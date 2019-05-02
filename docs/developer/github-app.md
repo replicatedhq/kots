@@ -5,18 +5,24 @@ Log in to GitHub and create a new app by clicking: https://github.com/settings/a
 Use the following information to configure this app:
 
 App Name: Ship Cluster Dev
+
 Homepage URL: http://localhost:8000
+
 User authorization callback URL: http://localhost:8000/auth/github/callback
+
 Setup URL: http://localhost:8000
+
 Redirect on Update: ✓
+
 Webhook URL: https://your-ngrok.ngrok.io/api/v1/hooks/github
 
-Permissions:
+**Permissions:**
 
 Repository Contents: Read & Write
+
 Pull Requests: Read & Write
 
-Subscribe To Events:
+**Subscribe To Events:**
 
 Pull request ✓
 
