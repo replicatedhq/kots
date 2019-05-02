@@ -23,7 +23,3 @@ steps:
     branches: master
     retry:
       automatic: true
-
-
-
-docker run - replicated/gitops-builder:buildkite
