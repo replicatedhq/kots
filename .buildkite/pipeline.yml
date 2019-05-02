@@ -3,7 +3,15 @@
   commit: "${BUILDKITE_COMMIT}"
   branch: "${BUILDKITE_BRANCH}"
 
-# - trigger: "ship-cluster-web"
-# - trigger: "ship-cluster-worker"
+- trigger: "ship-cluster-web"
+  message: "${BUILDKITE_MESSAGE}"
+  commit: "${BUILDKITE_COMMIT}"
+  branch: "${BUILDKITE_BRANCH}"
+
+- trigger: "ship-cluster-worker"
+  message: "${BUILDKITE_MESSAGE}"
+  commit: "${BUILDKITE_COMMIT}"
+  branch: "${BUILDKITE_BRANCH}"
+
 # - trigger: "ship-cluster-migrations"
 # - trigger: "ship-cluster-ship-operator"

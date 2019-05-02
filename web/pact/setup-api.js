@@ -13,6 +13,6 @@ global.provider = new Pact({
   spec: 2,
   pactfileWriteMode: "merge",
   consumer: "ship-cluster-ui",
-  provider: "ship-cloud-api",
+  provider: "ship-cluster-api",
   host: "127.0.0.1"
 });

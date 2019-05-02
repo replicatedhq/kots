@@ -1,23 +1,23 @@
 steps:
-  - command: make build
+  - command: cd worker && make build
     label: test-and-build
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
-          workdir: /go/src/github.com/replicatedcom/ship-cluster-worker
+          workdir: /go/src/github.com/replicatedhq/ship-cluster-worker
     artifact_paths:
       - "bin/**/*"
 
   - wait
 
-  - command: "make build-enterprise"
+  - command: cd worker && make build-enterprise
     branches: master
     retry:
       automatic: true
 
   - wait
 
-  - command: "make publish-enterprise"
+  - command: cd worker && make publish-enterprise
     branches: master
     retry:
       automatic: true
