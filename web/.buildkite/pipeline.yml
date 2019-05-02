@@ -24,7 +24,8 @@ steps:
   - wait
 
   - commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-enterprise
       - cd web
-      - mkdir -p dist; buildkite-agent artifact download web/dist/* dist --step build-enterprise
       - make publish-enterprise
     branches: "master"

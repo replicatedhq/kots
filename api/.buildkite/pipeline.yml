@@ -6,7 +6,9 @@ steps:
       - docker-compose -f api/test/docker-compose.yml up --exit-code-from ship-cluster-api
       - docker-compose -f api/test/docker-compose.yml down
 
-  - command: cd api && make deps build pkg
+  - commands:
+      - cd api
+      - make deps build pkg
     label: "build"
     plugins:
       - docker#v3.0.1:
@@ -19,18 +21,26 @@ steps:
 
   - wait
 
-  - command: cd api && make can-i-deploy
+  - commands:
+     - cd api
+     - make can-i-deploy
 
   - wait
 
   - commands:
+      - mkdir -p api/build
+      - buildkite-agent artifact download api/build/* . --step build
+      - mkdir -p api/bin
+      - buildkite-agent artifact download api/bin/* . --step build
+      - chmod +x api/bin/ship-cluster-api
+      - chmod +x api/bin/shipcloudctl
       - cd api
-      - mkdir -p build; buildkite-agent artifact download api/build/* build --step build
-      - mkdir -p bin; buildkite-agent artifact download api/bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
       - make build-enterprise
     branches: "master"
 
   - wait
 
-  - commands: cd api && make publish-enterprise
+  - commands:
+      - cd api
+      - make publish-enterprise
     branches: "master"

@@ -1,5 +1,7 @@
 steps:
-  - command: cd worker && make build
+  - commands:
+      - cd worker
+      - make build
     label: test-and-build
     plugins:
       - docker#v3.0.1:
@@ -10,7 +12,12 @@ steps:
 
   - wait
 
-  - command: cd worker && make build-enterprise
+  - commands:
+      - mkdir -p worker/bin;
+      - buildkite-agent artifact download worker/bin/* . --step test-and-build
+      - chmod +x worker/bin/ship-cluster-worker
+      - cd worker
+      - make build-enterprise
     branches: master
     retry:
       automatic: true
@@ -20,7 +27,6 @@ steps:
   - commands:
       - cd worker
       - make publish-enterprise
-      - mkdir -p bin; buildkite-agent artifact download worker/bin/* bin --step test-and-build; chmod +x bin/ship-cluster-worker
     branches: master
     retry:
       automatic: true
