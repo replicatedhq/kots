@@ -1,8 +1,8 @@
 {
-  "name": "ship-cloud-fixtures",
+  "name": "ship-cluster-fixtures",
   "version": "1.0.0",
-  "description": "Ship Cloud Fixtures",
-  "license": "UNLICENSED",
+  "description": "Ship Cluster Fixtures",
+  "license": "Apache-2.0",
   "main": "./build/fixtures.js",
   "dependencies": {
     "js-yaml": "^3.13.1",

@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= ship-cloud-fixtures
+PROJECT_NAME ?= ship-cluster-fixtures
 
 .PHONY: deps
 deps:
@@ -15,7 +15,7 @@ lint:
 	npx tslint --project ./tsconfig.json --fix
 
 .PHONY: build
-build: prebuild
+build: prebuild deps
 	`yarn bin`/tsc --project .
 
 .PHONY: run
