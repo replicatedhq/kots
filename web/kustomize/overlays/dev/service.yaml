@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-cluster-ui-pub
+  labels:
+    app: ship-cluster-ui
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 8064
+    targetPort: http-pub
+  selector:
+    app: ship-cluster-ui

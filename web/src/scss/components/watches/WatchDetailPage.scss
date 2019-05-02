@@ -1,0 +1,86 @@
+.WatchDetailPage--wrapper {
+
+  .watch-detail-header {
+    padding: 30px 20px;
+    background: rgb(255,255,255);
+    background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(244,249,246,1) 100%);
+  
+    .watch-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      display: block;
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
+      background-color: #ffffff;
+    }
+  
+    p {
+      font-size: 24px;
+    }
+  }
+  
+  .details-subnav {
+    padding: 0 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #DFDFDF;
+    border-bottom: 1px solid #DFDFDF;
+    ul { 
+      margin: 0 auto;
+    }
+    ul li {
+      display: inline-block;
+      margin: 0 70px;
+      &:first-child { margin-left: 0; }
+      &:last-child { margin-right: 0; }
+      
+      a {
+        position: relative;
+        padding: 12px 10px 11px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #9B9B9B;
+        display: inline-block;
+        transition: color .2s;
+
+        &:hover {
+          color: #717171;
+        }
+      }
+
+      &.is-active a {
+        color: #4a4a4a;
+
+        &:hover {
+          color: #4a4a4a;
+        }
+        &:after {
+          content: "";
+          width: 100%;
+          height: 2px;
+          position: absolute;
+          display: block;
+          background-color: #44bb66;
+          bottom: 0;
+          left: 0;
+        }
+      }
+    }
+  }
+
+  .DetailPageApplication {
+    max-width: 800px;
+    width: 100%;
+
+    .detail-right-sidebar {
+      max-width: 200px;
+    }
+    .icon.downloadAssets--small {
+      vertical-align: -3px;
+    }
+  }
+}
+

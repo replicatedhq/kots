@@ -1,0 +1,37 @@
+.CreateCluster--wrapper {
+  max-width: 540px;
+  width: 100%;
+  code {
+    white-space: pre-wrap;
+    padding: 10px;
+    background: #4A4A4A;
+    color: white;
+    margin: 12px 0;
+  }
+}
+.InstallClusterModal--wrapper {
+  code {
+    white-space: pre-wrap;
+    padding: 10px;
+    background: #4A4A4A;
+    color: white;
+    margin: 12px 0;
+  }
+}
+.cluster-deployment-type {
+  .BoxedCheckbox {
+    position: relative;
+    .icon.clusterType {
+      top: 3px;
+    }
+    input {
+      position: absolute;
+      top: 19px;
+      left: 12px;
+    }
+    &.is-active {
+      border-color: #44BB66;
+      background-color: #F8FCF9;
+    }
+  }
+}

@@ -1,0 +1,107 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: "Helvetica Neue", "Helvetica", sans-serif;
+  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+body a {
+  text-decoration: none;
+  outline: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.replicated-link {
+  color: #337AB7;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #44bb66;
+  font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
+  background-color: #E3F5E8;
+  border-radius: 4px;
+}
+
+.container {
+  padding: 0 20px;
+}
+
+.HiddenText-wrapper {
+  top: -1000px;
+  left: -1000px;
+  z-index: -1;
+  opacity: 0;
+}
+
+/*
+Apply this class to any icon using main_spritesheet. From there
+all you need to do is supply a `width: [value]` `height: [value]`
+and `background-position: [value]`
+*/
+.icon {
+  background-image: url("../images/main_spritesheet.svg");
+  background-repeat: no-repeat;
+  background-size: initial;
+  display: inline-block;
+  cursor: default;
+  position: relative;
+}
+.icon.clickable {
+  cursor: pointer;
+}
+
+/* Media Queries */
+
+/* ≥ 568px */
+@media screen and (min-width: 35.5em) {
+
+}
+
+/* ≥ 768px */
+@media screen and (min-width: 48em) {
+  .container {
+    padding: 0 30px;
+  }
+}
+
+/* ≥ 960px */
+@media screen and (min-width: 60em) {
+
+}
+
+/* ≥ 1024px */
+@media screen and (min-width: 64em) {
+
+}
+
+/* ≥ 1280px */
+@media screen and (min-width: 80em) {
+
+}
+
+.hidden {
+  display: none;
+}

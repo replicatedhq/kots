@@ -1,0 +1,9 @@
+bases:
+- ../../base
+
+resources:
+- ./session-secret.json
+- ./bugsnag-secret.yaml
+
+patchesStrategicMerge:
+- ./deployment.yaml

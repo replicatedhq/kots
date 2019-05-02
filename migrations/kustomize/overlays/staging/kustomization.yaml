@@ -1,0 +1,7 @@
+bases:
+  - ../staging-job
+resources:
+  - ./secret.json
+  - ./secret-rw.json
+  - ./secret-host.json
+  - ./ship-postgres-secret.json

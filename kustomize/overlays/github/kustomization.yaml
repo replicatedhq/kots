@@ -1,0 +1,8 @@
+bases:
+  - ../dev
+
+patchesStrategicMerge:
+  - ./secrets/github-private-key.yaml
+
+resources:
+  - ./secrets/github-app.yaml

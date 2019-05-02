@@ -1,0 +1,37 @@
+steps:
+  - commands:
+      - docker-compose -f test/docker-compose.yml down
+      - docker-compose -f test/docker-compose.yml pull
+      - docker-compose -f test/docker-compose.yml build
+      - docker-compose -f test/docker-compose.yml up --exit-code-from ship-cluster-api
+      - docker-compose -f test/docker-compose.yml down
+    branches: "clusters"
+
+  - command: make deps build pkg
+    label: "build"
+    plugins:
+      - docker#v3.0.1:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo
+    artifact_paths:
+      - "build/**/*"
+      - "bin/**/*"
+
+  - wait
+
+  - command: make can-i-deploy
+    branches: "clusters"
+
+  - wait
+
+  - commands:
+	    - mkdir -p build; buildkite-agent artifact download build/* build --step build
+	    - mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
+      - make build-enterprise
+    branches: "clusters"
+
+  - wait
+
+  - command: make publish-enterprise
+    branches: "clusters"

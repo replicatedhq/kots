@@ -1,0 +1,7 @@
+bases:
+  - ../../base
+patchesStrategicMerge:
+  - ./deployment.yaml
+  - ./service.yaml
+resources:
+  - ./configmap.yaml

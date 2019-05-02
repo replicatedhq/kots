@@ -1,0 +1,8 @@
+FROM migrate/migrate
+ADD /migrations /migrations
+ENTRYPOINT []
+CMD [ \
+  "/bin/sh", \
+  "-c", \
+  "/migrate -path=/migrations/ -database=${POSTGRES_URI} up" \
+]

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-worker-image
+spec:
+  replicas: 1
+  template:
+    spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
+      restartPolicy: Always
+      containers:
+        - name: ship-cluster-worker
+          image: registry.replicated.com/ship-enterprise/ship-cluster-worker
+          env:
+            - name: LOG_LEVEL
+              value: warn
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-enterprise-postgres
+                  key: uri

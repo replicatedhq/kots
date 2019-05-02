@@ -1,0 +1,6 @@
+{
+    "printWidth": 160,
+    "tabWidth": 2,
+    "parser": "typescript",
+    "trailingComma": "all"
+}

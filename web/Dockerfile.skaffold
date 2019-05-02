@@ -1,0 +1,16 @@
+FROM node:8 as build
+ADD ./package.json /src/package.json
+ADD ./yarn.lock /src/yarn.lock
+WORKDIR /src
+RUN yarn
+ADD ./Makefile /src/Makefile
+ADD . /src
+WORKDIR /src
+ARG env=skaffold
+RUN npx webpack --config webpack.config.js --env ${env} --mode development
+
+
+FROM nginx:1.11.8
+COPY --from=build /src/dist /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 3000

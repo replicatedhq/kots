@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-worker-watch
+spec:
+  template:
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: ship-cluster-worker
+          env:
+            - name: LOG_LEVEL
+              value: debug
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-postgres   # This secret is created in the ship-cluster-db project
+                  key: uri
+            - name: GITHUB_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: github-app-private-key
+                  key: private-key.pem

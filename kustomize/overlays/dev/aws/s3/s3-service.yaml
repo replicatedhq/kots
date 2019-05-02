@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3
+  labels:
+    app: s3
+spec:
+  type: LoadBalancer
+  ports:
+  - name: s3
+    port: 4569
+    targetPort: s3
+  selector:
+    app: s3

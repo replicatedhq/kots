@@ -1,0 +1,1 @@
+alter table pullrequest_history add column sequence integer default 0;

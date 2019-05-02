@@ -1,0 +1,7 @@
+
+resources:
+  - ./deployment.yaml
+  - ./cluster-ip.yaml
+  
+
+  

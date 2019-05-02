@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-cluster-api
+  labels:
+    app: ship-cluster-api
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+  selector:
+    app: ship-cluster-api

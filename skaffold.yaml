@@ -1,0 +1,30 @@
+apiVersion: skaffold/v1beta9
+kind: Config
+
+profiles:
+  - name: github
+    deploy:
+      kustomize:
+        path: "./kustomize/overlays/github"
+
+build:
+  artifacts:
+    - image: ship-cluster-api
+      context: "./api"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+    - image: ship-cluster-worker
+      context: "./worker"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+    - image: ship-cluster-migrations
+      context: "./migrations"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+    - image: fake-s3
+      context: "./util/s3"
+
+deploy:
+  kustomize:
+    path: "./kustomize/overlays/dev"

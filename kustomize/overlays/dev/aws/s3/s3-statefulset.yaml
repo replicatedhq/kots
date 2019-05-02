@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: s3
+  labels:
+    app: s3
+spec:
+  serviceName: s3
+  template:
+    metadata:
+      labels:
+        app: s3
+    spec:
+      containers:
+        - name: s3
+          image: fake-s3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4569
+              name: s3
+          volumeMounts:
+            - name: s3dir
+              mountPath: /fakes3_root
+
+      volumes:
+        - name: s3dir
+          persistentVolumeClaim:
+            claimName: s3dir
+
+  volumeClaimTemplates:
+    - metadata:
+        name: s3dir
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: 1Gi

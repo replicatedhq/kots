@@ -1,0 +1,1 @@
+alter table image_watch add column docker_pullable text null;

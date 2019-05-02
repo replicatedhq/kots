@@ -1,0 +1,27 @@
+steps:
+  - command: make deps test && yarn run publish:pact
+    label: "test-and-build"
+    plugins:
+      - docker#v3.0.1:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo
+          environment:
+            - PACT_BROKER_USERNAME
+            - PACT_BROKER_PASSWORD
+
+  - wait
+
+  - command: make deps build-enterprise
+    label: "build-enterprise"
+    branches: "clusters"
+    plugins:
+      - docker#v3.0.1:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo
+    artifact_paths:
+      - "dist/**/*"
+
+  - wait
+
+  - command: make publish-enterprise
+    branches: "clusters"

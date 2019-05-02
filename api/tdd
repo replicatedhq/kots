@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+const gri = require('gaze-run-interrupt');
+
+gri([
+    'src/**/*.ts',
+], [{
+    command: 'yarn',
+    args: ['mintest']
+}]);

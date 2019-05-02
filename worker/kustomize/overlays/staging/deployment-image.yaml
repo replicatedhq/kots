@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-worker-image
+spec:
+  replicas: 2
+  template:
+    spec:
+      nodeSelector:
+        replicated/node-pool: privileged
+      containers:
+        - name: ship-cluster-worker
+          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-worker
+          env:
+            - name: USE_EC2_PARAMETERS
+              value: "1"
+            - name: AWS_REGION
+              value: us-east-1

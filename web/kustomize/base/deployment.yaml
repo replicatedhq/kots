@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-ui
+spec:
+  selector:
+    matchLabels:
+      app: ship-cluster-ui
+  template:
+    metadata:
+      labels:
+        app: ship-cluster-ui
+    spec:
+      containers:
+        - name: ship-cluster-ui
+          image: gcr.io/replicated-qa/ship-cluster-ui
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 1

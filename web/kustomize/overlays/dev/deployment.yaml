@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-ui
+spec:
+  template:
+    spec:
+      containers:
+        - name: ship-cluster-ui
+          ports:
+            - name: http-pub
+              containerPort: 3000

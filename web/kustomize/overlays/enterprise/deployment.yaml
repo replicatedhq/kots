@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-ui
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
+      containers:
+        - name: ship-cluster-ui
+          image: registry.replicated.com/ship-enterprise/ship-cluster-ui
+          args: ["/scripts/start-ship-cluster-ui.sh"]
+          volumeMounts:
+            - name: ship-cluster-ui-scripts
+              mountPath: /scripts/start-ship-cluster-ui.sh
+              subPath: start-ship-cluster-ui.sh
+      volumes:
+      - name: ship-cluster-ui-scripts
+        configMap:
+          name: ship-cluster-ui-scripts
+          defaultMode: 0744

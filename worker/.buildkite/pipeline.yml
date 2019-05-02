@@ -1,0 +1,21 @@
+steps:
+  - command: make build
+    label: test-and-build
+    plugins:
+      - docker#v3.0.1:
+          image: replicated/gitops-builder:buildkite
+          workdir: /go/src/github.com/replicatedcom/ship-cluster-worker
+    artifact_paths:
+      - "bin/**/*"
+
+  - wait
+
+  - command: "make build-enterprise"
+    retry:
+      automatic: true
+
+  - wait
+
+  - command: "make publish-enterprise"
+    retry:
+      automatic: true

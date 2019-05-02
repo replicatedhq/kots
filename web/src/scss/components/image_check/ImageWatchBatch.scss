@@ -1,0 +1,385 @@
+.ClusterScope-create--wrapper {
+  max-width: 960px;
+  .kub-logo {
+    background-position: 0 -525px;
+    width: 83px;
+    height: 80px;
+  }
+}
+.ClusterScoperBatch--wrapper {
+  .ContentHeader--wrapper h2 {
+    padding-left: 12px;
+  }
+}
+.Output--wrapper {
+  max-width: 620px;
+  width: 100%;
+  margin: 0 auto;
+  .step-count {
+    background: #F5FBF7;
+    height: 30px;
+    width: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 30px;
+    color: #44BB66;
+    margin-right: 10px;
+  }
+  code {
+    white-space: pre-wrap;
+    padding: 10px;
+    background: #4A4A4A;
+    color: white;
+    margin: 12px 0;
+  }
+  .line {
+    border-color: transparent;
+    border-radius: 3px;
+    width: 2px;
+    background: #EBB55C;
+    margin-left: 13px;
+    height: 12px;
+  }
+}
+.cluster-scope-bg-white-gradient {
+  background: url("../../../images/backgrounds/header_white_gradient@2x.png") repeat-x;
+  background-size: 1px auto; 
+  width: 100%;
+  height: 140px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+}
+.command-blocks-wrapper {
+  width: 100%;
+  max-width: 1020px;
+  margin: 40px auto;
+  z-index: 3;
+}
+.command-block-wrapper {
+  width: 300px;
+  box-sizing: border-box;
+  display: inline-block;
+  margin-top: 50px;
+  padding: 0 30px;
+}
+.command-block-illustration {
+  margin-bottom: 12px;
+}
+.command-block-wrapper:first-child {
+  margin-top: 0;
+}
+.command-block-illustration.safe {
+  background-position: 0 -607px;
+  width: 52px;
+  height: 59px;
+}
+.command-block-illustration.control {
+  margin-top: 10px;
+  background-position: 0 -667px;
+  width: 97px;
+  height: 49px;
+}
+.command-block-illustration.sparkle {
+  background-position: -56px -607px;
+  width: 55px;
+  height: 59px;
+}
+.LoginBox-wrapper.image-batch {
+  max-width: 100%;
+  box-shadow: none;
+}
+.cluster-scope-row {
+  padding: 14px 12px;
+  border-bottom: 1px solid #dfdfdf;
+
+  &.private-image {
+    background: #F7F7F7;
+  }
+
+  &.pending {
+    .loading-wrapper {
+      .loading-bar {
+        border-radius: 2px;
+        width: 100%;
+        height: 12px;
+        margin: 10px 20px 10px 0;
+        display: inline-block;
+        background: #f3f3f3 -webkit-gradient(linear, 100% 0, 0 0, from(#f3f3f3), color-stop(0.5, #ffffff), to(#f3f3f3));
+        background-position: -4rem top; /*50px*/
+        background-repeat: no-repeat;
+        animation-name: shimmer;
+        animation-duration: 2.2s;
+        animation-iteration-count: infinite;
+        background-size: 4rem 100%; /*50px*/
+        &:last-of-type {
+          width: 25%;
+        }
+      }
+    }
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  & > div:first-of-type {
+    margin-right: 60px;
+    p {
+      word-break: break-all;
+    }
+  }
+
+  & .left p {
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 600px;
+    text-overflow: ellipsis;
+  }
+
+  .versions-behind {
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 10px;
+    padding-top: 8px;
+
+    .warn-icon {
+      margin-right: 6px;
+      vertical-align: -2px;
+    }
+
+    &.warning {
+      color: #DB9016;
+      .warn-icon {
+        background-position: -18px -271px;
+      }
+    }
+    &.super-warning {
+      color: #BC4752;
+      .warn-icon {
+        background-position: -36px -271px;
+      }
+    }
+    &.pending {
+      color: #46A9FF;
+      .warn-icon {
+        background-position: -64px -271px;
+      }
+    }
+    &.up-to-date {
+      color: #9B9B9B;
+      .warn-icon {
+        background-position: 0 -271px;
+      }
+    }
+    &.private-warning {
+      color: #9B9B9B;
+      .warn-icon {
+        background-position: -82px -271px;
+      }
+    }
+  }
+}
+.ClusterScopeBatchPath--wrapper {
+  max-width: 520px;
+  padding-right: 50px;
+  .version {
+    .version--line {
+      bottom: 5px;
+      width: 100%;
+      height: 2px;
+      background: #DFDFDF;
+    }
+    & p:first-of-type {
+      margin-bottom: 5px;
+    }
+    &.oldest-version p:last-of-type {
+      position: relative;
+      left: -50%;
+      bottom: 0;
+      .version--line {
+        position: absolute;
+        right: -100%;
+      }
+    }
+    &.newest-version p:last-of-type {
+      position: relative;
+      left: 50%;
+      white-space: nowrap;
+      .version--line {
+        position: absolute;
+        right: 100%;
+      }
+    }
+  }
+  .version--point {
+    width: 10px;
+    height: 10px;
+    border-radius: 20px;
+    background: #000;
+    display: inline-block;
+    border: solid 4px #fff;
+    position: relative;
+    bottom: -4.5px;
+    &.red {
+      background: #BC4752;
+    }
+    &.green {
+      background: #44BB66;
+    }
+    &.gray {
+      background: #717171;
+    }
+  }
+  .path {
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+    .path--line {
+      height: 2px;
+      position: relative;
+      bottom: 5px;
+      background: #DFDFDF;
+    }
+    .path--points {
+      position: absolute;
+      bottom: -1px;
+      .point {
+        margin: 0 30px;
+      }
+      .point .dot-wrapper span {
+        width: 6px;
+        height: 6px;
+        display: inline-block;
+        border-radius: 20px;
+        background: #9B9B9B;
+        border: solid 4px #fff;
+      }
+    }
+    &.loading {
+      .path--line {
+        position: relative;
+        z-index: 2;
+        margin: 0 -46px 0 -42px;
+        background: #f3f3f3 -webkit-gradient(linear, 100% 0, 0 0, from(#f3f3f3), color-stop(0.5, #ffffff), to(#f3f3f3));
+        background-position: -4rem top; /*50px*/
+        background-repeat: no-repeat;
+        animation-name: shimmer;
+        animation-duration: 2.2s;
+        animation-iteration-count: infinite;
+        background-size: 4rem 100%; /*50px*/
+      }
+    }
+  }
+}
+
+.ReactModal__Overlay .Modal.ClusterScopeSignUpModal--wrapper {
+  padding: 25px;
+}
+
+.sidedevices .computerwrapper .mask {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	border-radius: 8px;
+	box-shadow: -1px 1px 4px rgba(107,124,147,.45);
+	background: white;
+}
+.sidedevices .computerwrapper .mask-img {
+	width: 100%;
+	display: block;
+}
+.sidedevices .computerwrapper .computer {
+	width: 800px;
+	height: 520px;
+	background: linear-gradient(to bottom, rgba(247,251,254,1) 0%,rgba(221,226,232,1) 100%);
+	border-radius: 18px;
+	position: relative;
+	box-shadow: inset 0 2px 7px 1px rgba(255,255,255,.5),inset 0 -5px 20px rgba(187,200,225,.35),0 2px 6px rgba(40,39,66,.14),0 10px 20px rgba(40,39,66,.06), 76px 75px 169px -35px rgba(0,0,0,0.2);
+	padding: 28px;
+}
+.sidedevices .computerwrapper .computer:after,
+.sidedevices .computerwrapper .computer:before {
+	content: "";
+	position: absolute;
+	border-radius: 3px 3px 0 0;
+	width: calc(100% + 200px);
+	height: 10px;
+	background: linear-gradient(to right, rgba(246,250,253,1) 0%,rgba(221,226,233,1) 6%,rgba(246,250,253,1) 15%,rgba(246,250,253,1) 42%,rgba(230, 230, 230, 1) 42%,rgba(246,250,253,1) 45%,rgba(246,250,253,1) 53%,rgba(230, 230, 230, 1) 56%,rgba(246,250,253,1) 56%, rgba(246,250,253,1) 85%,rgba(221,226,233,1) 94%,rgba(246,250,253,1) 100%);
+	left: -100px;
+	bottom: -5px;
+}
+.sidedevices .computerwrapper .computer:before {
+	height: 6px;
+	bottom: -11px;
+	border-radius: 0 0 40px 40px;
+	background: #dde2e9;
+	box-shadow: inset 0px -25px 10px -20px rgba(0,0,0,.5);
+}
+
+.clusterscope-section .device-wrapper {
+  display: none;
+}
+
+.ClusterScopePage--wrapper .clusterscope-section .section-gradient {
+  background: url("../../../images/backgrounds/commands-section-gradient@2x.png") repeat-x;
+  background-size: 1px auto;
+  width: 100%;
+  height: 332px;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+/* ≥ 568px */
+@media screen and (min-width: 35.5em) {
+  .command-block-wrapper {
+    width: 50%;
+  }
+  .command-block-wrapper:nth-child(2) {
+    margin-top: 0;
+  }
+  .clusterscope-section {
+    min-height: 500px;
+  }
+  .clusterscope-section .device-wrapper {
+    display: flex;
+  }
+  .clusterscope-section .sidedevices {
+    position: absolute;
+    bottom: -150px;
+  }
+}
+
+/* ≥ 768px */
+@media screen and (min-width: 48em) {
+  .command-block-wrapper {
+    width: 33%;
+    margin-top: 0;
+  }
+  .clusterscope-section .sidedevices {
+    bottom: -100px;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .sidedevices .computerwrapper .sidedevices .computerwrapper .computer {
+		margin: auto;
+		width: 100%;
+		padding: 20px;
+		height: calc((100vw - 80px) * .75);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -4rem top; /*50px*/ }
+  80% { background-position: 50.5rem top; /*200px*/ }
+  100% { background-position: 50.5rem top; /*200px*/ }
+}

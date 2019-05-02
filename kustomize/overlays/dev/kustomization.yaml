@@ -1,0 +1,6 @@
+bases:
+  - ../../base
+
+resources:
+  - ./aws/s3/s3-statefulset.yaml
+  - ./aws/s3/s3-service.yaml

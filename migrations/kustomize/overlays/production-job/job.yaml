@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ship-cluster-migrations
+spec:
+  template:
+    spec:
+      nodeSelector:
+        replicated/node-pool: privileged
+      containers:
+      - name: migrations
+        image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-migrations

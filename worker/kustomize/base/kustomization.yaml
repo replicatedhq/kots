@@ -1,0 +1,11 @@
+resources:
+- ./deployment-init.yaml
+- ./deployment-update.yaml
+- ./deployment-watch.yaml
+- ./deployment-image.yaml
+- ./service-init.yaml
+- ./service-update.yaml
+- ./service-watch.yaml
+- ./rbac-init.yaml
+- ./rbac-update.yaml
+- ./rbac-watch.yaml

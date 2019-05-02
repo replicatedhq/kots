@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ship-cluster-migrations
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
+      containers:
+        - name: migrations
+          image: registry.replicated.com/ship-enterprise/ship-cluster-migrations
+          env:
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-enterprise-postgres
+                  key: uri

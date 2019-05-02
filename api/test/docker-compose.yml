@@ -1,0 +1,11 @@
+version: "3.2"
+services:
+  postgres:
+    image: replicated/ship-cluster-fixtures:latest
+  ship-cluster-api:
+    build:
+      context: ../
+      dockerfile: ./test/Dockerfile
+    environment:
+      - PACT_BROKER_USERNAME=${PACT_BROKER_USERNAME}
+      - PACT_BROKER_PASSWORD=${PACT_BROKER_PASSWORD}

@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-ui
+spec:
+  template:
+    spec:
+      containers:
+        - name: ship-cluster-ui
+          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-ui
+          env:
+            - name: USE_EC2_PARAMETERS
+              value: "1"
+            - name: AWS_REGION
+              value: us-east-1

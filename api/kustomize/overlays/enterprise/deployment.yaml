@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
+      containers:
+        - name: ship-cluster-api
+          image: registry.replicated.com/ship-enterprise/ship-cluster-api
+          env:
+            - name: SESSION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: session
+                  key: key
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-enterprise-postgres
+                  key: uri
+            - name: INIT_SERVER_URI
+              value: "http://init-server:3000"
+            - name: WATCH_SERVER_URI
+              value: "http://watch-server:3000"
+            - name: PINO_LOG_PRETTY
+              value: "1"
+            - name: S3_ENDPOINT
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}http://minio.default.svc.cluster.local:9000/{{repl else}}{{repl ConfigOption "s3_endpoint"}}{{repl end}}
+            - name: S3_BUCKET_NAME
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}ship-enterprise{{repl else}}{{repl ConfigOption "s3_bucket"}}{{repl end}}
+            - name: S3_ACCESS_KEY_ID
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}{{repl ConfigOption "embedded_s3_access_key_id"}}{{repl else}}{{repl ConfigOption "s3_access_key_id"}}{{repl end}}
+            - name: S3_SECRET_ACCESS_KEY
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}{{repl ConfigOption "embedded_s3_secret_access_key"}}{{repl else}}{{repl ConfigOption "s3_secret_access_key"}}{{repl end}}
+            - name: S3_BUCKET_ENDPOINT
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}true{{repl else}}{{repl end}}
+            - name: GITHUB_CLIENT_ID
+              value: '{{repl ConfigOption "github-clientid"}}'
+            - name: GITHUB_CLIENT_SECRET
+              value: '{{repl ConfigOption "github-clientsecret"}}'
+            - name: GITHUB_INTEGRATION_ID
+              value: '{{repl ConfigOption "github-integrationid"}}'
+            - name: SHIP_API_ADVERTISE_ENDPOINT
+              value: 'https://{{repl ConfigOption "hostname"}}'

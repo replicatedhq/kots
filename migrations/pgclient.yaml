@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+#  name: pg-client
+  namespace: default
+spec:
+  backoffLimit: 6
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      containers:
+        - env:
+            - name: PGUSER
+              value: shipcloud
+            - name: PGDATABASE
+              value: shipcloud
+            - name: PGPORT
+              value: "5432"
+            - name: PGSSLMODE
+              value: require
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: postgres-host
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: postgres
+          image: postgres:10.4
+          imagePullPolicy: IfNotPresent
+          name: pg-client
+          command: ["sleep"]
+          args: ["1h"]
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        replicated/node-pool: privileged
+      restartPolicy: OnFailure
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

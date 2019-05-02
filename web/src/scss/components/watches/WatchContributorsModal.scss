@@ -1,0 +1,20 @@
+.BoxedCheckbox .user-photo {
+  display: block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  border-radius: 100%;
+  overflow: hidden;
+  width: 30px;
+  height: 30px;
+  margin-right: 8px;
+}
+
+.contributer-wrapper {
+  max-height: 15.5em;
+  overflow: auto;
+
+  .BoxedCheckbox-wrapper {
+    margin: 10px 0;
+    margin-left: 0;
+  }
+}
