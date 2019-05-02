@@ -35,6 +35,7 @@ echo "export SHIP_CLUSTER_GITHUB_INSTALL_URL=${SHIP_CLUSTER_GITHUB_INSTALL_URL}"
 echo "export SHIP_CLUSTER_GITHUB_CLIENT_ID=${SHIP_CLUSTER_GITHUB_CLIENT_ID}" \
   | tee -a ~/.bash_profile > /dev/null
 
+mkdir -p kustomize/overlays/github/secrets
 kubectl create secret generic github-app \
   --dry-run \
   --from-literal=client-id=${SHIP_CLUSTER_GITHUB_CLIENT_ID} \
