@@ -24,8 +24,8 @@ steps:
   - wait
 
   - commands:
-	    - mkdir -p build; buildkite-agent artifact download build/* build --step build
-	    - mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
+      - mkdir -p build; buildkite-agent artifact download build/* build --step build
+      - mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
       - make build-enterprise
     branches: "master"
 
