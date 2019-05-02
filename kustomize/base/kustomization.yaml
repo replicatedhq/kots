@@ -2,3 +2,4 @@ bases:
   - ../../api/kustomize/overlays/dev
   - ../../worker/kustomize/overlays/dev
   - ../../migrations/kustomize/overlays/dev
+  - ../../ship-operator/kustomize/overlays/dev

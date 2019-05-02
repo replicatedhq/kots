@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: ship-cluster-ui
-          image: gcr.io/replicated-qa/ship-cluster-ui
+          image: ship-cluster-ui
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
