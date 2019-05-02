@@ -1,0 +1,5 @@
+- trigger: "ship-cluster-api"
+# - trigger: "ship-cluster-web"
+# - trigger: "ship-cluster-worker"
+# - trigger: "ship-cluster-migrations"
+# - trigger: "ship-cluster-ship-operator"

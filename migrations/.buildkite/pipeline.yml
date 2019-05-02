@@ -20,7 +20,7 @@ steps:
   - wait
 
   - command: make publish-enterprise
-    branches: clusters
+    branches: master
 
   - command: make publish-staging
     branches: master

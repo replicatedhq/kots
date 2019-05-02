@@ -7,18 +7,17 @@ steps:
           workdir: /go/src/github.com/replicatedhq/ship-operator
     artifact_paths:
       - "bin/**/*"
-    branches: clusters
 
   - wait
 
   - command: "make build-enterprise"
-    branches: clusters
+    branches: master
     retry:
       automatic: true
 
   - wait
 
   - command: "make publish-enterprise"
-    branches: clusters
+    branches: master
     retry:
       automatic: true

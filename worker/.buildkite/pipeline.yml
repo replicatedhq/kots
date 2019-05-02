@@ -11,11 +11,13 @@ steps:
   - wait
 
   - command: "make build-enterprise"
+    branches: master
     retry:
       automatic: true
 
   - wait
 
   - command: "make publish-enterprise"
+    branches: master
     retry:
       automatic: true

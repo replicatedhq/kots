@@ -13,7 +13,7 @@ steps:
 
   - command: make deps build-enterprise
     label: "build-enterprise"
-    branches: "clusters"
+    branches: "master"
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
@@ -24,4 +24,4 @@ steps:
   - wait
 
   - command: make publish-enterprise
-    branches: "clusters"
+    branches: "master"

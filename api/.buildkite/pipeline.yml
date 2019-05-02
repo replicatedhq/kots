@@ -5,7 +5,6 @@ steps:
       - docker-compose -f test/docker-compose.yml build
       - docker-compose -f test/docker-compose.yml up --exit-code-from ship-cluster-api
       - docker-compose -f test/docker-compose.yml down
-    branches: "clusters"
 
   - command: make deps build pkg
     label: "build"
@@ -21,7 +20,6 @@ steps:
   - wait
 
   - command: make can-i-deploy
-    branches: "clusters"
 
   - wait
 
@@ -29,9 +27,9 @@ steps:
 	    - mkdir -p build; buildkite-agent artifact download build/* build --step build
 	    - mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
       - make build-enterprise
-    branches: "clusters"
+    branches: "master"
 
   - wait
 
   - command: make publish-enterprise
-    branches: "clusters"
+    branches: "master"
