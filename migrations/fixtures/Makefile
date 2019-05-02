@@ -25,8 +25,6 @@ run:
 .PHONY: publish
 publish: REGISTRY = replicated
 publish:
-	buildkite-agent artifact download fixtures/* . --step build-fixtures
-
 	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:latest .
 	docker tag ${PROJECT_NAME}:latest $(REGISTRY)/${PROJECT_NAME}:latest
 	docker push $(REGISTRY)/${PROJECT_NAME}:latest

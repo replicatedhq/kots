@@ -8,7 +8,7 @@ spec:
   type: LoadBalancer
   ports:
   - name: http
-    port: 8064
+    port: 8000
     targetPort: http-pub
   selector:
     app: ship-cluster-ui

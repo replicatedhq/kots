@@ -1,28 +1,39 @@
 steps:
-  - command: make check-dups
+  - commands:
+      - cd migrations
+      - make check-dups
 
   - wait
 
-  - command: cd fixtures && make deps build run
+  - commands:
+      - cd migrations/fixtures
+      - make deps build run
     label: "build-fixtures"
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
           workdir: /repo
     artifact_paths:
-      - "fixtures/fixtures.sql"
+      - "migrations/fixtures/fixtures.sql"
 
   - wait
 
-  - command: "cd fixtures && make publish"
+  - commands:
+      - buildkite-agent artifact download migrations/fixtures/fixtures.sql . --step build-fixtures
+      - cd migrations/fixtures
+      - make publish
     label: "publish-fixtures"
 
   - wait
 
-  - command: make publish-enterprise
+  - commands:
+      - cd migrations
+      - make publish-enterprise
     branches: master
 
-  - command: make publish-staging
+  - commands:
+      - cd migrations
+      - make publish-staging
     branches: master
     env:
       AWS_PROFILE: replicated-staging
@@ -34,7 +45,9 @@ steps:
   - block: "Release to production"
     branches: master
 
-  - command: make publish-production
+  - commands:
+      - cd migrations
+      - make publish-production
     branches: master
     env:
       AWS_PROFILE: replicated-production

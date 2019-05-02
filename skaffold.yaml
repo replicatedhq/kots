@@ -22,6 +22,15 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
+    - image: ship-operator
+      context: "./ship-operator"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+    - image: ship-operator-tools
+      context: "./ship-operator-tools"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
     - image: fake-s3
       context: "./util/s3"
 
