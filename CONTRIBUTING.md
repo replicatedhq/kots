@@ -23,8 +23,10 @@ Configure your local environment with your GitHub app credentials by:
 export SHIP_CLUSTER_GITHUB_INSTALL_URL=https://github.com/apps/<YOUR-APP-NAME>
 export SHIP_CLUSTER_GITHUB_CLIENT_ID=<YOUR-CLIENT-ID>
 
-echo "export SHIP_CLUSTER_GITHUB_INSTALL_URL=${SHIP_CLUSTER_GITHUB_INSTALL_URL}" | tee -a ~/.bash_profile > /dev/null
-echo "export SHIP_CLUSTER_GITHUB_CLIENT_ID=${SHIP_CLUSTER_GITHUB_CLIENT_ID}" | tee -a ~/.bash_profile > /dev/null
+echo "export SHIP_CLUSTER_GITHUB_INSTALL_URL=${SHIP_CLUSTER_GITHUB_INSTALL_URL}" \
+  | tee -a ~/.bash_profile > /dev/null
+echo "export SHIP_CLUSTER_GITHUB_CLIENT_ID=${SHIP_CLUSTER_GITHUB_CLIENT_ID}" \
+  | tee -a ~/.bash_profile > /dev/null
 ```
 
 Finally, create 2 Kubernetes secret in the kustomize/overlays/github/secrets directory:
