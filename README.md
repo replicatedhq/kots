@@ -21,4 +21,4 @@ helm install ship
 
 ## Contributing
 
-For docs on setting up a dev environment to build and run Ship Cluster locally, read the [CONTRIBUTING](https://github.com/repliatedhq/ship-cluster/blob/master/CONTRIBUTING.md) guide.
+For docs on setting up a dev environment to build and run Ship Cluster locally, read the [CONTRIBUTING](https://github.com/replicatedhq/ship-cluster/blob/master/CONTRIBUTING.md) guide.
