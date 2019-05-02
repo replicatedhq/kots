@@ -1,35 +1,35 @@
 steps:
   - commands:
-      - docker-compose -f test/docker-compose.yml down
-      - docker-compose -f test/docker-compose.yml pull
-      - docker-compose -f test/docker-compose.yml build
-      - docker-compose -f test/docker-compose.yml up --exit-code-from ship-cluster-api
-      - docker-compose -f test/docker-compose.yml down
+      - docker-compose -f api/test/docker-compose.yml down
+      - docker-compose -f api/test/docker-compose.yml pull
+      - docker-compose -f api/test/docker-compose.yml build
+      - docker-compose -f api/test/docker-compose.yml up --exit-code-from ship-cluster-api
+      - docker-compose -f api/test/docker-compose.yml down
 
-  - command: make deps build pkg
+  - command: cd api && make deps build pkg
     label: "build"
     plugins:
       - docker#v3.0.1:
           always-pull: true
           image: replicated/gitops-builder:buildkite
-          workdir: /repo
+          workdir: /repo/api
     artifact_paths:
       - "build/**/*"
       - "bin/**/*"
 
   - wait
 
-  - command: make can-i-deploy
+  - command: cd api && make can-i-deploy
 
   - wait
 
   - commands:
-      - mkdir -p build; buildkite-agent artifact download build/* build --step build
-      - mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
-      - make build-enterprise
+      - cd api && mkdir -p build; buildkite-agent artifact download build/* build --step build
+      - cd api && mkdir -p bin; buildkite-agent artifact download bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
+      - cd api && make build-enterprise
     branches: "master"
 
   - wait
 
-  - command: make publish-enterprise
+  - command: cd api && make publish-enterprise
     branches: "master"
