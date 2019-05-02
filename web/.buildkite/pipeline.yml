@@ -19,9 +19,11 @@ steps:
           image: replicated/gitops-builder:buildkite
           workdir: /repo/web
     artifact_paths:
-      - "dist/**/*"
+      - "web/dist/**/*"
 
   - wait
 
-  - command: cd web && make publish-enterprise
+  - commands:
+      - cd web && mkdir -p dist; buildkite-agent artifact download web/dist/* dist --step build-enterprise
+      - cd web && make publish-enterprise
     branches: "master"

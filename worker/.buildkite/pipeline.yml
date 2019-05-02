@@ -4,9 +4,9 @@ steps:
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
-          workdir: /go/src/github.com/replicatedhq/ship-cluster-worker
+          workdir: /go/src/github.com/replicatedhq/ship-cluster/worker
     artifact_paths:
-      - "bin/**/*"
+      - "worker/bin/**/*"
 
   - wait
 
@@ -17,7 +17,9 @@ steps:
 
   - wait
 
-  - command: cd worker && make publish-enterprise
+  - commands:
+      - cd worker && make publish-enterprise
+      - cd worker && mkdir -p bin; buildkite-agent artifact download worker/bin/* bin --step test-and-build; chmod +x bin/ship-cluster-worker
     branches: master
     retry:
       automatic: true
