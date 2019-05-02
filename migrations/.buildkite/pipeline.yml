@@ -31,6 +31,9 @@ steps:
       - make publish-enterprise
     branches: master
 
+  - block: "Release to staging"
+    branches: master
+
   - commands:
       - cd migrations
       - make publish-staging
