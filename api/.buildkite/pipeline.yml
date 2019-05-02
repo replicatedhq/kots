@@ -24,12 +24,13 @@ steps:
   - wait
 
   - commands:
-      - cd api && mkdir -p build; buildkite-agent artifact download api/build/* build --step build
-      - cd api && mkdir -p bin; buildkite-agent artifact download api/bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
-      - cd api && make build-enterprise
+      - cd api
+      - mkdir -p build; buildkite-agent artifact download api/build/* build --step build
+      - mkdir -p bin; buildkite-agent artifact download api/bin/* bin --step build; chmod +x bin/ship-cluster-api; chmod +x bin/shipcloudctl
+      - make build-enterprise
     branches: "master"
 
   - wait
 
-  - command: cd api && make publish-enterprise
+  - commands: cd api && make publish-enterprise
     branches: "master"
