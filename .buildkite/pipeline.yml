@@ -16,5 +16,10 @@
     commit: "${BUILDKITE_COMMIT}"
     branch: "${BUILDKITE_BRANCH}"
 
-# - trigger: "ship-cluster-migrations"
+- trigger: "ship-cluster-migrations"
+  build:
+    message: "${BUILDKITE_MESSAGE}"
+    commit: "${BUILDKITE_COMMIT}"
+    branch: "${BUILDKITE_BRANCH}"
+
 # - trigger: "ship-cluster-ship-operator"
