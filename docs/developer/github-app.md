@@ -14,6 +14,7 @@ Setup URL: http://localhost:8000
 
 Redirect on Update: ✓
 
+If using ngrok to receive github pull request events, you can add this:
 Webhook URL: https://your-ngrok.ngrok.io/api/v1/hooks/github
 
 **Permissions:**
