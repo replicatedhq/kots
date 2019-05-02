@@ -1,4 +1,8 @@
 - trigger: "ship-cluster-api"
+  message: "${BUILDKITE_MESSAGE}"
+  commit: "${BUILDKITE_COMMIT}"
+  branch: "${BUILDKITE_BRANCH}"
+
 # - trigger: "ship-cluster-web"
 # - trigger: "ship-cluster-worker"
 # - trigger: "ship-cluster-migrations"
