@@ -18,8 +18,9 @@ steps:
   - wait
 
   - commands:
-      - cd worker && make publish-enterprise
-      - cd worker && mkdir -p bin; buildkite-agent artifact download worker/bin/* bin --step test-and-build; chmod +x bin/ship-cluster-worker
+      - cd worker
+      - make publish-enterprise
+      - mkdir -p bin; buildkite-agent artifact download worker/bin/* bin --step test-and-build; chmod +x bin/ship-cluster-worker
     branches: master
     retry:
       automatic: true

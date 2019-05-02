@@ -107,9 +107,6 @@ build-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
 build-enterprise: build_and_push
 
 build_and_push:
-	# Fetch the artifacts from the previous step
-	mkdir -p bin; buildkite-agent artifact download bin/* bin --step test-and-build; chmod +x bin/ship-cluster-worker
-
 	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
 	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}

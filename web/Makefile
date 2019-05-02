@@ -75,9 +75,6 @@ publish-enterprise: docker
 publish-enterprise: gitops
 
 docker:
-	# Fetch the artifacts from the previous step
-	mkdir -p dist; buildkite-agent artifact download dist/* dist --step ${CACHE_STEP}
-
 	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
 	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
