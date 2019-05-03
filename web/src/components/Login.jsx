@@ -35,9 +35,11 @@ class Login extends React.Component {
   }
 
   render() {
+    const showSCM = window.env.SHOW_SCM_LEADS;
+    const scmLeadsStyle = showSCM ? { width: "100%", maxWidth: "960px"} : {};
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
-        <div className="LoginBox-wrapper u-flexTabletReflow">
+        <div className="LoginBox-wrapper u-flexTabletReflow flex-auto" style={scmLeadsStyle}>
           <div className="flex-auto flex-column login-form-wrapper justifyContent--center">
             <div className="flex">
               <span className="icon ship-login-icon"></span>
@@ -48,7 +50,9 @@ class Login extends React.Component {
               <span className="icon clickable github-button-icon"></span> Login with GitHub
             </button>
           </div>
-          <TrackSCMLeads />
+          {showSCM &&
+            <TrackSCMLeads />
+          }
         </div>
       </div>
     );
