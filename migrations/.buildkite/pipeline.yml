@@ -30,6 +30,8 @@ steps:
       - cd migrations
       - make publish-enterprise
     branches: master
+    retry:
+      automatic: true
 
   - block: "Release to staging"
     branches: master
