@@ -23,3 +23,5 @@
     branch: "${BUILDKITE_BRANCH}"
 
 # - trigger: "ship-cluster-ship-operator"
+
+# TODO single gitops deploy should go here

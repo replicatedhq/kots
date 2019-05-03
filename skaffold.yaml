@@ -7,6 +7,16 @@ profiles:
       kustomize:
         path: "./kustomize/overlays/github"
 
+  - name: microk8s
+    activation:
+      - kubeContext: microk8s
+    deploy:
+      kustomize:
+        path: "./kustomize/overlays/microk8s"
+        flags:
+          apply:
+            - --validate=false  ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
+
 build:
   artifacts:
     - image: ship-cluster-api

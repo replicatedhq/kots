@@ -4,7 +4,7 @@ EXPOSE 3000 9229
 ADD ./package.json /src/package.json
 ADD ./yarn.lock /src/yarn.lock
 WORKDIR /src
-RUN yarn install
+RUN yarn install --silent
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.11.1
