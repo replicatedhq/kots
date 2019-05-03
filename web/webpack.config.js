@@ -154,7 +154,7 @@ module.exports = function (env) {
     ],
   };
 
-  if (env === "dev" || env === "local" || env.indexOf("skaffold") !== -1 || !env) {
+  if (env === "skaffold" || !env) {
     var dev = require("./webpack.config.dev");
     return webpackMerge(common, dev);
   } else {
