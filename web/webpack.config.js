@@ -4,7 +4,7 @@ var webpack = require("webpack");
 var HtmlWebpackPlugin = require("html-webpack-plugin");
 var HtmlWebpackTemplate = require("html-webpack-template");
 var ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 
 module.exports = function (env) {
@@ -24,6 +24,9 @@ module.exports = function (env) {
     appEnv.SHIPINIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/init/`;
     appEnv.SHIPUPDATE_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/update/`;
   }
+  if (process.env["SHIP_CLUSTER_WEB_URI"]) {
+    appEnv.GITHUB_REDIRECT_URI = `${process.env["SHIP_CLUSTER_WEB_URI"]}/auth/github/callback`;
+  }
 
   var common = {
     output: {
@@ -35,8 +38,8 @@ module.exports = function (env) {
     resolve: {
       extensions: [".js", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
       alias: {
-        'react': path.resolve('node_modules/react'),
-        'react-dom': path.resolve('node_modules/react-dom'),
+        "react": path.resolve("node_modules/react"),
+        "react-dom": path.resolve("node_modules/react-dom"),
       }
     },
 
@@ -125,7 +128,7 @@ module.exports = function (env) {
       }),
       new FaviconsWebpackPlugin(srcPath + "/favicon-64.png"),
       new webpack.DefinePlugin({
-        'process.env.NODE_ENV': JSON.stringify(appEnv.ENVIRONMENT),
+        "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT),
       }),
       new MonacoWebpackPlugin({
         languages: [

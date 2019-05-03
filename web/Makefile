@@ -31,7 +31,7 @@ verify_local:
 
 .PHONY: serve
 serve: deps
-	node --max_old_space_size=6144 ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.config.js --progress -w --debug --env skaffold --mode development
+	node --max_old_space_size=6144 ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.config.js --progress -w --debug --env skaffold --mode development --host 0.0.0.0
 
 .PHONY: build-staging
 build-staging: SHIP_CLOUD_ENV = staging
