@@ -42,6 +42,17 @@ export const Utilities = {
     return message === "GraphQL error: Unauthorized";
   },
 
+  getReadableLoginType(type) {
+    switch (type) {
+      case "gitlab":
+        return "GitLab";
+      case "bitbucket":
+        return "Bitbucket";
+      default:
+        return "GitHub";
+    }
+  },
+
   trimLeadingSlash(string) {
     if (string) {
       return `/${string.replace(/^\/+/g, "")}`;

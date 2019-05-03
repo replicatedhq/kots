@@ -92,7 +92,7 @@ class TrackSCMLeads extends React.Component {
             <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Thanks! We'll notify you when we support {scmType.value === "other" ? otherProvider ? otherProvider : "more SCM providers" : scmType.label}</p>
           </div>
           :
-          <div className="flex1 flex-column">
+          <div className="flex1 flex-column justifyContent--center">
             <p className="u-lineHeight--normal u-fontSize--large u-color--doveGray u-fontWeight--medium u-marginBottom--30">Interested in accessing Replicated Ship with another SCM provider or deploying a private instance on-prem? Sign up to get notified.</p>
             <div className="u-flexTabletReflow u-marginBottom--20">
               <div className="component-wrapper flex1">

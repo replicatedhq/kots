@@ -3,10 +3,12 @@ import { withRouter } from "react-router-dom";
 import "../scss/components/Login.scss";
 import { Utilities } from "../utilities/utilities";
 import TrackSCMLeads from "./TrackSCMLeads";
+import TraditionalAuth from "./TraditionalAuth";
 
 class Login extends React.Component {
-  constructor(props) {
-    super(props);
+  
+  state = {
+    traditionalAuth: false
   }
 
   componentDidMount() {
@@ -30,12 +32,24 @@ class Login extends React.Component {
     }
   }
 
-  handleLogIn = () => {
-    this.props.history.push("/auth/github");
+  handleLogIn = (type) => {
+    if (type === "github") {
+      this.props.history.push("/auth/github");
+    } else if (type === "gitlab") {
+      console.log("GitLab to be implemented");
+    } else if (type === "bitbucket") {
+      console.log("Bitbucket to be implemented");
+    } else {
+      this.setState({
+        traditionalAuth: true
+      })
+    }
   }
 
   render() {
+    const { traditionalAuth } = this.state;
     const showSCM = window.env.SHOW_SCM_LEADS;
+    const allowedLogins = window.env.AVALIABLE_LOGIN_TYPES;
     const scmLeadsStyle = showSCM ? { width: "100%", maxWidth: "960px"} : {};
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
@@ -45,14 +59,26 @@ class Login extends React.Component {
               <span className="icon ship-login-icon"></span>
               <p className="login-text u-color--tuna u-fontWeight--bold">Log in</p>
             </div>
-            <p className="u-lineHeight--normal u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginBottom--20">Connect your GitHub account to get started using Replicated Ship</p>
-            <button type="button" className="btn auth github" onClick={this.handleLogIn}>
-              <span className="icon clickable github-button-icon"></span> Login with GitHub
-            </button>
+            {traditionalAuth ?
+              <button type="button" className={`btn auth traditional u-marginTop--20`} onClick={() => this.setState({ traditionalAuth: false })}>
+                <span className="icon clickable backArrow-icon" style={{ verticalAlign: "0" }}></span> Use a different auth type
+              </button>
+            : allowedLogins && allowedLogins.map((type) => {
+              const readableType = Utilities.getReadableLoginType(type);
+              return (
+                <button key={type} type="button" className={`btn auth ${type} u-marginTop--20`} onClick={() => this.handleLogIn(type)}>
+                  <span className={`icon clickable ${type}-button-icon`}></span> {type === "traditional" ? "Use email & password" : `Login with ${readableType}`}
+                </button>
+              )
+            })
+            }
           </div>
-          {showSCM &&
-            <TrackSCMLeads />
+          {traditionalAuth &&
+            <TraditionalAuth context="login" />
           }
+          {showSCM && !traditionalAuth ?
+            <TrackSCMLeads />
+          : null}
         </div>
       </div>
     );

@@ -43,6 +43,7 @@
     max-width: 300px;
   }
 
+  .traditional-auth-wrapper,
   .scm-form-wrapper {
     padding: 40px;
     background-color: #F8F8F8;
@@ -63,10 +64,6 @@
       top: -2px;
     }
   }
-}
-
-.ship-login-icon {
-  margin-bottom: 30px;
 }
 
 /* ≥ 768px */
