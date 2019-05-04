@@ -37,8 +37,6 @@ build:
       context: "./migrations"
       docker:
         dockerfile: ./Dockerfile.skaffold
-        cacheFrom:
-          - repldev/ship-cluster-migraitons:latest
 
     - image: ship-operator
       context: "./ship-operator"

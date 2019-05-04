@@ -25,11 +25,6 @@ check-dups:
 	  exit 1; \
 	fi
 
-.PHONY: build-staffold-cache
-build-skaffold-cache:
-	docker build -f Dockerfile.skaffold -t repldev/${PROJECT_NAME}:latest .
-	docker push repldev/${PROJECT_NAME}:latest
-	
 .PHONY: publish-production
 publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
 publish-production: OVERLAY = production
