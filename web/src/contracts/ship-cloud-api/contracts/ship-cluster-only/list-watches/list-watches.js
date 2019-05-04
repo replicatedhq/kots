@@ -1,12 +1,8 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
-import { createSessionToken } from "../../../utils";
-
+import { getShipClient } from "../../../utils";
 import { listWatches } from "../../../../../queries/WatchQueries";
-
 import { listWatchesInteraction } from "./interactions";
 
 chai.use(chaiAsPromised);
@@ -22,8 +18,7 @@ export default () => {
   });
 
   it("lists watches for ship-cluster account", (done) => {
-    const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("ship-cluster-account-session-1") }, fetch);
-    shipClient.query({
+    getShipClient("ship-cluster-account-session-1").query({
       query: listWatches,
     })
     .then(result => {

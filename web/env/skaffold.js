@@ -2,6 +2,7 @@ module.exports = {
   ENVIRONMENT: "development",
   INSTALL_ENDPOINT: "http://localhost:8065/api/install",
   GRAPHQL_ENDPOINT: "http://localhost:8065/graphql",
+  REST_ENDPOINT: "http://localhost:8065/api",
   SHIPINIT_ENDPOINT: "http://localhost:8065/api/v1/init/",
   SHIPUPDATE_ENDPOINT: "http://localhost:8065/api/v1/update/",
   SHOW_SCM_LEADS: false,

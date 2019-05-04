@@ -1,6 +1,9 @@
 import * as jwt from "jsonwebtoken";
+import { ShipClientGQL } from "../../ShipClientGQL";
+import fetch from "node-fetch";
 
 const SESSION_KEY = "testsession";
+const MOCK_SERVER_PORT = 3333;
 
 export function createSessionToken(sessionId) {
   return jwt.sign(
@@ -11,4 +14,13 @@ export function createSessionToken(sessionId) {
     },
     SESSION_KEY
   );
+}
+
+export function getShipClient(sessionId) {
+  return ShipClientGQL(
+    `http://localhost:${MOCK_SERVER_PORT}/graphql`,
+    `http://localhost:${MOCK_SERVER_PORT}/api`,
+    async () => {
+      return createSessionToken(sessionId)
+    }, fetch);
 }

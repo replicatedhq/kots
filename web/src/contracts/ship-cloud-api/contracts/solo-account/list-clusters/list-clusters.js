@@ -1,8 +1,6 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import fetch from "node-fetch";
-import { createSessionToken } from "../../../utils";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
+import { getShipClient } from "../../../utils";
 import { listClusters } from "../../../../../queries/ClusterQueries";
 import { listClustersInteraction } from "./interactions";
 
@@ -19,8 +17,7 @@ export default () => {
   });
 
   it("lists ship clusters for solo dev", (done) => {
-    const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("solo-account-session-1") }, fetch);
-    shipClient.query({
+    getShipClient("solo-account-session-1").query({
       query: listClusters,
     })
     .then(result => {

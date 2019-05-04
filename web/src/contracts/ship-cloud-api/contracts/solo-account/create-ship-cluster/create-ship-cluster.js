@@ -1,13 +1,8 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
-import { createSessionToken } from "../../../utils";
-
 import { listClusters } from "../../../../../queries/ClusterQueries";
 import { createShipOpsCluster } from "../../../../../mutations/ClusterMutations";
-
 import { createShipClusterInteraction } from "./interactions";
 import { listClustersAfterCreatingShipInteraction } from "../list-clusters/interactions";
 
@@ -21,8 +16,7 @@ export default () => {
 
   it("creates a ship cluster for solo dev", (done) => {
     global.provider.addInteraction(createShipClusterInteraction).then(() => {
-      const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("solo-account-session-1") }, fetch);
-      shipClient.mutate({
+      getShipClient("solo-account-session-1").mutate({
         mutation: createShipOpsCluster,
         variables: {
           title: "FooBarBaz Cluster",

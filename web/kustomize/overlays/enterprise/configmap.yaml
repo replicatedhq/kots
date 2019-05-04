@@ -6,6 +6,7 @@ data:
   start-ship-cluster-ui.sh: |
     #!/bin/bash
     sed -i 's/###_GRAPHQL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/graphql/g' /usr/share/nginx/html/index.html
+    sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/g' /usr/share/nginx/html/index.html
     sed -i 's/###_GITHUB_CLIENT_ID_###/{{repl ConfigOption "github-clientid"}}/g' /usr/share/nginx/html/index.html
     sed -i 's/###_SHIPDOWNLOAD_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/download/g' /usr/share/nginx/html/index.html
     sed -i 's/###_SHIPINIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/init\//g' /usr/share/nginx/html/index.html

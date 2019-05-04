@@ -1,13 +1,14 @@
 import { ApolloClient } from "apollo-client";
 import { ApolloLink } from "apollo-link";
 import { createHttpLink } from "apollo-link-http";
+import { RestLink } from "apollo-link-rest";
 import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { withClientState } from "apollo-link-state";
 import { Utilities } from "./utilities/utilities";
 
-export function ShipClientGQL(graphqlEndpoint, tokenFunction, fetcher) {
+export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetcher) {
   const cache = new InMemoryCache({
     addTypename: false,
   });
@@ -18,6 +19,11 @@ export function ShipClientGQL(graphqlEndpoint, tokenFunction, fetcher) {
 
   const httpLink = createHttpLink({
     uri: graphqlEndpoint,
+    fetch: fetcher ? fetcher : fetch,
+  });
+
+  const restLink = new RestLink({
+    uri: restEndpoint,
     fetch: fetcher ? fetcher : fetch,
   });
 
@@ -56,6 +62,7 @@ export function ShipClientGQL(graphqlEndpoint, tokenFunction, fetcher) {
     authLink,
     errorLink,
     httpLink,
+    restLink,
   ]);
 
   const client = new ApolloClient({

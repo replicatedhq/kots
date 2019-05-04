@@ -1,9 +1,7 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import chaiString from "chai-string";
-import fetch from "node-fetch";
-import { createSessionToken } from "../../../utils";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
+import { getShipClient } from "../../../utils";
 import { getWatchVersion } from "../../../../../queries/WatchQueries";
 import { getWatchVersionInteraction } from "./interactions";
 
@@ -21,8 +19,7 @@ export default () => {
   });
 
   it("get a single watch version for solo dev", (done) => {
-    const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("solo-account-session-1") }, fetch);
-    shipClient.query({
+    getShipClient("solo-account-session-1").query({
       query: getWatchVersion,
       variables: {
         id: "solo-account-watch-1",
