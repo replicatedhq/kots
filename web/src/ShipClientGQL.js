@@ -22,9 +22,16 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
     fetch: fetcher ? fetcher : fetch,
   });
 
+  if (fetcher) {
+    global.Headers = fetcher.Headers;
+  }
+
   const restLink = new RestLink({
-    uri: restEndpoint,
-    fetch: fetcher ? fetcher : fetch,
+    uri: `${restEndpoint}/v1`,
+    endpoints: {
+      "v1": `${restEndpoint}/v1`,
+    },
+    customFetch: fetcher ? fetcher : undefined,
   });
 
   const authLink = setContext(async (_, { headers }) => {
@@ -32,7 +39,7 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
       headers: {
         ...headers,
         authorization: await tokenFunction(),
-        "X-Replicated-Client": "ship-cloud",
+        "X-Replicated-Client": "ship-cluster",
       },
     };
   });
@@ -60,9 +67,9 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
   const link = ApolloLink.from([
     stateLink,
     authLink,
+    restLink,
     errorLink,
     httpLink,
-    restLink,
   ]);
 
   const client = new ApolloClient({

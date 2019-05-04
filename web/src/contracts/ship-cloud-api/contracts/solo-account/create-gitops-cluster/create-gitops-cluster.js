@@ -34,7 +34,10 @@ export default () => {
         // createdClusterId = result.data.createGitOpsCluster.id;
         global.provider.verify();
         done();
-      });
+      })
+      .catch(err => {
+        console.error(err);
+      })
     });
   });
 

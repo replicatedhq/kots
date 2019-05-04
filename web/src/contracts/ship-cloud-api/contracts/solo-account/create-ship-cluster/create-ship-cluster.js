@@ -5,6 +5,7 @@ import { listClusters } from "../../../../../queries/ClusterQueries";
 import { createShipOpsCluster } from "../../../../../mutations/ClusterMutations";
 import { createShipClusterInteraction } from "./interactions";
 import { listClustersAfterCreatingShipInteraction } from "../list-clusters/interactions";
+import { getShipClient } from "../../../utils";
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -27,7 +28,10 @@ export default () => {
         // createdClusterId = result.data.createShipOpsCluster.id;
         global.provider.verify();
         done();
-      });
+      })
+      .catch(err => {
+        console.error(err);
+      })
     });
   });
 

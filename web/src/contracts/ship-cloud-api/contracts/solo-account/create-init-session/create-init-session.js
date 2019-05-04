@@ -26,7 +26,10 @@ export default () => {
       .then(result => {
         global.provider.verify();
         done();
-      });
+      })
+      .catch(err => {
+        console.error(err)
+      })
     });
   });
 }
