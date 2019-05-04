@@ -1,4 +1,8 @@
 steps:
+  - commands:
+      - cd ship-operator
+      - make build-skaffold-cache
+
   - command: make ci
     label: test-and-build
     plugins:

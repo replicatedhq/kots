@@ -72,6 +72,11 @@ pkg:
 types:
 	yarn gql-gen --template graphql-codegen-typescript-template --schema http://localhost:8065/graphql --out ./src/generated/types.d.ts
 
+.PHONY: build-staffold-cache
+build-skaffold-cache:
+	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+	docker push repldev/${PROJECT_NAME}:latest
+
 .PHONY: build-staging
 build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
 build-staging: build_and_push
