@@ -22,6 +22,8 @@ export default () => {
       variables: {
         input: {
           email: "test-ship-auth-signup@gmail.com",
+          firstName: "First",
+          lastName: "Last",
           password: "password",
         },
       }

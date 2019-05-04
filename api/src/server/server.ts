@@ -1,5 +1,4 @@
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
-import * as bodyParser from "body-parser";
 import * as bugsnag from "bugsnag";
 import * as cors from "cors";
 import { NextFunction, Request, Response } from "express";
@@ -67,6 +66,8 @@ export class Server extends ServerLoader {
     // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924
     this.use("/api/v1/init/:id", InitProxy);
     this.use("/api/v1/update/:id", UpdateProxy);
+
+    const bodyParser = require("body-parser");
     this.use(bodyParser.json());
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {

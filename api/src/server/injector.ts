@@ -3,15 +3,6 @@ import * as jaeger from "jaeger-client";
 import { DataDogMetricRegistry } from "monkit";
 import { InjectorService, Service } from "ts-express-decorators";
 
-import { GitHubHookAPI } from "../controllers/GitHubHookAPI";
-import { HealthzAPI } from "../controllers/HealthzAPI";
-import { Metricz } from "../controllers/MetriczAPI";
-import { WatchDownloadAPI } from "../controllers/WatchDownloadAPI";
-import { DeployAPI } from "../controllers/DeployAPI";
-import { RootAPI } from "../controllers/RootAPI";
-import { WatchAPI } from "../controllers/WatchAPI";
-import { InstallAPI } from "../controllers/InstallAPI";
-
 import { ReplicatedSchema } from "../schema";
 import { Mutation, Query } from "../schema/decorators";
 import { DefaultClock } from "../util/clock";
@@ -69,10 +60,6 @@ export async function configureInjector(): Promise<void> {
   bind(Params)(await Params.getParams());
   bind(AWS.S3)(new AWS.S3({ apiVersion: "2012-06-01", signatureVersion: 'v4' }));
   bind(DataDogMetricRegistry)(await metrics());
-  bind(HealthzAPI);
-  bind(Metricz);
-  bind(GitHubHookAPI);
-  bind(WatchDownloadAPI);
   bind(Auth);
   bind(Watch);
   bind(Cluster);
@@ -84,8 +71,4 @@ export async function configureInjector(): Promise<void> {
   bind(GitHub);
   bind(Session);
   bind(ReplicatedSchema);
-  bind(DeployAPI);
-  bind(RootAPI);
-  bind(WatchAPI);
-  bind(InstallAPI);
 }

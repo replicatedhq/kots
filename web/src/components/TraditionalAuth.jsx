@@ -1,7 +1,8 @@
 import * as React from "react";
-import { compose } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import "../scss/components/Login.scss";
+import { shipAuthSignup } from "../mutations/AuthMutations";
 
 class TraditionalAuth extends React.Component {
   state = {
@@ -16,7 +17,23 @@ class TraditionalAuth extends React.Component {
   }
 
   handleSignup = () => {
-    console.log("handle sign up");
+    this.props.client.mutate({
+      mutation: shipAuthSignup,
+      variables: {
+        input: {
+          email: "asdasd",
+          password: "asasd",
+          firstName: "asdasd",
+          lastName: "Asdasd",
+        },
+      },
+    })
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
   }
 
   render() {
@@ -38,11 +55,11 @@ class TraditionalAuth extends React.Component {
           :
             <div>
               <p className="u-lineHeight--normal u-fontSize--large u-color--doveGray u-fontWeight--medium u-marginBottom--5">Login with your email and password.</p>
-              <p className="u-lineHeight--normal u-fontSize--large u-color--doveGray u-fontWeight--medium u-marginBottom--20">If you don not have an account, you can <Link to="/signup" className="replicated-link">create one here</Link></p>
+              <p className="u-lineHeight--normal u-fontSize--large u-color--doveGray u-fontWeight--medium u-marginBottom--20">If you do not have an account, you can <Link to="/signup" className="replicated-link">create one here</Link></p>
             </div>
           }
           <form>
-            {context === "signup" && 
+            {context === "signup" &&
               <div className="u-flexTabletReflow">
                 <div className="component-wrapper flex1 u-paddingRight--10">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">First name</p>
@@ -75,5 +92,6 @@ class TraditionalAuth extends React.Component {
 }
 
 export default compose(
+  withApollo,
   withRouter
 )(TraditionalAuth);

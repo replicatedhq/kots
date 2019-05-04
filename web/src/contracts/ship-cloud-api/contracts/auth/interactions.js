@@ -11,6 +11,8 @@ export const shipAuthSignupInteraction = new Pact.Interaction()
     },
     body: {
         email: "test-ship-auth-signup@gmail.com",
+        firstName: "First",
+        lastName: "Last",
         password: "password",
     },
   })

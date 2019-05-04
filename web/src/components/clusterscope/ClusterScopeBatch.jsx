@@ -137,7 +137,7 @@ class ClusterScopeBatch extends React.Component {
             <span className="icon ship-login-icon"></span>
             <p className="u-lineHeight--normal u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginBottom--30">Ready to update your images? <br /><span className="u-fontWeight--medium u-color--dustyGray">Connect your GitHub account to get started using Replicated Ship</span></p>
             <button type="button" className="btn auth github" onClick={this.handleLogIn}>
-              <span className="icon clickable github-button-icon"></span> Login with GitHub
+              <span className="icon clickable github-button-icon"></span> Login with Octo
             </button>
           </div>
         </Modal>
