@@ -1,5 +1,9 @@
 steps:
   - commands:
+      - cd api
+      - make build-skaffold-cache
+
+  - commands:
       - docker-compose -f api/test/docker-compose.yml down
       - docker-compose -f api/test/docker-compose.yml pull
       - docker-compose -f api/test/docker-compose.yml build

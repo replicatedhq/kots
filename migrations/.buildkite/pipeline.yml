@@ -6,6 +6,10 @@ steps:
   - wait
 
   - commands:
+      - cd migrations
+      - make build-skaffold-cache
+
+  - commands:
       - cd migrations/fixtures
       - make deps build run
     label: "build-fixtures"

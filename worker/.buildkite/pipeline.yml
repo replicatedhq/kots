@@ -1,6 +1,10 @@
 steps:
   - commands:
       - cd worker
+      - make build-skaffold-cache
+
+  - commands:
+      - cd worker
       - make build
     label: test-and-build
     plugins:

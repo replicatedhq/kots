@@ -58,6 +58,11 @@ githooks:
 	echo 'make install' > .git/hooks/post-merge
 	chmod +x .git/hooks/post-merge
 
+.PHONY: build-staffold-cache
+build-skaffold-cache:
+	docker build -f Dockerfile.skaffold -t repldev/${PROJECT_NAME}:latest .
+	docker push repldev/${PROJECT_NAME}:latest
+	
 .PHONY: build-enterprise
 build-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
 build-enterprise: build_and_push
