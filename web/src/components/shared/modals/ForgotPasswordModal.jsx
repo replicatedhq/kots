@@ -10,6 +10,7 @@ export default class ForgotPasswordModal extends React.Component {
 
   onSubmit = () => {
     const { email } = this.state;
+    // this.props.sendResetEmail(email);
     console.log(`send email to ${email}`);
   }
 
