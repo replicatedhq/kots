@@ -1,14 +1,17 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
 import "../scss/components/Login.scss";
+import Modal from "react-modal";
 import { Utilities } from "../utilities/utilities";
 import TrackSCMLeads from "./TrackSCMLeads";
 import TraditionalAuth from "./TraditionalAuth";
+import ForgotPasswordModal from "./shared/modals/ForgotPasswordModal";
 
 class Login extends React.Component {
   
   state = {
-    traditionalAuth: false
+    traditionalAuth: false,
+    displayForgotPasswordModal: false
   }
 
   componentDidMount() {
@@ -20,6 +23,10 @@ class Login extends React.Component {
     const URLParams = new URLSearchParams(search);
     if (URLParams.get("next") && Utilities.localStorageEnabled()) {
       localStorage.setItem("next", URLParams.get("next"));
+    }
+    const traditional = URLParams.get("ta");
+    if (traditional === "1") {
+      this.setState({ traditionalAuth: true });
     }
     if (Utilities.getToken()) {
       const next = URLParams.get("next");
@@ -40,9 +47,7 @@ class Login extends React.Component {
     } else if (type === "bitbucket") {
       console.log("Bitbucket to be implemented");
     } else {
-      this.setState({
-        traditionalAuth: true
-      })
+      this.setState({ traditionalAuth: true });
     }
   }
 
@@ -74,12 +79,26 @@ class Login extends React.Component {
             }
           </div>
           {traditionalAuth &&
-            <TraditionalAuth context="login" />
+            <TraditionalAuth context="login" handleForgotPasswordClick={() => this.setState({ displayForgotPasswordModal: true })} />
           }
           {showSCM && !traditionalAuth ?
             <TrackSCMLeads />
           : null}
         </div>
+        {this.state.displayForgotPasswordModal &&
+          <Modal
+            isOpen={this.state.displayForgotPasswordModal}
+            onRequestClose={() => this.setState({ displayForgotPasswordModal: false })}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Forgot password modal"
+            ariaHideApp={false}
+            className="ForgotPasswordModal--wrapper Modal DefaultSize"
+          >
+            <div className="Modal-body">
+              <ForgotPasswordModal onRequestClose={() => this.setState({ displayForgotPasswordModal: false })} />
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
