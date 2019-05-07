@@ -5,20 +5,13 @@ import Modal from "react-modal";
 import { Utilities } from "../utilities/utilities";
 import TrackSCMLeads from "./TrackSCMLeads";
 import TraditionalAuth from "./TraditionalAuth";
-<<<<<<< HEAD
 import ForgotPasswordModal from "./shared/modals/ForgotPasswordModal";
-=======
->>>>>>> 34fff39762be0c19c1728f6760d2c65ffd0682b0
 
 class Login extends React.Component {
   
   state = {
-<<<<<<< HEAD
     traditionalAuth: false,
     displayForgotPasswordModal: false
-=======
-    traditionalAuth: false
->>>>>>> 34fff39762be0c19c1728f6760d2c65ffd0682b0
   }
 
   componentDidMount() {
@@ -54,13 +47,7 @@ class Login extends React.Component {
     } else if (type === "bitbucket") {
       console.log("Bitbucket to be implemented");
     } else {
-<<<<<<< HEAD
       this.setState({ traditionalAuth: true });
-=======
-      this.setState({
-        traditionalAuth: true
-      })
->>>>>>> 34fff39762be0c19c1728f6760d2c65ffd0682b0
     }
   }
 
@@ -92,11 +79,7 @@ class Login extends React.Component {
             }
           </div>
           {traditionalAuth &&
-<<<<<<< HEAD
             <TraditionalAuth context="login" handleForgotPasswordClick={() => this.setState({ displayForgotPasswordModal: true })} />
-=======
-            <TraditionalAuth context="login" />
->>>>>>> 34fff39762be0c19c1728f6760d2c65ffd0682b0
           }
           {showSCM && !traditionalAuth ?
             <TrackSCMLeads />
