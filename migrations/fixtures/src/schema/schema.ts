@@ -31,10 +31,15 @@ export class Schema {
 
   public generateUserFixture(user: any): string[] {
     const statements: string[] = [
-      escape(`insert into github_user (username, github_id, avatar_url, email) values (%L, %L::integer, %L, %L)`,
-        user.username, ''+user.github_id, user.avatar_url, user.email),
-      escape(`insert into ship_user (id, github_id, created_at) values (%L, %L::integer, %L)`, user.id, ''+user.github_id, user.created_at),
+      escape(`insert into ship_user (id, created_at) values (%L, %L)`, user.id, user.created_at),
     ];
+
+    if (user.type === "github") {
+      statements.push(escape(
+        `insert into github_user (user_id, github_id, username, avatar_url, email) values (%L, ${user.github.github_id}, %L, %L, %L)`,
+        user.id, user.github.username, user.github.avatar_url, user.github.email)
+      );
+    }
 
     const metadata = {};
     metadata[user.username] = user.github_id;

@@ -1,10 +1,12 @@
 users:
   - id: "solo-account"
     created_at: "2019-04-10 12:34:56.789"
-    username: "lonely-github-dev"
-    github_id: 1111
-    avatar_url: "https://avatars3.githubusercontent.com/u/123456?v=4"
-    email: "solo-account@replicated.com"
+    type: github
+    github:
+      username: "lonely-github-dev"
+      github_id: 1111
+      avatar_url: "https://avatars3.githubusercontent.com/u/123456?v=4"
+      email: "solo-account@replicated.com"
     sessions:
       - solo-account-session-1
 
