@@ -341,6 +341,75 @@
       }
     },
     {
+      "description": "a query to list image watches from a cluster for solo account",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "imageWatchItems",
+          "query": "\n  query imageWatchItems($batchId: String!) {\n    imageWatchItems(batchId: $batchId) {\n      id\n      name\n      lastCheckedOn\n      isPrivate\n      versionDetected\n      latestVersion\n      compatibleVersion\n      versionsBehind\n      path\n    }\n  }\n",
+          "variables": {
+            "batchId": "solo-account-image-batch-watch-1"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*imageWatchItems\\(\\$batchId:\\s*String!\\)\\s*\\{\\s*imageWatchItems\\(batchId:\\s*\\$batchId\\)\\s*\\{\\s*id\\s*name\\s*lastCheckedOn\\s*isPrivate\\s*versionDetected\\s*latestVersion\\s*compatibleVersion\\s*versionsBehind\\s*path\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "imageWatchItems": [
+              {
+                "id": "solo-account-image-watch-1",
+                "name": "postgres:10.7,docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee",
+                "lastCheckedOn": "Tue May 07 2019 22:43:05 GMT+0000 (UTC)",
+                "isPrivate": false,
+                "versionDetected": "10.7",
+                "latestVersion": "11.2.0",
+                "compatibleVersion": "",
+                "versionsBehind": 3,
+                "path": "[{\"sort\":3,\"version\":\"11.2\",\"date\":\"2019-04-25T00:27:55.227279355Z\"},{\"sort\":2,\"version\":\"11.1\",\"date\":\"2019-02-06T08:16:44.722701909Z\"},{\"sort\":1,\"version\":\"11.0\",\"date\":\"2018-10-18T23:39:51.864511929Z\"},{\"sort\":0,\"version\":\"10.7\",\"date\":\"2019-04-25T00:28:05.286902175Z\"}]"
+              },
+              {
+                "id": "solo-account-image-watch-2",
+                "name": "quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64:0.22.0",
+                "lastCheckedOn": "Tue May 07 2019 22:43:05 GMT+0000 (UTC)",
+                "isPrivate": false,
+                "versionDetected": "0.22.0",
+                "latestVersion": "",
+                "compatibleVersion": "",
+                "versionsBehind": 0,
+                "path": ""
+              },
+              {
+                "id": "solo-account-image-watch-3",
+                "name": "localhost:32000/ship-cluster-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
+                "lastCheckedOn": "Tue May 07 2019 22:43:05 GMT+0000 (UTC)",
+                "isPrivate": true,
+                "versionDetected": "c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
+                "latestVersion": "",
+                "compatibleVersion": "",
+                "versionsBehind": 0,
+                "path": ""
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "description": "a query to list watches for ship-clusters account",
       "request": {
         "method": "POST",
