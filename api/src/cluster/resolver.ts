@@ -2,7 +2,7 @@ import { ClusterStore } from "./cluster_store";
 import { SessionStore } from "../session/store";
 import { Service } from "ts-express-decorators";
 import { Query, Mutation } from "../schema/decorators";
-import { authorized } from "../auth/decorators";
+import { authorized } from "../user/decorators";
 import { ClusterItem } from "../generated/types";
 import { tracer } from "../server/tracing";
 import { Context } from "../server/server";

@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../auth/decorators";
+import { authorized } from "../user/decorators";
 import { Query } from "../schema/decorators";
 import { Context } from "../server/server";
 import { tracer } from "../server/tracing";

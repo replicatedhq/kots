@@ -1,6 +1,6 @@
 import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../auth/decorators";
+import { authorized } from "../user/decorators";
 import { CreateInitSessionMutationArgs, InitSession, ValidateUpstreamUrlQueryArgs } from "../generated/types";
 import { Mutation, Query } from "../schema/decorators";
 import { Context } from "../server/server";

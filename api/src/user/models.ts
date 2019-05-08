@@ -1,11 +1,3 @@
-export interface UserModel {
-  id: string;
-  github_username: string | null;
-  bitbucket_username: string | null;
-  gitlab_username: string | null;
-  email: string | null;
-}
-
 export interface ScmLeadModel {
   id: string;
   deployment_type: string | null;

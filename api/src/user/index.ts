@@ -11,10 +11,10 @@ import { Params } from "../server/params";
 import { Context } from "../server/server";
 import { tracer } from "../server/tracing";
 import { SessionStore } from "../session/store";
-import { storeTransaction } from "../util/persistence/db";
 import { authorized } from "./decorators";
-import { UserModel } from "./models";
-import { GithubNonceStore, UserStore } from "./store";
+import { User } from "./user";
+import { GithubNonceStore } from "./store";
+import { UserStore } from "./user_store";
 import { ClusterStore } from "../cluster/cluster_store";
 
 export type authCode = { code: string };
@@ -72,7 +72,7 @@ export class Auth {
     const { data: userData }: { data: GithubUser } = await github.users.get({});
 
     try {
-      const [user] = await this.maybeCreateUser(span.context(), userData.login!, userData.id!, userData.avatar_url!, userData.email!);
+      const user = await this.maybeCreateUser(userData.login!, userData.id!, userData.avatar_url!, userData.email!);
 
       const session = await this.sessionStore.createGithubSession(span.context(), accessToken.access_token, user.id);
 
@@ -95,36 +95,29 @@ export class Auth {
     span.finish();
   }
 
-  async maybeCreateUser(ctx: jaeger.SpanContext, githubUsername: string, githubId: number, githubAvatar: string, email?: string): Promise<UserModel[]> {
-    const span: jaeger.Span = tracer().startSpan("maybeCreateUser", { childOf: ctx });
-
-    span.setTag("githubUsername", githubUsername);
-    span.setTag("githubId", githubId);
-
+  async maybeCreateUser(githubUsername: string, githubId: number, githubAvatar: string, email?: string): Promise<User> {
     const lowerUsername = githubUsername.toLowerCase();
 
-    const user = await this.userStore.getUser(span.context(), githubId);
+    const user = await this.userStore.getUser("asd");
 
-    if (!user.length) {
-      await storeTransaction(this.userStore, async store => {
-        await store.createGithubUser(span.context(), githubId, lowerUsername, githubAvatar, email);
-        await store.createShipUser(span.context(), githubId, lowerUsername);
+    // if (!user.length) {
+    //   await storeTransaction(this.userStore, async store => {
+    //     await store.createGithubUser(span.context(), githubId, lowerUsername, githubAvatar, email);
+    //     await store.createShipUser(span.context(), githubId, lowerUsername);
 
-        const shipUser = await store.getUser(span.context(), githubId);
-        const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
-        for (const allUserCluster of allUsersClusters) {
-          await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
-        }
-      });
+    //     const shipUser = await store.getUser(span.context(), githubId);
+    //     const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
+    //     for (const allUserCluster of allUsersClusters) {
+    //       await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
+    //     }
+    //   });
 
-      return this.userStore.getUser(span.context(), githubId);
-    }
+    //   return this.userStore.getUser(span.context(), githubId);
+    // }
 
-    if (email) {
-      await this.userStore.updateGithubUserEmail(span.context(), githubId, email);
-    }
-
-    span.finish();
+    // if (email) {
+    //   await this.userStore.updateGithubUserEmail(span.context(), githubId, email);
+    // }
 
     return user;
   }
@@ -143,7 +136,8 @@ export class Auth {
   @Mutation("ship-cloud")
   async trackScmLead(root: any, args: TrackScmLeadMutationArgs, context: Context): Promise<string> {
     const span = tracer().startSpan("mutation.trackScmLead");
-    const { id } = await this.userStore.trackScmLead(span.context(), args.deploymentPreference, args.emailAddress, args.scmProvider);
+    //const { id } = await this.userStore.trackScmLead(span.context(), args.deploymentPreference, args.emailAddress, args.scmProvider);
+    const id = "123";
     span.finish();
     return id;
   }

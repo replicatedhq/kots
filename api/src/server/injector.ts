@@ -9,7 +9,7 @@ import { DefaultClock } from "../util/clock";
 import { logger } from "./logger";
 
 import { Pool } from "pg";
-import { Auth } from "../auth";
+import { Auth } from "../user";
 import { GitHub } from "../github_installation/github";
 import { ImageWatch } from "../imagewatch/resolver";
 import { Init } from "../init/resolver";

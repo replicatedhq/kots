@@ -6,71 +6,14 @@ import * as randomstring from "randomstring";
 import { Service } from "ts-express-decorators";
 import { traced } from "../server/tracing";
 import { Connectable, PostgresWrapper } from "../util/persistence/db";
-import { GithubNonceModel, UserModel, ScmLeadModel } from "./models";
+import { GithubNonceModel, ScmLeadModel } from "./models";
 
 @Service()
-export class UserStore implements Connectable<UserStore> {
+export class UserStoreOld implements Connectable<UserStoreOld> {
   constructor(readonly wrapper: PostgresWrapper) {}
 
   withWrapper(wrapper: PostgresWrapper) {
-    return new UserStore(wrapper);
-  }
-
-  async listAllUsers(ctx: jaeger.SpanContext): Promise<UserModel[]> {
-    const q = `select github_id from github_user`;
-    const v = [];
-
-    const { rows } = await this.wrapper.query(q, v);
-
-    const users: UserModel[] = [];
-    for (const row of rows) {
-      const user = await this.getUser(ctx, row.github_id);
-      if (user.length) {
-        users.push(user[0]);
-      }
-    }
-
-    return users;
-  }
-
-  @instrumented({ tags: ["tier:store"] })
-  @traced({ paramTags: { githubId: 1 } })
-  async getUser(ctx: jaeger.SpanContext, githubId: number): Promise<UserModel[]> {
-    const q = `
-      SELECT ship_user.id, github_user.username AS github_username, github_user.email AS email
-      FROM ship_user
-      INNER JOIN github_user ON ship_user.github_id = github_user.github_id
-      WHERE github_user.github_id = $1
-    `;
-    const v = [githubId];
-
-    const { rows } = await this.wrapper.query(q, v);
-
-    return rows as UserModel[];
-  }
-
-  @instrumented()
-  @traced({ paramTags: { githubId: 1, githubUsername: 2 } })
-  async createShipUser(ctx: jaeger.SpanContext, githubId: number, githubUsername: string) {
-    const id = randomstring.generate({ capitalization: "lowercase" });
-
-    const uq = "INSERT INTO ship_user (id, github_id, created_at) VALUES ($1, $2, $3)";
-    const uv = [id, githubId, new Date()];
-
-    await this.wrapper.query(uq, uv);
-  }
-
-  @instrumented()
-  @traced({ paramTags: { githubId: 1, githubUsername: 2 } })
-  async createGithubUser(ctx: jaeger.SpanContext, githubId: number, githubUsername: string, githubAvatar: string, email?: string | null) {
-    let gq = "INSERT INTO github_user (username, github_id, avatar_url) VALUES ($1, $2, $3)";
-    let gv = [githubUsername, githubId, githubAvatar];
-    if (email) {
-      gq = "INSERT INTO github_user (username, github_id, avatar_url, email) VALUES ($1, $2, $3, $4)";
-      gv = [...gv, email];
-    }
-
-    await this.wrapper.query(gq, gv);
+    return new UserStoreOld(wrapper);
   }
 
   @instrumented()

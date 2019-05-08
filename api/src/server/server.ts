@@ -6,7 +6,7 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { InjectorService, ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
-import { isPolicyValid } from "../auth/policy";
+import { isPolicyValid } from "../user/policy";
 import { proxy as InitProxy } from "../init/proxy";
 import { ReplicatedSchema } from "../schema";
 import { Session } from "../session";

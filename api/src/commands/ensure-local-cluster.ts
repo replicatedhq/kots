@@ -9,7 +9,7 @@ import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
 import { ClusterStore } from "../cluster/cluster_store";
 import { tracer } from "../server/tracing";
-import { UserStore } from "../auth/store";
+import { UserStore } from "../user/user_store";
 
 const config = Api.config;
 
@@ -53,7 +53,7 @@ async function main(argv): Promise<any> {
     localCluster = await clusterStore.createNewCluster(span.context(), undefined, true, "This Cluster", "ship");
 
     // Give all existing users access to this cluster
-    const allUsers = await userStore.listAllUsers(span.context());
+    const allUsers = await userStore.listAllUsers();
     for(const user of allUsers) {
       await clusterStore.addUserToCluster(span.context(), localCluster.id!, user.id);
     }

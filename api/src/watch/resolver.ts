@@ -1,9 +1,8 @@
-import * as jaeger from "jaeger-client";
 import { Validator } from "jsonschema";
 import * as _ from "lodash";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../auth/decorators";
-import { UserStore } from "../auth/store";
+import { authorized } from "../user/decorators";
+import { UserStore } from "../user/user_store";
 import {
   ContributorItem,
   CreateWatchMutationArgs,
@@ -247,29 +246,30 @@ export class Watch {
 
     const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id });
 
-    await storeTransaction(this.userStore, async store => {
-      // Remove existing contributors
-      await store.removeExistingWatchContributorsExcept(span.context(), watch.id!, context.userId);
 
-      // For each contributor, get user, if !user then create user
-      for (const contributor of contributors) {
-        const { githubId, login, avatar_url } = contributor!;
+    // await storeTransaction(this.userStore, async store => {
+    //   // Remove existing contributors
+    //   await store.removeExistingWatchContributorsExcept(span.context(), watch.id!, context.userId);
 
-        let shipUser = await store.getUser(span.context(), githubId!);
-        if (!shipUser.length) {
-          await store.createGithubUser(span.context(), githubId!, login!, avatar_url!);
-          await store.createShipUser(span.context(), githubId!, login!);
-          shipUser = await store.getUser(span.context(), githubId!);
+    //   // For each contributor, get user, if !user then create user
+    //   for (const contributor of contributors) {
+    //     const { githubId, login, avatar_url } = contributor!;
 
-          const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
-          for (const allUserCluster of allUsersClusters) {
-            await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
-          }
-        }
-        // tslint:disable-next-line:curly
-        if (shipUser[0].id !== context.userId) await store.saveWatchContributor(span.context(), shipUser[0].id, watch.id!);
-      }
-    });
+    //     let shipUser = await store.getUser(span.context(), githubId!);
+    //     if (!shipUser.length) {
+    //       await store.createGithubUser(span.context(), githubId!, login!, avatar_url!);
+    //       await store.createShipUser(span.context(), githubId!, login!);
+    //       shipUser = await store.getUser(span.context(), githubId!);
+
+    //       const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
+    //       for (const allUserCluster of allUsersClusters) {
+    //         await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
+    //       }
+    //     }
+    //     // tslint:disable-next-line:curly
+    //     if (shipUser[0].id !== context.userId) await store.saveWatchContributor(span.context(), shipUser[0].id, watch.id!);
+    //   }
+    // });
 
     return this.watchStore.listWatchContributors(span.context(), id);
   }

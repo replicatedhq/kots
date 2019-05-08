@@ -1,4 +1,4 @@
-import { vendor as AuthSchema } from "../auth/types";
+import { vendor as AuthSchema } from "../user/types";
 import { types as GithubTypes, vendor as GithubSchema } from "../github_installation/types";
 import { types as ImageWatchTypes } from "../imagewatch/types";
 import { types as FeatureTypes } from "../feature/types";

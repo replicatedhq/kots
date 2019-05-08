@@ -5,7 +5,7 @@ import { instrumented } from "monkit/dist";
 
 import * as request from "request-promise";
 import { StatusCodeError } from "request-promise/errors";
-import { authorized } from "../auth/decorators";
+import { authorized } from "../user/decorators";
 import {
   GetBranchesResponseItem,
   GetForOrgResponse,
