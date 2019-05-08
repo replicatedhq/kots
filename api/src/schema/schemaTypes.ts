@@ -18,7 +18,7 @@ schema {
 }
 `;
 
-export const VendorSchemaTypes = [
+export const ShipClusterSchemaTypes = [
   SchemaDefinition,
   Query,
   ...Mutation,

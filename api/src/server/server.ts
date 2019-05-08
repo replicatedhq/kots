@@ -4,17 +4,30 @@ import * as cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
-import { InjectorService, ServerLoader, ServerSettings } from "ts-express-decorators";
+import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
 import { isPolicyValid } from "../user/policy";
 import { proxy as InitProxy } from "../init/proxy";
-import { ReplicatedSchema } from "../schema";
+import { ShipClusterSchema } from "../schema";
 import { proxy as UpdateProxy } from "../update/proxy";
 import { ReplicatedError } from "./errors";
 import { configureInjector } from "./injector";
 import { logger } from "./logger";
-import { Params } from "./params";
 import { Context } from "../context";
+
+import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
+import { Params } from "./params";
+import { UserStore } from "../user/user_store";
+import { Stores } from "../schema/stores";
+import { SessionStore } from "../session";
+import { ClusterStore } from "../cluster";
+import { WatchStore } from "../watch/watch_store";
+import { NotificationStore } from "../notification/store";
+import { UpdateStore } from "../update/store";
+import { UnforkStore } from "../unfork/unfork_store";
+import { InitStore } from "../init/init_store";
+import { ImageWatchStore } from "../imagewatch/store";
+import { FeatureStore } from "../feature/feature_store";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -78,29 +91,37 @@ export class Server extends ServerLoader {
     });
 
     this.use("/graphql", setContext);
-    this.use(
-      "/graphql",
-      graphqlExpress(
-        async (req: Request, res: Response): Promise<any> => {
-          const schema = InjectorService.get<ReplicatedSchema>(ReplicatedSchema).getSchema();
+    this.use("/graphql", graphqlExpress(async (req: Request, res: Response): Promise<any> => {
+      const wrapper = new PostgresWrapper(await getPostgresPool());
+      const params = await Params.getParams();
+      const stores: Stores = {
+        sessionStore: new SessionStore(wrapper, params),
+        userStore: new UserStore(wrapper),
+        clsuterStore: new ClusterStore(wrapper, params),
+        watchStore: new WatchStore(wrapper, params),
+        notificationStore: new NotificationStore(wrapper, params),
+        updateStore: new UpdateStore(wrapper, params),
+        unforkStore: new UnforkStore(wrapper, params),
+        initStore: new InitStore(wrapper, params),
+        imageWatchStore: new ImageWatchStore(wrapper),
+        featureStore: new FeatureStore(wrapper, params),
+      }
 
+      return {
+        schema: new ShipClusterSchema().getSchema(stores),
+        context: res.locals.context,
+        tracing: true,
+        cacheControl: true,
+        formatError: (error: any) => {
           return {
-            schema,
-            context: res.locals.context,
-            tracing: true,
-            cacheControl: true,
-            formatError: (error: any) => {
-              return {
-                state: error.originalError && error.originalError.state,
-                locations: error.locations,
-                path: error.path,
-                ...ReplicatedError.getDetails(error),
-              };
-            },
+            state: error.originalError && error.originalError.state,
+            locations: error.locations,
+            path: error.path,
+            ...ReplicatedError.getDetails(error),
           };
         },
-      ),
-    );
+      };
+    }));
 
     this.expressApp.get("/graphiql", graphiqlExpress({ endpointURL: "/graphql" }));
     this.use((error: ReplicatedError | Error, request: Request, response: Response, next: NextFunction) => {

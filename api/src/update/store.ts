@@ -1,22 +1,16 @@
-import * as jaeger from "jaeger-client";
-import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
 import * as rp from "request-promise";
 import { Service } from "ts-express-decorators";
 import { UpdateSession } from "../generated/types";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import { tracer } from "../server/tracing";
 import { PostgresWrapper } from "../util/persistence/db";
 
 @Service()
 export class UpdateStore {
   constructor(private readonly wrapper: PostgresWrapper, private readonly params: Params) {}
 
-  @instrumented()
-  async createUpdateSession(ctx: jaeger.SpanContext, userId: string, watchId: string): Promise<UpdateSession> {
-    const span: jaeger.SpanContext = tracer().startSpan("initStore.createUpdateSession", { childOf: ctx });
-
+  async createUpdateSession(userId: string, watchId: string): Promise<UpdateSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
     const q = `INSERT INTO ship_update (id, user_id, watch_id, created_at)
@@ -25,18 +19,13 @@ export class UpdateStore {
 
     await this.wrapper.query(q, v);
 
-    const updateSession = this.getSession(span.context(), id);
-
-    span.finish();
+    const updateSession = this.getSession(id);
 
     return updateSession;
   }
 
-  @instrumented()
-  async deployUpdateSession(ctx: jaeger.SpanContext, updateSessionId: string): Promise<UpdateSession> {
-    const span: jaeger.SpanContext = tracer().startSpan("initStore.deployUpdateSession", { childOf: ctx });
-
-    const updateSession = await this.getSession(span.context(), updateSessionId);
+  async deployUpdateSession(updateSessionId: string): Promise<UpdateSession> {
+    const updateSession = await this.getSession(updateSessionId);
 
     const options = {
       method: "POST",
@@ -53,17 +42,11 @@ export class UpdateStore {
       message: "updateserver-parsedbody",
       parsedBody,
     });
-    span.finish();
 
     return updateSession;
   }
 
-  @instrumented()
-  async getSession(ctx: jaeger.SpanContext, id: string): Promise<UpdateSession> {
-    const span: jaeger.SpanContext = tracer().startSpan("updateStore.get", {
-      childOf: ctx,
-    });
-
+  async getSession(id: string): Promise<UpdateSession> {
     const q = `
       SELECT id, watch_id, created_at, finished_at, result
       FROM ship_update
@@ -73,8 +56,6 @@ export class UpdateStore {
 
     const { rows }: { rows: any[] } = await this.wrapper.query(q, v);
     const result = this.mapRow(rows[0]);
-
-    span.finish();
 
     return result;
   }
