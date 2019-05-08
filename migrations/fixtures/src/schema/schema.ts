@@ -25,6 +25,13 @@ export class Schema {
     for (const watch of this.parsedDoc.watches) {
       statements = statements.concat(this.generateWatchFixture(watch));
     }
+    
+    if (this.parsedDoc.imageBatches) {
+      console.log("Generating image batches...");
+      for (const imageBatch of this.parsedDoc.imageBatches) {
+        statements = statements.concat(this.generateImageWatchFixture(imageBatch));
+      }
+    }
 
     return statements;
   }
@@ -118,6 +125,25 @@ export class Schema {
           escape(`insert into object_store (filepath, encoded_block) values (%L, %L)`,
             `${watch.id}/${version.sequence}.tar.gz`, version.output),
         );
+      }
+    }
+
+    return statements;
+  }
+
+  public generateImageWatchFixture(imageBatch: any): string[] {
+    const statements: string[] = [];
+
+    statements.push(
+      escape(`insert into image_watch_batch (id, user_id, images_input, created_at) values (%L, %L, %L, %L)`, imageBatch.id, imageBatch.user_id, imageBatch.images_input, imageBatch.created_at)
+    );
+
+    if (imageBatch.batch_watches) {
+      for (const batchWatch of imageBatch.batch_watches) {
+        statements.push(
+          escape(`insert into image_watch (id, batch_id, image_name, checked_at, is_private, versions_behind, detected_version, latest_version, compatible_version, check_error, docker_pullable, path, started_processing_at) values (%L, %L, %L, %L, ${batchWatch.is_private}, ${batchWatch.versions_behind}, %L, %L, %L, %L, %L, %L, %L)`,
+          batchWatch.id, batchWatch.batch_id, batchWatch.image_name, batchWatch.checked_at, batchWatch.detected_version, batchWatch.latest_version, batchWatch.compatible_version, batchWatch.check_error, batchWatch.docker_pullable, batchWatch.path, batchWatch.started_processing_at)
+        )
       }
     }
 
