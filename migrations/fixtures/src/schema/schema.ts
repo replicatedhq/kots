@@ -12,18 +12,24 @@ export class Schema {
   public generateFixtures(): string[] {
     let statements: string[] = [];
     console.log("Generating users...");
-    for (const user of this.parsedDoc.users) {
-      statements = statements.concat(this.generateUserFixture(user));
+    if (this.parsedDoc.users) {
+      for (const user of this.parsedDoc.users) {
+        statements = statements.concat(this.generateUserFixture(user));
+      }
     }
 
     console.log("Generating clusters...");
-    for (const cluster of this.parsedDoc.clusters) {
-      statements = statements.concat(this.generateClusterFixture(cluster));
+    if (this.parsedDoc.clusters) {
+      for (const cluster of this.parsedDoc.clusters) {
+        statements = statements.concat(this.generateClusterFixture(cluster));
+      }
     }
 
     console.log("Generating watches...");
-    for (const watch of this.parsedDoc.watches) {
-      statements = statements.concat(this.generateWatchFixture(watch));
+    if (this.parsedDoc.watches) {
+      for (const watch of this.parsedDoc.watches) {
+        statements = statements.concat(this.generateWatchFixture(watch));
+      }
     }
     
     if (this.parsedDoc.imageBatches) {

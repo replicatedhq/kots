@@ -29,7 +29,7 @@ export const updateStateJSON = gql`
   }
 `;
 
-export const updateWatch = gql`
+export const updateWatchRaw = `
   mutation updateWatch($watchId: String!, $watchName: String, $iconUri: String) {
     updateWatch(watchId: $watchId, watchName: $watchName, iconUri: $iconUri) {
       id
@@ -49,6 +49,8 @@ export const updateWatch = gql`
     }
   }
 `;
+
+export const updateWatch = gql(updateWatchRaw);
 
 export const deployWatchVersion = gql`
   mutation deployWatchVersion($watchId: String!, $sequence: Int) {
