@@ -1,7 +1,6 @@
 import { Validator } from "jsonschema";
 import * as _ from "lodash";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../user/decorators";
 import { UserStore } from "../user/user_store";
 import {
   ContributorItem,
@@ -27,9 +26,8 @@ import { NotificationStore } from "../notification/store";
 import { Mutation, Query } from "../schema/decorators";
 import { ReplicatedError } from "../server/errors";
 import { logger } from "../server/logger";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
-import { storeTransaction } from "../util/persistence/db";
 import { schema } from "./schema";
 import { WatchStore } from "./watch_store";
 import { FeatureResolvers } from "../feature/resolver";
@@ -49,7 +47,6 @@ export class Watch {
   ) {}
 
   @Mutation("ship-cloud")
-  @authorized()
   async deployWatchVersion(root: any, args: DeployWatchVersionMutationArgs, context: Context): Promise<boolean> {
     const span = tracer().startSpan("mutation.deployShipOpsClusterVersion")
 
@@ -65,7 +62,6 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async getWatchVersion(root: any, args: GetWatchVersionQueryArgs, context: Context): Promise<VersionItemDetail> {
     const span = tracer().startSpan("query.getWatchVersion");
 
@@ -86,12 +82,10 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async listWatches(root: any, args: any, context: Context): Promise<WatchItem[]> {
     const span = tracer().startSpan("query.listWatches");
-    span.setTag("userId", context.userId);
 
-    const watches = await this.watchStore.listWatches(span.context(), context.userId);
+    const watches = await this.watchStore.listWatches(span.context(), context.session.userId);
     const result = watches.map(watch => this.toSchemaWatch(watch, root, context));
 
     span.finish();
@@ -100,15 +94,12 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async searchWatches(root: any, args: SearchWatchesQueryArgs, context: Context): Promise<WatchItem[]> {
     const span = tracer().startSpan("query.searchWatches");
 
     const { watchName } = args;
-    span.setTag("userId", context.userId);
-    span.setTag("watchId", watchName);
 
-    const watches = await this.watchStore.searchWatches(span, context.userId, watchName);
+    const watches = await this.watchStore.searchWatches(span, context.session.userId, watchName);
 
     span.finish();
 
@@ -116,7 +107,6 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async getWatch(root: any, args: GetWatchQueryArgs, context: Context): Promise<WatchItem> {
     const span = tracer().startSpan("query.getWatch");
 
@@ -124,10 +114,8 @@ export class Watch {
     if (!id && !slug) {
       throw new ReplicatedError("One of slug or id is required", "bad_request");
     }
-    span.setTag("slug", slug);
-    span.setTag("userId", context.userId);
 
-    const result = await this.watchStore.findUserWatch(span.context(), context.userId, { slug: slug!, id: id! });
+    const result = await this.watchStore.findUserWatch(span.context(), context.session.userId, { slug: slug!, id: id! });
 
     span.finish();
 
@@ -135,14 +123,12 @@ export class Watch {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async updateStateJSON(root: any, args: UpdateStateJsonMutationArgs, context: Context): Promise<WatchItem> {
     const span = tracer().startSpan("mutation.updateStateJSON");
 
     const { slug, stateJSON } = args;
-    span.setTag("slug", slug);
 
-    let watch = await this.watchStore.findUserWatch(span.context(), context.userId, { slug: slug });
+    let watch = await this.watchStore.findUserWatch(span.context(), context.session.userId, { slug: slug });
 
     this.validateJson(stateJSON, schema);
 
@@ -158,13 +144,12 @@ export class Watch {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async updateWatch(root: any, args: UpdateWatchMutationArgs, context: Context): Promise<WatchItem> {
     const span = tracer().startSpan("query.updateWatch");
 
     const { watchId, watchName, iconUri } = args;
 
-    let watch = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    let watch = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     await this.watchStore.updateWatch(span.context(), watchId, watchName || undefined, iconUri || undefined);
 
@@ -176,7 +161,6 @@ export class Watch {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: CreateWatchMutationArgs, context: Context): Promise<WatchItem> {
     const span = tracer().startSpan("mutation.createWatch");
 
@@ -184,18 +168,17 @@ export class Watch {
 
     const metadata = JSON.parse(stateJSON).v1.metadata;
 
-    const newWatch = await this.watchStore.createNewWatch(span.context(), stateJSON, owner, context.userId, metadata);
+    const newWatch = await this.watchStore.createNewWatch(span.context(), stateJSON, owner, context.session.userId, metadata);
     span.finish();
 
     return newWatch;
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async deleteWatch(root: any, { watchId, childWatchIds }: DeleteWatchMutationArgs, context: Context): Promise<boolean> {
     const span = tracer().startSpan("mutation.deleteWatch");
 
-    const watch = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    const watch = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const notifications = await this.notificationStore.listNotifications(span.context(), watch.id!);
     for (const notification of notifications) {
@@ -220,36 +203,27 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async watchContributors(root: any, args: WatchContributorsQueryArgs, context: Context): Promise<ContributorItem[]> {
     const span = tracer().startSpan("query.watchContributors");
 
     const { id } = args;
 
-    span.setTag("id", id);
-    span.setTag("userId", context.userId);
-
-    const watch = await this.watchStore.findUserWatch(span.context(), context.userId, { id });
+    const watch = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id });
 
     return this.watchStore.listWatchContributors(span.context(), watch.id!);
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async saveWatchContributors(root: any, args: SaveWatchContributorsMutationArgs, context: Context): Promise<ContributorItem[]> {
     const span = tracer().startSpan("mutation.saveWatchContributors");
 
     const { id, contributors } = args;
-
-    span.setTag("id", id);
-    span.setTag("userId", context.userId);
-
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id });
 
 
     // await storeTransaction(this.userStore, async store => {
     //   // Remove existing contributors
-    //   await store.removeExistingWatchContributorsExcept(span.context(), watch.id!, context.userId);
+    //   await store.removeExistingWatchContributorsExcept(span.context(), watch.id!, context.session.userId);
 
     //   // For each contributor, get user, if !user then create user
     //   for (const contributor of contributors) {
@@ -267,7 +241,7 @@ export class Watch {
     //       }
     //     }
     //     // tslint:disable-next-line:curly
-    //     if (shipUser[0].id !== context.userId) await store.saveWatchContributor(span.context(), shipUser[0].id, watch.id!);
+    //     if (shipUser[0].id !== context.session.userId) await store.saveWatchContributor(span.context(), shipUser[0].id, watch.id!);
     //   }
     // });
 
@@ -275,11 +249,10 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async listPendingWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
     const span = tracer().startSpan("query.listPendingWatchVersions");
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const pendingVersions = await this.watchStore.listPendingVersions(span.context(), watch.id!);
 
@@ -289,11 +262,10 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async listPastWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
     const span = tracer().startSpan("query.listPastWatchVersions");
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const pastVersions = await this.watchStore.listPastVersions(span.context(), watch.id!)
 
@@ -303,11 +275,10 @@ export class Watch {
   }
 
   @Query("ship-cloud")
-  @authorized()
   async getCurrentWatchVersion(root: any, { watchId }: GetCurrentWatchVersionQueryArgs, context: Context): Promise<VersionItem|undefined> {
     const span = tracer().startSpan("query.getCurrentWatchVersion");
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const currentVersion = await this.watchStore.getCurrentVersion(span.context(), watch.id!)
 

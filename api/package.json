@@ -35,6 +35,7 @@
     "opentracing": "^0.14.3",
     "pg": "^7.10.0",
     "pino": "^5.12.3",
+    "pino-pretty": "^3.0.0",
     "randomstring": "^1.1.5",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
@@ -103,7 +104,7 @@
     "pact:provider:broker": "node ./pact/provider_tests_broker.js",
     "test:broker": "start-server-and-test start http://localhost:3000 pact:provider:broker",
     "pact:provider:local": "node ./pact/provider_tests_local.js",
-    "test": "start-server-and-test start http://localhost:3000 pact:provider:local"
+    "test:local": "start-server-and-test start http://localhost:3000 pact:provider:local"
   },
   "snyk": true,
   "nyc": {

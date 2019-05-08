@@ -10,7 +10,14 @@ import { Service } from "ts-express-decorators";
 import { Params } from "../server/params";
 import { traced } from "../server/tracing";
 import { PostgresWrapper } from "../util/persistence/db";
-import { SessionModel } from "./models";
+import { Session } from "./session";
+
+const invalidSession = {
+  auth: "",
+  expiration: new Date(Date.now()),
+  userId: "",
+  sessionId: "",
+};
 
 export type InstallationMap = {
   [key: string]: number;
@@ -29,9 +36,7 @@ export class SessionStore {
     }, {});
   }
 
-  @instrumented()
-  @traced({ paramTags: { userId: 2 } })
-  async createGithubSession(ctx: jaeger.SpanContext, token: string, userId: string): Promise<string> {
+  async createGithubSession(token: string, userId: string): Promise<string> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
@@ -85,21 +90,47 @@ export class SessionStore {
     await this.wrapper.query(q, v);
   }
 
-  @instrumented()
-  @traced()
-  async getGithubSession(ctx: jaeger.SpanContext, sessionId: string): Promise<SessionModel> {
-    const q = `SELECT id, user_id, metadata, expire_at FROM session WHERE id = $1`;
+  public async getGithubSession(sessionId: string): Promise<Session> {
+    const q = `select id, user_id, metadata, expire_at from session where id = $1`;
     const v = [sessionId];
-    const { rows }: { rows: SessionModel[] } = await this.wrapper.query(q, v);
-    return rows[0];
+
+    const result = await this.wrapper.query(q, v);
+
+    const session: Session = new Session();
+    session.id = result.rows[0].id;
+    session.userId = result.rows[0].user_id;
+    session.metadata = result.rows[0].metadata;
+    session.expiresAt = result.rows[0].expire_at;
+
+    return session;
   }
 
-  @instrumented()
-  @traced()
-  async deleteSession(ctx: jaeger.SpanContext, sessionId: string): Promise<void> {
-    const q = `DELETE FROM session WHERE id = $1`;
+  public async deleteSession(sessionId: string): Promise<void> {
+    const q = `delete from session where id = $1`;
     const v = [sessionId];
 
     await this.wrapper.query(q, v);
+  }
+
+  public async decode(token: string): Promise<Session | any> {
+    //tslint:disable-next-line possible-timing-attack
+    if (token.length > 0 && token !== "null") {
+      try {
+        const decoded: any = jwt.verify(token, this.params.sessionKey);
+
+        const session = await this.getGithubSession(decoded.sessionId);
+        return {
+          scmToken: decoded.token,
+          metadata: JSON.parse(session.metadata!),
+          expiration: session.expiresAt,
+          userId: session.userId,
+          sessionId: session.id,
+        };
+      } catch (e) {
+        // Errors here negligible as they are from jwts not passing verification
+      }
+    }
+
+    return invalidSession;
   }
 }

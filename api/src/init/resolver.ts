@@ -1,9 +1,7 @@
-import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../user/decorators";
 import { CreateInitSessionMutationArgs, InitSession, ValidateUpstreamUrlQueryArgs } from "../generated/types";
 import { Mutation, Query } from "../schema/decorators";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
 import { InitStore } from "./init_store";
 import { WatchStore } from "../watch/watch_store";
@@ -20,14 +18,12 @@ export class Init {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async createInitSession(root: any, { upstreamUri, clusterID, githubPath }: CreateInitSessionMutationArgs, context: Context): Promise<InitSession> {
     const span = tracer().startSpan("mutation.createInitSession");
 
-    const uri = await this.maybeRewriteUpstreamUri(span.context(), context.userId, upstreamUri);
+    const uri = await this.maybeRewriteUpstreamUri(span.context(), context.session.userId, upstreamUri);
 
-    const initSession = await this.initStore.createInitSession(span.context(), context.userId, uri, clusterID, githubPath, upstreamUri);
+    const initSession = await this.initStore.createInitSession(span.context(), context.session.userId, uri, clusterID, githubPath, upstreamUri);
     const deployedInitSession = await this.initStore.deployInitSession(span.context(), initSession.id!);
 
     span.finish();
@@ -35,13 +31,11 @@ export class Init {
     return deployedInitSession;
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   async validateUpstreamURL(root: any, { upstream }: ValidateUpstreamUrlQueryArgs, context: Context): Promise<boolean> {
     const span = tracer().startSpan("query.validateUpstreamURL");
 
-    upstream = await this.maybeRewriteUpstreamUri(span.context(), context.userId, upstream);
+    upstream = await this.maybeRewriteUpstreamUri(span.context(), context.session.userId, upstream);
 
     // TODO validate this returns a non-error code
 

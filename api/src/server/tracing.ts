@@ -67,15 +67,9 @@ export class FuncTracer {
     const theName = name || "unnamed";
     const span = parentCtx ? this.client.startSpan(theName, { childOf: parentCtx }) : this.client.startSpan(theName);
 
-    for (const tag of Object.keys(tags || {})) {
-      span.setTag(tag, tags![tag]);
-    }
-
     try {
       return await f(span.context());
     } catch (err) {
-      span.setTag(opentracing.Tags.ERROR, true);
-      span.log({ event: "error", "error.object": err, message: err.message, stack: err.stack });
       throw err;
     } finally {
       span.finish();

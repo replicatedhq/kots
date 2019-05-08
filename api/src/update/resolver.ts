@@ -1,9 +1,7 @@
-import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../user/decorators";
 import { CreateUpdateSessionMutationArgs, UpdateSession } from "../generated/types";
 import { Mutation } from "../schema/decorators";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
 import { UpdateStore } from "./store";
 
@@ -12,12 +10,10 @@ export class Update {
   constructor(private readonly updateStore: UpdateStore) {}
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async createUpdateSession(root: any, { watchId }: CreateUpdateSessionMutationArgs, context: Context): Promise<UpdateSession> {
     const span = tracer().startSpan("mutation.createUpdateSession");
 
-    const updateSession = await this.updateStore.createUpdateSession(span.context(), context.userId, watchId);
+    const updateSession = await this.updateStore.createUpdateSession(span.context(), context.session.userId, watchId);
     const deployedUpdateSession = await this.updateStore.deployUpdateSession(span.context(), updateSession.id!);
 
     span.finish();

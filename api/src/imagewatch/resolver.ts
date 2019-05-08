@@ -2,7 +2,7 @@ import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
 import { ImageWatchItem, ImageWatchItemsQueryArgs, UploadImageWatchBatchMutationArgs } from "../generated/types";
 import { Mutation, Query } from "../schema/decorators";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
 import { ImageWatchStore } from "./store";
 
@@ -17,7 +17,7 @@ export class ImageWatch {
 
     const { imageList } = args;
 
-    const batchId = await this.imageWatchStore.createBatch(span.context(), context.userId, imageList);
+    const batchId = await this.imageWatchStore.createBatch(span.context(), context.session.userId, imageList);
 
     span.finish();
 

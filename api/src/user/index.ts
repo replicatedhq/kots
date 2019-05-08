@@ -8,10 +8,9 @@ import { Mutation } from "../schema/decorators";
 import { ReplicatedError } from "../server/errors";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
-import { SessionStore } from "../session/store";
-import { authorized } from "./decorators";
+import { SessionStore } from "../session/session_store";
 import { User } from "./user";
 import { GithubNonceStore } from "./store";
 import { UserStore } from "./user_store";
@@ -28,13 +27,12 @@ export class Auth {
     private readonly sessionStore: SessionStore,
   ) {}
 
+  // createGitHubAuthToken is the entrypoint from ship-cluster-web when a new github user is signing up
   @Mutation("ship-cloud")
-  async createGithubAuthToken(root: any, { state, code }: CreateGithubAuthTokenMutationArgs): Promise<AccessToken> {
-    const span = tracer().startSpan("mutation.createGithubAuthToken");
-
-    const validGithubNonce = await this.validateGithubLoginState(span.context(), state);
+  async createGithubAuthToken(root: any, args: CreateGithubAuthTokenMutationArgs): Promise<AccessToken> {
+    const validGithubNonce = await this.validateGithubLoginState(args.state);
     if (!validGithubNonce) {
-      throw new ReplicatedError("Ship Cloud Access Denied");
+      throw new ReplicatedError("Invalid GitHub Exchange");
     }
 
     const githubClientId = this.params.githubClientId;
@@ -53,14 +51,12 @@ export class Auth {
     });
 
     const tokenConfig = {
-      code,
+      code: args.code,
       redirect_uri: "",
     };
 
     const accessToken = await oauth2.authorizationCode.getToken(tokenConfig);
-
     if (accessToken.error) {
-      span.finish();
       throw new Error(accessToken.error);
     }
 
@@ -72,64 +68,43 @@ export class Auth {
     const { data: userData }: { data: GithubUser } = await github.users.get({});
 
     try {
-      const user = await this.maybeCreateUser(userData.login!, userData.id!, userData.avatar_url!, userData.email!);
+      const user = await this.getOrCreateGitHubUser(userData.login!, userData.id!, userData.avatar_url!, userData.email!);
 
-      const session = await this.sessionStore.createGithubSession(span.context(), accessToken.access_token, user.id);
-
-      span.finish();
+      const session = await this.sessionStore.createGithubSession(accessToken.access_token, user.id);
 
       return {
         access_token: session,
       };
     } catch (e) {
       logger.error(e);
-      throw new ReplicatedError("Ship Cloud Access Denied");
+      throw new ReplicatedError("Unable to log in now");
     }
   }
 
   @Mutation("ship-cloud")
-  @authorized()
   async refreshGithubTokenMetadata(root: any, args: any, context: Context): Promise<void> {
     const span = tracer().startSpan("mutation.refreshGithubTokenMetadata");
-    await this.sessionStore.refreshGithubTokenMetadata(span.context(), context.auth, context.sessionId);
+    await this.sessionStore.refreshGithubTokenMetadata(span.context(), context.getGitHubToken(), context.session.id);
     span.finish();
   }
 
-  async maybeCreateUser(githubUsername: string, githubId: number, githubAvatar: string, email?: string): Promise<User> {
-    const lowerUsername = githubUsername.toLowerCase();
+  async getOrCreateGitHubUser(githubUsername: string, githubId: number, githubAvatar: string, email: string): Promise<User> {
+    let user = await this.userStore.tryGetGitHubUser(githubId);
+    if (user) {
+      return user;
+    }
 
-    const user = await this.userStore.getUser("asd");
-
-    // if (!user.length) {
-    //   await storeTransaction(this.userStore, async store => {
-    //     await store.createGithubUser(span.context(), githubId, lowerUsername, githubAvatar, email);
-    //     await store.createShipUser(span.context(), githubId, lowerUsername);
-
-    //     const shipUser = await store.getUser(span.context(), githubId);
-    //     const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
-    //     for (const allUserCluster of allUsersClusters) {
-    //       await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
-    //     }
-    //   });
-
-    //   return this.userStore.getUser(span.context(), githubId);
+    user = await this.userStore.createGitHubUser(githubId, githubUsername.toLowerCase(), githubAvatar, email);
+    // const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
+    // for (const allUserCluster of allUsersClusters) {
+    //   await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
     // }
-
-    // if (email) {
-    //   await this.userStore.updateGithubUserEmail(span.context(), githubId, email);
-    // }
-
     return user;
   }
 
   @Mutation("ship-cloud")
   async createGithubNonce(): Promise<string> {
-    const span = tracer().startSpan("mutation.createCode");
-
-    const { nonce } = await this.githubNonceStore.createNonce(span.context());
-
-    span.finish();
-
+    const { nonce } = await this.githubNonceStore.createNonce();
     return nonce;
   }
 
@@ -143,19 +118,12 @@ export class Auth {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  async logout(root: any, args: any, { sessionId }: Context): Promise<null> {
-    const span = tracer().startSpan("mutation.logout");
-
-    await this.sessionStore.deleteSession(span.context(), sessionId);
-
-    return null;
+  async logout(root: any, args: any, context: Context): Promise<void> {
+    await this.sessionStore.deleteSession(context.session.id);
   }
 
-  async validateGithubLoginState(ctx: jaeger.SpanContext, nonce: string): Promise<boolean> {
-    const span: jaeger.Span = tracer().startSpan("validateGithubLoginState", { childOf: ctx });
-
-    const matchingNonce = await this.githubNonceStore.getNonce(span.context(), nonce);
+  async validateGithubLoginState(nonce: string): Promise<boolean> {
+    const matchingNonce = await this.githubNonceStore.getNonce(nonce);
     if (!matchingNonce) {
       return false;
     }
@@ -165,7 +133,7 @@ export class Auth {
       return false;
     }
 
-    await this.githubNonceStore.deleteNonce(span.context(), nonce);
+    await this.githubNonceStore.deleteNonce(nonce);
 
     return true;
   }

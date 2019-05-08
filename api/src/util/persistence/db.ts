@@ -11,12 +11,10 @@ export async function getPostgresPool(): Promise<Pool> {
   const uri = await param("POSTGRES_URI", "/shipcloud/postgres/uri", true);
 
   if (uri) {
-    logger.info(`Connecting to postgres with connection string set in uri`);
     return new Pool({
       connectionString: uri,
     });
   } else {
-    logger.info(`Connecting to postgres with connection string: server=${host};uid=${user};pwd=*******;database=${database}`);
     return new Pool({
       user,
       host,

@@ -21,6 +21,21 @@ export class UserStore {
     return users;
   }
 
+  public async tryGetGitHubUser(githubId: number): Promise<User | void> {
+    const q = `select user_id from github_user where github_id = $1`;
+    const v = [
+      githubId,
+    ];
+
+    const result = await this.wrapper.query(q, v);
+
+    if (result.rowCount === 0) {
+      return;
+    }
+
+    return this.getUser(result.rows[0].user_id);
+  }
+
   public async getUser(id: string): Promise<User> {
     const q = `select id, created_at from ship_user where id = $1`;
     const v = [id];
@@ -81,6 +96,6 @@ export class UserStore {
         await this.wrapper.query("rollback");
     }
 
-    return this.getUser(id);    
+    return this.getUser(id);
   }
 }

@@ -9,23 +9,14 @@ import { $log } from "ts-log-debug";
 import { isPolicyValid } from "../user/policy";
 import { proxy as InitProxy } from "../init/proxy";
 import { ReplicatedSchema } from "../schema";
-import { Session } from "../session";
 import { proxy as UpdateProxy } from "../update/proxy";
 import { ReplicatedError } from "./errors";
 import { configureInjector } from "./injector";
 import { logger } from "./logger";
 import { Params } from "./params";
+import { Context } from "../context";
 
-// TODO Move this to a different file
-export interface Context {
-  auth: string;
-  metadata?: { [key: string]: string };
-  expiration: Date;
-  sessionId: string;
-  userId: string;
-}
-
-@ServerSettings({
+const tsedConfig = {
   rootDir: path.resolve(__dirname),
   mount: {
     // tslint:disable-next-line
@@ -36,7 +27,9 @@ export interface Context {
   port: 3000,
   httpsPort: 0,
   debug: false,
-})
+};
+
+@ServerSettings(tsedConfig)
 export class Server extends ServerLoader {
   async $onInit(): Promise<void> {
     await configureInjector();
@@ -72,7 +65,8 @@ export class Server extends ServerLoader {
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
       const token = req.get("Authorization") || "";
-      const context = await InjectorService.get<Session>(Session).decode(token);
+
+      const context = await Context.fetch(token);
       res.locals.context = context;
 
       next();

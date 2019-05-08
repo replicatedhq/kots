@@ -1,9 +1,7 @@
 import * as GitHubApi from "@octokit/rest";
 import * as jaeger from "jaeger-client";
 import * as _ from "lodash";
-import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../user/decorators";
 import {
   CreateFirstPullRequestMutationArgs,
   CreateNotificationMutationArgs,
@@ -19,23 +17,20 @@ import {
   WatchItem,
 } from "../generated/types";
 import { Mutation, Query } from "../schema/decorators";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
 import { WatchStore } from "../watch/watch_store";
 import { NotificationStore } from "./store";
-import { QueryDocumentKeys } from "graphql/language/visitor";
 
 @Service()
 export class ShipNotification {
   constructor(private readonly notificationStore: NotificationStore, private readonly watchStore: WatchStore) {}
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async updatePullRequestHistory(root: any, args: UpdatePullRequestHistoryMutationArgs, context: Context): Promise<PullRequestHistoryItem[]> {
     const span: jaeger.SpanContext = tracer().startSpan("query.updatePullRequestHistory");
 
-    const notification = await this.notificationStore.findUserNotification(span.context(), context.userId, args.notificationId);
+    const notification = await this.notificationStore.findUserNotification(span.context(), context.session.userId, args.notificationId);
     const result = await this.notificationStore.listPullRequestHistory(span.context(), notification.id!);
 
     // This probably should use a webhook implementation from github eventually to cache and store the results
@@ -45,7 +40,7 @@ export class ShipNotification {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     const params: GitHubApi.PullRequestsGetAllParams = {
@@ -90,12 +85,10 @@ export class ShipNotification {
   }
 
   @Query("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async pullRequestHistory(root: any, args: PullRequestHistoryQueryArgs, context: Context): Promise<PullRequestHistoryItem[]> {
     const span: jaeger.SpanContext = tracer().startSpan("query.pullRequestHistory");
 
-    const notification = await this.notificationStore.findUserNotification(span.context(), context.userId, args.notificationId);
+    const notification = await this.notificationStore.findUserNotification(span.context(), context.session.userId, args.notificationId);
     const result = await this.notificationStore.listPullRequestHistory(span.context(), notification.id!);
 
     span.finish();
@@ -104,12 +97,10 @@ export class ShipNotification {
   }
 
   @Query("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async listNotifications(root: any, args: ListNotificationsQueryArgs, context: Context): Promise<Notification[]> {
     const span: jaeger.SpanContext = tracer().startSpan("query.getNotifications");
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: args.watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: args.watchId });
     const notifications = await this.notificationStore.listNotifications(span.context(), watch.id!);
     // Not surfacing to UI currently, but optional
     const pendingNotifications = await this.notificationStore.listPendingPRNotifications(span.context(), watch.id!);
@@ -118,7 +109,7 @@ export class ShipNotification {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     // Update PR history
@@ -156,12 +147,10 @@ export class ShipNotification {
   }
 
   @Query("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async getNotification(root: any, args: GetNotificationQueryArgs, context: Context): Promise<Notification> {
     const span: jaeger.SpanContext = tracer().startSpan("query.getNotifications");
 
-    const notification = await this.notificationStore.findUserNotification(span.context(), context.userId, args.notificationId);
+    const notification = await this.notificationStore.findUserNotification(span.context(), context.session.userId, args.notificationId);
     const result = await this.notificationStore.getNotification(span.context(), notification.id!);
 
     span.finish();
@@ -170,12 +159,10 @@ export class ShipNotification {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async createFirstPullRequest(root: any, args: CreateFirstPullRequestMutationArgs, context: Context): Promise<number> {
     const span: jaeger.SpanContext = tracer().startSpan("mutation.createFirstPullReqeust");
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: args.watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: args.watchId });
     const currentState = await this.watchStore.getStateJSON(span.context(), watch.id!);
 
     let versionLabel: string = "";
@@ -189,7 +176,7 @@ export class ShipNotification {
 
     const result = await this.notificationStore.createFirstPullRequest(
       span.context(),
-      context.metadata![args.pullRequest!.org.toLowerCase()],
+      context.session.metadata[args.pullRequest!.org.toLowerCase()],
       watch.id!,
       notificationId,
       versionLabel,
@@ -202,14 +189,12 @@ export class ShipNotification {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async createNotification(root: any, args: CreateNotificationMutationArgs, context: Context): Promise<Notification> {
     const span: jaeger.SpanContext = tracer().startSpan("mutation.createNotification");
 
     const { watchId, webhook, email } = args;
 
-    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    const watch: WatchItem = await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const result = await this.notificationStore.createNotification(span.context(), watch.id!, false, webhook || undefined, email || undefined);
 
@@ -219,15 +204,13 @@ export class ShipNotification {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async enableNotification(root: any, args: EnableNotificationMutationArgs, context: Context): Promise<Notification> {
     const span: jaeger.SpanContext = tracer().startSpan("mutation.toggleEnableNotification");
 
     const { watchId, notificationId, enabled } = args;
 
     // This will exception if not authorized
-    await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     await this.notificationStore.toggleEnableNotification(span.context(), notificationId, enabled);
 
@@ -237,15 +220,13 @@ export class ShipNotification {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async updateNotification(root: any, args: UpdateNotificationMutationArgs, context: Context): Promise<Notification> {
     const span: jaeger.SpanContext = tracer().startSpan("mutation.updateNotification");
 
     const { watchId, notificationId, webhook, email } = args;
 
     // This will throw if not authorized
-    await this.watchStore.findUserWatch(span.context(), context.userId, { id: watchId });
+    await this.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
 
     const result = await this.notificationStore.updateNotification(span.context(), notificationId, webhook || undefined, email || undefined);
 
@@ -255,16 +236,14 @@ export class ShipNotification {
   }
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async deleteNotification(root: any, args: DeleteNotificationMutationArgs, context: Context) {
     const span: jaeger.SpanContext = tracer().startSpan("mutation.deleteNotificaton");
 
     if(args.isPending) {
-      const notification = await this.notificationStore.findPendingUserNotification(span.context(), context.userId, args.id);
+      const notification = await this.notificationStore.findPendingUserNotification(span.context(), context.session.userId, args.id);
       await this.notificationStore.deletePendingNotificationById(span.context(), notification.id!);
     } else {
-      const notification = await this.notificationStore.findUserNotification(span.context(), context.userId, args.id);
+      const notification = await this.notificationStore.findUserNotification(span.context(), context.session.userId, args.id);
       await this.notificationStore.deleteNotification(span.context(), notification.id!);
     }
 

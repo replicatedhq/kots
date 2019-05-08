@@ -70,8 +70,6 @@ export class GitHubHookAPI {
     @BodyParams("") body?: { action?: string }, // we're just gonna cast this later
   ): Promise<{} | ErrorResponse> {
     const span: jaeger.SpanContext = tracer().startSpan("githubHookAPI.githubHook");
-    span.setTag("eventType", eventType);
-
     logger.info(`received github hook for eventType ${eventType}`);
 
     const action = body && body.action;

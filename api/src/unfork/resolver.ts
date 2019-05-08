@@ -1,8 +1,6 @@
-import { instrumented } from "monkit";
 import { Service } from "ts-express-decorators";
-import { authorized } from "../user/decorators";
 import { Mutation, Query } from "../schema/decorators";
-import { Context } from "../server/server";
+import { Context } from "../context";
 import { tracer } from "../server/tracing";
 import { UnforkStore } from "./unfork_store";
 import { CreateUnforkSessionMutationArgs, UnforkSession, UpdateSession } from "../generated/types";
@@ -20,14 +18,12 @@ export class Unfork {
   ) {}
 
   @Mutation("ship-cloud")
-  @authorized()
-  @instrumented({ tags: ["tier:resolver"] })
   async createUnforkSession(root: any, args: CreateUnforkSessionMutationArgs, context: Context): Promise<Error|UpdateSession> {
     const span = tracer().startSpan("mutation.createUnforkSession");
 
     const { upstreamUri, forkUri } = args;
 
-    const unforkSession = await this.unforkStore.createUnforkSession(span.context(), context.userId, upstreamUri, forkUri);
+    const unforkSession = await this.unforkStore.createUnforkSession(span.context(), context.session.userId, upstreamUri, forkUri);
     const deployedUnforkSession = await this.unforkStore.deployUnforkSession(span.context(), unforkSession.id!);
 
     // Until we have unfork headed mode, we just create an update haded job to allow for UI
@@ -43,7 +39,7 @@ export class Unfork {
         };
 
       } else if (maybeUpdatedSession.result === "completed") {
-        const updateSession = await this.updateStore.createUpdateSession(span.context(), context.userId, maybeUpdatedSession.id!);
+        const updateSession = await this.updateStore.createUpdateSession(span.context(), context.session.userId, maybeUpdatedSession.id!);
         const deployedUpdateSession = await this.updateStore.deployUpdateSession(span.context(), updateSession.id!);
 
         span.finish();

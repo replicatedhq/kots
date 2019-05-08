@@ -1,11 +1,8 @@
 import * as GitHubApi from "@octokit/rest";
 import * as fs from "fs";
 import * as jwt from "jsonwebtoken";
-import { instrumented } from "monkit/dist";
-
 import * as request from "request-promise";
 import { StatusCodeError } from "request-promise/errors";
-import { authorized } from "../user/decorators";
 import {
   GetBranchesResponseItem,
   GetForOrgResponse,
@@ -21,7 +18,7 @@ import { Query } from "../schema/decorators";
 import { ReplicatedError } from "../server/errors";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import { Context } from "../server/server";
+import { Context } from "../context";
 
 export class GithubAuthError extends Error {
   constructor(message?: string) {
@@ -33,7 +30,6 @@ export class GithubAuthError extends Error {
 export class GitHub {
   constructor(private readonly accessTokensUrl: string, private readonly params: Params) {}
 
-  @instrumented()
   async getToken(): Promise<string> {
     let key: string = "";
     if (this.params.githubPrivateKeyContents) {
@@ -74,15 +70,13 @@ export class GitHub {
       });
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   // installationOrganizations returns organizations which have installed the ship github app
   async installationOrganizations(root: any, { page }: InstallationOrganizationsQueryArgs, context: Context): Promise<GetInstallationsResponse> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     let githubPage = 1;
@@ -109,9 +103,7 @@ export class GitHub {
     };
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   async orgRepos(root: any, { org, page }: OrgReposQueryArgs, context: Context): Promise<GetForOrgResponse> {
     const github = new GitHubApi({
       headers: {
@@ -120,11 +112,11 @@ export class GitHub {
     });
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     const lowerOrgName = org.toLowerCase();
-    const installationId = context.metadata![lowerOrgName];
+    const installationId = context.session.metadata[lowerOrgName];
     if (!installationId) {
       throw new ReplicatedError("No matching installation id found");
     }
@@ -145,14 +137,12 @@ export class GitHub {
     };
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   async repoBranches(root: any, { owner, repo, page }: RepoBranchesQueryArgs, context: Context): Promise<GetBranchesResponseItem[]> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     let githubPage = 1;
@@ -169,14 +159,12 @@ export class GitHub {
     return repoBranches;
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   async githubUser(root: any, args: any, context: Context): Promise<GithubUser> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     const { data: userData }: { data: GithubUser } = await github.users.get({});
@@ -184,14 +172,12 @@ export class GitHub {
     return userData;
   }
 
-  @instrumented()
   @Query("ship-cloud")
-  @authorized()
   async orgMembers(root: any, { org, page }: OrgMembersQueryArgs, context: Context): Promise<GetMembersResponseItem[]> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
-      token: context.auth,
+      token: context.getGitHubToken(),
     });
 
     let githubPage = 1;

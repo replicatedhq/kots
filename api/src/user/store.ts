@@ -1,10 +1,8 @@
 // @ts-ignore
 import { addMinutes } from "date-fns";
 import * as jaeger from "jaeger-client";
-import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
 import { Service } from "ts-express-decorators";
-import { traced } from "../server/tracing";
 import { Connectable, PostgresWrapper } from "../util/persistence/db";
 import { GithubNonceModel, ScmLeadModel } from "./models";
 
@@ -16,8 +14,6 @@ export class UserStoreOld implements Connectable<UserStoreOld> {
     return new UserStoreOld(wrapper);
   }
 
-  @instrumented()
-  @traced()
   async trackScmLead(ctx: jaeger.SpanContext, preference: string, email: string, provider: string): Promise<ScmLeadModel> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const currentTime = new Date(Date.now()).toUTCString();
@@ -31,17 +27,6 @@ export class UserStoreOld implements Connectable<UserStoreOld> {
     return rows[0];
   }
 
-  @instrumented()
-  @traced({ paramTags: { githubId: 1, email: 2 } })
-  async updateGithubUserEmail(ctx: jaeger.SpanContext, githubId: number, email: string) {
-    const q = `UPDATE github_user SET email = $2 WHERE github_id = $1`
-    const v = [githubId, email];
-
-    await this.wrapper.query(q, v);
-  }
-
-  @instrumented()
-  @traced({ paramTags: { userId: 1, contributorId: 2 } })
   async saveWatchContributor(ctx: jaeger.SpanContext, userId: String, id: String) {
     const q = "INSERT INTO user_watch (user_id, watch_id) VALUES ($1, $2)";
 
@@ -50,8 +35,6 @@ export class UserStoreOld implements Connectable<UserStoreOld> {
     await this.wrapper.query(q, v);
   }
 
-  @instrumented()
-  @traced({ paramTags: { watchId: 1, userId: 2 } })
   async removeExistingWatchContributorsExcept(ctx: jaeger.SpanContext, id: string, userIdToExclude: string) {
     const q = `
     DELETE FROM
@@ -71,9 +54,7 @@ export class UserStoreOld implements Connectable<UserStoreOld> {
 export class GithubNonceStore {
   constructor(private readonly wrapper: PostgresWrapper) {}
 
-  @instrumented()
-  @traced()
-  async createNonce(ctx: jaeger.SpanContext): Promise<GithubNonceModel> {
+  async createNonce(): Promise<GithubNonceModel> {
     const state = randomstring.generate({ capitalization: "lowercase" });
 
     const currentTime = new Date(Date.now()).toUTCString();
@@ -83,18 +64,14 @@ export class GithubNonceStore {
     return rows[0];
   }
 
-  @instrumented()
-  @traced()
-  async getNonce(ctx: jaeger.SpanContext, nonce: string): Promise<GithubNonceModel> {
+  async getNonce(nonce: string): Promise<GithubNonceModel> {
     const q = `SELECT * FROM github_nonce WHERE nonce = $1`;
     const v = [nonce];
     const { rows }: { rows: GithubNonceModel[] } = await this.wrapper.query(q, v);
     return rows[0];
   }
 
-  @instrumented()
-  @traced()
-  async deleteNonce(ctx: jaeger.SpanContext, nonce: string): Promise<void> {
+  async deleteNonce(nonce: string): Promise<void> {
     const q = `DELETE FROM github_nonce WHERE nonce = $1`;
     const v = [nonce];
     await this.wrapper.query(q, v);
