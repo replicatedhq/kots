@@ -107,7 +107,7 @@
     "pact:provider:broker": "node ./pact/provider_tests_broker.js",
     "test:broker": "start-server-and-test start http://localhost:3000 pact:provider:broker",
     "pact:provider:local": "node ./pact/provider_tests_local.js",
-    "test": "start-server-and-test start http://localhost:3000 pact:provider:local"
+    "test:local": "start-server-and-test start http://localhost:3000 pact:provider:local"
   },
   "snyk": true,
   "nyc": {

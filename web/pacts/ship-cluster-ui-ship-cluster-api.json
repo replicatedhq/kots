@@ -406,6 +406,17 @@
               }
             ]
           }
+        },
+        "matchingRules": {
+          "$.body.data.imageWatchItems[0].lastCheckedOn": {
+            "match": "type"
+          },
+          "$.body.data.imageWatchItems[1].lastCheckedOn": {
+            "match": "type"
+          },
+          "$.body.data.imageWatchItems[2].lastCheckedOn": {
+            "match": "type"
+          }
         }
       }
     },

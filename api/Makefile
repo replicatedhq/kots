@@ -58,7 +58,7 @@ test:
 	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 ||:
 	docker pull replicated/ship-cluster-fixtures:latest
 	docker run --rm -d --name ship-cluster-fixtures -p 15432:5432 replicated/ship-cluster-fixtures
-	yarn run test:broker
+	yarn run test:local
 	@-sleep 1
 	docker rm -f ship-cluster-fixtures
 
