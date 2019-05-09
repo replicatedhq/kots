@@ -1,14 +1,14 @@
 import { makeExecutableSchema } from "graphql-tools";
-import { Service } from "ts-express-decorators";
 import { ShipClusterSchemaTypes } from "./schemaTypes";
 import { Resolvers } from "./resolvers";
+import { Stores } from "./stores";
+import { Params } from "../server/params";
 
-@Service()
 export class ShipClusterSchema {
-  getSchema(stores): {} {
+  getSchema(stores: Stores, params: Params): {} {
     return makeExecutableSchema({
       typeDefs: ShipClusterSchemaTypes,
-      ...Resolvers(stores),
+      resolvers: Resolvers(stores, params),
     });
   }
 }

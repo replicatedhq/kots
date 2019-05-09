@@ -5,7 +5,7 @@ import * as fs from "fs";
 import { exec } from "child_process";
 import * as which from "which";
 
-import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
+import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
 import { ClusterStore } from "../cluster/cluster_store";
 import { tracer } from "../server/tracing";
@@ -41,10 +41,10 @@ async function main(argv): Promise<any> {
 
   console.log(`Attempting to ensure local cluster is provisioned`);
 
-  const wrapper = new PostgresWrapper(await getPostgresPool());
+  const pool = await getPostgresPool();
   const params = await Params.getParams();
-  const clusterStore = new ClusterStore(wrapper, params);
-  const userStore = new UserStore(wrapper);
+  const clusterStore = new ClusterStore(pool, params);
+  const userStore = new UserStore(pool);
 
   let localCluster = await clusterStore.getLocalShipOpsCluster();
   if (localCluster) {

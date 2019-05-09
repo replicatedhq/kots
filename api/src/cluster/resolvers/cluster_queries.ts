@@ -2,8 +2,9 @@ import { ClusterItem } from "../../generated/types";
 import { tracer } from "../../server/tracing";
 import { Context } from "../../context";
 import * as _ from "lodash";
+import { Stores } from "../../schema/stores";
 
-export function ClusterQueries(stores: any) {
+export function ClusterQueries(stores: Stores) {
   return {
     async listClusters(root: any, args: any, context: Context): Promise<any[]> {
       const span = tracer().startSpan("query.listClusters");

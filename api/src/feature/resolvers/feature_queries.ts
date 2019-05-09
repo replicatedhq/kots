@@ -15,20 +15,6 @@ export function FeatureQueries(stores: any) {
 
       return result;
     },
-
-    async watchFeatures(root: any, args: any, context: Context): Promise<Feature[]> {
-      const span = tracer().startSpan("query.listWatchFeatures");
-
-      const { watchId } = args;
-
-      const features = await stores.featureStore.listWatchFeatures(span.context(), watchId);
-      const result = features.map(feature => toSchemaFeature(feature, root, context));
-
-      span.finish();
-
-      return result;
-    }
-
   }
 }
 

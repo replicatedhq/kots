@@ -122,9 +122,8 @@ export function GithubInstallationQueries(stores: any) {
         token: context.getGitHubToken(),
       });
 
-      const { data: userData }: { data: GithubUser } = await github.users.get({});
-
-      return userData;
+      const user = await github.users.get({});
+      return user.data;
     },
 
     async orgMembers(root: any, { org, page }: OrgMembersQueryArgs, context: Context): Promise<GetMembersResponseItem[]> {

@@ -11,11 +11,10 @@ import { proxy as InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { proxy as UpdateProxy } from "../update/proxy";
 import { ReplicatedError } from "./errors";
-import { configureInjector } from "./injector";
 import { logger } from "./logger";
 import { Context } from "../context";
 
-import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
+import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "./params";
 import { UserStore } from "../user/user_store";
 import { Stores } from "../schema/stores";
@@ -28,6 +27,8 @@ import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
 import { ImageWatchStore } from "../imagewatch/store";
 import { FeatureStore } from "../feature/feature_store";
+import { GithubNonceStore } from "../user/store";
+import { HealthzStore } from "../healthz/store";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -44,10 +45,6 @@ const tsedConfig = {
 
 @ServerSettings(tsedConfig)
 export class Server extends ServerLoader {
-  async $onInit(): Promise<void> {
-    await configureInjector();
-  }
-
   async $onMountingMiddlewares(): Promise<void> {
     this.expressApp.enable("trust proxy"); // so we get the real ip from the ELB in amazon
     const params = await Params.getParams();
@@ -85,6 +82,24 @@ export class Server extends ServerLoader {
       next();
     };
 
+    const pool = await getPostgresPool();
+    const stores: Stores = {
+      sessionStore: new SessionStore(pool, params),
+      userStore: new UserStore(pool),
+      githubNonceStore: new GithubNonceStore(pool),
+      clusterStore: new ClusterStore(pool, params),
+      watchStore: new WatchStore(pool, params),
+      notificationStore: new NotificationStore(pool, params),
+      updateStore: new UpdateStore(pool, params),
+      unforkStore: new UnforkStore(pool, params),
+      initStore: new InitStore(pool, params),
+      imageWatchStore: new ImageWatchStore(pool),
+      featureStore: new FeatureStore(pool, params),
+      healthzStore: new HealthzStore(pool),
+    }
+
+    this.expressApp.locals.stores = stores;
+
     this.use("/api/v1/download/:watchId", setContext);
     this.use("/api/v1/download/:watchId", (request: Request, response: Response, next: NextFunction) => {
       next(isPolicyValid(response.locals.context));
@@ -92,23 +107,10 @@ export class Server extends ServerLoader {
 
     this.use("/graphql", setContext);
     this.use("/graphql", graphqlExpress(async (req: Request, res: Response): Promise<any> => {
-      const wrapper = new PostgresWrapper(await getPostgresPool());
-      const params = await Params.getParams();
-      const stores: Stores = {
-        sessionStore: new SessionStore(wrapper, params),
-        userStore: new UserStore(wrapper),
-        clsuterStore: new ClusterStore(wrapper, params),
-        watchStore: new WatchStore(wrapper, params),
-        notificationStore: new NotificationStore(wrapper, params),
-        updateStore: new UpdateStore(wrapper, params),
-        unforkStore: new UnforkStore(wrapper, params),
-        initStore: new InitStore(wrapper, params),
-        imageWatchStore: new ImageWatchStore(wrapper),
-        featureStore: new FeatureStore(wrapper, params),
-      }
+      const shipClusterSchema: ShipClusterSchema = new ShipClusterSchema();
 
       return {
-        schema: new ShipClusterSchema().getSchema(stores),
+        schema: shipClusterSchema.getSchema(stores, params),
         context: res.locals.context,
         tracing: true,
         cacheControl: true,

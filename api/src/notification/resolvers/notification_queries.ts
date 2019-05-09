@@ -11,8 +11,9 @@ import {
 } from "../../generated/types";
 import { Context } from "../../context";
 import { tracer } from "../../server/tracing";
+import { Stores } from "../../schema/stores";
 
-export function NotificationQueries(stores: any) {
+export function NotificationQueries(stores: Stores) {
   return {
     async pullRequestHistory(root: any, args: PullRequestHistoryQueryArgs, context: Context): Promise<PullRequestHistoryItem[]> {
       const span: jaeger.SpanContext = tracer().startSpan("query.pullRequestHistory");
@@ -78,7 +79,7 @@ export function NotificationQueries(stores: any) {
       const span: jaeger.SpanContext = tracer().startSpan("query.getNotifications");
 
       const notification = await stores.notificationStore.findUserNotification(span.context(), context.session.userId, args.notificationId);
-      const result = await stores.notificationStore.getNotification(span.context(), notification.id!);
+      const result = await stores.notificationStore.getNotification(notification.id!);
 
       span.finish();
 

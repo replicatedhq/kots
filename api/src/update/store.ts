@@ -1,23 +1,21 @@
 import * as randomstring from "randomstring";
 import * as rp from "request-promise";
-import { Service } from "ts-express-decorators";
 import { UpdateSession } from "../generated/types";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import { PostgresWrapper } from "../util/persistence/db";
+import * as pg from "pg";
 
-@Service()
 export class UpdateStore {
-  constructor(private readonly wrapper: PostgresWrapper, private readonly params: Params) {}
+  constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
   async createUpdateSession(userId: string, watchId: string): Promise<UpdateSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
     const q = `INSERT INTO ship_update (id, user_id, watch_id, created_at)
-               VALUES ($1, $2, $3, $4)`;
+              VALUES ($1, $2, $3, $4)`;
     const v = [id, userId, watchId, new Date()];
 
-    await this.wrapper.query(q, v);
+    await this.pool.query(q, v);
 
     const updateSession = this.getSession(id);
 
@@ -54,7 +52,7 @@ export class UpdateStore {
     `;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.wrapper.query(q, v);
+    const { rows }: { rows: any[] } = await this.pool.query(q, v);
     const result = this.mapRow(rows[0]);
 
     return result;

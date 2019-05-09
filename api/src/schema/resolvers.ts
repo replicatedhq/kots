@@ -6,8 +6,13 @@ import { UnforkQueries, UnforkMutations } from "../unfork";
 import { NotificationQueries, NotificationMutations } from "../notification";
 import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
+import { HealthzQueries } from "../healthz";
 
-export const Resolvers = (stores: any) => ({
+import { Params } from "../server/params";
+import { Stores } from "./stores";
+import { GithubInstallationQueries, GithubInstallationMutations } from "../github_installation";
+
+export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
     ...UserQueries,
     ...ClusterQueries(stores),
@@ -17,10 +22,12 @@ export const Resolvers = (stores: any) => ({
     ...NotificationQueries(stores),
     ...InitQueries(stores),
     ...FeatureQueries(stores),
+    ...HealthzQueries(stores),
+    ...GithubInstallationQueries(stores),
   },
 
   Mutation: {
-    ...UserMutations(stores),
+    ...UserMutations(stores, params),
     ...ClusterMutations(stores),
     ...WatchMutations(stores),
     ...UpdateMutations(stores),
@@ -28,5 +35,6 @@ export const Resolvers = (stores: any) => ({
     ...NotificationMutations(stores),
     ...InitMutations(stores),
     ...FeatureMutations(stores),
+    ...GithubInstallationMutations(stores),
   }
 })

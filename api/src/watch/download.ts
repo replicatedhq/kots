@@ -5,7 +5,6 @@ import * as jaeger from "jaeger-client";
 import { instrumented } from "monkit";
 import { Writable } from "stream";
 import { extract, Extract } from "tar-stream";
-import { Service } from "ts-express-decorators";
 import { logger } from "../server/logger";
 import { tracer } from "../server/tracing";
 import { getS3 } from "../util/s3";
@@ -31,7 +30,6 @@ const FileExtensions = {
   [ContentType.YAML]: ".yaml",
 };
 
-@Service()
 export class WatchDownload {
   constructor(private readonly watchStore: WatchStore) {}
 

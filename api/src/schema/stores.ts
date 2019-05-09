@@ -8,11 +8,14 @@ import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
 import { ImageWatchStore } from "../imagewatch/store";
 import { FeatureStore } from "../feature/feature_store";
+import { GithubNonceStore } from "../user/store";
+import { HealthzStore } from "../healthz/store";
 
 export interface Stores {
   sessionStore: SessionStore;
   userStore: UserStore;
-  clsuterStore: ClusterStore;
+  githubNonceStore: GithubNonceStore;
+  clusterStore: ClusterStore;
   watchStore: WatchStore,
   notificationStore: NotificationStore,
   updateStore: UpdateStore,
@@ -20,4 +23,5 @@ export interface Stores {
   initStore: InitStore,
   imageWatchStore: ImageWatchStore,
   featureStore: FeatureStore,
+  healthzStore: HealthzStore,
 }

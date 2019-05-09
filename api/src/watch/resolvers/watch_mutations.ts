@@ -140,7 +140,7 @@ export function WatchMutations(stores: any) {
       //   }
       // });
 
-      return stores.watchStore.listWatchContributors(span.context(), id);
+      return stores.watchStore.listWatchContributors(id);
     },
 
 

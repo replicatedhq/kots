@@ -1,17 +1,17 @@
-import { PostgresWrapper } from "../util/persistence/db";
+import * as pg from "pg";
 import * as randomstring from "randomstring";
 import { User } from "./user";
-import { Service } from "ts-express-decorators";
 
-@Service()
 export class UserStore {
-  constructor(readonly wrapper: PostgresWrapper) {}
+  constructor(
+    private readonly pool: pg.Pool,
+  ) {}
 
   public async listAllUsers(): Promise<User[]> {
     const q = `select id from ship_user`;
     const v = [];
 
-    const result = await this.wrapper.query(q, v);
+    const result = await this.pool.query(q, v);
     const users: User[] = [];
     for (const row of result.rows) {
       const user = await this.getUser(row.id);
@@ -27,7 +27,7 @@ export class UserStore {
       githubId,
     ];
 
-    const result = await this.wrapper.query(q, v);
+    const result = await this.pool.query(q, v);
 
     if (result.rowCount === 0) {
       return;
@@ -40,7 +40,7 @@ export class UserStore {
     const q = `select id, created_at from ship_user where id = $1`;
     const v = [id];
 
-    const result = await this.wrapper.query(q, v);
+    const result = await this.pool.query(q, v);
     const user: User = new User();
     user.id = result.rows[0].id;
     user.createdAt = result.rows[0].created_at;
@@ -49,9 +49,11 @@ export class UserStore {
 
   public async createGitHubUser(githubId: number, githubLogin: string, githubAvatar: string, email: string): Promise<User> {
     const id = randomstring.generate({ capitalization: "lowercase" });
-    await this.wrapper.query("begin");
+    const pg = await this.pool.connect();
 
     try {
+      await pg.query("begin");
+
       let v: any[] = [];
 
       let q = `insert into ship_user (id, created_at) values ($1, $2)`;
@@ -59,7 +61,7 @@ export class UserStore {
           id,
           new Date(),
       ];
-      await this.wrapper.query(q, v);
+      await pg.query(q, v);
 
       q = `insert into github_user (user_id, username, github_id, avatar_url, email) values ($1, $2, $3, $4, $5)`;
       v = [
@@ -69,33 +71,41 @@ export class UserStore {
         githubAvatar,
         email,
       ];
-      await this.wrapper.query(q, v);
+      await pg.query(q, v);
 
-      await this.wrapper.query("commit");
-    } catch {
-        await this.wrapper.query("rollback");
+      await pg.query("commit");
+
+      return this.getUser(id);
+    } catch(err) {
+      await pg.query("rollback");
+      throw err;
+    } finally {
+      pg.release();
     }
-
-    return this.getUser(id);
   }
 
   public async createPasswordUser(email: string, password: string, firstName: string, lastName: string): Promise<User> {
     const id = randomstring.generate({ capitalization: "lowercase" });
-    await this.wrapper.query("begin");
+    const pg = await this.pool.connect();
 
     try {
+      await pg.query("begin");
+
       let q = `insert into ship_user (id, created_at) values ($1, $2)`;
       let v = [
           id,
           new Date(),
       ];
-      await this.wrapper.query(q, v);
+      await pg.query(q, v);
 
-      await this.wrapper.query("commit");
-    } catch {
-        await this.wrapper.query("rollback");
+      await pg.query("commit");
+
+      return this.getUser(id);
+    } catch(err) {
+      await pg.query("rollback");
+      throw err;
+    } finally {
+      pg.release();
     }
-
-    return this.getUser(id);
   }
 }

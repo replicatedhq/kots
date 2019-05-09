@@ -4,10 +4,8 @@ import {
   Controller,
   Post,
   Req,
-  Required,
   Res,
 } from "ts-express-decorators";
-import { UserStore } from "../user/user_store";
 
 interface SignupRequest {
   email: string;
@@ -22,11 +20,6 @@ interface ErrorResponse {
 
 @Controller("/api/v1/signup")
 export class SignupAPI {
-  constructor(
-    private readonly userStore: UserStore,
-  ) {
-  }
-
   @Post("")
   public async signup(
     @Res() response: Express.Response,
@@ -38,11 +31,11 @@ export class SignupAPI {
         message: `Email and password are both required`,
       };
     }
-    
-    const user = await this.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
-    console.log(user);
 
-    
+    // const user = await this.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
+    // console.log(user);
+
+
     return {};
   }
 }

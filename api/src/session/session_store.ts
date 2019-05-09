@@ -5,11 +5,10 @@ import * as jaeger from "jaeger-client";
 import * as jwt from "jsonwebtoken";
 import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
-import { Service } from "ts-express-decorators";
 
 import { Params } from "../server/params";
 import { traced } from "../server/tracing";
-import { PostgresWrapper } from "../util/persistence/db";
+import * as pg from "pg";
 import { Session } from "./session";
 
 const invalidSession = {
@@ -23,9 +22,8 @@ export type InstallationMap = {
   [key: string]: number;
 };
 
-@Service()
 export class SessionStore {
-  constructor(private readonly wrapper: PostgresWrapper, private readonly params: Params) {}
+  constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
   createInstallationMap(installations: GitHubApi.GetInstallationsResponseInstallationsItem[]): InstallationMap {
     return installations.reduce((installationAcctMap: InstallationMap, { id, account }) => {
@@ -58,7 +56,7 @@ export class SessionStore {
     const expirationDate = addWeeks(currentUtcDate, 2);
     const v = [sessionId, userId, JSON.stringify(installationMap), expirationDate];
 
-    await this.wrapper.query(q, v);
+    await this.pool.query(q, v);
 
     return jwt.sign(
       {
@@ -87,14 +85,14 @@ export class SessionStore {
 
     const q = `UPDATE session SET metadata = $1 WHERE id = $2`;
     const v = [updatedInstallationMap, sessionId];
-    await this.wrapper.query(q, v);
+    await this.pool.query(q, v);
   }
 
   public async getGithubSession(sessionId: string): Promise<Session> {
     const q = `select id, user_id, metadata, expire_at from session where id = $1`;
     const v = [sessionId];
 
-    const result = await this.wrapper.query(q, v);
+    const result = await this.pool.query(q, v);
 
     const session: Session = new Session();
     session.id = result.rows[0].id;
@@ -109,7 +107,7 @@ export class SessionStore {
     const q = `delete from session where id = $1`;
     const v = [sessionId];
 
-    await this.wrapper.query(q, v);
+    await this.pool.query(q, v);
   }
 
   public async decode(token: string): Promise<Session | any> {

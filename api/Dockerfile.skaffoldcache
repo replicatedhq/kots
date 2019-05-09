@@ -15,6 +15,3 @@ ADD ./package.json /src/package.json
 ADD ./yarn.lock /src/yarn.lock
 WORKDIR /src
 RUN yarn install --silent
-ADD . /src
-
-CMD ["make", "build"]
