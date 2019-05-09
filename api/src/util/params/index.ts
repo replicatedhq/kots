@@ -1,5 +1,4 @@
 import * as AWS from "aws-sdk";
-import * as monkit from "monkit";
 
 let ssmClient: AWS.SSM;
 const cache: { [key: string]: string } = {};
@@ -10,18 +9,9 @@ export async function param(envName: string, ssmName: string, encrypted = false)
   }
 
   if (cache[ssmName]) {
-    monkit
-      .getRegistry()
-      .meter("SSM.cache.hits")
-      .mark();
-
     return cache[ssmName];
   }
 
-  monkit
-    .getRegistry()
-    .meter("SSM.cache.misses")
-    .mark();
   if (!ssmClient) {
     ssmClient = new AWS.SSM({
       apiVersion: "2014-11-06",

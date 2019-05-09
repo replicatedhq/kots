@@ -3,11 +3,9 @@ import { addWeeks } from "date-fns";
 // @ts-ignore
 import * as jaeger from "jaeger-client";
 import * as jwt from "jsonwebtoken";
-import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
 
 import { Params } from "../server/params";
-import { traced } from "../server/tracing";
 import * as pg from "pg";
 import { Session } from "./session";
 
@@ -67,8 +65,6 @@ export class SessionStore {
     );
   }
 
-  @instrumented()
-  @traced()
   async refreshGithubTokenMetadata(ctx: jaeger.SpanContext, token: string, sessionId: string): Promise<void> {
     const github = new GitHubApi();
     github.authenticate({

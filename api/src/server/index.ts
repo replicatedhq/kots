@@ -6,7 +6,6 @@ import * as uuid from "uuid";
 import * as Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
 import * as vendor from "./server";
-import * as tracing from "./tracing";
 
 @OverrideMiddleware(LogIncomingRequestMiddleware)
 export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddleware {
@@ -110,7 +109,6 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
 // tslint:disable no-console
 function main() {
-  tracing.bootstrap();
   new vendor.Server()
     .start()
     .then(() => {

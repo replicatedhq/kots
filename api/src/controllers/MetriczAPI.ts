@@ -1,5 +1,4 @@
 import * as Express from "express";
-import { instrumented } from "monkit";
 import { Controller, Get, Res } from "ts-express-decorators";
 
 interface ErrorResponse {
@@ -9,7 +8,6 @@ interface ErrorResponse {
 @Controller("/metricz")
 export class Metricz {
   @Get("")
-  @instrumented()
   async metricz(@Res() response: Express.Response): Promise<{} | ErrorResponse> {
     response.status(200);
 

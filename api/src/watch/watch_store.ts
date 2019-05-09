@@ -3,7 +3,6 @@ import { stripIndent } from "common-tags";
 import * as jaeger from "jaeger-client";
 import * as _ from "lodash";
 import * as path from "path";
-import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
 import { ContributorItem, StateMetadata, WatchItem, VersionItem } from "../generated/types";
@@ -333,7 +332,6 @@ export class WatchStore {
     }
   }
 
-  @instrumented()
   async deleteWatch(ctx: jaeger.SpanContext, watchId: string): Promise<boolean> {
     const pg = await this.pool.connect();
 
@@ -592,7 +590,6 @@ export class WatchStore {
     return params;
   }
 
-  @instrumented()
   async getGeneratedFileForSequence(ctx: jaeger.SpanContext, watchId: string, sequence: number): Promise<GeneratedFile> {
     const pg = await this.pool.connect();
 
