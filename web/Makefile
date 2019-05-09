@@ -21,6 +21,7 @@ clean:
 
 .PHONY: test
 test:
+	rm -rf pacts/ship-cluster-ui-ship-cluster-api.json
 	yarn test
 
 .PHONY: verify_local

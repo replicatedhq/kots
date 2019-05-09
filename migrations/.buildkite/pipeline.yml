@@ -23,6 +23,7 @@ steps:
       - cd migrations/fixtures
       - make publish
     label: "publish-fixtures"
+    branches: "master"
 
   - wait
 

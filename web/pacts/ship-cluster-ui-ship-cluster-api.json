@@ -112,6 +112,17 @@
               }
             ]
           }
+        },
+        "matchingRules": {
+          "$.body.data.imageWatchItems[0].lastCheckedOn": {
+            "match": "type"
+          },
+          "$.body.data.imageWatchItems[1].lastCheckedOn": {
+            "match": "type"
+          },
+          "$.body.data.imageWatchItems[2].lastCheckedOn": {
+            "match": "type"
+          }
         }
       }
     },
@@ -270,6 +281,58 @@
             "match": "type"
           },
           "$.body.signup.id": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "a mutation to update a watch for single user",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzaW5nbGUtdXNlci1hY2NvdW50LXNlc3Npb24tMSJ9.DafcYfGJbqEvPxch9VzSnXcrUbvmtQtslzV0yVm_IBs",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "updateWatch",
+          "query": "\n  mutation updateWatch($watchId: String!, $watchName: String, $iconUri: String) {\n    updateWatch(watchId: $watchId, watchName: $watchName, iconUri: $iconUri) {\n      id\n      stateJSON\n      watchName\n      slug\n      watchIcon\n      createdOn\n      lastUpdated\n      contributors {\n        id\n        createdAt\n        githubId\n        login\n        avatar_url\n      }\n    }\n  }\n",
+          "variables": {
+            "watchId": "single-user-watch-update-1",
+            "watchName": "Updated Single User Watch Update",
+            "iconUri": "http://ccsuppliersource.com/wp-content/uploads/2018/12/bigstock_online_update_11303201.jpg"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*mutation\\s*updateWatch\\(\\$watchId:\\s*String!,\\s*\\$watchName:\\s*String,\\s*\\$iconUri:\\s*String\\)\\s*\\{\\s*updateWatch\\(watchId:\\s*\\$watchId,\\s*watchName:\\s*\\$watchName,\\s*iconUri:\\s*\\$iconUri\\)\\s*\\{\\s*id\\s*stateJSON\\s*watchName\\s*slug\\s*watchIcon\\s*createdOn\\s*lastUpdated\\s*contributors\\s*\\{\\s*id\\s*createdAt\\s*githubId\\s*login\\s*avatar_url\\s*\\}\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "updateWatch": {
+              "id": "single-user-watch-update-1",
+              "slug": "single-user/single-user-watch-update-1",
+              "watchName": "Updated Single User Watch Update",
+              "watchIcon": "http://ccsuppliersource.com/wp-content/uploads/2018/12/bigstock_online_update_11303201.jpg",
+              "createdOn": "2019-04-10 12:34:56.789",
+              "lastUpdated": "generated"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.updateWatch.createdOn": {
+            "match": "type"
+          },
+          "$.body.data.updateWatch.lastUpdated": {
             "match": "type"
           }
         }

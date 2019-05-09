@@ -6,8 +6,13 @@ import listWatchesShipCluster from "./contracts/ship-cluster-only/list-watches/l
 import createInitSession from "./contracts/solo-account/create-init-session/create-init-session";
 import getWatchVersion from "./contracts/solo-account/get-watch-version/get-watch-version";
 import getImageWatchItems from "./contracts/solo-account/list-image-watch-items/list-image-watch-items";
+<<<<<<< HEAD
 import getWatchVersionGitOps from "./contracts/gitops-cluster-only/get-watch-version/get-watch-version";
 import shipauthSignup from "./contracts/auth/shipauth-signup";
+=======
+import updateWatch from "./contracts/single-user/update-watch/update-watch";
+// import getWatchVersionGitOps from "./contracts/gitops-cluster-only/get-watch-version/get-watch-version";
+>>>>>>> master
 
 describe("ShipAPI GraphQL Pact", () => {
   afterEach(() => global.provider.verify())
@@ -19,10 +24,15 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("solo-account:createInitSession", () => createInitSession() );
   describe("solo-account:getWatchVersion", () => getWatchVersion() );
   describe("solo-account:getImageWatchItems", () => getImageWatchItems() );
+<<<<<<< HEAD
 
   // describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
 
   describe("auth:shipAuthSignup", () => shipauthSignup() );
+=======
+  describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
+  describe("single-user:updateWatch", () => updateWatch() );
+>>>>>>> master
 
   // describe("gitops-cluster-account:getWatchVersion", () => getWatchVersionGitOps() );
 });

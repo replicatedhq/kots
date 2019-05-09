@@ -11,6 +11,13 @@ steps:
 
   - wait
 
+  - trigger: "ship-cluster-api"
+    async: true
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
+
   - command: cd web && make deps build-enterprise
     label: "build-enterprise"
     branches: "master"
