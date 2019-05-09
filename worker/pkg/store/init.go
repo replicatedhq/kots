@@ -19,10 +19,11 @@ func (s *SQLStore) GetInit(ctx context.Context, initID string) (*types.InitSessi
 	query := `select
 			ship_init.id, ship_init.upstream_uri, ship_init.created_at, ship_init.finished_at,
 			ship_init.result, ship_init.user_id, ship_init.cluster_id, ship_init.github_path,
-			github_user.username, ship_init.requested_upstream_uri
+			ship_init.requested_upstream_uri,
+			github_user.username
 		from ship_init
 		inner join ship_user on ship_user.id = ship_init.user_id
-		inner join github_user on github_user.github_id = ship_user.github_id
+		left outer join github_user on github_user.user_id = ship_init.user_id
 		where ship_init.id = $1`
 	row := s.db.QueryRowContext(ctx, query, initID)
 
@@ -35,7 +36,7 @@ func (s *SQLStore) GetInit(ctx context.Context, initID string) (*types.InitSessi
 
 	if err := row.Scan(&initSession.ID, &initSession.UpstreamURI, &initSession.CreatedAt,
 		&finishedAt, &result, &initSession.UserID, &clusterID,
-		&githubPath, &initSession.Username, &requestedUpstreamURI); err != nil {
+		&githubPath, &requestedUpstreamURI, &initSession.Username); err != nil {
 		return nil, errors.Wrap(err, "scan")
 	}
 	if finishedAt.Valid {

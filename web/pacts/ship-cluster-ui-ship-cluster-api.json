@@ -7,25 +7,18 @@
   },
   "interactions": [
     {
-      "description": "a query to list clusters for solo account",
+      "description": "a query to sign up for a new shipauth account",
       "request": {
         "method": "POST",
-        "path": "/graphql",
+        "path": "/api/v1/signup",
         "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
           "Content-Type": "application/json"
         },
         "body": {
-          "operationName": "listClusters",
-          "query": "\n  query listClusters {\n    listClusters {\n      id\n      title\n      slug\n      createdOn\n      lastUpdated\n      gitOpsRef {\n        owner\n        repo\n        branch\n      }\n      shipOpsRef {\n        token\n      }\n      totalApplicationCount\n    }\n  }\n",
-          "variables": {
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*query\\s*listClusters\\s*\\{\\s*listClusters\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*gitOpsRef\\s*\\{\\s*owner\\s*repo\\s*branch\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*"
-          }
+          "email": "test-ship-auth-signup@gmail.com",
+          "firstName": "First",
+          "lastName": "Last",
+          "password": "password"
         }
       },
       "response": {
@@ -34,297 +27,10 @@
           "Content-Type": "application/json"
         },
         "body": {
-          "data": {
-            "listClusters": [
-              {
-                "id": "solo-account-cluster-1",
-                "title": "Solo Cluster",
-                "slug": "solo-cluster",
-                "totalApplicationCount": 1,
-                "createdOn": "2019-04-10 12:34:56.789",
-                "lastUpdated": "2019-04-11 01:23:45.567",
-                "gitOpsRef": null,
-                "shipOpsRef": {
-                  "token": "solo-account-cluster-token"
-                }
-              },
-              {
-                "id": "solo-account-cluster-2",
-                "title": "Solo GitHub Cluster",
-                "slug": "solo-cluster-2",
-                "totalApplicationCount": 0,
-                "createdOn": "2019-04-10 12:34:56.789",
-                "lastUpdated": "2019-04-11 01:23:45.567",
-                "gitOpsRef": {
-                  "owner": "lonely-github-dev",
-                  "repo": "gitops-deploy",
-                  "branch": "master"
-                },
-                "shipOpsRef": null
-              }
-            ]
-          }
-        },
-        "matchingRules": {
-          "$.body.data.listClusters[0].createdOn": {
-            "match": "type"
-          },
-          "$.body.data.listClusters[0].lastUpdated": {
-            "match": "type"
-          },
-          "$.body.data.listClusters[1].createdOn": {
-            "match": "type"
-          },
-          "$.body.data.listClusters[1].lastUpdated": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "a mutation to create a ship cluster for solo dev",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "createShipOpsCluster",
-          "query": "\n  mutation createShipOpsCluster($title: String!) {\n    createShipOpsCluster(title: $title) {\n      id\n      slug\n      shipOpsRef {\n        token\n      }\n    }\n  }\n",
-          "variables": {
-            "title": "FooBarBaz Cluster"
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*mutation\\s*createShipOpsCluster\\(\\$title:\\s*String!\\)\\s*\\{\\s*createShipOpsCluster\\(title:\\s*\\$title\\)\\s*\\{\\s*id\\s*slug\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "createShipOpsCluster": {
-              "id": "generated",
-              "slug": "foobarbaz-cluster",
-              "shipOpsRef": {
-                "token": "generated"
-              }
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.data.createShipOpsCluster.id": {
-            "match": "type"
-          },
-          "$.body.data.createShipOpsCluster.shipOpsRef.token": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "a mutation to create a gitops cluster for solo dev",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "createGitOpsCluster",
-          "query": "\n  mutation createGitOpsCluster($title: String!, $installationId: Int, $gitOpsRef: GitOpsRefInput) {\n    createGitOpsCluster(title: $title, installationId: $installationId, gitOpsRef: $gitOpsRef) {\n      id\n      slug\n    }\n  }\n",
-          "variables": {
-            "title": "FooBarGit Cluster",
-            "installationId": 987654,
-            "gitOpsRef": {
-              "owner": "me",
-              "repo": "myself",
-              "branch": "i"
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*mutation\\s*createGitOpsCluster\\(\\$title:\\s*String!,\\s*\\$installationId:\\s*Int,\\s*\\$gitOpsRef:\\s*GitOpsRefInput\\)\\s*\\{\\s*createGitOpsCluster\\(title:\\s*\\$title,\\s*installationId:\\s*\\$installationId,\\s*gitOpsRef:\\s*\\$gitOpsRef\\)\\s*\\{\\s*id\\s*slug\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "createGitOpsCluster": {
-              "id": "generated",
-              "slug": "foobargit-cluster"
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.data.createGitOpsCluster.id": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "a mutation to create a midstream watch for solo dev",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "createWatch",
-          "query": "\n  mutation createWatch($stateJSON: String!, $owner: String!) {\n    createWatch(stateJSON: $stateJSON, owner: $owner) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
-          "variables": {
-            "owner": "solo-account",
-            "stateJSON": "{\n  \"v1\": {\n    \"config\": {},\n    \"releaseName\": \"factorio\",\n    \"helmValuesDefaults\": \"\",\n    \"upstream\": \"https://github.com/helm/charts/tree/ffb84f85a861e765caade879491a75a6dd3091a5/stable/factorio\",\n    \"metadata\": {\n      \"applicationType\": \"helm\",\n      \"icon\": \"https://us1.factorio.com/assets/img/factorio-logo.png\",\n      \"name\": \"factorio\",\n      \"releaseNotes\": \"\",\n      \"license\": {\n        \"assignee\": \"\",\n        \"createdAt\": \"0001-01-01T00:00:00Z\",\n        \"expiresAt\": \"0001-01-01T00:00:00Z\",\n        \"id\": \"\",\n        \"type\": \"\"\n      },\n      \"sequence\": 0,\n      \"version\": \"0.3.1\"\n    },\n    \"contentSHA\": \"126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e\"\n  }\n}"
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!,\\s*\\$owner:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON,\\s*owner:\\s*\\$owner\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "createWatch": {
-              "id": "generated",
-              "slug": "generated",
-              "watchName": "generated",
-              "createdOn": "generated",
-              "lastUpdated": null
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.data.createWatch.id": {
-            "match": "type"
-          },
-          "$.body.data.createWatch.slug": {
-            "match": "type"
-          },
-          "$.body.data.createWatch.watchName": {
-            "match": "type"
-          },
-          "$.body.data.createWatch.createdOn": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "a mutation to create a helm init session",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "createInitSession",
-          "query": "\n  mutation createInitSession($upstreamUri: String!, $clusterID: String, $githubPath: String) {\n    createInitSession(upstreamUri: $upstreamUri, clusterID: $clusterID, githubPath: $githubPath) {\n      id\n      upstreamUri\n      createdOn\n      finishedOn\n      result\n    }\n  }\n",
-          "variables": {
-            "upstreamUri": "https://github.com/helm/charts/stable/grafana",
-            "clusterID": null,
-            "githubPath": null
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*mutation\\s*createInitSession\\(\\$upstreamUri:\\s*String!,\\s*\\$clusterID:\\s*String,\\s*\\$githubPath:\\s*String\\)\\s*\\{\\s*createInitSession\\(upstreamUri:\\s*\\$upstreamUri,\\s*clusterID:\\s*\\$clusterID,\\s*githubPath:\\s*\\$githubPath\\)\\s*\\{\\s*id\\s*upstreamUri\\s*createdOn\\s*finishedOn\\s*result\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "createInitSession": {
-              "id": "generated",
-              "upstreamUri": "https://github.com/helm/charts/stable/grafana",
-              "createdOn": "generated",
-              "finishedOn": null,
-              "result": null
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.data.createInitSession.id": {
-            "match": "type"
-          },
-          "$.body.data.createInitSession.createdOn": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "a query to get a single watch version for solo account",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "getWatchVersion",
-          "query": "\n  query getWatchVersion($id: String!, $sequence: Int) {\n    getWatchVersion(id: $id, sequence: $sequence) {\n      title\n      status\n      createdOn\n      sequence\n      pullrequestNumber\n      rendered\n    }\n  }\n",
-          "variables": {
-            "id": "solo-account-watch-1",
-            "sequence": 0
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*query\\s*getWatchVersion\\(\\$id:\\s*String!,\\s*\\$sequence:\\s*Int\\)\\s*\\{\\s*getWatchVersion\\(id:\\s*\\$id,\\s*sequence:\\s*\\$sequence\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*pullrequestNumber\\s*rendered\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "getWatchVersion": {
-              "title": "string",
-              "status": "deployed",
-              "createdOn": "2019-04-10 12:34:56.789",
-              "sequence": 0,
-              "pullrequestNumber": null,
-              "rendered": "apiVersion: v1\ndata:\n  factorio-password: eW91ci5wYXNzd29yZA==\n  factorio-username: eW91ci51c2VybmFtZQ==\n  rcon-password: \"\"\n  server-password: \"\"\nkind: Secret\nmetadata:\n labels:\n    app: factorio-factorio\n    release: factorio\n  name: factorio-factorio\ntype: Opaque\n---\napiVersion: v1\nkind: Service\nmetadata:\n  labels:\n    app: factorio-factorio\n    release: factorio\n  name: factorio-factorio\nspec:\n  ports:\n  - name: factorio\n    port: 34197\n    protocol: UDP\ntargetPort: factorio\n  selector:\n    app: factorio-factorio\n  type: LoadBalancer\n---\napiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n  labels:\n    app: factorio-factorio\n    release: factorio\n  name: factorio-factorio\nspec:\n  template:\n    metadata:\n      labels:\n        app: factorio-factorio\n    spec:\n      containers:\n      - env:\n        - name: FACTORIO_SERVER_NAME\n          value: Kubernetes Server\n        - name: FACTORIO_DESCRIPTION\n          value: Factorio running on Kubernetes\n        - name: FACTORIO_PORT\n          value: \"34197\"\n        - name: FACTORIO_MAX_PLAYERS\n    value: \"255\"\n        - name: FACTORIO_IS_PUBLIC\n          value: \"false\"\n        - name: FACTORIO_REQUIRE_USER_VERIFICATION\n          value: \"false\"\n        - name: FACTORIO_ALLOW_COMMANDS\n          value: admins-only\n        - name: FACTORIO_NO_AUTO_PAUSE\n          value: \"false\"\n        - name: FACTORIO_AUTOSAVE_INTERVAL\nvalue: \"2\"\n        - name: FACTORIO_AUTOSAVE_SLOTS\n          value: \"3\"\n        image: quay.io/games_on_k8s/factorio:0.14.22\n        imagePullPolicy: Always\n        name: factorio-factorio\n        ports:\n        - containerPort: 34197\n          name: factorio\n          protocol: UDP\n        resources:\n          requests:\n            cpu: 500m\n            memory: 512Mi\n        volumeMounts:\n- mountPath: /opt/factorio/saves\n          name: saves\n        - mountPath: /opt/factorio/mods\n   name: mods\n      volumes:\n      - name: saves\n        persistentVolumeClaim:\n          claimName:factorio-factorio-savedgames\n      - emptyDir: {}\n        name: mods\n---\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  labels:\n    app: factorio-factorio\n    release: factorio\n  name: factorio-factorio-savedgames\nspec:\n  accessModes:\n  - ReadWriteOnce\n  resources:\n    requests:\n      storage: 1Gi\n"
-            }
+          "token": "generated",
+          "signup": {
+            "email": "test-ship-auth-signup@gmail.com",
+            "id": "generated"
           }
         },
         "matchingRules": {
@@ -574,7 +280,7 @@
           "$.body.data.listWatches[0].watches[0].cluster.createdOn": {
             "match": "type"
           },
-          "$.body.data.listWatches[0].watches[0].cluster.lastUpdated": {
+          "$.body.signup.id": {
             "match": "type"
           }
         }

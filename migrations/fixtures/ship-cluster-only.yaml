@@ -1,10 +1,12 @@
 users:
   - id: "ship-cluster-account"
     created_at: "2019-04-18 12:34:56.789"
-    username: "ship-cluster-dev"
-    github_id: 2222
-    avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
-    email: "ship-cluster-account@replicated.com"
+    type: github
+    github:
+      username: "ship-cluster-dev"
+      github_id: 2222
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "ship-cluster-account@replicated.com"
     sessions:
       - ship-cluster-account-session-1
 

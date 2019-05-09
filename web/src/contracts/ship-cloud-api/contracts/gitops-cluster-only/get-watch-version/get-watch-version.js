@@ -1,17 +1,14 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import chaiString from "chai-string";
-import fetch from "node-fetch";
-import { createSessionToken } from "../../../utils";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
 import { getWatchVersion } from "../../../../../queries/WatchQueries";
 import { getWatchVersionCurrentGitopsInteraction, getWatchVersionNextGitopsInteraction } from "./interactions";
+import { getShipClient } from "../../../utils";
 
 chai.use(chaiAsPromised);
 chai.use(chaiString);
 const expect = chai.expect;
 
-const MOCK_SERVER_PORT = 3333;
 
 export default () => {
   beforeEach((done) => {
@@ -23,13 +20,9 @@ export default () => {
   it("get the current watch version for gitops dev", (done) => {
     global.provider.addInteraction(getWatchVersionCurrentGitopsInteraction).then(() => {
       done();
-    })
+    });
 
-    const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => {
-      return createSessionToken("gitops-cluster-account-session-1")
-    }, fetch);
-
-    shipClient.query({
+    getShipClient("gitops-cluster-account-session-1").query({
       query: getWatchVersion,
       variables: {
         id: "gitops-grafana-downstream",
@@ -49,13 +42,9 @@ export default () => {
   it("gets the next watch version for gitops dev", (done) => {
     global.provider.addInteraction(getWatchVersionNextGitopsInteraction).then(() => {
       done();
-    })
+    });
 
-    const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => {
-      return createSessionToken("gitops-cluster-account-session-1")
-    }, fetch);
-
-    shipClient.query({
+    getShipClient("gitops-cluster-account-session-1").query({
       query: getWatchVersion,
       variables: {
         id: "gitops-grafana-downstream",

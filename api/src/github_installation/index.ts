@@ -1,5 +1,8 @@
 import * as _ from "lodash";
 
+export * from "./resolvers/githubinstallation_queries";
+export * from "./resolvers/githubinstallation_mutations";
+
 export class GitHubRef {
   id: string;
   installationId: number;

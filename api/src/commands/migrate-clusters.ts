@@ -1,5 +1,5 @@
 import * as util from "util";
-import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
+import { getPostgresPool } from "../util/persistence/db";
 import { WatchStore } from "../watch/watch_store";
 import { Params } from "../server/params";
 import { tracer } from "../server/tracing";
@@ -29,12 +29,12 @@ async function main(argv): Promise<any> {
 
   console.log(`Beginning migration to clusters...`);
 
-  const wrapper = new PostgresWrapper(await getPostgresPool());
+  const pool = await getPostgresPool();
   const params = await Params.getParams();
 
-  const watchStore = new WatchStore(wrapper, params);
-  const notificationStore = new NotificationStore(wrapper, params);
-  const clusterStore = new ClusterStore(wrapper, params);
+  const watchStore = new WatchStore(pool, params);
+  const notificationStore = new NotificationStore(pool, params);
+  const clusterStore = new ClusterStore(pool, params);
 
   const allWatches = await watchStore.listAllWatchesForAllTeams(span.context());
   for (const watch of allWatches) {

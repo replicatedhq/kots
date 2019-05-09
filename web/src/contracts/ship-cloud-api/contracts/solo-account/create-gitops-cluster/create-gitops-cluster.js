@@ -1,13 +1,9 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
-import { createSessionToken } from "../../../utils";
-
+import { getShipClient } from "../../../utils";
 import { listClusters } from "../../../../../queries/ClusterQueries";
 import { createGitOpsCluster } from "../../../../../mutations/ClusterMutations";
-
 import { createGitOpsClusterInteraction } from "./interactions";
 import { listClustersAfterCreatingGitOpsInteraction } from "../list-clusters/interactions";
 
@@ -21,8 +17,7 @@ export default () => {
 
   it("creates a gitops cluster for solo dev", (done) => {
     global.provider.addInteraction(createGitOpsClusterInteraction).then(() => {
-      const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("solo-account-session-1") }, fetch);
-      shipClient.mutate({
+      getShipClient("solo-account-session-1").mutate({
         mutation: createGitOpsCluster,
         variables: {
           title: "FooBarGit Cluster",
@@ -39,7 +34,10 @@ export default () => {
         // createdClusterId = result.data.createGitOpsCluster.id;
         global.provider.verify();
         done();
-      });
+      })
+      .catch(err => {
+        console.error(err);
+      })
     });
   });
 

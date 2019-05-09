@@ -1,9 +1,7 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { ShipClientGQL } from "../../../../../ShipClientGQL";
-import { createSessionToken } from "../../../utils";
+import { getShipClient } from "../../../utils";
 
 import { createInitSession } from "../../../../../mutations/WatchMutations";
 
@@ -17,8 +15,7 @@ const MOCK_SERVER_PORT = 3333;
 export default () => {
   it("creates a midstream watch for solo dev", (done) => {
     global.provider.addInteraction(createHelmInitSessionInteraction).then(() => {
-      const shipClient = ShipClientGQL(`http://localhost:${MOCK_SERVER_PORT}/graphql`, async () => { return createSessionToken("solo-account-session-1") }, fetch);
-      shipClient.mutate({
+      getShipClient("solo-account-session-1").mutate({
         mutation: createInitSession,
         variables: {
           upstreamUri: "https://github.com/helm/charts/stable/grafana",
@@ -29,7 +26,10 @@ export default () => {
       .then(result => {
         global.provider.verify();
         done();
-      });
+      })
+      .catch(err => {
+        console.error(err)
+      })
     });
   });
 }
