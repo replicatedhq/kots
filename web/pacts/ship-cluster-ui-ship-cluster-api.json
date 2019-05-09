@@ -631,6 +631,123 @@
           }
         }
       }
+    },
+    {
+      "description": "a query to list watches for a single user",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzaW5nbGUtdXNlci1kZWxldGUtd2F0Y2gtc2Vzc2lvbi0xIn0.Qsn4gRjHPbm2Miq260hpAbbKo4bCeYT97xTGVP0WXRc",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "listWatchesBeforeDeletion",
+          "query": "\n    query listWatchesBeforeDeletion {\n      listWatches {\n        id\n        watchName\n      }\n    }\n  ",
+          "variables": {
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*listWatchesBeforeDeletion\\s*\\{\\s*listWatches\\s*\\{\\s*id\\s*watchName\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "listWatches": [
+              {
+                "id": "single-user-delete-watch-1",
+                "watchName": "Single User Save This Watch"
+              },
+              {
+                "id": "single-user-delete-watch-2",
+                "watchName": "Single User Delete This Watch"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "description": "a mutation to delete a watch for single user",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzaW5nbGUtdXNlci1kZWxldGUtd2F0Y2gtc2Vzc2lvbi0xIn0.Qsn4gRjHPbm2Miq260hpAbbKo4bCeYT97xTGVP0WXRc",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "deleteWatch",
+          "query": "\n  mutation deleteWatch($watchId: String!, $childWatchIds: [String]) {\n    deleteWatch(watchId: $watchId, childWatchIds: $childWatchIds)\n  }\n",
+          "variables": {
+            "watchId": "single-user-delete-watch-2"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*mutation\\s*deleteWatch\\(\\$watchId:\\s*String!,\\s*\\$childWatchIds:\\s*\\[String\\]\\)\\s*\\{\\s*deleteWatch\\(watchId:\\s*\\$watchId,\\s*childWatchIds:\\s*\\$childWatchIds\\)\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "deleteWatch": true
+          }
+        }
+      }
+    },
+    {
+      "description": "a query to list watches after a delete occurs for a single user",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzaW5nbGUtdXNlci1kZWxldGUtd2F0Y2gtc2Vzc2lvbi0xIn0.Qsn4gRjHPbm2Miq260hpAbbKo4bCeYT97xTGVP0WXRc",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "listWatchesAfterDeletion",
+          "query": "\n    query listWatchesAfterDeletion {\n      listWatches {\n        id\n        watchName\n      }\n    }\n  ",
+          "variables": {
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*listWatchesAfterDeletion\\s*\\{\\s*listWatches\\s*\\{\\s*id\\s*watchName\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "listWatches": [
+              {
+                "id": "single-user-delete-watch-1",
+                "watchName": "Single User Save This Watch"
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "metadata": {

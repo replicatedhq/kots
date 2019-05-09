@@ -7,6 +7,7 @@ import createInitSession from "./contracts/solo-account/create-init-session/crea
 import getWatchVersion from "./contracts/solo-account/get-watch-version/get-watch-version";
 import getImageWatchItems from "./contracts/solo-account/list-image-watch-items/list-image-watch-items";
 import updateWatch from "./contracts/single-user/update-watch/update-watch";
+import deleteWatch from "./contracts/single-user/delete-watch/delete-watch";
 // import getWatchVersionGitOps from "./contracts/gitops-cluster-only/get-watch-version/get-watch-version";
 
 describe("ShipAPI GraphQL Pact", () => {
@@ -21,6 +22,7 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("solo-account:getImageWatchItems", () => getImageWatchItems() );
   describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
   describe("single-user:updateWatch", () => updateWatch() );
+  describe("single-user:deleteWatch", () => deleteWatch() );
 
   // describe("gitops-cluster-account:getWatchVersion", () => getWatchVersionGitOps() );
 });
