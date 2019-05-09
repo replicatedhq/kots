@@ -9,6 +9,7 @@ import { ShipClientGQL } from "./ShipClientGQL";
 import { Helmet } from "react-helmet";
 
 import Login from "./components/Login";
+import Signup from "./components/Signup";
 import NotFound from "./components/static/NotFound";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -102,7 +103,7 @@ class Root extends React.Component {
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
         </Helmet>
-        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, () => { return Utilities.getToken(); })}>
+        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, window.env.REST_ENDPOINT, () => { return Utilities.getToken(); })}>
           <Router history={history}>
             <div className="flex-column flex1">
               <NavBar />
@@ -110,6 +111,7 @@ class Root extends React.Component {
                 <Switch>
                   <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
                   <Route exact path="/login" component={Login} />
+                  <Route exact path="/signup" component={Signup} />
                   <Route path="/auth/github" component={GitHubAuth} />
                   <Route exact path="/coming-soon" component={ComingSoon} />
                   <Route path="/clusterscope" component={ClusterScope} />

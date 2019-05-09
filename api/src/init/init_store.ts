@@ -1,24 +1,18 @@
 import * as jaeger from "jaeger-client";
-import { instrumented } from "monkit";
 import * as randomstring from "randomstring";
 import * as rp from "request-promise";
-import { Service } from "ts-express-decorators";
 import { InitSession } from "../generated/types";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import { traced } from "../server/tracing";
-import { PostgresWrapper } from "../util/persistence/db";
+import * as pg from "pg";
 
-@Service()
 export class InitStore {
   constructor(
-    private readonly wrapper: PostgresWrapper,
+    private readonly pool: pg.Pool,
     private readonly params: Params
   ) {
   }
 
-  @instrumented()
-  @traced({ paramTags: { userId: 1, upstream: 2 } })
   async createInitSession(ctx: jaeger.SpanContext, userId: string, upstreamUri: string, clusterId: any, githubPath: any, requestedUpstreamUri?: string): Promise<InitSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
@@ -33,15 +27,13 @@ export class InitStore {
       requestedUpstreamUri,
     ];
 
-    await this.wrapper.query(q, v);
+    await this.pool.query(q, v);
 
-    return this.getSession(ctx, id);
+    return this.getSession(null, id);
   }
 
-  @instrumented()
-  @traced({ paramTags: { initSessionId: 1 } })
   async deployInitSession(ctx: jaeger.SpanContext, id: string): Promise<InitSession> {
-    const initSession = await this.getSession(ctx, id);
+    const initSession = await this.getSession(null, id);
 
     if (this.params.skipDeployToWorker) {
       logger.info("skipping deploy to worker");
@@ -66,8 +58,6 @@ export class InitStore {
     return initSession;
   }
 
-  @instrumented()
-  @traced({ paramTags: { initSessionId: 1 } })
   async getSession(ctx: jaeger.SpanContext, id: string): Promise<InitSession> {
     const q = `
       SELECT id, upstream_uri, created_at, finished_at, result
@@ -76,7 +66,7 @@ export class InitStore {
     `;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.wrapper.query(q, v);
+    const { rows }: { rows: any[] } = await this.pool.query(q, v);
     return this.mapRow(rows[0]);
   }
 

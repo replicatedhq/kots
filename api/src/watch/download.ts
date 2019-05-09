@@ -2,10 +2,8 @@ import { S3 } from "aws-sdk";
 import * as Bluebird from "bluebird";
 import * as Gunzip from "gunzip-maybe";
 import * as jaeger from "jaeger-client";
-import { instrumented } from "monkit";
 import { Writable } from "stream";
 import { extract, Extract } from "tar-stream";
-import { Service } from "ts-express-decorators";
 import { logger } from "../server/logger";
 import { tracer } from "../server/tracing";
 import { getS3 } from "../util/s3";
@@ -31,11 +29,9 @@ const FileExtensions = {
   [ContentType.YAML]: ".yaml",
 };
 
-@Service()
 export class WatchDownload {
   constructor(private readonly watchStore: WatchStore) {}
 
-  @instrumented()
   async downloadDeploymentYAML(watchId: string): Promise<DeploymentFile> {
     const span = tracer().startSpan("downloadDeploymentYAML");
     const watch = await this.watchStore.getWatch(span, watchId);
@@ -50,7 +46,6 @@ export class WatchDownload {
     };
   }
 
-  @instrumented()
   async downloadDeploymentYAMLForSequence(watchId: string, sequence: number): Promise<DeploymentFile> {
     const span = tracer().startSpan("downloadDeploymentYAMLForSequence");
     const params = await this.watchStore.getLatestGeneratedFileS3Params(span.context(), watchId, sequence);
@@ -65,7 +60,6 @@ export class WatchDownload {
     };
   }
 
-  @instrumented()
   async findDeploymentFile(ctx: jaeger.SpanContext, params: S3.Types.GetObjectRequest): Promise<Download> {
     const span: jaeger.SpanContext = tracer().startSpan("watchDownload.findDeploymentYAML", { childOf: ctx });
     const shipParams = await Params.getParams();

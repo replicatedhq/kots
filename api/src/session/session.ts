@@ -1,0 +1,26 @@
+import * as jwt from "jsonwebtoken";
+import { Params } from "../server/params";
+
+interface Claims {
+  session_id: string;
+  user_id: string;
+}
+
+export class Session {
+  public id: string;
+  public userId: string;
+  public expiresAt: Date;
+  public metadata: string;
+  public scmToken: string;
+
+  public async getToken(): Promise<string> {
+    const claims: Claims = {
+      session_id: this.id,
+      user_id: this.userId,
+    };
+
+    const params = await Params.getParams();
+    const token = jwt.sign(claims, params.sessionKey);
+    return token;
+  }
+}

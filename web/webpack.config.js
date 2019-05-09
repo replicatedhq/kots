@@ -21,6 +21,7 @@ module.exports = function (env) {
   if (process.env["SHIP_CLUSTER_API_SERVER"]) {
     appEnv.INSTALL_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/install`;
     appEnv.GRAPHQL_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/graphql`;
+    appEnv.REST_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api`;
     appEnv.SHIPINIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/init/`;
     appEnv.SHIPUPDATE_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/update/`;
   }
@@ -154,7 +155,7 @@ module.exports = function (env) {
     ],
   };
 
-  if (env === "dev" || env === "local" || env.indexOf("skaffold") !== -1 || !env) {
+  if (env === "skaffold" || !env) {
     var dev = require("./webpack.config.dev");
     return webpackMerge(common, dev);
   } else {

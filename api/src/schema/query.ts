@@ -3,9 +3,11 @@ type Healthz {
   version: String
 }
 `;
+
 export const Query = `
   type Query {
     healthz: Healthz!
+    ping: String!
 
     installationOrganizations(page: Int): GetInstallationsResponse
     orgRepos(org: String!, page: Int): GetForOrgResponse

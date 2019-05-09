@@ -1,21 +1,14 @@
 import { makeExecutableSchema } from "graphql-tools";
-import { Service } from "ts-express-decorators";
-import { DecoratedMutations, DecoratedQueries } from "./decorators";
-import { VendorSchemaTypes } from "./schemaTypes";
+import { ShipClusterSchemaTypes } from "./schemaTypes";
+import { Resolvers } from "./resolvers";
+import { Stores } from "./stores";
+import { Params } from "../server/params";
 
-@Service()
-export class ReplicatedSchema {
-  getSchema(): {} {
+export class ShipClusterSchema {
+  getSchema(stores: Stores, params: Params): {} {
     return makeExecutableSchema({
-      typeDefs: VendorSchemaTypes,
-      resolvers: {
-        Query: {
-          ...DecoratedQueries("ship-cloud"),
-        },
-        Mutation: {
-          ...DecoratedMutations("ship-cloud"),
-        },
-      },
+      typeDefs: ShipClusterSchemaTypes,
+      resolvers: Resolvers(stores, params),
     });
   }
 }

@@ -6,7 +6,6 @@ import * as uuid from "uuid";
 import * as Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
 import * as vendor from "./server";
-import * as tracing from "./tracing";
 
 @OverrideMiddleware(LogIncomingRequestMiddleware)
 export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddleware {
@@ -110,21 +109,6 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
 // tslint:disable no-console
 function main() {
-  tracing.bootstrap();
-
-  // todo use a library for argv
-  // pass "--check" to spin up the server, ensure injection works, then shut down.
-  // catches issues in packaged binary like
-  // https://replicated.slack.com/archives/C9QQD9LHK/p1536791961000100
-  if (process.argv.indexOf("--check") !== -1) {
-    const timeoutMs = 1000;
-    console.log(`--check flag was passed, will exit in ${timeoutMs}ms`);
-    setTimeout(() => {
-      console.log("exiting (0) because check flag was passed");
-      process.exit(0);
-    }, timeoutMs);
-  }
-
   new vendor.Server()
     .start()
     .then(() => {

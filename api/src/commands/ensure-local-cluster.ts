@@ -5,11 +5,11 @@ import * as fs from "fs";
 import { exec } from "child_process";
 import * as which from "which";
 
-import { PostgresWrapper, getPostgresPool } from "../util/persistence/db";
+import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
 import { ClusterStore } from "../cluster/cluster_store";
 import { tracer } from "../server/tracing";
-import { UserStore } from "../auth/store";
+import { UserStore } from "../user/user_store";
 
 const config = Api.config;
 
@@ -41,10 +41,10 @@ async function main(argv): Promise<any> {
 
   console.log(`Attempting to ensure local cluster is provisioned`);
 
-  const wrapper = new PostgresWrapper(await getPostgresPool());
+  const pool = await getPostgresPool();
   const params = await Params.getParams();
-  const clusterStore = new ClusterStore(wrapper, params);
-  const userStore = new UserStore(wrapper);
+  const clusterStore = new ClusterStore(pool, params);
+  const userStore = new UserStore(pool);
 
   let localCluster = await clusterStore.getLocalShipOpsCluster();
   if (localCluster) {
@@ -53,7 +53,7 @@ async function main(argv): Promise<any> {
     localCluster = await clusterStore.createNewCluster(span.context(), undefined, true, "This Cluster", "ship");
 
     // Give all existing users access to this cluster
-    const allUsers = await userStore.listAllUsers(span.context());
+    const allUsers = await userStore.listAllUsers();
     for(const user of allUsers) {
       await clusterStore.addUserToCluster(span.context(), localCluster.id!, user.id);
     }
