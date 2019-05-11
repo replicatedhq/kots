@@ -10,6 +10,6 @@ spec:
   - name: s3
     port: 4569
     targetPort: s3
-    nodePort: 4569
+    nodePort: 30569
   selector:
     app: s3

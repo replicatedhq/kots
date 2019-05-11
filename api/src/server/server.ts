@@ -6,7 +6,6 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
-import { isPolicyValid } from "../user/policy";
 import { proxy as InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { proxy as UpdateProxy } from "../update/proxy";
@@ -105,7 +104,7 @@ export class Server extends ServerLoader {
 
     this.use("/api/v1/download/:watchId", setContext);
     this.use("/api/v1/download/:watchId", (request: Request, response: Response, next: NextFunction) => {
-      next(isPolicyValid(response.locals.context));
+      next(response.locals.context.hasValidSession());
     });
 
     this.use("/graphql", setContext);

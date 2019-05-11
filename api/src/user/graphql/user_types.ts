@@ -4,4 +4,6 @@ type AccessToken {
 }
 `;
 
-export const vendor = [GQLAccessToken];
+export default [
+  GQLAccessToken
+];

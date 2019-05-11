@@ -24,7 +24,7 @@ export class DeployAPI {
     let cluster;
 
     try {
-      cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(span.context(), credentials.pass);
+      cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(credentials.pass);
     } catch (err) {
       // TODO error type
       response.status(401);

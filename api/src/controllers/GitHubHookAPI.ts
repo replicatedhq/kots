@@ -109,7 +109,7 @@ export class GitHubHookAPI {
     const owner = pullRequestEvent.pull_request.base.repo.owner.login;
     const repo = pullRequestEvent.pull_request.base.repo.name;
 
-    const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(null, owner, repo);
+    const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
     for (const cluster of clusters) {
       const watches = await request.app.locals.stores.watchStore.listForCluster(null, cluster.id!);

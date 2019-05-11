@@ -71,10 +71,6 @@ pkg:
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/ship-cluster-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
 
-.PHONY: types
-types:
-	yarn gql-gen --template graphql-codegen-typescript-template --schema http://localhost:8065/graphql --out ./src/generated/types.d.ts
-
 .PHONY: build-staffold-cache
 build-skaffold-cache:
 	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .

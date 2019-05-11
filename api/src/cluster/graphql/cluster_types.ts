@@ -1,16 +1,16 @@
-const ClusterItem = `
-  type ClusterItem {
-    id: ID
-    title: String
-    slug: String
-    lastUpdated: String
-    createdOn: String
-    gitOpsRef: GitOpsRef
-    shipOpsRef: ShipOpsRef
-    watchCounts: WatchCounts
-    totalApplicationCount: Int
-    enabled: Boolean
-  }
+const Cluster = `
+type Cluster {
+  id: ID
+  title: String
+  slug: String
+  lastUpdated: String
+  createdOn: String
+  gitOpsRef: GitOpsRef
+  shipOpsRef: ShipOpsRef
+  watchCounts: WatchCounts
+  totalApplicationCount: Int
+  enabled: Boolean
+}
 `;
 
 const GitOpsRef = `
@@ -43,8 +43,8 @@ const WatchCounts = `
   }
 `
 
-export const types = [
-  ClusterItem,
+export default [
+  Cluster,
   GitOpsRef,
   GitOpsRefInput,
   ShipOpsRef,

@@ -3,12 +3,12 @@ import { addMinutes } from "date-fns";
 import * as jaeger from "jaeger-client";
 import * as randomstring from "randomstring";
 import * as pg from "pg";
-import { GithubNonceModel, ScmLeadModel } from "./models";
+import { GithubNonce, ScmLead } from "./";
 
 export class UserStoreOld {
   constructor(readonly pool: pg.Pool) {}
 
-  async trackScmLead(ctx: jaeger.SpanContext, preference: string, email: string, provider: string): Promise<ScmLeadModel> {
+  async trackScmLead(ctx: jaeger.SpanContext, preference: string, email: string, provider: string): Promise<ScmLead> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const currentTime = new Date(Date.now()).toUTCString();
     const q = `
@@ -17,7 +17,7 @@ export class UserStoreOld {
       VALUES ($1, $2, $3, $4, $5) RETURNING id
       `;
     const v = [id, preference, email, provider, currentTime];
-    const { rows }: { rows: ScmLeadModel[] } = await this.pool.query(q, v);
+    const { rows }: { rows: ScmLead[] } = await this.pool.query(q, v);
     return rows[0];
   }
 
@@ -47,21 +47,21 @@ export class UserStoreOld {
 export class GithubNonceStore {
   constructor(private readonly pool: pg.Pool) {}
 
-  async createNonce(): Promise<GithubNonceModel> {
+  async createNonce(): Promise<GithubNonce> {
     const state = randomstring.generate({ capitalization: "lowercase" });
 
     const currentTime = new Date(Date.now()).toUTCString();
 
     const q = "INSERT INTO github_nonce (nonce, expire_at) VALUES ($1, $2) RETURNING nonce";
     const v = [state, addMinutes(currentTime, 10)];
-    const { rows }: { rows: GithubNonceModel[] } = await this.pool.query(q, v);
+    const { rows }: { rows: GithubNonce[] } = await this.pool.query(q, v);
     return rows[0];
   }
 
-  async getNonce(nonce: string): Promise<GithubNonceModel> {
+  async getNonce(nonce: string): Promise<GithubNonce> {
     const q = `SELECT * FROM github_nonce WHERE nonce = $1`;
     const v = [nonce];
-    const { rows }: { rows: GithubNonceModel[] } = await this.pool.query(q, v);
+    const { rows }: { rows: GithubNonce[] } = await this.pool.query(q, v);
     return rows[0];
   }
 

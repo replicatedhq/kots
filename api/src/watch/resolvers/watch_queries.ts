@@ -121,7 +121,7 @@ export function toSchemaWatch(watch: WatchItem, root: any, ctx: Context, stores:
 
   return {
     ...schemaWatch,
-    cluster: async () => await stores.clusterStore.getForWatch(null, watch.id!),
+    cluster: async () => await stores.clusterStore.getForWatch(watch.id!),
     contributors: async () => WatchQueries(stores).watchContributors(root, { id: watch.id! }, ctx),
     notifications: async () => NotificationQueries(stores).listNotifications(root, { watchId: watch.id! }, ctx),
     features: async () => watchFeatures(watch.id!, stores),

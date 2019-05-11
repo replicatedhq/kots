@@ -10,7 +10,7 @@ const WatchItem = `
     contributors: [ContributorItem]
     notifications: [Notification]
     features: [Feature]
-    cluster: ClusterItem
+    cluster: Cluster
     watches: [WatchItem]
     currentVersion: VersionItem
     pendingVersions: [VersionItem]

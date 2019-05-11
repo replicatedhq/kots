@@ -7,9 +7,9 @@ type Mutation {
   refreshGithubTokenMetadata: String
   logout: String
 
-  createShipOpsCluster(title: String!): ClusterItem
-  createGitOpsCluster(title: String!, installationId: Int, gitOpsRef: GitOpsRefInput): ClusterItem
-  updateCluster(clusterId: String!, clusterName: String!, gitOpsRef: GitOpsRefInput): ClusterItem
+  createShipOpsCluster(title: String!): Cluster
+  createGitOpsCluster(title: String!, installationId: Int, gitOpsRef: GitOpsRefInput): Cluster
+  updateCluster(clusterId: String!, clusterName: String!, gitOpsRef: GitOpsRefInput): Cluster
   deleteCluster(clusterId: String!): Boolean
 
   createWatch(stateJSON: String!, owner: String!, clusterID: String, githubPath: String): WatchItem

@@ -16,7 +16,7 @@ export const Query = `
     userFeatures: [Feature]
     orgMembers(org: String!, page: Int): [GetMembersResponseItem]
 
-    listClusters: [ClusterItem]
+    listClusters: [Cluster]
 
     listWatches: [WatchItem]
     searchWatches(watchName: String!): [WatchItem]
