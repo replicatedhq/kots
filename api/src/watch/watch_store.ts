@@ -759,11 +759,9 @@ export class WatchStore {
     `;
     const v = [id];
 
-    console.log(`THIS IS THE ID ${id}`);
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-
+    const result = await this.pool.query(q, v);
     const contributors: ContributorItem[] = [];
-    for (const row of rows) {
+    for (const row of result.rows) {
       const result = this.mapContributor(row);
       contributors.push(result);
     }
