@@ -59,6 +59,8 @@ test:
 	cd ../migrations/fixtures && make build run
 	docker build -t replicated/ship-cluster-fixtures:local -f ../migrations/fixtures/deploy/Dockerfile ../migrations/fixtures
 	docker run --rm -d --name ship-cluster-fixtures -p 15432:5432 replicated/ship-cluster-fixtures:local
+	mkdir -p pacts/
+	cp ../web/pacts/ship-cluster-ui-ship-cluster-api.json ./pacts/
 	yarn run test:local
 	@-sleep 1
 	docker rm -f ship-cluster-fixtures

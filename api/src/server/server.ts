@@ -29,6 +29,7 @@ import { ImageWatchStore } from "../imagewatch/store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/store";
+import { WatchDownload } from "../watch/download";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -83,12 +84,13 @@ export class Server extends ServerLoader {
     };
 
     const pool = await getPostgresPool();
+    const watchStore = new WatchStore(pool, params);
     const stores: Stores = {
       sessionStore: new SessionStore(pool, params),
       userStore: new UserStore(pool),
       githubNonceStore: new GithubNonceStore(pool),
       clusterStore: new ClusterStore(pool, params),
-      watchStore: new WatchStore(pool, params),
+      watchStore: watchStore,
       notificationStore: new NotificationStore(pool, params),
       updateStore: new UpdateStore(pool, params),
       unforkStore: new UnforkStore(pool, params),
@@ -96,6 +98,7 @@ export class Server extends ServerLoader {
       imageWatchStore: new ImageWatchStore(pool),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool),
+      watchDownload: new WatchDownload(watchStore)
     }
 
     this.expressApp.locals.stores = stores;

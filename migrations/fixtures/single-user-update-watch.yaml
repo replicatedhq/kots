@@ -1,10 +1,12 @@
 users:
   - id: "single-user-watch-update-account"
     created_at: "2019-04-18 12:34:56.789"
-    username: "single-user"
-    github_id: 2424
-    avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
-    email: "single-user-account@replicated.com"
+    type: "github"
+    github:
+      username: "single-user"
+      github_id: 2424
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "single-user-account@replicated.com"
     sessions:
       - single-user-account-session-1
 
@@ -15,7 +17,7 @@ watches:
         "v1": {
           "config": {},
           "releaseName": "factorio",
-          "helmValuesDefaults": "# Factorio image version\n# ref: https://quay.io/repository/games_on_k8s/factorio?tab=tags\nimage: quay.io/games_on_k8s/factorio\nimageTag: \"0.14.22\"\n\n# Configure resource requests and limits\n# ref: http://kubernetes.io/docs/user-guide/compute-resources/\nresources:\n  requests:\n    memory: 512Mi\n    cpu: 500m\n\n# Most of these map to environment variables. See docker-factorio for details:\n# https://github.com/games-on-k8s/docker-factorio/blob/master/README.md#environment-variable-reference\nfactorioServer:\n  name: Kubernetes Server\n  description: Factorio running on Kubernetes\n  port: 34197\n  # Lock this server down with a password.\n  # password: change.me\n  maxPlayers: 255\n  # Publishes this server in the server browser if true.\n  # You'll want to set Factorio.User below if true, as it becomes required.\n  isPublic: false\n  verifyIdentity: false\n  # Allows or disallows console commands. Must be one of: `true`, `false`, or `admins-only`.\n  allowCommands: admins-only\n  # Pause the server when nobody is connected?\n  noAutoPause: \"false\"\n  # You'll want to change this to NodePort if you are on AWS.\n  serviceType: LoadBalancer\n\n  autosave:\n    # Auto-save interval in minutes.\n    interval: 2\n    slots: 3\n\n  rcon:\n    enabled: false\n    port: 27015\n    # Empty value here enables an auto-generated password.\n    password: \"\"\n    serviceType: LoadBalancer\n\nfactorio:\n  # Your factorio.com User/pass is needed if factorioServer.IsPublic is true.\n  user:\n    username: your.username\n    password: your.password\n\npersistence:\n  ## factorio data Persistent Volume Storage Class\n  ## If defined, storageClassName: \u003cstorageClass\u003e\n  ## If set to \"-\", storageClassName: \"\", which disables dynamic provisioning\n  ## If undefined (the default) or set to null, no storageClassName spec is\n  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on\n  ##   GKE, AWS \u0026 OpenStack)\n  ##\n  # storageClass: \"-\"\n  savedGames:\n    # Set this to false if you don't care to persist saved games between restarts.\n    enabled: true\n    size: 1Gi\n  mods:\n    enabled: false\n    size: 128Mi\n",
+          "helmValuesDefaults": "",
           "upstream": "https://github.com/helm/charts/tree/ffb84f85a861e765caade879491a75a6dd3091a5/stable/factorio",
           "metadata": {
             "applicationType": "helm",

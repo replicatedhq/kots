@@ -27,7 +27,7 @@ export function WatchQueries(stores: Stores) {
 
       const versionItem = await stores.watchStore.getOneVersion(span.context(), args.id, args.sequence!);
       const params = await stores.watchStore.getLatestGeneratedFileS3Params(span.context(), watch!.id!, args.sequence!);
-      const download = await this.downloadService.findDeploymentFile(span.context(), params);
+      const download = await stores.watchDownload.findDeploymentFile(span.context(), params);
 
       const versionItemDetail = {
         ...versionItem,
@@ -115,7 +115,7 @@ export function WatchQueries(stores: Stores) {
   }
 }
 
-function toSchemaWatch(watch: WatchItem, root: any, ctx: Context, stores: Stores): any {
+export function toSchemaWatch(watch: WatchItem, root: any, ctx: Context, stores: Stores): any {
   const schemaWatch = {...watch};
   schemaWatch.watches = schemaWatch.watches!.map(childWatch => toSchemaWatch(childWatch!, root, ctx, stores));
 
