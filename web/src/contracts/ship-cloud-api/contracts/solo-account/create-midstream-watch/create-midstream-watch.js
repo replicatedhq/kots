@@ -6,14 +6,11 @@ import { createNewWatch } from "../../../../../mutations/WatchMutations";
 import { createMidstreamWatchInteraction } from "./interactions";
 
 chai.use(chaiAsPromised);
-const expect = chai.expect;
-
-const MOCK_SERVER_PORT = 3333;
 
 export default () => {
-  it("creates a midstream watch for solo dev", (done) => {
-    global.provider.addInteraction(createMidstreamWatchInteraction).then(() => {
-      getShipClient("solo-account-session-1").mutate({
+  it("creates a midstream watch for solo dev", async (done) => {
+    await global.provider.addInteraction(createMidstreamWatchInteraction);
+    const result = await getShipClient("solo-account-session-1").mutate({
         mutation: createNewWatch,
         variables: {
           owner: "solo-account",
@@ -42,14 +39,7 @@ export default () => {
   }
 }`
         },
-      })
-      .then(result => {
-        global.provider.verify();
-        done();
-      })
-      .catch(err => {
-        console.error(err);
-      })
     });
+    global.provider.verify().then(() => done());
   });
 }

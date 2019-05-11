@@ -8,8 +8,6 @@ import { listWatchesInteraction } from "./interactions";
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
-const MOCK_SERVER_PORT = 3333;
-
 export default () => {
   beforeEach((done) => {
     global.provider.addInteraction(listWatchesInteraction).then(() => {

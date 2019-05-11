@@ -8,28 +8,18 @@ import { createInitSession } from "../../../../../mutations/WatchMutations";
 import { createHelmInitSessionInteraction } from "./interactions";
 
 chai.use(chaiAsPromised);
-const expect = chai.expect;
-
-const MOCK_SERVER_PORT = 3333;
 
 export default () => {
-  it("creates a midstream watch for solo dev", (done) => {
-    global.provider.addInteraction(createHelmInitSessionInteraction).then(() => {
-      getShipClient("solo-account-session-1").mutate({
-        mutation: createInitSession,
-        variables: {
-          upstreamUri: "https://github.com/helm/charts/stable/grafana",
-          clusterID: null,
-          githubPath: null,
-        },
-      })
-      .then(result => {
-        global.provider.verify();
-        done();
-      })
-      .catch(err => {
-        console.error(err)
-      })
+  it("creates an init session for solo dev", async (done) => {
+    await global.provider.addInteraction(createHelmInitSessionInteraction);
+    const result = await getShipClient("solo-account-session-1").mutate({
+      mutation: createInitSession,
+      variables: {
+        upstreamUri: "https://github.com/helm/charts/stable/grafana",
+        clusterID: null,
+        githubPath: null,
+      },
     });
-  });
+    global.provider.verify().then(() => done());
+    });
 }

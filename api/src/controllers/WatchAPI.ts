@@ -23,7 +23,7 @@ export class WatchAPI {
 
     const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(span, watch.id!);
 
-    const download = await request.app.locals.stores.downloadService.findDeploymentFile(span.context(), params);
+    const download = await request.app.locals.stores.watchDownload.findDeploymentFile(span.context(), params);
 
     span.finish();
     response.status(200);

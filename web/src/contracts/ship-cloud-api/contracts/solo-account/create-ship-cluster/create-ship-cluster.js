@@ -8,31 +8,21 @@ import { listClustersAfterCreatingShipInteraction } from "../list-clusters/inter
 import { getShipClient } from "../../../utils";
 
 chai.use(chaiAsPromised);
-const expect = chai.expect;
-
-const MOCK_SERVER_PORT = 3333;
 
 export default () => {
   let createdClusterId;
 
-  it("creates a ship cluster for solo dev", (done) => {
-    global.provider.addInteraction(createShipClusterInteraction).then(() => {
-      getShipClient("solo-account-session-1").mutate({
-        mutation: createShipOpsCluster,
-        variables: {
-          title: "FooBarBaz Cluster",
-        },
-      })
-      .then(result => {
-        // expect(result.data.createShipOpsCluster).to.deep.equal({"id": "generated", "slug": "foobarbaz-cluster", "shipOpsRef": {"token": "generated"}})
-        // createdClusterId = result.data.createShipOpsCluster.id;
-        global.provider.verify();
-        done();
-      })
-      .catch(err => {
-        console.error(err);
-      })
+  it("creates a ship cluster for solo dev", async (done) => {
+    await global.provider.addInteraction(createShipClusterInteraction);
+    const result = await getShipClient("solo-account-session-1").mutate({
+      mutation: createShipOpsCluster,
+      variables: {
+        title: "FooBarBaz Cluster",
+      },
     });
+    // expect(result.data.createShipOpsCluster).to.deep.equal({"id": "generated", "slug": "foobarbaz-cluster", "shipOpsRef": {"token": "generated"}})
+    // createdClusterId = result.data.createShipOpsCluster.id;
+    global.provider.verify().then(() => done());
   });
 
   // it("lists ship clusters for solo dev after creation", (done) => {

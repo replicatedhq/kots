@@ -7,6 +7,7 @@ import { onError } from "apollo-link-error";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { withClientState } from "apollo-link-state";
 import { Utilities } from "./utilities/utilities";
+import fetch from "node-fetch";
 
 export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetcher) {
   const cache = new InMemoryCache({

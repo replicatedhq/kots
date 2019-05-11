@@ -753,12 +753,13 @@ export class WatchStore {
     const q = `
       SELECT ship_user.id as user_id, ship_user.created_at, github_user.github_id, github_user.username, github_user.avatar_url
       FROM user_watch
-            JOIN ship_user ON ship_user.id = user_watch.user_id
-            JOIN github_user ON github_user.user_id = ship_user.id
+        JOIN ship_user ON ship_user.id = user_watch.user_id
+        LEFT OUTER JOIN github_user ON github_user.user_id = ship_user.id
       WHERE watch_id = $1
     `;
     const v = [id];
 
+    console.log(`THIS IS THE ID ${id}`);
     const { rows }: { rows: any[] } = await this.pool.query(q, v);
 
     const contributors: ContributorItem[] = [];

@@ -9,7 +9,6 @@ chai.use(chaiAsPromised);
 chai.use(chaiString);
 const expect = chai.expect;
 
-
 export default () => {
   beforeEach((done) => {
     global.provider.removeInteractions().then(() => {

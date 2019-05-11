@@ -8,37 +8,26 @@ import { createGitOpsClusterInteraction } from "./interactions";
 import { listClustersAfterCreatingGitOpsInteraction } from "../list-clusters/interactions";
 
 chai.use(chaiAsPromised);
-const expect = chai.expect;
-
-const MOCK_SERVER_PORT = 3333;
 
 export default () => {
-  let createdClusterId;
 
-  it("creates a gitops cluster for solo dev", (done) => {
-    global.provider.addInteraction(createGitOpsClusterInteraction).then(() => {
-      getShipClient("solo-account-session-1").mutate({
-        mutation: createGitOpsCluster,
-        variables: {
-          title: "FooBarGit Cluster",
-          installationId: 987654,
-          gitOpsRef: {
-            owner: "me",
-            repo: "myself",
-            branch: "i",
-          },
+  it("creates a gitops cluster for solo dev", async (done) => {
+    await global.provider.addInteraction(createGitOpsClusterInteraction);
+    const result = await getShipClient("solo-account-session-1").mutate({
+      mutation: createGitOpsCluster,
+      variables: {
+        title: "FooBarGit Cluster",
+        installationId: 987654,
+        gitOpsRef: {
+          owner: "me",
+          repo: "myself",
+          branch: "i",
         },
-      })
-      .then(result => {
-        // expect(result.data.createGitOpsCluster).to.deep.equal({"id": "generated", "slug": "foobargit-cluster"})
-        // createdClusterId = result.data.createGitOpsCluster.id;
-        global.provider.verify();
-        done();
-      })
-      .catch(err => {
-        console.error(err);
-      })
+      },
     });
+    // expect(result.data.createGitOpsCluster).to.deep.equal({"id": "generated", "slug": "foobargit-cluster"})
+    // createdClusterId = result.data.createGitOpsCluster.id;
+    global.provider.verify().then(() => done());
   });
 
   // it("lists ship clusters for solo dev after creation", (done) => {

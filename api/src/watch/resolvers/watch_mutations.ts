@@ -16,8 +16,10 @@ import { logger } from "../../server/logger";
 import { Context } from "../../context";
 import { tracer } from "../../server/tracing";
 import { schema } from "../schema";
+import { Stores } from "../../schema/stores";
+import { toSchemaWatch } from "./watch_queries";
 
-export function WatchMutations(stores: any) {
+export function WatchMutations(stores: Stores) {
   return {
     async deployWatchVersion(root: any, args: DeployWatchVersionMutationArgs, context: Context): Promise<boolean> {
       const span = tracer().startSpan("mutation.deployShipOpsClusterVersion")
@@ -66,7 +68,7 @@ export function WatchMutations(stores: any) {
 
       span.finish();
 
-      return watch;
+      return toSchemaWatch(watch, root, context, stores);
     },
 
     async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: CreateWatchMutationArgs, context: Context): Promise<WatchItem> {
