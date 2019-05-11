@@ -5,10 +5,11 @@ metadata:
   labels:
     app: ship-cluster-ui
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
   - name: http
     port: 8000
     targetPort: http-pub
+    nodePort: 30000
   selector:
     app: ship-cluster-ui
