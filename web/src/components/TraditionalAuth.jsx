@@ -29,7 +29,6 @@ class TraditionalAuth extends React.Component {
         window.localStorage.setItem("token", res.data.login.token);
         this.props.history.push("/watches");
       }
-      console.log(res);
     })
     .catch((err) => {
       console.log(err);

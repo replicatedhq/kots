@@ -45,7 +45,6 @@ module.exports = {
   devServer: {
     port: 8000,
     hot: true,
-    disableHostCheck: true,
     hotOnly: true,
     historyApiFallback: {
       verbose: true
