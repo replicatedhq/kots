@@ -6,7 +6,8 @@ import Loader from "../Loader";
 import { WatchContributorCheckbox } from "./WatchContributorCheckbox";
 import { keyBy, merge, omitBy, get } from "lodash";
 import { getWatchContributors } from "../../../queries/WatchQueries";
-import { githubUser, githubUserOrgs, getOrgMembers } from "../../../queries/GitHubQueries";
+import { githubUserOrgs, getOrgMembers } from "../../../queries/GitHubQueries";
+import { userInfo } from "../../../queries/UserQueries";
 import { saveWatchContributors } from "../../../mutations/WatchMutations";
 import Select from "react-select";
 
@@ -49,7 +50,7 @@ export class WatchContributorsModal extends React.Component {
     }
     if (getGithubUserOrgs && getGithubUserOrgs !== getGithubUserOrgs.installationOrganizations) {
       if (getGithubUserOrgs.installationOrganizations) {
-        const filteredOrgs = getGithubUserOrgs.installationOrganizations.installations.filter((org) => this.props.getGithubUser.githubUser.login !== org.login)
+        const filteredOrgs = getGithubUserOrgs.installationOrganizations.installations.filter((org) => this.props.getUserInfo.userInfo.login !== org.login)
         this.setState({ orgs: filteredOrgs });
       }
     }
@@ -63,7 +64,7 @@ export class WatchContributorsModal extends React.Component {
     }
     if (getGithubUserOrgs !== lastProps.getGithubUserOrgs && getGithubUserOrgs.installationOrganizations) {
       if (getGithubUserOrgs.installationOrganizations) {
-        const filteredOrgs = getGithubUserOrgs.installationOrganizations.installations.filter((org) => this.props.getGithubUser.githubUser.login !== org.login)
+        const filteredOrgs = getGithubUserOrgs.installationOrganizations.installations.filter((org) => this.props.getUserInfo.userInfo.login !== org.login)
         this.setState({ orgs: filteredOrgs });
       }
     }
@@ -215,7 +216,7 @@ export class WatchContributorsModal extends React.Component {
       getGithubUser,
       getWatchContributorsQuery
     } = this.props;
-    const loading = getGithubUser && getGithubUser.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading
+    const loading = getGithubUser && this.props.getUserInfo.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading
     const {
       org,
       orgs,
@@ -269,7 +270,7 @@ export class WatchContributorsModal extends React.Component {
                         key={i}
                         contributors={contributors}
                         handleCheckboxChange={(field, e) => this.handleCheckboxChange(field, e)}
-                        githubLogin={getGithubUser && getGithubUser.githubUser.login.toLowerCase()}
+                        githubLogin={getGithubUser && this.props.getUserInfo.userInfo.username.toLowerCase()}
                       />
                     )}
                   </div>
@@ -312,8 +313,8 @@ export default compose(
       variables: { page: 1 },
     })
   }),
-  graphql(githubUser, {
-    name: "getGithubUser"
+  graphql(userInfo, {
+    name: "getUserInfo"
   }),
   graphql(saveWatchContributors, {
     props: ({ mutate }) => ({

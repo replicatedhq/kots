@@ -12,7 +12,7 @@ export const Query = `
     installationOrganizations(page: Int): GetInstallationsResponse
     orgRepos(org: String!, page: Int): GetForOrgResponse
     repoBranches(owner: String! repo:String! page: Int): [GetBranchesResponseItem]
-    githubUser: GithubUser
+    userInfo: UserInfo
     userFeatures: [Feature]
     orgMembers(org: String!, page: Int): [GetMembersResponseItem]
 

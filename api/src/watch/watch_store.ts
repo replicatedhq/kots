@@ -10,7 +10,6 @@ import { ReplicatedError } from "../server/errors";
 import { Params } from "../server/params";
 import * as pg from "pg";
 import { checkExists, putObject } from "../util/s3";
-import { tracer } from "../server/tracing";
 
 export interface FindWatchOpts {
   id?: string;

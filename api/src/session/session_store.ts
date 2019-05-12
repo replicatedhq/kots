@@ -1,7 +1,5 @@
 import * as GitHubApi from "@octokit/rest";
 import { addWeeks } from "date-fns";
-// @ts-ignore
-import * as jaeger from "jaeger-client";
 import * as jwt from "jsonwebtoken";
 import * as randomstring from "randomstring";
 
@@ -14,6 +12,7 @@ const invalidSession = {
   expiration: new Date(Date.now()),
   userId: "",
   sessionId: "",
+  type: "",
 };
 
 export type InstallationMap = {
@@ -32,7 +31,31 @@ export class SessionStore {
     }, {});
   }
 
-  async createGithubSession(token: string, userId: string): Promise<string> {
+  async createPasswordSession(userId: string): Promise<string> {
+    const sessionId = randomstring.generate({ capitalization: "lowercase" });
+    const currentUtcDate = new Date(Date.now()).toUTCString();
+    const expirationDate = addWeeks(currentUtcDate, 2);
+
+    const q = `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`;
+    const v = [
+      sessionId,
+      userId,
+      "{}",
+      expirationDate,
+    ];
+
+    await this.pool.query(q, v);
+
+    return jwt.sign(
+      {
+        type: "password",
+        sessionId,
+      },
+      this.params.sessionKey
+    );
+  }
+
+  async createGithubSession(userId: string, token: string): Promise<string> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
@@ -47,17 +70,22 @@ export class SessionStore {
     const installationMap = this.createInstallationMap(installations);
 
     const sessionId = randomstring.generate({ capitalization: "lowercase" });
-
-    const q = `INSERT INTO session (id, user_id, metadata, expire_at) VALUES($1, $2, $3, $4)`;
-
     const currentUtcDate = new Date(Date.now()).toUTCString();
     const expirationDate = addWeeks(currentUtcDate, 2);
-    const v = [sessionId, userId, JSON.stringify(installationMap), expirationDate];
+
+    const q = `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`;
+    const v = [
+      sessionId,
+      userId,
+      JSON.stringify(installationMap),
+      expirationDate
+    ];
 
     await this.pool.query(q, v);
 
     return jwt.sign(
       {
+        type: "github",
         token,
         sessionId,
       },
@@ -65,7 +93,7 @@ export class SessionStore {
     );
   }
 
-  async refreshGithubTokenMetadata(ctx: jaeger.SpanContext, token: string, sessionId: string): Promise<void> {
+  async refreshGithubTokenMetadata(token: string, sessionId: string): Promise<void> {
     const github = new GitHubApi();
     github.authenticate({
       type: "token",
@@ -79,7 +107,7 @@ export class SessionStore {
 
     const updatedInstallationMap = this.createInstallationMap(installations);
 
-    const q = `UPDATE session SET metadata = $1 WHERE id = $2`;
+    const q = `update session set metadata = $1 where id = $2`;
     const v = [updatedInstallationMap, sessionId];
     await this.pool.query(q, v);
   }
@@ -112,6 +140,10 @@ export class SessionStore {
       try {
         const decoded: any = jwt.verify(token, this.params.sessionKey);
 
+        if (decoded.type === "github") {
+          await this.refreshGithubTokenMetadata(decoded.token, decoded.sessionId);
+        }
+
         const session = await this.getGithubSession(decoded.sessionId);
         return {
           scmToken: decoded.token,
@@ -119,6 +151,7 @@ export class SessionStore {
           expiration: session.expiresAt,
           userId: session.userId,
           sessionId: session.id,
+          type: decoded.type,
         };
       } catch (e) {
         // Errors here negligible as they are from jwts not passing verification

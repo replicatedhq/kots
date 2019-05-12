@@ -115,17 +115,6 @@ export function GithubInstallationQueries(stores: any) {
       return repoBranches;
     },
 
-    async githubUser(root: any, args: any, context: Context): Promise<GithubUser> {
-      const github = new GitHubApi();
-      github.authenticate({
-        type: "token",
-        token: context.getGitHubToken(),
-      });
-
-      const user = await github.users.get({});
-      return user.data;
-    },
-
     async orgMembers(root: any, { org, page }: OrgMembersQueryArgs, context: Context): Promise<GetMembersResponseItem[]> {
       const github = new GitHubApi();
       github.authenticate({

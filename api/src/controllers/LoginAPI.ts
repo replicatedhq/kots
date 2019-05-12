@@ -42,6 +42,11 @@ export class LoginAPI {
       return {};
     }
 
-    return {};
+    const sessionToken = await request.app.locals.stores.sessionStore.createPasswordSession(user.id);
+
+    response.status(200);
+    return {
+      token: sessionToken,
+    };
   }
 }

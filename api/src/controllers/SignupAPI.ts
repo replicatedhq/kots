@@ -33,9 +33,12 @@ export class SignupAPI {
     }
 
     const user = await request.app.locals.stores.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
-    console.log(user);
+
+    const sessionToken = await request.app.locals.stores.sessionStore.createPasswordSession(user.id);
 
     response.status(201);
-    return {};
+    return {
+      token: sessionToken,
+    };
   }
 }

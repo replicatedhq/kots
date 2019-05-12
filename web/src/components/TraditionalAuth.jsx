@@ -4,6 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { shipAuthSignup, shipAuthLogin } from "../mutations/AuthMutations";
 
 import "../scss/components/Login.scss";
+import { Utilities } from "../utilities/utilities";
 
 class TraditionalAuth extends React.Component {
   state = {
@@ -18,12 +19,16 @@ class TraditionalAuth extends React.Component {
       mutation: shipAuthLogin,
       variables: {
         input: {
-          email: "asdasd",
-          password: "asdasd",
+          email: this.state.email,
+          password: this.state.password,
         },
       },
     })
     .then((res) => {
+      if (Utilities.localStorageEnabled()) {
+        window.localStorage.setItem("token", res.data.login.token);
+        this.props.history.push("/watches");
+      }
       console.log(res);
     })
     .catch((err) => {
@@ -36,15 +41,18 @@ class TraditionalAuth extends React.Component {
       mutation: shipAuthSignup,
       variables: {
         input: {
-          email: "asdasd",
-          password: "asasd",
-          firstName: "asdasd",
-          lastName: "Asdasd",
+          email: this.state.email,
+          password: this.state.password,
+          firstName: this.state.firstName,
+          lastName: this.state.lastName,
         },
       },
     })
     .then((res) => {
-      console.log(res);
+      if (Utilities.localStorageEnabled()) {
+        window.localStorage.setItem("token", res.data.login.token);
+        this.props.history.push("/watches");
+      }
     })
     .catch((err) => {
       console.log(err);

@@ -54,14 +54,14 @@ export class ImageWatchStore {
     return this.mapImageWatch(rows[0]);
   }
 
-  async listImageWatchItemsInBatch(ctx: jaeger.SpanContext, batchId: string): Promise<ImageWatchItem[]> {
+  async listImageWatchItemsInBatch(batchId: string): Promise<ImageWatchItem[]> {
     const q = `select id, image_name, checked_at, is_private, versions_behind,
               detected_version, latest_version, compatible_version, path from image_watch where batch_id = $1`;
     const v = [batchId];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
+    const result = await this.pool.query(q, v);
     const imageWatchItems: ImageWatchItem[] = [];
-    for (const row of rows) {
+    for (const row of result.rows) {
       const result = this.mapImageWatch(row);
       imageWatchItems.push(result);
     }

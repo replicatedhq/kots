@@ -14,7 +14,7 @@ import { GithubInstallationQueries, GithubInstallationMutations } from "../githu
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
-    ...UserQueries,
+    ...UserQueries(stores),
     ...ClusterQueries(stores),
     ...WatchQueries(stores),
     ...UpdateQueries(stores),

@@ -4,7 +4,7 @@ import { compose, withApollo, graphql } from "react-apollo";
 import { Utilities } from "../../utilities/utilities";
 import { userFeatures } from "../../queries/WatchQueries";
 import { listWatches } from "../../queries/WatchQueries";
-import { githubUser } from "../../queries/GitHubQueries";
+import { userInfo } from "../../queries/UserQueries";
 import { logout } from "../../mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
 
@@ -27,18 +27,18 @@ export class NavBar extends React.Component {
 
   componentDidUpdate() {
     if (Utilities.isLoggedIn() && !this.state.user) {
-      this.props.client.query({ query: githubUser })
+      this.props.client.query({ query: userInfo })
         .then((res) => {
-          this.setState({ user: res.data.githubUser });
+          this.setState({ user: res.data.userInfo });
         }).catch();
     }
   }
 
   componentDidMount() {
     if (Utilities.isLoggedIn()) {
-      this.props.client.query({ query: githubUser })
+      this.props.client.query({ query: userInfo })
         .then((res) => {
-          this.setState({ user: res.data.githubUser });
+          this.setState({ user: res.data.userInfo });
         }).catch();
     }
   }
@@ -122,7 +122,7 @@ export class NavBar extends React.Component {
                     <p data-qa="Navbar--logOutButton" className="NavItem" onClick={this.handleLogOut}>Log out</p>
                   </div>
                   <div className="flex-column flex-auto justifyContent--center u-marginLeft--10">
-                    <Avatar imageUrl={this.state.user && this.state.user.avatar_url} />
+                    <Avatar imageUrl={this.state.user && this.state.user.avatarUrl} />
                   </div>
                 </div>
                 : null}

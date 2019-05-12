@@ -8,19 +8,6 @@ import { GithubNonce, ScmLead } from "./";
 export class UserStoreOld {
   constructor(readonly pool: pg.Pool) {}
 
-  async trackScmLead(ctx: jaeger.SpanContext, preference: string, email: string, provider: string): Promise<ScmLead> {
-    const id = randomstring.generate({ capitalization: "lowercase" });
-    const currentTime = new Date(Date.now()).toUTCString();
-    const q = `
-      INSERT INTO
-        track_scm_leads (id, deployment_type, email_address, scm_provider, created_at)
-      VALUES ($1, $2, $3, $4, $5) RETURNING id
-      `;
-    const v = [id, preference, email, provider, currentTime];
-    const { rows }: { rows: ScmLead[] } = await this.pool.query(q, v);
-    return rows[0];
-  }
-
   async saveWatchContributor(ctx: jaeger.SpanContext, userId: String, id: String) {
     const q = "INSERT INTO user_watch (user_id, watch_id) VALUES ($1, $2)";
 

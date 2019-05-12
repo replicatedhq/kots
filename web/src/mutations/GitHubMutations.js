@@ -28,12 +28,6 @@ export const setUpWatchPullRequests = gql`
   }
 `;
 
-export const refreshGithubTokenMetadata = gql`
-  mutation {
-    refreshGithubTokenMetadata
-  }
-`;
-
 export const logout = gql`
   mutation {
     logout

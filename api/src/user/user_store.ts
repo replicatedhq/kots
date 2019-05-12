@@ -1,7 +1,7 @@
 import * as pg from "pg";
 import * as bcrypt from "bcrypt";
 import * as randomstring from "randomstring";
-import { User } from "./user";
+import { User } from "./";
 
 export class UserStore {
   constructor(
@@ -160,5 +160,24 @@ export class UserStore {
     } finally {
       pg.release();
     }
+  }
+
+  async trackScmLead(preference: string, email: string, provider: string): Promise<string> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const currentTime = new Date(Date.now()).toUTCString();
+
+    const q = `insert into track_scm_leads (id, deployment_type, email_address, scm_provider, created_at)
+      values ($1, $2, $3, $4, $5)`;
+    const v = [
+      id,
+      preference,
+      email,
+      provider,
+      currentTime
+    ];
+
+    await this.pool.query(q, v);
+
+    return id;
   }
 }

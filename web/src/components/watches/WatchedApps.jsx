@@ -6,7 +6,6 @@ import ContentHeader from "../shared/ContentHeader";
 import WatchCard from "./WatchCard/";
 import Loader from "../shared/Loader";
 import { listWatches, userFeatures } from "../../queries/WatchQueries";
-import { refreshGithubTokenMetadata } from "../../mutations/GitHubMutations";
 import { createUpdateSession, deleteWatch, deployWatchVersion } from "../../mutations/WatchMutations";
 import ShipLoading from "../ShipLoading";
 import Modal from "react-modal";
@@ -132,7 +131,6 @@ export class WatchedApps extends React.Component {
     const _search = location && location.search;
     const searchParams = new URLSearchParams(_search);
     const installationId = searchParams.get("installation_id");
-    await this.props.refreshGithubTokenMetadata();
     if (installationId) {
       let appRedirect = document.cookie.match("(^|;)\\s*appRedirect\\s*=\\s*([^;]+)");
       if (appRedirect) {
@@ -272,11 +270,6 @@ export default compose(
   }),
   graphql(userFeatures, {
     name: "userFeaturesQuery"
-  }),
-  graphql(refreshGithubTokenMetadata, {
-    props: ({ mutate }) => ({
-      refreshGithubTokenMetadata: () => mutate(),
-    })
   }),
   graphql(createUpdateSession, {
     props: ({ mutate }) => ({

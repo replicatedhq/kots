@@ -18,6 +18,10 @@ export class Context {
     return context;
   }
 
+  public sessionType(): string {
+    return this.session.type;
+  }
+
   public getGitHubToken(): string {
     return this.session.scmToken;
   }
