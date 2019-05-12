@@ -32,9 +32,8 @@ export class SignupAPI {
       };
     }
 
-    // const user = await this.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
-    // console.log(user);
-
+    const user = await request.app.locals.stores.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
+    console.log(user);
 
     return {};
   }

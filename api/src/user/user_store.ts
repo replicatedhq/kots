@@ -1,4 +1,5 @@
 import * as pg from "pg";
+import * as bcrypt from "bcrypt";
 import * as randomstring from "randomstring";
 import { User } from "./user";
 
@@ -95,6 +96,15 @@ export class UserStore {
       let v = [
           id,
           new Date(),
+      ];
+      await pg.query(q, v);
+
+      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name) values ($1, $2, $3, $4)`;
+      v = [
+        id,
+        await bcrypt.hash(password, 10),
+        firstName,
+        lastName,
       ];
       await pg.query(q, v);
 

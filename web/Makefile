@@ -12,7 +12,7 @@ endif
 
 .PHONY: deps
 deps:
-	yarn --silent
+	yarn --silent --frozen-lockfile
 
 .PHONY: clean
 clean:

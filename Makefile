@@ -1,4 +1,10 @@
 
+.PHONY: cache
+cache:
+	cd api && make build-cache
+	cd worker && make build-cache
+	cd ship-operator && make build-cache
+
 .PHONY: test
 test:
 	cd web && make test

@@ -4,4 +4,8 @@ ADD ./package.json /src/package.json
 ADD ./yarn.lock /src/yarn.lock
 WORKDIR /src
 ADD . /src
-CMD ["make", "build", "run"]
+
+RUN make build
+
+ENTRYPOINT ["node", "--no-deprecation", "/src/build/server/index.js"]
+

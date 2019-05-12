@@ -3,7 +3,7 @@ PROJECT_NAME ?= ship-cluster-api
 
 .PHONY: deps
 deps:
-	yarn --silent
+	yarn --silent --frozen-lockfile
 
 .PHONY: prebuild
 prebuild:
@@ -71,9 +71,12 @@ pkg:
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/ship-cluster-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
 
-.PHONY: build-staffold-cache
-build-skaffold-cache:
+.PHONY: build-cache
+build-cache:
 	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+
+.PHONY: publish-cache
+publish-cache:
 	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging
