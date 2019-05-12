@@ -6,11 +6,10 @@ import {
   Req,
   Res,
 } from "ts-express-decorators";
+import { ReplicatedError } from "../server/errors";
 
-interface SignupRequest {
+interface LoginRequest {
   email: string;
-  firstName: string;
-  lastName: string;
   password: string;
 }
 
@@ -18,10 +17,10 @@ interface ErrorResponse {
   message: string;
 }
 
-@Controller("/api/v1/signup")
-export class SignupAPI {
+@Controller("/api/v1/login")
+export class LoginAPI {
   @Post("")
-  public async signup(
+  public async login(
     @Res() response: Express.Response,
     @Req() request: Express.Request,
     @BodyParams("") body: any,
@@ -32,10 +31,17 @@ export class SignupAPI {
       };
     }
 
-    const user = await request.app.locals.stores.userStore.createPasswordUser(body.email, body.password, body.firstName, body.lastName);
-    console.log(user);
+    const user = await request.app.locals.stores.userStore.tryGetPasswordUser(body.email);
+    if (!user) {
+      response.status(401);
+      return {};
+    }
 
-    response.status(201);
+    if (!await user.validatePassword(body.password)) {
+      response.status(401);
+      return {};
+    }
+
     return {};
   }
 }

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
-import { shipAuthSignup } from "../mutations/AuthMutations";
+import { shipAuthSignup, shipAuthLogin } from "../mutations/AuthMutations";
 
 import "../scss/components/Login.scss";
 
@@ -14,7 +14,21 @@ class TraditionalAuth extends React.Component {
   }
 
   handleLogin = () => {
-    console.log("handle login");
+    this.props.client.mutate({
+      mutation: shipAuthLogin,
+      variables: {
+        input: {
+          email: "asdasd",
+          password: "asdasd",
+        },
+      },
+    })
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
   }
 
   handleSignup = () => {
@@ -55,7 +69,7 @@ class TraditionalAuth extends React.Component {
             <p className="u-lineHeight--normal u-fontSize--large u-color--doveGray u-fontWeight--medium u-marginBottom--5">Login with your email and password.</p>
           }
           <form>
-            {context === "signup" && 
+            {context === "signup" &&
               <div className="u-flexTabletReflow">
                 <div className="component-wrapper flex1 u-paddingRight--10">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">First name</p>
