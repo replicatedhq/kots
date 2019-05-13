@@ -48,7 +48,7 @@ export class SessionStore {
 
     return jwt.sign(
       {
-        type: "password",
+        type: "ship",
         sessionId,
       },
       this.params.sessionKey
