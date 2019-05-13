@@ -1,17 +1,21 @@
-import * as jaeger from "jaeger-client";
 import * as _ from "lodash";
 import * as randomstring from "randomstring";
-import { ImageWatchItem } from "../generated/types";
 import * as pg from "pg";
+import { ImageWatch } from "./";
 
 export class ImageWatchStore {
   constructor(private readonly pool: pg.Pool) {}
 
-  async createBatch(ctx: jaeger.SpanContext, userId: string, unparsedInput: string): Promise<string> {
+  async createBatch(userId: string, unparsedInput: string): Promise<string> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
     const q = "insert into image_watch_batch (id, user_id, images_input, created_at) values ($1, $2, $3, $4)";
-    const v = [id, userId, unparsedInput, new Date()];
+    const v = [
+      id,
+      userId,
+      unparsedInput,
+      new Date(),
+    ];
 
     await this.pool.query(q, v);
 
@@ -19,56 +23,62 @@ export class ImageWatchStore {
       _.split(unparsedInput, "\n").map(async (line: string) => {
         const imagesAndPullable = line.split(",");
         if (imagesAndPullable.length === 1) {
-          await this.createImageWatch(null, id, imagesAndPullable[0]);
+          await this.createImageWatch(id, imagesAndPullable[0]);
           return;
         }
 
         const images = imagesAndPullable[0].split(" ");
         const pullables = imagesAndPullable[1].split(" ");
         for (const i of Object.keys(images)) {
-          await this.createImageWatch(null, id, images[i], pullables[i]);
+          await this.createImageWatch(id, images[i], pullables[i]);
         }
       }),
     );
+
     return id;
   }
 
-  async createImageWatch(ctx: jaeger.SpanContext, batchId: string, imageName: string, dockerPullable?: string): Promise<ImageWatchItem> {
+  async createImageWatch(batchId: string, imageName: string, dockerPullable?: string): Promise<ImageWatch> {
   const id = randomstring.generate({ capitalization: "lowercase" });
 
     const q = "insert into image_watch (id, batch_id, image_name, docker_pullable) values ($1, $2, $3, $4)";
-    const v = [id, batchId, imageName, dockerPullable];
+    const v = [
+      id,
+      batchId,
+      imageName,
+      dockerPullable,
+    ];
 
     await this.pool.query(q, v);
 
-    return this.getImageWatchItem(null, id);
+    return this.getImageWatch(id);
   }
 
-  async getImageWatchItem(ctx: jaeger.SpanContext, id: string): Promise<ImageWatchItem> {
+  async getImageWatch(id: string): Promise<ImageWatch> {
     const q = `select id, image_name, checked_at, is_private, versions_behind,
               detected_version, latest_version, compatible_version, path from image_watch where id = $1`;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
+    const result = await this.pool.query(q, v);
 
-    return this.mapImageWatch(rows[0]);
+    return this.mapImageWatch(result.rows[0]);
   }
 
-  async listImageWatchItemsInBatch(batchId: string): Promise<ImageWatchItem[]> {
+  async listImageWatchesInBatch(batchId: string): Promise<ImageWatch[]> {
     const q = `select id, image_name, checked_at, is_private, versions_behind,
               detected_version, latest_version, compatible_version, path from image_watch where batch_id = $1`;
     const v = [batchId];
 
     const result = await this.pool.query(q, v);
-    const imageWatchItems: ImageWatchItem[] = [];
+    const imageWatches: ImageWatch[] = [];
     for (const row of result.rows) {
       const result = this.mapImageWatch(row);
-      imageWatchItems.push(result);
+      imageWatches.push(result);
     }
-    return imageWatchItems;
+    return imageWatches;
   }
 
-  private mapImageWatch(row: any): ImageWatchItem {
+  private mapImageWatch(row: any): ImageWatch {
     return {
       id: row.id,
       name: row.image_name,

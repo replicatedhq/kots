@@ -1,4 +1,4 @@
-const ShipNotification = `
+const Notification = `
 type Notification {
   id: ID
   webhook: WebhookNotification
@@ -56,8 +56,8 @@ input PullRequestNotificationInput {
 }
 `;
 
-const PullRequestHistoryItem = `
-type PullRequestHistoryItem {
+const PullRequestHistory = `
+type PullRequestHistory {
   title: String!
   status: String!
   createdOn: String!
@@ -83,14 +83,14 @@ type PendingPR {
 }
 `;
 
-export const types = [
+export default [
   WebhookNotification,
   WebhookNotificationInput,
   EmailNotification,
   EmailNotificationInput,
   PullRequestNotification,
   PullRequestNotificationInput,
-  PullRequestHistoryItem,
-  ShipNotification,
+  PullRequestHistory,
+  Notification,
   PendingPR,
 ];

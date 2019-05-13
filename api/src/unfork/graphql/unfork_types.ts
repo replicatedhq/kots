@@ -8,4 +8,6 @@ type UnforkSession {
   result: String
 }`;
 
-export const types = [UnforkSession];
+export default [
+  UnforkSession,
+];

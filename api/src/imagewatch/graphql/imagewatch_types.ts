@@ -1,5 +1,5 @@
-const ImageWatchItem = `
-type ImageWatchItem {
+const ImageWatch = `
+type ImageWatch {
   id: ID
   name: String
   lastCheckedOn: String
@@ -12,4 +12,6 @@ type ImageWatchItem {
 }
 `;
 
-export const types = [ImageWatchItem];
+export default [
+  ImageWatch
+];

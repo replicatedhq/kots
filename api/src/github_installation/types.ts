@@ -1,11 +1,11 @@
-const GQLGetInstallationsResponse = `
+const GetInstallationsResponse = `
 type GetInstallationsResponse {
   totalCount: Int
-  installations: [GetInstallationsResponseItem]
+  installations: [GetInstallationsResponse]
 }
 `;
 
-const GQLGetInstallationsResponseItem = `
+const GetInstallationsResponseItem = `
 type GetInstallationsResponseItem {
   login: String
   id: Int
@@ -14,14 +14,14 @@ type GetInstallationsResponseItem {
 }
 `;
 
-const GQLGetForOrgResponse = `
+const GetForOrgResponse = `
 type GetForOrgResponse {
   totalCount: Int
-  repos: [GetForOrgResponseItem]
+  repos: [GetForOrgResponse]
 }
 `;
 
-const GQLGetForOrgResponseItem = `
+const GetForOrgResponseItem = `
 type GetForOrgResponseItem {
   id: Int
   node_id: String
@@ -38,13 +38,13 @@ type GetForOrgResponseItem {
 }
 `;
 
-const GQLGetBranchesResponseItem = `
-type GetBranchesResponseItem {
+const GetBranchesResponse = `
+type GetBranchesResponse {
   name: String
 }
 `;
 
-const GQLGithubUser = `
+const GithubUser = `
 type GithubUser {
   login: String
   avatar_url: String
@@ -53,8 +53,8 @@ type GithubUser {
 }
 `;
 
-const GQLGetMembersResponseItem = `
-type GetMembersResponseItem {
+const GetMembersResponse = `
+type GetMembersResponse {
   id: Int
   login: String
   avatar_url: String
@@ -110,6 +110,18 @@ input GitHubRefInput {
 }
 `;
 
-export const types = [GitHubIntegration, GitHubInstallation, GitHubRepo, GitHubRef, GitHubRefInput, GitHubFile];
-
-export const vendor = [GQLGetInstallationsResponse, GQLGetInstallationsResponseItem, GQLGetForOrgResponse, GQLGetForOrgResponseItem, GQLGetBranchesResponseItem, GQLGithubUser, GQLGetMembersResponseItem];
+export default [
+  GitHubIntegration,
+  GitHubInstallation,
+  GitHubRepo,
+  GitHubRef,
+  GitHubRefInput,
+  GitHubFile,
+  GetInstallationsResponse,
+  GetInstallationsResponseItem,
+  GetForOrgResponse,
+  GetForOrgResponseItem,
+  GetBranchesResponse,
+  GithubUser,
+  GetMembersResponse,
+];

@@ -1,5 +1,5 @@
-const WatchItem = `
-  type WatchItem {
+const Watch = `
+  type Watch {
     id: ID
     stateJSON: String
     watchName: String
@@ -7,21 +7,21 @@ const WatchItem = `
     watchIcon: String
     lastUpdated: String
     createdOn: String
-    contributors: [ContributorItem]
+    contributors: [Contributor]
     notifications: [Notification]
     features: [Feature]
     cluster: Cluster
-    watches: [WatchItem]
-    currentVersion: VersionItem
-    pendingVersions: [VersionItem]
-    pastVersions: [VersionItem]
-    currentVersion: VersionItem
-    parentWatch: WatchItem
+    watches: [Watch]
+    currentVersion: Version
+    pendingVersions: [Version]
+    pastVersions: [Version]
+    currentVersion: Version
+    parentWatch: Watch
   }
 `;
 
-const VersionItem = `
-  type VersionItem {
+const Version = `
+  type Version {
     title: String!
     status: String!
     createdOn: String!
@@ -30,8 +30,8 @@ const VersionItem = `
   }
 `
 
-const VersionItemDetail = `
-  type VersionItemDetail {
+const VersionDetail = `
+  type VersionDetail {
     title: String
     status: String
     createdOn: String
@@ -48,8 +48,8 @@ const StateMetadata = `
   }
 `;
 
-const ContributorItem = `
-  type ContributorItem {
+const Contributor = `
+  type Contributor {
     id: ID
     createdAt: String
     githubId: Int
@@ -58,19 +58,19 @@ const ContributorItem = `
   }
 `;
 
-const ContributorItemInput = `
-  input ContributorItemInput {
+const ContributorInput = `
+  input ContributorInput {
     githubId: Int
     login: String
     avatar_url: String
   }
 `;
 
-export const types = [
-  WatchItem,
+export default [
+  Watch,
   StateMetadata,
-  ContributorItem,
-  ContributorItemInput,
-  VersionItem,
-  VersionItemDetail,
+  Contributor,
+  ContributorInput,
+  Version,
+  VersionDetail,
 ];

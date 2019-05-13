@@ -9,19 +9,17 @@ import { WatchStore } from "../../watch/watch_store";
 export function InitMutations(stores: any) {
   return {
     async createInitSession(root: any, { upstreamUri, clusterID, githubPath }: CreateInitSessionMutationArgs, context: Context): Promise<InitSession> {
-      const span = tracer().startSpan("mutation.createInitSession");
-
       const uri = await maybeRewriteUpstreamUri(stores.watchStore, context.session.userId, upstreamUri);
 
-      const initSession = await stores.initStore.createInitSession(span.context(), context.session.userId, uri, clusterID, githubPath, upstreamUri);
-      const deployedInitSession = await stores.initStore.deployInitSession(span.context(), initSession.id!);
+      const initSession = await stores.initStore.createInitSession(context.session.userId, uri, clusterID, githubPath, upstreamUri);
+      const deployedInitSession = await stores.initStore.deployInitSession(initSession.id);
 
-      span.finish();
-
-      return deployedInitSession;
+      return {
+        id: deployedInitSession.id,
+        upstreamUri: deployedInitSession.upstreamURI,
+        createdOn: deployedInitSession.createdOn.toISOString(),
+      }
     },
-
-
   }
 }
 

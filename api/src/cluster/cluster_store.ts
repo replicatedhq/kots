@@ -1,7 +1,6 @@
 import { Params } from "../server/params";
 import * as pg from "pg";
 import { Cluster } from "./";
-import { GitOpsRefInput } from "../generated/types";
 import { ReplicatedError } from "../server/errors";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
@@ -496,7 +495,7 @@ items:
     return manifests;
   }
 
-  async updateCluster(userId: string, clusterId: string, clusterName: string, gitOpsRef: GitOpsRefInput | null): Promise<boolean> {
+  async updateCluster(userId: string, clusterId: string, clusterName: string, gitOpsRef: any): Promise<boolean> {
     const slugProposal = `${slugify(clusterName, { lower: true })}`;
     const clusters = await this.listClusters(userId);
     const existingSlugs = clusters.map(cluster => cluster.slug);

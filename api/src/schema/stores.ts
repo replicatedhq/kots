@@ -6,7 +6,7 @@ import { NotificationStore } from "../notification/store";
 import { UpdateStore } from "../update/store";
 import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
-import { ImageWatchStore } from "../imagewatch/store";
+import { ImageWatchStore } from "../imagewatch/imagewatch_store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/store";

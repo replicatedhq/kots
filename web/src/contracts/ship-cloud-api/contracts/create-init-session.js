@@ -51,8 +51,6 @@ const createHelmInitSessionInteraction = new Pact.GraphQLInteraction()
           id: Matchers.like("generated"),
           upstreamUri: "https://github.com/helm/charts/stable/grafana",
           createdOn: Matchers.like("generated"),
-          finishedOn: null,
-          result: null,
         },
       },
     },

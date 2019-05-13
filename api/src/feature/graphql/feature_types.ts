@@ -4,6 +4,6 @@ const Feature = `
   }
 `;
 
-export const types = [
-  Feature
+export default [
+  Feature,
 ];

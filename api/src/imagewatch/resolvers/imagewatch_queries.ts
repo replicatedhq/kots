@@ -1,15 +1,12 @@
-import { ImageWatchItem, ImageWatchItemsQueryArgs } from "../../generated/types";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 
 export function ImageWatchQueries(stores: Stores) {
   return {
-    async imageWatchItems(root: any, args: ImageWatchItemsQueryArgs, context: Context): Promise<ImageWatchItem[]> {
+    async imageWatches(root: any, args: any, context: Context) {
       // TODO ownership
 
-      const { batchId } = args;
-
-      const items = await stores.imageWatchStore.listImageWatchItemsInBatch(batchId);
+      const items = await stores.imageWatchStore.listImageWatchesInBatch(args.batchId);
 
       return items;
     }

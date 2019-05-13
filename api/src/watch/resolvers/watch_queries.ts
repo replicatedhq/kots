@@ -132,7 +132,7 @@ export function toSchemaWatch(watch: WatchItem, root: any, ctx: Context, stores:
 }
 
 async function watchFeatures(watchId: string, stores: Stores): Promise<any[]> {
-  const features = await stores.featureStore.listWatchFeatures(null, watchId);
+  const features = await stores.featureStore.listWatchFeatures(watchId);
   const result = _.map(features, (feature) => {
     return {
       ...feature,

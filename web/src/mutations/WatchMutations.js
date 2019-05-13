@@ -64,8 +64,6 @@ export const createInitSessionRaw = `
       id
       upstreamUri
       createdOn
-      finishedOn
-      result
     }
   }
 `
@@ -78,8 +76,6 @@ export const createUnforkSession = gql`
       upstreamUri
       forkUri
       createdOn
-      finishedOn
-      result
     }
   }
 `
@@ -90,8 +86,6 @@ export const createUpdateSession = gql`
       id
       watchId
       createdOn
-      finishedOn
-      result
     }
   }
 `
