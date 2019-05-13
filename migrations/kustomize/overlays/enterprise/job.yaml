@@ -5,11 +5,11 @@ metadata:
 spec:
   template:
     spec:
-      imagePullSecrets:
-        - name: replicatedregistrykey
+      restartPolicy: OnFailure
       containers:
         - name: migrations
           image: registry.replicated.com/ship-enterprise/ship-cluster-migrations
+          imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_URI
               valueFrom:

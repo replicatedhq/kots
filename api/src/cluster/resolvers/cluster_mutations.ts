@@ -1,7 +1,7 @@
-import { tracer } from "../../server/tracing";
 import { Context } from "../../context";
+import { Stores } from "../../schema/stores";
 
-export function ClusterMutations(stores: any) {
+export function ClusterMutations(stores: Stores) {
   return {
     async createGitOpsCluster(root: any, { title, installationId, gitOpsRef }: any, context: Context) {
       const result = await stores.clusterStore.createNewCluster(context.session.userId, false, title, "gitops", gitOpsRef.owner, gitOpsRef.repo, gitOpsRef.branch, installationId)

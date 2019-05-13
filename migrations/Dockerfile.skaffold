@@ -1,8 +1,11 @@
-FROM migrate/migrate
-ADD /migrations /migrations
-ENTRYPOINT []
-CMD [ \
-  "/bin/sh", \
-  "-c", \
-  "/migrate -path=/migrations/ -database=${POSTGRES_URI} up" \
-]
+FROM node:10
+ADD . /src
+WORKDIR /src/fixtures
+RUN rm -rf node_modules
+RUN make deps build run
+
+FROM postgres:10.7
+
+COPY --from=0 /src/fixtures/fixtures.sql /docker-entrypoint-initdb.d/fixtures.sql
+
+

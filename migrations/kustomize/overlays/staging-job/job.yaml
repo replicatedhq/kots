@@ -7,6 +7,14 @@ spec:
     spec:
       nodeSelector:
         replicated/node-pool: privileged
+      restartPolicy: OnFailure
       containers:
-      - name: migrations
-        image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-migrations
+        - name: migrations
+          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-migrations
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-enterprise-postgres
+                  key: uri

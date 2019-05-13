@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:10.7
+        image: ship-cluster-migrations
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA
@@ -61,7 +61,7 @@ spec:
             - /bin/sh
             - -i
             - -c
-            - pg_isready -h 127.0.0.1 -p 5432
+            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
           initialDelaySeconds: 30
           timeoutSeconds: 5
           failureThreshold: 3
@@ -71,7 +71,7 @@ spec:
             - /bin/sh
             - -i
             - -c
-            - pg_isready -h 127.0.0.1 -p 5432
+            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
           initialDelaySeconds: 5
           timeoutSeconds: 1
           periodSeconds: 10

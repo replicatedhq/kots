@@ -9,7 +9,7 @@ spec:
   ports:
   - name: http
     port: 8000
-    targetPort: http-pub
+    targetPort: http
     nodePort: 30000
   selector:
     app: ship-cluster-ui
