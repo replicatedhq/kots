@@ -35,8 +35,16 @@ serve: deps
 	node --max_old_space_size=6144 \
 		./node_modules/webpack-dev-server/bin/webpack-dev-server.js \
 		--config webpack.config.js \
-		--progress -w --debug --env skaffold --mode development --hot \
+		--progress -w --debug --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
+
+.PHONY: build-cache
+build-cache:
+	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+
+.PHONY: publish-cache
+publish-cache:
+	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging
 build-staging: SHIP_CLOUD_ENV = staging

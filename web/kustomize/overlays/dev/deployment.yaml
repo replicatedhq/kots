@@ -8,5 +8,20 @@ spec:
       containers:
         - name: ship-cluster-ui
           ports:
-            - name: http-pub
-              containerPort: 3000
+            - name: http
+              containerPort: 8000
+          env:
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: github-app
+                  key: client-id
+            - name: GITHUB_INSTALL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: github-app
+                  key: install-url
+            - name: SHIP_CLUSTER_API_SERVER
+              value: "http://localhost:30065"
+            - name: SHIP_CLUSTER_WEB_URI
+              value: "http://localhost:8000"

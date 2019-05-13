@@ -15,6 +15,16 @@ spec:
             - name: ship-cluster-ui-scripts
               mountPath: /scripts/start-ship-cluster-ui.sh
               subPath: start-ship-cluster-ui.sh
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 1
       volumes:
       - name: ship-cluster-ui-scripts
         configMap:

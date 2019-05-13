@@ -4,6 +4,7 @@ cache:
 	cd api && make build-cache
 	cd worker && make build-cache
 	cd ship-operator && make build-cache
+	cd web && make build-cache
 
 .PHONY: test
 test:
@@ -22,3 +23,4 @@ bitbucket-server:
 		-p 7999:7999 \
 		atlassian/bitbucket-server:4.12
 	@echo "A BitBucket server is starting on http://localhost:7990. You'll need to install an eval license".
+
