@@ -14,7 +14,6 @@ import {
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { tracer } from "../../server/tracing";
-import { Feature } from "aws-sdk/clients/alexaforbusiness";
 import { Stores } from "../../schema/stores";
 import { NotificationQueries } from "../../notification";
 
@@ -23,10 +22,10 @@ export function WatchQueries(stores: Stores) {
     async getWatchVersion(root: any, args: GetWatchVersionQueryArgs, context: Context): Promise<VersionItemDetail> {
       const span = tracer().startSpan("query.getWatchVersion");
 
-      const watch = await stores.watchStore.getWatch(span.context(), args.id);
+      const watch = await stores.watchStore.getWatch(args.id);
 
-      const versionItem = await stores.watchStore.getOneVersion(span.context(), args.id, args.sequence!);
-      const params = await stores.watchStore.getLatestGeneratedFileS3Params(span.context(), watch!.id!, args.sequence!);
+      const versionItem = await stores.watchStore.getOneVersion(args.id, args.sequence!);
+      const params = await stores.watchStore.getLatestGeneratedFileS3Params(watch!.id!, args.sequence!);
       const download = await stores.watchDownload.findDeploymentFile(span.context(), params);
 
       const versionItemDetail = {
@@ -40,7 +39,7 @@ export function WatchQueries(stores: Stores) {
     },
 
     async listWatches(root: any, args: any, context: Context): Promise<WatchItem[]> {
-      const watches = await stores.watchStore.listWatches(null, context.session.userId);
+      const watches = await stores.watchStore.listWatches(context.session.userId);
       const result = watches.map(watch => toSchemaWatch(watch, root, context, stores));
 
       return result;
@@ -51,7 +50,7 @@ export function WatchQueries(stores: Stores) {
 
       const { watchName } = args;
 
-      const watches = await stores.watchStore.searchWatches(span, context.session.userId, watchName);
+      const watches = await stores.watchStore.searchWatches(context.session.userId, watchName);
 
       span.finish();
 
@@ -59,38 +58,31 @@ export function WatchQueries(stores: Stores) {
     },
 
     async getWatch(root: any, args: GetWatchQueryArgs, context: Context): Promise<WatchItem> {
-      const span = tracer().startSpan("query.getWatch");
 
       const { slug, id } = args;
       if (!id && !slug) {
         throw new ReplicatedError("One of slug or id is required", "bad_request");
       }
 
-      const result = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { slug: slug!, id: id! });
-
-      span.finish();
+      const result = await stores.watchStore.findUserWatch(context.session.userId, { slug: slug!, id: id! });
 
       return toSchemaWatch(result, root, context, stores);
     },
 
     async watchContributors(root: any, args: WatchContributorsQueryArgs, context: Context): Promise<ContributorItem[]> {
-      const span = tracer().startSpan("query.watchContributors");
 
       const { id } = args;
 
-      const watch = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id });
+      const watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
 
       return stores.watchStore.listWatchContributors(watch.id!);
     },
 
     async listPendingWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
-      const span = tracer().startSpan("query.listPendingWatchVersions");
 
-      const watch: WatchItem = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
+      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
-      const pendingVersions = await stores.watchStore.listPendingVersions(span.context(), watch.id!);
-
-      span.finish();
+      const pendingVersions = await stores.watchStore.listPendingVersions(watch.id!);
 
       return pendingVersions;
     },
@@ -98,7 +90,7 @@ export function WatchQueries(stores: Stores) {
     async listPastWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
       const span = tracer().startSpan("query.listPastWatchVersions");
 
-      const watch: WatchItem = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
+      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
       const pastVersions = await stores.watchStore.listPastVersions(watch.id!)
 
@@ -108,7 +100,7 @@ export function WatchQueries(stores: Stores) {
     },
 
     async getCurrentWatchVersion(root: any, args: GetCurrentWatchVersionQueryArgs, context: Context): Promise<VersionItem|undefined> {
-      const watch: WatchItem = await stores.watchStore.findUserWatch(null, context.session.userId, { id: args.watchId });
+      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
       return stores.watchStore.getCurrentVersion(watch.id!)
     }
 

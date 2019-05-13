@@ -24,11 +24,11 @@ export function WatchMutations(stores: Stores) {
     async deployWatchVersion(root: any, args: DeployWatchVersionMutationArgs, context: Context): Promise<boolean> {
       const span = tracer().startSpan("mutation.deployShipOpsClusterVersion")
 
-      const watch = await stores.watchStore.getWatch(span.context(), args.watchId);
+      const watch = await stores.watchStore.getWatch(args.watchId);
 
       // TODO should probablly disallow this if it's a midtream or a gitops cluster?
 
-      await stores.watchStore.setCurrentVersion(span.context(), watch.id!, args.sequence!);
+      await stores.watchStore.setCurrentVersion(watch.id!, args.sequence!);
 
       span.finish();
 
@@ -40,15 +40,15 @@ export function WatchMutations(stores: Stores) {
 
       const { slug, stateJSON } = args;
 
-      let watch = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { slug: slug });
+      let watch = await stores.watchStore.findUserWatch(context.session.userId, { slug: slug });
 
       validateJson(stateJSON, schema);
 
       const metadata = JSON.parse(stateJSON).v1.metadata;
 
-      await stores.watchStore.updateStateJSON(span.context(), watch.id!, stateJSON, metadata);
+      await stores.watchStore.updateStateJSON(watch.id!, stateJSON, metadata);
 
-      watch = await stores.watchStore.getWatch(span.context(), watch.id!);
+      watch = await stores.watchStore.getWatch(watch.id!);
 
       span.finish();
 
@@ -60,11 +60,11 @@ export function WatchMutations(stores: Stores) {
 
       const { watchId, watchName, iconUri } = args;
 
-      let watch = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
+      let watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
-      await stores.watchStore.updateWatch(span.context(), watchId, watchName || undefined, iconUri || undefined);
+      await stores.watchStore.updateWatch(watchId, watchName || undefined, iconUri || undefined);
 
-      watch = await stores.watchStore.getWatch(span.context(), watchId);
+      watch = await stores.watchStore.getWatch(watchId);
 
       span.finish();
 
@@ -78,7 +78,7 @@ export function WatchMutations(stores: Stores) {
 
       const metadata = JSON.parse(stateJSON).v1.metadata;
 
-      const newWatch = await stores.watchStore.createNewWatch(span.context(), stateJSON, owner, context.session.userId, metadata);
+      const newWatch = await stores.watchStore.createNewWatch(stateJSON, owner, context.session.userId, metadata);
       span.finish();
 
       return newWatch;
@@ -87,7 +87,7 @@ export function WatchMutations(stores: Stores) {
     async deleteWatch(root: any, { watchId, childWatchIds }: DeleteWatchMutationArgs, context: Context): Promise<boolean> {
       const span = tracer().startSpan("mutation.deleteWatch");
 
-      const watch = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: watchId });
+      const watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
       const notifications = await stores.notificationStore.listNotifications(span.context(), watch.id!);
       for (const notification of notifications) {
@@ -97,11 +97,11 @@ export function WatchMutations(stores: Stores) {
       // TODO delete from s3
       // They are still listed in ship_output_files, so we can reconcile this.
 
-      await stores.watchStore.deleteWatch(span.context(), watch.id!);
+      await stores.watchStore.deleteWatch(watch.id!);
       if (childWatchIds) {
         for (const id of childWatchIds) {
           if (id) {
-            await stores.watchStore.deleteWatch(span.context(), id);
+            await stores.watchStore.deleteWatch(id);
           }
         }
       }
@@ -115,7 +115,7 @@ export function WatchMutations(stores: Stores) {
       const span = tracer().startSpan("mutation.saveWatchContributors");
 
       const { id, contributors } = args;
-      const watch: WatchItem = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id });
+      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id });
 
 
       // await storeTransaction(this.userStore, async store => {

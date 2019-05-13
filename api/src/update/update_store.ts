@@ -1,6 +1,6 @@
 import * as randomstring from "randomstring";
 import * as rp from "request-promise";
-import { UpdateSession } from "../generated/types";
+import { UpdateSession } from "./";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import * as pg from "pg";
@@ -17,13 +17,13 @@ export class UpdateStore {
 
     await this.pool.query(q, v);
 
-    const updateSession = this.getSession(id);
+    const updateSession = this.getSession(id, userId);
 
     return updateSession;
   }
 
-  async deployUpdateSession(updateSessionId: string): Promise<UpdateSession> {
-    const updateSession = await this.getSession(updateSessionId);
+  async deployUpdateSession(updateSessionId: string, userId: string): Promise<UpdateSession> {
+    const updateSession = await this.getSession(updateSessionId, userId);
 
     const options = {
       method: "POST",
@@ -44,7 +44,7 @@ export class UpdateStore {
     return updateSession;
   }
 
-  async getSession(id: string): Promise<UpdateSession> {
+  async getSession(id: string, userId: string): Promise<UpdateSession> {
     const q = `
       SELECT id, watch_id, created_at, finished_at, result
       FROM ship_update
@@ -52,19 +52,20 @@ export class UpdateStore {
     `;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    const result = this.mapRow(rows[0]);
+    const result = await this.pool.query(q, v);
+    const session = this.mapRow(result.rows[0], userId);
 
-    return result;
+    return session;
   }
 
-  private mapRow(row: any): UpdateSession {
+  private mapRow(row: any, userId: string): UpdateSession {
     return {
       id: row.id,
       watchId: row.watch_id,
       createdOn: row.created_at,
       finishedOn: row.finished_at,
       result: row.result,
+      userId
     };
   }
 }

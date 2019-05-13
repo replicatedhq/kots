@@ -19,9 +19,9 @@ export class WatchAPI {
   ): Promise<any | ErrorResponse> {
     const span: jaeger.SpanContext = tracer().startSpan("watchApi.getUpstreamWatch");
 
-    const watch = await request.app.locals.stores.watchStore.findUpstreamWatch(span.context(), token, upstreamId);
+    const watch = await request.app.locals.stores.watchStore.findUpstreamWatch(token, upstreamId);
 
-    const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(span, watch.id!);
+    const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(watch.id!);
 
     const download = await request.app.locals.stores.watchDownload.findDeploymentFile(span.context(), params);
 

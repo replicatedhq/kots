@@ -78,7 +78,7 @@ export function NotificationMutations(stores: any) {
       const span: jaeger.SpanContext = tracer().startSpan("mutation.createFirstPullReqeust");
 
       const watch: WatchItem = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: args.watchId });
-      const currentState = await stores.watchStore.getStateJSON(span.context(), watch.id!);
+      const currentState = await stores.watchStore.getStateJSON(watch.id!);
 
       let versionLabel: string = "";
       try {

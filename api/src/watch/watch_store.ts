@@ -1,6 +1,5 @@
 import { S3 } from "aws-sdk";
 import { stripIndent } from "common-tags";
-import * as jaeger from "jaeger-client";
 import * as _ from "lodash";
 import * as path from "path";
 import * as randomstring from "randomstring";
@@ -29,7 +28,7 @@ export class WatchStore {
     private readonly params: Params
   ) {}
 
-  async setCurrentVersion(ctx: jaeger.SpanContext, watchId: string, sequence: number): Promise<void> {
+  async setCurrentVersion(watchId: string, sequence: number): Promise<void> {
     const q = `update watch set current_sequence = $1 where id = $2`;
     const v = [
       sequence,
@@ -39,7 +38,7 @@ export class WatchStore {
     await this.pool.query(q, v);
   }
 
-  async updateVersionStatus(ctx: jaeger.SpanContext, watchId: string, sequence: number, status: string): Promise<void> {
+  async updateVersionStatus(watchId: string, sequence: number, status: string): Promise<void> {
     const q = `update watch_version set status = $1 where watch_id = $2 and sequence = $3`;
     const v = [
       status,
@@ -50,7 +49,7 @@ export class WatchStore {
     await this.pool.query(q, v);
   }
 
-  async getOneVersion(ctx: jaeger.SpanContext, watchId: string, sequence: number): Promise<VersionItem> {
+  async getOneVersion(watchId: string, sequence: number): Promise<VersionItem> {
     const q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence = $2`;
     const v = [
       watchId,
@@ -107,17 +106,17 @@ export class WatchStore {
       sequence,
     ];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
+    result = await this.pool.query(q, v);
     const versionItems: VersionItem[] = [];
 
-    for (const row of rows) {
+    for (const row of result.rows) {
       versionItems.push(this.mapWatchVersion(row));
     }
 
     return versionItems;
   }
 
-  async listPendingVersions(ctx: jaeger.SpanContext, watchId: string): Promise<VersionItem[]> {
+  async listPendingVersions(watchId: string): Promise<VersionItem[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -137,17 +136,17 @@ export class WatchStore {
       sequence,
     ];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
+    result = await this.pool.query(q, v);
     const versionItems: VersionItem[] = [];
 
-    for (const row of rows) {
+    for (const row of result.rows) {
       versionItems.push(this.mapWatchVersion(row));
     }
 
     return versionItems;
   }
 
-  async createWatchVersion(ctx: jaeger.SpanContext, watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<VersionItem | void> {
+  async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<VersionItem | void> {
     const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number) values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
       watchId,
@@ -162,7 +161,7 @@ export class WatchStore {
     await this.pool.query(q, v);
   }
 
-  async setParent(ctx: jaeger.SpanContext, watchId: string, parentId?: string): Promise<void> {
+  async setParent(watchId: string, parentId?: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -178,7 +177,7 @@ export class WatchStore {
     }
   }
 
-  async setCluster(ctx: jaeger.SpanContext, watchId: string, clusterId: string, githubPath?: string): Promise<void> {
+  async setCluster(watchId: string, clusterId: string, githubPath?: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -210,7 +209,7 @@ export class WatchStore {
     }
   }
 
-  async createDownstreamToken(ctx: jaeger.SpanContext, watchId: string): Promise<string> {
+  async createDownstreamToken(watchId: string): Promise<string> {
     const token = randomstring.generate({ capitalization: "lowercase" });
     const pg = await this.pool.connect();
 
@@ -229,7 +228,7 @@ export class WatchStore {
     }
   }
 
-  async listForCluster(ctx: jaeger.SpanContext, clusterId: string): Promise<WatchItem[]> {
+  async listForCluster(clusterId: string): Promise<WatchItem[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -238,15 +237,15 @@ export class WatchStore {
         clusterId,
       ];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const watchIds: string[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         watchIds.push(row.watch_id);
       }
 
       const watches: WatchItem[] = [];
       for (const watchId of watchIds) {
-        const watch = await this.getWatch(null, watchId);
+        const watch = await this.getWatch(watchId);
         watches.push(watch);
       }
 
@@ -256,24 +255,24 @@ export class WatchStore {
     }
   }
 
-  async findUpstreamWatch(ctx: jaeger.SpanContext, token: string, watchId: string): Promise<WatchItem> {
+  async findUpstreamWatch(token: string, watchId: string): Promise<WatchItem> {
     const pg = await this.pool.connect();
 
     try {
       const q = `select watch_id from watch_downstream_token where token = $1`;
       const v = [token];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-      if (rows.length === 0) {
+      const result = await pg.query(q, v);
+      if (result.rows.length === 0) {
         throw new ReplicatedError("Watch not found");
       }
 
       // This next check may not be necessary?
-      if (watchId !== rows[0].watch_id) {
+      if (watchId !== result.rows[0].watch_id) {
         throw new ReplicatedError("Watch not found");
       }
 
-      const watch = await this.getWatch(null, rows[0].watch_id);
+      const watch = await this.getWatch(result.rows[0].watch_id);
 
       return watch;
     } finally {
@@ -281,7 +280,7 @@ export class WatchStore {
     }
   }
 
-  async findUserWatch(ctx: jaeger.SpanContext, userId: string, opts: FindWatchOpts): Promise<WatchItem> {
+  async findUserWatch(userId: string, opts: FindWatchOpts): Promise<WatchItem> {
     if (!opts.id && !opts.slug) {
       throw new TypeError("one of slug or id is required");
     }
@@ -300,30 +299,30 @@ export class WatchStore {
         v = [opts.slug, userId];
       }
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-      if (rows.length === 0) {
+      const result = await pg.query(q, v);
+      if (result.rows.length === 0) {
         throw new ReplicatedError("Watch not found");
       }
 
-      const watch = await this.getWatch(null, rows[0].watch_id);
+      const watch = await this.getWatch(result.rows[0].watch_id);
       return watch;
     } finally {
       pg.release();
     }
   }
 
-  async getWatch(ctx: jaeger.SpanContext, id: string): Promise<WatchItem> {
+  async getWatch(id: string): Promise<WatchItem> {
     const pg = await this.pool.connect();
 
     try {
       const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at from watch where id = $1";
       const v = [id];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-      const watches = rows.map(row => this.mapWatch(row));
+      const result = await pg.query(q, v);
+      const watches = result.rows.map(row => this.mapWatch(row));
       const watch = watches[0];
 
-      watch.watches = await this.listWatches(null, undefined, watch.id!);
+      watch.watches = await this.listWatches(undefined, watch.id!);
 
       return watch;
     } finally {
@@ -331,7 +330,7 @@ export class WatchStore {
     }
   }
 
-  async deleteWatch(ctx: jaeger.SpanContext, watchId: string): Promise<boolean> {
+  async deleteWatch(watchId: string): Promise<boolean> {
     const pg = await this.pool.connect();
 
     try {
@@ -365,16 +364,16 @@ export class WatchStore {
     }
   }
 
-  async listAllWatchesForAllTeams(ctx: jaeger.SpanContext): Promise<WatchItem[]> {
+  async listAllWatchesForAllTeams(): Promise<WatchItem[]> {
     const pg = await this.pool.connect();
 
     try {
       const q = `select id, current_state, title, slug, icon_uri, created_at, updated_at from watch`;
       const v = [];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const watches: WatchItem[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         const result = this.mapWatch(row);
         watches.push(result);
       }
@@ -385,16 +384,16 @@ export class WatchStore {
     }
   }
 
-  async listUsersForWatch(ctx: jaeger.SpanContext, watchId: string): Promise<string[]> {
+  async listUsersForWatch(watchId: string): Promise<string[]> {
     const pg = await this.pool.connect();
 
     try {
       const q = `select user_id from user_watch where watch_id = $1`;
       const v = [watchId];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const userIds: string[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         userIds.push(row.user_id);
       }
 
@@ -404,7 +403,7 @@ export class WatchStore {
     }
   }
 
-  async listAllUserWatches(ctx: jaeger.SpanContext, userId?: string): Promise<WatchItem[]> {
+  async listAllUserWatches(userId?: string): Promise<WatchItem[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -426,12 +425,12 @@ export class WatchStore {
         userId,
       ];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const watches: WatchItem[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         const watch = this.mapWatch(row);
 
-        watch.watches = await this.listWatches(null, userId, watch.id!);
+        watch.watches = await this.listWatches(userId, watch.id!);
         watches.push(watch);
       }
 
@@ -441,7 +440,7 @@ export class WatchStore {
     }
   }
 
-  async listWatches(ctx: jaeger.SpanContext, userId?: string, parentId?: string): Promise<WatchItem[]> {
+  async listWatches(userId?: string, parentId?: string): Promise<WatchItem[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -487,12 +486,12 @@ export class WatchStore {
           ];
         }
 
-        const { rows }: { rows: any[] } = await pg.query(q, v);
+        const result = await pg.query(q, v);
         const watches: WatchItem[] = [];
-        for (const row of rows) {
+        for (const row of result.rows) {
           const watch = this.mapWatch(row);
 
-          watch.watches = await this.listWatches(null, userId, watch.id!);
+          watch.watches = await this.listWatches(userId, watch.id!);
           watches.push(watch);
         }
 
@@ -503,7 +502,7 @@ export class WatchStore {
   }
 
   // returns the list of generated files for this watch in reverse sequence order. (highest sequence number first)
-  async listGeneratedFiles(ctx: jaeger.SpanContext, watchId: string): Promise<GeneratedFile[]> {
+  async listGeneratedFiles(watchId: string): Promise<GeneratedFile[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -518,9 +517,9 @@ export class WatchStore {
         ORDER BY sequence DESC`;
 
       const v = [watchId];
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const files: GeneratedFile[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         const result = this.mapGeneratedFile(row);
         files.push(result);
       }
@@ -531,12 +530,12 @@ export class WatchStore {
     }
   }
 
-  async getLatestGeneratedFileS3Params(ctx: jaeger.SpanContext, watchId: string, sequence?: number): Promise<S3.GetObjectRequest> {
+  async getLatestGeneratedFileS3Params(watchId: string, sequence?: number): Promise<S3.GetObjectRequest> {
     let generatedFiles: GeneratedFile[];
     if (_.isUndefined(sequence)) {
-      generatedFiles = await this.listGeneratedFiles(null, watchId);
+      generatedFiles = await this.listGeneratedFiles(watchId);
     } else {
-      generatedFiles = [await this.getGeneratedFileForSequence(null, watchId, sequence)];
+      generatedFiles = [await this.getGeneratedFileForSequence(watchId, sequence)];
     }
 
     let exists = false;
@@ -589,7 +588,7 @@ export class WatchStore {
     return params;
   }
 
-  async getGeneratedFileForSequence(ctx: jaeger.SpanContext, watchId: string, sequence: number): Promise<GeneratedFile> {
+  async getGeneratedFileForSequence(watchId: string, sequence: number): Promise<GeneratedFile> {
     const pg = await this.pool.connect();
 
     try {
@@ -603,16 +602,16 @@ export class WatchStore {
         watchId,
         sequence
       ];
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-      const result = rows.map(row => this.mapGeneratedFile(row));
+      const result = await pg.query(q, v);
+      const generatedFile = result.rows.map(row => this.mapGeneratedFile(row));
 
-      return result[0];
+      return generatedFile[0];
     } finally {
       pg.release();
     }
   }
 
-  async searchWatches(ctx: jaeger.SpanContext, userId: string, watchName: string): Promise<WatchItem[]> {
+  async searchWatches(userId: string, watchName: string): Promise<WatchItem[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -635,9 +634,9 @@ export class WatchStore {
         `%${watchName}%`,
       ];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
+      const result = await pg.query(q, v);
       const watches: WatchItem[] = [];
-      for (const row of rows) {
+      for (const row of result.rows) {
         const result = this.mapWatch(row);
         watches.push(result);
       }
@@ -647,21 +646,21 @@ export class WatchStore {
     }
   }
 
-  async getStateJSON(ctx: jaeger.SpanContext, id: string): Promise<any> {
+  async getStateJSON(id: string): Promise<any> {
     const pg = await this.pool.connect();
 
     try {
       const q = "SELECT current_state FROM watch WHERE id = $1";
       const v = [id];
 
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-      return JSON.parse(rows[0].current_state);
+      const result = await pg.query(q, v);
+      return JSON.parse(result.rows[0].current_state);
     } finally {
       pg.release();
     }
   }
 
-  async updateStateJSON(ctx: jaeger.SpanContext, id: string, stateJSON: string, metadata: StateMetadata) {
+  async updateStateJSON(id: string, stateJSON: string, metadata: StateMetadata) {
     const pg = await this.pool.connect();
 
     try {
@@ -676,7 +675,7 @@ export class WatchStore {
     }
   }
 
-  async updateWatch(ctx: jaeger.SpanContext, id: string, watchName?: string, iconUri?: string) {
+  async updateWatch(id: string, watchName?: string, iconUri?: string) {
     const pg = await this.pool.connect();
 
     try {
@@ -701,14 +700,14 @@ export class WatchStore {
     }
   }
 
-  async createNewWatch(ctx: jaeger.SpanContext, stateJSON: string, owner: string, userId: string, metadata: StateMetadata): Promise<WatchItem> {
+  async createNewWatch(stateJSON: string, owner: string, userId: string, metadata: StateMetadata): Promise<WatchItem> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const title = _.get(metadata, "name", "New Application");
     const icon = _.get(metadata, "icon", "https://vignette.wikia.nocookie.net/jet/images/e/ea/Under_construction-icon.JPG/revision/latest?cb=20100622032326"); // under construction image
     const titleForSlug = title.replace(/\./g, "-");
 
     const slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
-    const watches = await this.listAllUserWatches(ctx, userId);
+    const watches = await this.listAllUserWatches(userId);
     const existingSlugs = watches.map(watch => watch.slug);
     let finalSlug = slugProposal;
 
@@ -739,7 +738,7 @@ export class WatchStore {
       await pg.query(uwq, uwv);
 
       await pg.query("commit");
-      const watch = await this.getWatch(null, id);
+      const watch = await this.getWatch(id);
 
       return watch;
     } finally {

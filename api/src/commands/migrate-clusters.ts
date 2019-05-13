@@ -36,9 +36,9 @@ async function main(argv): Promise<any> {
   const notificationStore = new NotificationStore(pool, params);
   const clusterStore = new ClusterStore(pool, params);
 
-  const allWatches = await watchStore.listAllWatchesForAllTeams(span.context());
+  const allWatches = await watchStore.listAllWatchesForAllTeams();
   for (const watch of allWatches) {
-    const userIds = await watchStore.listUsersForWatch(span.context(), watch.id!);
+    const userIds = await watchStore.listUsersForWatch(watch.id!);
     if (userIds.length === 0) {
       console.log(`no users for watch $${watch.watchName}, not migrating`);
       continue;
@@ -58,16 +58,16 @@ async function main(argv): Promise<any> {
 
     const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
     console.log(`creating new parent watch for ${watch.watchName}`);
-    const parentWatch = await watchStore.createNewWatch(span.context(), JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
+    const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
 
     // Change child upstream to be parent
     if (childState.v1) {
       childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
 
       console.log(`updating child watch state for watch ${watch.watchName}`);
-      await watchStore.updateStateJSON(span.context(), watch.id!, JSON.stringify(childState, null, 2), metadata);
+      await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
 
-      await watchStore.setParent(span.context(), watch.id!, parentWatch.id!);
+      await watchStore.setParent(watch.id!, parentWatch.id!);
     }
 
     const watchNotifications = await notificationStore.listNotifications(span.context(), watch.id!);
@@ -103,12 +103,12 @@ async function main(argv): Promise<any> {
         }
 
         const path = watchNotification.pullRequest.rootPath ? watchNotification.pullRequest.rootPath : undefined;
-        await watchStore.setCluster(span.context(), watch.id!, cluster!.id!, path);
+        await watchStore.setCluster(watch.id!, cluster!.id!, path);
 
         // migrate the history
         const pullrequestHistoryItems = await notificationStore.listPullRequestHistory(span.context(), watchNotification.id!);
         for(const item of pullrequestHistoryItems) {
-          await watchStore.createWatchVersion(span.context(), watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
+          await watchStore.createWatchVersion(watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
         }
       }
     }

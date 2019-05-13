@@ -31,12 +31,12 @@ export class DeployAPI {
       return {};
     }
 
-    const watches = await request.app.locals.stores.watchStore.listForCluster(span.context(), cluster.id!);
+    const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
 
     const desiredState: string[] = [];
 
     for (const watch of watches) {
-      const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(span, watch.id!);
+      const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(watch.id!);
 
       const download = await request.app.locals.stores.watchDownload.findDeploymentFile(span.context(), params);
       desiredState.push(download.contents.toString("base64"));
