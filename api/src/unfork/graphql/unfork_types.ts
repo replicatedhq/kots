@@ -4,8 +4,6 @@ type UnforkSession {
   upstreamUri: String
   forkUri: String
   createdOn: String
-  finishedOn: String
-  result: String
 }`;
 
 export default [

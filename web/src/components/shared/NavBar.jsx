@@ -67,6 +67,7 @@ export class NavBar extends React.Component {
 
   render() {
     const { className } = this.props;
+    const { user } = this.state;
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
 
     return (
@@ -121,9 +122,11 @@ export class NavBar extends React.Component {
                   <div className="flex-column flex-auto justifyContent--center">
                     <p data-qa="Navbar--logOutButton" className="NavItem" onClick={this.handleLogOut}>Log out</p>
                   </div>
-                  <div className="flex-column flex-auto justifyContent--center u-marginLeft--10">
-                    <Avatar imageUrl={this.state.user && this.state.user.avatarUrl} />
-                  </div>
+                  {user && user.avatarUrl !== "" ?
+                    <div className="flex-column flex-auto justifyContent--center u-marginLeft--10">
+                      <Avatar imageUrl={this.state.user && this.state.user.avatarUrl} />
+                    </div>
+                  : null}
                 </div>
                 : null}
             </div>
