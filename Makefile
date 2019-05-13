@@ -9,6 +9,12 @@ cache:
 .PHONY: test
 test:
 	cd web && make test
+
+	cd migrations/fixtures && make build run
+	cd migrations && docker build -t replicated/ship-cluster-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
+
+	mkdir -p api/pacts
+	cp web/pacts/ship-cluster-ui-ship-cluster-api.json api/pacts/
 	cd api && make test
 
 .PHONY: bitbucket-server
