@@ -338,7 +338,7 @@ export class NotificationStore {
     return emptyNotification;
   }
 
-  async deleteNotification(ctx: jaeger.SpanContext, notificationId: string): Promise<void> {
+  async deleteNotification(notificationId: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -404,7 +404,7 @@ export class NotificationStore {
     }
   }
 
-  async listNotifications(ctx: jaeger.SpanContext, watchId: string): Promise<Notification[]> {
+  async listNotifications(watchId: string): Promise<Notification[]> {
     const q = `
       SELECT n.id,
             n.watch_id,

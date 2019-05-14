@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
-import { ContributorItem, StateMetadata, WatchItem, VersionItem } from "../generated/types";
+import { Watch, Version, StateMetadata, Contributor } from "./"
 import { ReplicatedError } from "../server/errors";
 import { Params } from "../server/params";
 import * as pg from "pg";
@@ -49,7 +49,7 @@ export class WatchStore {
     await this.pool.query(q, v);
   }
 
-  async getOneVersion(watchId: string, sequence: number): Promise<VersionItem> {
+  async getOneVersion(watchId: string, sequence: number): Promise<Version> {
     const q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence = $2`;
     const v = [
       watchId,
@@ -61,7 +61,7 @@ export class WatchStore {
     return versionItem;
   }
 
-  async getCurrentVersion(watchId: string): Promise<VersionItem|undefined> {
+  async getCurrentVersion(watchId: string): Promise<Version|undefined> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -86,7 +86,7 @@ export class WatchStore {
     return versionItem;
   }
 
-  async listPastVersions(watchId: string): Promise<VersionItem[]> {
+  async listPastVersions(watchId: string): Promise<Version[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -107,7 +107,7 @@ export class WatchStore {
     ];
 
     result = await this.pool.query(q, v);
-    const versionItems: VersionItem[] = [];
+    const versionItems: Version[] = [];
 
     for (const row of result.rows) {
       versionItems.push(this.mapWatchVersion(row));
@@ -116,7 +116,7 @@ export class WatchStore {
     return versionItems;
   }
 
-  async listPendingVersions(watchId: string): Promise<VersionItem[]> {
+  async listPendingVersions(watchId: string): Promise<Version[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -137,7 +137,7 @@ export class WatchStore {
     ];
 
     result = await this.pool.query(q, v);
-    const versionItems: VersionItem[] = [];
+    const versionItems: Version[] = [];
 
     for (const row of result.rows) {
       versionItems.push(this.mapWatchVersion(row));
@@ -146,7 +146,7 @@ export class WatchStore {
     return versionItems;
   }
 
-  async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<VersionItem | void> {
+  async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<Version | void> {
     const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number) values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
       watchId,
@@ -228,7 +228,7 @@ export class WatchStore {
     }
   }
 
-  async listForCluster(clusterId: string): Promise<WatchItem[]> {
+  async listForCluster(clusterId: string): Promise<Watch[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -243,7 +243,7 @@ export class WatchStore {
         watchIds.push(row.watch_id);
       }
 
-      const watches: WatchItem[] = [];
+      const watches: Watch[] = [];
       for (const watchId of watchIds) {
         const watch = await this.getWatch(watchId);
         watches.push(watch);
@@ -255,7 +255,7 @@ export class WatchStore {
     }
   }
 
-  async findUpstreamWatch(token: string, watchId: string): Promise<WatchItem> {
+  async findUpstreamWatch(token: string, watchId: string): Promise<Watch> {
     const pg = await this.pool.connect();
 
     try {
@@ -280,7 +280,7 @@ export class WatchStore {
     }
   }
 
-  async findUserWatch(userId: string, opts: FindWatchOpts): Promise<WatchItem> {
+  async findUserWatch(userId: string, opts: FindWatchOpts): Promise<Watch> {
     if (!opts.id && !opts.slug) {
       throw new TypeError("one of slug or id is required");
     }
@@ -311,7 +311,7 @@ export class WatchStore {
     }
   }
 
-  async getWatch(id: string): Promise<WatchItem> {
+  async getWatch(id: string): Promise<Watch> {
     const pg = await this.pool.connect();
 
     try {
@@ -321,8 +321,6 @@ export class WatchStore {
       const result = await pg.query(q, v);
       const watches = result.rows.map(row => this.mapWatch(row));
       const watch = watches[0];
-
-      watch.watches = await this.listWatches(undefined, watch.id!);
 
       return watch;
     } finally {
@@ -364,7 +362,7 @@ export class WatchStore {
     }
   }
 
-  async listAllWatchesForAllTeams(): Promise<WatchItem[]> {
+  async listAllWatchesForAllTeams(): Promise<Watch[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -372,7 +370,7 @@ export class WatchStore {
       const v = [];
 
       const result = await pg.query(q, v);
-      const watches: WatchItem[] = [];
+      const watches: Watch[] = [];
       for (const row of result.rows) {
         const result = this.mapWatch(row);
         watches.push(result);
@@ -403,7 +401,7 @@ export class WatchStore {
     }
   }
 
-  async listAllUserWatches(userId?: string): Promise<WatchItem[]> {
+  async listAllUserWatches(userId?: string): Promise<Watch[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -426,11 +424,9 @@ export class WatchStore {
       ];
 
       const result = await pg.query(q, v);
-      const watches: WatchItem[] = [];
+      const watches: Watch[] = [];
       for (const row of result.rows) {
         const watch = this.mapWatch(row);
-
-        watch.watches = await this.listWatches(userId, watch.id!);
         watches.push(watch);
       }
 
@@ -440,7 +436,7 @@ export class WatchStore {
     }
   }
 
-  async listWatches(userId?: string, parentId?: string): Promise<WatchItem[]> {
+  async listWatches(userId?: string, parentId?: string): Promise<Watch[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -487,11 +483,9 @@ export class WatchStore {
         }
 
         const result = await pg.query(q, v);
-        const watches: WatchItem[] = [];
+        const watches: Watch[] = [];
         for (const row of result.rows) {
           const watch = this.mapWatch(row);
-
-          watch.watches = await this.listWatches(userId, watch.id!);
           watches.push(watch);
         }
 
@@ -611,7 +605,7 @@ export class WatchStore {
     }
   }
 
-  async searchWatches(userId: string, watchName: string): Promise<WatchItem[]> {
+  async searchWatches(userId: string, watchName: string): Promise<Watch[]> {
     const pg = await this.pool.connect();
 
     try {
@@ -635,7 +629,7 @@ export class WatchStore {
       ];
 
       const result = await pg.query(q, v);
-      const watches: WatchItem[] = [];
+      const watches: Watch[] = [];
       for (const row of result.rows) {
         const result = this.mapWatch(row);
         watches.push(result);
@@ -700,7 +694,7 @@ export class WatchStore {
     }
   }
 
-  async createNewWatch(stateJSON: string, owner: string, userId: string, metadata: StateMetadata): Promise<WatchItem> {
+  async createNewWatch(stateJSON: string, owner: string, userId: string, metadata: StateMetadata): Promise<Watch> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const title = _.get(metadata, "name", "New Application");
     const icon = _.get(metadata, "icon", "https://vignette.wikia.nocookie.net/jet/images/e/ea/Under_construction-icon.JPG/revision/latest?cb=20100622032326"); // under construction image
@@ -747,7 +741,7 @@ export class WatchStore {
     }
   }
 
-  async listWatchContributors(id: string): Promise<ContributorItem[]> {
+  async listWatchContributors(id: string): Promise<Contributor[]> {
     const q = `
       SELECT ship_user.id as user_id, ship_user.created_at, github_user.github_id, github_user.username, github_user.avatar_url
       FROM user_watch
@@ -758,7 +752,7 @@ export class WatchStore {
     const v = [id];
 
     const result = await this.pool.query(q, v);
-    const contributors: ContributorItem[] = [];
+    const contributors: Contributor[] = [];
     for (const row of result.rows) {
       const result = this.mapContributor(row);
       contributors.push(result);
@@ -766,18 +760,18 @@ export class WatchStore {
     return contributors;
   }
 
-  private mapWatch(row: any): WatchItem {
+  private mapWatch(row: any): Watch {
     const parsedWatchName = this.parseWatchName(row.title);
-
-    return {
-      id: row.id,
-      stateJSON: row.current_state,
-      watchName: parsedWatchName,
-      slug: row.slug,
-      watchIcon: row.icon_uri,
-      lastUpdated: row.updated_at,
-      createdOn: row.created_at,
-    };
+    const watch = new Watch();
+    watch.id = row.id;
+    watch.stateJSON = row.current_state;
+    watch.watchName = parsedWatchName;
+    watch.slug = row.slug;
+    watch.watchIcon = row.icon_uri;
+    watch.lastUpdated = row.updated_at;
+    watch.createdOn = row.created_at;
+    
+    return watch;
   }
 
   private mapGeneratedFile(row: any): GeneratedFile {
@@ -789,7 +783,7 @@ export class WatchStore {
     };
   }
 
-  private mapContributor(row: any): ContributorItem {
+  private mapContributor(row: any): Contributor {
     return {
       id: row.user_id,
       createdAt: row.created_at,
@@ -799,7 +793,7 @@ export class WatchStore {
     };
   }
 
-  private mapWatchVersion(row: any): VersionItem {
+  private mapWatchVersion(row: any): Version {
     return {
       title: row.version_label,
       status: row.status,

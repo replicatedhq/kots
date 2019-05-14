@@ -1,135 +1,73 @@
 import * as _ from "lodash";
-import {
-  ContributorItem,
-  GetWatchQueryArgs,
-  SearchWatchesQueryArgs,
-  WatchContributorsQueryArgs,
-  WatchItem,
-  VersionItem,
-  ListPendingWatchVersionsQueryArgs,
-  GetCurrentWatchVersionQueryArgs,
-  VersionItemDetail,
-  GetWatchVersionQueryArgs,
-} from "../../generated/types";
+import { Watch, Contributor, Version, VersionDetail } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
 import { Stores } from "../../schema/stores";
-import { NotificationQueries } from "../../notification";
 
 export function WatchQueries(stores: Stores) {
   return {
-    async getWatchVersion(root: any, args: GetWatchVersionQueryArgs, context: Context): Promise<VersionItemDetail> {
-      const span = tracer().startSpan("query.getWatchVersion");
-
+    async getWatchVersion(root: any, args: any): Promise<VersionDetail> {
       const watch = await stores.watchStore.getWatch(args.id);
-
       const versionItem = await stores.watchStore.getOneVersion(args.id, args.sequence!);
       const params = await stores.watchStore.getLatestGeneratedFileS3Params(watch!.id!, args.sequence!);
-      const download = await stores.watchDownload.findDeploymentFile(span.context(), params);
+      const download = await stores.watchDownload.findDeploymentFile(params);
 
       const versionItemDetail = {
         ...versionItem,
         rendered: download.contents.toString("utf-8"),
       }
 
-      span.finish();
-
       return versionItemDetail;
     },
 
-    async listWatches(root: any, args: any, context: Context): Promise<WatchItem[]> {
+    async listWatches(root: any, args: any, context: Context): Promise<Watch[]> {
       const watches = await stores.watchStore.listWatches(context.session.userId);
-      const result = watches.map(watch => toSchemaWatch(watch, root, context, stores));
-
+      const w = new Watch();
+      const result = watches.map(watch => w.toSchema(watch, root, stores, context));
       return result;
     },
 
-    async searchWatches(root: any, args: SearchWatchesQueryArgs, context: Context): Promise<WatchItem[]> {
-      const span = tracer().startSpan("query.searchWatches");
-
+    async searchWatches(root: any, args: any, context: Context): Promise<Watch[]> {
       const { watchName } = args;
-
       const watches = await stores.watchStore.searchWatches(context.session.userId, watchName);
-
-      span.finish();
-
-      return watches.map(watch => toSchemaWatch(watch, root, context, stores));
+      const w = new Watch();
+      return watches.map(watch => w.toSchema(watch, root, stores, context));
     },
 
-    async getWatch(root: any, args: GetWatchQueryArgs, context: Context): Promise<WatchItem> {
-
+    async getWatch(root: any, args: any, context: Context): Promise<Watch> {
       const { slug, id } = args;
       if (!id && !slug) {
         throw new ReplicatedError("One of slug or id is required", "bad_request");
       }
-
       const result = await stores.watchStore.findUserWatch(context.session.userId, { slug: slug!, id: id! });
-
-      return toSchemaWatch(result, root, context, stores);
+      const watch = new Watch();
+      return watch.toSchema(result, root, stores, context);
     },
 
-    async watchContributors(root: any, args: WatchContributorsQueryArgs, context: Context): Promise<ContributorItem[]> {
-
+    async watchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
       const { id } = args;
-
-      const watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
-
-      return stores.watchStore.listWatchContributors(watch.id!);
+      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
+      const watch = new Watch();
+      return watch.getContributors(w.id!, stores);
     },
 
-    async listPendingWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
-
-      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
-
-      const pendingVersions = await stores.watchStore.listPendingVersions(watch.id!);
-
-      return pendingVersions;
+    async listPendingWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
+      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      const watch = new Watch();
+      return watch.getPendingVersions(w.id, stores);
     },
 
-    async listPastWatchVersions(root: any, { watchId }: ListPendingWatchVersionsQueryArgs, context: Context): Promise<VersionItem[]> {
-      const span = tracer().startSpan("query.listPastWatchVersions");
-
-      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
-
-      const pastVersions = await stores.watchStore.listPastVersions(watch.id!)
-
-      span.finish();
-
-      return pastVersions;
+    async listPastWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
+      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      const watch = new Watch();
+      return watch.getPastVersions(w.id, stores);
     },
 
-    async getCurrentWatchVersion(root: any, args: GetCurrentWatchVersionQueryArgs, context: Context): Promise<VersionItem|undefined> {
-      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
-      return stores.watchStore.getCurrentVersion(watch.id!)
+    async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<Version|undefined> {
+      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
+      const watch = new Watch();
+      return watch.getCurrentVersion(w.id!, stores);
     }
 
   }
-}
-
-export function toSchemaWatch(watch: WatchItem, root: any, ctx: Context, stores: Stores): any {
-  const schemaWatch = {...watch};
-  schemaWatch.watches = schemaWatch.watches!.map(childWatch => toSchemaWatch(childWatch!, root, ctx, stores));
-
-  return {
-    ...schemaWatch,
-    cluster: async () => await stores.clusterStore.getForWatch(watch.id!),
-    contributors: async () => WatchQueries(stores).watchContributors(root, { id: watch.id! }, ctx),
-    notifications: async () => NotificationQueries(stores).listNotifications(root, { watchId: watch.id! }, ctx),
-    features: async () => watchFeatures(watch.id!, stores),
-    pendingVersions: async () => WatchQueries(stores).listPendingWatchVersions(root, { watchId: watch.id! }, ctx),
-    pastVersions: async () => stores.watchStore.listPastVersions(watch.id!),
-    currentVersion: async () => stores.watchStore.getCurrentVersion(watch.id!),
-  };
-}
-
-async function watchFeatures(watchId: string, stores: Stores): Promise<any[]> {
-  const features = await stores.featureStore.listWatchFeatures(watchId);
-  const result = _.map(features, (feature) => {
-    return {
-      ...feature,
-    };
-  });
-
-  return result;
 }

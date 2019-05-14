@@ -1,28 +1,16 @@
 
 import { Validator } from "jsonschema";
 import * as _ from "lodash";
-import {
-  ContributorItem,
-  CreateWatchMutationArgs,
-  DeleteWatchMutationArgs,
-  SaveWatchContributorsMutationArgs,
-  UpdateStateJsonMutationArgs,
-  UpdateWatchMutationArgs,
-  WatchItem,
-  DeployWatchVersionMutationArgs,
-} from "../../generated/types";
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
 import { schema } from "../schema";
 import { Stores } from "../../schema/stores";
-import { toSchemaWatch } from "./watch_queries";
+import { Watch, Contributor } from "../";
 
 export function WatchMutations(stores: Stores) {
   return {
-    async deployWatchVersion(root: any, args: DeployWatchVersionMutationArgs, context: Context): Promise<boolean> {
-      const span = tracer().startSpan("mutation.deployShipOpsClusterVersion")
+    async deployWatchVersion(root: any, args: any, context: Context): Promise<boolean> {
 
       const watch = await stores.watchStore.getWatch(args.watchId);
 
@@ -30,13 +18,10 @@ export function WatchMutations(stores: Stores) {
 
       await stores.watchStore.setCurrentVersion(watch.id!, args.sequence!);
 
-      span.finish();
-
       return true;
     },
 
-    async updateStateJSON(root: any, args: UpdateStateJsonMutationArgs, context: Context): Promise<WatchItem> {
-      const span = tracer().startSpan("mutation.updateStateJSON");
+    async updateStateJSON(root: any, args: any, context: Context): Promise<Watch> {
 
       const { slug, stateJSON } = args;
 
@@ -50,48 +35,41 @@ export function WatchMutations(stores: Stores) {
 
       watch = await stores.watchStore.getWatch(watch.id!);
 
-      span.finish();
-
       return watch;
     },
 
-    async updateWatch(root: any, args: UpdateWatchMutationArgs, context: Context): Promise<WatchItem> {
-      const span = tracer().startSpan("query.updateWatch");
-
+    async updateWatch(root: any, args: any, context: Context): Promise<Watch> {
       const { watchId, watchName, iconUri } = args;
 
-      let watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      let w = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
       await stores.watchStore.updateWatch(watchId, watchName || undefined, iconUri || undefined);
 
-      watch = await stores.watchStore.getWatch(watchId);
+      w = await stores.watchStore.getWatch(watchId);
 
-      span.finish();
+      const watch = new Watch();
 
-      return toSchemaWatch(watch, root, context, stores);
+      return watch.toSchema(w, root, stores, context);
     },
 
-    async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: CreateWatchMutationArgs, context: Context): Promise<WatchItem> {
-      const span = tracer().startSpan("mutation.createWatch");
+    async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: any, context: Context): Promise<Watch> {
 
       validateJson(stateJSON, schema);
 
       const metadata = JSON.parse(stateJSON).v1.metadata;
 
       const newWatch = await stores.watchStore.createNewWatch(stateJSON, owner, context.session.userId, metadata);
-      span.finish();
 
       return newWatch;
     },
 
-    async deleteWatch(root: any, { watchId, childWatchIds }: DeleteWatchMutationArgs, context: Context): Promise<boolean> {
-      const span = tracer().startSpan("mutation.deleteWatch");
+    async deleteWatch(root: any, { watchId, childWatchIds }: any, context: Context): Promise<boolean> {
 
       const watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
-      const notifications = await stores.notificationStore.listNotifications(span.context(), watch.id!);
+      const notifications = await stores.notificationStore.listNotifications(watch.id!);
       for (const notification of notifications) {
-        await stores.notificationStore.deleteNotification(span.context(), notification.id!);
+        await stores.notificationStore.deleteNotification(notification.id!);
       }
 
       // TODO delete from s3
@@ -106,16 +84,13 @@ export function WatchMutations(stores: Stores) {
         }
       }
 
-      span.finish();
-
       return true;
     },
 
-    async saveWatchContributors(root: any, args: SaveWatchContributorsMutationArgs, context: Context): Promise<ContributorItem[]> {
-      const span = tracer().startSpan("mutation.saveWatchContributors");
+    async saveWatchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
 
       const { id, contributors } = args;
-      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id });
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
 
 
       // await storeTransaction(this.userStore, async store => {

@@ -7,8 +7,8 @@ import {
   Notification,
   PullRequestHistoryItem,
   PullRequestHistoryQueryArgs,
-  WatchItem,
 } from "../../generated/types";
+import { Watch } from "../../watch/";
 import { Context } from "../../context";
 import { tracer } from "../../server/tracing";
 import { Stores } from "../../schema/stores";
@@ -29,8 +29,8 @@ export function NotificationQueries(stores: Stores) {
     async listNotifications(root: any, args: ListNotificationsQueryArgs, context: Context): Promise<Notification[]> {
       const span: jaeger.SpanContext = tracer().startSpan("query.getNotifications");
 
-      const watch: WatchItem = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
-      const notifications = await stores.notificationStore.listNotifications(span.context(), watch.id!);
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
+      const notifications = await stores.notificationStore.listNotifications(watch.id!);
       // Not surfacing to UI currently, but optional
       const pendingNotifications = await stores.notificationStore.listPendingPRNotifications(span.context(), watch.id!);
       const allNotifications = _.concat(notifications, pendingNotifications);

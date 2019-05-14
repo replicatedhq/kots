@@ -38,7 +38,7 @@ export class DeployAPI {
     for (const watch of watches) {
       const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(watch.id!);
 
-      const download = await request.app.locals.stores.watchDownload.findDeploymentFile(span.context(), params);
+      const download = await request.app.locals.stores.watchDownload.findDeploymentFile(params);
       desiredState.push(download.contents.toString("base64"));
     }
 
