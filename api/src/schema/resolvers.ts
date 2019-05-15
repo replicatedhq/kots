@@ -6,6 +6,8 @@ import { UnforkQueries, UnforkMutations } from "../unfork";
 import { NotificationQueries, NotificationMutations } from "../notification";
 import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
+import { EditMutations, EditQueries } from "../edit";
+
 import { HealthzQueries } from "../healthz";
 
 import { Params } from "../server/params";
@@ -24,6 +26,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...FeatureQueries(stores),
     ...HealthzQueries(stores),
     ...GithubInstallationQueries(stores),
+    ...EditQueries(stores),
   },
 
   Mutation: {
@@ -36,5 +39,6 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...InitMutations(stores),
     ...FeatureMutations(stores),
     ...GithubInstallationMutations(stores),
+    ...EditMutations(stores),
   }
 })

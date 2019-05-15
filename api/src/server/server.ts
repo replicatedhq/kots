@@ -29,6 +29,7 @@ import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore, UserStoreOld } from "../user/store";
 import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
+import { EditStore } from "../edit";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -98,7 +99,8 @@ export class Server extends ServerLoader {
       imageWatchStore: new ImageWatchStore(pool),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool),
-      watchDownload: new WatchDownload(watchStore)
+      watchDownload: new WatchDownload(watchStore),
+      editStore: new EditStore(pool, params),
     }
 
     this.expressApp.locals.stores = stores;

@@ -26,6 +26,7 @@ type Mutation {
   createInitSession(upstreamUri: String!, clusterID: String, githubPath: String): InitSession!
   createUnforkSession(upstreamUri: String!, forkUri: String!): UnforkSession!
   createUpdateSession(watchId: ID!): UpdateSession!
+  createEditSession(watchId: ID!): EditSession!
 
   uploadImageWatchBatch(imageList: String!): String
 

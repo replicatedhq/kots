@@ -1,6 +1,7 @@
 import { Stores } from "../../schema/stores";
 
-export function UpdateQueries(stores: Stores) {
+export function EditQueries(stores: Stores) {
   return {
+
   }
 }

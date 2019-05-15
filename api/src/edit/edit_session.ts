@@ -1,6 +1,6 @@
-export interface UpdateSession {
+export interface EditSession {
   id: string;
-  watchId: string;
+  watchId: string,
   createdOn: Date;
   finishedOn?: Date;
   result?: string;

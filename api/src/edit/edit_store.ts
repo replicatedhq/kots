@@ -1,17 +1,17 @@
-import * as randomstring from "randomstring";
-import * as rp from "request-promise";
-import { UpdateSession } from "./";
-import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import * as pg from "pg";
+import * as rp from "request-promise";
+import { EditSession } from "./edit_session";
+import * as randomstring from "randomstring";
+import { logger } from "../server/logger";
 
-export class UpdateStore {
+export class EditStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
-  async createUpdateSession(userId: string, watchId: string): Promise<UpdateSession> {
+  async createEditSession(userId: string, watchId: string): Promise<EditSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const q = `insert into ship_update (id, user_id, watch_id, created_at) values ($1, $2, $3, $4)`;
+    const q = `insert into ship_edit (id, user_id, watch_id, created_at) values ($1, $2, $3, $4)`;
     const v = [
       id,
       userId,
@@ -24,34 +24,35 @@ export class UpdateStore {
     return this.getSession(id);
   }
 
-  async deployUpdateSession(id: string): Promise<UpdateSession> {
-    const updateSession = await this.getSession(id);
+  async deployEditSession(id: string): Promise<EditSession> {
+    const editSession = await this.getSession(id);
 
     const options = {
       method: "POST",
-      uri: `${this.params.shipUpdateBaseURL}/v1/update`,
+      uri: `${this.params.shipEditBaseURL}/v1/edit`,
       body: {
-        id: updateSession.id,
-        watchId: updateSession.watchId,
+        id: editSession.id,
+        watchId: editSession.watchId,
       },
       json: true,
     };
 
     const parsedBody = await rp(options);
     logger.debug({
-      message: "updateserver-parsedbody",
+      message: "editserver-parsedbody",
       parsedBody,
     });
 
-    return updateSession;
+    return editSession;
   }
 
-  async getSession(id: string): Promise<UpdateSession> {
-    const q = `select id, watch_id, created_at, finished_at, result from ship_update where id = $1`;
+
+  async getSession(id: string): Promise<EditSession> {
+    const q = `select id, watch_id, created_at, finished_at, result from ship_edit where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
-    const session: UpdateSession = {
+    const session: EditSession = {
       id: result.rows[0].id,
       watchId: result.rows[0].watch_id,
       createdOn: new Date(result.rows[0].created_at),
