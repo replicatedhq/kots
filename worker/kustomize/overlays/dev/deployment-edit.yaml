@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-update
+  name: ship-cluster-worker-edit
 spec:
   template:
     spec:

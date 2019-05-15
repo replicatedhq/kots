@@ -31,6 +31,7 @@ func RootCmd(c *config.Config, out io.Writer) *cobra.Command {
 	cmd.AddCommand(Watch(c, out))
 	cmd.AddCommand(Update(c, out))
 	cmd.AddCommand(Image(c, out))
+	cmd.AddCommand(Edit(c, out))
 
 	return cmd
 }
