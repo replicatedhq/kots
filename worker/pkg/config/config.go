@@ -32,6 +32,7 @@ type Config struct {
 	WatchCreationInterval time.Duration `mapstructure:"watch_creation_interval"`
 	InitServerAddress     string        `mapstructure:"init_server_address"`
 	UpdateServerAddress   string        `mapstructure:"update_server_address"`
+	EditServerAddress     string        `mapstructure:"edit_server_address"`
 	WatchServerAddress    string        `mapstructure:"watch_server_address"`
 
 	ShipImage      string `mapstructure:"ship_image"`
@@ -59,6 +60,7 @@ func New() *Config {
 		InitServerAddress:     ":3000",
 		WatchServerAddress:    ":3000",
 		UpdateServerAddress:   ":3000",
+		EditServerAddress:     ":3000",
 		DBPollInterval:        time.Second * 2,
 		WatchCreationInterval: time.Second * 5,
 		PostgresURI:           "postgresql://",

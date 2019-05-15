@@ -15,6 +15,8 @@ spec:
               value: untrusted
             - name: UPDATE_NODE_SELECTOR
               value: untrusted
+            - name: EDIT_NODE_SELECTOR
+              value: untrusted
             - name: USE_EC2_PARAMETERS
               value: "1"
             - name: AWS_REGION
