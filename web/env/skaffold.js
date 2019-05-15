@@ -5,6 +5,7 @@ module.exports = {
   REST_ENDPOINT: "http://localhost:30065/api",
   SHIPINIT_ENDPOINT: "http://localhost:30065/api/v1/init/",
   SHIPUPDATE_ENDPOINT: "http://localhost:30065/api/v1/update/",
+  SHIPEDIT_ENDPOINT: "http://localhost:30065/api/v1/edit/",
   SHOW_SCM_LEADS: false,
   GITHUB_REDIRECT_URI: "http://localhost:30065/auth/github/callback",
   AVALIABLE_LOGIN_TYPES: ["github", "traditional"],

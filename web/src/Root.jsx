@@ -164,6 +164,17 @@ class Root extends React.Component {
                       />
                     }
                   />
+                  <ProtectedRoute
+                    path="/ship/edit"
+                    render={
+                      (props) => <Ship
+                        {...props}
+                        rootURL={window.env.SHIPEDIT_ENDPOINT}
+                        initSessionId={initSessionId}
+                        onCompletion={this.handleUpdateCompletion(props.history)}
+                      />
+                    }
+                  />
                   <Route component={NotFound} />
                 </Switch>
               </div>

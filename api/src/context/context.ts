@@ -14,7 +14,6 @@ export class Context {
 
     const context = new Context();
     context.session = await sessionStore.decode(token);
-
     return context;
   }
 

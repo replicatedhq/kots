@@ -6,9 +6,10 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
-import { proxy as InitProxy } from "../init/proxy";
+import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
-import { proxy as UpdateProxy } from "../update/proxy";
+import { UpdateProxy } from "../update/proxy";
+import { EditProxy } from "../edit/proxy";
 import { ReplicatedError } from "./errors";
 import { logger } from "./logger";
 import { Context } from "../context";
@@ -70,6 +71,7 @@ export class Server extends ServerLoader {
     // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924
     this.use("/api/v1/init/:id", InitProxy);
     this.use("/api/v1/update/:id", UpdateProxy);
+    this.use("/api/v1/edit/:id", EditProxy);
 
     const bodyParser = require("body-parser");
     this.use(bodyParser.json());
