@@ -15,6 +15,7 @@ export class Params {
   readonly sessionKey: string;
   readonly shipInitBaseURL: string;
   readonly shipUpdateBaseURL: string;
+  readonly shipEditBaseURL: string;
   readonly shipWatchBaseURL: string;
   readonly shipOutputBucket: string;
   readonly sigsciRpcAddress: string;
@@ -38,6 +39,7 @@ export class Params {
     sessionKey,
     shipInitBaseURL,
     shipUpdateBaseURL,
+    shipEditBaseURL,
     shipWatchBaseURL,
     shipOutputBucket,
     sigsciRpcAddress,
@@ -60,6 +62,7 @@ export class Params {
     this.sessionKey = sessionKey;
     this.shipInitBaseURL = shipInitBaseURL;
     this.shipUpdateBaseURL = shipUpdateBaseURL;
+    this.shipEditBaseURL = shipEditBaseURL;
     this.shipWatchBaseURL = shipWatchBaseURL;
     this.shipOutputBucket = shipOutputBucket;
     this.sigsciRpcAddress = sigsciRpcAddress;
@@ -88,6 +91,7 @@ export class Params {
       shipInitBaseURL: (await param("INIT_SERVER_URI", "/shipcloud/initserver/baseURL", false)) || "http://init-server:3000",
       shipWatchBaseURL: (await param("WATCH_SERVER_URI", "/shipcloud/watchserver/baseURL", false)) || "http://watch-server:3000",
       shipUpdateBaseURL: (await param("UPDATE_SERVER_URI", "/shipcloud/updateserver/baseURL", false)) || "http://update-server:3000",
+      shipEditBaseURL: (await param("EDIT_BASE_URI", "/shipcloud/editserver/baseURL", false)) || "http://edit-server:3000",
       bugsnagKey: await param("BUGSNAG_KEY", "/shipcloud/bugsnag/key", false),
       sessionKey: await param("SESSION_KEY", "/shipcloud/session/key", true),
       shipOutputBucket: await param("S3_BUCKET_NAME", "/shipcloud/s3/ship_output_bucket", false),

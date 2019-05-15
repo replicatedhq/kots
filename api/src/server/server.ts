@@ -6,9 +6,10 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
-import { proxy as InitProxy } from "../init/proxy";
+import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
-import { proxy as UpdateProxy } from "../update/proxy";
+import { UpdateProxy } from "../update/proxy";
+import { EditProxy } from "../edit/proxy";
 import { ReplicatedError } from "./errors";
 import { logger } from "./logger";
 import { Context } from "../context";
@@ -29,6 +30,7 @@ import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore, UserStoreOld } from "../user/store";
 import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
+import { EditStore } from "../edit";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -69,6 +71,7 @@ export class Server extends ServerLoader {
     // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924
     this.use("/api/v1/init/:id", InitProxy);
     this.use("/api/v1/update/:id", UpdateProxy);
+    this.use("/api/v1/edit/:id", EditProxy);
 
     const bodyParser = require("body-parser");
     this.use(bodyParser.json());
@@ -98,7 +101,8 @@ export class Server extends ServerLoader {
       imageWatchStore: new ImageWatchStore(pool),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool),
-      watchDownload: new WatchDownload(watchStore)
+      watchDownload: new WatchDownload(watchStore),
+      editStore: new EditStore(pool, params),
     }
 
     this.expressApp.locals.stores = stores;

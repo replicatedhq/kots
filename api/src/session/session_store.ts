@@ -147,7 +147,7 @@ export class SessionStore {
         const session = await this.getGithubSession(decoded.sessionId);
         return {
           scmToken: decoded.token,
-          metadata: JSON.parse(session.metadata!),
+          metadata: JSON.parse(session.metadata),
           expiration: session.expiresAt,
           userId: session.userId,
           sessionId: session.id,

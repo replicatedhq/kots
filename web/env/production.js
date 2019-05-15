@@ -7,6 +7,7 @@ module.exports = {
   SHIPDOWNLOAD_ENDPOINT: "https://www.replicated.com/api/v1/download",
   SHIPINIT_ENDPOINT: "https://www.replicated.com/api/v1/init/",
   SHIPUPDATE_ENDPOINT: "https://www.replicated.com/api/v1/update/",
+  SHIPEDIT_ENDPOINT: "https://www.replicated.com/api/v1/edit/",
   GITHUB_REDIRECT_URI: "https://www.replicated.com/auth/github/callback",
   GITHUB_INSTALL_URL: "https://github.com/apps/replicated-ship",
   BUGSNAG_API_KEY: "a7504e4a1632ad844b789721e8982b19",

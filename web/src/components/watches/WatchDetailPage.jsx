@@ -121,7 +121,7 @@ class WatchDetailPage extends React.Component {
         </div>
       )
     }
-    
+
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <div className="watch-detail-header flex-column alignItems--center justifyContent--center">

@@ -6,7 +6,7 @@ import ContentHeader from "../shared/ContentHeader";
 import WatchCard from "./WatchCard/";
 import Loader from "../shared/Loader";
 import { listWatches, userFeatures } from "../../queries/WatchQueries";
-import { createUpdateSession, deleteWatch, deployWatchVersion } from "../../mutations/WatchMutations";
+import { createEditSession, deleteWatch, deployWatchVersion } from "../../mutations/WatchMutations";
 import ShipLoading from "../ShipLoading";
 import Modal from "react-modal";
 import AddClusterModal from "../shared/modals/AddClusterModal";
@@ -39,17 +39,19 @@ export class WatchedApps extends React.Component {
   }
 
   onEditApplicationClicked = (watch) => {
-    const { onActiveInitSession } = this.props;
-
     this.setState({ watchToEdit: watch });
-    this.props.createUpdateSession(watch.id)
-      .then(({ data }) => {
-        const { createUpdateSession } = data;
-        const { id: initSessionId } = createUpdateSession;
-        onActiveInitSession(initSessionId);
-        this.props.history.push("/ship/update")
-      })
-      .catch(() => this.setState({ watchToEdit: null }));
+
+    this.props.client.mutate({
+      mutation: createEditSession,
+      variables: {
+        watchId: watch.id,
+      },
+    })
+    .then(({ data }) => {
+      this.props.onActiveInitSession(data.createEditSession.id);
+      this.props.history.push("/ship/edit")
+    })
+    .catch(() => this.setState({ watchToEdit: null }));
   }
 
   onCardActionClick = (url) => {
@@ -270,11 +272,6 @@ export default compose(
   }),
   graphql(userFeatures, {
     name: "userFeaturesQuery"
-  }),
-  graphql(createUpdateSession, {
-    props: ({ mutate }) => ({
-      createUpdateSession: (watchId) => mutate({ variables: { watchId }})
-    })
   }),
   graphql(deleteWatch, {
     props: ({ mutate }) => ({

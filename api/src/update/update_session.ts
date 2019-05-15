@@ -1,8 +1,7 @@
 export interface UpdateSession {
   id: string;
   watchId: string;
-  userId: string;
-  createdOn: string;
-  finishedOn?: string;
+  createdOn: Date;
+  finishedOn?: Date;
   result?: string;
 }

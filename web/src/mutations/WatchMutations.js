@@ -90,6 +90,17 @@ export const createUpdateSession = gql`
   }
 `
 
+export const createEditSessionRaw = `
+  mutation createEditSession($watchId: ID!) {
+    createEditSession(watchId: $watchId) {
+      id
+      watchId
+      createdOn
+    }
+  }
+`;
+export const createEditSession = gql(createEditSessionRaw);
+
 export const saveWatchContributors = gql`
   mutation saveWatchContributors($id: String!, $contributors: [ContributorItemInput]!) {
     saveWatchContributors(id: $id, contributors: $contributors) {

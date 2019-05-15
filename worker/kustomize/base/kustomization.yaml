@@ -1,11 +1,14 @@
 resources:
 - ./deployment-init.yaml
 - ./deployment-update.yaml
+- ./deployment-edit.yaml
 - ./deployment-watch.yaml
 - ./deployment-image.yaml
 - ./service-init.yaml
 - ./service-update.yaml
+- ./service-edit.yaml
 - ./service-watch.yaml
 - ./rbac-init.yaml
 - ./rbac-update.yaml
+- ./rbac-edit.yaml
 - ./rbac-watch.yaml

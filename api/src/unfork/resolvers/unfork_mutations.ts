@@ -9,9 +9,9 @@ export function UnforkMutations(stores: any) {
       const { upstreamUri, forkUri } = args;
 
       const unforkSession = await stores.unforkStore.createUnforkSession(context.session.userId, upstreamUri, forkUri);
-      const deployedUnforkSession = await stores.unforkStore.deployUnforkSession(unforkSession.id!);
+      const deployedUnforkSession = await stores.unforkStore.deployUnforkSession(unforkSession.id);
 
-      // Until we have unfork headed mode, we just create an update haded job to allow for UI
+      // Until we have unfork headed mode, we just create an update headed job to allow for UI
       const now = new Date();
       const abortAfter = new Date(now.getTime() + (1000 * 60));
       while (new Date() < abortAfter) {
@@ -24,8 +24,8 @@ export function UnforkMutations(stores: any) {
           };
 
         } else if (maybeUpdatedSession.result === "completed") {
-          const updateSession = await stores.updateStore.createUpdateSession(span.context(), context.session.userId, maybeUpdatedSession.id!);
-          const deployedUpdateSession = await stores.updateStore.deployUpdateSession(span.context(), updateSession.id!);
+          const updateSession = await stores.updateStore.createUpdateSession(context.session.userId, maybeUpdatedSession.id!);
+          const deployedUpdateSession = await stores.updateStore.deployUpdateSession(updateSession.id);
 
           span.finish();
 

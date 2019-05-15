@@ -19,10 +19,14 @@ type Store interface {
 	UploadToS3(ctx context.Context, outputSession types.Output, file multipart.File) error
 	DownloadFromS3(ctx context.Context, path string) (string, error)
 
-	GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error)
 	GetNextUploadSequence(ctx context.Context, watchID string) (int, error)
-	SetUpdateStatus(ctx context.Context, updateID string, status string) error
 	UpdateWatchFromState(ctx context.Context, watchID string, stateJSON []byte) error
+
+	GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error)
+	SetUpdateStatus(ctx context.Context, updateID string, status string) error
+
+	GetEdit(ctx context.Context, editID string) (*types.EditSession, error)
+	SetEditStatus(ctx context.Context, edit string, status string) error
 
 	ListReadyWatchIDs(ctx context.Context) ([]string, error)
 	GetWatchIDFromSlug(ctx context.Context, slug string, userID string) (string, error)

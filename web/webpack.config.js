@@ -24,6 +24,7 @@ module.exports = function (env) {
     appEnv.REST_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api`;
     appEnv.SHIPINIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/init/`;
     appEnv.SHIPUPDATE_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/update/`;
+    appEnv.SHIPEDIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/edit/`;
   }
   if (process.env["SHIP_CLUSTER_WEB_URI"]) {
     appEnv.GITHUB_REDIRECT_URI = `${process.env["SHIP_CLUSTER_WEB_URI"]}/auth/github/callback`;

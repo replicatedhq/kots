@@ -3,7 +3,7 @@ import * as proxyMiddleware from "http-proxy-middleware";
 import { parse } from "url";
 import { logger } from "../server/logger";
 
-export const proxy = proxyMiddleware({
+export const UpdateProxy = proxyMiddleware({
   target: "Ship Cloud Binary - Update",
   proxyTimeout: 5000,
   router(req: IncomingMessage): string {

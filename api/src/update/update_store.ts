@@ -11,19 +11,21 @@ export class UpdateStore {
   async createUpdateSession(userId: string, watchId: string): Promise<UpdateSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const q = `INSERT INTO ship_update (id, user_id, watch_id, created_at)
-              VALUES ($1, $2, $3, $4)`;
-    const v = [id, userId, watchId, new Date()];
+    const q = `insert into ship_update (id, user_id, watch_id, created_at) values ($1, $2, $3, $4)`;
+    const v = [
+      id,
+      userId,
+      watchId,
+      new Date(),
+    ];
 
     await this.pool.query(q, v);
 
-    const updateSession = this.getSession(id, userId);
-
-    return updateSession;
+    return this.getSession(id);
   }
 
-  async deployUpdateSession(updateSessionId: string, userId: string): Promise<UpdateSession> {
-    const updateSession = await this.getSession(updateSessionId, userId);
+  async deployUpdateSession(id: string): Promise<UpdateSession> {
+    const updateSession = await this.getSession(id);
 
     const options = {
       method: "POST",
@@ -44,28 +46,19 @@ export class UpdateStore {
     return updateSession;
   }
 
-  async getSession(id: string, userId: string): Promise<UpdateSession> {
-    const q = `
-      SELECT id, watch_id, created_at, finished_at, result
-      FROM ship_update
-      WHERE id = $1
-    `;
+  async getSession(id: string): Promise<UpdateSession> {
+    const q = `select id, watch_id, created_at, finished_at, result from ship_update where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
-    const session = this.mapRow(result.rows[0], userId);
+    const session: UpdateSession = {
+      id: result.rows[0].id,
+      watchId: result.rows[0].watch_id,
+      createdOn: new Date(result.rows[0].created_at),
+      finishedOn: result.rows[0].finished_at ? new Date(result.rows[0].finished_at) : undefined,
+      result: result.rows[0].result,
+    }
 
     return session;
-  }
-
-  private mapRow(row: any, userId: string): UpdateSession {
-    return {
-      id: row.id,
-      watchId: row.watch_id,
-      createdOn: row.created_at,
-      finishedOn: row.finished_at,
-      result: row.result,
-      userId
-    };
   }
 }

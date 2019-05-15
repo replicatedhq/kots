@@ -1,5 +1,6 @@
+import { Stores } from "../../schema/stores";
 
-export function UpdateQueries(stores: any) {
+export function UpdateQueries(stores: Stores) {
   return {
   }
 }

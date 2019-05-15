@@ -11,6 +11,7 @@ import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore, UserStoreOld } from "../user/store";
 import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
+import { EditStore } from "../edit";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -26,5 +27,6 @@ export interface Stores {
   imageWatchStore: ImageWatchStore,
   featureStore: FeatureStore,
   healthzStore: HealthzStore,
-  watchDownload: WatchDownload
+  watchDownload: WatchDownload,
+  editStore: EditStore,
 }

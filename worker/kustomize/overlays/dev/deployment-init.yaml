@@ -14,7 +14,7 @@ spec:
             - name: SHIP_TAG
               value: "alpha"
             - name: SHIP_PULL_POLICY
-              value: "IfNotPresent"
+              value: "Always"
             - name: LOG_LEVEL
               value: debug
             - name: S3_ENDPOINT
