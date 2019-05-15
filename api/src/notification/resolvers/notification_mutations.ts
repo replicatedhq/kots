@@ -78,7 +78,7 @@ export function NotificationMutations(stores: any) {
       const span: jaeger.SpanContext = tracer().startSpan("mutation.createFirstPullReqeust");
 
       const watch: WatchItem = await stores.watchStore.findUserWatch(span.context(), context.session.userId, { id: args.watchId });
-      const currentState = await stores.watchStore.getStateJSON(span.context(), watch.id!);
+      const currentState = await stores.watchStore.getStateJSON(watch.id!);
 
       let versionLabel: string = "";
       try {
@@ -155,7 +155,7 @@ export function NotificationMutations(stores: any) {
         await stores.notificationStore.deletePendingNotificationById(span.context(), notification.id!);
       } else {
         const notification = await stores.notificationStore.findUserNotification(span.context(), context.session.userId, args.id);
-        await stores.notificationStore.deleteNotification(span.context(), notification.id!);
+        await stores.notificationStore.deleteNotification(notification.id!);
       }
 
       span.finish();

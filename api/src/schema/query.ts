@@ -11,30 +11,30 @@ export const Query = `
 
     installationOrganizations(page: Int): GetInstallationsResponse
     orgRepos(org: String!, page: Int): GetForOrgResponse
-    repoBranches(owner: String! repo:String! page: Int): [GetBranchesResponseItem]
-    githubUser: GithubUser
+    repoBranches(owner: String! repo:String! page: Int): [GetBranchesResponse]
+    userInfo: UserInfo
     userFeatures: [Feature]
-    orgMembers(org: String!, page: Int): [GetMembersResponseItem]
+    orgMembers(org: String!, page: Int): [GetMembersResponse]
 
-    listClusters: [ClusterItem]
+    listClusters: [Cluster]
 
-    listWatches: [WatchItem]
-    searchWatches(watchName: String!): [WatchItem]
-    getWatch(slug: String, id: String): WatchItem
-    watchContributors(id: String!): [ContributorItem]
-    getWatchVersion(id: String!, sequence: Int): VersionItemDetail
+    listWatches: [Watch]
+    searchWatches(watchName: String!): [Watch]
+    getWatch(slug: String, id: String): Watch
+    watchContributors(id: String!): [Contributor]
+    getWatchVersion(id: String!, sequence: Int): VersionDetail
 
-    listPendingWatchVersions(watchId: String!): [VersionItem]
-    listPastWatchVersions(watchId: String!): [VersionItem]
-    getCurrentWatchVersion(watchId: String!): VersionItem
+    listPendingWatchVersions(watchId: String!): [Version]
+    listPastWatchVersions(watchId: String!): [Version]
+    getCurrentWatchVersion(watchId: String!): Version
 
     validateUpstreamURL(upstream: String!): Boolean!
 
     listNotifications(watchId: String!): [Notification]
     getNotification(notificationId: String!): Notification
-    pullRequestHistory(notificationId: String!): [PullRequestHistoryItem]
+    pullRequestHistory(notificationId: String!): [PullRequestHistory]
 
-    imageWatchItems(batchId: String!): [ImageWatchItem]
+    imageWatches(batchId: String!): [ImageWatch]
 
     getGitHubInstallationId: String!
   }

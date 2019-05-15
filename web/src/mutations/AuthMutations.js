@@ -19,3 +19,17 @@ mutation signup($input: SignupInput) {
 }
 `;
 export const shipAuthSignup = gql(shipAuthSignupRaw);
+
+export const shipAuthLoginRaw = `
+mutation login($input: LoginInput) {
+  login(input: $input)
+    @rest(
+      type: "Login",
+      method: "POST",
+      path: "/login",
+      endpoint: "v1") {
+        token
+      }
+}
+`;
+export const shipAuthLogin = gql(shipAuthLoginRaw);

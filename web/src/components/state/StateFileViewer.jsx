@@ -5,7 +5,7 @@ import MonacoEditor from "react-monaco-editor";
 import isEmpty from "lodash/isEmpty";
 import { createNewWatch, updateStateJSON } from "../../mutations/WatchMutations";
 import { getWatchJson } from "../../queries/WatchQueries";
-import { githubUser } from "../../queries/GitHubQueries";
+import { userInfo } from "../../queries/UserQueries";
 
 import "../../scss/components/state/StateFileViewer.scss";
 
@@ -68,7 +68,7 @@ class StateFileViewer extends React.Component {
   handleSaveValues = () => {
     const { specValue } = this.state;
     const { owner, slug } = this.props.match.params;
-    const { login } = this.props.getGithubUser.githubUser;
+    const { username } = this.props.getUserInfo;
     const watchSlug = `${owner}/${slug}`;
     this.setState({ saving: true, specValueError: false, serverEror: false });
 
@@ -76,7 +76,7 @@ class StateFileViewer extends React.Component {
 
     if (this.props.isNew) {
       if (isValid) {
-        this.props.createNewWatch(specValue, login)
+        this.props.createNewWatch(specValue, username)
           .then(() => {
             this.setState({ saving: false });
             this.savedValues();
@@ -216,7 +216,7 @@ export default compose(
       updateStateJSON: (slug, stateJSON) => mutate({ variables: { slug, stateJSON } })
     })
   }),
-  graphql(githubUser, {
-    name: "getGithubUser"
+  graphql(userInfo, {
+    name: "getUserInfo"
   }),
 )(StateFileViewer);

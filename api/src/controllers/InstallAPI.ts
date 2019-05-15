@@ -14,13 +14,13 @@ export class InstallAPI {
   ): Promise<void | string> {
     const span: jaeger.SpanContext = tracer().startSpan("installAPI.renderedOperatorInstall");
 
-    const cluster = await request.app.locals.stores.clusterStore.getCluster(span.context(), clusterId);
+    const cluster = await request.app.locals.stores.clusterStore.getCluster(clusterId);
     if (cluster.shipOpsRef!.token !== token) {
       response.status(404);
       return;
     }
 
-    const manifests = await request.app.locals.stores.clusterStore.getShipInstallationManifests(span.context(), cluster.id!);
+    const manifests = await request.app.locals.stores.clusterStore.getShipInstallationManifests(cluster.id!);
 
     response.setHeader("Content-Type", "text/plain");
     response.send(`${manifests}`);

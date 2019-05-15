@@ -13,11 +13,12 @@ export const createNewWatchRaw = `
 `;
 export const createNewWatch = gql(createNewWatchRaw);
 
-export const deleteWatch = gql`
+export const deleteWatchRaw = `
   mutation deleteWatch($watchId: String!, $childWatchIds: [String]) {
     deleteWatch(watchId: $watchId, childWatchIds: $childWatchIds)
   }
 `;
+export const deleteWatch = gql(deleteWatchRaw);
 
 export const updateStateJSON = gql`
   mutation updateStateJSON($slug: String!, $stateJSON: String!) {
@@ -49,7 +50,6 @@ export const updateWatchRaw = `
     }
   }
 `;
-
 export const updateWatch = gql(updateWatchRaw);
 
 export const deployWatchVersion = gql`
@@ -64,8 +64,6 @@ export const createInitSessionRaw = `
       id
       upstreamUri
       createdOn
-      finishedOn
-      result
     }
   }
 `
@@ -78,8 +76,6 @@ export const createUnforkSession = gql`
       upstreamUri
       forkUri
       createdOn
-      finishedOn
-      result
     }
   }
 `
@@ -90,8 +86,6 @@ export const createUpdateSession = gql`
       id
       watchId
       createdOn
-      finishedOn
-      result
     }
   }
 `

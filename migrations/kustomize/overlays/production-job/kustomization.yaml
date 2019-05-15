@@ -1,5 +1,6 @@
 # production-job is an overlay for the job that gets a nameprefix
 bases:
   - ../../base
-patchesStrategicMerge:
+
+resources:
   - ./job.yaml

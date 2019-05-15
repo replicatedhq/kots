@@ -3,7 +3,7 @@ import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link } from "react-router-dom";
 import { createGithubAuthToken } from "../../mutations/GitHubMutations";
-import { githubUser } from "../../queries/GitHubQueries";
+import { userInfo } from "../../queries/UserQueries";
 import { Utilities } from "../../utilities/utilities";
 
 class GitHubAuthCallback extends React.Component {
@@ -15,11 +15,13 @@ class GitHubAuthCallback extends React.Component {
   }
 
   async getUser() {
-    await this.props.client.query({ query: githubUser })
+    await this.props.client.query({ query: userInfo })
       .then(() => {
         if (Utilities.localStorageEnabled()) {
           const next = localStorage.getItem("next");
-          if (next) {return this.props.history.push(next);}
+          if (next) {
+            return this.props.history.push(next);
+          }
         }
         this.props.history.push("/watches");
       })
@@ -36,7 +38,7 @@ class GitHubAuthCallback extends React.Component {
         .then((res) => {
           if (Utilities.localStorageEnabled()) {
             window.localStorage.setItem("token", res.data.createGithubAuthToken.access_token);
-            this.getUser(); 
+            this.getUser();
           }
         })
         .catch((err) => {

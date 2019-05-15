@@ -1,6 +1,7 @@
 import * as pg from "pg";
+import * as bcrypt from "bcrypt";
 import * as randomstring from "randomstring";
-import { User } from "./user";
+import { User } from "./";
 
 export class UserStore {
   constructor(
@@ -21,6 +22,21 @@ export class UserStore {
     return users;
   }
 
+  public async tryGetPasswordUser(email: string): Promise<User | void> {
+    const q = `select user_id from ship_user_local where email = $1`;
+    const v = [
+      email,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rowCount === 0) {
+      return;
+    }
+
+    return this.getUser(result.rows[0].user_id);
+  }
+
   public async tryGetGitHubUser(githubId: number): Promise<User | void> {
     const q = `select user_id from github_user where github_id = $1`;
     const v = [
@@ -37,13 +53,40 @@ export class UserStore {
   }
 
   public async getUser(id: string): Promise<User> {
-    const q = `select id, created_at from ship_user where id = $1`;
-    const v = [id];
-
-    const result = await this.pool.query(q, v);
     const user: User = new User();
+
+    let q = `select id, created_at from ship_user where id = $1`;
+    let v = [id];
+    let result = await this.pool.query(q, v);
     user.id = result.rows[0].id;
     user.createdAt = result.rows[0].created_at;
+
+    // GitHub
+    q = `select username, github_id, avatar_url, email from github_user where user_id = $1`;
+    v = [id];
+    result = await this.pool.query(q, v);
+    if (result.rowCount > 0) {
+      user.githubUser = {
+        login: result.rows[0].username,
+        githubId: result.rows[0].github_id,
+        avatarUrl: result.rows[0].avatar_url,
+        email: result.rows[0].email,
+      };
+    }
+
+    // Ship
+    q = `select email, first_name, last_name, password_bcrypt from ship_user_local where user_id = $1`;
+    v = [id];
+    result = await this.pool.query(q, v);
+    if (result.rowCount > 0) {
+      user.shipUser = {
+        firstName: result.rows[0].first_name,
+        lastName: result.rows[0].last_name,
+        email: result.rows[0].email,
+        passwordCrypt: result.rows[0].password_bcrypt,
+      };
+    }
+
     return user;
   }
 
@@ -98,6 +141,16 @@ export class UserStore {
       ];
       await pg.query(q, v);
 
+      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name, email) values ($1, $2, $3, $4, $5)`;
+      v = [
+        id,
+        await bcrypt.hash(password, 10),
+        firstName,
+        lastName,
+        email,
+      ];
+      await pg.query(q, v);
+
       await pg.query("commit");
 
       return this.getUser(id);
@@ -107,5 +160,24 @@ export class UserStore {
     } finally {
       pg.release();
     }
+  }
+
+  async trackScmLead(preference: string, email: string, provider: string): Promise<string> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const currentTime = new Date(Date.now()).toUTCString();
+
+    const q = `insert into track_scm_leads (id, deployment_type, email_address, scm_provider, created_at)
+      values ($1, $2, $3, $4, $5)`;
+    const v = [
+      id,
+      preference,
+      email,
+      provider,
+      currentTime
+    ];
+
+    await this.pool.query(q, v);
+
+    return id;
   }
 }

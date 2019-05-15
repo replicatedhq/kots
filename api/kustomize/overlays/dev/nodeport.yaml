@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-cluster-api-lb
+  labels:
+    app: ship-cluster-api
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8065
+    targetPort: http
+    nodePort: 30065
+  selector:
+    app: ship-cluster-api

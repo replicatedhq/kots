@@ -1,19 +1,12 @@
-import { ImageWatchItem, ImageWatchItemsQueryArgs } from "../../generated/types";
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
+import { Stores } from "../../schema/stores";
 
-export function ImageWatchQueries(stores: any) {
+export function ImageWatchQueries(stores: Stores) {
   return {
-    async imageWatchItems(root: any, args: ImageWatchItemsQueryArgs, context: Context): Promise<ImageWatchItem[]> {
-      const span = tracer().startSpan("mutation.uploadImageWatchBatch");
-
+    async imageWatches(root: any, args: any, context: Context) {
       // TODO ownership
 
-      const { batchId } = args;
-
-      const items = await stores.imageWatchStore.listImageWatchItemsInBatch(span.context(), batchId);
-
-      span.finish();
+      const items = await stores.imageWatchStore.listImageWatchesInBatch(args.batchId);
 
       return items;
     }

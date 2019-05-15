@@ -50,12 +50,12 @@ async function main(argv): Promise<any> {
   if (localCluster) {
     console.log(`Local cluster is already provisioned, all is well.`);
   } else {
-    localCluster = await clusterStore.createNewCluster(span.context(), undefined, true, "This Cluster", "ship");
+    localCluster = await clusterStore.createNewCluster(undefined, true, "This Cluster", "ship");
 
     // Give all existing users access to this cluster
     const allUsers = await userStore.listAllUsers();
     for(const user of allUsers) {
-      await clusterStore.addUserToCluster(span.context(), localCluster.id!, user.id);
+      await clusterStore.addUserToCluster(localCluster.id!, user.id);
     }
 
     // Attempt to deploy this cluster
@@ -75,7 +75,7 @@ async function main(argv): Promise<any> {
     }
 
     const clusterFile = tmp.fileSync();
-    fs.writeFileSync(clusterFile.name, await clusterStore.getShipInstallationManifests(span.context(), localCluster.id!));
+    fs.writeFileSync(clusterFile.name, await clusterStore.getShipInstallationManifests(localCluster.id!));
 
     args.push("apply");
     args.push("-f");

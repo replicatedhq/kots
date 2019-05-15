@@ -20,20 +20,16 @@ LOG_LEVEL ?= debug
 
 .PHONY: clean
 clean:
-	rm -rf .state/ bin/
+	rm -rf bin/
 
 .PHONY: run
 run: build
 	LOG_LEVEL=$(LOG_LEVEL) ./bin/ship-cluster-worker init
 
-.PHONY: .state/build-deps
-.state/build-deps: hack/get_build_deps.sh
-	./hack/get_build_deps.sh
-	@mkdir -p .state/
-	@touch .state/build-deps
-
 .PHONY: build-deps
-build-deps: .state/build-deps
+build-deps:
+	hack/get_build_deps.sh
+	./hack/get_build_deps.sh
 
 .PHONY: dep-deps
 dep-deps:
@@ -43,60 +39,38 @@ dep-deps:
 deps:
 	dep ensure -v
 
-.PHONY: .state/fmt
-.state/fmt: $(SRC)
-	goreturns -w pkg
-	goreturns -w cmd
-	@mkdir -p .state
-	@touch .state/fmt
-
-.PHONY: fmt
-fmt: build-deps .state/fmt
-
-.PHONY: .state/lint
-.state/lint: $(SRC)
+.PHONY: lint
+lint:
 	golint ./pkg/... | grep -v "should have comment" | grep -v "comment on exported" | grep -v bindata || :
 	golint ./cmd/... | grep -v "should have comment" | grep -v "comment on exported" | grep -v bindata || :
-	@mkdir -p .state
-	@touch .state/lint
-
-.PHONY: lint
-lint: fmt .state/lint
-
-.PHONY: .state/vet
-.state/vet: $(SRC)
-	go vet ./pkg/...
-	go vet ./cmd/...
-	@mkdir -p .state
-	@touch .state/vet
 
 .PHONY: vet
-vet: lint .state/vet
+vet: lint
+	go vet ./pkg/...
+	go vet ./cmd/...
 
-.PHONY: .state/test
-.state/test: $(SRC)
-	go test ./pkg/... | grep -v '?'
-	@mkdir -p .state
-	@touch .state/test
 
 .PHONY: test
-test: .state/test
+test:
+	go test ./pkg/... | grep -v '?'
 
 .PHONY: bin/ship-cluster-worker
 bin/ship-cluster-worker: $(SRC)
-	go build \
+	time go build \
 		${LDFLAGS} \
-		-i \
 		-o bin/ship-cluster-worker \
 		./cmd/ship-cluster-worker
 	@echo built bin/ship-cluster-worker
 
 .PHONY: build
-build: test bin/ship-cluster-worker
+build: bin/ship-cluster-worker test
 
-.PHONY: build-staffold-cache
-build-skaffold-cache:
+.PHONY: build-cache
+build-cache:
 	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+
+.PHONY: publish-cache
+publish-cache:
 	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging

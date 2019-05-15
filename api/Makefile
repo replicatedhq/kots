@@ -3,7 +3,7 @@ PROJECT_NAME ?= ship-cluster-api
 
 .PHONY: deps
 deps:
-	yarn --silent
+	yarn --silent --frozen-lockfile
 
 .PHONY: prebuild
 prebuild:
@@ -56,8 +56,6 @@ test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
 test:
 	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 ||:
-	cd ../migrations/fixtures && make build run
-	docker build -t replicated/ship-cluster-fixtures:local -f ../migrations/fixtures/deploy/Dockerfile ../migrations/fixtures
 	docker run --rm -d --name ship-cluster-fixtures -p 15432:5432 replicated/ship-cluster-fixtures:local
 	yarn run test:local
 	@-sleep 1
@@ -69,13 +67,12 @@ pkg:
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/ship-cluster-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
 
-.PHONY: types
-types:
-	yarn gql-gen --template graphql-codegen-typescript-template --schema http://localhost:8065/graphql --out ./src/generated/types.d.ts
-
-.PHONY: build-staffold-cache
-build-skaffold-cache:
+.PHONY: build-cache
+build-cache:
 	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+
+.PHONY: publish-cache
+publish-cache:
 	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging

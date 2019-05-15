@@ -16,7 +16,7 @@ class ClusterScopeBatch extends React.Component {
     this.state = {
       loggedIn: Utilities.isLoggedIn(),
       displaySignUpModal: false,
-      imageWatchItems: []
+      imageWatches: []
     }
   }
 
@@ -30,9 +30,9 @@ class ClusterScopeBatch extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    if(this.props.data.imageWatchItems !== lastProps.data.imageWatchItems) {
-      this.setState({ imageWatchItems: this.props.data.imageWatchItems });
-      if(!some(this.props.data.imageWatchItems, { lastCheckedOn: null })) {this.props.data.stopPolling();}
+    if(this.props.data.imageWatches !== lastProps.data.imageWatches) {
+      this.setState({ imageWatches: this.props.data.imageWatches });
+      if(!some(this.props.data.imageWatches, { lastCheckedOn: null })) {this.props.data.stopPolling();}
     }
   }
 
@@ -47,7 +47,7 @@ class ClusterScopeBatch extends React.Component {
 
   render() {
     const { displaySignUpModal } = this.state;
-    const items = reverse(sortBy(this.state.imageWatchItems, ["versionsBehind"]));
+    const items = reverse(sortBy(this.state.imageWatches, ["versionsBehind"]));
     const rows = map(sortBy(items, ["isPrivate"]), (item) => {
       const warningClass = item.versionsBehind > 0 && item.versionsBehind <= 9 ? "warning" : "";
       const superWarningClass = item.versionsBehind >= 10 ? "super-warning" : "";

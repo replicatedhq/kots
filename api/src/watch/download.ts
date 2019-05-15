@@ -33,13 +33,11 @@ export class WatchDownload {
   constructor(private readonly watchStore: WatchStore) {}
 
   async downloadDeploymentYAML(watchId: string): Promise<DeploymentFile> {
-    const span = tracer().startSpan("downloadDeploymentYAML");
-    const watch = await this.watchStore.getWatch(span, watchId);
-    const params = await this.watchStore.getLatestGeneratedFileS3Params(span, watchId);
+    const watch = await this.watchStore.getWatch(watchId);
+    const params = await this.watchStore.getLatestGeneratedFileS3Params(watchId);
 
-    const download = await this.findDeploymentFile(span, params);
+    const download = await this.findDeploymentFile(params);
     const filename = this.determineFileName(download, watch.watchName!);
-    span.finish();
     return {
       ...download,
       filename,
@@ -47,21 +45,18 @@ export class WatchDownload {
   }
 
   async downloadDeploymentYAMLForSequence(watchId: string, sequence: number): Promise<DeploymentFile> {
-    const span = tracer().startSpan("downloadDeploymentYAMLForSequence");
-    const params = await this.watchStore.getLatestGeneratedFileS3Params(span.context(), watchId, sequence);
+    const params = await this.watchStore.getLatestGeneratedFileS3Params(watchId, sequence);
 
-    const download = await this.findDeploymentFile(span.context(), params);
-    const watch = await this.watchStore.getWatch(span.context(), watchId);
+    const download = await this.findDeploymentFile(params);
+    const watch = await this.watchStore.getWatch(watchId);
     const filename = this.determineFileName(download, watch.watchName!);
-    span.finish();
     return {
       ...download,
       filename,
     };
   }
 
-  async findDeploymentFile(ctx: jaeger.SpanContext, params: S3.Types.GetObjectRequest): Promise<Download> {
-    const span: jaeger.SpanContext = tracer().startSpan("watchDownload.findDeploymentYAML", { childOf: ctx });
+  async findDeploymentFile(params: S3.Types.GetObjectRequest): Promise<Download> {
     const shipParams = await Params.getParams();
 
     return new Bluebird<Download>((resolve, reject) => {
@@ -117,7 +112,6 @@ export class WatchDownload {
           };
         }
 
-        span.finish();
         resolve(download);
         return;
       });
@@ -129,7 +123,6 @@ export class WatchDownload {
     })
       .timeout(30000, "Unable to read deployment YAML from tar output")
       .catch(error => {
-        span.finish();
         throw error;
       });
   }

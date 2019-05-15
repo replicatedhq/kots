@@ -12,11 +12,11 @@ module.exports = function (env) {
   var srcPath = path.join(__dirname, "src");
   var appEnv = require("./env/" + (env || "dev") + ".js");
 
-  if (process.env["SHIP_CLUSTER_GITHUB_CLIENT_ID"]) {
-    appEnv.GITHUB_CLIENT_ID = process.env["SHIP_CLUSTER_GITHUB_CLIENT_ID"];
+  if (process.env["GITHUB_CLIENT_ID"]) {
+    appEnv.GITHUB_CLIENT_ID = process.env["GITHUB_CLIENT_ID"];
   }
-  if (process.env["SHIP_CLUSTER_GITHUB_INSTALL_URL"]) {
-    appEnv.GITHUB_INSTALL_URL = process.env["SHIP_CLUSTER_GITHUB_INSTALL_URL"];
+  if (process.env["GITHUB_INSTALL_URL"]) {
+    appEnv.GITHUB_INSTALL_URL = process.env["GITHUB_INSTALL_URL"];
   }
   if (process.env["SHIP_CLUSTER_API_SERVER"]) {
     appEnv.INSTALL_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/install`;

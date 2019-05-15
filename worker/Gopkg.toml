@@ -43,7 +43,7 @@
 
 [[override]]
   name = "gopkg.in/fsnotify.v1"
-  source = "https://github.com/fsnotify/fsnotify.git"
+  source = "github.com/fsnotify/fsnotify"
 
 [[constraint]]
   name = "github.com/gin-gonic/gin"

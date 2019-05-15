@@ -6,7 +6,6 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
-import { isPolicyValid } from "../user/policy";
 import { proxy as InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { proxy as UpdateProxy } from "../update/proxy";
@@ -22,13 +21,14 @@ import { SessionStore } from "../session";
 import { ClusterStore } from "../cluster";
 import { WatchStore } from "../watch/watch_store";
 import { NotificationStore } from "../notification/store";
-import { UpdateStore } from "../update/store";
+import { UpdateStore } from "../update/update_store";
 import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
-import { ImageWatchStore } from "../imagewatch/store";
+import { ImageWatchStore } from "../imagewatch/imagewatch_store";
 import { FeatureStore } from "../feature/feature_store";
-import { GithubNonceStore } from "../user/store";
+import { GithubNonceStore, UserStoreOld } from "../user/store";
 import { HealthzStore } from "../healthz/store";
+import { WatchDownload } from "../watch/download";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -83,12 +83,14 @@ export class Server extends ServerLoader {
     };
 
     const pool = await getPostgresPool();
+    const watchStore = new WatchStore(pool, params);
     const stores: Stores = {
       sessionStore: new SessionStore(pool, params),
       userStore: new UserStore(pool),
+      userStoreOld: new UserStoreOld(pool),
       githubNonceStore: new GithubNonceStore(pool),
       clusterStore: new ClusterStore(pool, params),
-      watchStore: new WatchStore(pool, params),
+      watchStore: watchStore,
       notificationStore: new NotificationStore(pool, params),
       updateStore: new UpdateStore(pool, params),
       unforkStore: new UnforkStore(pool, params),
@@ -96,13 +98,14 @@ export class Server extends ServerLoader {
       imageWatchStore: new ImageWatchStore(pool),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool),
+      watchDownload: new WatchDownload(watchStore)
     }
 
     this.expressApp.locals.stores = stores;
 
     this.use("/api/v1/download/:watchId", setContext);
     this.use("/api/v1/download/:watchId", (request: Request, response: Response, next: NextFunction) => {
-      next(isPolicyValid(response.locals.context));
+      next(response.locals.context.hasValidSession());
     });
 
     this.use("/graphql", setContext);
