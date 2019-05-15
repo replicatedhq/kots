@@ -41,6 +41,7 @@ func (s *EditSession) GetName() string {
 func (s *EditSession) GetShipArgs() []string {
 	return []string{
 		"edit",
+		"--headed",
 	}
 }
 
