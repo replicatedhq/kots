@@ -94,7 +94,7 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 		return 0, "pending", "", nil
 	}
 
-	watchState := state.State{}
+	watchState := state.VersionedState{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
 		return 0, "", "", errors.Wrap(err, "unmarshal watch state")
 	}
@@ -130,7 +130,7 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 }
 
 func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, isCurrent bool) error {
-	watchState := state.State{}
+	watchState := state.VersionedState{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
 		return errors.Wrap(err, "unmarshal watch state")
 	}
