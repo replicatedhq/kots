@@ -1,10 +1,10 @@
-import * as jaeger from "jaeger-client";
 import * as randomstring from "randomstring";
 import * as rp from "request-promise";
-import { InitSession } from "../generated/types";
+import { InitSession } from "./";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import * as pg from "pg";
+import { ReplicatedError } from "../server/errors";
 
 export class InitStore {
   constructor(
@@ -13,7 +13,7 @@ export class InitStore {
   ) {
   }
 
-  async createInitSession(ctx: jaeger.SpanContext, userId: string, upstreamUri: string, clusterId: any, githubPath: any, requestedUpstreamUri?: string): Promise<InitSession> {
+  async createInitSession(userId: string, upstreamUri: string, clusterId: any, githubPath: any, requestedUpstreamUri?: string): Promise<InitSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
     const q = `insert into ship_init (id, user_id, upstream_uri, created_at, cluster_id, github_path, requested_upstream_uri) values ($1, $2, $3, $4, $5, $6, $7)`;
@@ -29,11 +29,11 @@ export class InitStore {
 
     await this.pool.query(q, v);
 
-    return this.getSession(null, id);
+    return this.getSession(id);
   }
 
-  async deployInitSession(ctx: jaeger.SpanContext, id: string): Promise<InitSession> {
-    const initSession = await this.getSession(null, id);
+  async deployInitSession(id: string): Promise<InitSession> {
+    const initSession = await this.getSession(id);
 
     if (this.params.skipDeployToWorker) {
       logger.info("skipping deploy to worker");
@@ -43,12 +43,9 @@ export class InitStore {
     const options = {
       method: "POST",
       uri: `${this.params.shipInitBaseURL}/v1/init`,
-      headers: {
-        "X-TraceContext": ctx,
-      },
       body: {
         id: initSession.id,
-        upstreamUri: initSession.upstreamUri,
+        upstreamUri: initSession.upstreamURI,
       },
       json: true,
     };
@@ -58,25 +55,22 @@ export class InitStore {
     return initSession;
   }
 
-  async getSession(ctx: jaeger.SpanContext, id: string): Promise<InitSession> {
-    const q = `
-      SELECT id, upstream_uri, created_at, finished_at, result
-      FROM ship_init
-      WHERE id = $1
-    `;
+  async getSession(id: string): Promise<InitSession> {
+    const q = `select id, upstream_uri, created_at, finished_at, result from ship_init where id = $1`;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    return this.mapRow(rows[0]);
-  }
+    const result = await this.pool.query(q, v);
 
-  private mapRow(row: any): InitSession {
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`Init session ${id} not found`);
+    }
+
     return {
-      id: row.id,
-      upstreamUri: row.upstream_uri,
-      createdOn: row.created_at,
-      finishedOn: row.finished_at,
-      result: row.result,
+      id: result.rows[0].id,
+      upstreamURI: result.rows[0].upstream_uri,
+      createdOn: result.rows[0].created_at,
+      finishedOn: result.rows[0].finished_at,
+      result: result.rows[0].result,
     };
   }
 }

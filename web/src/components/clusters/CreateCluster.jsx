@@ -1,8 +1,7 @@
 import * as React from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { createShipOpsCluster } from "../../mutations/ClusterMutations";
-import { refreshGithubTokenMetadata } from "../../mutations/GitHubMutations";
 import omit from "lodash/omit";
 import "../../scss/components/clusters/CreateCluster.scss";
 import ShipClusterSuccess from "./ShipClusterSuccess";
@@ -65,20 +64,7 @@ export class CreateCluster extends React.Component {
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
 
-    // const { location } = this.props;
-    // const _search = location && location.search;
-    // const searchParams = new URLSearchParams(_search);
-    // const installationId = searchParams.get("installation_id");
-    
-
     if (configStep) {
-      // await this.props.refreshGithubTokenMetadata();
-      // if (installationId) {
-      //   let appRedirect = document.cookie.match("(^|;)\\s*appRedirect\\s*=\\s*([^;]+)");
-      //   if (appRedirect) {
-      //     appRedirect = appRedirect.pop();
-      //   }
-      // }
       this.setState({
         ...this.state,
         opsType: {
@@ -193,9 +179,4 @@ export class CreateCluster extends React.Component {
 export default compose(
   withRouter,
   withApollo,
-  graphql(refreshGithubTokenMetadata, {
-    props: ({ mutate }) => ({
-      refreshGithubTokenMetadata: () => mutate(),
-    })
-  }),
 )(CreateCluster);

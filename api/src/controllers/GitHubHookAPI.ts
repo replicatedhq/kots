@@ -109,18 +109,18 @@ export class GitHubHookAPI {
     const owner = pullRequestEvent.pull_request.base.repo.owner.login;
     const repo = pullRequestEvent.pull_request.base.repo.name;
 
-    const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(null, owner, repo);
+    const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
     for (const cluster of clusters) {
-      const watches = await request.app.locals.stores.watchStore.listForCluster(null, cluster.id!);
+      const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
 
       for (const watch of watches) {
-        const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(null, watch.id!);
+        const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
         for (const pendingVersion of pendingVersions) {
           if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
-            await request.app.locals.stores.watchStore.updateVersionStatus(null, watch.id!, pendingVersion.sequence!, status);
+            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
             if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(null, watch.id!, pendingVersion.sequence!);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!);
             }
             return;
           }
@@ -129,9 +129,9 @@ export class GitHubHookAPI {
         const pastVersions = await request.app.locals.stores.watchStore.listPastVersions(watch.id!);
         for (const pastVersion of pastVersions) {
           if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
-            await request.app.locals.stores.watchStore.updateVersionStatus(null, watch.id!, pastVersion.sequence!, status);
+            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
             if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(null, watch.id!, pastVersion .sequence!);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!);
             }
             return;
           }

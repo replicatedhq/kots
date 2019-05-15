@@ -1,4 +1,5 @@
 bases:
+  - ../../web/kustomize/overlays/dev
   - ../../api/kustomize/overlays/dev
   - ../../worker/kustomize/overlays/dev
   - ../../migrations/kustomize/overlays/dev

@@ -12,6 +12,7 @@ export class Session {
   public expiresAt: Date;
   public metadata: string;
   public scmToken: string;
+  public type: string;
 
   public async getToken(): Promise<string> {
     const claims: Claims = {

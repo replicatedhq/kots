@@ -1,14 +1,5 @@
 import gql from "graphql-tag";
 
-export const githubUser = gql`
-  query {
-    githubUser {
-      login,
-      avatar_url
-    }
-  }
-`;
-
 export const githubUserOrgs = gql`
 query installationOrganizations($page: Int) {
   installationOrganizations(page: $page) {

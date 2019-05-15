@@ -1,7 +1,6 @@
 bases:
   - ../../base
 resources:
-  - ./debug-lb.yaml
-  - ./loadbalancer.yaml
+  - ./nodeport.yaml
 patchesStrategicMerge:
   - ./deployment.yaml

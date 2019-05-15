@@ -24,21 +24,21 @@ export class DeployAPI {
     let cluster;
 
     try {
-      cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(span.context(), credentials.pass);
+      cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(credentials.pass);
     } catch (err) {
       // TODO error type
       response.status(401);
       return {};
     }
 
-    const watches = await request.app.locals.stores.watchStore.listForCluster(span.context(), cluster.id!);
+    const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
 
     const desiredState: string[] = [];
 
     for (const watch of watches) {
-      const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(span, watch.id!);
+      const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(watch.id!);
 
-      const download = await request.app.locals.stores.downloadService.findDeploymentFile(span.context(), params);
+      const download = await request.app.locals.stores.watchDownload.findDeploymentFile(params);
       desiredState.push(download.contents.toString("base64"));
     }
 

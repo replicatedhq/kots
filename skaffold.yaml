@@ -1,4 +1,4 @@
-apiVersion: skaffold/v1beta9
+apiVersion: skaffold/v1beta10
 kind: Config
 
 profiles:
@@ -25,6 +25,23 @@ build:
         dockerfile: ./Dockerfile.skaffold
         cacheFrom:
           - repldev/ship-cluster-api:latest
+
+    - image: ship-cluster-ui
+      context: "./web"
+      sync:
+        manual:
+          - src: "src/**/*.js?"
+            dest: "./"
+          - src: "src/**/*.png"
+            dest: "./"
+          - src: "src/**/*.scss"
+            dest: "./"
+          - src: "src/**/*.css"
+            dest: "./"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+        cacheFrom:
+          - repldev/ship-cluster-web:latest
 
     - image: ship-cluster-worker
       context: "./worker"

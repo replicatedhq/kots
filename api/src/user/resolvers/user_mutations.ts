@@ -6,7 +6,6 @@ import { AccessToken, CreateGithubAuthTokenMutationArgs, GithubUser, TrackScmLea
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
 
@@ -69,7 +68,7 @@ export function UserMutations(stores: Stores, params: Params) {
           // }
         }
 
-        const session = await stores.sessionStore.createGithubSession(accessToken.access_token, user.id);
+        const session = await stores.sessionStore.createGithubSession(user.id, accessToken.access_token);
 
         return {
           access_token: session,
@@ -80,24 +79,13 @@ export function UserMutations(stores: Stores, params: Params) {
       }
     },
 
-    async refreshGithubTokenMetadata(root: any, args: any, context: Context): Promise<void> {
-      const span = tracer().startSpan("mutation.refreshGithubTokenMetadata");
-      await stores.sessionStore.refreshGithubTokenMetadata(span.context(), context.getGitHubToken(), context.session.id);
-      span.finish();
-    },
-
-
     async createGithubNonce(): Promise<string> {
       const nonce = await stores.githubNonceStore.createNonce();
       return nonce.nonce;
     },
 
     async trackScmLead(root: any, args: TrackScmLeadMutationArgs, context: Context): Promise<string> {
-      const span = tracer().startSpan("mutation.trackScmLead");
-      //const { id } = await this.userStore.trackScmLead(span.context(), args.deploymentPreference, args.emailAddress, args.scmProvider);
-      const id = "123";
-      span.finish();
-      return id;
+      return await this.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 
     async logout(root: any, args: any, context: Context): Promise<void> {

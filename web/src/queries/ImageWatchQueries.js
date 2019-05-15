@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
 
 export const getImageWatchRaw = `
-  query imageWatchItems($batchId: String!) {
-    imageWatchItems(batchId: $batchId) {
+  query imageWatches($batchId: String!) {
+    imageWatches(batchId: $batchId) {
       id
       name
       lastCheckedOn

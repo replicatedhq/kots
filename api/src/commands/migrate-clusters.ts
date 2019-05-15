@@ -4,7 +4,7 @@ import { WatchStore } from "../watch/watch_store";
 import { Params } from "../server/params";
 import { tracer } from "../server/tracing";
 import { NotificationStore } from "../notification/store";
-import { ClusterStore } from "../cluster/cluster_store";
+import { ClusterStore, Cluster } from "../cluster";
 import * as _ from "lodash";
 
 export const name = "migrate";
@@ -36,9 +36,9 @@ async function main(argv): Promise<any> {
   const notificationStore = new NotificationStore(pool, params);
   const clusterStore = new ClusterStore(pool, params);
 
-  const allWatches = await watchStore.listAllWatchesForAllTeams(span.context());
+  const allWatches = await watchStore.listAllWatchesForAllTeams();
   for (const watch of allWatches) {
-    const userIds = await watchStore.listUsersForWatch(span.context(), watch.id!);
+    const userIds = await watchStore.listUsersForWatch(watch.id!);
     if (userIds.length === 0) {
       console.log(`no users for watch $${watch.watchName}, not migrating`);
       continue;
@@ -58,19 +58,19 @@ async function main(argv): Promise<any> {
 
     const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
     console.log(`creating new parent watch for ${watch.watchName}`);
-    const parentWatch = await watchStore.createNewWatch(span.context(), JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
+    const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
 
     // Change child upstream to be parent
     if (childState.v1) {
       childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
 
       console.log(`updating child watch state for watch ${watch.watchName}`);
-      await watchStore.updateStateJSON(span.context(), watch.id!, JSON.stringify(childState, null, 2), metadata);
+      await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
 
-      await watchStore.setParent(span.context(), watch.id!, parentWatch.id!);
+      await watchStore.setParent(watch.id!, parentWatch.id!);
     }
 
-    const watchNotifications = await notificationStore.listNotifications(span.context(), watch.id!);
+    const watchNotifications = await notificationStore.listNotifications(watch.id!);
 
     for (const watchNotification of watchNotifications) {
       if (watchNotification.pullRequest) {
@@ -82,29 +82,33 @@ async function main(argv): Promise<any> {
         const clusterName = `${watchNotification.pullRequest.org}-${watchNotification.pullRequest.repo}-${watchNotification.pullRequest.branch}`;
         console.log(`looking for a cluster named ${clusterName} to target`);
 
-        const clusters = await clusterStore.listClusters(span.context(), firstUserId);
-        let cluster = _.find(clusters, (cluster) => {
+        const clusters = await clusterStore.listClusters(firstUserId);
+        let cluster = _.find(clusters, (cluster: Cluster) => {
           return cluster.title === clusterName;
         });
 
         if (!cluster) {
           const branch = watchNotification.pullRequest.branch ? watchNotification.pullRequest.branch : "";
           console.log(`creating a new cluster`);
-          cluster = await clusterStore.createNewCluster(span.context(), firstUserId, false, clusterName, "gitops", watchNotification.pullRequest.org, watchNotification.pullRequest.repo, branch, installationId);
+          cluster = await clusterStore.createNewCluster(firstUserId, false, clusterName, "gitops", watchNotification.pullRequest.org, watchNotification.pullRequest.repo, branch, installationId);
         }
 
+        if (!cluster) {
+          console.error(`unable to find cluster`);
+          return;
+        }
 
         for (const userId of userIds) {
-          await clusterStore.addUserToCluster(span.context(), cluster.id!, userId);
+          await clusterStore.addUserToCluster(cluster.id, userId);
         }
 
         const path = watchNotification.pullRequest.rootPath ? watchNotification.pullRequest.rootPath : undefined;
-        await watchStore.setCluster(span.context(), watch.id!, cluster!.id!, path);
+        await watchStore.setCluster(watch.id!, cluster!.id!, path);
 
         // migrate the history
         const pullrequestHistoryItems = await notificationStore.listPullRequestHistory(span.context(), watchNotification.id!);
         for(const item of pullrequestHistoryItems) {
-          await watchStore.createWatchVersion(span.context(), watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
+          await watchStore.createWatchVersion(watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
         }
       }
     }
@@ -118,37 +122,3 @@ async function main(argv): Promise<any> {
 }
 
 
-
-// Table "public.pullrequest_notification"
-// Column         |            Type             | Collation | Nullable | Default
-// ------------------------+-----------------------------+-----------+----------+---------
-// notification_id        | text                        |           | not null |
-// org                    | text                        |           | not null |
-// repo                   | text                        |           | not null |
-// branch                 | text                        |           |          |
-// root_path              | text                        |           |          |
-// created_at             | timestamp without time zone |           | not null |
-// github_installation_id | integer
-
-
-
-// shipcloud-# \d cluster_github
-//                Table "public.cluster_github"
-//      Column      |  Type   | Collation | Nullable | Default
-// -----------------+---------+-----------+----------+---------
-//  cluster_id      | text    |           | not null |
-//  owner           | text    |           | not null |
-//  repo            | text    |           | not null |
-//  branch          | text    |           |          |
-//  installation_id | integer |           | not null |
-// Indexes:
-
-// create table watch_version (
-//   watch_id text not null,
-//   created_at timestamp without time zone,
-//   version_label text not null,
-//   status text not null default 'unknown',
-//   source_branch text null,
-//   sequence integer default 0,
-//   pullrequest_number integer null
-// );

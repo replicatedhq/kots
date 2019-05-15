@@ -1,46 +1,27 @@
-import { ClusterItem } from "../../generated/types";
-import { tracer } from "../../server/tracing";
 import { Context } from "../../context";
+import { Stores } from "../../schema/stores";
 
-export function ClusterMutations(stores: any) {
+export function ClusterMutations(stores: Stores) {
   return {
-    async createGitOpsCluster(root: any, { title, installationId, gitOpsRef }: any, context: Context): Promise<ClusterItem> {
-      const span = tracer().startSpan("mutation.creaateGitOpsCluster");
-
-      const result = await stores.clusterStore.createNewCluster(span.context(), context.session.userId, false, title, "gitops", gitOpsRef.owner, gitOpsRef.repo, gitOpsRef.branch, installationId)
-
-      span.finish();
-
+    async createGitOpsCluster(root: any, { title, installationId, gitOpsRef }: any, context: Context) {
+      const result = await stores.clusterStore.createNewCluster(context.session.userId, false, title, "gitops", gitOpsRef.owner, gitOpsRef.repo, gitOpsRef.branch, installationId)
       return result;
     },
 
-    async createShipOpsCluster(root: any, { title }: any, context: Context): Promise<ClusterItem> {
-      const span = tracer().startSpan("mutation.createShipOpsCluster");
-
-      const result = await stores.clusterStore.createNewCluster(span.context(), context.session.userId, false, title, "ship");
-
-      span.finish();
-
+    async createShipOpsCluster(root: any, { title }: any, context: Context) {
+      const result = await stores.clusterStore.createNewCluster(context.session.userId, false, title, "ship");
       return result;
     },
 
-    async updateCluster(root: any, { clusterId, clusterName, gitOpsRef }: any, context: Context): Promise<ClusterItem> {
-      const span = tracer().startSpan("mutation.updateCluster");
-
-      await stores.clusterStore.updateCluster(span.context(), context.session.userId, clusterId, clusterName, gitOpsRef);
-      const updatedCluster = stores.clusterStore.getCluster(span.context(), clusterId);
-
-      span.finish();
+    async updateCluster(root: any, { clusterId, clusterName, gitOpsRef }: any, context: Context) {
+      await stores.clusterStore.updateCluster(context.session.userId, clusterId, clusterName, gitOpsRef);
+      const updatedCluster = stores.clusterStore.getCluster(clusterId);
 
       return updatedCluster;
     },
 
-    async deleteCluster(root: any, { clusterId }: any, context: Context): Promise<boolean> {
-      const span = tracer().startSpan("mutation.deleteCluster");
-
-      await stores.clusterStore.deleteCluster(span.context(), context.session.userId, clusterId);
-
-      span.finish();
+    async deleteCluster(root: any, { clusterId }: any, context: Context) {
+      await stores.clusterStore.deleteCluster(context.session.userId, clusterId);
 
       return true;
     },

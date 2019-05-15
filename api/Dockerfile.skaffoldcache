@@ -1,4 +1,4 @@
-FROM node:8.11
+FROM node:8
 EXPOSE 3000 9229
 
 # Install Kubectl

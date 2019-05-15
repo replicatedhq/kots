@@ -1,6 +1,5 @@
 bases:
   - ../../base
-patchesStrategicMerge:
-  - job.yaml
+
 resources:
   - postgres.yaml

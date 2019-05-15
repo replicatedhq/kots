@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-cluster-ui
+  labels:
+    app: ship-cluster-ui
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+    nodePort: 30000
+  selector:
+    app: ship-cluster-ui

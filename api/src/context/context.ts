@@ -1,6 +1,8 @@
 import { SessionStore, Session } from "../session";
 import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
+import { ReplicatedError } from "../server/errors";
+import { isAfter } from "date-fns";
 
 export class Context {
   public session: Session;
@@ -16,7 +18,24 @@ export class Context {
     return context;
   }
 
+  public sessionType(): string {
+    return this.session.type;
+  }
+
   public getGitHubToken(): string {
     return this.session.scmToken;
+  }
+
+  public hasValidSession(): ReplicatedError | null {
+    if (this.getGitHubToken().length === 0) {
+      return new ReplicatedError("Unauthorized", "401");
+    }
+
+    const currentTime = new Date(Date.now()).toUTCString();
+    if (isAfter(currentTime, this.session.expiresAt)) {
+      return new ReplicatedError("Expired session", "401");
+    }
+
+    return null
   }
 }

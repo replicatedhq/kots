@@ -20,11 +20,10 @@ export function getShipClient(sessionId) {
   return ShipClientGQL(
     `http://localhost:${MOCK_SERVER_PORT}/graphql`,
     `http://localhost:${MOCK_SERVER_PORT}/api`,
-    async () => {
+    () => {
       if (!sessionId) {
         return "";
       }
-
       return createSessionToken(sessionId)
     }, fetch);
 }

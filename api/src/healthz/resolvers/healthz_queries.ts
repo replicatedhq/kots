@@ -1,6 +1,7 @@
 import { logger } from "../../server/logger";
+import { Stores } from "../../schema/stores";
 
-export function HealthzQueries(stores: any) {
+export function HealthzQueries(stores: Stores) {
   return {
     async healthz(): Promise<{}> {
       return {

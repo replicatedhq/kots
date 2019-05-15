@@ -1,7 +1,6 @@
 import { Params } from "../server/params";
 import * as pg from "pg";
-import * as jaeger from "jaeger-client";
-import { ClusterItem, GitOpsRefInput } from "../generated/types";
+import { Cluster } from "./";
 import { ReplicatedError } from "../server/errors";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
@@ -10,58 +9,56 @@ import * as _ from "lodash";
 export class ClusterStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
-  async listClustersForGitHubRepo(ctx: jaeger.SpanContext, owner: string, repo: string): Promise<ClusterItem[]> {
+  async listClustersForGitHubRepo(owner: string, repo: string): Promise<Cluster[]> {
     const q = `select cluster_id from cluster_github where owner = $1 and repo = $2`;
     const v = [
       owner,
       repo,
     ];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    const clusterIds = rows.map(row => row.cluster_id);
+    const result = await this.pool.query(q, v);
+    const clusterIds = result.rows.map(row => row.cluster_id);
 
-    const clusters: ClusterItem[] = [];
-
+    const clusters: Cluster[] = [];
     for (const clusterId of clusterIds) {
       clusters.push(await this.getGitOpsCluster(clusterId));
     }
 
-      return clusters;
+    return clusters;
   }
 
-  async getFromDeployToken(ctx: jaeger.SpanContext, token: string): Promise<ClusterItem> {
+  async getFromDeployToken(token: string): Promise<Cluster> {
     const q = `select id from cluster where token = $1`;
     const v = [
       token,
     ];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    const result = rows.map(row => this.mapCluster(row));
-
-    return this.getCluster(null, result[0].id!);
+    const result = await this.pool.query(q, v);
+    return this.getCluster(result[0].id);
   }
 
-  async getGitOpsCluster(clusterId: string, watchId?: string): Promise<ClusterItem> {
+  async getGitOpsCluster(clusterId: string, watchId?: string): Promise<Cluster> {
     const fields = ["id", "title", "slug", "created_at", "updated_at", "cluster_type", "owner", "repo", "branch"]
     if (watchId) {
       fields.push("wc.github_path");
     }
-    const q = `
-    select ${fields} from cluster
-    inner join
-      cluster_github on cluster_id = id
-    ${watchId ? " left outer join watch_cluster as wc on wc.cluster_id = id where wc.cluster_id = $1 and watch_id = $2" : " where id = $1"}`;
+
+    const q = `select ${fields} from cluster
+      inner join
+        cluster_github on cluster_id = id
+      ${watchId ? " left outer join watch_cluster as wc on wc.cluster_id = id where wc.cluster_id = $1 and watch_id = $2" : " where id = $1"}`;
+
     let v = [clusterId];
     if (watchId) {
       v.push(watchId);
     }
 
-    const { rows }: { rows: any[] }  = await this.pool.query(q, v);
+    const result = await this.pool.query(q, v);
 
-    return this.mapCluster(rows[0]);
+    return this.mapCluster(result.rows[0]);
   }
 
-  async getLocalShipOpsCluster(): Promise<ClusterItem|void> {
+  async getLocalShipOpsCluster(): Promise<Cluster|void> {
     const q = `select id from cluster where cluster_type = $1 and title = $2`;
     const v = [
       "ship",
@@ -76,22 +73,22 @@ export class ClusterStore {
     return this.getShipOpsCluster(result.rows[0].id);
   }
 
-  async getShipOpsCluster(clusterId: string): Promise<ClusterItem> {
+  async getShipOpsCluster(clusterId: string): Promise<Cluster> {
     const q = `select id, title, slug, created_at, updated_at, token, cluster_type from cluster where id = $1`;
     const v = [clusterId];
 
-    const { rows }: { rows: any[] }  = await this.pool.query(q, v);
+    const result  = await this.pool.query(q, v);
 
-    return this.mapCluster(rows[0]);
+    return this.mapCluster(result.rows[0]);
   }
 
-  async listAllUsersClusters(ctx: jaeger.SpanContext): Promise<ClusterItem[]> {
+  async listAllUsersClusters(): Promise<Cluster[]> {
       const q = `select id, cluster_type from cluster where is_all_users = true order by created_at, title`;
       const v = [];
 
-      const { rows }: { rows: any[] }  = await this.pool.query(q, v);
-      const clusters: ClusterItem[] = [];
-      for (const row of rows) {
+      const result = await this.pool.query(q, v);
+      const clusters: Cluster[] = [];
+      for (const row of result.rows) {
         if (row.cluster_type === "gitops") {
           clusters.push(await this.getGitOpsCluster(row.id));
         } else {
@@ -102,13 +99,13 @@ export class ClusterStore {
       return clusters;
   }
 
-  async listClusters(ctx: jaeger.SpanContext, userId: string): Promise<ClusterItem[]> {
+  async listClusters(userId: string): Promise<Cluster[]> {
     const q = `select id, cluster_type from cluster inner join user_cluster on cluster_id = id where user_cluster.user_id = $1 order by created_at, title`;
     const v = [userId];
 
-    const { rows }: { rows: any[] }  = await this.pool.query(q, v);
-    const clusters: ClusterItem[] = [];
-    for (const row of rows) {
+    const result = await this.pool.query(q, v);
+    const clusters: Cluster[] = [];
+    for (const row of result.rows) {
       if (row.cluster_type === "gitops") {
         clusters.push(await this.getGitOpsCluster(row.id));
       } else {
@@ -119,41 +116,41 @@ export class ClusterStore {
     return clusters;
   }
 
-  async getForWatch(ctx: jaeger.SpanContext, watchId: string): Promise<ClusterItem | void> {
-      const q = `select cluster_id, cluster_type from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
-      const v = [watchId];
+  async getForWatch(watchId: string): Promise<Cluster | void> {
+    const q = `select cluster_id, cluster_type from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
+    const v = [watchId];
 
-      const { rows }: { rows: any[] }  = await this.pool.query(q, v);
-      if (rows.length === 0) {
-        return;
-      }
-      let cluster: ClusterItem = {}
-      if (rows[0].cluster_type === "gitops") {
-        cluster = await this.getGitOpsCluster(rows[0].cluster_id, watchId);
-      } else {
-        cluster = await this.getShipOpsCluster(rows[0].cluster_id);
-      }
+    const result  = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      return;
+    }
+    let cluster: Cluster;
+    if (result.rows[0].cluster_type === "gitops") {
+      cluster = await this.getGitOpsCluster(result.rows[0].cluster_id, watchId);
+    } else {
+      cluster = await this.getShipOpsCluster(result.rows[0].cluster_id);
+    }
 
-      return cluster;
+    return cluster;
   }
 
-  async getCluster(ctx: jaeger.SpanContext, id: string): Promise<ClusterItem> {
+  async getCluster(id: string): Promise<Cluster> {
     const q = `select id, cluster_type from cluster where id = $1`;
     const v = [id];
 
-    const { rows }: { rows: any[] }  = await this.pool.query(q, v);
-    const result = rows.map(row => {
-      if (row.cluster_type === "gitops") {
-        return this.getGitOpsCluster(row.id);
-      } else {
-        return this.getShipOpsCluster(row.id);
-      }
-    });
+    const result  = await this.pool.query(q, v);
 
-    return result[0];
+    const clusterType = result.rows[0].cluster_type;
+
+    switch (clusterType) {
+      case "gitops":
+        return this.getGitOpsCluster(result.rows[0].id);
+      default:
+        return this.getShipOpsCluster(result.rows[0].id);
+    }
   }
 
-  async addUserToCluster(ctx: jaeger.SpanContext, clusterId: string, userId: string): Promise<void> {
+  async addUserToCluster(clusterId: string, userId: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -182,7 +179,7 @@ export class ClusterStore {
     }
   }
 
-  async createNewCluster(ctx: jaeger.SpanContext, userId: string|undefined, isAllUsers: boolean, title: string, type: string, gitOwner?: string, gitRepo?: string, gitBranch?: string, gitInstallationId?: number): Promise<ClusterItem> {
+  async createNewCluster(userId: string|undefined, isAllUsers: boolean, title: string, type: string, gitOwner?: string, gitRepo?: string, gitBranch?: string, gitInstallationId?: number): Promise<Cluster> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
     const slugProposal = `${slugify(title, { lower: true })}`;
@@ -190,9 +187,9 @@ export class ClusterStore {
     let clusters;
 
     if (userId) {
-      clusters = await this.listClusters(ctx, userId);
+      clusters = await this.listClusters(userId);
     } else {
-      clusters = await this.listAllUsersClusters(ctx);
+      clusters = await this.listAllUsersClusters();
     }
 
     const existingSlugs = clusters.map(cluster => cluster.slug);
@@ -258,14 +255,14 @@ export class ClusterStore {
 
       await pg.query("commit");
 
-      return this.getCluster(ctx, id);
+      return this.getCluster(id);
     } finally {
       await pg.query("rollback");
       pg.release();
     }
   }
 
-  async getShipInstallationManifests(ctx: jaeger.SpanContext, clusterId: string): Promise<string> {
+  async getShipInstallationManifests(clusterId: string): Promise<string> {
     const cluster = await this.getShipOpsCluster(clusterId);
 
     const manifests = `
@@ -498,9 +495,9 @@ items:
     return manifests;
   }
 
-  async updateCluster(ctx: jaeger.SpanContext, userId: string, clusterId: string, clusterName: string, gitOpsRef: GitOpsRefInput | null): Promise<boolean> {
+  async updateCluster(userId: string, clusterId: string, clusterName: string, gitOpsRef: any): Promise<boolean> {
     const slugProposal = `${slugify(clusterName, { lower: true })}`;
-    const clusters = await this.listClusters(ctx, userId);
+    const clusters = await this.listClusters(userId);
     const existingSlugs = clusters.map(cluster => cluster.slug);
     let finalSlug = slugProposal;
 
@@ -538,7 +535,7 @@ items:
     return rows[0].count;
   }
 
-  async deleteCluster(ctx: jaeger.SpanContext, userId: string, clusterId: string): Promise<boolean> {
+  async deleteCluster( userId: string, clusterId: string): Promise<boolean> {
     const pg = await this.pool.connect();
 
     try {
@@ -553,7 +550,7 @@ items:
       }
 
       try {
-        const cluster = await this.getCluster(ctx, clusterId);
+        const cluster = await this.getCluster(clusterId);
 
         let q = `delete from cluster where id = $1`;
         let v = [clusterId];
@@ -581,7 +578,7 @@ items:
     }
   }
 
-  private mapCluster(row: any): ClusterItem {
+  private mapCluster(row: any): Cluster {
     let gitOpsRef, shipOpsRef: any = null
     if (row.token) {
       shipOpsRef = {
