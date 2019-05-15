@@ -11,7 +11,7 @@ metadata:
   name: edit-worker-list-pods
 subjects:
 - kind: ServiceAccount
-  name: edit-cluster-worker-update
+  name: edit-cluster-worker-edit
   namespace: default
 roleRef:
   kind: ClusterRole
