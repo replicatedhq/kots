@@ -22,16 +22,14 @@ export function WatchQueries(stores: Stores) {
 
     async listWatches(root: any, args: any, context: Context): Promise<Watch[]> {
       const watches = await stores.watchStore.listWatches(context.session.userId);
-      const w = new Watch();
-      const result = watches.map(watch => w.toSchema(watch, root, stores, context));
+      const result = watches.map(watch => watch.toSchema(root, stores, context));
       return result;
     },
 
     async searchWatches(root: any, args: any, context: Context): Promise<Watch[]> {
       const { watchName } = args;
       const watches = await stores.watchStore.searchWatches(context.session.userId, watchName);
-      const w = new Watch();
-      return watches.map(watch => w.toSchema(watch, root, stores, context));
+      return watches.map(watch => watch.toSchema(root, stores, context));
     },
 
     async getWatch(root: any, args: any, context: Context): Promise<Watch> {
@@ -40,33 +38,28 @@ export function WatchQueries(stores: Stores) {
         throw new ReplicatedError("One of slug or id is required", "bad_request");
       }
       const result = await stores.watchStore.findUserWatch(context.session.userId, { slug: slug!, id: id! });
-      const watch = new Watch();
-      return watch.toSchema(result, root, stores, context);
+      return result.toSchema(root, stores, context);
     },
 
     async watchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
       const { id } = args;
-      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
-      const watch = new Watch();
-      return watch.getContributors(w.id!, stores);
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
+      return watch.getContributors(stores);
     },
 
     async listPendingWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
-      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
-      const watch = new Watch();
-      return watch.getPendingVersions(w.id, stores);
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      return watch.getPendingVersions(stores);
     },
 
     async listPastWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
-      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
-      const watch = new Watch();
-      return watch.getPastVersions(w.id, stores);
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      return watch.getPastVersions(stores);
     },
 
     async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<Version|undefined> {
-      const w: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
-      const watch = new Watch();
-      return watch.getCurrentVersion(w.id!, stores);
+      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
+      return watch.getCurrentVersion(stores);
     }
 
   }

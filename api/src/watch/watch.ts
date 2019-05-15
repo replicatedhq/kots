@@ -24,37 +24,61 @@ export class Watch {
   public parentWatch: Watch;
 
   // Watch Cluster Methods
-  public async getCluster(watchId: string, stores: Stores) {
-    return stores.clusterStore.getForWatch(watchId!)
+  public async getCluster(stores: Stores): Promise<Cluster | void> {
+    return stores.clusterStore.getForWatch(this.id)
   }
 
   // Parent/Child Watch Methods
-  public async getParentWatch(watchId: string) {}
+  public async getParentWatch(stores: Stores): Promise<Watch> {
+    const parentWatchId = await stores.watchStore.getParentWatchId(this.id)
+    return stores.watchStore.getWatch(parentWatchId);
+  }
   public async getChildWatches(stores): Promise<Watch[]> {
     return stores.watchStore.listWatches(undefined, this.id);
   }
 
   // Version Methods
-  public async getCurrentVersion(watchId: string, stores: Stores) {
-    return stores.watchStore.getCurrentVersion(watchId!);
+  public async getCurrentVersion(stores: Stores): Promise<Version | undefined> {
+    return stores.watchStore.getCurrentVersion(this.id);
   }
-  public async getPendingVersions(watchId: string, stores: Stores) {
-    return stores.watchStore.listPendingVersions(watchId!);
+  public async getPendingVersions(stores: Stores): Promise<Version[]> {
+    return stores.watchStore.listPendingVersions(this.id);
   }
-  public async getPastVersions(watchId: string, stores: Stores) {
-    return stores.watchStore.listPastVersions(watchId!);
+  public async getPastVersions(stores: Stores): Promise<Version[]> {
+    return stores.watchStore.listPastVersions(this.id);
   }
 
   // Contributor Methods
-  public async getContributors(watchId: string, stores: Stores) {
-    return stores.watchStore.listWatchContributors(watchId!);
+  public async getContributors(stores: Stores): Promise<Contributor[]> {
+    return stores.watchStore.listWatchContributors(this.id);
   }
+  
+  public async addContributor(stores: Stores, context: Context): Promise<Contributor[]> {
+    // Remove existing contributors
+    await stores.userStoreOld.removeExistingWatchContributorsExcept(this.id, context.session.userId);
 
-  public async addContributor() {}
+    // For each contributor, get user, if !user then create a new user
+    for (const contributor of this.contributors) {
+      const { githubId, login, avatar_url } = contributor!;
+
+      let shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
+      if (!shipUser) {
+        shipUser = await stores.userStore.createGitHubUser(githubId!, login!, avatar_url!, "");
+
+        const allUsersClusters = await stores.clusterStore.listAllUsersClusters();
+        for (const allUserCluster of allUsersClusters) {
+          await stores.clusterStore.addUserToCluster(allUserCluster.id!, shipUser[0].id);
+        }
+      }
+      // tslint:disable-next-line:curly
+      if (shipUser[0].id !== context.session.userId) await stores.userStoreOld.saveWatchContributor(shipUser[0].id, this.id);
+    }
+    return this.getContributors(stores);
+  }
   
   // Features Methods
-  public async getFeatures(watchId: string, stores: Stores) {
-    const features = await stores.featureStore.listWatchFeatures(watchId);
+  public async getFeatures(stores: Stores): Promise<Feature[]> {
+    const features = await stores.featureStore.listWatchFeatures(this.id);
     const result = _.map(features, (feature: Feature) => {
       return {
         ...feature,
@@ -63,17 +87,18 @@ export class Watch {
     return result;
   }
 
-  public toSchema(watch: Watch, root: any, stores: Stores, context: Context): any {
+  public toSchema(root: any, stores: Stores, context: Context): any {
     return {
-      ...watch,
-      watches: async () => (await watch.getChildWatches(stores)).map(childWatch => this.toSchema(childWatch!, root, stores, context)),
-      cluster: async () => await this.getCluster(watch.id, stores),
-      contributors: async () => this.getContributors(watch.id, stores),
-      notifications: async () => NotificationQueries(stores).listNotifications(root, { watchId: watch.id! }, context),
-      features: async () => this.getFeatures(watch.id!, stores),
-      pendingVersions: async () => this.getPendingVersions(watch.id!, stores),
-      pastVersions: async () => this.getPastVersions(watch.id!, stores),
-      currentVersion: async () => this.getCurrentVersion(watch.id!, stores),
+      ...this,
+      watches: async () => (await this.getChildWatches(stores)).map(watch => watch.toSchema(root, stores, context)),
+      cluster: async () => await this.getCluster(stores),
+      contributors: async () => this.getContributors(stores),
+      notifications: async () => NotificationQueries(stores).listNotifications(root, { watchId: this.id }, context),
+      features: async () => this.getFeatures(stores),
+      pendingVersions: async () => this.getPendingVersions(stores),
+      pastVersions: async () => this.getPastVersions(stores),
+      currentVersion: async () => this.getCurrentVersion(stores),
+      parentWatch: async () => this.getParentWatch(stores)
     };
   }
 

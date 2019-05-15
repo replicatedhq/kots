@@ -1,4 +1,3 @@
-
 import { Validator } from "jsonschema";
 import * as _ from "lodash";
 import { ReplicatedError } from "../../server/errors";
@@ -41,15 +40,13 @@ export function WatchMutations(stores: Stores) {
     async updateWatch(root: any, args: any, context: Context): Promise<Watch> {
       const { watchId, watchName, iconUri } = args;
 
-      let w = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      let watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
 
       await stores.watchStore.updateWatch(watchId, watchName || undefined, iconUri || undefined);
 
-      w = await stores.watchStore.getWatch(watchId);
+      watch = await stores.watchStore.getWatch(watchId);
 
-      const watch = new Watch();
-
-      return watch.toSchema(w, root, stores, context);
+      return watch.toSchema(root, stores, context);
     },
 
     async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: any, context: Context): Promise<Watch> {
@@ -91,7 +88,7 @@ export function WatchMutations(stores: Stores) {
 
       const { id, contributors } = args;
       const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
-
+      watch.addContributor(stores, context)
 
       // await storeTransaction(this.userStore, async store => {
       //   // Remove existing contributors

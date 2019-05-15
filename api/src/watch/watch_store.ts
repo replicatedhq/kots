@@ -328,6 +328,23 @@ export class WatchStore {
     }
   }
 
+  async getParentWatchId(id: string): Promise<string> {
+    const pg = await this.pool.connect();
+
+    try {
+      const q = "select parent_watch_id from watch where id = $1";
+      const v = [id];
+
+      const result = await pg.query(q, v);
+      if (result.rows.length === 0) {
+        throw new ReplicatedError("This watch does not have a parent");
+      }
+      return result.rows[0].parent_watch_id;
+    } finally {
+      pg.release();
+    }
+  }
+
   async deleteWatch(watchId: string): Promise<boolean> {
     const pg = await this.pool.connect();
 

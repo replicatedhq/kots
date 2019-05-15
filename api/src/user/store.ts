@@ -1,6 +1,5 @@
 // @ts-ignore
 import { addMinutes } from "date-fns";
-import * as jaeger from "jaeger-client";
 import * as randomstring from "randomstring";
 import * as pg from "pg";
 import { GithubNonce, ScmLead } from "./";
@@ -8,7 +7,7 @@ import { GithubNonce, ScmLead } from "./";
 export class UserStoreOld {
   constructor(readonly pool: pg.Pool) {}
 
-  async saveWatchContributor(ctx: jaeger.SpanContext, userId: String, id: String) {
+  async saveWatchContributor(userId: String, id: String) {
     const q = "INSERT INTO user_watch (user_id, watch_id) VALUES ($1, $2)";
 
     const v = [userId, id];
@@ -16,7 +15,7 @@ export class UserStoreOld {
     await this.pool.query(q, v);
   }
 
-  async removeExistingWatchContributorsExcept(ctx: jaeger.SpanContext, id: string, userIdToExclude: string) {
+  async removeExistingWatchContributorsExcept(id: string, userIdToExclude: string) {
     const q = `
     DELETE FROM
       user_watch
