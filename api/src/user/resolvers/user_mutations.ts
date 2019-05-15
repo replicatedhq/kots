@@ -1,19 +1,18 @@
-
 import * as GitHubApi from "@octokit/rest";
 import { isAfter } from "date-fns";
 import * as simpleOauth from "simple-oauth2";
-import { AccessToken, CreateGithubAuthTokenMutationArgs, GithubUser, TrackScmLeadMutationArgs } from "../../generated/types";
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
+import { GitHubUser, AccessToken } from "../";
 
 export type authCode = { code: string };
 
 export function UserMutations(stores: Stores, params: Params) {
   return {
-    async createGithubAuthToken(root: any, args: CreateGithubAuthTokenMutationArgs): Promise<AccessToken> {
+    async createGithubAuthToken(root: any, args: any): Promise<AccessToken> {
       const matchingNonce = await stores.githubNonceStore.getNonce(args.state);
       if (!matchingNonce) {
         throw new ReplicatedError("Invalid GitHub Exchange");
@@ -87,7 +86,7 @@ export function UserMutations(stores: Stores, params: Params) {
       return nonce.nonce;
     },
 
-    async trackScmLead(root: any, args: TrackScmLeadMutationArgs, context: Context): Promise<string> {
+    async trackScmLead(root: any, args: any, context: Context): Promise<string> {
       return await this.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 

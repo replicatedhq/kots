@@ -1,4 +1,4 @@
-import GitHubInstallation from "../github_installation/types";
+import GitHubInstallation from "../github_installation/graphql/types";
 import User from "../user/graphql/user_types";
 import Cluster from "../cluster/graphql/cluster_types";
 import Unfork from "../unfork/graphql/unfork_types";
