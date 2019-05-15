@@ -12,6 +12,7 @@ import { GithubNonceStore, UserStoreOld } from "../user/store";
 import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
+import { PendingStore } from "../pending";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -24,6 +25,7 @@ export interface Stores {
   updateStore: UpdateStore,
   unforkStore: UnforkStore,
   initStore: InitStore,
+  pendingStore: PendingStore,
   imageWatchStore: ImageWatchStore,
   featureStore: FeatureStore,
   healthzStore: HealthzStore,

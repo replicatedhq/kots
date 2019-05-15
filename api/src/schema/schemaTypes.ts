@@ -9,6 +9,7 @@ import ImageWatch from "../imagewatch/graphql/imagewatch_types";
 import Update from "../update/graphql/update_types";
 import Notification from "../notification/graphql/notification_types";
 import Edit from "../edit/graphql/edit_types";
+import Pending from "../pending/graphql/pending_types";
 
 import { all as Mutation } from "./mutation";
 import { Healthz, Query } from "./query";
@@ -36,4 +37,5 @@ export const ShipClusterSchemaTypes = [
   ...Update,
   ...ImageWatch,
   ...Edit,
+  ...Pending,
 ];
