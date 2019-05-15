@@ -18,6 +18,8 @@ export const Query = `
 
     listClusters: [Cluster]
 
+    listPendingInitSessions: [PendingInitSession]
+
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]
     getWatch(slug: String, id: String): Watch
