@@ -200,7 +200,7 @@ export class WatchedApps extends React.Component {
             title="Installed 3rd-party applications"
             buttonText="Install a new application"
             onClick={() => this.props.history.push("/watch/create/init")}
-            searchCallback={(watches) => { this.setState({ watches }) }}
+            searchCallback={(watches, pendingWatches) => { this.setState({ watches, pendingWatches }) }}
             showUnfork
           />
           <div className="flex1 u-paddingBottom--20 installed-watches-wrapper">
@@ -223,11 +223,7 @@ export class WatchedApps extends React.Component {
                   }}
                 />
               </div>
-            )) :
-              <div className="flex1 flex alignItems--center justifyContent--center">
-                <p className="u-fontWeight--medium u-color--dustyGray">No watches found</p>
-              </div>
-            }
+            )) : null}
             {pendingWatches.length ? pendingWatches.map((pendingWatch) => (
               <div key={pendingWatch.id} className="installed-watch-wrapper pending flex flex-auto u-paddingBottom--20">
                 <PendingWatchCard
@@ -240,6 +236,11 @@ export class WatchedApps extends React.Component {
                 />
               </div>
             ))
+            : null}
+            {!watches.length && !pendingWatches.length ? 
+              <div className="flex1 flex alignItems--center justifyContent--center">
+                <p className="u-fontWeight--medium u-color--dustyGray">No watches found</p>
+              </div>
             : null}
           </div>
         </div>

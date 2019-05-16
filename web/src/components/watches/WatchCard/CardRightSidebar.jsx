@@ -42,7 +42,7 @@ export default class CardRightSideBar extends React.Component {
         return {}
       }
     });
-    options.push({
+    options && options.push({
       value: watch.id,
       label: `${watch.watchName} (mid-stream)`,
       watchId: watch.id

@@ -12,6 +12,18 @@ export function PendingQueries(stores: Stores) {
           title: pendingInitSession.title,
         };
       });
-    }
+    },
+
+    async searchPendingInitSessions(root: any, args: any, context: Context) {
+      const { title } = args;
+      const pendingInitSessions = await stores.pendingStore.searchPendingInitSessions(context.session.userId, title);
+      return pendingInitSessions.map((pendingInitSession) => {
+        return {
+          id: pendingInitSession.id,
+          upstreamURI: pendingInitSession.upstreamURI,
+          title: pendingInitSession.title,
+        };
+      });
+    },
   }
 }

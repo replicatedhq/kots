@@ -552,3 +552,15 @@ export const listPendingInitRaw = `
 `;
 
 export const listPendingInit = gql(listPendingInitRaw);
+
+export const searchPendingInitSessionsRaw = `
+  query searchPendingInitSessions($title: String!) {
+    searchPendingInitSessions(title: $title) {
+      id
+      title
+      upstreamURI
+    }
+  }
+`;
+
+export const searchPendingInitSessions = gql(searchPendingInitSessionsRaw);
