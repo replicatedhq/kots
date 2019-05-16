@@ -59,8 +59,8 @@ export const deployWatchVersion = gql`
 `;
 
 export const createInitSessionRaw = `
-  mutation createInitSession($upstreamUri: String!, $clusterID: String, $githubPath: String) {
-    createInitSession(upstreamUri: $upstreamUri, clusterID: $clusterID, githubPath: $githubPath) {
+  mutation createInitSession($pendingInitId: String, $upstreamUri: String, $clusterID: String, $githubPath: String) {
+    createInitSession(pendingInitId: $pendingInitId, upstreamUri: $upstreamUri, clusterID: $clusterID, githubPath: $githubPath) {
       id
       upstreamUri
       createdOn

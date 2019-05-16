@@ -7,6 +7,7 @@ import { NotificationQueries, NotificationMutations } from "../notification";
 import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
 import { EditMutations, EditQueries } from "../edit";
+import { PendingQueries } from "../pending";
 
 import { HealthzQueries } from "../healthz";
 
@@ -27,6 +28,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...HealthzQueries(stores),
     ...GithubInstallationQueries(stores),
     ...EditQueries(stores),
+    ...PendingQueries(stores)
   },
 
   Mutation: {

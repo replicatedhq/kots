@@ -2,14 +2,24 @@ import { Context } from "../../context";
 import { Params } from "../../server/params";
 import * as _ from "lodash";
 import { WatchStore } from "../../watch/watch_store";
+import { ReplicatedError } from "../../server/errors";
 
 export function InitMutations(stores: any) {
   return {
-    async createInitSession(root: any, { upstreamUri, clusterID, githubPath }: any, context: Context) {
-      const uri = await maybeRewriteUpstreamUri(stores.watchStore, context.session.userId, upstreamUri);
-
+    async createInitSession(root: any, { pendingInitId, upstreamUri, clusterID, githubPath }: any, context: Context) {
+      let uri: any = null;
+      if (pendingInitId) {
+        uri = await stores.pendingStore.getPendingInitURI(pendingInitId);
+      } else if (upstreamUri) {
+        uri = await maybeRewriteUpstreamUri(stores.watchStore, context.session.userId, upstreamUri);
+      }
+      
+      if (!uri) {
+        throw new ReplicatedError("No upstream given");
+      }
+      
       const initSession = await stores.initStore.createInitSession(context.session.userId, uri, clusterID, githubPath, upstreamUri);
-      const deployedInitSession = await stores.initStore.deployInitSession(initSession.id);
+      const deployedInitSession = await stores.initStore.deployInitSession(initSession.id, pendingInitId || null);
 
       return {
         id: deployedInitSession.id,

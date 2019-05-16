@@ -23,7 +23,7 @@ type Mutation {
   enableNotification(watchId: String!, notificationId: String!, enabled: Int!): Notification
   deleteNotification(id: String!, isPending: Boolean): Boolean
 
-  createInitSession(upstreamUri: String!, clusterID: String, githubPath: String): InitSession!
+  createInitSession(pendingInitId: String, upstreamUri: String, clusterID: String, githubPath: String): InitSession!
   createUnforkSession(upstreamUri: String!, forkUri: String!): UnforkSession!
   createUpdateSession(watchId: ID!): UpdateSession!
   createEditSession(watchId: ID!): EditSession!

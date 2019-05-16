@@ -11,7 +11,7 @@ export class PendingStore {
 
   public async listPendingInitSessions(userId: string): Promise<PendingInitSession[]> {
     const q = `select id, title, upstream_uri, requested_upstream_uri, created_at, finished_at, result from ship_init_pending
-      inner join ship_initPending_user on ship_init_pending_id = ship_init_pending.id where
+      inner join ship_init_pending_user on ship_init_pending_id = ship_init_pending.id
       where user_id = $1`;
     const v = [
       userId,
@@ -29,10 +29,18 @@ export class PendingStore {
         finishedAt: row.finished_at ? new Date(row.finished_at) : undefined,
         result: row.result,
       };
-
+      
       pendingInitSessions.push(pendingInitSession);
     }
 
     return pendingInitSessions;
+  }
+
+  public async getPendingInitURI(initId: string): Promise<string> {
+    const q = `select upstream_uri from ship_init_pending where id = $1`
+    const v = [initId];
+    const result = await this.pool.query(q,v);
+
+    return result.rows[0].upstream_uri;
   }
 }

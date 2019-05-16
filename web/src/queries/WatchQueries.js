@@ -540,3 +540,15 @@ export const userFeatures = gql`
     }
   }
 `;
+
+export const listPendingInitRaw = `
+  query listPendingInitSessions {
+    listPendingInitSessions {
+      id
+      title
+      upstreamURI
+    }
+  }
+`;
+
+export const listPendingInit = gql(listPendingInitRaw);
