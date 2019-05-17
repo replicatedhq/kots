@@ -4,12 +4,12 @@ var srcPath = path.join(__dirname, "src");
 
 module.exports = {
   entry: [
+    "react-hot-loader/patch",
     "./src/index.jsx"
   ],
 
   plugins: [
     new webpack.NamedModulesPlugin(),
-    new webpack.HotModuleReplacementPlugin(),
   ],
 
   output: {

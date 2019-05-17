@@ -1,7 +1,7 @@
+import { hot } from "react-hot-loader/root";
 import React from "react";
 import createHistory from "history/createBrowserHistory";
 import ReactPiwik from "react-piwik";
-import { hot } from "react-hot-loader";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Utilities } from "./utilities/utilities";
@@ -189,4 +189,4 @@ class Root extends React.Component {
   }
 }
 
-export default hot(module)(Root)
+export default hot(Root);
