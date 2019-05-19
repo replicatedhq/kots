@@ -1,5 +1,6 @@
 bases:
-  - ../staging-job
+  - ../../base
+
 resources:
   - ./secret.json
   - ./secret-rw.json

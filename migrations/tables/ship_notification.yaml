@@ -1,0 +1,33 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: ship-notification
+spec:
+  database: ship-cluster-postgres
+  name: ship_notification
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: watch_id
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: timestamp without time zone
+      - name: triggered_at
+        type: timestamp without time zone
+      - name: enabled
+        type: smallint

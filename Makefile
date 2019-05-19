@@ -5,6 +5,7 @@ cache:
 	cd api && make build-cache
 	cd worker && make build-cache
 	cd ship-operator && make build-cache
+	cd ship-operator-tools && make build-cache
 	cd web && make build-cache
 
 .PHONY: test
@@ -35,3 +36,9 @@ bitbucket-server:
 		atlassian/bitbucket-server:4.12
 	@echo "A BitBucket server is starting on http://localhost:7990. You'll need to install an eval license".
 
+.PHONY: reset-ships
+reset-ships:
+	kubectl delete ns `kubectl get ns | grep shipwatch- | awk '{print $1}'` || true
+	kubectl delete ns `kubectl get ns | grep shipedit- | awk '{print $1}'` || true
+	kubectl delete ns `kubectl get ns | grep shipupdate- | awk '{print $1}'` || true
+	kubectl delete ns `kubectl get ns | grep shipinit- | awk '{print $1}'` || terue

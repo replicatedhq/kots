@@ -2,4 +2,5 @@ bases:
   - ../../base
 
 resources:
-  - postgres.yaml
+  - ./postgres.yaml
+  - ./ship-cluster-postgres.yaml

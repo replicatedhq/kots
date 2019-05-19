@@ -1,0 +1,41 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: watch
+spec:
+  database: ship-cluster-postgres
+  name: watch
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: current_state
+        type: text
+      - name: title
+        type: text
+        constraints:
+          notNull: true
+      - name: icon_uri
+        type: text
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: timestamp without time zone
+      - name: slug
+        type: text
+        constraints:
+          notNull: true
+      - name: parent_watch_id
+        type: text
+      - name: current_sequence
+        type: integer

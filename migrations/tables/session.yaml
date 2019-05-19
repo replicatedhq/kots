@@ -1,0 +1,31 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: session
+spec:
+  database: ship-cluster-postgres
+  name: session
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: user_id
+        type: text
+        constraints:
+          notNull: true
+      - name: metadata
+        type: text
+        constraints:
+          notNull: true
+      - name: expire_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true

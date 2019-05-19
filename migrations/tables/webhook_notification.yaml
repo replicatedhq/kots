@@ -1,0 +1,26 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: webhook-notification
+spec:
+  database: ship-cluster-postgres
+  name: webhook_notification
+  requires: []
+  schema:
+    postgres:
+      primaryKey: []
+      columns:
+      - name: notification_id
+        type: text
+        constraints:
+          notNull: true
+      - name: destination_uri
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
