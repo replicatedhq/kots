@@ -1,6 +1,6 @@
 import { hot } from "react-hot-loader/root";
 import React from "react";
-import createHistory from "history/createBrowserHistory";
+import { createBrowserHistory } from "history";
 import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
@@ -37,7 +37,7 @@ import "./scss/index.scss";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
-let history = createHistory();
+let history = createBrowserHistory();
 if(process.env.NODE_ENV === "production") {
   const piwik = new ReactPiwik({
     url: "https://data-2.replicated.com",

@@ -161,7 +161,7 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App name</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You can name your app whatever you want.</p>
               <div className="flex">
-                <input type="text" className="Input" placeholder="What is your application called?" value={this.state.appName} onChange={(e) => { this.onFormChange("appName", e) }} />
+                <input type="text" className="Input" placeholder="What is your application called?" value={this.state.appName || ""} onChange={(e) => { this.onFormChange("appName", e) }} />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateName} disabled={this.state.nameLoading}>{this.state.nameLoading ? "Saving" : "Save"}</button>
                 </div>
@@ -171,7 +171,7 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App icon</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Link to any URI for an app icon.</p>
               <div className="flex">
-                <input type="text" className="Input" placeholder="Add a URL" value={this.state.iconUri} onChange={(e) => { this.onFormChange("iconUri", e) }} />
+                <input type="text" className="Input" placeholder="Add a URL" value={this.state.iconUri || ""} onChange={(e) => { this.onFormChange("iconUri", e) }} />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateIcon} disabled={this.state.iconLoading}>{this.state.iconLoading ? "Saving" : "Save"}</button>
                 </div>

@@ -38,7 +38,7 @@ module.exports = function (env) {
     },
 
     resolve: {
-      extensions: [".js", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
+      extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
       alias: {
         "react": path.resolve("node_modules/react"),
         "react-dom": path.resolve("node_modules/react-dom"),
@@ -53,6 +53,11 @@ module.exports = function (env) {
 
     module: {
       rules: [
+        {
+          test: /\.mjs$/,
+          include: /node_modules/,
+          type: 'javascript/auto'
+        },
         {
           test: /\.css$/,
           use: [
@@ -73,7 +78,7 @@ module.exports = function (env) {
           include: srcPath,
           use: [
             { loader: "style-loader" },
-            { loader: "css-loader?importLoaders=2" },
+            { loader: "css-loader", options: { importLoaders: 1 } },
             { loader: "sass-loader" },
             { loader: "postcss-loader" }
           ]
