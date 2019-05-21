@@ -19,7 +19,7 @@ export function InitMutations(stores: any) {
       }
       
       const initSession = await stores.initStore.createInitSession(context.session.userId, uri, clusterID, githubPath, upstreamUri);
-      const deployedInitSession = await stores.initStore.deployInitSession(initSession.id, pendingInitId || null);
+      const deployedInitSession = await stores.initStore.deployInitSession(initSession.id, pendingInitId);
 
       return {
         id: deployedInitSession.id,

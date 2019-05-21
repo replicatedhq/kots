@@ -32,7 +32,7 @@ export class InitStore {
     return this.getSession(id);
   }
 
-  async deployInitSession(id: string, pendingInitId: string): Promise<InitSession> {
+  async deployInitSession(id: string, pendingInitId?: string): Promise<InitSession> {
     const initSession = await this.getSession(id);
 
     if (this.params.skipDeployToWorker) {

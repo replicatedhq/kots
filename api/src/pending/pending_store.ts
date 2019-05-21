@@ -35,9 +35,6 @@ export class PendingStore {
   }
 
   public async searchPendingInitSessions(userId: string, title: string): Promise<PendingInitSession[]> {
-    const pg = await this.pool.connect();
-
-    try {
       const q = `
       select
         id, title, upstream_uri, requested_upstream_uri, created_at, finished_at, result
@@ -55,16 +52,13 @@ export class PendingStore {
         `%${title}%`,
       ];
 
-      const result = await pg.query(q, v);
+      const result = await this.pool.query(q, v);
       const pendingInitSessions: PendingInitSession[] = [];
       for (const row of result.rows) {
         const result = this.mapRow(row);
         pendingInitSessions.push(result);
       }
       return pendingInitSessions;
-    } finally {
-      pg.release();
-    }
   }
 
   private mapRow(row): PendingInitSession {
