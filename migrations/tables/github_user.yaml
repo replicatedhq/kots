@@ -22,9 +22,8 @@ spec:
         constraints:
           notNull: true
       - name: avatar_url
-        type: character varying
+        type: character varying (255)
         constraints:
-          maxLength: 255
           notNull: false
       - name: email
         type: text

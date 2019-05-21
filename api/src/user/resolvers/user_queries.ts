@@ -6,7 +6,6 @@ import { ReplicatedError } from "../../server/errors";
 export function UserQueries(stores: Stores) {
   return {
     async userInfo(root: any, args: any, context: Context) {
-      console.log(context.sessionType());
       if (context.sessionType() === "github") {
         const github = new GitHubApi();
         github.authenticate({
