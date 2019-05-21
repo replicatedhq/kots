@@ -16,6 +16,7 @@ export default () => {
     const result = await getShipClient("solo-account-session-1").mutate({
       mutation: createInitSession,
       variables: {
+        pendingInitId: "",
         upstreamUri: "https://github.com/helm/charts/stable/grafana",
         clusterID: null,
         githubPath: null,
@@ -38,6 +39,7 @@ const createHelmInitSessionInteraction = new Pact.GraphQLInteraction()
   .withOperation("createInitSession")
   .withQuery(createInitSessionRaw)
   .withVariables({
+    pendingInitId: "",
     upstreamUri: "https://github.com/helm/charts/stable/grafana",
     clusterID: null,
     githubPath: null,

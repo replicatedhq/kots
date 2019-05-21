@@ -25,15 +25,21 @@ export class ShipInitPre extends React.Component {
     const { search } = this.props.location;
     const searchParams = new URLSearchParams(search);
     const upstream = searchParams.get("upstream");
+    const pendingInitId = searchParams.get("pendingInitId");
     const licenseId = searchParams.get("license_id");
     const clusterId = searchParams.get("cluster_id");
     const githubPath = searchParams.get("path");
+    const autoStart = searchParams.get("start");
     const url = `${upstream ? upstream : ""}${licenseId ? `?license_id=${licenseId}`: ""}`;
     this.setState({
+      pendingInitId: pendingInitId || "",
       url: url || "",
       clusterId: clusterId || "",
       githubPath: githubPath || ""
     });
+    if (autoStart === "1") {
+      this.onShipInitUrlSubmitted();
+    }
   }
 
   componentWillUnmount() {
@@ -66,34 +72,30 @@ export class ShipInitPre extends React.Component {
     const { onActiveInitSession } = this.props;
     const { url } = this.state;
 
-    if (url === "") {
-      this.setState({ urlError: true });
+    if (url.indexOf("?license_id=") === -1 && url.indexOf("replicated.app") !== -1) { // Prompt user to input license ID before trying to fetch app
+      return this.setState({ displayLicenseIdModal: true });
+    }
+
+    this.setState({
+      saving: true,
+      urlError: false,
+      displayLicenseIdModal: false,
+      url,
+    });
+    const validUpstream = await this.validateUpstream(url).catch(this.handleInvalidUpstream);
+
+    if (validUpstream) {
+      const { clusterId, githubPath, pendingInitId } = this.state;
+      this.props.createInitSession(pendingInitId, url, clusterId, githubPath)
+        .then(({ data }) => {
+          if (!window.location.pathname.includes("/watch/create/init")) {return;} // Prevent redirect if component is no longer mounted
+          const { createInitSession } = data;
+          const { id: initSessionId } = createInitSession;
+          onActiveInitSession(initSessionId);
+          this.props.history.push("/ship/init")
+        }).catch(this.handleInvalidUpstream);
     } else {
-      if (url.indexOf("?license_id=") === -1 && url.indexOf("replicated.app") !== -1) { // Prompt user to input license ID before trying to fetch app
-        return this.setState({ displayLicenseIdModal: true });
-      }
-
-      this.setState({
-        saving: true,
-        urlError: false,
-        displayLicenseIdModal: false,
-        url,
-      });
-      const validUpstream = await this.validateUpstream(url).catch(this.handleInvalidUpstream);
-
-      if (validUpstream) {
-        const { clusterId, githubPath } = this.state;
-        this.props.createInitSession(url, clusterId, githubPath)
-          .then(({ data }) => {
-            if (!window.location.pathname.includes("/watch/create/init")) {return;} // Prevent redirect if component is no longer mounted
-            const { createInitSession } = data;
-            const { id: initSessionId } = createInitSession;
-            onActiveInitSession(initSessionId);
-            this.props.history.push("/ship/init")
-          }).catch(this.handleInvalidUpstream);
-      } else {
-        this.handleInvalidUpstream();
-      }
+      this.handleInvalidUpstream();
     }
   }
 
@@ -212,7 +214,7 @@ export default compose(
   withApollo,
   graphql(createInitSession, {
     props: ({ mutate }) => ({
-      createInitSession: (upstreamUri, clusterID, githubPath) => mutate({ variables: { upstreamUri, clusterID, githubPath } })
+      createInitSession: (pendingInitId, upstreamUri, clusterID, githubPath) => mutate({ variables: { pendingInitId, upstreamUri, clusterID, githubPath } })
     })
   })
 )(ShipInitPre);

@@ -4,8 +4,9 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import ContentHeader from "../shared/ContentHeader";
 import WatchCard from "./WatchCard/";
+import PendingWatchCard from "./PendingWatchCard.jsx";
 import Loader from "../shared/Loader";
-import { listWatches, userFeatures } from "../../queries/WatchQueries";
+import { listWatches, listPendingInit, userFeatures } from "../../queries/WatchQueries";
 import { createEditSession, deleteWatch, deployWatchVersion } from "../../mutations/WatchMutations";
 import ShipLoading from "../ShipLoading";
 import Modal from "react-modal";
@@ -31,6 +32,7 @@ export class WatchedApps extends React.Component {
     clusterIdToAddTo: "",
     watchToEdit: null,
     watches: [],
+    pendingWatches: [],
     downloadingIds: new Set(),
     addNewClusterModal: false,
     displayRemoveClusterModal: false,
@@ -52,6 +54,11 @@ export class WatchedApps extends React.Component {
       this.props.history.push("/ship/edit")
     })
     .catch(() => this.setState({ watchToEdit: null }));
+  }
+
+  onPendingInstallClick = async (watch) => {
+    const { id } = watch;
+    this.props.history.push(`/watch/create/init?pendingInitId=${id}&start=1`);
   }
 
   onCardActionClick = (url) => {
@@ -143,7 +150,7 @@ export class WatchedApps extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { listWatchesQuery, history, location } = this.props;
+    const { listWatchesQuery, pendingWatchesQuery, history, location } = this.props;
     const _search = location && location.search;
     const searchParams = new URLSearchParams(_search);
     const addClusterId = searchParams.get("add_cluster_id");
@@ -157,6 +164,9 @@ export class WatchedApps extends React.Component {
         this.handleAddNewClusterClick(watch);
       }
     }
+    if (pendingWatchesQuery !== lastProps.pendingWatchesQuery && pendingWatchesQuery.listPendingInitSessions) {
+      this.setState({ pendingWatches: pendingWatchesQuery.listPendingInitSessions });
+    }
   }
 
   toggleContributorsModal = (watch) => {
@@ -167,10 +177,11 @@ export class WatchedApps extends React.Component {
   }
 
   render() {
-    const { listWatchesQuery } = this.props;
-    const { watches, watchToEdit, downloadingIds, clusterToRemove, addNewClusterModal, displayRemoveClusterModal } = this.state;
+    const { listWatchesQuery, pendingWatchesQuery } = this.props;
+    const { watches, pendingWatches, watchToEdit, downloadingIds, clusterToRemove, addNewClusterModal, displayRemoveClusterModal } = this.state;
+    const showLoader = (!listWatchesQuery || listWatchesQuery.loading || !pendingWatchesQuery || pendingWatchesQuery.loading);
 
-    if (!listWatchesQuery || listWatchesQuery.loading) {
+    if (showLoader) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" color="#44bb66" />
@@ -189,7 +200,7 @@ export class WatchedApps extends React.Component {
             title="Installed 3rd-party applications"
             buttonText="Install a new application"
             onClick={() => this.props.history.push("/watch/create/init")}
-            searchCallback={(watches) => { this.setState({ watches }) }}
+            searchCallback={(watches, pendingWatches) => { this.setState({ watches, pendingWatches }) }}
             showUnfork
           />
           <div className="flex1 u-paddingBottom--20 installed-watches-wrapper">
@@ -212,11 +223,25 @@ export class WatchedApps extends React.Component {
                   }}
                 />
               </div>
-            )) :
+            )) : null}
+            {pendingWatches.length ? pendingWatches.map((pendingWatch) => (
+              <div key={pendingWatch.id} className="installed-watch-wrapper pending flex flex-auto u-paddingBottom--20">
+                <PendingWatchCard
+                  pendingContext="install"
+                  item={pendingWatch}
+                  onEditApplication={this.onPendingInstallClick}
+                  submitCallback={() => {
+                    this.props.pendingWatchesQuery.refetch();
+                  }}
+                />
+              </div>
+            ))
+            : null}
+            {!watches.length && !pendingWatches.length ? 
               <div className="flex1 flex alignItems--center justifyContent--center">
                 <p className="u-fontWeight--medium u-color--dustyGray">No watches found</p>
               </div>
-            }
+            : null}
           </div>
         </div>
         <Modal
@@ -268,6 +293,12 @@ export default compose(
     name: "listWatchesQuery",
     options: {
       fetchPolicy: "network-only"
+    }
+  }),
+  graphql(listPendingInit, {
+    name: "pendingWatchesQuery",
+    options: {
+      fetchPolicy: "no-cache"
     }
   }),
   graphql(userFeatures, {
