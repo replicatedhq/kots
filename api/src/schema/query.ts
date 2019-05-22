@@ -19,6 +19,7 @@ export const Query = `
     listClusters: [Cluster]
 
     listPendingInitSessions: [PendingInitSession]
+    searchPendingInitSessions(title: String!): [PendingInitSession]
 
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]

@@ -32,7 +32,7 @@ export class InitStore {
     return this.getSession(id);
   }
 
-  async deployInitSession(id: string): Promise<InitSession> {
+  async deployInitSession(id: string, pendingInitId?: string): Promise<InitSession> {
     const initSession = await this.getSession(id);
 
     if (this.params.skipDeployToWorker) {
@@ -40,13 +40,16 @@ export class InitStore {
       return initSession;
     }
 
+    const body: any = {};
+    body.id = initSession.id;
+    body.upstreamUri = initSession.upstreamURI;
+    if (pendingInitId) {
+      body.pendingInitId = pendingInitId;
+    }
     const options = {
       method: "POST",
       uri: `${this.params.shipInitBaseURL}/v1/init`,
-      body: {
-        id: initSession.id,
-        upstreamUri: initSession.upstreamURI,
-      },
+      body,
       json: true,
     };
 

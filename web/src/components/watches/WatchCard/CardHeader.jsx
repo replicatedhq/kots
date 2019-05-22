@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 
-const CardHeader = ({ watch, watchIntegrations, onEditApplication }) => (
+const CardHeader = ({ watch, watchIntegrations, onEditApplication, isPending }) => (
   <div className="installed-watch-header flex">
     <div className="installed-watch-name flex alignItems--center">
       <div className="logo" style={{ backgroundImage: `url(${watch.watchIcon})` }}></div>
@@ -20,24 +20,26 @@ const CardHeader = ({ watch, watchIntegrations, onEditApplication }) => (
         </div>
       </div>
     }
-    <div className="installed-watch-integrations flex flex-column">
-      <p className="uppercase-title">Integrations</p>
-      <div className="flex alignItems--center">
-        <p className="integration-number flex u-fontSize--large u-color--tuna u-fontWeight--bold">
-          <span className="icon flex alignItems--center integration-card-icon-email"></span>
-          { watchIntegrations.email.length }
-        </p>
-        <p className="border">|</p>
-        <p className="flex alignItems--center u-fontSize--large u-color--tuna u-fontWeight--bold">
-          <span className="icon integration-card-icon-webhook"></span>
-          { watchIntegrations.webhook.length }
-        </p>
-        <Link to={`/watch/${watch.slug}/integrations`} className="u-marginLeft--10 u-fontSize--small replicated-link">Manage</Link>
+    {watchIntegrations && (watchIntegrations.email.length || watchIntegrations.webhook.length) ?
+      <div className="installed-watch-integrations flex flex-column">
+        <p className="uppercase-title">Integrations</p>
+        <div className="flex alignItems--center">
+          <p className="integration-number flex u-fontSize--large u-color--tuna u-fontWeight--bold">
+            <span className="icon flex alignItems--center integration-card-icon-email"></span>
+            { watchIntegrations.email.length }
+          </p>
+          <p className="border">|</p>
+          <p className="flex alignItems--center u-fontSize--large u-color--tuna u-fontWeight--bold">
+            <span className="icon integration-card-icon-webhook"></span>
+            { watchIntegrations.webhook.length }
+          </p>
+          <Link to={`/watch/${watch.slug}/integrations`} className="u-marginLeft--10 u-fontSize--small replicated-link">Manage</Link>
+        </div>
       </div>
-    </div>
+    : null}
     <div className="installed-watch-actions alignItems--center flex">
-      <Link to={`/watch/${watch.slug}`} className="u-marginRight--10 u-fontSize--small replicated-link">Application Details</Link>
-      <button className="btn primary" onClick={() => onEditApplication(watch)}>Customize application</button>
+      {!isPending && <Link to={`/watch/${watch.slug}`} className="u-marginRight--10 u-fontSize--small replicated-link">Application Details</Link>}
+      <button className="btn primary" onClick={() => onEditApplication(watch)}>{isPending ? "Install application" : "Customize application"}</button>
     </div>
   </div>
 );
