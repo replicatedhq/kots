@@ -1,8 +1,6 @@
 import * as Express from "express";
 import { Controller, Get, Res, Req, HeaderParams } from "ts-express-decorators";
 import * as BasicAuth from "basic-auth";
-import * as jaeger from "jaeger-client";
-import { tracer } from "../server/tracing";
 import * as _ from "lodash";
 
 interface ErrorResponse {
@@ -17,8 +15,6 @@ export class DeployAPI {
     @Res() response: Express.Response,
     @HeaderParams("Authorization") auth: string,
   ): Promise<any | ErrorResponse> {
-    const span: jaeger.SpanContext = tracer().startSpan("deployAPI.desired");
-
     const credentials: BasicAuth.Credentials = BasicAuth.parse(auth);
 
     let cluster;
@@ -42,7 +38,7 @@ export class DeployAPI {
       desiredState.push(download.contents.toString("base64"));
     }
 
-    span.finish();
+
     response.status(200);
     return {
       present: desiredState,

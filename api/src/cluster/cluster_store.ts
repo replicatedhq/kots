@@ -34,7 +34,7 @@ export class ClusterStore {
     ];
 
     const result = await this.pool.query(q, v);
-    return this.getCluster(result[0].id);
+    return this.getCluster(result.rows[0].id);
   }
 
   async getGitOpsCluster(clusterId: string, watchId?: string): Promise<Cluster> {

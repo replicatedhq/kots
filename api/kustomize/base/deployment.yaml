@@ -71,7 +71,7 @@ spec:
             - name: SHIP_API_ENDPOINT
               value: http://ship-cluster-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
-              value: http://localhost:8065
+              value: http://172.17.0.1:30065
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github
