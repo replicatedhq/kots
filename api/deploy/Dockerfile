@@ -1,11 +1,5 @@
-
-FROM debian:stretch-slim
-WORKDIR /src
-COPY ./bin/ship-cluster-api /src/ship-cluster-api
-COPY ./bin/shipcloudctl /src/shipcloudctl
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+FROM node:8
+EXPOSE 3000 9229
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.11.1
@@ -17,8 +11,11 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_VERSION}" /usr/local/bin/kubectl
 
-EXPOSE 3000
-ARG version=unknown
-ENV VERSION=${version}
-CMD ["/src/ship-cluster-api"]
+WORKDIR /src
+ADD . /src
+
+RUN yarn install --silent
+RUN make build
+
+ENTRYPOINT ["node", "--no-deprecation", "/src/build/server/index.js"]
 

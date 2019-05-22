@@ -5,6 +5,8 @@ metadata:
 spec:
   template:
     spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
       restartPolicy: OnFailure
       containers:
         - name: migrations
