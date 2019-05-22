@@ -2,14 +2,15 @@ kind: Kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 
 bases:
-- ../../base
+- ../../ba]se
 
 resources:
-- ./local-cluster-job.yaml
+  - ./local-cluster-job.yaml
+  - ./github-app-secret.yaml
 
 patchesStrategicMerge:
-- ./deployment.yaml
-- ./session-secret.yaml
-- ./github-secret.yaml
-- ./service.yaml
+  - ./deployment.yaml
+  - ./session-secret.yaml
+  - ./github-secret.yaml
+  - ./service.yaml
 
