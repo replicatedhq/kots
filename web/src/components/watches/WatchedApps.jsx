@@ -237,7 +237,7 @@ export class WatchedApps extends React.Component {
               </div>
             ))
             : null}
-            {!watches.length && !pendingWatches.length ? 
+            {!watches.length && !pendingWatches.length ?
               <div className="flex1 flex alignItems--center justifyContent--center">
                 <p className="u-fontWeight--medium u-color--dustyGray">No watches found</p>
               </div>

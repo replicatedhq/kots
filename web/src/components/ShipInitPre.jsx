@@ -30,6 +30,7 @@ export class ShipInitPre extends React.Component {
     const clusterId = searchParams.get("cluster_id");
     const githubPath = searchParams.get("path");
     const autoStart = searchParams.get("start");
+
     const url = `${upstream ? upstream : ""}${licenseId ? `?license_id=${licenseId}`: ""}`;
     this.setState({
       pendingInitId: pendingInitId || "",
@@ -38,7 +39,7 @@ export class ShipInitPre extends React.Component {
       githubPath: githubPath || ""
     });
     if (autoStart === "1") {
-      this.onShipInitUrlSubmitted();
+      this.onShipInitUrlSubmitted(url);
     }
   }
 
@@ -52,7 +53,7 @@ export class ShipInitPre extends React.Component {
     const autoStart = searchParams.get("start");
     if (this.state.clusterId !== lastState.clusterId && this.state.clusterId.length) {
       if (autoStart === "1") {
-        this.onShipInitUrlSubmitted();
+        this.onShipInitUrlSubmitted(this.state.url);
       }
     }
   }
@@ -68,9 +69,8 @@ export class ShipInitPre extends React.Component {
     this.setState({ url: newUrl });
   }
 
-  onShipInitUrlSubmitted = async () => {
+  onShipInitUrlSubmitted = async (url) => {
     const { onActiveInitSession } = this.props;
-    const { url } = this.state;
 
     if (url.indexOf("?license_id=") === -1 && url.indexOf("replicated.app") !== -1) { // Prompt user to input license ID before trying to fetch app
       return this.setState({ displayLicenseIdModal: true });
@@ -88,7 +88,11 @@ export class ShipInitPre extends React.Component {
       const { clusterId, githubPath, pendingInitId } = this.state;
       this.props.createInitSession(pendingInitId, url, clusterId, githubPath)
         .then(({ data }) => {
-          if (!window.location.pathname.includes("/watch/create/init")) {return;} // Prevent redirect if component is no longer mounted
+          if (!window.location.pathname.includes("/watch/create/init")) {
+            // Prevent redirect if component is no longer mounted
+            return;
+          }
+
           const { createInitSession } = data;
           const { id: initSessionId } = createInitSession;
           onActiveInitSession(initSessionId);
@@ -104,7 +108,7 @@ export class ShipInitPre extends React.Component {
     if (enterKey) {
       e.preventDefault();
       e.stopPropagation();
-      this.onShipInitUrlSubmitted();
+      this.onShipInitUrlSubmitted(this.state.url);
     }
   }
 
@@ -148,7 +152,7 @@ export class ShipInitPre extends React.Component {
               <div className="flex flex1">
                 <input value={this.state.url} onChange={(e) => { this.onUrlChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="https://github.com/helm/charts/stable/grafana" />
                 <div className="flex-auto u-marginLeft--10">
-                  <button onClick={this.onShipInitUrlSubmitted} className="btn primary large">Ship init</button>
+                  <button onClick={this.onShipInitUrlSubmitted.bind(this, this.state.url)} className="btn primary large">Ship init</button>
                 </div>
               </div>
             </div>
@@ -200,7 +204,7 @@ export class ShipInitPre extends React.Component {
               <input value={this.state.licenseId} onChange={(e) => { this.onLicenseIdChange(e.target.value) }} type="text" className="Input flex1" />
             </div>
             <div className="u-marginTop--15">
-              <button type="button" className="btn primary green" onClick={this.onShipInitUrlSubmitted}>Fetch application</button>
+              <button type="button" className="btn primary green" onClick={this.onShipInitUrlSubmitted.bind(this, this.state.url)}>Fetch application</button>
             </div>
           </div>
         </Modal>

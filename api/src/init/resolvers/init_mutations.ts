@@ -6,18 +6,20 @@ import { ReplicatedError } from "../../server/errors";
 
 export function InitMutations(stores: any) {
   return {
-    async createInitSession(root: any, { pendingInitId, upstreamUri, clusterID, githubPath }: any, context: Context) {
+    async createInitSession(root: any, args: any, context: Context) {
+      const { pendingInitId, upstreamUri, clusterID, githubPath } = args;
+
       let uri: any = null;
       if (pendingInitId) {
         uri = await stores.pendingStore.getPendingInitURI(pendingInitId);
       } else if (upstreamUri) {
         uri = await maybeRewriteUpstreamUri(stores.watchStore, context.session.userId, upstreamUri);
       }
-      
+
       if (!uri) {
         throw new ReplicatedError("No upstream given");
       }
-      
+
       const initSession = await stores.initStore.createInitSession(context.session.userId, uri, clusterID, githubPath, upstreamUri);
       const deployedInitSession = await stores.initStore.deployInitSession(initSession.id, pendingInitId);
 

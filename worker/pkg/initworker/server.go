@@ -262,7 +262,7 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 			c.Status(http.StatusCreated)
 			return
 		}
-		if time.Now().Sub(start) > time.Duration(time.Second*30) {
+		if time.Now().Sub(start) > time.Duration(time.Second*60) {
 			level.Error(s.Logger).Log("timeout creating init worker", shipInit.ID)
 			c.AbortWithStatus(http.StatusGatewayTimeout)
 			return
