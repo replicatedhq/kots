@@ -94,6 +94,9 @@
   },
   "bin": "build/server/index.js",
   "pkg": {
+    "scripts": [
+      "./build/controllers/**/*.js"
+    ],
     "assets": [
       "./node_modules/jaeger-client/dist/**/*.thrift"
     ]
