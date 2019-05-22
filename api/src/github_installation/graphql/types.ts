@@ -1,7 +1,7 @@
 const GetInstallationsResponse = `
 type GetInstallationsResponse {
   totalCount: Int
-  installations: [GetInstallationsResponse]
+  installations: [GetInstallationsResponseItem]
 }
 `;
 
@@ -17,7 +17,7 @@ type GetInstallationsResponseItem {
 const GetForOrgResponse = `
 type GetForOrgResponse {
   totalCount: Int
-  repos: [GetForOrgResponse]
+  repos: [GetForOrgResponseItem]
 }
 `;
 
