@@ -13,7 +13,7 @@ spec:
           args: ["/scripts/start-ship-cluster-ui.sh"]
           ports:
             - name: http
-              containerPort: 8000
+              containerPort: 3000
           volumeMounts:
             - name: ship-cluster-ui-scripts
               mountPath: /scripts/start-ship-cluster-ui.sh
