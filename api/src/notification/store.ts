@@ -259,24 +259,7 @@ export class NotificationStore {
     return this.getNotification(rows[0].id);
   }
 
-  async findPendingUserNotification(ctx: jaeger.SpanContext, userId: string, notificationId: string): Promise<Notification> {
-    const q = `SELECT n.pullrequest_history_id
-              FROM pending_pullrequest_notification n
-                      INNER JOIN watch w ON w.id = n.watch_id
-                      INNER JOIN user_watch u ON u.watch_id = w.id
-              WHERE n.pullrequest_history_id = $1
-              AND u.user_id = $2`;
-    const v = [notificationId, userId];
-
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    if (rows.length === 0) {
-      throw new ReplicatedError("Notification not found");
-    }
-
-    return this.getPendingPRNotification(null, rows[0].pullrequest_history_id);
-  }
-
-  async getPendingPRNotification(ctx: jaeger.SpanContext, id: string): Promise<Notification> {
+  async getPendingPRNotificationOLD(ctx: jaeger.SpanContext, id: string): Promise<Notification> {
     const q = `
       SELECT  pullrequest_history_id as id,
               org,
@@ -293,7 +276,7 @@ export class NotificationStore {
 
     const { rows }: { rows: any[] } = await this.pool.query(q, v);
     if (rows.length > 0) {
-      return this.mapRow(rows[0]);
+      return this.mapRowOLD(rows[0]);
     }
     const emptyNotification: Notification = {}
     emptyNotification.id = ""
@@ -309,33 +292,52 @@ export class NotificationStore {
   }
 
   async getNotification(id: string): Promise<Notification> {
-    const q = `
-      SELECT n.id,
+    const q = `select n.id,
             n.watch_id,
             n.created_at,
             n.updated_at,
             n.triggered_at,
             n.enabled,
             whn.destination_uri,
-            en.recipient,
-            prn.org,
-            prn.repo,
-            prn.branch,
-            prn.root_path
-      FROM ship_notification n
-            LEFT OUTER JOIN webhook_notification whn ON whn.notification_id = n.id
-            LEFT OUTER JOIN email_notification en ON en.notification_id = n.id
-            LEFT OUTER JOIN pullrequest_notification prn ON prn.notification_id = n.id
-      WHERE n.id = $1`;
+            en.recipient
+      from ship_notification n
+            left outer join webhook_notification whn on whn.notification_id = n.id
+            left outer join email_notification en on en.notification_id = n.id
+      where n.id = $1`;
     const v = [id];
 
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    if (rows.length > 0) {
-      return this.mapRow(rows[0]);
+    const result = await this.pool.query(q, v);
+    const row = result.rows[0];
+    const notification: Notification = {
+      id: row.id,
+      createdOn: row.created_at,
+      updatedOn: row.updated_at,
+      triggeredOn: row.triggered_at,
+      enabled: row.enabled,
+      webhook: null,
+      email: null,
+      isDefault: false,
+    };
+
+    if (row.destination_uri) {
+      notification.webhook = {
+        uri: row.destination_uri,
+      };
+      if (row.destination_uri === "placeholder") {
+        notification.isDefault = true;
+      }
     }
-    const emptyNotification: Notification = {}
-    emptyNotification.id = ""
-    return emptyNotification;
+
+    if (row.recipient) {
+      notification.email = {
+        recipientAddress: row.recipient,
+      };
+      if (row.recipient === "placeholder") {
+        notification.isDefault = true;
+      }
+    }
+
+    return notification;
   }
 
   async deleteNotification(notificationId: string): Promise<void> {
@@ -405,6 +407,22 @@ export class NotificationStore {
   }
 
   async listNotifications(watchId: string): Promise<Notification[]> {
+    const q = `select n.id from ship_notification n
+    inner join watch on watch.id = n.watch_id
+    where watch.id = $1 order by n.created_at`;
+    const v = [watchId];
+
+    const result = await this.pool.query(q, v);
+    const notifications: Notification[] = [];
+    for (const row of result.rows) {
+      const notification = await this.getNotification(row.id);
+      notifications.push(notification);
+    }
+    return notifications;
+  }
+
+  // This is left for migration to run and then be deleted
+  async listNotificationsOLD(watchId: string): Promise<Notification[]> {
     const q = `
       SELECT n.id,
             n.watch_id,
@@ -430,36 +448,10 @@ export class NotificationStore {
     const { rows }: { rows: any[] } = await this.pool.query(q, v);
     const notifications: Notification[] = [];
     for (const row of rows) {
-      const result = this.mapRow(row);
+      const result = this.mapRowOLD(row);
       notifications.push(result);
     }
     return notifications;
-  }
-
-  async listPendingPRNotifications(ctx: jaeger.SpanContext, watchId: string): Promise<Notification[]> {
-    const q = `
-      SELECT  pullrequest_history_id as id,
-              org,
-              repo,
-              branch,
-              root_path,
-              created_at,
-              github_installation_id,
-              pullrequest_number,
-              watch_id
-      FROM pending_pullrequest_notification
-      WHERE watch_id = $1
-      AND pullrequest_history_id NOT IN (SELECT id FROM ship_notification)
-      ORDER BY created_at`;
-    const v = [watchId];
-
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    const pending: Notification[] = [];
-    for (const row of rows) {
-      const result = this.mapRow(row);
-      pending.push(result);
-    }
-    return pending;
   }
 
   async checkPendingPrNotification(owner: string, repo: string, prNumber: number ): Promise<QueryResult> {
@@ -521,7 +513,7 @@ export class NotificationStore {
     return this.pool.query(q, v);
   }
 
-  private mapRow(row: any): Notification {
+  private mapRowOLD(row: any): Notification {
     const result: Notification = {
       id: row.id,
       createdOn: row.created_at,

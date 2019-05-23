@@ -147,18 +147,9 @@ export function NotificationMutations(stores: any) {
       return result;
     },
 
-    async deleteNotification(root: any, args: DeleteNotificationMutationArgs, context: Context) {
-      const span: jaeger.SpanContext = tracer().startSpan("mutation.deleteNotificaton");
-
-      if(args.isPending) {
-        const notification = await stores.notificationStore.findPendingUserNotification(span.context(), context.session.userId, args.id);
-        await stores.notificationStore.deletePendingNotificationById(span.context(), notification.id!);
-      } else {
-        const notification = await stores.notificationStore.findUserNotification(span.context(), context.session.userId, args.id);
-        await stores.notificationStore.deleteNotification(notification.id!);
-      }
-
-      span.finish();
+    async deleteNotification(root: any, args: any, context: Context) {
+      const notification = await stores.notificationStore.findUserNotification(context.session.userId, args.id);
+      await stores.notificationStore.deleteNotification(notification.id);
       return true;
     }
   }
