@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: controller-manager
+  namespace: ship-operator-system
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: replicatedregistrykey
+      containers:
+      - image: registry.replicated.com/ship-enterprise/ship-cd
+        name: manager

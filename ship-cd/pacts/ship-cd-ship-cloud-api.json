@@ -1,0 +1,39 @@
+{
+  "consumer": {
+    "name": "ship-cd"
+  },
+  "provider": {
+    "name": "ship-cloud-api"
+  },
+  "interactions": [
+    {
+      "description": "A request to list objects in a cluster",
+      "providerState": "Cluster ship-test-pact exists",
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/deploy/desired",
+        "headers": {
+          "Authorization": "Basic OnNoaXAtY2x1c3Rlci1uby1hcHBsaWNhdGlvbnM="
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "present": [
+
+          ],
+          "missing": [
+
+          ]
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
