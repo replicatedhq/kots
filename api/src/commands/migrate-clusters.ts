@@ -70,7 +70,7 @@ async function main(argv): Promise<any> {
       await watchStore.setParent(watch.id!, parentWatch.id!);
     }
 
-    const watchNotifications = await notificationStore.listNotifications(watch.id!);
+    const watchNotifications = await notificationStore.listNotificationsOLD(watch.id!);
 
     for (const watchNotification of watchNotifications) {
       if (watchNotification.pullRequest) {
