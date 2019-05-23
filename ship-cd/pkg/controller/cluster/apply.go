@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/replicatedhq/ship-cd/pkg/controller/cluster/applier"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/controller/cluster/applier"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 

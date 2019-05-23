@@ -20,9 +20,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/replicatedhq/ship-cd/pkg/apis"
-	"github.com/replicatedhq/ship-cd/pkg/controller"
-	"github.com/replicatedhq/ship-cd/pkg/webhook"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/controller"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/webhook"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

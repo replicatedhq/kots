@@ -18,7 +18,7 @@ limitations under the License.
 package shipclusterclientset
 
 import (
-	clustersv1alpha1 "github.com/replicatedhq/ship-cd/pkg/client/shipclusterclientset/typed/clusters/v1alpha1"
+	clustersv1alpha1 "github.com/replicatedhq/ship-cluster/ship-cd/pkg/client/shipclusterclientset/typed/clusters/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

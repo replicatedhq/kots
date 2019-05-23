@@ -18,7 +18,7 @@ limitations under the License.
 package scheme
 
 import (
-	clustersv1alpha1 "github.com/replicatedhq/ship-cd/pkg/apis/clusters/v1alpha1"
+	clustersv1alpha1 "github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis/clusters/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

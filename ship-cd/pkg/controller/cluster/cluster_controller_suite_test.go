@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/onsi/gomega"
-	"github.com/replicatedhq/ship-cd/pkg/apis"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"

@@ -5,7 +5,7 @@ steps:
       - docker#v3.0.1:
           always-pull: true
           image: replicated/gitops-builder:buildkite
-          workdir: /go/src/github.com/replicatedhq/ship-cd
+          workdir: /go/src/github.com/replicatedhq/ship-cluster/ship-cd
     artifact_paths:
       - "bin/**/*"
       - "pacts/**/*"

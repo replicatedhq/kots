@@ -18,8 +18,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/replicatedhq/ship-cd/pkg/apis/clusters/v1alpha1"
-	"github.com/replicatedhq/ship-cd/pkg/client/shipclusterclientset/scheme"
+	v1alpha1 "github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis/clusters/v1alpha1"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/client/shipclusterclientset/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

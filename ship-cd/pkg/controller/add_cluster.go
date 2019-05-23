@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"github.com/replicatedhq/ship-cd/pkg/controller/cluster"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/controller/cluster"
 )
 
 func init() {

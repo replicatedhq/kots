@@ -17,7 +17,7 @@ limitations under the License.
 package apis
 
 import (
-	"github.com/replicatedhq/ship-cd/pkg/apis/clusters/v1alpha1"
+	"github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis/clusters/v1alpha1"
 )
 
 func init() {

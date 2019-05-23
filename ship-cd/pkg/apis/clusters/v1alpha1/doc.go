@@ -17,7 +17,7 @@ limitations under the License.
 // Package v1alpha1 contains API Schema definitions for the clusters v1alpha1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/replicatedhq/ship-cd/pkg/apis/clusters
+// +k8s:conversion-gen=github.com/replicatedhq/ship-cluster/ship-cd/pkg/apis/clusters
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=clusters.replicated.com
 package v1alpha1
