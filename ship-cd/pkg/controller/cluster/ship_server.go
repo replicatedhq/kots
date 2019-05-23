@@ -24,6 +24,7 @@ func getDesiredStateFromShipServer(apiEndpoint string, token string) (*ShipDesir
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code from ship server: %d", resp.StatusCode)
