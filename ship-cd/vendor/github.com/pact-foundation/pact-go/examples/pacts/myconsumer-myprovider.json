@@ -13,6 +13,7 @@
         "method": "GET",
         "path": "/foobar",
         "headers": {
+          "Authorization": "Bearer 1234",
           "Content-Type": "application/json"
         },
         "body": {

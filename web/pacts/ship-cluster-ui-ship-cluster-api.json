@@ -246,8 +246,9 @@
         },
         "body": {
           "operationName": "createInitSession",
-          "query": "\n  mutation createInitSession($upstreamUri: String!, $clusterID: String, $githubPath: String) {\n    createInitSession(upstreamUri: $upstreamUri, clusterID: $clusterID, githubPath: $githubPath) {\n      id\n      upstreamUri\n      createdOn\n    }\n  }\n",
+          "query": "\n  mutation createInitSession($pendingInitId: String, $upstreamUri: String, $clusterID: String, $githubPath: String) {\n    createInitSession(pendingInitId: $pendingInitId, upstreamUri: $upstreamUri, clusterID: $clusterID, githubPath: $githubPath) {\n      id\n      upstreamUri\n      createdOn\n    }\n  }\n",
           "variables": {
+            "pendingInitId": "",
             "upstreamUri": "https://github.com/helm/charts/stable/grafana",
             "clusterID": null,
             "githubPath": null
@@ -256,7 +257,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*mutation\\s*createInitSession\\(\\$upstreamUri:\\s*String!,\\s*\\$clusterID:\\s*String,\\s*\\$githubPath:\\s*String\\)\\s*\\{\\s*createInitSession\\(upstreamUri:\\s*\\$upstreamUri,\\s*clusterID:\\s*\\$clusterID,\\s*githubPath:\\s*\\$githubPath\\)\\s*\\{\\s*id\\s*upstreamUri\\s*createdOn\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*mutation\\s*createInitSession\\(\\$pendingInitId:\\s*String,\\s*\\$upstreamUri:\\s*String,\\s*\\$clusterID:\\s*String,\\s*\\$githubPath:\\s*String\\)\\s*\\{\\s*createInitSession\\(pendingInitId:\\s*\\$pendingInitId,\\s*upstreamUri:\\s*\\$upstreamUri,\\s*clusterID:\\s*\\$clusterID,\\s*githubPath:\\s*\\$githubPath\\)\\s*\\{\\s*id\\s*upstreamUri\\s*createdOn\\s*\\}\\s*\\}\\s*"
           }
         }
       },

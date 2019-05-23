@@ -13,16 +13,12 @@ publish-pact:
 	--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
 	-X PUT \
 	-H "Content-Type: application/json" \
-	-d@pacts/ship-cd-ship-cloud-api.json \
-	https://replicated-pact-broker.herokuapp.com/pacts/provider/ship-cloud-api/consumer/ship-cd/version/0.0.1
+	-d@pacts/ship-cd-ship-cluster-api.json \
+	https://replicated-pact-broker.herokuapp.com/pacts/provider/ship-cluster-api/consumer/ship-cd/version/0.0.1
 
 publish: docker-build docker-push
 
 all: test manager
-
-# Run tests
-test: generate fmt vet manifests
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 pacts:
 	go test ./pkg/controller/cluster/pacts
@@ -103,4 +99,12 @@ build_and_publish:
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITHUB_BRANCH)
+          git push origin $(GITOPS_BRANCH)
+
+.PHONY: test
+test: generate fmt vet manifests
+	go test ./pkg/... ./cmd/... -coverprofile cover.out
+
+.PHONY: test-pact
+test-pact: generate fmt vet manifests
+	go test ./pkg/controller/cluster/pacts/...

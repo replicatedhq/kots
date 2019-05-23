@@ -3,7 +3,7 @@
     "name": "ship-cd"
   },
   "provider": {
-    "name": "ship-cloud-api"
+    "name": "ship-cluster-api"
   },
   "interactions": [
     {

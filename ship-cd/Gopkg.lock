@@ -320,16 +320,19 @@
   version = "v1.5.0"
 
 [[projects]]
-  digest = "1:b794e81d366c4e668fd4366a7fa789af00e44715a2fe4d32097bf4d5d30b41dc"
+  digest = "1:59c5063e4e36fb84bdac40bff2da77b5eca6c24c19b733de8388cf10b3837d72"
   name = "github.com/pact-foundation/pact-go"
   packages = [
-    ".",
-    "command",
+    "client",
+    "dsl",
     "install",
+    "proxy",
+    "types",
+    "utils",
   ]
   pruneopts = "T"
-  revision = "6ec25718366e22bf3f50b126b9c4db4d91b9cfce"
-  version = "v1.0.0-beta.3"
+  revision = "b5a493b9157808d187d372288d092cfef9cec25f"
+  version = "v1.0.0-beta.5"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
@@ -968,7 +971,7 @@
     "github.com/emicklei/go-restful",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
-    "github.com/pact-foundation/pact-go",
+    "github.com/pact-foundation/pact-go/dsl",
     "golang.org/x/net/context",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/errors",

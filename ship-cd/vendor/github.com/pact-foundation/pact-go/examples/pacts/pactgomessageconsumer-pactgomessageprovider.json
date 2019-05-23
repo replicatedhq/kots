@@ -10,7 +10,8 @@
       "description": "a user",
       "providerStates": [
         {
-          "name": "user with id 127 exists"
+          "name": "user with id 127 exists",
+          "params": null
         }
       ],
       "contents": {
@@ -69,7 +70,8 @@
       "description": "an order",
       "providerStates": [
         {
-          "name": "an order exists"
+          "name": "an order exists",
+          "params": null
         }
       ],
       "contents": {

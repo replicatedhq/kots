@@ -6,14 +6,14 @@ RESTful APIs.
 The following example is a simple Login UI ([Consumer](#consumer)) that calls a
 User Service ([Provider](#provider)) using JSON over HTTP.
 
-The API currently exposes a single `Login` endpoint at `POST /users/login/:id`, which
+The API currently exposes a single `Login` endpoint at `POST //login/:id`, which
 the Consumer uses to authenticate a User.
 
 We test 3 scenarios, highlighting the use of [Provider States](/pact-foundation/pact-go#provider#provider-states):
 
-1.  When the user "Billy" exists, and we perform a login, we expect an HTTP `200`
-1.  When the user "Billy" does not exists, and we perform a login, we expect an HTTP `404`
-1.  When the user "Billy" is unauthorized, and we perform a login, we expect an HTTP `403`
+1.  When the user "jmarie" exists, and we perform a login, we expect an HTTP `200`
+1.  When the user "jmarie" does not exists, and we perform a login, we expect an HTTP `404`
+1.  When the user "jmarie" is unauthorized, and we perform a login, we expect an HTTP `403`
 
 # Getting started
 
@@ -27,7 +27,7 @@ go get ./...
 ## Provider
 
 The "Provider" is a real Go Kit Endpoint (following the Profile Service [example](https://github.com/go-kit/kit/tree/master/examples/profilesvc)),
-exposing a single `/users/login/:id` API call:
+exposing a single `/login/:id` API call:
 
 ```
 cd provider
@@ -46,19 +46,19 @@ go run cmd/usersvc/main.go
 
 # 200
 curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
-  "username":"billy",
+  "username":"jmarie",
   "password":"issilly"
-}' "http://localhost:8080/users/login/1"
+}' "http://localhost:8080//ogin/1"
 
 # 403
 curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
-  "username":"billy",
+  "username":"jmarie",
   "password":"issilly"
-}' "http://localhost:8080/users/login/1"
+}' "http://localhost:8080/login/1"
 
 # 404
 curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
   "username":"someoneelse",
   "password":"issilly"
-}' "http://localhost:8080/users/login/1"
+}' "http://localhost:8080/login/1"
 ```

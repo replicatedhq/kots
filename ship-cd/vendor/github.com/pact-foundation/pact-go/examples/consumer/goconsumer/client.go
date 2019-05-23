@@ -7,44 +7,72 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-)
 
-// User is a representation of a User. Dah.
-type User struct {
-	Name     string `json:"name"`
-	username string
-	password string
-}
+	ex "github.com/pact-foundation/pact-go/examples/types"
+)
 
 // Client is a UI for the User Service.
 type Client struct {
-	user *User
-	Host string
-	err  error
+	user  *ex.User
+	Host  string
+	err   error
+	token string
 }
 
 // Marshalling format for Users.
 type loginResponse struct {
-	User User `json:"user"`
+	User ex.User `json:"user"`
 }
 
 type templateData struct {
-	User  *User
+	User  *ex.User
 	Error error
 }
 
 var loginTemplatePath = "login.html"
 var templates = template.Must(template.ParseFiles(loginTemplatePath))
 
+// getUser finds a user
+func (c *Client) getUser(id string) (*ex.User, error) {
+
+	u := fmt.Sprintf("%s/users/%s", c.Host, id)
+	req, err := http.NewRequest("GET", u, nil)
+
+	// NOTE: by default, request bodies are expected to be sent with a Content-Type
+	// of application/json. If you don't explicitly set the content-type, you
+	// will get a mismatch during Verification.
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", c.token)
+
+	res, err := http.DefaultClient.Do(req)
+
+	if res.StatusCode != 200 || err != nil {
+		return nil, fmt.Errorf("get user failed")
+	}
+
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ex.User
+	err = json.Unmarshal(data, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, err
+}
+
 // Login handles the login API call to the User Service.
-func (c *Client) login(username string, password string) (*User, error) {
+func (c *Client) login(username string, password string) (*ex.User, error) {
 	loginRequest := fmt.Sprintf(`
     {
       "username":"%s",
       "password": "%s"
     }`, username, password)
 
-	res, err := http.Post(fmt.Sprintf("%s/users/login/10?foo=anything", c.Host), "application/json; charset=utf-8", bytes.NewReader([]byte(loginRequest)))
+	res, err := http.Post(fmt.Sprintf("%s/login/10?foo=anything", c.Host), "application/json; charset=utf-8", bytes.NewReader([]byte(loginRequest)))
 	if res.StatusCode != 200 || err != nil {
 		return nil, fmt.Errorf("login failed")
 	}
