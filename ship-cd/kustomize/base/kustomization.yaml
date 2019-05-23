@@ -1,0 +1,14 @@
+namespace: ship-operator-system
+
+namePrefix: ship-operator-
+
+resources:
+- ./config/rbac/rbac_role.yaml
+- ./config/rbac/rbac_role_binding.yaml
+- ./config/manager/manager.yaml
+
+- ./config/rbac/auth_proxy_service.yaml
+- ./config/rbac/auth_proxy_role.yaml
+- ./config/rbac/auth_proxy_role_binding.yaml
+
+- ./clusters_v1alpha1_cluster.yaml
