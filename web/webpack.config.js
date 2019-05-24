@@ -133,7 +133,21 @@ module.exports = function (env) {
         sync: "ship-cloud.js",
         defaultAttribute: "async"
       }),
-      new FaviconsWebpackPlugin(srcPath + "/favicon-64.png"),
+      new FaviconsWebpackPlugin({
+        logo: `${srcPath}/favicon-64.png`,
+        icons: {
+          android: false,
+          appleIcon: false,
+          appleStartup: false,
+          coast: false,
+          favicons: true,
+          firefox: true,
+          opengraph: false,
+          twitter: false,
+          yandex: false,
+          windows: false
+        }
+      }),
       new webpack.DefinePlugin({
         "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT),
       }),
