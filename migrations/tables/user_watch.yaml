@@ -1,0 +1,24 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: user-watch
+spec:
+  database: ship-cluster-postgres
+  name: user_watch
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - user_id
+      - watch_id
+      columns:
+      - name: user_id
+        type: text
+        constraints:
+          notNull: true
+      - name: watch_id
+        type: text
+        constraints:
+          notNull: true

@@ -1,5 +1,5 @@
 .PHONY: docker-build dep-deps deps
-
+PROJECT_NAME ?= ship-operator-tools
 FULLSRC = $(shell find . -name "*.go")
 
 define LDFLAGS
@@ -9,6 +9,14 @@ define LDFLAGS
 	-X ${VERSION_PACKAGE}.buildTime=${DATE} \
 "
 endef
+
+.PHONY: build-cache
+build-cache:
+	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
+
+.PHONY: publish-cache
+publish-cache:
+	docker push repldev/${PROJECT_NAME}:latest
 
 docker-build:
 	docker build -t replicated/ship-operator-tools -f Dockerfile.skaffold .

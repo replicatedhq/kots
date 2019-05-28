@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: ship-cluster-migrations
+        image: postgres:10.7
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA

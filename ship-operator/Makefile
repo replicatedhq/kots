@@ -60,7 +60,7 @@ githooks:
 
 .PHONY: build-cache
 build-cache:
-	docker build -f Dockerfile.skaffold -t repldev/${PROJECT_NAME}:latest .
+	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
 
 .PHONY: publish-cache
 publish-cache:

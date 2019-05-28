@@ -1,0 +1,45 @@
+apiVersion: schemas.schemahero.io/v1alpha1
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: cluster
+spec:
+  database: ship-cluster-postgres
+  name: cluster
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: title
+        type: text
+        constraints:
+          notNull: true
+      - name: slug
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: timestamp without time zone
+      - name: token
+        type: text
+      - name: cluster_type
+        type: text
+        constraints:
+          notNull: true
+        default: '''gitops''::text'
+      - name: is_all_users
+        type: boolean
+        constraints:
+          notNull: true
+        default: "false"

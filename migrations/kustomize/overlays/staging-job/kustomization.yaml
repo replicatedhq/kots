@@ -1,6 +1,0 @@
-# staging-job is an overlay for the job that gets a nameprefix
-bases:
-  - ../../base
-
-resources:
-  - ./job.yaml

@@ -50,11 +50,6 @@ build:
         cacheFrom:
           - repldev/ship-cluster-worker:latest
 
-    - image: ship-cluster-migrations
-      context: "./migrations"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
-
     - image: ship-operator
       context: "./ship-operator"
       docker:
