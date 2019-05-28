@@ -81,7 +81,14 @@ module.exports = function (env) {
             { loader: "style-loader" },
             { loader: "css-loader", options: { importLoaders: 1 } },
             { loader: "sass-loader" },
-            { loader: "postcss-loader" }
+            { 
+              loader: "postcss-loader",
+              options: {
+                plugins: () => [
+                  require('cssnano')()
+                ]
+              }
+            }
           ]
         },
         {
@@ -92,7 +99,14 @@ module.exports = function (env) {
         {
           test: /\.svg/,
           include: srcPath,
-          use: ["svg-url-loader"],
+          use: [
+            {
+              loader: 'svg-url-loader',
+              options: {
+                stripdeclarations: true
+              }
+            }
+          ],
         },
         {
           test: /\.woff(2)?(\?v=\d+\.\d+\.\d+)?$/,
