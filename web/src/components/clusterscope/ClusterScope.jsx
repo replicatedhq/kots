@@ -3,6 +3,7 @@ import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { uploadImageWatchBatch } from "../../mutations/ImageWatchMutations";
 
+import Loader from "../shared/Loader";
 const ClusterScopeBatchCreate = lazy(() => import("./ClusterScopeBatchCreate"));
 const ClusterScopeBatch = lazy(() => import("./ClusterScopeBatch"));
 

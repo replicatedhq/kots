@@ -1,7 +1,11 @@
-import * as moment from "moment";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
 import pick from "lodash/pick";
 import filter from "lodash/filter";
 import { default as download } from "downloadjs";
+dayjs.extend(utc);
+dayjs.extend(relativeTime);
 
 export const Utilities = {
   getToken() {
@@ -30,13 +34,13 @@ export const Utilities = {
 
   dateFormat(date, format, localize = true) {
     if (!localize) {
-      return moment.utc(date).format(format);
+      return dayjs.utc(date).format(format);
     }
-    return moment.utc(date).local().format(format);
+    return dayjs.utc(date).local().format(format);
   },
 
   dateFromNow(date) {
-    return moment.utc(date).local().fromNow();
+    return dayjs.utc(date).local().fromNow();
   },
 
   gqlUnauthorized(message) {

@@ -6,7 +6,7 @@ var HtmlWebpackTemplate = require("html-webpack-template");
 var ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
 module.exports = function (env) {
   var distPath = path.join(__dirname, "dist");
@@ -43,6 +43,7 @@ module.exports = function (env) {
       alias: {
         "react": path.resolve("node_modules/react"),
         "react-dom": path.resolve("node_modules/react-dom"),
+        "monaco-editor": "monaco-editor/esm/vs/editor/editor.api.js"
       }
     },
 
@@ -57,7 +58,7 @@ module.exports = function (env) {
         {
           test: /\.mjs$/,
           include: /node_modules/,
-          type: 'javascript/auto'
+          type: "javascript/auto"
         },
         {
           test: /\.css$/,
@@ -84,8 +85,9 @@ module.exports = function (env) {
             { 
               loader: "postcss-loader",
               options: {
+                ident: "postcss",
                 plugins: () => [
-                  require('cssnano')()
+                  require("cssnano")()
                 ]
               }
             }
@@ -101,7 +103,7 @@ module.exports = function (env) {
           include: srcPath,
           use: [
             {
-              loader: 'svg-url-loader',
+              loader: "svg-url-loader",
               options: {
                 stripdeclarations: true
               }
@@ -187,11 +189,11 @@ module.exports = function (env) {
         },
       }),
       new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/),
-      new BundleAnalyzerPlugin({
-        generateStatsFile: true,
-        analyzerHost: "0.0.0.0",
-        analyzerPort: 30088
-      })
+      // new BundleAnalyzerPlugin({
+      //   generateStatsFile: true,
+      //   analyzerHost: "0.0.0.0",
+      //   analyzerPort: 30088
+      // })
     ],
   };
 

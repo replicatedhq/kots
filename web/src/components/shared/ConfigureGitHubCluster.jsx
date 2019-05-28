@@ -5,7 +5,7 @@ import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallati
 import "../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
 import { createGitOpsCluster } from "../../mutations/ClusterMutations";
-import moment from "moment";
+import dayjs from "dayjs";
 import find from "lodash/find";
 import get from "lodash/get";
 import Select from "react-select";
@@ -89,7 +89,7 @@ export class ConfigureGitHub extends React.Component {
   }
 
   handleInstallGitHubApp = () => {
-    var exp = new Date(moment().add(30, "m").toDate());
+    var exp = new Date(dayjs().add(30, "m").toDate());
     // Set cookie with current location, expires 30 mins from current time
     document.cookie = `appRedirect=/cluster/create?configure;expires=${exp.toUTCString()};path=/watches`;
     window.location.replace(window.env.GITHUB_INSTALL_URL)

@@ -102,6 +102,7 @@
     "apollo-link-state": "^0.4.2",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "clipboard": "^2.0.4",
+    "dayjs": "^1.8.14",
     "downloadjs": "^1.4.7",
     "enzyme-adapter-react-16": "^1.13.1",
     "graphiql": "^0.13.0",

@@ -8,6 +8,7 @@ import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
 import { EditMutations, EditQueries } from "../edit";
 import { PendingQueries } from "../pending";
+import { ImageWatchMutations, ImageWatchQueries } from "../imagewatch";
 import { HealthzQueries } from "../healthz";
 import { Params } from "../server/params";
 import { Stores } from "./stores";
@@ -29,6 +30,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...EditQueries(stores),
     ...PendingQueries(stores),
     ...HelmChartQueries(stores),
+    ...ImageWatchQueries(stores)
   },
 
   Mutation: {
@@ -43,5 +45,6 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...GithubInstallationMutations(stores),
     ...EditMutations(stores),
     ...HelmChartMutations(stores),
+    ...ImageWatchMutations(stores)
   }
 })
