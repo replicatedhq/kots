@@ -6,6 +6,7 @@ var HtmlWebpackTemplate = require("html-webpack-template");
 var ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = function (env) {
   var distPath = path.join(__dirname, "dist");
@@ -134,7 +135,7 @@ module.exports = function (env) {
         defaultAttribute: "async"
       }),
       new FaviconsWebpackPlugin({
-        logo: `${srcPath}/favicon-64.png`,
+        logo: srcPath + "/favicon-64.png",
         icons: {
           android: false,
           appleIcon: false,
@@ -171,7 +172,12 @@ module.exports = function (env) {
           ]
         },
       }),
-      new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/)
+      new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/),
+      new BundleAnalyzerPlugin({
+        generateStatsFile: true,
+        analyzerHost: "0.0.0.0",
+        analyzerPort: 30088
+      })
     ],
   };
 

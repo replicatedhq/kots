@@ -1,6 +1,6 @@
 import * as React from "react";
 import moment from "moment";
-import { sortBy } from "lodash";
+import sortBy from "lodash/sortBy";
 
 const Point = ({ point, multi }) => (
   <div className="point flex flex-column alignItems--center">

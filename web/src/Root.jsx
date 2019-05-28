@@ -1,5 +1,5 @@
 import { hot } from "react-hot-loader/root";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { createBrowserHistory } from "history";
 import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
@@ -8,32 +8,33 @@ import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import { Helmet } from "react-helmet";
 
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-import NotFound from "./components/static/NotFound";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
-import GitHubAuth from "./components/github_auth/GitHubAuth";
-import Clusters from "./components/clusters/Clusters";
-import CreateCluster from "./components/clusters/CreateCluster";
-import WatchedApps from "./components/watches/WatchedApps";
-import VersionHistory from "./components/watches/VersionHistory";
-import DiffShipReleases from "./components/watches/DiffShipReleases";
-import DiffGitHubReleases from "./components/watches/DiffGitHubReleases";
-import ComingSoon from "./components/ComingSoon";
-import StateFileViewer from "./components/state/StateFileViewer";
-import Ship from "./components/Ship";
-import ShipInitPre from "./components/ShipInitPre";
-import ShipUnfork from "./components/ShipUnfork";
-import ShipInitCompleted from "./components/ShipInitCompleted";
-import WatchDetailPage from "./components/watches/WatchDetailPage";
-import ClusterScope from "./components/clusterscope/ClusterScope";
-import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
+import Loader from "./components/shared/Loader";
 
 // Import Ship Init component CSS first
 import "@replicatedhq/ship-init/dist/styles.css";
-
 import "./scss/index.scss";
+
+const Login = lazy(() => import("./components/Login"));
+const Signup = lazy(() => import("./components/Signup"));
+const GitHubAuth = lazy(() => import("./components/github_auth/GitHubAuth"));
+const Clusters = lazy(() => import("./components/clusters/Clusters"));
+const CreateCluster = lazy(() => import("./components/clusters/CreateCluster"));
+const WatchedApps = lazy(() => import("./components/watches/WatchedApps"));
+const VersionHistory = lazy(() => import("./components/watches/VersionHistory"));
+const DiffShipReleases = lazy(() => import("./components/watches/DiffShipReleases"));
+const DiffGitHubReleases = lazy(() => import("./components/watches/DiffGitHubReleases"));
+const StateFileViewer = lazy(() => import("./components/state/StateFileViewer"));
+const Ship = lazy(() => import("./components/Ship"));
+const ShipInitPre = lazy(() => import("./components/ShipInitPre"));
+const ShipUnfork = lazy(() => import("./components/ShipUnfork"));
+const ShipInitCompleted = lazy(() => import("./components/ShipInitCompleted"));
+const WatchDetailPage = lazy(() => import("./components/watches/WatchDetailPage"));
+const ClusterScope = lazy(() => import("./components/clusterscope/ClusterScope"));
+const UnsupportedBrowser = lazy(() => import("./components/static/UnsupportedBrowser"));
+const ComingSoon = lazy(() => import("./components/ComingSoon"));
+const NotFound = lazy(() => import("./components/static/NotFound"));
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
@@ -107,77 +108,79 @@ class Root extends React.Component {
           <Router history={history}>
             <div className="flex-column flex1">
               <NavBar />
-              <div className="flex-1-auto flex-column u-overflow--hidden">
-                <Switch>
-                  <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
-                  <Route exact path="/login" component={Login} />
-                  <Route exact path="/signup" component={Signup} />
-                  <Route path="/auth/github" component={GitHubAuth} />
-                  <Route exact path="/coming-soon" component={ComingSoon} />
-                  <Route path="/clusterscope" component={ClusterScope} />
-                  <Route path="/unsupported" component={UnsupportedBrowser} />
-                  <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
-                  <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
-                  <ProtectedRoute path="/watches" render={(props) => <WatchedApps {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                  <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
-                  <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
-                  <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
-                  <ProtectedRoute path="/watch/create/init" render={(props) => <ShipInitPre {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                  <ProtectedRoute path="/watch/create/unfork" render={(props) => <ShipUnfork {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                  <ProtectedRoute path="/watch/create/state" component={() =>
-                    <StateFileViewer
-                      isNew={true}
-                      headerText="Add your application's state.json file"
-                      subText={<span>Paste in the state.json that was generated by Replicated Ship. If you need help finding your state.json file or you have not initialized your app using Replicated Ship, <a href="https://ship.replicated.com/docs/ship-init/storing-state/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our docs.</a></span>}
+              <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" color="#44bb66" /></div>}>
+                <div className="flex-1-auto flex-column u-overflow--hidden">
+                  <Switch>
+                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
+                    <Route exact path="/login" component={Login} />
+                    <Route exact path="/signup" component={Signup} />
+                    <Route path="/auth/github" component={GitHubAuth} />
+                    <Route exact path="/coming-soon" component={ComingSoon} />
+                    <Route path="/clusterscope" component={ClusterScope} />
+                    <Route path="/unsupported" component={UnsupportedBrowser} />
+                    <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
+                    <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
+                    <ProtectedRoute path="/watches" render={(props) => <WatchedApps {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
+                    <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
+                    <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
+                    <ProtectedRoute path="/watch/create/init" render={(props) => <ShipInitPre {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute path="/watch/create/unfork" render={(props) => <ShipUnfork {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute path="/watch/create/state" component={() =>
+                      <StateFileViewer
+                        isNew={true}
+                        headerText="Add your application's state.json file"
+                        subText={<span>Paste in the state.json that was generated by Replicated Ship. If you need help finding your state.json file or you have not initialized your app using Replicated Ship, <a href="https://ship.replicated.com/docs/ship-init/storing-state/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our docs.</a></span>}
+                      />
+                    } />
+                    <ProtectedRoute
+                      path="/watch/init/complete"
+                      render={
+                        (props) => <ShipInitCompleted
+                          {...props}
+                          initSessionId={initSessionId}
+                          onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
+                        />
+                      }
                     />
-                  } />
-                  <ProtectedRoute
-                    path="/watch/init/complete"
-                    render={
-                      (props) => <ShipInitCompleted
-                        {...props}
-                        initSessionId={initSessionId}
-                        onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
-                      />
-                    }
-                  />
-                  <ProtectedRoute path="/watch/:owner/:slug/:tab?" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                  <ProtectedRoute
-                    path="/ship/init"
-                    render={
-                      (props) => <Ship
-                        {...props}
-                        rootURL={window.env.SHIPINIT_ENDPOINT}
-                        initSessionId={initSessionId}
-                        onCompletion={this.handleInitCompletion(props.history)}
-                      />
-                    }
-                  />
-                  <ProtectedRoute
-                    path="/ship/update"
-                    render={
-                      (props) => <Ship
-                        {...props}
-                        rootURL={window.env.SHIPUPDATE_ENDPOINT}
-                        initSessionId={initSessionId}
-                        onCompletion={this.handleUpdateCompletion(props.history)}
-                      />
-                    }
-                  />
-                  <ProtectedRoute
-                    path="/ship/edit"
-                    render={
-                      (props) => <Ship
-                        {...props}
-                        rootURL={window.env.SHIPEDIT_ENDPOINT}
-                        initSessionId={initSessionId}
-                        onCompletion={this.handleUpdateCompletion(props.history)}
-                      />
-                    }
-                  />
-                  <Route component={NotFound} />
-                </Switch>
-              </div>
+                    <ProtectedRoute path="/watch/:owner/:slug/:tab?" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute
+                      path="/ship/init"
+                      render={
+                        (props) => <Ship
+                          {...props}
+                          rootURL={window.env.SHIPINIT_ENDPOINT}
+                          initSessionId={initSessionId}
+                          onCompletion={this.handleInitCompletion(props.history)}
+                        />
+                      }
+                    />
+                    <ProtectedRoute
+                      path="/ship/update"
+                      render={
+                        (props) => <Ship
+                          {...props}
+                          rootURL={window.env.SHIPUPDATE_ENDPOINT}
+                          initSessionId={initSessionId}
+                          onCompletion={this.handleUpdateCompletion(props.history)}
+                        />
+                      }
+                    />
+                    <ProtectedRoute
+                      path="/ship/edit"
+                      render={
+                        (props) => <Ship
+                          {...props}
+                          rootURL={window.env.SHIPEDIT_ENDPOINT}
+                          initSessionId={initSessionId}
+                          onCompletion={this.handleUpdateCompletion(props.history)}
+                        />
+                      }
+                    />
+                    <Route component={NotFound} />
+                  </Switch>
+                </div>
+              </Suspense>
               <div className="flex-auto Footer-wrapper u-width--full">
                 <Footer />
               </div>

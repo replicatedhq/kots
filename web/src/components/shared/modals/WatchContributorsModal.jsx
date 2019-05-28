@@ -4,12 +4,15 @@ import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import Loader from "../Loader";
 import { WatchContributorCheckbox } from "./WatchContributorCheckbox";
-import { keyBy, merge, omitBy, get } from "lodash";
 import { getWatchContributors } from "../../../queries/WatchQueries";
 import { githubUserOrgs, getOrgMembers } from "../../../queries/GitHubQueries";
 import { userInfo } from "../../../queries/UserQueries";
 import { saveWatchContributors } from "../../../mutations/WatchMutations";
 import Select from "react-select";
+import keyBy from "lodash/keyBy";
+import merge from "lodash/merge";
+import omitBy from "lodash/omitBy";
+import get from "lodash/get";
 
 import "../../../scss/components/watches/WatchContributorsModal.scss";
 

@@ -1,5 +1,6 @@
 import * as moment from "moment";
-import { pick, filter } from "lodash";
+import pick from "lodash/pick";
+import filter from "lodash/filter";
 import { default as download } from "downloadjs";
 
 export const Utilities = {

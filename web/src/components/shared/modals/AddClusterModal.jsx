@@ -3,7 +3,7 @@ import { compose, graphql, withApollo } from "react-apollo";
 import { listClusters } from "../../../queries/ClusterQueries";
 import Select from "react-select";
 
-export class AddNewClusterModal extends React.Component {
+class AddNewClusterModal extends React.Component {
 
   state = {
     selectedCluster: {
