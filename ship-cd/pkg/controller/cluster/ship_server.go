@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -41,4 +42,37 @@ func getDesiredStateFromShipServer(apiEndpoint string, token string) (*ShipDesir
 	}
 
 	return &shipDesiredState, nil
+}
+
+func reporCurrentStateToShipServer(apiEndpoint string, token string, helmApplications []*HelmApplication) error {
+	currentState := struct {
+		HelmApplications []*HelmApplication `json:"helmApplications"`
+	}{
+		helmApplications,
+	}
+
+	b, err := json.Marshal(currentState)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+
+	uri := fmt.Sprintf("%s/api/v1/current", apiEndpoint)
+
+	fmt.Printf("Reporting helm charts to %q\n", uri)
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(b))
+	req.Header["Content-Type"] = []string{"application/json"}
+	req.SetBasicAuth("", token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code from ship server: %d", resp.StatusCode)
+	}
+
+	return nil
 }

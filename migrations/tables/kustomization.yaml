@@ -32,3 +32,5 @@ resources:
 - ./ship_edit.yaml
 - ./ship_init_pending.yaml
 - ./ship_init_pending_user.yaml
+- ./helm_chart_source.yaml
+- ./helm_chart.yaml

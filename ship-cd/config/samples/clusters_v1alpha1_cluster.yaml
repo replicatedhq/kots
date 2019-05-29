@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: cluster-sample
+  name: dev-cluster
 spec:
-  shipApiServer: http://localhost:8065
-  token: 08814725d458b87fa06ad8f5647fe85e
+  shipApiServer: http://localhost:30065
+  token: u9l6mft8dnnb5t11ht5sittv0k85z47g
