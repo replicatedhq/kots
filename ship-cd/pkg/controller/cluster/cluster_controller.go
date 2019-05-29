@@ -136,7 +136,18 @@ func (r *ReconcileCluster) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
-	// Poll for updates
+	if isHelmInstalled() {
+		helmApplications, err := listHelmApplications()
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if err := reporCurrentStateToShipServer(instance.Spec.ShipAPIServer, instance.Spec.Token, helmApplications); err != nil {
+			return reconcile.Result{}, err
+		}
+
+	}
+
 	desiredState, err := getDesiredStateFromShipServer(instance.Spec.ShipAPIServer, instance.Spec.Token)
 	if err != nil {
 		fmt.Println(err)

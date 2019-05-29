@@ -48,3 +48,4 @@ steps:
       - cd api
       - make publish-enterprise
     branches: "master"
+
