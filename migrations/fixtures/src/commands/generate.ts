@@ -26,13 +26,13 @@ async function main(argv): Promise<any> {
 
   let allStatements: string[] = [];
 
-  const files = fs.readdirSync("./");
+  const files = fs.readdirSync("./fixtures");
   for (const file of files) {
     if (path.extname(file) === ".yaml") {
       console.log(`   begin converting ${file}`)
 
       const schema: Schema = new Schema();
-      schema.parse(file);
+      schema.parse(path.join("./fixtures", file));
 
       allStatements = allStatements.concat(schema.generateFixtures());
 
@@ -42,13 +42,8 @@ async function main(argv): Promise<any> {
 
   fs.writeFileSync("./fixtures.sql", `/* Auto generated file. Do not edit by hand. */\n\n`);
 
-  const migrationFiles = fs.readdirSync("../migrations");
-  for (const migrationFile of migrationFiles) {
-    if (migrationFile.endsWith(".up.sql")) {
-      const migrationContents = fs.readFileSync(path.join("../migrations", migrationFile));
-      fs.appendFileSync("./fixtures.sql", `${migrationContents};\n`);
-    }
-  }
+  const schema = fs.readFileSync("./schema/fixtures.sql");
+  fs.appendFileSync("./fixtures.sql", `${schema};\n`);
 
   for (const statement of allStatements) {
     fs.appendFileSync("./fixtures.sql", `${statement};\n`);

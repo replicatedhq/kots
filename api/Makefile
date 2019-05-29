@@ -93,21 +93,21 @@ build_and_push:
 	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 
 
-# .PHONY: publish-production
-# publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-# publish-production: OVERLAY = production
-# publish-production: GITOPS_OWNER = replicatedcom
-# publish-production: GITOPS_REPO = gitops-deploy
-# publish-production: GITOPS_BRANCH = release
-# publish-production: build_and_publish
+.PHONY: publish-production
+publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
+publish-production: OVERLAY = production
+publish-production: GITOPS_OWNER = replicatedcom
+publish-production: GITOPS_REPO = gitops-deploy
+publish-production: GITOPS_BRANCH = release
+publish-production: build_and_publish
 
-# .PHONY: publish-staging
-# publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-# publish-staging: OVERLAY = staging
-# publish-staging: GITOPS_OWNER = replicatedcom
-# publish-staging: GITOPS_REPO = gitops-deploy
-# publish-staging: GITOPS_BRANCH = master
-# publish-staging: build_and_publish
+.PHONY: publish-staging
+publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
+publish-staging: OVERLAY = staging
+publish-staging: GITOPS_OWNER = replicatedcom
+publish-staging: GITOPS_REPO = gitops-deploy
+publish-staging: GITOPS_BRANCH = master
+publish-staging: build_and_publish
 
 .PHONY: publish-enterprise
 publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
@@ -129,5 +129,5 @@ build_and_publish:
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITHUB_BRANCH)
+          git push origin $(GITOPS_BRANCH)
 
