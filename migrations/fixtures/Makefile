@@ -19,8 +19,13 @@ build: prebuild deps
 	`yarn bin`/tsc --project .
 
 .PHONY: run
-run:
+run: schema-fixtures
 	node --no-deprecation ./build/fixtures.js generate
+
+.PHONY: schema-fixtures
+schema-fixtures:
+	docker pull schemahero/schemahero:alpha
+	docker run -v `pwd`/schema:/out -v `pwd`/../tables:/in schemahero/schemahero:alpha fixtures --input-dir /in --output-dir /out --dbname -ship-cloud --driver postgres
 
 .PHONY: publish
 publish: REGISTRY = replicated

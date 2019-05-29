@@ -31,7 +31,7 @@ export class Schema {
         statements = statements.concat(this.generateWatchFixture(watch));
       }
     }
-    
+
     if (this.parsedDoc.imageBatches) {
       console.log("Generating image batches...");
       for (const imageBatch of this.parsedDoc.imageBatches) {
@@ -68,7 +68,7 @@ export class Schema {
 
   public generateClusterFixture(cluster: any): string[] {
     const statements: string[] = [
-      escape(`insert into cluster (id, title, slug, created_at, updated_at, token, cluster_type) values (%L, %L, %L, %L, %L, %L, %L)`,
+      escape(`insert into cluster (id, title, slug, created_at, updated_at, token, cluster_type, is_all_users) values (%L, %L, %L, %L, %L, %L, %L, ${false})`,
         cluster.id, cluster.title, cluster.slug, cluster.created_at, cluster.updated_at, cluster.token, cluster.cluster_type),
     ];
 
