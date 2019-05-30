@@ -13,6 +13,7 @@ import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
+import { HelmChartStore } from "../helmchart";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -31,4 +32,5 @@ export interface Stores {
   healthzStore: HealthzStore,
   watchDownload: WatchDownload,
   editStore: EditStore,
+  helmChartStore: HelmChartStore,
 }
