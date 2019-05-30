@@ -2,7 +2,5 @@ bases:
   - ../../base
 
 resources:
-  - ./secret.json
-  - ./secret-rw.json
-  - ./secret-host.json
-  - ./ship-postgres-secret.json
+  - ./database.yaml
+  - ./ship-cluster-postgres.yaml
