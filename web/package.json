@@ -92,7 +92,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@bugsnag/js": "^6.2.0",
     "@bugsnag/plugin-react": "^6.2.0",
-    "@replicatedhq/ship-init": "^1.5.3",
+    "@replicatedhq/ship-init": "^1.6.1",
     "apollo-cache-inmemory": "^1.5.1",
     "apollo-client": "^2.5.1",
     "apollo-link": "^1.2.11",

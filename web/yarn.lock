@@ -727,13 +727,6 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
-"@babel/runtime@^7.3.4":
-  version "7.4.3"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.4.3.tgz#79888e452034223ad9609187a0ad1fe0d2ad4bdc"
-  integrity sha512-9lsJwJLxDh/T3Q3SZszfWOTkk3pHbkmH+3KY+zwIDmsNlxsumuhS2TH3NIpktU4kNvfzy+k3eLT7aTJSPTo0OA==
-  dependencies:
-    regenerator-runtime "^0.13.2"
-
 "@babel/template@^7.1.0", "@babel/template@^7.4.0", "@babel/template@^7.4.4":
   version "7.4.4"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.4.4.tgz#f4b88d1225689a08f5bc3a17483545be9e4ed237"
@@ -1096,13 +1089,13 @@
     pkginfo "^0.4.1"
     popsicle "^9.2.0"
 
-"@replicatedhq/ship-init@^1.5.3":
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.5.3.tgz#b18ee7817649714897f00cbf172d0d048f05bda0"
-  integrity sha512-4yn8NTXhKUbDBMBg3efCa3KZpTvV+48lVUMtLGb3UcOmq4HE5AZ+swlYi+0Fj1DF0ndqTlZd1RVItLIxCc70qg==
+"@replicatedhq/ship-init@^1.6.1":
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.6.1.tgz#e76f9395dc377b7814c568110edcfd2e57f21fad"
+  integrity sha512-EKK9Ol7tsYdePKzz/h4z5axg5ZiWMm92IQPrElBDOX03PX84B7pbXPq7tCjWx8jvqptQb6sZ/C50y+KM0PWY2A==
   dependencies:
-    "@babel/runtime" "^7.3.4"
     brace "^0.11.1"
+    classnames "^2.2.6"
     history "^4.7.2"
     isomorphic-fetch "^2.2.1"
     lodash "^4.17.11"
@@ -3721,7 +3714,7 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
-classnames@^2.2.5:
+classnames@^2.2.5, classnames@^2.2.6:
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.2.6.tgz#43935bffdd291f326dad0a205309b38d00f650ce"
   integrity sha512-JR/iSQOSt+LQIWwrwEzJ9uk0xfN3mTVYMwt1Ir5mUcSN6pU+V4zQFFaJsclJbPuAUQH+yfWef6tm7l1quW3C8Q==
