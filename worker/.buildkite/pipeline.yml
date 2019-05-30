@@ -1,15 +1,15 @@
 steps:
   - commands:
-      - cd worker
-      - make build-cache publish-cache
+      - make -C workerbuild-cache publish-cache
+    branches: "master"
 
   - commands:
-      - cd worker
-      - make build
+      - make -C worker build
     label: test-and-build
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
+          always-pull: true
           workdir: /go/src/github.com/replicatedhq/ship-cluster
     artifact_paths:
       - "worker/bin/**/*"
@@ -20,17 +20,15 @@ steps:
       - mkdir -p worker/bin;
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
       - chmod +x worker/bin/ship-cluster-worker
-      - cd worker
-      - make build-enterprise
-    branches: master
+      - make -C worker build-enterprise
+    branches: "master"
     retry:
       automatic: true
 
   - wait
 
   - commands:
-      - cd worker
-      - make publish-enterprise
-    branches: master
+      - make -C worker publish-enterprise
+    branches: "master"
     retry:
       automatic: true
