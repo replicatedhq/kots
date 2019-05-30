@@ -10,6 +10,7 @@ steps:
           image: schemahero/schemahero:alpha
           always-pull: true
           workdir: /repo
+          shell: false
           volumes:
             - "/repo/migrations/fixtures/schema:/out"
             - "/repo/migrations/tables:/in"
