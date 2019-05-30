@@ -49,3 +49,19 @@ steps:
       - make publish-enterprise
     branches: "master"
 
+  - block: "Release to staging"
+    branches: "master"
+
+  - commands:
+      - cd api
+      - make publish-staging
+    branches: "master"
+
+  - block: "Release to production"
+    branches: "master"
+
+  - commands:
+      - cd api
+      - make publish-production
+    branches: "master"
+

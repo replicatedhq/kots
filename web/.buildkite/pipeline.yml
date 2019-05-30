@@ -40,3 +40,23 @@ steps:
       - cd web
       - make publish-enterprise
     branches: "master"
+
+  - block: "Release to staging"
+    branches: "master"
+
+  - commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-staging
+      - cd web
+      - make publish-staging
+    branches: "master"
+
+  - block: "Release to production"
+    branches: "master"
+
+  - commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-production
+      - cd web
+      - make publish-production
+    branches: "master"

@@ -61,21 +61,23 @@ build-enterprise: webpack_build
 webpack_build:
 	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode production
 
-# .PHONY: publish-production
-# publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-# publish-production: OVERLAY = production
-# publish-production: GITOPS_OWNER = replicatedcom
-# publish-production: GITOPS_REPO = gitops-deploy
-# publish-production: GITOPS_BRANCH = release
-# publish-production: docker_and_gitops
+.PHONY: publish-production
+publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
+publish-production: OVERLAY = production
+publish-production: GITOPS_OWNER = replicatedcom
+publish-production: GITOPS_REPO = gitops-deploy
+publish-production: GITOPS_BRANCH = release
+publish-production: docker
+publish-production: gitops
 
-# .PHONY: publish-staging
-# publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-# publish-staging: OVERLAY = staging
-# publish-staging: GITOPS_OWNER = replicatedcom
-# publish-staging: GITOPS_REPO = gitops-deploy
-# publish-staging: GITOPS_BRANCH = master
-# publish-staging: docker_and_gitops
+.PHONY: publish-staging
+publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
+publish-staging: OVERLAY = staging
+publish-staging: GITOPS_OWNER = replicatedcom
+publish-staging: GITOPS_REPO = gitops-deploy
+publish-staging: GITOPS_BRANCH = master
+publish-staging: docker
+publish-staging: gitops
 
 .PHONY: publish-enterprise
 publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
@@ -83,7 +85,6 @@ publish-enterprise: OVERLAY = enterprise
 publish-enterprise: GITOPS_OWNER = replicatedhq
 publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: CACHE_STEP = build-enterprise
 publish-enterprise: docker
 publish-enterprise: gitops
 
@@ -104,7 +105,7 @@ gitops:
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITHUB_BRANCH)
+          git push origin $(GITOPS_BRANCH)
 
 
 
