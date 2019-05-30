@@ -2,7 +2,6 @@
 .idea
 .vscode
 .buildkite
-bin
 deploy
 hack
 kustomize
