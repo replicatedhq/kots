@@ -8,7 +8,7 @@ steps:
           image: schemahero/schemahero:alpha
           always-pull: true
           workdir: /repo
-          debug: true
+          user: 999
           volumes:
             - "./migrations/fixtures/schema:/out"
             - "./migrations/tables:/in"
