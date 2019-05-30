@@ -32,6 +32,7 @@ import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
+import { HelmChartStore } from "../helmchart";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -105,6 +106,7 @@ export class Server extends ServerLoader {
       watchDownload: new WatchDownload(watchStore),
       editStore: new EditStore(pool, params),
       pendingStore: new PendingStore(pool, params),
+      helmChartStore: new HelmChartStore(pool),
     }
 
     this.expressApp.locals.stores = stores;

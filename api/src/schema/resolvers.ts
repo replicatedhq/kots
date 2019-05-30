@@ -8,12 +8,11 @@ import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
 import { EditMutations, EditQueries } from "../edit";
 import { PendingQueries } from "../pending";
-
 import { HealthzQueries } from "../healthz";
-
 import { Params } from "../server/params";
 import { Stores } from "./stores";
 import { GithubInstallationQueries, GithubInstallationMutations } from "../github_installation";
+import { HelmChartQueries, HelmChartMutations } from "../helmchart";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
@@ -28,7 +27,8 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...HealthzQueries(stores),
     ...GithubInstallationQueries(stores),
     ...EditQueries(stores),
-    ...PendingQueries(stores)
+    ...PendingQueries(stores),
+    ...HelmChartQueries(stores),
   },
 
   Mutation: {
@@ -42,5 +42,6 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...FeatureMutations(stores),
     ...GithubInstallationMutations(stores),
     ...EditMutations(stores),
+    ...HelmChartMutations(stores),
   }
 })
