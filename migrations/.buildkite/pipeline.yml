@@ -1,7 +1,7 @@
 steps:
   - label: "schema-fixtures"
     artifact_paths:
-      - "migrations/schema/fixtures.sql"
+      - "migrations/fixtures/schema/fixtures.sql"
     branches: "master"
     plugins:
       - docker#v3.0.1:
