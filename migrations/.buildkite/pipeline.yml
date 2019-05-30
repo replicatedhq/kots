@@ -1,12 +1,21 @@
 steps:
   - commands:
-      - make -C migrations/fixtures schema-fixtures
+      - fixtures --input-dir /in --output-dir /out --dbname -ship-cloud --driver postgres
     label: "schema-fixtures"
     artifact_paths:
       - "migrations/schema/fixtures.sql"
     branches: "master"
+    plugins:
+      - docker#v3.0.1:
+          image: schemahero/schemahero:alpha
+          always-pull: true
+          workdir: /repo
+          volumes:
+            - "/repo/migrations/fixtures/schema:/out"
+            - "/repo/migrations/tables:/in"
 
   - wait
+
   - commands:
       - buildkite-agent artifact download migrations/schema/fixtures.sql . --step schema-fixtures
       - make -C migrations/fixtures deps build run
@@ -14,6 +23,7 @@ steps:
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
+          always-pull: true
           workdir: /repo
     artifact_paths:
       - "migrations/fixtures/fixtures.sql"
