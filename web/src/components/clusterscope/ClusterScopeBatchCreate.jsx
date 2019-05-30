@@ -29,7 +29,6 @@ class ClusterScopeBatchCreate extends React.Component {
       .then((result) => {
         this.setState({ saving: false });
         if (!Utilities.isLoggedIn()) {sessionStorage.setItem("showSignUpModal", true);}
-        console.log(result)
         this.props.history.replace(`/clusterscope/${result.data.uploadImageWatchBatch}`)
       })
       .catch((err) => {
