@@ -19,7 +19,7 @@ steps:
   - wait
 
   - commands:
-      - buildkite-agent artifact download migrations/schema/fixtures.sql . --step schema-fixtures
+      - buildkite-agent artifact download migrations/fixtures/schema/fixtures.sql . --step schema-fixtures
       - make -C migrations/fixtures deps build run
     label: "build-fixtures"
     plugins:
