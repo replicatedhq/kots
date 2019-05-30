@@ -10,7 +10,7 @@ steps:
           workdir: /repo
           debug: true
           environment:
-            - uid:999 # buildkite-agent user
+            - "uid=999"
           volumes:
             - "./migrations/fixtures:/out"
             - "./migrations/tables:/in"
