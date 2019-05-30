@@ -3,7 +3,7 @@ PROJECT_NAME ?= ship-cluster-fixtures
 
 .PHONY: deps
 deps:
-	yarn --silent
+	yarn --silent --frozen-lockfile
 
 .PHONY: prebuild
 prebuild:
@@ -19,7 +19,7 @@ build: prebuild deps
 	`yarn bin`/tsc --project .
 
 .PHONY: run
-run: schema-fixtures
+run:
 	node --no-deprecation ./build/fixtures.js generate
 
 .PHONY: schema-fixtures

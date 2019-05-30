@@ -1,13 +1,15 @@
 steps:
   - commands:
-      - cd migrations
-      - make check-dups
+      - make -C migrations/fixtures schema-fixtures
+    label: "schema-fixtures"
+    artifact_paths:
+      - "migrations/schema/fixtures.sql"
+    branches: "master"
 
   - wait
-
   - commands:
-      - cd migrations/fixtures
-      - make deps build run
+      - buildkite-agent artifact download migrations/schema/fixtures.sql . --step schema-fixtures
+      - make -C migrations/fixtures deps build run
     label: "build-fixtures"
     plugins:
       - docker#v3.0.1:
@@ -15,6 +17,7 @@ steps:
           workdir: /repo
     artifact_paths:
       - "migrations/fixtures/fixtures.sql"
+    branches: "master"
 
   - wait
 
@@ -35,12 +38,12 @@ steps:
       automatic: true
 
   - block: "Release to staging"
-    branches: master
+    branches: "master"
 
   - commands:
       - cd migrations
       - make publish-staging
-    branches: master
+    branches: "master"
     env:
       AWS_PROFILE: replicated-staging
     plugins:
@@ -49,12 +52,12 @@ steps:
           account_ids: "923411875752"
 
   - block: "Release to production"
-    branches: master
+    branches: "master"
 
   - commands:
       - cd migrations
       - make publish-production
-    branches: master
+    branches: "master"
     env:
       AWS_PROFILE: replicated-production
     plugins:

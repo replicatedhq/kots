@@ -13,7 +13,7 @@ test:
 	make -C web test
 	make -C ship-cd test-pact
 
-	make -C migrations/fixtures build run
+	make -C migrations/fixtures schema-fixtures build run
 	cd migrations && docker build -t replicated/ship-cluster-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
 
 	mkdir -p api/pacts
