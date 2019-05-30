@@ -10,8 +10,8 @@ steps:
           workdir: /repo
           debug: true
           volumes:
-            - "/repo/migrations/fixtures/schema:/out"
-            - "/repo/migrations/tables:/in"
+            - "./migrations/fixtures/schema:/out"
+            - "./migrations/tables:/in"
           command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out", "--dbname", "ship-cloud", "--driver", "postgres"]
 
   - wait
