@@ -1,5 +1,5 @@
 steps:
-    label: "schema-fixtures"
+  - label: "schema-fixtures"
     artifact_paths:
       - "migrations/schema/fixtures.sql"
     branches: "master"
