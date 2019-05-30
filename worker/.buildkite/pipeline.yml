@@ -32,3 +32,21 @@ steps:
     branches: "master"
     retry:
       automatic: true
+
+  - block: "Release to staging"
+    branches: "master"
+
+  - commands:
+      - make -C worker publish-staging
+    branches: "master"
+    retry:
+      automatic: true
+
+  - block: "Release to production"
+    branches: "master"
+
+  - commands:
+      - make -C worker publish-production
+    branches: "master"
+    retry:
+      automatic: true

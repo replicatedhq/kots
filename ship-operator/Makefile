@@ -98,5 +98,5 @@ build_and_publish:
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITHUB_BRANCH)
+          git push origin $(GITOPS_BRANCH)
 
