@@ -63,6 +63,7 @@ watches:
           "contentSHA": "126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e"
         }
       }
+    metadata: "{}"
     title: "Solo Account Watch"
     icon_uri: "https://us1.factorio.com/assets/img/factorio-logo.png"
     created_at: "2019-04-10 12:34:56.789"

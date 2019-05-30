@@ -12,7 +12,7 @@ type Store interface {
 	SetInitStatus(ctx context.Context, initID string, status string) error
 	GetUnfork(ctx context.Context, unforkID string) (*types.UnforkSession, error)
 	SetUnforkStatus(ctx context.Context, unforkID string, status string) error
-	CreateWatchFromState(ctx context.Context, stateJSON []byte, title string, iconURI string, slug string, userID string, initID string, clusterID string, githubPath string, parentWatchID string) error
+	CreateWatchFromState(ctx context.Context, stateJSON []byte, metadata []byte, title string, iconURI string, slug string, userID string, initID string, clusterID string, githubPath string, parentWatchID string) error
 
 	GetS3StoreURL(shipSession types.Session) (string, error)
 	SetOutputFilepath(ctx context.Context, session types.Output) error

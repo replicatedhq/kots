@@ -178,7 +178,12 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod) error {
 		watchSlug = fmt.Sprintf("%s-%d", watchSlug, len(matchingWatchSlugs))
 	}
 
-	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], title, stateMetadata.V1.Metadata.Icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
+	marshaledMetadata, err := json.Marshal(stateMetadata.V1.Metadata)
+	if err != nil {
+		return errors.Wrap(err, "marshal state metadata")
+	}
+
+	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], marshaledMetadata, title, stateMetadata.V1.Metadata.Icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
 		return errors.Wrap(err, "create watch from state")
 	}
 
@@ -260,11 +265,16 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 		}
 	}
 
+	marshaledMetadata, err := json.Marshal(stateMetadata.V1.Metadata)
+	if err != nil {
+		return errors.Wrap(err, "marshal state metadata")
+	}
+
 	parentWatchID := ""
 	if parentWatch != nil {
 		parentWatchID = parentWatch.ID
 	}
-	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], title, stateMetadata.V1.Metadata.Icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
+	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], marshaledMetadata, title, stateMetadata.V1.Metadata.Icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
 		return errors.Wrap(err, "create watch from state")
 	}
 
@@ -322,7 +332,7 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 	if err != nil {
 		return 0, "", "", err
 	}
-	watchState := state.VersionedState{}
+	watchState := state.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
 		return 0, "", "", errors.Wrap(err, "unmarshal watch state")
 	}

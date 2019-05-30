@@ -315,7 +315,7 @@ export class WatchStore {
     const pg = await this.pool.connect();
 
     try {
-      const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at from watch where id = $1";
+      const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata from watch where id = $1";
       const v = [id];
 
       const result = await pg.query(q, v);
@@ -380,23 +380,15 @@ export class WatchStore {
   }
 
   async listAllWatchesForAllTeams(): Promise<Watch[]> {
-    const pg = await this.pool.connect();
-
-    try {
-      const q = `select id, current_state, title, slug, icon_uri, created_at, updated_at from watch`;
-      const v = [];
-
-      const result = await pg.query(q, v);
-      const watches: Watch[] = [];
-      for (const row of result.rows) {
-        const result = this.mapWatch(row);
-        watches.push(result);
-      }
-
-      return watches;
-    } finally {
-      pg.release();
+    const q = `select id from watch`;
+    const result = await this.pool.query(q);
+    const watches: Watch[] = [];
+    for (const row of result.rows) {
+      const watch = await this.getWatch(row.id);
+      watches.push(watch);
     }
+
+    return watches;
   }
 
   async listUsersForWatch(watchId: string): Promise<string[]> {
@@ -418,98 +410,48 @@ export class WatchStore {
     }
   }
 
-  async listAllUserWatches(userId?: string): Promise<Watch[]> {
-    const pg = await this.pool.connect();
+  async listAllUserWatches(userId: string): Promise<Watch[]> {
+    const q = `select watch_id as id from user_watch where user_id = $1`;
+    const v = [
+      userId,
+    ];
 
-    try {
-      const q = `
-          SELECT user_id,
-                watch_id as id,
-                watch.current_state,
-                watch.title,
-                watch.slug,
-                watch.icon_uri,
-                watch.created_at,
-                watch.updated_at
-          FROM user_watch
-                JOIN watch ON watch.id = user_watch.watch_id
-          WHERE user_watch.user_id = $1
-          ORDER BY watch.title
-        `;
-      const v = [
-        userId,
-      ];
-
-      const result = await pg.query(q, v);
-      const watches: Watch[] = [];
-      for (const row of result.rows) {
-        const watch = this.mapWatch(row);
-        watches.push(watch);
-      }
-
-      return watches;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    const watches: Watch[] = [];
+    for (const row of result.rows) {
+      const watch = await this.getWatch(row.id);
+      watches.push(watch);
     }
+
+    return _.sortBy(watches, ["title"]);
   }
 
   async listWatches(userId?: string, parentId?: string): Promise<Watch[]> {
-    const pg = await this.pool.connect();
+    let q;
+    let v;
 
-    try {
-        let q;
-        let v;
+    if (parentId) {
+      q = `select id from watch where parent_watch_id = $1`;
+      v = [
+        parentId,
+      ];
+    } else {
+      q = `select watch_id as id from user_watch join watch on watch.id = user_watch.watch_id
+        where user_watch.user_id = $1
+        and watch.parent_watch_id is null`;
+      v = [
+        userId,
+      ];
+    }
 
-        if (parentId) {
-          q = `
-            SELECT user_id,
-                  watch_id as id,
-                  watch.current_state,
-                  watch.title,
-                  watch.slug,
-                  watch.icon_uri,
-                  watch.created_at,
-                  watch.updated_at
-            FROM user_watch
-                  JOIN watch ON watch.id = user_watch.watch_id
-            AND watch.parent_watch_id = $1
-            ORDER BY watch.title
-          `;
-          v = [
-            parentId,
-          ];
-        } else {
-          q = `
-            SELECT user_id,
-                  watch_id as id,
-                  watch.current_state,
-                  watch.title,
-                  watch.slug,
-                  watch.icon_uri,
-                  watch.created_at,
-                  watch.updated_at
-            FROM user_watch
-                  JOIN watch ON watch.id = user_watch.watch_id
-            WHERE user_watch.user_id = $1
-            AND watch.parent_watch_id IS NULL
-            ORDER BY watch.title
-          `;
-          v = [
-            userId,
-          ];
-        }
+    const result = await this.pool.query(q, v);
+    const watches: Watch[] = [];
+    for (const row of result.rows) {
+      const watch = await this.getWatch(row.id);
+      watches.push(watch);
+    }
 
-        const result = await pg.query(q, v);
-        const watches: Watch[] = [];
-        for (const row of result.rows) {
-          const watch = this.mapWatch(row);
-          watches.push(watch);
-        }
-
-        return watches;
-      } finally {
-        pg.release();
-      }
+    return _.sortBy(watches, ["title"]);
   }
 
   // returns the list of generated files for this watch in reverse sequence order. (highest sequence number first)
@@ -634,7 +576,8 @@ export class WatchStore {
               watch.slug,
               watch.icon_uri,
               watch.created_at,
-              watch.updated_at
+              watch.updated_at,
+              watch.metadata
         FROM user_watch
               JOIN watch ON watch.id = user_watch.watch_id
         WHERE user_watch.user_id = $1
@@ -719,6 +662,7 @@ export class WatchStore {
 
     const slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
     const watches = await this.listAllUserWatches(userId);
+
     const existingSlugs = watches.map(watch => watch.slug);
     let finalSlug = slugProposal;
 
@@ -787,7 +731,8 @@ export class WatchStore {
     watch.watchIcon = row.icon_uri;
     watch.lastUpdated = row.updated_at;
     watch.createdOn = row.created_at;
-    
+    watch.metadata = row.metadata;
+
     return watch;
   }
 

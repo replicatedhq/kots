@@ -184,6 +184,19 @@ func HashAlgoString(alg x509.SignatureAlgorithm) string {
 	}
 }
 
+// StringTLSVersion returns underlying enum values from human names for TLS
+// versions, defaults to current golang default of TLS 1.0
+func StringTLSVersion(version string) uint16 {
+	switch version {
+	case "1.2":
+		return tls.VersionTLS12
+	case "1.1":
+		return tls.VersionTLS11
+	default:
+		return tls.VersionTLS10
+	}
+}
+
 // EncodeCertificatesPEM encodes a number of x509 certificates to PEM
 func EncodeCertificatesPEM(certs []*x509.Certificate) []byte {
 	var buffer bytes.Buffer

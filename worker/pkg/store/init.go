@@ -67,7 +67,7 @@ func (s *SQLStore) SetInitStatus(ctx context.Context, initID string, status stri
 	return err
 }
 
-func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, title string, iconURI string, slug string, userID string, initID string, clusterID string, githubPath string, parentWatchID string) error {
+func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, metadata []byte, title string, iconURI string, slug string, userID string, initID string, clusterID string, githubPath string, parentWatchID string) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return errors.Wrap(err, "begin transaction")
@@ -77,16 +77,16 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, t
 	query := ""
 
 	if parentWatchID == "" {
-		query = `insert into watch (id, current_state, title, icon_uri, created_at, slug, parent_watch_id)
-	values ($1, $2, $3, $4, $5, $6, NULL)`
-		_, err = tx.ExecContext(ctx, query, initID, stateJSON, title, iconURI, time.Now(), slug)
+		query = `insert into watch (id, current_state, title, icon_uri, created_at, slug, parent_watch_id, metadata)
+	values ($1, $2, $3, $4, $5, $6, NULL, $7)`
+		_, err = tx.ExecContext(ctx, query, initID, stateJSON, title, iconURI, time.Now(), slug, metadata)
 		if err != nil {
 			return errors.Wrap(err, "create watch no parent")
 		}
 	} else {
-		query = `insert into watch (id, current_state, title, icon_uri, created_at, slug, parent_watch_id)
-	values ($1, $2, $3, $4, $5, $6, $7)`
-		_, err = tx.ExecContext(ctx, query, initID, stateJSON, title, iconURI, time.Now(), slug, parentWatchID)
+		query = `insert into watch (id, current_state, title, icon_uri, created_at, slug, parent_watch_id, metadata)
+	values ($1, $2, $3, $4, $5, $6, $7, $8)`
+		_, err = tx.ExecContext(ctx, query, initID, stateJSON, title, iconURI, time.Now(), slug, parentWatchID, metadata)
 		if err != nil {
 			return errors.Wrap(err, "create watch")
 		}

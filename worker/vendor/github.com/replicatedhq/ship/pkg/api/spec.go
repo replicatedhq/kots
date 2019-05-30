@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/replicatedhq/ship/pkg/constants"
 )
@@ -71,9 +72,18 @@ type ShipAppMetadata struct {
 	ReleaseNotes string `json:"releaseNotes" yaml:"releaseNotes" hcl:"releaseNotes" meta:"release-notes"`
 }
 
+type License struct {
+	ID        string    `json:"id" yaml:"id" hcl:"id" meta:"id"`
+	Assignee  string    `json:"assignee" yaml:"assignee" hcl:"assignee" meta:"assignee"`
+	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" hcl:"createdAt" meta:"created-at"`
+	ExpiresAt time.Time `json:"expiresAt" yaml:"expiresAt" hcl:"expiresAt" meta:"expires-at"`
+	Type      string    `json:"type" yaml:"type" hcl:"type" meta:"type"`
+}
+
 // ReleaseMetadata
 type ReleaseMetadata struct {
 	ReleaseID       string          `json:"releaseId" yaml:"releaseId" hcl:"releaseId" meta:"release-id"`
+	Sequence        int64           `json:"sequence" yaml:"sequence" hcl:"sequence" meta:"sequence"`
 	CustomerID      string          `json:"customerId" yaml:"customerId" hcl:"customerId" meta:"customer-id"`
 	InstallationID  string          `json:"installation" yaml:"installation" hcl:"installation" meta:"installation-id"`
 	ChannelID       string          `json:"channelId" yaml:"channelId" hcl:"channelId" meta:"channel-id"`
@@ -84,12 +94,14 @@ type ReleaseMetadata struct {
 	Semver          string          `json:"semver" yaml:"semver" hcl:"semver" meta:"release-version"`
 	ReleaseNotes    string          `json:"releaseNotes" yaml:"releaseNotes" hcl:"releaseNotes" meta:"release-notes"`
 	Created         string          `json:"created" yaml:"created" hcl:"created" meta:"release-date"`
+	Installed       string          `json:"installed" yaml:"installed" hcl:"installed" meta:"install-date"`
 	RegistrySecret  string          `json:"registrySecret" yaml:"registrySecret" hcl:"registrySecret" meta:"registry-secret"`
 	Images          []Image         `json:"images" yaml:"images" hcl:"images" meta:"images"`
 	GithubContents  []GithubContent `json:"githubContents" yaml:"githubContents" hcl:"githubContents" meta:"githubContents"`
 	ShipAppMetadata ShipAppMetadata `json:"shipAppMetadata" yaml:"shipAppMetadata" hcl:"shipAppMetadata" meta:"shipAppMetadata"`
 	Entitlements    Entitlements    `json:"entitlements" yaml:"entitlements" hcl:"entitlements" meta:"entitlements"`
 	Type            string          `json:"type" yaml:"type" hcl:"type" meta:"type"`
+	License         License         `json:"license" yaml:"license" hcl:"license" meta:"license"`
 }
 
 func (r ReleaseMetadata) ReleaseName() string {
@@ -101,6 +113,10 @@ func (r ReleaseMetadata) ReleaseName() string {
 
 	if r.ShipAppMetadata.Name != "" {
 		releaseName = r.ShipAppMetadata.Name
+	}
+
+	if releaseName == "" && r.AppSlug != "" {
+		releaseName = r.AppSlug
 	}
 
 	if len(releaseName) == 0 {

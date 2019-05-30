@@ -167,7 +167,16 @@ func (h *HelmIntro) ShortName() string   { return "helm-intro" }
 // and save user input changes to values.yaml
 type HelmValues struct {
 	StepShared `json:",inline" yaml:",inline" hcl:",inline"`
-	Path       string `json:"path,omitempty" yaml:"path,omitempty" hcl:"path,omitempty"`
+	Path       string                  `json:"path,omitempty" yaml:"path,omitempty" hcl:"path,omitempty"`
+	Readme     *HelmValuesReadmeSource `json:"readme,omitempty" yaml:"readme,omitempty" hcl:"readme,omitempty"`
+}
+
+// A HelmValuesReadmeSource tells ship how to populate the readme file for the helm values editor.
+// if not provided, ship will use the default behavior of pulling the readme from the
+// root of the default target chart
+type HelmValuesReadmeSource struct {
+	Contents string `json:"contents,omitempty" yaml:"contents,omitempty" hcl:"contents,omitempty"`
+	// someday we'll support file or something too
 }
 
 func (h *HelmValues) Shared() *StepShared { return &h.StepShared }

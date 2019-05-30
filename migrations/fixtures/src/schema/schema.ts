@@ -95,8 +95,8 @@ export class Schema {
     const currentSequenceValue = watch.current_sequence === null ? "NULL" : ''+watch.current_sequence;
 
     statements.push(
-      escape(`insert into watch (id, current_state, title, icon_uri, created_at, updated_at, slug, parent_watch_id, current_sequence) values (%L, %L, %L, %L, %L, %L, %L, %L, ${currentSequenceEscapeSequence})`,
-        watch.id, watch.current_state, watch.title, watch.icon_uri, watch.created_at, watch.updated_at, watch.slug, watch.parent_watch_id, currentSequenceValue)
+      escape(`insert into watch (id, current_state, title, icon_uri, created_at, updated_at, slug, parent_watch_id, current_sequence, metadata) values (%L, %L, %L, %L, %L, %L, %L, %L, ${currentSequenceEscapeSequence}, %L)`,
+        watch.id, watch.current_state, watch.title, watch.icon_uri, watch.created_at, watch.updated_at, watch.slug, watch.parent_watch_id, currentSequenceValue, watch.metadata)
     );
 
     if (watch.cluster) {

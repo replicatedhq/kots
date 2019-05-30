@@ -17,6 +17,7 @@ const Watch = `
     pastVersions: [Version]
     currentVersion: Version
     parentWatch: Watch
+    metadata: String
   }
 `;
 

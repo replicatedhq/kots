@@ -14,7 +14,7 @@ func TestNewPullRequestRequest(t *testing.T) {
 	tests := []struct {
 		describe   string
 		watch      *types.Watch
-		watchState state.VersionedState
+		watchState state.State
 		title      string
 
 		owner          string
@@ -32,7 +32,7 @@ func TestNewPullRequestRequest(t *testing.T) {
 			watch: &types.Watch{
 				Title: "ice-cream",
 			},
-			watchState: state.VersionedState{
+			watchState: state.State{
 				V1: &state.V1{
 					Metadata: &state.Metadata{
 						Version:      "0.2",
@@ -58,7 +58,7 @@ rocky mountain`,
 			watch: &types.Watch{
 				Title: "hot-dog",
 			},
-			watchState: state.VersionedState{
+			watchState: state.State{
 				V1: &state.V1{
 					Metadata: &state.Metadata{
 						Version: "0.4",

@@ -25,7 +25,7 @@ run:
 .PHONY: schema-fixtures
 schema-fixtures:
 	docker pull schemahero/schemahero:alpha
-	docker run -v `pwd`/schema:/out -v `pwd`/../tables:/in schemahero/schemahero:alpha fixtures --input-dir /in --output-dir /out --dbname -ship-cloud --driver postgres
+	docker run -e uid=$$UID -v `pwd`:/out -v `pwd`/../tables:/in schemahero/schemahero:alpha fixtures --input-dir /in --output-dir /out/schema --dbname -ship-cloud --driver postgres
 
 .PHONY: publish
 publish: REGISTRY = replicated

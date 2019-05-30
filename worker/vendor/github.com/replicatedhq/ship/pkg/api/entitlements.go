@@ -12,10 +12,17 @@ type Meta struct {
 	CustomerID  string    `json:"customer_id"`
 }
 
-// EntitlementValue is a single entitlement value
-type EntitlementValue struct {
+// EntitlementLabel is a single entitlement label
+type EntitlementLabel struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+// EntitlementValue is a single entitlement value
+type EntitlementValue struct {
+	Key    string             `json:"key"`
+	Value  string             `json:"value"`
+	Labels []EntitlementLabel `json:"labels"`
 }
 
 // Utilization is a single utilization value

@@ -21,7 +21,7 @@ func (s *WatchServer) EmailRequestHandler(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	watchState := state.VersionedState{}
+	watchState := state.State{}
 	if err := json.Unmarshal([]byte(stateJSON), &watchState); err != nil {
 		level.Error(s.Logger).Log("unmarshal state", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
