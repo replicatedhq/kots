@@ -411,7 +411,7 @@ export class WatchStore {
   }
 
   async listAllUserWatches(userId: string): Promise<Watch[]> {
-    const q = `select watch_id from user_watch where user_id = $1`;
+    const q = `select watch_id as id from user_watch where user_id = $1`;
     const v = [
       userId,
     ];
@@ -662,6 +662,7 @@ export class WatchStore {
 
     const slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
     const watches = await this.listAllUserWatches(userId);
+
     const existingSlugs = watches.map(watch => watch.slug);
     let finalSlug = slugProposal;
 

@@ -53,6 +53,7 @@ watches:
           }
         }
       }
+    metadata: "{}"
     title: Grafana
     icon_uri: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
     created_at: "2019-04-20 12:34:56.789"
@@ -116,6 +117,7 @@ watches:
           }
         }
       }
+    metadata: "{}"
     title: Grafana
     icon_uri: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
     created_at: "2019-04-21 12:34:56.789"

@@ -9,7 +9,6 @@ export const getWatchVersionRaw = `
       sequence
       pullrequestNumber
       rendered
-      metadata
     }
   }
 `;

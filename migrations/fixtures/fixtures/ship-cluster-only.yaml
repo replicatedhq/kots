@@ -80,6 +80,7 @@ watches:
           }
         }
       }
+    metadata: "{}"
     title: "Better DB Midstream"
     icon_uri: ""
     created_at: "2019-04-18 12:34:56.789"
@@ -119,6 +120,7 @@ watches:
           }
         }
       }
+    metadata: "{}"
     title: "Better DB Ship 1"
     icon_uri: ""
     created_at: "2019-04-19 12:34:56.789"

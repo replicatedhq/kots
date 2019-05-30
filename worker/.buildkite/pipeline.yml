@@ -17,7 +17,7 @@ steps:
   - wait
 
   - commands:
-      - mkdir -p worker/bin;
+      - mkdir -p worker/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
       - chmod +x worker/bin/ship-cluster-worker
       - make -C worker build-enterprise
