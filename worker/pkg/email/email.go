@@ -40,7 +40,7 @@ func NewMailer(
 	}, nil
 }
 
-func NewEmailRequest(watch *types.Watch, notification *types.EmailNotification, watchState state.VersionedState, file multipart.File, title string) *EmailRequest {
+func NewEmailRequest(watch *types.Watch, notification *types.EmailNotification, watchState state.State, file multipart.File, title string) *EmailRequest {
 	newVersionString := ""
 	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
 		newVersionString = watchState.V1.Metadata.Version

@@ -1,5 +1,6 @@
 import * as React from "react";
 import CardHeader from "./CardHeader";
+import CardHeaderReplicatedApp from "./CardHeaderReplicatedApp";
 import DeploymentClusters from "../DeploymentClusters";
 import CardRightSideBar from "./CardRightSidebar";
 import PropTypes from "prop-types";
@@ -41,13 +42,40 @@ export default class WatchCard extends React.Component {
     } = this.props;
     const integrations = this.parseNotifications(item.notifications);
 
+    let appType = "other";
+    let parsedMetadata;
+
+    try {
+      parsedMetadata = JSON.parse(item.metadata);
+      appType = parsedMetadata.applicationType;
+    } catch {
+      /* ignore */
+    }
+
+    let cardHeader;
+    if (appType === "replicated.app") {
+      let expirationDate = parsedMetadata.license.expiresAt;
+      if (expirationDate === "0001-01-01T00:00:00Z") {
+        expirationDate = null;
+      }
+
+      cardHeader = <CardHeaderReplicatedApp
+        watchIntegrations={integrations}
+        watch={item}
+        onEditApplication={onEditApplication}
+        expirationDate={expirationDate}
+      />;
+    } else {
+      cardHeader = <CardHeader
+        watchIntegrations={integrations}
+        watch={item}
+        onEditApplication={onEditApplication}
+        />;
+    }
+
     return (
       <div data-qa={`WatchCard--${item.id}`} className="installed-watch flex-column u-width--full">
-        <CardHeader 
-          watchIntegrations={integrations}
-          watch={item}
-          onEditApplication={onEditApplication}
-        />
+        {cardHeader}
         <div className="installed-watch-body flex">
           <DeploymentClusters
             parentClusterName={item.watchName}
@@ -57,12 +85,12 @@ export default class WatchCard extends React.Component {
             toggleDeleteDeploymentModal={toggleDeleteDeploymentModal}
             installLatestVersion={installLatestVersion}
           />
-          <CardRightSideBar 
+          <CardRightSideBar
             watch={item}
             childWatches={item.watches}
             handleDownload={this.props.handleDownload}
             setWatchIdToDownload={this.props.setWatchIdToDownload}
-            submitCallback={submitCallback} 
+            submitCallback={submitCallback}
             downloadingIds={downloadingIds}
           />
         </div>

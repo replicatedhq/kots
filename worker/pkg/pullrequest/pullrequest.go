@@ -42,7 +42,7 @@ type PullRequestRequest struct {
 
 // NewPullRequestRequest will create a PullRequestRequest object that can be used to create a PR later
 // this is separated into a function like this because it's also used in ShouldCreatePullRequest
-func NewPullRequestRequest(watch *types.Watch, file multipart.File, owner string, repo string, branch string, path string, installationID int, watchState state.VersionedState, title string, sourceBranch string) (*PullRequestRequest, error) {
+func NewPullRequestRequest(watch *types.Watch, file multipart.File, owner string, repo string, branch string, path string, installationID int, watchState state.State, title string, sourceBranch string) (*PullRequestRequest, error) {
 	newVersionString := ""
 	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
 		newVersionString = watchState.V1.Metadata.Version

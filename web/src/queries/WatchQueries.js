@@ -9,6 +9,7 @@ export const getWatchVersionRaw = `
       sequence
       pullrequestNumber
       rendered
+      metadata
     }
   }
 `;
@@ -24,6 +25,7 @@ export const listWatchesRaw = `
       watchIcon
       createdOn
       lastUpdated
+      metadata
       contributors {
         id
         createdAt
@@ -74,6 +76,7 @@ export const listWatchesRaw = `
         watchIcon
         createdOn
         lastUpdated
+        metadata
         contributors {
           id
           createdAt
@@ -148,6 +151,7 @@ export const searchWatches = gql`
       watchIcon
       createdOn
       lastUpdated
+      metadata
       contributors {
         id
         createdAt
@@ -204,6 +208,7 @@ export const getWatch = gql`
       watchIcon
       createdOn
       lastUpdated
+      metadata
       contributors {
         id
         createdAt
@@ -348,6 +353,7 @@ export const getWatchById = gql`
     getWatch(id: $id) {
       watchName
       slug
+      metadata
       cluster {
         id
         title
@@ -407,6 +413,7 @@ export const getWatchById = gql`
         watchIcon
         createdOn
         lastUpdated
+        metadata
         contributors {
           id
           createdAt

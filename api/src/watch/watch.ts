@@ -22,6 +22,7 @@ export class Watch {
   public pendingVersions: [Version];
   public pastVersions: [Version];
   public parentWatch: Watch;
+  public metadata: string;
 
   // Watch Cluster Methods
   public async getCluster(stores: Stores): Promise<Cluster | void> {
@@ -52,7 +53,7 @@ export class Watch {
   public async getContributors(stores: Stores): Promise<Contributor[]> {
     return stores.watchStore.listWatchContributors(this.id);
   }
-  
+
   public async addContributor(stores: Stores, context: Context): Promise<Contributor[]> {
     // Remove existing contributors
     await stores.userStoreOld.removeExistingWatchContributorsExcept(this.id, context.session.userId);
@@ -75,7 +76,7 @@ export class Watch {
     }
     return this.getContributors(stores);
   }
-  
+
   // Features Methods
   public async getFeatures(stores: Stores): Promise<Feature[]> {
     const features = await stores.featureStore.listWatchFeatures(this.id);
@@ -98,7 +99,7 @@ export class Watch {
       pendingVersions: async () => this.getPendingVersions(stores),
       pastVersions: async () => this.getPastVersions(stores),
       currentVersion: async () => this.getCurrentVersion(stores),
-      parentWatch: async () => this.getParentWatch(stores)
+      parentWatch: async () => this.getParentWatch(stores),
     };
   }
 

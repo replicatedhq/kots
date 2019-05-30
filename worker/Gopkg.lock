@@ -150,7 +150,8 @@
   version = "v0.1.2"
 
 [[projects]]
-  digest = "1:742890ab4bf0fd5346b79dfad96362117c6b28e3624491b399c6fe1f1e2869fe"
+  branch = "master"
+  digest = "1:10d0fab9d03b437ed7a33273b12ebbb4597eadac3daa7ebf07e6ff8bf778779b"
   name = "github.com/cloudflare/cfssl"
   packages = [
     "auth",
@@ -169,8 +170,7 @@
     "signer/local",
   ]
   pruneopts = "UT"
-  revision = "5d63dbd981b5c408effbb58c442d54761ff94fbd"
-  version = "1.3.2"
+  revision = "9c027c93ba9e044bfffb63b78f9174075413bc9e"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -461,7 +461,7 @@
   revision = "4030bb1f1f0c35b30ca7009e9ebd06849dd45306"
 
 [[projects]]
-  digest = "1:8632e80fb6a763b2b12f8679e14ec737b087507ce9426522cfe4d51be8935cde"
+  digest = "1:31f4817f638536811d1b92f08135483f8da2f9a9b75995d732c078638b388136"
   name = "github.com/google/certificate-transparency-go"
   packages = [
     ".",
@@ -474,7 +474,8 @@
     "x509/pkix",
   ]
   pruneopts = "UT"
-  revision = "5ab67e519c93568ac3ee50fd6772a5bcf8aa460d"
+  revision = "3629d6846518309d22c16fee15d1007262a459d2"
+  version = "v1.0.21"
 
 [[projects]]
   digest = "1:2e3c336fc7fde5c984d2841455a658a6d626450b1754a854b3b32e7a8f49a07a"
@@ -695,7 +696,7 @@
   revision = "97b3a9cdfa9349086cfad7ea2fe3165bfe3cbf63"
 
 [[projects]]
-  digest = "1:b93d0c2e29f69b37ca09b7196508deafa548f565fb68164ea6604718f1bfc5b1"
+  digest = "1:2f41d2e82a74475b356fcc25c7a2fcbe156c6ee1c9def67706a4c5b6e72ba828"
   name = "github.com/hashicorp/terraform"
   packages = [
     "config",
@@ -719,8 +720,8 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "d48069534832fdb09919a5fe46500755540cbf0a"
-  version = "v0.11.13"
+  revision = "12bf5f6afec2a9dcc97357671fdfa9fb972884eb"
+  version = "v0.11.14"
 
 [[projects]]
   digest = "1:8eb1de8112c9924d59bf1d3e5c26f5eaa2bfc2a5fcbb92dc1c2e4546d695f277"
@@ -1019,7 +1020,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:a0ad944135b559dcfa8e2b5b65d19f11834221954a44c9889dbd649eca252bac"
+  digest = "1:e0658249ce5d803939df239ff01d1989ed5c5cf18ced9262891cca29043398a6"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1029,10 +1030,11 @@
     "pkg/state",
     "pkg/util",
     "pkg/util/warnings",
+    "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "93879b9251aae4c84a01cd5d44c50a9fa86e7227"
-  version = "v0.37.1"
+  revision = "d27319bdc04982cb3d295d6bf860edfce6abeacc"
+  version = "v0.44.0"
 
 [[projects]]
   branch = "master"
@@ -1168,7 +1170,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:236c416ba2fd75a10366ed922b1b3b48650a6818eb5f397546a27f49bfb99414"
+  digest = "1:9a265a9cfebea20b327d27ef2ca56a8e1fb4f706a3c846af4c641cf1bb1ce3b1"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -1176,6 +1178,8 @@
     "cast5",
     "cryptobyte",
     "cryptobyte/asn1",
+    "ed25519",
+    "ed25519/internal/edwards25519",
     "ocsp",
     "openpgp",
     "openpgp/armor",

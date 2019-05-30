@@ -39,3 +39,5 @@ spec:
         type: text
       - name: current_sequence
         type: integer
+      - name: metadata
+        type: text
