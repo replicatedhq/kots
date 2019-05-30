@@ -11,7 +11,7 @@ steps:
           environment:
             - uid:999 # buildkite-agent user
           volumes:
-            - "./migrations/fixtures/schema:/out"
+            - "./migrations/fixtures:/out"
             - "./migrations/tables:/in"
           command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out/schema", "--dbname", "ship-cloud", "--driver", "postgres"]
 
