@@ -8,6 +8,7 @@ steps:
           image: schemahero/schemahero:alpha
           always-pull: true
           workdir: /repo
+          debug: true
           environment:
             - uid:999 # buildkite-agent user
           volumes:
