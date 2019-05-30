@@ -1,6 +1,14 @@
 steps:
   - commands:
-      - fixtures --input-dir /in --output-dir /out --dbname -ship-cloud --driver postgres
+      - fixtures
+      - --input-dir
+      - /in
+      - --output-dir
+      - /out
+      - --dbname
+      - -ship-cloud
+      - --driver
+      - postgres
     label: "schema-fixtures"
     artifact_paths:
       - "migrations/schema/fixtures.sql"
