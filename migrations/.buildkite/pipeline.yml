@@ -35,16 +35,14 @@ steps:
 
   - commands:
       - buildkite-agent artifact download migrations/fixtures/fixtures.sql . --step build-fixtures
-      - cd migrations/fixtures
-      - make publish
+      - make -C migrations/fixtures publish
     label: "publish-fixtures"
     branches: "master"
 
   - wait
 
   - commands:
-      - cd migrations
-      - make publish-enterprise
+      - make -C migrations publish-enterprise
     branches: master
     retry:
       automatic: true
