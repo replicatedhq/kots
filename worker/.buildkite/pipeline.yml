@@ -1,6 +1,6 @@
 steps:
   - commands:
-      - make -C workerbuild-cache publish-cache
+      - make -C worker build-cache publish-cache
     branches: "master"
 
   - commands:
