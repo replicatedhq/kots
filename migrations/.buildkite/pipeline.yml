@@ -1,14 +1,4 @@
 steps:
-  - commands:
-      - fixtures
-      - --input-dir
-      - /in
-      - --output-dir
-      - /out
-      - --dbname
-      - -ship-cloud
-      - --driver
-      - postgres
     label: "schema-fixtures"
     artifact_paths:
       - "migrations/schema/fixtures.sql"
@@ -22,6 +12,7 @@ steps:
           volumes:
             - "/repo/migrations/fixtures/schema:/out"
             - "/repo/migrations/tables:/in"
+          command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out", "--dbname", "ship-cloud", "--driver", "postgres"]
 
   - wait
 
