@@ -8,11 +8,12 @@ steps:
           image: schemahero/schemahero:alpha
           always-pull: true
           workdir: /repo
-          user: 999
+          environment:
+            - uid:999 # buildkite-agent user
           volumes:
             - "./migrations/fixtures/schema:/out"
             - "./migrations/tables:/in"
-          command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out", "--dbname", "ship-cloud", "--driver", "postgres"]
+          command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out/schema", "--dbname", "ship-cloud", "--driver", "postgres"]
 
   - wait
 
