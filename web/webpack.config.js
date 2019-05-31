@@ -1,17 +1,21 @@
-var path = require("path");
-var webpackMerge = require("webpack-merge");
-var webpack = require("webpack");
-var HtmlWebpackPlugin = require("html-webpack-plugin");
-var HtmlWebpackTemplate = require("html-webpack-template");
-var ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
+const path = require("path");
+const glob = require("glob");
+const webpackMerge = require("webpack-merge");
+const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const HtmlWebpackTemplate = require("html-webpack-template");
+const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
-// const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const PurgecssPlugin = require("purgecss-webpack-plugin");
+
+// const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 module.exports = function (env) {
-  var distPath = path.join(__dirname, "dist");
-  var srcPath = path.join(__dirname, "src");
-  var appEnv = require("./env/" + (env || "dev") + ".js");
+  const distPath = path.join(__dirname, "dist");
+  const srcPath = path.join(__dirname, "src");
+  const appEnv = require("./env/" + (env || "dev") + ".js");
 
   if (process.env["GITHUB_CLIENT_ID"]) {
     appEnv.GITHUB_CLIENT_ID = process.env["GITHUB_CLIENT_ID"];
@@ -64,6 +68,12 @@ module.exports = function (env) {
           test: /\.css$/,
           use: [
             "style-loader",
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                hmr: env === "skaffold",
+              },
+            },
             "css-loader",
             {
               loader: "postcss-loader",
@@ -80,6 +90,12 @@ module.exports = function (env) {
           include: srcPath,
           use: [
             { loader: "style-loader" },
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                hmr: env === "skaffold",
+              },
+            },
             { loader: "css-loader", options: { importLoaders: 1 } },
             { loader: "sass-loader" },
             { 
@@ -141,6 +157,9 @@ module.exports = function (env) {
           }
         ],
         scripts: appEnv.WEBPACK_SCRIPTS,
+        links: [
+          "style.css"
+        ],
         inject: false,
         window: {
           env: appEnv,
@@ -189,6 +208,13 @@ module.exports = function (env) {
         },
       }),
       new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/),
+      new MiniCssExtractPlugin({
+        filename: "style.css",
+        chunkFilename: "[id].css"
+      }),
+      new PurgecssPlugin({
+        paths: glob.sync(`${path.join(__dirname, "src")}/**/*`, { nodir: true })
+      })
       // new BundleAnalyzerPlugin({
       //   generateStatsFile: true,
       //   analyzerHost: "0.0.0.0",
