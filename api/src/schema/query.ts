@@ -21,6 +21,8 @@ export const Query = `
     listPendingInitSessions: [PendingInitSession]
     searchPendingInitSessions(title: String!): [PendingInitSession]
 
+    listHelmCharts: [HelmChart]
+
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]
     getWatch(slug: String, id: String): Watch
