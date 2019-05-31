@@ -35,5 +35,6 @@ s3rver.run().then(() => {
     console.log("Stopping s3 server");
     s3rver.close();
     console.error(err);
+    process.exit(1);
   });
 });
