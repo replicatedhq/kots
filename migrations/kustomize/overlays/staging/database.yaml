@@ -4,6 +4,9 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
   name: ship-cluster-postgres
+schemahero:
+  nodeSelector:
+    replicated/node-pool: privileged
 connection:
   postgres:
     uri:
