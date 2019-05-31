@@ -22,7 +22,7 @@ class ClusterScope extends React.Component {
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <div className="flex-column flex1 HelmValues--wrapper">
-          <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" color="#44bb66" /></div>}>
+          <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
             <Switch>
               <Route exact path="/clusterscope" render={() =>
                 <ClusterScopeBatchCreate

@@ -89,7 +89,7 @@ export class ConfigureGitHub extends React.Component {
   }
 
   handleInstallGitHubApp = () => {
-    var exp = new Date(dayjs().add(30, "m").toDate());
+    const exp = new Date(dayjs().add(30, "m").toDate());
     // Set cookie with current location, expires 30 mins from current time
     document.cookie = `appRedirect=/cluster/create?configure;expires=${exp.toUTCString()};path=/watches`;
     window.location.replace(window.env.GITHUB_INSTALL_URL)

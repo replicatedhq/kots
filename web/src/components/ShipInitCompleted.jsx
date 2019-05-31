@@ -103,7 +103,7 @@ export class ShipInitCompleted extends React.Component {
                   <div className="button-wrapper flex">
                     {isLoading ?
                       <div className="flex-column flex1 alignItems--center justifyContent--center">
-                        <Loader size="60" color="#44bb66" />
+                        <Loader size="60" />
                       </div>
                       :
                       <div className="flex1 flex card-action-wrapper u-cursor--pointer u-textAlign--center">

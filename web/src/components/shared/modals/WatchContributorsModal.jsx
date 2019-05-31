@@ -286,7 +286,7 @@ export class WatchContributorsModal extends React.Component {
                 </div>
               </div> :
               <div className="flex flex1 alignItems--center justifyContent--center">
-                <Loader size="50" color="#44bb66" />
+                <Loader size="50" />
               </div>
             }
             <div className="flex flex1 justifyContent--flexEnd alignItems--center u-marginTop--20">

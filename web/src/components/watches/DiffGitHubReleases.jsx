@@ -82,7 +82,7 @@ class DiffGitHubReleases extends React.Component {
     if (!getWatch || getWatch.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" color="#44bb66" />
+          <Loader size="60" />
         </div>
       )
     }

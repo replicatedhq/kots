@@ -118,7 +118,7 @@ class WatchDetailPage extends React.Component {
     if (!watch || this.props.data.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" color="#44bb66" />
+          <Loader size="60" />
         </div>
       )
     }
@@ -137,15 +137,13 @@ class WatchDetailPage extends React.Component {
             <li className={`${match.params.tab === "state" ? "is-active" : ""}`}><Link to={`/watch/${slug}/state`}>State JSON</Link></li>
           </ul>
         </div>
-        <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" color="#44bb66" /></div>}>
+        <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
           <Switch>
             {!watch.cluster &&
               <Route exact path="/watch/:owner/:slug" render={() =>
                 <DetailPageApplication
                   watch={watch}
-                  updateCallback={() => {
-                    this.props.data.refetch();
-                  }}
+                  updateCallback={this.props.data.refetch}
                 />
               }/>
             }
