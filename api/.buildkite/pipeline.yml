@@ -1,6 +1,6 @@
 steps:
   - commands:
-      - make -C build-cache publish-cache
+      - make -C api build-cache publish-cache
 
   - commands:
       - docker-compose -f api/test/docker-compose.yml down
