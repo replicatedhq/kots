@@ -1,6 +1,5 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import * as _ from "lodash";
 import { getShipClient, createSessionToken } from "../utils";
 import { createGitOpsCluster } from "../../../mutations/ClusterMutations";
 import * as Pact from "@pact-foundation/pact";

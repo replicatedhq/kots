@@ -1,18 +1,19 @@
-import * as React from "react";
+import React, {Suspense, lazy} from "react";
 import { withRouter, Switch, Route, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { getWatch } from "../../queries/WatchQueries";
-import { omit } from "lodash";
-import Loader from "../shared/Loader";
-import NotFound from "../static/NotFound";
-import "../../scss/components/watches/WatchDetailPage.scss";
-import DetailPageApplication from "./DetailPageApplication";
-import DetailPageIntegrations from "./DetailPageIntegrations";
-import StateFileViewer from "../state/StateFileViewer";
-import DeploymentClusters from "../watches/DeploymentClusters";
 import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
+import omit from "lodash/omit";
 import Modal from "react-modal";
-import AddClusterModal from "../shared/modals/AddClusterModal";
+import Loader from "../shared/Loader";
+import "../../scss/components/watches/WatchDetailPage.scss";
+
+const NotFound = lazy(() => import("../static/NotFound"));
+const DetailPageApplication = lazy(() => import("./DetailPageApplication"));
+const DetailPageIntegrations = lazy(() => import("./DetailPageIntegrations"));
+const StateFileViewer = lazy(() => import("../state/StateFileViewer"));
+const DeploymentClusters = lazy(() => import("../watches/DeploymentClusters"));
+const AddClusterModal = lazy(() => import("../shared/modals/AddClusterModal"));
 
 class WatchDetailPage extends React.Component {
   constructor() {
@@ -117,7 +118,7 @@ class WatchDetailPage extends React.Component {
     if (!watch || this.props.data.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" color="#44bb66" />
+          <Loader size="60" />
         </div>
       )
     }
@@ -136,36 +137,36 @@ class WatchDetailPage extends React.Component {
             <li className={`${match.params.tab === "state" ? "is-active" : ""}`}><Link to={`/watch/${slug}/state`}>State JSON</Link></li>
           </ul>
         </div>
-        <Switch>
-          {!watch.cluster &&
-            <Route exact path="/watch/:owner/:slug" render={() =>
-              <DetailPageApplication
-                watch={watch}
-                updateCallback={() => {
-                  this.props.data.refetch();
-                }}
-              />
-            }/>
-          }
-          {!watch.cluster &&
-            <Route exact path="/watch/:owner/:slug/deployment-clusters" render={() =>
-              <div className="container">
-                <DeploymentClusters
-                  appDetailPage={true}
-                  parentClusterName={watch.watchName}
-                  preparingUpdate={this.state.preparingUpdate}
-                  childWatches={watch.watches}
-                  handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
-                  onEditApplication={this.onEditApplicationClicked}
-                  toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
+        <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
+          <Switch>
+            {!watch.cluster &&
+              <Route exact path="/watch/:owner/:slug" render={() =>
+                <DetailPageApplication
+                  watch={watch}
+                  updateCallback={this.props.data.refetch}
                 />
-              </div>
-            }/>
-          }
-          <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} /> } />
-          <Route exact path="/watch/:owner/:slug/state" render={() =>  <StateFileViewer headerText="Edit your application’s state.json file" /> } />
-          <Route component={NotFound} />
-        </Switch>
+              }/>
+            }
+            {!watch.cluster &&
+              <Route exact path="/watch/:owner/:slug/deployment-clusters" render={() =>
+                <div className="container">
+                  <DeploymentClusters
+                    appDetailPage={true}
+                    parentClusterName={watch.watchName}
+                    preparingUpdate={this.state.preparingUpdate}
+                    childWatches={watch.watches}
+                    handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
+                    onEditApplication={this.onEditApplicationClicked}
+                    toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
+                  />
+                </div>
+              }/>
+            }
+            <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} /> } />
+            <Route exact path="/watch/:owner/:slug/state" render={() =>  <StateFileViewer headerText="Edit your application’s state.json file" /> } />
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
         {addNewClusterModal &&
           <Modal
             isOpen={addNewClusterModal}

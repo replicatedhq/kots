@@ -29,13 +29,9 @@ spec:
         type: timestamp without time zone
       - name: is_private
         type: boolean
-        constraints:
-          notNull: true
         default: "false"
       - name: versions_behind
         type: integer
-        constraints:
-          notNull: true
         default: "0"
       - name: detected_version
         type: text

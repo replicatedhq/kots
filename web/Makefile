@@ -58,6 +58,13 @@ build-production: webpack_build
 build-enterprise: SHIP_CLOUD_ENV = enterprise
 build-enterprise: webpack_build
 
+.PHONY: build-local
+build-local: SHIP_CLOUD_ENV = skaffold
+build-local: webpack_build_local
+
+webpack_build_local:
+	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode development
+
 webpack_build:
 	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode production
 

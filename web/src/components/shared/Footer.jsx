@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Link, withRouter } from "react-router-dom";
-import { compose } from "react-apollo";
 
 import "../../scss/components/shared/Footer.scss";
 
@@ -49,4 +48,4 @@ export class Footer extends React.Component {
   }
 }
 
-export default withRouter(compose()(Footer));
+export default withRouter(Footer);

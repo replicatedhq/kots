@@ -28,9 +28,11 @@ class DetailPageApplication extends React.Component {
       }
     }
 
-  onFormChange = (field, e) => {
-    const { value } = e.target;
-    this.setState({ [field]: value });
+  onFormChange = (event) => {
+    const { value, name } = event.target;
+    this.setState({
+      [name]: value 
+    });
   }
 
   setWatchState = (watch) => {
@@ -161,7 +163,14 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App name</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You can name your app whatever you want.</p>
               <div className="flex">
-                <input type="text" className="Input" placeholder="What is your application called?" value={this.state.appName} onChange={(e) => { this.onFormChange("appName", e) }} />
+                <input 
+                  type="text" 
+                  className="Input" 
+                  placeholder="What is your application called?" 
+                  value={this.state.appName || ""} 
+                  name="appName"
+                  onChange={this.onFormChange} 
+                />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateName} disabled={this.state.nameLoading}>{this.state.nameLoading ? "Saving" : "Save"}</button>
                 </div>
@@ -171,7 +180,14 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App icon</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Link to any URI for an app icon.</p>
               <div className="flex">
-                <input type="text" className="Input" placeholder="Add a URL" value={this.state.iconUri} onChange={(e) => { this.onFormChange("iconUri", e) }} />
+                <input 
+                  type="text" 
+                  className="Input" 
+                  placeholder="Add a URL" 
+                  value={this.state.iconUri || ""} 
+                  name="iconUri"
+                  onChange={this.onFormChange} 
+                />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateIcon} disabled={this.state.iconLoading}>{this.state.iconLoading ? "Saving" : "Save"}</button>
                 </div>
@@ -183,7 +199,7 @@ class DetailPageApplication extends React.Component {
                 <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--medium">This will download the YAML for your mid-stream watch.</p>
                 {isDownloadingMidstreamAssets ?
                   <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <Loader size="60" color="#44bb66" />
+                    <Loader size="60" />
                   </div>
                   :
                   <div className="u-marginTop--10">
@@ -211,7 +227,7 @@ class DetailPageApplication extends React.Component {
               </div>
               {isDownloadingAssets ?
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="60" color="#44bb66" />
+                  <Loader size="60" />
                 </div>
                 :
                 <div className="u-marginTop--10">
@@ -248,7 +264,16 @@ class DetailPageApplication extends React.Component {
           <div className="Modal-body flex-column flex1">
             <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Are you sure you want to delete {this.state.appName}?</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To delete {this.state.appName}, type its name in the field below</p>
-            <input type="text" className="Input" placeholder="Type the app name here" value={this.state.confirmAppName} onKeyPress={(e => { this.handleEnterPress(e) })} onChange={(e) => { this.onFormChange("confirmAppName", e) }} autoFocus />
+            <input 
+              type="text" 
+              className="Input" 
+              placeholder="Type the app name here" 
+              value={this.state.confirmAppName} 
+              onKeyPress={this.handleEnterPress} 
+              name="confirmAppName"
+              onChange={this.onFormChange} 
+              autoFocus 
+            />
             {this.state.confirmDeleteErr && <p className="u-fontSize--small u-color--chestnut u-marginTop--10">Names did not match</p>}
             <div className="u-marginTop--20 flex justifyContent--flexEnd">
               <button type="button" className="btn primary red" onClick={this.handleDeleteApp} disabled={this.state.deleteAppLoading}>{this.state.deleteAppLoading ? "Deleting" : "Delete"}</button>

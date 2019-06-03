@@ -1,6 +1,5 @@
 import * as React from "react";
 import truncateMiddle from "truncate-middle";
-import { reverse, sortBy, map, some } from "lodash";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { getImageWatch } from "../../queries/ImageWatchQueries";
@@ -9,6 +8,10 @@ import ContentHeader from "../shared/ContentHeader";
 import ClusterScopeBatchPath from "./ClusterScopeBatchPath";
 import "../../scss/components/image_check/ImageWatchBatch.scss";
 import Modal from "react-modal";
+import reverse from "lodash/reverse";
+import sortBy from "lodash/sortBy";
+import map from "lodash/map";
+import some from "lodash/some";
 
 class ClusterScopeBatch extends React.Component {
   constructor(props) {

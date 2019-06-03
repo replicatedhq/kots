@@ -63,7 +63,7 @@ export class SearchWatchesBar extends React.Component {
           placeholder="Search watches"
           onChange={(e) => this.onSearch(e)} 
         />
-        {this.state.isLoading && <Loader size="25" color="#44bb66" />}
+        {this.state.isLoading && <Loader size="25" />}
       </div>
     );
   }

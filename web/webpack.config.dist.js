@@ -1,22 +1,12 @@
 var webpack = require("webpack");
 var path = require("path");
 var srcPath = path.join(__dirname, "src");
-var UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+const TerserPlugin = require('terser-webpack-plugin');
 const { BugsnagSourceMapUploaderPlugin } = require("webpack-bugsnag-plugins");
 
 function getPlugins(appEnv) {
   const plugins = [
-    new UglifyJsPlugin({
-      uglifyOptions: {
-        compress: { warnings: false },
-        output: {
-          comments: false,
-        },
-        minimize: false
-      },
-      sourceMap: true,
-    }),
-    new webpack.NamedModulesPlugin(),
+    new webpack.NamedModulesPlugin()
   ];
 
   if (appEnv.BUGSNAG_API_KEY) {
@@ -53,7 +43,20 @@ module.exports = (env) => {
 
     plugins: getPlugins(appEnv),
 
-    devtool: "source-map",
+    devtool: "hidden-source-map",
+
+    optimization: {
+      minimizer: [new TerserPlugin({
+        terserOptions: {
+          warnings: false,
+          output: {
+            comments: false,
+          }
+        },
+        sourceMap: false,
+        parallel: true
+      })],
+    },
 
     stats: {
       colors: true,
