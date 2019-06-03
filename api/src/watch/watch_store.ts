@@ -312,20 +312,14 @@ export class WatchStore {
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const pg = await this.pool.connect();
+    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata from watch where id = $1";
+    const v = [id];
 
-    try {
-      const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata from watch where id = $1";
-      const v = [id];
+    const result = await this.pool.query(q, v);
+    const watches = result.rows.map(row => this.mapWatch(row));
+    const watch = watches[0];
 
-      const result = await pg.query(q, v);
-      const watches = result.rows.map(row => this.mapWatch(row));
-      const watch = watches[0];
-
-      return watch;
-    } finally {
-      pg.release();
-    }
+    return watch;
   }
 
   async getParentWatchId(id: string): Promise<string> {
@@ -392,22 +386,16 @@ export class WatchStore {
   }
 
   async listUsersForWatch(watchId: string): Promise<string[]> {
-    const pg = await this.pool.connect();
+    const q = `select user_id from user_watch where watch_id = $1`;
+    const v = [watchId];
 
-    try {
-      const q = `select user_id from user_watch where watch_id = $1`;
-      const v = [watchId];
-
-      const result = await pg.query(q, v);
-      const userIds: string[] = [];
-      for (const row of result.rows) {
-        userIds.push(row.user_id);
-      }
-
-      return userIds;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    const userIds: string[] = [];
+    for (const row of result.rows) {
+      userIds.push(row.user_id);
     }
+
+    return userIds;
   }
 
   async listAllUserWatches(userId: string): Promise<Watch[]> {
@@ -456,31 +444,25 @@ export class WatchStore {
 
   // returns the list of generated files for this watch in reverse sequence order. (highest sequence number first)
   async listGeneratedFiles(watchId: string): Promise<GeneratedFile[]> {
-    const pg = await this.pool.connect();
+    const q = stripIndent`
+      SELECT ship_output_files.watch_id as watch_id,
+            ship_output_files.created_at as created_at,
+            ship_output_files.sequence as sequence,
+            ship_output_files.filepath as filepath
+      FROM ship_output_files
+            JOIN user_watch ON user_watch.watch_id = ship_output_files.watch_id
+      WHERE ship_output_files.watch_id = $1
+      ORDER BY sequence DESC`;
 
-    try {
-      const q = stripIndent`
-        SELECT ship_output_files.watch_id as watch_id,
-              ship_output_files.created_at as created_at,
-              ship_output_files.sequence as sequence,
-              ship_output_files.filepath as filepath
-        FROM ship_output_files
-              JOIN user_watch ON user_watch.watch_id = ship_output_files.watch_id
-        WHERE ship_output_files.watch_id = $1
-        ORDER BY sequence DESC`;
-
-      const v = [watchId];
-      const result = await pg.query(q, v);
-      const files: GeneratedFile[] = [];
-      for (const row of result.rows) {
-        const result = this.mapGeneratedFile(row);
-        files.push(result);
-      }
-
-      return files;
-    } finally {
-      pg.release();
+    const v = [watchId];
+    const result = await this.pool.query(q, v);
+    const files: GeneratedFile[] = [];
+    for (const row of result.rows) {
+      const result = this.mapGeneratedFile(row);
+      files.push(result);
     }
+
+    return files;
   }
 
   async getLatestGeneratedFileS3Params(watchId: string, sequence?: number): Promise<S3.GetObjectRequest> {
@@ -542,91 +524,70 @@ export class WatchStore {
   }
 
   async getGeneratedFileForSequence(watchId: string, sequence: number): Promise<GeneratedFile> {
-    const pg = await this.pool.connect();
+    const q = stripIndent`
+      SELECT watch_id, created_at, sequence, filepath
+      FROM ship_output_files
+      WHERE watch_id = $1
+        AND sequence = $2`;
 
-    try {
-      const q = stripIndent`
-        SELECT watch_id, created_at, sequence, filepath
-        FROM ship_output_files
-        WHERE watch_id = $1
-          AND sequence = $2`;
+    const v = [
+      watchId,
+      sequence
+    ];
+    const result = await this.pool.query(q, v);
+    const generatedFile = result.rows.map(row => this.mapGeneratedFile(row));
 
-      const v = [
-        watchId,
-        sequence
-      ];
-      const result = await pg.query(q, v);
-      const generatedFile = result.rows.map(row => this.mapGeneratedFile(row));
-
-      return generatedFile[0];
-    } finally {
-      pg.release();
-    }
+    return generatedFile[0];
   }
 
   async searchWatches(userId: string, watchName: string): Promise<Watch[]> {
-    const pg = await this.pool.connect();
+    const q = `
+      SELECT user_id,
+            watch_id as id,
+            watch.current_state,
+            watch.title,
+            watch.slug,
+            watch.icon_uri,
+            watch.created_at,
+            watch.updated_at,
+            watch.metadata
+      FROM user_watch
+            JOIN watch ON watch.id = user_watch.watch_id
+      WHERE user_watch.user_id = $1
+        AND watch.title ILIKE $2`;
 
-    try {
-      const q = `
-        SELECT user_id,
-              watch_id as id,
-              watch.current_state,
-              watch.title,
-              watch.slug,
-              watch.icon_uri,
-              watch.created_at,
-              watch.updated_at,
-              watch.metadata
-        FROM user_watch
-              JOIN watch ON watch.id = user_watch.watch_id
-        WHERE user_watch.user_id = $1
-          AND watch.title ILIKE $2`;
+    const v = [
+      userId,
+      `%${watchName}%`,
+    ];
 
-      const v = [
-        userId,
-        `%${watchName}%`,
-      ];
-
-      const result = await pg.query(q, v);
-      const watches: Watch[] = [];
-      for (const row of result.rows) {
-        const result = this.mapWatch(row);
-        watches.push(result);
-      }
-      return watches;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    const watches: Watch[] = [];
+    for (const row of result.rows) {
+      const result = this.mapWatch(row);
+      watches.push(result);
     }
+    return watches;
   }
 
   async getStateJSON(id: string): Promise<any> {
-    const pg = await this.pool.connect();
+    const q = "SELECT current_state FROM watch WHERE id = $1";
+    const v = [id];
 
-    try {
-      const q = "SELECT current_state FROM watch WHERE id = $1";
-      const v = [id];
-
-      const result = await pg.query(q, v);
-      return JSON.parse(result.rows[0].current_state);
-    } finally {
-      pg.release();
-    }
+    const result = await this.pool.query(q, v);
+    return JSON.parse(result.rows[0].current_state);
   }
 
   async updateStateJSON(id: string, stateJSON: string, metadata: StateMetadata) {
-    const pg = await this.pool.connect();
-
-    try {
-      const title = metadata.name;
-
-      const q = "UPDATE watch SET current_state = $1, updated_at = $2, title = $3, icon_uri = $4 WHERE id = $5";
-      const v = [stateJSON, new Date(), title, metadata.icon, id];
-
-      await pg.query(q, v);
-    } finally {
-      pg.release();
+    let title = metadata.name;
+    if (!title) {
+      title = "Unknown application";
     }
+
+    const q = "UPDATE watch SET current_state = $1, updated_at = $2, title = $3, icon_uri = $4 WHERE id = $5";
+    const v = [stateJSON, new Date(), title, metadata.icon, id];
+
+    await this.pool.query(q, v);
   }
 
   async updateWatch(id: string, watchName?: string, iconUri?: string) {
