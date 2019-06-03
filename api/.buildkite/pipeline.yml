@@ -35,24 +35,22 @@ steps:
       - buildkite-agent artifact download api/bin/* . --step build
       - chmod +x api/bin/ship-cluster-api
       - chmod +x api/bin/shipcloudctl
-      - cd api
-      - make build-enterprise
     branches: "master"
 
   - wait
 
   - commands:
-      - make -C api publish-enterprise
+      - make -C api build-enterprise publish-enterprise
     branches: "master"
 
   - commands:
-      - make -C api publish-staging
+      - make -C api build-staging publish-staging
     branches: "master"
 
   - block: "Release to production"
     branches: "master"
 
   - commands:
-      - make -C api publish-production
+      - make -C api build-production publish-production
     branches: "master"
 
