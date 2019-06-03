@@ -1,7 +1,6 @@
 steps:
   - commands:
-      - cd api
-      - make build-cache publish-cache
+      - make -C build-cache publish-cache
 
   - commands:
       - docker-compose -f api/test/docker-compose.yml down
@@ -11,8 +10,7 @@ steps:
       - docker-compose -f api/test/docker-compose.yml down
 
   - commands:
-      - cd api
-      - make deps build pkg
+      - make -C api deps build pkg
     label: "build"
     plugins:
       - docker#v3.0.1:
@@ -26,8 +24,7 @@ steps:
   - wait
 
   - commands:
-     - cd api
-     - make can-i-deploy
+     - make -C api can-i-deploy
 
   - wait
 
@@ -45,23 +42,17 @@ steps:
   - wait
 
   - commands:
-      - cd api
-      - make publish-enterprise
-    branches: "master"
-
-  - block: "Release to staging"
+      - make -C api publish-enterprise
     branches: "master"
 
   - commands:
-      - cd api
-      - make publish-staging
+      - make -C api publish-staging
     branches: "master"
 
   - block: "Release to production"
     branches: "master"
 
   - commands:
-      - cd api
-      - make publish-production
+      - make -C api publish-production
     branches: "master"
 
