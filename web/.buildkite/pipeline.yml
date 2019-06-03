@@ -1,7 +1,6 @@
 steps:
   - commands:
-      - cd web
-      - make build-cache publish-cache
+      - make -C web build-cache publish-cache
 
   - command: cd web && make deps test && yarn run publish:pact
     label: "test-and-build"
@@ -16,7 +15,6 @@ steps:
   - wait
 
   - trigger: "ship-cluster-api"
-    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
@@ -37,8 +35,7 @@ steps:
   - commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-enterprise
-      - cd web
-      - make publish-enterprise
+      - make -C web publish-enterprise
     branches: "master"
 
   - block: "Release to staging"
@@ -47,8 +44,7 @@ steps:
   - commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-staging
-      - cd web
-      - make publish-staging
+      - make -C web publish-staging
     branches: "master"
 
   - block: "Release to production"
@@ -57,6 +53,5 @@ steps:
   - commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-production
-      - cd web
-      - make publish-production
+      - make -C web publish-production
     branches: "master"
