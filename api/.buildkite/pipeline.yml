@@ -46,6 +46,12 @@ steps:
   - commands:
       - make -C api build-staging publish-staging
     branches: "master"
+    env:
+      AWS_PROFILE: replicated-staging
+    plugins:
+      - ecr#v2.0.0:
+          login: true
+          account_ids: "923411875752"
 
   - block: "Release to production"
     branches: "master"
@@ -53,4 +59,9 @@ steps:
   - commands:
       - make -C api build-production publish-production
     branches: "master"
-
+    env:
+      AWS_PROFILE: replicated-production
+    plugins:
+      - ecr#v2.0.0:
+          login: true
+          account_ids: "799720048698"
