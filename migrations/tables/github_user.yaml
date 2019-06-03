@@ -29,5 +29,5 @@ spec:
         type: text
       - name: user_id
         type: text
-        constraints:
-          notNull: true
+        # constraints:
+        #   notNull: true
