@@ -47,12 +47,8 @@ steps:
     retry:
       automatic: true
 
-  - block: "Release to staging"
-    branches: "master"
-
   - commands:
-      - cd migrations
-      - make publish-staging
+      - make -C migrations publish-staging
     branches: "master"
     env:
       AWS_PROFILE: replicated-staging
@@ -65,8 +61,7 @@ steps:
     branches: "master"
 
   - commands:
-      - cd migrations
-      - make publish-production
+      - make -c migrations publish-production
     branches: "master"
     env:
       AWS_PROFILE: replicated-production
