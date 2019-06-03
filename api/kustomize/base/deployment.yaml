@@ -53,29 +53,6 @@ spec:
               value: ship-cluster-api
             - name: GITHUB_PRIVATE_KEY_FILE
               value: /keys/github/private-key.pem
-            - name: GITHUB_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: client-id
-            - name: GITHUB_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: client-secret
-            - name: GITHUB_INTEGRATION_ID
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: integration-id
-            - name: SHIP_API_ENDPOINT
-              value: http://ship-cluster-api.default.svc.cluster.local:3000
-            - name: SHIP_API_ADVERTISE_ENDPOINT
-              value: http://docker.for.mac.localhost:30065
-          volumeMounts:
-            - name: github-app-private-key
-              mountPath: /keys/github
-              readOnly: true
           readinessProbe:
             httpGet:
               path: /healthz
