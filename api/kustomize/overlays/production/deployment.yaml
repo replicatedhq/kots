@@ -40,3 +40,9 @@ spec:
                 secretKeyRef:
                   name: ship-cluster-api-bugsnag-secret
                   key: key
+            - name: GITHUB_CLIENT_ID
+              value: check-ssm
+            - name: GITHUB_CLIENT_SECRET
+              value: check-ssm
+            - name: GITHUB_INTEGRATION_ID
+              value: check-ssm
