@@ -1,4 +1,8 @@
 bases:
   - ../../base
+
+resources:
+  - ./clusterip.yaml
+
 patchesStrategicMerge:
   - ./deployment.yaml
