@@ -8,6 +8,34 @@ export class UserStore {
     private readonly pool: pg.Pool,
   ) {}
 
+  public async migrateUsers(): Promise<void> {
+    const pg = await this.pool.connect();
+
+    try {
+      await pg.query("begin");
+
+      const q = `select id, created_at, github_id from ship_user`;
+      const v = [];
+
+      const result = await pg.query(q, v);
+      for (const row of result.rows) {
+        const qq = `update github_user set user_id = $1 where github_id = $2`;
+        const vv = [
+          row.id,
+          row.github_id,
+        ];
+        await pg.query(q, v);
+      }
+
+      await pg.query("commit");
+    } catch (err) {
+      await pg.query("rollback");
+      throw err;
+    } finally {
+      pg.release();
+    }
+  }
+
   public async listAllUsers(): Promise<User[]> {
     const q = `select id from ship_user`;
     const v = [];
