@@ -25,6 +25,36 @@ steps:
     retry:
       automatic: true
 
+  - commands:
+      - mkdir -p worker/bin
+      - buildkite-agent artifact download worker/bin/* . --step test-and-build
+      - chmod +x worker/bin/ship-cluster-worker
+      - make -C worker build-staging
+    branches: "master"
+    retry:
+      automatic: true
+    env:
+      AWS_PROFILE: replicated-staging
+    plugins:
+      - ecr#v2.0.0:
+          login: true
+          account_ids: "923411875752"
+
+  - commands:
+      - mkdir -p worker/bin
+      - buildkite-agent artifact download worker/bin/* . --step test-and-build
+      - chmod +x worker/bin/ship-cluster-worker
+      - make -C worker build-production
+    branches: "master"
+    retry:
+      automatic: true
+    env:
+      AWS_PROFILE: replicated-production
+    plugins:
+      - ecr#v2.0.0:
+          login: true
+          account_ids: "799720048698"
+
   - wait
 
   - commands:
@@ -38,12 +68,7 @@ steps:
     branches: "master"
     retry:
       automatic: true
-    env:
-      AWS_PROFILE: replicated-staging
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "923411875752"
+
 
   - block: "Release to production"
     branches: "master"
@@ -53,9 +78,3 @@ steps:
     branches: "master"
     retry:
       automatic: true
-    env:
-      AWS_PROFILE: replicated-production
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "799720048698"
