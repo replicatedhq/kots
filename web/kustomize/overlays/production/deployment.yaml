@@ -23,3 +23,6 @@ spec:
             periodSeconds: 2
             successThreshold: 1
             timeoutSeconds: 1
+          ports:
+            - name: http
+              containerPort: 8000
