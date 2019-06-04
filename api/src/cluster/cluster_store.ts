@@ -285,6 +285,7 @@ export class ClusterStore {
       if (rr.rows[0].count === 0) {
         foundUniqueSlug = true;
       }
+      i++;
     }
 
     const pg = await this.pool.connect();
