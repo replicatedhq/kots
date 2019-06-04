@@ -1,9 +1,3 @@
-- trigger: "ship-cluster-web"
-  build:
-    message: "${BUILDKITE_MESSAGE}"
-    commit: "${BUILDKITE_COMMIT}"
-    branch: "${BUILDKITE_BRANCH}"
-
 - trigger: "ship-cluster-worker"
   build:
     message: "${BUILDKITE_MESSAGE}"
