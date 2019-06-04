@@ -23,8 +23,6 @@ build:
       context: "./api"
       docker:
         dockerfile: ./Dockerfile.skaffold
-        cacheFrom:
-          - repldev/ship-cluster-api:latest
 
     - image: ship-cluster-ui
       context: "./web"
@@ -40,15 +38,11 @@ build:
             dest: "./"
       docker:
         dockerfile: ./Dockerfile.skaffold
-        cacheFrom:
-          - repldev/ship-cluster-web:latest
 
     - image: ship-cluster-worker
       context: "./worker"
       docker:
         dockerfile: ./Dockerfile.skaffold
-        cacheFrom:
-          - repldev/ship-cluster-worker:latest
 
     - image: ship-operator
       context: "./ship-operator"

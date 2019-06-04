@@ -56,7 +56,7 @@ test:
 
 .PHONY: bin/ship-cluster-worker
 bin/ship-cluster-worker: $(SRC)
-	time go build \
+	time go build -i \
 		${LDFLAGS} \
 		-o bin/ship-cluster-worker \
 		./cmd/ship-cluster-worker
