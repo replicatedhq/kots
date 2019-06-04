@@ -25,4 +25,4 @@ spec:
             timeoutSeconds: 1
           ports:
             - name: http
-              containerPort: 8000
+              containerPort: 3000
