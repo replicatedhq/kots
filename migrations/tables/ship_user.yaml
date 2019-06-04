@@ -19,3 +19,5 @@ spec:
           notNull: true
       - name: created_at
         type: timestamp without time zone
+      - name: github_id
+        type: integer
