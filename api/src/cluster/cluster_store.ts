@@ -268,30 +268,23 @@ export class ClusterStore {
   async createNewCluster(userId: string|undefined, isAllUsers: boolean, title: string, type: string, gitOwner?: string, gitRepo?: string, gitBranch?: string, gitInstallationId?: number): Promise<Cluster> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const slugProposal = `${slugify(title, { lower: true })}`;
+    let slugProposal = `${slugify(title, { lower: true })}`;
 
-    let clusters;
+    let i = 0;
+    let foundUniqueSlug = false;
+    while (!foundUniqueSlug) {
+      if (i > 0) {
+        slugProposal = `${slugify(title, { lower: true })}-${i}`;
+      }
+      const qq = `select count(1) as count from cluster where slug = $1`;
+      const vv = [
+        slugProposal,
+      ];
 
-    if (userId) {
-      clusters = await this.listClusters(userId);
-    } else {
-      clusters = await this.listAllUsersClusters();
-    }
-
-    const existingSlugs = clusters.map(cluster => cluster.slug);
-    let finalSlug = slugProposal;
-
-    if (_.includes(existingSlugs, slugProposal)) {
-      const maxNumber =
-        _(existingSlugs)
-          .map(slug => {
-            const result = slug!.replace(slugProposal, "").replace("-", "");
-
-            return result ? parseInt(result, 10) : 0;
-          })
-          .max() || 0;
-
-      finalSlug = `${slugProposal}-${maxNumber + 1}`;
+      const rr = await this.pool.query(qq, vv);
+      if (rr.rows[0].count === 0) {
+        foundUniqueSlug = true;
+      }
     }
 
     const pg = await this.pool.connect();
@@ -302,7 +295,7 @@ export class ClusterStore {
       let v: any[] = [
         id,
         title,
-        finalSlug,
+        slugProposal,
         new Date(),
         null,
         type,

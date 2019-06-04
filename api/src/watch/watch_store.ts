@@ -622,14 +622,22 @@ export class WatchStore {
     const titleForSlug = title.replace(/\./g, "-");
 
     let slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
-    const watches = await this.listAllUserWatches(userId);
 
-    const existingSlugs = watches.map(watch => watch.slug);
+    let i = 0;
+    let foundUniqueSlug = false;
+    while (!foundUniqueSlug) {
+      if (i > 0) {
+        slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}-${i}`;
+      }
+      const qq = `select count(1) as count from watch where slug = $1`;
+      const vv = [
+        slugProposal,
+      ];
 
-    let i = 1;
-    while (_.includes(existingSlugs, slugProposal)) {
-      slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}-${i}`;
-      i++;
+      const rr = await this.pool.query(qq, vv);
+      if (rr.rows[0].count === 0) {
+        foundUniqueSlug = true;
+      }
     }
 
     const pg = await this.pool.connect();
