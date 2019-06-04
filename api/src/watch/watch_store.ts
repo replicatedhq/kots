@@ -621,35 +621,33 @@ export class WatchStore {
     const icon = _.get(metadata, "icon", "https://vignette.wikia.nocookie.net/jet/images/e/ea/Under_construction-icon.JPG/revision/latest?cb=20100622032326"); // under construction image
     const titleForSlug = title.replace(/\./g, "-");
 
-    const slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
+    let slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}`;
     const watches = await this.listAllUserWatches(userId);
 
     const existingSlugs = watches.map(watch => watch.slug);
-    let finalSlug = slugProposal;
 
-    if (_.includes(existingSlugs, slugProposal)) {
-      const maxNumber =
-        _(existingSlugs)
-          .map(slug => {
-            const result = slug!.replace(slugProposal, "").replace("-", "");
-
-            return result ? parseInt(result, 10) : 0;
-          })
-          .max() || 0;
-
-      finalSlug = `${slugProposal}-${maxNumber + 1}`;
+    let i = 1;
+    while (_.includes(existingSlugs, slugProposal)) {
+      slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}-${i}`;
     }
 
     const pg = await this.pool.connect();
 
     try {
       await pg.query("begin");
-      const q = "INSERT INTO watch (id, current_state, title, slug, icon_uri, created_at) VALUES ($1, $2, $3, $4, $5, $6)";
-      const v = [id, stateJSON, title, finalSlug, icon, new Date()];
+      const q = "insert into watch (id, current_state, title, slug, icon_uri, created_at) values ($1, $2, $3, $4, $5, $6)";
+      const v = [
+        id,
+        stateJSON,
+        title,
+        slugProposal,
+        icon,
+        new Date()
+      ];
 
       await pg.query(q, v);
 
-      const uwq = "INSERT INTO user_watch (user_id, watch_id) VALUES ($1, $2)";
+      const uwq = "insert into user_watch (user_id, watch_id) values ($1, $2)";
       const uwv = [userId, id];
       await pg.query(uwq, uwv);
 

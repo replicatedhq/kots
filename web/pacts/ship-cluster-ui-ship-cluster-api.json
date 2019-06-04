@@ -340,6 +340,59 @@
       }
     },
     {
+      "description": "a mutation to create a watch that will default to a duplicate slug",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJkdXBsaWNhdGUtc2x1Zy1hY2NvdW50LXNlc3Npb24tMSJ9.bEZr7PaGeqmAC41Hs-yU69qZCzp69SDtsO7VgRx_cMk",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "createWatch",
+          "query": "\n  mutation createWatch($stateJSON: String!, $owner: String!) {\n    createWatch(stateJSON: $stateJSON, owner: $owner) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
+          "variables": {
+            "owner": "duplicate-slug-account",
+            "stateJSON": "{\n  \"v1\": {\n    \"config\": {},\n    \"releaseName\": \"factorio\",\n    \"helmValuesDefaults\": \"\",\n    \"upstream\": \"\",\n    \"metadata\": {\n      \"applicationType\": \"helm\",\n      \"icon\": \"https://us1.factorio.com/assets/img/factorio-logo.png\",\n      \"name\": \"duplicate-slug-one\",\n      \"releaseNotes\": \"\",\n      \"sequence\": 0,\n      \"version\": \"0.3.1\"\n    },\n    \"contentSHA\": \"126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e\"\n  }\n}"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!,\\s*\\$owner:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON,\\s*owner:\\s*\\$owner\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "createWatch": {
+              "id": "generated",
+              "slug": "duplicate-slug-account/duplicate-slug-one-1",
+              "watchName": "generated",
+              "createdOn": "generated",
+              "lastUpdated": null
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.createWatch.id": {
+            "match": "type"
+          },
+          "$.body.data.createWatch.watchName": {
+            "match": "type"
+          },
+          "$.body.data.createWatch.createdOn": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "a mutation to update a watch for single user",
       "request": {
         "method": "POST",

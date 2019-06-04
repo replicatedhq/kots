@@ -10,6 +10,8 @@ import getWatchVersionGitOpsCluster from "./contracts/get-watch-version-gitops-c
 import shipauthSignup from "./contracts/shipauth-signup";
 import updateWatch from "./contracts/update-watch";
 import deleteWatch from "./contracts/delete-watch";
+import duplicateSlugCheck from "./contracts/duplicate-slug-check";
+
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
 describe("ShipAPI GraphQL Pact", () => {
@@ -20,6 +22,8 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("solo-account:createMidstreamWatch", () => createMidstreamWatch() );
   describe("solo-account:createInitSession", () => createInitSession() );
   describe("solo-account:getWatchVersion", () => getWatchVersion() );
+  describe("duplicate-slug-check", () => duplicateSlugCheck() );
+
   // describe("solo-account:listImageWatches", () => listImageWatches() );
 
   describe("single-user:updateWatch", () => updateWatch() );

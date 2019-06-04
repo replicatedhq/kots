@@ -58,16 +58,22 @@ async function main(argv): Promise<any> {
 
     const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
     console.log(`creating new parent watch for ${watch.watchName}`);
-    const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
 
-    // Change child upstream to be parent
-    if (childState.v1) {
-      childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
+    try {
+      const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
 
-      console.log(`updating child watch state for watch ${watch.watchName}`);
-      await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
+      // Change child upstream to be parent
+      if (childState.v1) {
+        childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
 
-      await watchStore.setParent(watch.id!, parentWatch.id!);
+        console.log(`updating child watch state for watch ${watch.watchName}`);
+        await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
+
+        await watchStore.setParent(watch.id!, parentWatch.id!);
+      }
+    } catch (err) {
+      console.log(`FAILED to create new parent watch for ${watch.watchName}`);
+      console.log(err);
     }
 
     const watchNotifications = await notificationStore.listNotificationsOLD(watch.id!);
