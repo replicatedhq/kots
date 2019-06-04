@@ -145,6 +145,9 @@ func (c SemverTagCollection) RemoveLeastSpecific() []*semver.Version {
 
 		isLessSpecific := true
 		for idx, iSegment := range iSegments {
+			if len(jSegments) < idx+1 {
+				break
+			}
 			if iSegment > 0 && jSegments[idx] == 0 {
 				break
 			}

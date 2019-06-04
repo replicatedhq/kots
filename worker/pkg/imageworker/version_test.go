@@ -303,6 +303,11 @@ func TestRemoveLeastSpecific(t *testing.T) {
 			versions:       []string{"0.0.0", "0.0", "0"},
 			expectVersions: []string{"0.0.0"},
 		},
+		{
+			name:           "more segments",
+			versions:       []string{"3.5.1.1", "3.5.1", "4.5.1"},
+			expectVersions: []string{"3.5.1.1", "4.5.1"},
+		},
 	}
 
 	for _, test := range tests {
