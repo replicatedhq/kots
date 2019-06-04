@@ -629,6 +629,7 @@ export class WatchStore {
     let i = 1;
     while (_.includes(existingSlugs, slugProposal)) {
       slugProposal = `${owner.toLowerCase()}/${slugify(titleForSlug, { lower: true })}-${i}`;
+      i++;
     }
 
     const pg = await this.pool.connect();
