@@ -635,7 +635,7 @@ export class WatchStore {
       ];
 
       const rr = await this.pool.query(qq, vv);
-      if (rr.rows[0].count === 0) {
+      if (parseInt(rr.rows[0].count) === 0) {
         foundUniqueSlug = true;
       }
       i++;
