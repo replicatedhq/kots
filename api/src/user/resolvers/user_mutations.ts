@@ -56,12 +56,15 @@ export function UserMutations(stores: Stores, params: Params) {
         type: "token",
         token: accessToken.access_token,
       });
-      const { data: userData }: { data: GithubUser } = await github.users.get({});
+      const response = await github.users.get({});
+
+      console.log(response);
 
       try {
-        let user = await stores.userStore.tryGetGitHubUser(userData.id!);
+        let user = await stores.userStore.tryGetGitHubUser(response.data.id);
+        console.log(user);
         if (!user) {
-          user = await stores.userStore.createGitHubUser(userData.id!, userData.login!.toLowerCase(), userData.avatar_url!, userData.email!);
+          user = await stores.userStore.createGitHubUser(response.data.id, response.data.login.toLowerCase(), response.data.avatar_url, response.data.email);
           // const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
           // for (const allUserCluster of allUsersClusters) {
           //   await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
