@@ -1,5 +1,4 @@
 const path = require("path");
-const glob = require("glob");
 const webpackMerge = require("webpack-merge");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -8,7 +7,6 @@ const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const PurgecssPlugin = require("purgecss-webpack-plugin");
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -158,7 +156,7 @@ module.exports = function (env) {
         ],
         scripts: appEnv.WEBPACK_SCRIPTS,
         links: [
-          "style.css"
+          "style[hash].css"
         ],
         inject: false,
         window: {
@@ -209,11 +207,8 @@ module.exports = function (env) {
       }),
       new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/),
       new MiniCssExtractPlugin({
-        filename: "style.css",
+        filename: "style.[hash].css",
         chunkFilename: "[id].css"
-      }),
-      new PurgecssPlugin({
-        paths: glob.sync(`${path.join(__dirname, "src")}/**/*`, { nodir: true })
       })
       // new BundleAnalyzerPlugin({
       //   generateStatsFile: true,
