@@ -11,6 +11,7 @@ export class UserStore {
   public async migrateUsers(): Promise<void> {
     const pg = await this.pool.connect();
 
+    console.log("migating users");
     try {
       await pg.query("begin");
 
@@ -19,12 +20,15 @@ export class UserStore {
 
       const result = await pg.query(q, v);
       for (const row of result.rows) {
-        const qq = `update github_user set user_id = $1 where github_id = $2`;
-        const vv = [
-          row.id,
-          row.github_id,
-        ];
-        await pg.query(q, v);
+        if (row.github_id) {
+          console.log(`migrating user ${row}`);
+          const qq = `update github_user set user_id = $1 where github_id = $2`;
+          const vv = [
+            row.id,
+            row.github_id,
+          ];
+          await pg.query(q, v);
+        }
       }
 
       await pg.query("commit");
