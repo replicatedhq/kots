@@ -27,10 +27,11 @@ export class UserStore {
             row.id,
             row.github_id,
           ];
-          await pg.query(q, v);
+          await pg.query(qq, vv);
         }
       }
 
+      console.log("commiting");
       await pg.query("commit");
     } catch (err) {
       await pg.query("rollback");
