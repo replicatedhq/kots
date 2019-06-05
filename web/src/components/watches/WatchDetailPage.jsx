@@ -1,11 +1,14 @@
 import React, {Suspense, lazy} from "react";
-import { withRouter, Switch, Route, Link } from "react-router-dom";
+import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import { getWatch } from "../../queries/WatchQueries";
-import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
 import omit from "lodash/omit";
 import Modal from "react-modal";
+
+import { getWatch } from "../../queries/WatchQueries";
+import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
+import SubNavBar from "@src/components/shared/SubNavBar";
 import Loader from "../shared/Loader";
+
 import "../../scss/components/watches/WatchDetailPage.scss";
 
 const NotFound = lazy(() => import("../static/NotFound"));
@@ -111,8 +114,8 @@ class WatchDetailPage extends React.Component {
   }
 
   render() {
-    const { watch, displayRemoveClusterModal, addNewClusterModal, clusterToRemove } = this.state;
     const { match } = this.props;
+    const { watch, displayRemoveClusterModal, addNewClusterModal, clusterToRemove } = this.state;
     const slug = `${match.params.owner}/${match.params.slug}`;
 
     if (!watch || this.props.data.loading) {
@@ -120,23 +123,16 @@ class WatchDetailPage extends React.Component {
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
-      )
+      );
     }
-
-    return (
+    return (  
       <div className="WatchDetailPage--wrapper flex-column flex1">
-        <div className="watch-detail-header flex-column alignItems--center justifyContent--center">
-          <span className="watch-icon" style={{ backgroundImage: `url(${watch.watchIcon})` }}></span>
-          <p className="u-color--tundora u-fontWeight--bold u-marginTop--10">{watch.watchName}</p>
-        </div>
-        <div className="details-subnav flex flex u-marginBottom--30">
-          <ul>
-            {!watch.cluster && <li className={`${!match.params.tab ? "is-active" : ""}`}><Link to={`/watch/${slug}`}>Application</Link></li>}
-            {!watch.cluster && <li className={`${match.params.tab === "deployment-clusters" ? "is-active" : ""}`}><Link to={`/watch/${slug}/deployment-clusters`}>Deployment clusters</Link></li>}
-            <li className={`${match.params.tab === "integrations" ? "is-active" : ""}`}><Link to={`/watch/${slug}/integrations`}>Integrations</Link></li>
-            <li className={`${match.params.tab === "state" ? "is-active" : ""}`}><Link to={`/watch/${slug}/state`}>State JSON</Link></li>
-          </ul>
-        </div>
+        <SubNavBar 
+          className="flex flex u-marginBottom--30"
+          activeTab={match.params.tab || "app"}
+          slug={slug}
+          watch={watch}
+        />
         <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
           <Switch>
             {!watch.cluster &&

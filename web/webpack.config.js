@@ -45,7 +45,8 @@ module.exports = function (env) {
       alias: {
         "react": path.resolve("node_modules/react"),
         "react-dom": path.resolve("node_modules/react-dom"),
-        "monaco-editor": "monaco-editor/esm/vs/editor/editor.api.js"
+        "monaco-editor": "monaco-editor/esm/vs/editor/editor.api.js",
+        "@src": path.resolve(__dirname, "src")
       }
     },
 
