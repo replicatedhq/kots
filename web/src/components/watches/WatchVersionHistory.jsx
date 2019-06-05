@@ -6,17 +6,8 @@ import "@src/scss/components/watches/VersionCard.scss";
 
 export default function WatchVersionHistory(props) {
   const { watch } = props;
-  let { currentVersion, watches, pastVersions } = watch;
+  const { currentVersion, watches, pastVersions } = watch;
 
-  if (!pastVersions.length) {
-    pastVersions = pastVersions.concat([
-      { title: "2.20.19" },
-      { title: "2.20.18" },
-      { title: "2.20.17" },
-      { title: "2.20.16" },
-    ]);
-  }
-  console.log(pastVersions);
   return (
     <div className="flex-column u-position--relative verison-history-wrapper u-overflow--auto">
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--10">
