@@ -1,7 +1,10 @@
-import * as React from "react";
+import React from "react";
+import classNames from "classnames";
 import truncateMiddle from "truncate-middle";
 import { Link } from "react-router-dom";
+
 import "../../scss/components/clusters/ClusterCard.scss";
+import "../../scss/components/watches/WatchCard.scss";
 
 export default class DeploymentClusters extends React.Component {
 
@@ -16,7 +19,9 @@ export default class DeploymentClusters extends React.Component {
   render() {
     const { appDetailPage, childWatches, handleAddNewCluster, parentClusterName, toggleDeleteDeploymentModal } = this.props;
     return (
-      <div className={`installed-watch-github flex-column u-width--full ${!appDetailPage && "padded"}`}>
+      <div className={classNames("installed-watch-github flex-column u-width--full", {
+        padded: !appDetailPage
+      })}>
         {childWatches && childWatches.length ?
           <div className="flex-column">
             {appDetailPage ?

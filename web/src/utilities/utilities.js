@@ -7,6 +7,15 @@ import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
 
+/**
+ * 
+ * @param {Object} - 
+ * @return {String} - 
+ */
+export function getClusterType(gitOpsRef) {
+  return gitOpsRef ? "git" : "ship";
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {

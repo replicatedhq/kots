@@ -17,6 +17,7 @@ const DetailPageIntegrations = lazy(() => import("./DetailPageIntegrations"));
 const StateFileViewer = lazy(() => import("../state/StateFileViewer"));
 const DeploymentClusters = lazy(() => import("../watches/DeploymentClusters"));
 const AddClusterModal = lazy(() => import("../shared/modals/AddClusterModal"));
+const WatchVersionHistory = lazy (() => import("./WatchVersionHistory"));
 
 class WatchDetailPage extends React.Component {
   constructor() {
@@ -158,8 +159,16 @@ class WatchDetailPage extends React.Component {
                 </div>
               }/>
             }
+            { /* ROUTE UNUSED */}
             <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} /> } />
+            { /* ROUTE UNUSED */}
             <Route exact path="/watch/:owner/:slug/state" render={() =>  <StateFileViewer headerText="Edit your application’s state.json file" /> } />
+            
+            <Route exact path="/watch/:owner/:slug/version-history" render={() => 
+              <WatchVersionHistory 
+                watch={watch}
+              />
+            } />
             <Route component={NotFound} />
           </Switch>
         </Suspense>
