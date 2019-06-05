@@ -3,7 +3,7 @@ import classNames from "classnames";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 
-import navConfig from "@src/config-ui/navConfig";
+import navConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
   const { className, activeTab, slug, watch } = props;
