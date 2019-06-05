@@ -162,19 +162,13 @@ export class WatchStore {
   }
 
   async setParent(watchId: string, parentId?: string): Promise<void> {
-    const pg = await this.pool.connect();
+    const q = `update watch set parent_watch_id = $1 where id = $2`;
+    const v = [
+      parentId,
+      watchId,
+    ];
 
-    try {
-      const q = `update watch set parent_watch_id = $1 where id = $2`;
-      const v = [
-        parentId,
-        watchId,
-      ];
-
-      await pg.query(q, v);;
-    } finally {
-      pg.release();
-    }
+    await this.pool.query(q, v);
   }
 
   async setCluster(watchId: string, clusterId: string, githubPath?: string): Promise<void> {
@@ -211,73 +205,55 @@ export class WatchStore {
 
   async createDownstreamToken(watchId: string): Promise<string> {
     const token = randomstring.generate({ capitalization: "lowercase" });
-    const pg = await this.pool.connect();
+    const q = `insert into watch_downstream_token (watch_id, token) values ($1, $2)`;
+    const v = [
+      watchId,
+      token,
+    ];
 
-    try {
-      const q = `insert into watch_downstream_token (watch_id, token) values ($1, $2)`;
-      const v = [
-        watchId,
-        token,
-      ];
+    await this.pool.query(q, v);
 
-      await pg.query(q, v);
-
-      return token;
-    } finally {
-      pg.release();
-    }
+    return token;
   }
 
   async listForCluster(clusterId: string): Promise<Watch[]> {
-    const pg = await this.pool.connect();
+    const q = `select watch_id from watch_cluster where cluster_id = $1`;
+    const v = [
+      clusterId,
+    ];
 
-    try {
-      const q = `select watch_id from watch_cluster where cluster_id = $1`;
-      const v = [
-        clusterId,
-      ];
-
-      const result = await pg.query(q, v);
-      const watchIds: string[] = [];
-      for (const row of result.rows) {
-        watchIds.push(row.watch_id);
-      }
-
-      const watches: Watch[] = [];
-      for (const watchId of watchIds) {
-        const watch = await this.getWatch(watchId);
-        watches.push(watch);
-      }
-
-      return watches;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    const watchIds: string[] = [];
+    for (const row of result.rows) {
+      watchIds.push(row.watch_id);
     }
+
+    const watches: Watch[] = [];
+    for (const watchId of watchIds) {
+      const watch = await this.getWatch(watchId);
+      watches.push(watch);
+    }
+
+    return watches;
   }
 
   async findUpstreamWatch(token: string, watchId: string): Promise<Watch> {
-    const pg = await this.pool.connect();
+    const q = `select watch_id from watch_downstream_token where token = $1`;
+    const v = [token];
 
-    try {
-      const q = `select watch_id from watch_downstream_token where token = $1`;
-      const v = [token];
-
-      const result = await pg.query(q, v);
-      if (result.rows.length === 0) {
-        throw new ReplicatedError("Watch not found");
-      }
-
-      // This next check may not be necessary?
-      if (watchId !== result.rows[0].watch_id) {
-        throw new ReplicatedError("Watch not found");
-      }
-
-      const watch = await this.getWatch(result.rows[0].watch_id);
-
-      return watch;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError("Watch not found");
     }
+
+    // This next check may not be necessary?
+    if (watchId !== result.rows[0].watch_id) {
+      throw new ReplicatedError("Watch not found");
+    }
+
+    const watch = await this.getWatch(result.rows[0].watch_id);
+
+    return watch;
   }
 
   async findUserWatch(userId: string, opts: FindWatchOpts): Promise<Watch> {
@@ -285,30 +261,24 @@ export class WatchStore {
       throw new TypeError("one of slug or id is required");
     }
 
-    const pg = await this.pool.connect();
+    let q;
+    let v;
 
-    try {
-      let q;
-      let v;
-
-      if (opts.id) {
-        q = "SELECT watch_id FROM user_watch WHERE watch_id = $1 and user_id = $2";
-        v = [opts.id, userId];
-      } else if (opts.slug) {
-        q = "SELECT watch_id FROM user_watch INNER JOIN watch ON watch.id = user_watch.watch_id WHERE watch.slug = $1 and user_watch.user_id = $2";
-        v = [opts.slug, userId];
-      }
-
-      const result = await pg.query(q, v);
-      if (result.rows.length === 0) {
-        throw new ReplicatedError("Watch not found");
-      }
-
-      const watch = await this.getWatch(result.rows[0].watch_id);
-      return watch;
-    } finally {
-      pg.release();
+    if (opts.id) {
+      q = "SELECT watch_id FROM user_watch WHERE watch_id = $1 and user_id = $2";
+      v = [opts.id, userId];
+    } else if (opts.slug) {
+      q = "SELECT watch_id FROM user_watch INNER JOIN watch ON watch.id = user_watch.watch_id WHERE watch.slug = $1 and user_watch.user_id = $2";
+      v = [opts.slug, userId];
     }
+
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError("Watch not found");
+    }
+
+    const watch = await this.getWatch(result.rows[0].watch_id);
+    return watch;
   }
 
   async getWatch(id: string): Promise<Watch> {
@@ -323,20 +293,14 @@ export class WatchStore {
   }
 
   async getParentWatchId(id: string): Promise<string> {
-    const pg = await this.pool.connect();
+    const q = "select parent_watch_id from watch where id = $1";
+    const v = [id];
 
-    try {
-      const q = "select parent_watch_id from watch where id = $1";
-      const v = [id];
-
-      const result = await pg.query(q, v);
-      if (result.rows.length === 0) {
-        throw new ReplicatedError("This watch does not have a parent");
-      }
-      return result.rows[0].parent_watch_id;
-    } finally {
-      pg.release();
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError("This watch does not have a parent");
     }
+    return result.rows[0].parent_watch_id;
   }
 
   async deleteWatch(watchId: string): Promise<boolean> {
@@ -485,25 +449,19 @@ export class WatchStore {
            filepath,
          ];
 
-         const pg = await this.pool.connect();
+        const result = await this.pool.query(q, v);
+        const buffer = new Buffer(result.rows[0].encoded_block, "base64");
 
-         try {
-          const result = await pg.query(q, v);
-          const buffer = new Buffer(result.rows[0].encoded_block, "base64");
+        // Write to the local s3 server so we can return an S3.GetObjectRequest
+        const rewrittenFilepath = path.join(this.params.shipOutputBucket.trim(), filepath);
+        await putObject(this.params, rewrittenFilepath, buffer, "ship-pacts");
 
-          // Write to the local s3 server so we can return an S3.GetObjectRequest
-          const rewrittenFilepath = path.join(this.params.shipOutputBucket.trim(), filepath);
-          await putObject(this.params, rewrittenFilepath, buffer, "ship-pacts");
+        params = {
+          Bucket: this.params.shipOutputBucket.trim(),
+          Key: rewrittenFilepath,
+        };
 
-          params = {
-            Bucket: this.params.shipOutputBucket.trim(),
-            Key: rewrittenFilepath,
-          };
-
-          return params;
-        } finally {
-          pg.release();
-        }
+        return params;
       } else {
         params = {
           Bucket: this.params.shipOutputBucket.trim(),

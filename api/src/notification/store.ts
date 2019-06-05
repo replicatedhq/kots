@@ -208,6 +208,8 @@ export class NotificationStore {
     const pg = await this.pool.connect();
 
     try {
+      await pg.query("begin");
+
       const q = "UPDATE ship_notification SET updated_at = $2 WHERE id = $1";
       const v = [id, new Date()];
       await pg.query(q, v);
@@ -430,16 +432,12 @@ export class NotificationStore {
             n.updated_at,
             n.triggered_at,
             n.enabled,
-            whn.destination_uri,
-            en.recipient,
             prn.org,
             prn.repo,
             prn.branch,
             prn.root_path
       FROM ship_notification n
-            LEFT OUTER JOIN webhook_notification whn ON whn.notification_id = n.id
-            LEFT OUTER JOIN email_notification en ON en.notification_id = n.id
-            LEFT OUTER JOIN pullrequest_notification prn ON prn.notification_id = n.id
+            inner JOIN pullrequest_notification prn ON prn.notification_id = n.id
             INNER JOIN watch ON watch.id = n.watch_id
       WHERE watch.id = $1
       ORDER BY n.created_at`;

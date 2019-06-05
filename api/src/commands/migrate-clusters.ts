@@ -48,6 +48,14 @@ async function main(argv): Promise<any> {
       continue;
     }
 
+    // If there are no PR notifications, this watch doesn't need any migration, it will end as a midstream
+    const prCheck = await notificationStore.listNotificationsOLD(watch.id!);
+    console.log(prCheck);
+    if (prCheck.length === 0) {
+      console.log(`watch ${watch.watchName} does not have any PR notifications, leaving it as midstream`);
+      continue;
+    }
+
     const owner = watch.slug!.split("/")[0];
     const firstUserId = userIds[0];
     userIds.shift();
@@ -61,7 +69,7 @@ async function main(argv): Promise<any> {
     }
 
     const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
-    console.log(`creating new parent watch for ${watch.watchName}`);
+    // console.log(`creating new parent watch for ${watch.watchName}`);
 
     try {
       const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
@@ -74,7 +82,7 @@ async function main(argv): Promise<any> {
       if (childState.v1) {
         childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
 
-        console.log(`updating child watch state for watch ${watch.watchName}`);
+        // console.log(`updating child watch state for watch ${watch.watchName}`);
         await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
 
         await watchStore.setParent(watch.id!, parentWatch.id!);
