@@ -36,37 +36,7 @@ export default function SubNavBar(props) {
 SubNavBar.propTypes = {
   className: PropTypes.string,
   activeTab: PropTypes.string,
-  slug: PropTypes.string
+  slug: PropTypes.string,
+  watch: PropTypes.object
 };
 
-/*
-Reference JSX
-<div className="details-subnav flex flex u-marginBottom--30">
-  <ul>
-    {!watch.cluster && (
-      <li className={classNames({ "is-active": !match.params.tab})}>
-        <Link to={`/watch/${slug}`}>
-          Application
-        </Link>
-      </li>
-    )}
-    {!watch.cluster && (
-      <li className={classNames({ "is-active": match.params.tab === "deployment-clusters" })}>
-        <Link to={`/watch/${slug}/deployment-clusters`}>
-          Deployment clusters
-        </Link>
-      </li>
-    )}
-    <li className={`${match.params.tab === "integrations" ? "is-active" : ""}`}>
-      <Link to={`/watch/${slug}/integrations`}>
-        Integrations
-      </Link>
-    </li>
-    <li className={`${match.params.tab === "state" ? "is-active" : ""}`}>
-      <Link to={`/watch/${slug}/state`}>
-        State JSON
-      </Link>
-    </li>
-  </ul>
-</div>
-*/
