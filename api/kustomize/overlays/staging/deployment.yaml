@@ -48,3 +48,5 @@ spec:
               value: check-ssm
             - name: GITHUB_INTEGRATION_ID
               value: check-ssm
+            - name: PINO_LOG_PRETTY
+              value: "1"
