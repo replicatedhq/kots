@@ -209,31 +209,35 @@ class DetailPageApplication extends React.Component {
               </div>
             }
             <div className="u-marginTop--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets from a deployment cluster</p>
-              <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--medium">Select the cluster you would like to download your Ship YAML assets from.</p>
-              <div className="u-marginTop--10 flex">
-                <div className="flex1">
-                  <Select
-                    className="replicated-select-container"
-                    classNamePrefix="replicated-select"
-                    options={options}
-                    getOptionLabel={(downloadCluster) => downloadCluster.label}
-                    value={this.state.downloadCluster}
-                    onChange={this.onDownloadClusterChange}
-                    isOptionSelected={(option) => {option.value === this.state.downloadCluster.value}}
-                  />
-                </div>
-                <div className="flex1"></div>
-              </div>
-              {isDownloadingAssets ?
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="60" />
-                </div>
-                :
-                <div className="u-marginTop--10">
-                  <button disabled={this.state.downloadCluster.value === ""} onClick={() => this.downloadAssetsForCluster()} className="btn green secondary">Download generated YAML</button>
-                </div>
-              }
+              {options.length > 0 && (
+                <>
+                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets from a deployment cluster</p>
+                  <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--medium">Select the cluster you would like to download your Ship YAML assets from.</p>
+                  <div className="u-marginTop--10 flex">
+                    <div className="flex1">
+                      <Select
+                        className="replicated-select-container"
+                        classNamePrefix="replicated-select"
+                        options={options}
+                        getOptionLabel={(downloadCluster) => downloadCluster.label}
+                        value={this.state.downloadCluster}
+                        onChange={this.onDownloadClusterChange}
+                        isOptionSelected={(option) => { option.value === this.state.downloadCluster.value }}
+                      />
+                    </div>
+                    <div className="flex1"></div>
+                  </div>
+                  {isDownloadingAssets ?
+                    <div className="flex-column flex1 alignItems--center justifyContent--center">
+                      <Loader size="60" />
+                    </div>
+                    :
+                    <div className="u-marginTop--10">
+                      <button disabled={this.state.downloadCluster.value === ""} onClick={() => this.downloadAssetsForCluster()} className="btn green secondary">Download generated YAML</button>
+                    </div>
+                  }
+                </>
+              )}
             </div>
             <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Delete application</p>
@@ -244,8 +248,15 @@ class DetailPageApplication extends React.Component {
             </div>
           </div>
           <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
+            <div>
+                <p className="uppercase-title">Current Version</p>
+                <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
+                  {watch.currentVersion.title}
+                </p>
+            </div>
             <WatchContributors
               title="contributors"
+              className="u-marginTop--30"
               contributors={watch.contributors || []}
               watchName={watch.watchName}
               watchId={watch.id}
