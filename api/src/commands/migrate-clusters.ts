@@ -80,7 +80,9 @@ async function main(argv): Promise<any> {
 
       // Change child upstream to be parent
       if (childState.v1) {
-        childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
+        const downstreamToken = await watchStore.createDownstreamToken(parentWatch.id);
+
+        childState.v1.upstream = `${params.shipApiEndpoint}/api/v1/watch/${parentWatch.id}/upstream.yaml?token=${downstreamToken}`;
 
         // console.log(`updating child watch state for watch ${watch.watchName}`);
         await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
