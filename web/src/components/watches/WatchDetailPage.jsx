@@ -18,6 +18,9 @@ const StateFileViewer = lazy(() => import("../state/StateFileViewer"));
 const DeploymentClusters = lazy(() => import("../watches/DeploymentClusters"));
 const AddClusterModal = lazy(() => import("../shared/modals/AddClusterModal"));
 const WatchVersionHistory = lazy (() => import("./WatchVersionHistory"));
+const WatchConfig = lazy ( () => import("./WatchConfig"));
+const WatchTroubleshoot = lazy(() => import("./WatchTroubleshoot"));
+const WatchLicense = lazy(() => import("./WatchLicense"));
 
 class WatchDetailPage extends React.Component {
   constructor() {
@@ -166,6 +169,21 @@ class WatchDetailPage extends React.Component {
             
             <Route exact path="/watch/:owner/:slug/version-history" render={() => 
               <WatchVersionHistory 
+                watch={watch}
+              />
+            }/>
+            <Route exact path="/watch/:owner/:slug/config" render={() =>
+              <WatchConfig
+                watch={watch}
+              />
+            }/>
+            <Route exact path="/watch/:owner/:slug/troubleshoot" render={ () =>
+              <WatchTroubleshoot
+                watch={watch}
+              />
+            }/>
+            <Route exact path="/watch/:owner/:slug/license" render={() =>
+              <WatchLicense
                 watch={watch}
               />
             } />

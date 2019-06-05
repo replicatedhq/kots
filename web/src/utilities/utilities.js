@@ -13,7 +13,9 @@ dayjs.extend(relativeTime);
  * @return {String} - 
  */
 export function getClusterType(gitOpsRef) {
-  return gitOpsRef ? "git" : "ship";
+  return gitOpsRef 
+    ? "git" 
+    : "ship";
 }
 
 export const Utilities = {
