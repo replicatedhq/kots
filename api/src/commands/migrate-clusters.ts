@@ -40,89 +40,93 @@ async function main(argv): Promise<any> {
 
   await userStore.migrateUsers();
 
-  // const allWatches = await watchStore.listAllWatchesForAllTeams();
-  // for (const watch of allWatches) {
-  //   const userIds = await watchStore.listUsersForWatch(watch.id!);
-  //   if (userIds.length === 0) {
-  //     console.log(`no users for watch $${watch.watchName}, not migrating`);
-  //     continue;
-  //   }
+  const allWatches = await watchStore.listAllWatchesForAllTeams();
+  for (const watch of allWatches) {
+    const userIds = await watchStore.listUsersForWatch(watch.id!);
+    if (userIds.length === 0) {
+      console.log(`no users for watch $${watch.watchName}, not migrating`);
+      continue;
+    }
 
-  //   const owner = watch.slug!.split("/")[0];
-  //   const firstUserId = userIds[0];
-  //   userIds.shift();
+    const owner = watch.slug!.split("/")[0];
+    const firstUserId = userIds[0];
+    userIds.shift();
 
-  //   const parentState = JSON.parse(watch.stateJSON!);
-  //   const childState = JSON.parse(watch.stateJSON!)
+    const parentState = JSON.parse(watch.stateJSON!);
+    const childState = JSON.parse(watch.stateJSON!)
 
-  //   // Move patches to the child
-  //   if (parentState.v1 && parentState.v1.kustomize) {
-  //     delete parentState.v1.kustomize;
-  //   }
+    // Move patches to the child
+    if (parentState.v1 && parentState.v1.kustomize) {
+      delete parentState.v1.kustomize;
+    }
 
-  //   const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
-  //   console.log(`creating new parent watch for ${watch.watchName}`);
+    const metadata = parentState.v1 && parentState.v1.metadata ? parentState.v1.metadata : {};
+    console.log(`creating new parent watch for ${watch.watchName}`);
 
-  //   try {
-  //     const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
+    try {
+      const parentWatch = await watchStore.createNewWatch(JSON.stringify(parentState, null, 2), owner, firstUserId, metadata);
 
-  //     // Change child upstream to be parent
-  //     if (childState.v1) {
-  //       childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
+      for (const userId of userIds) {
+        await watchStore.addUserToWatch(parentWatch.id, userId);
+      }
 
-  //       console.log(`updating child watch state for watch ${watch.watchName}`);
-  //       await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
+      // Change child upstream to be parent
+      if (childState.v1) {
+        childState.v1.upstream = `ship://ship-cluster/${parentWatch.id}`;
 
-  //       await watchStore.setParent(watch.id!, parentWatch.id!);
-  //     }
-  //   } catch (err) {
-  //     console.log(`FAILED to create new parent watch for ${watch.watchName}`);
-  //     console.log(err);
-  //   }
+        console.log(`updating child watch state for watch ${watch.watchName}`);
+        await watchStore.updateStateJSON(watch.id!, JSON.stringify(childState, null, 2), metadata);
 
-  //   const watchNotifications = await notificationStore.listNotificationsOLD(watch.id!);
+        await watchStore.setParent(watch.id!, parentWatch.id!);
+      }
+    } catch (err) {
+      console.log(`FAILED to create new parent watch for ${watch.watchName}`);
+      console.log(err);
+    }
 
-  //   for (const watchNotification of watchNotifications) {
-  //     if (watchNotification.pullRequest) {
-  //       console.log(`migrating PR from watch ${watch.watchName}`);
+    const watchNotifications = await notificationStore.listNotificationsOLD(watch.id!);
 
-  //       const installationId = await notificationStore.getInstallationIdForPullRequestNotification(span.context(), watchNotification.id!);
+    for (const watchNotification of watchNotifications) {
+      if (watchNotification.pullRequest) {
+        console.log(`migrating PR from watch ${watch.watchName}`);
 
-  //       // generate a cluster name, to be used in a basic de-dupe attempt
-  //       const clusterName = `${watchNotification.pullRequest.org}-${watchNotification.pullRequest.repo}-${watchNotification.pullRequest.branch}`;
-  //       console.log(`looking for a cluster named ${clusterName} to target`);
+        const installationId = await notificationStore.getInstallationIdForPullRequestNotification(span.context(), watchNotification.id!);
 
-  //       const clusters = await clusterStore.listClusters(firstUserId);
-  //       let cluster = _.find(clusters, (cluster: Cluster) => {
-  //         return cluster.title === clusterName;
-  //       });
+        // generate a cluster name, to be used in a basic de-dupe attempt
+        const clusterName = `${watchNotification.pullRequest.org}-${watchNotification.pullRequest.repo}-${watchNotification.pullRequest.branch}`;
+        console.log(`looking for a cluster named ${clusterName} to target`);
 
-  //       if (!cluster) {
-  //         const branch = watchNotification.pullRequest.branch ? watchNotification.pullRequest.branch : "";
-  //         console.log(`creating a new cluster`);
-  //         cluster = await clusterStore.createNewCluster(firstUserId, false, clusterName, "gitops", watchNotification.pullRequest.org, watchNotification.pullRequest.repo, branch, installationId);
-  //       }
+        const clusters = await clusterStore.listClusters(firstUserId);
+        let cluster = _.find(clusters, (cluster: Cluster) => {
+          return cluster.title === clusterName;
+        });
 
-  //       if (!cluster) {
-  //         console.error(`unable to find cluster`);
-  //         return;
-  //       }
+        if (!cluster) {
+          const branch = watchNotification.pullRequest.branch ? watchNotification.pullRequest.branch : "";
+          console.log(`creating a new cluster`);
+          cluster = await clusterStore.createNewCluster(firstUserId, false, clusterName, "gitops", watchNotification.pullRequest.org, watchNotification.pullRequest.repo, branch, installationId);
+        }
 
-  //       for (const userId of userIds) {
-  //         await clusterStore.addUserToCluster(cluster.id, userId);
-  //       }
+        if (!cluster) {
+          console.error(`unable to find cluster`);
+          return;
+        }
 
-  //       const path = watchNotification.pullRequest.rootPath ? watchNotification.pullRequest.rootPath : undefined;
-  //       await watchStore.setCluster(watch.id!, cluster!.id!, path);
+        for (const userId of userIds) {
+          await clusterStore.addUserToCluster(cluster.id, userId);
+        }
 
-  //       // migrate the history
-  //       const pullrequestHistoryItems = await notificationStore.listPullRequestHistory(span.context(), watchNotification.id!);
-  //       for(const item of pullrequestHistoryItems) {
-  //         await watchStore.createWatchVersion(watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
-  //       }
-  //     }
-  //   }
-  // }
+        const path = watchNotification.pullRequest.rootPath ? watchNotification.pullRequest.rootPath : undefined;
+        await watchStore.setCluster(watch.id!, cluster!.id!, path);
+
+        // migrate the history
+        const pullrequestHistoryItems = await notificationStore.listPullRequestHistory(span.context(), watchNotification.id!);
+        for(const item of pullrequestHistoryItems) {
+          await watchStore.createWatchVersion(watch.id!, item.createdOn, item.title, item.status!, item.sourceBranch!, item.sequence!, item.number!);
+        }
+      }
+    }
+  }
 
   span.finish();
 

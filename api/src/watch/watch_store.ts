@@ -671,6 +671,16 @@ export class WatchStore {
     }
   }
 
+  async addUserToWatch(watchId: string, userId: string): Promise<void> {
+    const q = `insert into user_watch (user_id, watch_id) values ($1, $2)`;
+    const v = [
+      userId,
+      watchId,
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   async listWatchContributors(id: string): Promise<Contributor[]> {
     const q = `
       SELECT ship_user.id as user_id, ship_user.created_at, github_user.github_id, github_user.username, github_user.avatar_url
