@@ -1,16 +1,18 @@
-import * as React from "react";
+import React, { Component } from "react";
+import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
-import { Utilities } from "../../utilities/utilities";
-import { userFeatures } from "../../queries/WatchQueries";
-import { listWatches } from "../../queries/WatchQueries";
-import { userInfo } from "../../queries/UserQueries";
-import { logout } from "../../mutations/GitHubMutations";
+
+import { Utilities } from "@src/utilities/utilities";
+import { userFeatures } from "@src/queries/WatchQueries";
+import { listWatches } from "@src/queries/WatchQueries";
+import { userInfo } from "@src/queries/UserQueries";
+import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
 
-import "../../scss/components/shared/NavBar.scss";
+import "@src/scss/components/shared/NavBar.scss";
 
-export class NavBar extends React.Component {
+export class NavBar extends Component {
   constructor() {
     super();
     this.state = {}
@@ -69,9 +71,11 @@ export class NavBar extends React.Component {
     const { className } = this.props;
     const { user } = this.state;
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
-
+    ` ${className || ""}${isClusterScope && "cluster-scope"}`
     return (
-      <div className={`NavBarWrapper flex flex-auto ${className || ""}${isClusterScope && "cluster-scope"}`}>
+      <div className={classNames("NavBarWrapper flex flex-auto", className, {
+        "cluster-scope": isClusterScope
+      })}>
         <div className="container flex flex1">
           <div className="flex1 justifyContent--flexStart">
             <div className="flex1 flex u-height--full">
