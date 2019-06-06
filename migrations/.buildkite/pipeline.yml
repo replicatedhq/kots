@@ -67,7 +67,7 @@ steps:
     branches: "master"
 
   - commands:
-      - make -c migrations publish-production
+      - make -C migrations publish-production
     branches: "master"
     env:
       AWS_PROFILE: replicated-production
