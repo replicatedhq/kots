@@ -126,13 +126,13 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: #44bb66;
-    color: #44bb66;
+    border-color: #6D7278;
+    color: #6D7278;
     box-shadow: none;
 
     &:not(:disabled):hover {
-      border-color: #5f8268;
-      color: #5f8268;
+      border-color: #484F57;
+      color: #484F57;
     }
   }
 
@@ -146,8 +146,8 @@
   &.secondary:disabled,
   &.secondary[disabled] {
     cursor: not-allowed;
-    color: #a5d8b3;
-    border-color: #a5d8b3;
+    color: #CBD6E3;
+    border-color: #CBD6E3;
   }
 
   &.github {

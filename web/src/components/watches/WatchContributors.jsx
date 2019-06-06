@@ -51,10 +51,10 @@ class WatchContributors extends React.Component {
     return (
       <div className={classNames("WatchContributors--wrapper flex-column", className)}>
         {title && (
-          <div className="flex justifyContent--spaceBetween">
+          <div className="flex">
             <p className="uppercase-title">{title}</p>
             <span
-              className="u-fontSize--small replicated-link" 
+              className="u-fontSize--small replicated-link u-marginLeft--5" 
               onClick={() => this.toggleContributorsModal({ id: watchId, name: watchName })}>
               Manage
             </span>
