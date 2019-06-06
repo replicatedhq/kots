@@ -31,7 +31,7 @@ class DetailPageApplication extends React.Component {
   onFormChange = (event) => {
     const { value, name } = event.target;
     this.setState({
-      [name]: value 
+      [name]: value
     });
   }
 
@@ -163,13 +163,13 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App name</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You can name your app whatever you want.</p>
               <div className="flex">
-                <input 
-                  type="text" 
-                  className="Input" 
-                  placeholder="What is your application called?" 
-                  value={this.state.appName || ""} 
+                <input
+                  type="text"
+                  className="Input"
+                  placeholder="What is your application called?"
+                  value={this.state.appName || ""}
                   name="appName"
-                  onChange={this.onFormChange} 
+                  onChange={this.onFormChange}
                 />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateName} disabled={this.state.nameLoading}>{this.state.nameLoading ? "Saving" : "Save"}</button>
@@ -180,13 +180,13 @@ class DetailPageApplication extends React.Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App icon</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Link to any URI for an app icon.</p>
               <div className="flex">
-                <input 
-                  type="text" 
-                  className="Input" 
-                  placeholder="Add a URL" 
-                  value={this.state.iconUri || ""} 
+                <input
+                  type="text"
+                  className="Input"
+                  placeholder="Add a URL"
+                  value={this.state.iconUri || ""}
                   name="iconUri"
-                  onChange={this.onFormChange} 
+                  onChange={this.onFormChange}
                 />
                 <div className="u-marginLeft--10">
                   <button type="button" className="btn secondary" onClick={this.updateIcon} disabled={this.state.iconLoading}>{this.state.iconLoading ? "Saving" : "Save"}</button>
@@ -276,15 +276,15 @@ class DetailPageApplication extends React.Component {
           <div className="Modal-body flex-column flex1">
             <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Are you sure you want to delete {this.state.appName}?</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To delete {this.state.appName}, type its name in the field below</p>
-            <input 
-              type="text" 
-              className="Input" 
-              placeholder="Type the app name here" 
-              value={this.state.confirmAppName} 
-              onKeyPress={this.handleEnterPress} 
+            <input
+              type="text"
+              className="Input"
+              placeholder="Type the app name here"
+              value={this.state.confirmAppName}
+              onKeyPress={this.handleEnterPress}
               name="confirmAppName"
-              onChange={this.onFormChange} 
-              autoFocus 
+              onChange={this.onFormChange}
+              autoFocus
             />
             {this.state.confirmDeleteErr && <p className="u-fontSize--small u-color--chestnut u-marginTop--10">Names did not match</p>}
             <div className="u-marginTop--20 flex justifyContent--flexEnd">

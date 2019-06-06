@@ -119,7 +119,13 @@ class WatchDetailPage extends React.Component {
 
   render() {
     const { match } = this.props;
-    const { watch, displayRemoveClusterModal, addNewClusterModal, clusterToRemove } = this.state;
+    const {
+      watch,
+      displayRemoveClusterModal,
+      addNewClusterModal,
+      clusterToRemove
+    } = this.state;
+
     const slug = `${match.params.owner}/${match.params.slug}`;
 
     if (!watch || this.props.data.loading) {
@@ -129,9 +135,9 @@ class WatchDetailPage extends React.Component {
         </div>
       );
     }
-    return (  
+    return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
-        <SubNavBar 
+        <SubNavBar
           className="flex flex u-marginBottom--30"
           activeTab={match.params.tab || "app"}
           slug={slug}
@@ -166,9 +172,9 @@ class WatchDetailPage extends React.Component {
             <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} /> } />
             { /* ROUTE UNUSED */}
             <Route exact path="/watch/:owner/:slug/state" render={() =>  <StateFileViewer headerText="Edit your application’s state.json file" /> } />
-            
-            <Route exact path="/watch/:owner/:slug/version-history" render={() => 
-              <WatchVersionHistory 
+
+            <Route exact path="/watch/:owner/:slug/version-history" render={() =>
+              <WatchVersionHistory
                 watch={watch}
               />
             }/>
