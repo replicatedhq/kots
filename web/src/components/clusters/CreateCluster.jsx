@@ -80,7 +80,7 @@ export class CreateCluster extends React.Component {
     if (configStep) {
       this.setState({
         ...this.state,
-        title: clusterName,
+        title: clusterName || "",
         opsType: {
           value: "git",
           label: "GitOps"
