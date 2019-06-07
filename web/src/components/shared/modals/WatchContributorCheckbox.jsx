@@ -11,7 +11,7 @@ export const WatchContributorCheckbox = ({ handleCheckboxChange, contributors, g
           checked={contributors[item.login] && contributors[item.login].isActive}
           value={item.login}
           onChange={(e) => { handleCheckboxChange(item.login, e) }}
-          disabled={githubLogin.toLowerCase() === item.login}
+          disabled={githubLogin && githubLogin.toLowerCase() === item.login}
         />
       </div>
       <label htmlFor={`${item.login}`} className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
@@ -24,4 +24,4 @@ export const WatchContributorCheckbox = ({ handleCheckboxChange, contributors, g
       </label>
     </div>
   </div>
-)
+);
