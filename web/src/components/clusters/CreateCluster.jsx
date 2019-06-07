@@ -75,12 +75,12 @@ export class CreateCluster extends React.Component {
     const { search } = this.props.location;
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
-
-    // TODO: recover and set desired cluster title from localStorage
+    const clusterName = queryParams.get("name");
 
     if (configStep) {
       this.setState({
         ...this.state,
+        title: clusterName,
         opsType: {
           value: "git",
           label: "GitOps"

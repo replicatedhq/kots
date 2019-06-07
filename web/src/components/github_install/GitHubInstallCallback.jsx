@@ -29,29 +29,9 @@ class GitHubInstallCallback extends React.Component {
   }
 
   async componentDidMount() {
-    // const { search } = this.props.location;
-    // const queryParams = new URLSearchParams(search);
-    // const code = queryParams.get("code");
-    // const state = queryParams.get("state");
-    // if (code && state) {
-    //   await this.props.createGithubAuthToken(code, state)
-    //     .then((res) => {
-    //       if (Utilities.localStorageEnabled()) {
-    //         window.localStorage.setItem("token", res.data.createGithubAuthToken.access_token);
-    //         this.getUser();
-    //       }
-    //     })
-    //     .catch((err) => {
-    //       err.graphQLErrors.map(({ code }) => {
-    //         if (code === "Ship Cloud Access Denied") {
-    //           this.props.history.push("/coming-soon");
-    //         } else {
-    //           this.setState({ isLoading: false });
-    //         }
-    //       });
-    //       return;
-    //     });
-    // }
+    const { history } = this.props;
+    const redirectUri = Utilities.getCookieValue("appRedirect");
+    history.replace(redirectUri)
   }
 
   render() {
