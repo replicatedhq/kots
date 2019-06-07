@@ -4,7 +4,8 @@ import { graphql, compose, withApollo } from "react-apollo";
 import omit from "lodash/omit";
 import Modal from "react-modal";
 
-import { getWatch } from "../../queries/WatchQueries";
+import withTheme from "@src/components/context/withTheme";
+import { getWatch } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import Loader from "../shared/Loader";
@@ -39,11 +40,22 @@ class WatchDetailPage extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
+    const { getThemeState, setThemeState } = this.props;
     const { getWatch } = this.props.data;
+    const { watch } = this.state;
     if (getWatch !== lastProps.data.getWatch && getWatch) {
       this.setState({ watch: omit(getWatch, ["__typename"]) });
       if (getWatch.cluster) {
         this.props.history.replace(`/watch/${getWatch.slug}/state`);
+      }
+    }
+    if (watch?.watchIcon) {
+      const { navbarLogo } = getThemeState();
+      console.log(navbarLogo);
+      if (navbarLogo === null || navbarLogo !== watch.watchIcon) {
+        setThemeState({
+          navbarLogo: watch.watchIcon
+        });
       }
     }
   }
@@ -57,6 +69,7 @@ class WatchDetailPage extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.interval);
+    this.props.clearThemeState();
   }
 
   addClusterToWatch = (clusterId, githubPath) => {
@@ -243,6 +256,7 @@ class WatchDetailPage extends React.Component {
 export default compose(
   withApollo,
   withRouter,
+  withTheme,
   graphql(
     getWatch, {
       options: ({ match }) => ({
@@ -261,4 +275,5 @@ export default compose(
       deleteWatch: (watchId) => mutate({ variables: { watchId }})
     })
   })
+
 )(WatchDetailPage);

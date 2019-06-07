@@ -8,14 +8,22 @@ dayjs.extend(utc);
 dayjs.extend(relativeTime);
 
 /**
- * 
- * @param {Object} - 
- * @return {String} - 
+ *
+ * @param {Object} - gitOpsRef - Object from GraphQL DB
+ * @return {String} - "git" if a github deployment, otherwise "ship"
  */
 export function getClusterType(gitOpsRef) {
-  return gitOpsRef 
-    ? "git" 
+  return gitOpsRef
+    ? "git"
     : "ship";
+}
+
+/**
+ * @param {Object} params - React Router History params object
+ * @return {String} - slug of watch
+ */
+export function getCurrentWatch(params) {
+  return params?.slug?.params?.slug;
 }
 
 export const Utilities = {

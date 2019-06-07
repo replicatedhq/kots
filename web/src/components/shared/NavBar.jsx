@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { PureComponent } from "react";
 import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
@@ -12,7 +12,7 @@ import Avatar from "../shared/Avatar";
 
 import "@src/scss/components/shared/NavBar.scss";
 
-export class NavBar extends Component {
+export class NavBar extends PureComponent {
   constructor() {
     super();
     this.state = {}
@@ -68,10 +68,10 @@ export class NavBar extends Component {
   }
 
   render() {
-    const { className } = this.props;
+    const { className, logo } = this.props;
     const { user } = this.state;
+
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
-    ` ${className || ""}${isClusterScope && "cluster-scope"}`
     return (
       <div className={classNames("NavBarWrapper flex flex-auto", className, {
         "cluster-scope": isClusterScope
@@ -82,37 +82,41 @@ export class NavBar extends Component {
               <div className="flex flex-auto">
                 <div className="HeaderLogo-wrapper flex alignItems--center flex1 flex-verticalCenter u-position--relative">
                   <div className="HeaderLogo">
-                    <Link to={`${isClusterScope ? "/clusterscope" : "/"}`} tabIndex="-1">
-                      <span className="logo icon clickable"></span>
-                      <span className="text flex-column justifyContent--center">
-                        { isClusterScope ?
-                          <span>
-                            ClusterScope
-                          </span> :
-                          <span>Replicated Ship</span>
-                        }
+                    <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
+                      {logo
+                        ? <img className="watch-logo clickable" src={logo} />
+                        : <span className="logo icon clickable" />
+                      }
+                      <span className="text u-color--tuna flex-column justifyContent--center">
+                        <span>
+                          {isClusterScope
+                            ? "ClusterScope"
+                            : "Replicated Ship"
+                          }
+                        </span>
                       </span>
                     </Link>
                   </div>
                 </div>
-                {Utilities.isLoggedIn() ?
+                {Utilities.isLoggedIn() && (
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToWatches}>
-                        <span className="text u-color--white u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Watched apps</span>
+                        <span className="text u-color--tuna u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                          <span>Clusters</span>
                         </span>
                       </span>
                     </div>
                     <div className="NavItem u-position--relative flex ${clustersEnabled">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
-                        <span className="text u-color--white u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Clusters</span>
+                        <span className="text u-color--tuna u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                          <span>Team</span>
                         </span>
                       </span>
                     </div>
                   </div>
-                  : null}
+                  )
+                }
               </div>
               {this.props.location.pathname === "/coming-soon" ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">

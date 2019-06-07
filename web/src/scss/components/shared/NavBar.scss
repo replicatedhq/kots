@@ -3,7 +3,7 @@
 .NavBarWrapper {
   width: 100%;
   padding: 0;
-  background-color: #44BB66;
+  background-color: #FFFFFF;
   box-shadow: 0 1px 0 #DFDFDF;
   margin-bottom: 0;
   min-height: 50px;
@@ -35,18 +35,22 @@
 .HeaderLogo .text {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
   margin-left: 10px;
+}
+
+.watch-logo {
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
 }
 
 /* Nav Items */
 
-.NavItem, 
+.NavItem,
 .NavItem a {
   padding: 0;
   margin: 0;
   cursor: pointer;
-  color: rgba(255, 255,255,.85);
   font-size: 14px;
   font-weight: 500;
   line-height: 14px;
@@ -75,5 +79,5 @@
 
 /* ≥ 1024px */
 @media screen and (min-width: 64em) {
-  
+
 }
