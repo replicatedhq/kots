@@ -5,7 +5,11 @@ import omit from "lodash/omit";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
+<<<<<<< HEAD
 import { getWatch, listWatches } from "@src/queries/WatchQueries";
+=======
+import { getWatch } from "@src/queries/WatchQueries";
+>>>>>>> Make logo at top change when you view a watch
 import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -54,6 +58,10 @@ class WatchDetailPage extends React.Component {
     }
     if (watch?.watchIcon) {
       const { navbarLogo } = getThemeState();
+<<<<<<< HEAD
+=======
+      console.log(navbarLogo);
+>>>>>>> Make logo at top change when you view a watch
       if (navbarLogo === null || navbarLogo !== watch.watchIcon) {
         setThemeState({
           navbarLogo: watch.watchIcon
@@ -272,12 +280,15 @@ export default compose(
   withApollo,
   withRouter,
   withTheme,
+<<<<<<< HEAD
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
       fetchPolicy: "network-only"
     }
   }),
+=======
+>>>>>>> Make logo at top change when you view a watch
   graphql(
     getWatch, {
       options: ({ match }) => ({
