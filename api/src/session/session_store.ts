@@ -119,7 +119,7 @@ export class SessionStore {
     const result = await this.pool.query(q, v);
 
     const session: Session = new Session();
-    session.id = result.rows[0].id;
+    session.sessionId = result.rows[0].id;
     session.userId = result.rows[0].user_id;
     session.metadata = result.rows[0].metadata;
     session.expiresAt = result.rows[0].expire_at;
@@ -150,7 +150,7 @@ export class SessionStore {
           metadata: JSON.parse(session.metadata),
           expiration: session.expiresAt,
           userId: session.userId,
-          sessionId: session.id,
+          sessionId: session.sessionId,
           type: decoded.type,
         };
       } catch (e) {

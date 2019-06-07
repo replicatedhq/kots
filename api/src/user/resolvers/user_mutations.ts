@@ -91,7 +91,7 @@ export function UserMutations(stores: Stores, params: Params) {
     },
 
     async logout(root: any, args: any, context: Context): Promise<void> {
-      await stores.sessionStore.deleteSession(context.session.id);
+      await stores.sessionStore.deleteSession(context.session.sessionId);
     },
   }
 }
