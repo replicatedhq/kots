@@ -282,12 +282,15 @@ export default compose(
   withApollo,
   withRouter,
   withTheme,
+<<<<<<< HEAD
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
       fetchPolicy: "network-only"
     }
   }),
+=======
+>>>>>>> Make logo at top change when you view a watch
   graphql(
     getWatch, {
       options: ({ match }) => ({
