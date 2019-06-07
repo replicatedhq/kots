@@ -59,18 +59,18 @@ export function getApplicationType(watch) {
   }
 }
 
- /** 
- * @param {String} - 
- * @return {Object} - 
+ /**
+ * @param {String} -
+ * @return {Object} -
  */
 export function getAppData(metadata) {
   return JSON.parse(metadata);
 }
 
 /**
- * 
- * @param {String} - 
- * @return {String} - 
+ *
+ * @param {String} -
+ * @return {String} -
  */
 export function getReadableLicenseType(type) {
   let readableType = "Development";
