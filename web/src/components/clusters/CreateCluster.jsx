@@ -18,12 +18,24 @@ export class CreateCluster extends React.Component {
     saving: false,
     fetchError: false,
     createSuccess: false,
-    clusterToken: ""
+    clusterToken: "",
+    createClusterErr: undefined
   };
 
   onClickCreate = () => {
+    this.setState({ createClusterErr: undefined, saving: true });
+
+    if (!this.state.title.length) {
+      return this.setState({
+        createClusterErr: {
+          message: "In order to create a cluster, you must give it a name."
+        },
+        saving: false
+      });
+    }
+
     if (!this.state.createSuccess && this.state.opsType.value === "git") {
-      return this.setState({ createSuccess: true });
+      return this.setState({ createSuccess: true, saving: false });
     }
 
     this.props.client.mutate({
@@ -63,6 +75,8 @@ export class CreateCluster extends React.Component {
     const { search } = this.props.location;
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
+
+    // TODO: recover and set desired cluster title from localStorage
 
     if (configStep) {
       this.setState({
@@ -131,6 +145,7 @@ export class CreateCluster extends React.Component {
                 <div className="flex flex1">
                   <input value={this.state.title} onChange={(e) => { this.onTitleChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="Production" />
                 </div>
+                {this.state.createClusterErr && <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{this.state.createClusterErr.message}</p>}
               </div>
 
               <div className="flex-column flex1 u-marginTop--30">
