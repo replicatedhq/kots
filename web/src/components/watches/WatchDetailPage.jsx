@@ -242,8 +242,8 @@ class WatchDetailPage extends React.Component {
             className="AddNewClusterModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.state.selectedWatchName} to a deployment cluster</h2>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing clusters to deploy to.</p>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.state.selectedWatchName} to a new downstream</h2>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
               <AddClusterModal
                 onAddCluster={this.addClusterToWatch}
                 onRequestClose={this.closeAddClusterModal}
@@ -262,7 +262,7 @@ class WatchDetailPage extends React.Component {
             className="RemoveClusterFromWatchModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from your {clusterToRemove.cluster.title} cluster</h2>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.cluster.title}</h2>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.cluster.title}.</p>
               <div className="u-marginTop--10 flex">
                 <button onClick={() => this.toggleDeleteDeploymentModal({},"")} className="btn secondary u-marginRight--10">Cancel</button>

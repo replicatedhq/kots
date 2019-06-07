@@ -155,11 +155,14 @@ class DetailPageApplication extends React.Component {
   }
 
   render() {
+<<<<<<< HEAD
     const { isDownloadingAssets, isDownloadingMidstreamAssets } = this.state;
     const { watch, updateCallback } = this.props;
+=======
+    const { watch } = this.props;
+>>>>>>> updates to downstreams tab and copy updates
     const childWatches = watch.watches;
     const appMeta = getAppData(watch.metadata);
-    console.log(appMeta);
 
     // TODO: We shuold probably return something different if it never expires to avoid this hack string check.
     const expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
@@ -179,7 +182,7 @@ class DetailPageApplication extends React.Component {
                       <span className="u-marginRight--30">Expires: <span className="u-fontWeight--bold u-color--tundora">{expDate}</span></span>
                       <span>Type: <span className="u-fontWeight--bold u-color--tundora">{getReadableLicenseType(appMeta.license.type)}</span></span>
                     </div>
-                    <Link to={`/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
+                    <Link to={`/watch/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
                   </div>
                 }
               </div>
@@ -214,7 +217,7 @@ class DetailPageApplication extends React.Component {
                 })}
               </div>
               <div className="u-marginTop--10 u-paddingTop--5">
-                <Link to={`/${watch.slug}/deployment-clusters`} className="btn secondary">See downstreams</Link>
+                <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
               </div>
             </div>
 
@@ -223,14 +226,14 @@ class DetailPageApplication extends React.Component {
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Get help with your application</p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Generate a support bundle for your application to send to the vendor.</p>
                 <div className="u-marginTop--10">
-                  <Link to={`/`} className="btn secondary">Generate a support bundle</Link>
+                  <Link to={`/watch/${watch.slug}/troubleshoot`} className="btn secondary">Generate a support bundle</Link>
                 </div>
               </div>
               <div className="flex1 u-paddingLeft--15">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application config</p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Quickly see a ready-only preview of your application config for reference.</p>
                 <div className="u-marginTop--10">
-                  <Link to={`/`} className="btn secondary">See application config</Link>
+                  <Link to={`/watch/${watch.slug}/config`} className="btn secondary">See application config</Link>
                 </div>
               </div>
             </div>

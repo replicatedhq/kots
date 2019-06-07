@@ -62,7 +62,7 @@ class WatchContributors extends React.Component {
           
         ) }
         <div className="flex-column">
-          <p className="u-fontSize--jumbo1 u-fontWeight--bold u-color--tuna u-marginTop--15">Individuals</p>
+          <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginTop--15">Individuals</p>
           <div className="flex u-marginTop--15">
             {contributors && contributors.length && _contributors.map((contributor, i) => (
               <div key={i} className="watch-icon-wrapper u-cursor--pointer" onClick={() => this.toggleContributorsModal({ id: watchId, name: watchName })} data-tip={`${contributor.login}-${i}`} data-for={`${contributor.login}-${i}`}>

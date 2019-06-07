@@ -2,18 +2,25 @@ import React from "react";
 import classNames from "classnames";
 import truncateMiddle from "truncate-middle";
 import { Link } from "react-router-dom";
-
+import { Utilities } from "@src/utilities/utilities";
 import "../../scss/components/clusters/ClusterCard.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
 export default class DeploymentClusters extends React.Component {
 
   state = {
-    pendingUri: ""
+    pendingUri: "",
+    isDownloadingAssets: false
   }
 
   installLatestVersion = (watchId, sequence) => {
     this.props.installLatestVersion(watchId, sequence);
+  }
+
+  downloadAssetsForCluster = async (watchId) => {
+    this.setState({ isDownloadingAssets: true });
+    await Utilities.handleDownload(watchId);
+    this.setState({ isDownloadingAssets: false });
   }
 
   render() {
@@ -25,8 +32,9 @@ export default class DeploymentClusters extends React.Component {
         {childWatches && childWatches.length ?
           <div className="flex-column">
             {appDetailPage ?
-              <div className="flex">
-                <span className="u-marginBottom--20 replicated-link u-fontSize--normal" onClick={handleAddNewCluster}>Deploy {parentClusterName} to a new cluster</span>
+              <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--20">
+                <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Downstream deployments</p>
+                <button type="button" className="btn secondary" onClick={handleAddNewCluster}>Deploy a new downstream</button>
               </div>
             :
               <div className="flex">
@@ -45,7 +53,10 @@ export default class DeploymentClusters extends React.Component {
                     <div className="flex u-marginBottom--5">
                       <span className={`normal u-marginRight--5 icon clusterType ${type}`}></span>
                       <div className="flex1 justifyContent--center">
-                        <p className="u-fontWeight--bold u-fontSize--large u-color--tundora">{cluster && cluster.title || "Deployment cluster"}</p>
+                        <div className="flex justifyContent--spaceBetween">
+                          <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora">{cluster && cluster.title || "Downstream deployment"}</p>
+                          <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentClusterName)}></span>
+                        </div>
                         <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5">{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
                         <Link to={`/watch/${childWatch.slug}/state`} className="replicated-link u-marginTop--5 u-fontSize--small u-lineHeight--normal">View state.json</Link>
                       </div>
@@ -93,10 +104,10 @@ export default class DeploymentClusters extends React.Component {
                     <div className="flex flex1 alignItems--flexEnd">
                       <div className="flex u-marginTop--20 u-borderTop--gray u-width--full">
                         <div className="flex1 flex card-action-wrapper u-cursor--pointer">
-                          <span className="flex1 u-marginRight--5 u-color--red card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={() => { toggleDeleteDeploymentModal(childWatch, parentClusterName) }}>Delete deployment</span>
+                          <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={() => { this.downloadAssetsForCluster(childWatch.id) }}>Download assets</span>
                         </div>
                         <div className="flex1 flex card-action-wrapper u-cursor--pointer">
-                          <span onClick={this.props.preparingUpdate === childWatch.cluster.id ? () => { return } : () => this.props.onEditApplication(childWatch)} className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center">{this.props.preparingUpdate === childWatch.cluster.id ? "Preparing update" : "Customize deployment"}</span>
+                          <span onClick={this.props.preparingUpdate === childWatch.cluster.id ? () => { return } : () => this.props.onEditApplication(childWatch)} className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center">{this.props.preparingUpdate === childWatch.cluster.id ? "Preparing" : "Edit downstream"}</span>
                         </div>
                       </div>
                     </div>

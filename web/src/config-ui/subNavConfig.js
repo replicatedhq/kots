@@ -15,9 +15,9 @@ export default [
     to: slug => `/watch/${slug}/version-history`
   },
   {
-    tabName: "deployment-clusters",
-    displayName: "Clusters",
-    to: slug => `/watch/${slug}/deployment-clusters`,
+    tabName: "downstreams",
+    displayName: "Downstreams",
+    to: slug => `/watch/${slug}/downstreams`,
     displayRule: watch => {
       return !watch.cluster;
     }
