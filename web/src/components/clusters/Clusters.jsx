@@ -276,7 +276,7 @@ export class Clusters extends React.Component {
             <div className="Modal-body">
               <h2 className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Are you sure you want to delete {this.state.clusterToManage.title}</h2>
                 <div className="flex-column flex1">
-                  <p className="u-fontWeight--medium u-fontSize--normal u-color--dustyGray u-lineHeight--more u-marginTop--10">You cannont undo this action. Clusters that have applications deployed to them cannot be deleted.</p>
+                  <p className="u-fontWeight--medium u-fontSize--normal u-color--dustyGray u-lineHeight--more u-marginTop--10">You cannot undo this action. Clusters that have applications deployed to them cannot be deleted.</p>
                   {this.state.deleteErr && this.state.deleteErr.length &&
                     <p className="u-fontWeight--medium u-fontSize--normal u-color--red u-lineHeight--more u-marginTop--10">{this.state.deleteErr}</p>
                   }
