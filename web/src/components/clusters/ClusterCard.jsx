@@ -62,11 +62,7 @@ export default class ClusterCard extends React.Component {
               </div>
             }
             <div className="flex flex-auto u-marginTop--10 u-marginBottom--5 u-paddingTop--5">
-              {type === "ship" ?
-                <button className="btn secondary small" onClick={this.toggleInstallShipModal}>Install cluster</button>
-              :
-                <div style={{height: "25px"}} />
-              }
+              {type === "ship" && <button className="btn secondary small" onClick={this.toggleInstallShipModal}>Install cluster</button>}
             </div>
           </div>
           <div className="flex-auto">
