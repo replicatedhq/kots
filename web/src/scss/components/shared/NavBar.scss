@@ -27,7 +27,7 @@
 /* Header Logo */
 
 .HeaderLogo-wrapper {
-  margin-right: 50px;
+  margin-right: 15px;
 }
 .HeaderLogo a {
   display: flex;
@@ -49,6 +49,7 @@
   height: 30px;
   width: 30px;
   border-radius: 50%;
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
 }
 
 /* Nav Items */
@@ -66,17 +67,14 @@
   user-select: none;
 
   &:hover {
-    color: #4A4A4A;
+    color: #323232;
     text-decoration: none;
   }
 }
 
 .left-items {
   .NavItem {
-    padding: 0 12px;
-    &:hover {
-      background: rgba(0,0,0,.05);
-    }
+    padding: 0 15px;
   }
 }
 

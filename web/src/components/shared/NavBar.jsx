@@ -67,6 +67,18 @@ export class NavBar extends PureComponent {
     }
   }
 
+  handleGoToTeams = () => {
+    console.log("to be implemented")
+    // if (this.props.location.pathname === "/teams") {
+    //   this.props.client.query({
+    //     query: listWatches,
+    //     fetchPolicy: "network-only",
+    //   });
+    // } else {
+    //   this.props.history.push("/teams");
+    // }
+  }
+
   render() {
     const { className, logo } = this.props;
     const { user } = this.state;
@@ -87,30 +99,25 @@ export class NavBar extends PureComponent {
                         ? <img className="watch-logo clickable" src={logo} />
                         : <span className="logo icon clickable" />
                       }
-                      <span className="text u-color--tuna flex-column justifyContent--center">
-                        <span>
-                          {isClusterScope
-                            ? "ClusterScope"
-                            : "Replicated Ship"
-                          }
-                        </span>
-                      </span>
+                      {isClusterScope &&
+                        <span className="text u-color--tuna flex-column justifyContent--center">ClusterScope</span>
+                      }
                     </Link>
                   </div>
                 </div>
                 {Utilities.isLoggedIn() && (
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToWatches}>
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Clusters</span>
                         </span>
                       </span>
                     </div>
                     <div className="NavItem u-position--relative flex ${clustersEnabled">
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToTeams}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Team</span>
+                          <span>Teams</span>
                         </span>
                       </span>
                     </div>

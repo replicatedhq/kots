@@ -97,5 +97,19 @@
     }
 
   }
+
+  .CreateCluster--wrapper {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+    code {
+      white-space: pre-wrap;
+      padding: 10px;
+      background: #4A4A4A;
+      color: white;
+      margin: 12px 0;
+    }
+  }
+
 }
 
