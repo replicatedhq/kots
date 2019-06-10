@@ -1,0 +1,25 @@
+.sidebar {
+  padding: 16px;
+  background-color: #F8F8F8;
+  box-shadow: inset -1px 0 0 0 #C4C8CA;
+}
+
+.sidebar-link {
+  padding: 8px;
+  margin-bottom: 15px;
+  background-color: #FFFFFF;
+  border: 1px solid #C4C8CA;
+  border-radius: 10px;
+
+  &.selected {
+    background-color: #F5F8FC;
+    border-color: #337AB7
+  }
+}
+
+.sidebar-link-icon {
+  height: 40px;
+  width: 40px;
+  margin-right: 10px;
+  border-radius: 40px;
+}
