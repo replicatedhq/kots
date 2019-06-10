@@ -40,7 +40,7 @@ function SideBar(props) {
                       "u-color--orange": isBehind
                     })}>
                         { isBehind
-                            ? `${isBehind} versions behind`
+                            ? `${isBehind} ${isBehind >= 2 || typeof isBehind === 'string' ? "versions" : "version"} behind`
                             : "Up to date"
                         }
                       </span>
