@@ -52,7 +52,7 @@ export default class CardRightSideBar extends React.Component {
       <div className="installed-watch-sidebar flex-column u-width--full">
         <div className="contributors flex-column u-marginBottom--20">
           <WatchContributors
-            title="manage contributors"
+            title="contributors"
             contributors={watch.contributors || []}
             watchName={watch.watchName}
             watchId={watch.id}
@@ -78,7 +78,7 @@ export default class CardRightSideBar extends React.Component {
                 />
               </div>
               <div className="u-marginTop--10">
-                <button disabled={this.state.downloadCluster.value === ""} onClick={() => this.downloadAssetsForCluster()} className="btn green secondary">Download assets</button>
+                <button disabled={this.state.downloadCluster.value === ""} onClick={() => this.downloadAssetsForCluster()} className="btn secondary">Download assets</button>
               </div>
             </div>
           </div>

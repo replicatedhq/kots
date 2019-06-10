@@ -79,6 +79,10 @@ export class NavBar extends PureComponent {
     // }
   }
 
+  handleAddNewApplication = () => {
+    this.props.history.push("/watch/create/init");
+  }
+
   render() {
     const { className, logo } = this.props;
     const { user } = this.state;
@@ -125,17 +129,10 @@ export class NavBar extends PureComponent {
                   )
                 }
               </div>
-              {this.props.location.pathname === "/coming-soon" ?
-                <div className="flex flex1 justifyContent--flexEnd right-items">
-                  <div className="flex-column flex-auto justifyContent--center">
-                    <p className="NavItem" onClick={this.handleLogOut}>Log out</p>
-                  </div>
-                </div>
-                : null}
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
                   <div className="flex-column flex-auto u-marginRight--5 justifyContent--center">
-                    <Link className="NavBar-add-app u-color--chateauGreen u-fontSize--normal u-fontWeight--bold u-marginRight--10" to="/watch/create/init">
+                    <Link className="btn secondary green rounded" to="/watch/create/init">
                       Add a new application
                     </Link>
                   </div>

@@ -7,6 +7,7 @@ import { validateUpstreamURL } from "../queries/GitHubQueries";
 import ShipLoading from "./ShipLoading";
 import { Utilities } from "../utilities/utilities";
 import Modal from "react-modal";
+import "../scss/components/Login.scss";
 
 export class ShipInitPre extends React.Component {
   static propTypes = {

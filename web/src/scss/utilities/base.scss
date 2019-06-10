@@ -60,6 +60,39 @@ code {
   opacity: 0;
 }
 
+.init-pre-wrapper {
+  max-width: 510px;
+  width: 100%;
+}
+.init-unfork-wrapper {
+  max-width: 825px;
+  width: 100%;
+  .Input {
+    height: 40px;
+  }
+}
+.unfork-callout {
+  max-width: 218px;
+  min-width: 218px;
+  -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
+  -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
+  background-color: #FFFFFF;
+  border-radius: 4px;
+  padding: 14px;
+  margin-right: 20px;
+}
+
+.unforkLink {
+  .arrow {
+    top: 2px;
+    left: 3px;
+  }
+  &:hover .arrow {
+    left: 5px;
+  }
+}
+
 /*
 Apply this class to any icon using main_spritesheet. From there
 all you need to do is supply a `width: [value]` `height: [value]`

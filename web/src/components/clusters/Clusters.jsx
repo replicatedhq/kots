@@ -13,6 +13,7 @@ import { updateCluster, deleteCluster } from "../../mutations/ClusterMutations";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
+import "../../scss/components/clusters/CreateCluster.scss";
 
 export class Clusters extends React.Component {
   static propTypes = {

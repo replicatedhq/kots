@@ -217,8 +217,6 @@ export class WatchedApps extends React.Component {
         <div className="flex-column flex1">
           <ContentHeader
             title="Installed 3rd-party applications"
-            buttonText="Install a new application"
-            onClick={() => this.props.history.push("/watch/create/init")}
             searchCallback={(watches, pendingWatches) => { this.setState({ watches, pendingWatches }) }}
             showUnfork
           />

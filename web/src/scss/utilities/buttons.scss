@@ -32,6 +32,10 @@
     font-size: 14px;
   }
 
+  &.rounded {
+    border-radius: 60px;
+  }
+
   &.auth {
     padding: 12px 20px 11px;
     border-radius: 40px;
@@ -133,6 +137,20 @@
     &:not(:disabled):hover {
       border-color: #484F57;
       color: #484F57;
+    }
+  }
+
+  &.secondary.green {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #44bb66;
+    color: #44bb66;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #2F8D4A;
+      color: #2F8D4A;
     }
   }
 

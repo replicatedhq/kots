@@ -44,7 +44,7 @@ class GitHubAuthCallback extends React.Component {
         .catch((err) => {
           err.graphQLErrors.map(({ code }) => {
             if (code === "Ship Cloud Access Denied") {
-              this.props.history.push("/coming-soon");
+              this.props.history.push("/login");
             } else {
               this.setState({ isLoading: false });
             }

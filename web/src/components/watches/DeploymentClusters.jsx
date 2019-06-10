@@ -131,7 +131,7 @@ export default class DeploymentClusters extends React.Component {
                 <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{parentClusterName} has been configured but still needs to be deployed. Select a cluster you would like to deploy {parentClusterName} to.</p>
               </div>
               <div className="u-marginTop--20">
-                <button className="btn primary" onClick={handleAddNewCluster}>Add a deployment cluster</button>
+                <button className="btn secondary" onClick={handleAddNewCluster}>Add a deployment cluster</button>
               </div>
             </div>
           </div>
