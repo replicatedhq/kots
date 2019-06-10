@@ -7,7 +7,7 @@ interface Claims {
 }
 
 export class Session {
-  public id: string;
+  public sessionId: string;
   public userId: string;
   public expiresAt: Date;
   public metadata: string;
@@ -16,7 +16,7 @@ export class Session {
 
   public async getToken(): Promise<string> {
     const claims: Claims = {
-      session_id: this.id,
+      session_id: this.sessionId,
       user_id: this.userId,
     };
 

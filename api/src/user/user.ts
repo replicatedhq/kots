@@ -30,3 +30,7 @@ export interface ShipUser {
   email: string;
   passwordCrypt: string;
 }
+
+export interface AccessToken {
+  access_token: string;
+}

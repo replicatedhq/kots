@@ -138,7 +138,6 @@ export class UserStore {
           new Date(),
       ];
       await pg.query(q, v);
-
       q = `insert into github_user (user_id, username, github_id, avatar_url, email) values ($1, $2, $3, $4, $5)`;
       v = [
         id,

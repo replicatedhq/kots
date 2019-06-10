@@ -19,6 +19,7 @@ import "./scss/index.scss";
 const Login = lazy(() => import("./components/Login"));
 const Signup = lazy(() => import("./components/Signup"));
 const GitHubAuth = lazy(() => import("./components/github_auth/GitHubAuth"));
+const GitHubInstall = lazy(() => import("./components/github_install/GitHubInstall"));
 const Clusters = lazy(() => import("./components/clusters/Clusters"));
 const CreateCluster = lazy(() => import("./components/clusters/CreateCluster"));
 const WatchedApps = lazy(() => import("./components/watches/WatchedApps"));
@@ -115,6 +116,7 @@ class Root extends React.Component {
                     <Route exact path="/login" component={Login} />
                     <Route exact path="/signup" component={Signup} />
                     <Route path="/auth/github" component={GitHubAuth} />
+                    <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/coming-soon" component={ComingSoon} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />

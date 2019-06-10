@@ -16,7 +16,7 @@ export function ClusterQueries(stores: Stores) {
     },
 
     async getGitHubInstallationId(root: any, args: any, context: Context) {
-      const gitSession = await stores.sessionStore.getGithubSession(context.session.id);
+      const gitSession = await stores.sessionStore.getGithubSession(context.session.sessionId);
       return gitSession.metadata;
     }
   }
