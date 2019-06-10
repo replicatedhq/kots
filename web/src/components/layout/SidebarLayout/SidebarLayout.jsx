@@ -6,17 +6,12 @@ export default function SidebarLayout(props) {
     className,
     children,
     sidebar,
-    sidebarProps = {},
     condition = true
   } = props;
 
   return (
     <div className={classNames(className)}>
-      {condition && (
-        <div className="flex">
-          {sidebar}
-        </div>
-      )}
+      {Boolean(condition) && sidebar }
       {children}
     </div>
   );

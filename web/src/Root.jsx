@@ -84,7 +84,6 @@ class Root extends React.Component {
    * @param {Function} callback - callback to run like in setState()'s callback
    */
   setThemeState = (newThemeState, callback) => {
-    console.log("setnewThemeState with", newThemeState);
     this.setState({
       themeState: { ...newThemeState }
     }, callback);
