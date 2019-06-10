@@ -19,7 +19,7 @@ import "./scss/index.scss";
 const Login = lazy(() => import("./components/Login"));
 const Signup = lazy(() => import("./components/Signup"));
 const GitHubAuth = lazy(() => import("./components/github_auth/GitHubAuth"));
-// const GitHubInstall = lazy(() => import("./components/github_install/GitHubInstall"));
+const GitHubInstall = lazy(() => import("./components/github_install/GitHubInstall"));
 const Clusters = lazy(() => import("./components/clusters/Clusters"));
 const CreateCluster = lazy(() => import("./components/clusters/CreateCluster"));
 const WatchedApps = lazy(() => import("./components/watches/WatchedApps"));
