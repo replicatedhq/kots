@@ -97,9 +97,19 @@ class Root extends React.Component {
     return this.state.themeState;
   }
 
+  /**
+   * Clears the current theme state to nothing
+   */
   clearThemeState = () => {
+    /**
+     * Reference object to a blank theme state
+     */
+    const EMPTY_THEME_STATE = {
+      navbarLogo: null
+    };
+
     this.setState({
-      themeState: { ...{ navbarLogo: null} }
+      themeState: { ...EMPTY_THEME_STATE }
     });
   }
 

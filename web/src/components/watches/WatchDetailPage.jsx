@@ -153,7 +153,7 @@ class WatchDetailPage extends React.Component {
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <SidebarLayout
           className="flex u-minHeight--full"
-          condition={this.props.listWatchesQuery?.listWatches?.length}
+          condition={this.props.listWatchesQuery?.listWatches?.length > 1}
           sidebar={(
             <SideBar
               className="flex flex1"
@@ -162,9 +162,9 @@ class WatchDetailPage extends React.Component {
             />
           )}
         >
-          <div className="flex-column">
+          <div className="flex-column flex3 u-width--full">
             <SubNavBar
-              className="flex flex u-marginBottom--30"
+              className="flex u-marginBottom--30"
               activeTab={match.params.tab || "app"}
               slug={slug}
               watch={watch}

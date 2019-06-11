@@ -127,6 +127,11 @@ export class NavBar extends PureComponent {
                 : null}
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
+                  <div className="flex-column flex-auto u-marginRight--5 justifyContent--center">
+                    <Link className="NavBar-add-app u-color--chateauGreen u-fontSize--normal u-fontWeight--bold u-marginRight--10" to="/watch/create/init">
+                      Add a new application
+                    </Link>
+                  </div>
                   <div className="flex-column flex-auto justifyContent--center">
                     <p data-qa="Navbar--logOutButton" className="NavItem" onClick={this.handleLogOut}>Log out</p>
                   </div>

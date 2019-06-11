@@ -134,7 +134,7 @@ export class WatchedApps extends React.Component {
     });
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     // If redirect from github
     const { location } = this.props;
     const _search = location && location.search;
@@ -147,10 +147,29 @@ export class WatchedApps extends React.Component {
         this.props.history.push(`${appRedirect}?configure`);
       }
     }
+
   }
 
   componentDidUpdate(lastProps) {
     const { listWatchesQuery, pendingWatchesQuery, history, location } = this.props;
+
+
+    // HACK:
+    // This view is no longer being used!
+    // When the watches are fetched, this condition replaces the current view
+    // with the WatchDetailPage.jsx view
+    if (listWatchesQuery.loading) {
+      return;
+    }
+
+    if (listWatchesQuery?.listWatches?.length) {
+      const [firstWatch] = listWatchesQuery.listWatches;
+      history.replace(`/watch/${firstWatch.slug}`);
+    } else {
+      history.replace("/watch/create/init");
+    }
+
+    // Looks like this stuff isn't really being used anymore...
     const _search = location && location.search;
     const searchParams = new URLSearchParams(_search);
     const addClusterId = searchParams.get("add_cluster_id");
