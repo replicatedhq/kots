@@ -99,11 +99,7 @@ export class NavBar extends PureComponent {
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
-<<<<<<< HEAD
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-=======
-                        <span className="text u-color--tuna u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
->>>>>>> Handle navbar route change
                           <span>Clusters</span>
                         </span>
                       </span>

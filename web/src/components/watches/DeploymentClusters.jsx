@@ -24,12 +24,19 @@ export default class DeploymentClusters extends React.Component {
   }
 
   render() {
-    const { appDetailPage, childWatches, handleAddNewCluster, parentClusterName, toggleDeleteDeploymentModal } = this.props;
+    const {
+      appDetailPage,
+      childWatches,
+      handleAddNewCluster,
+      parentClusterName,
+      toggleDeleteDeploymentModal
+    } = this.props;
+
     return (
       <div className={classNames("installed-watch-github flex-column u-width--full", {
         padded: !appDetailPage
       })}>
-        {childWatches && childWatches.length ?
+        {childWatches?.length ?
           <div className="flex-column">
             {appDetailPage ?
               <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--20">
