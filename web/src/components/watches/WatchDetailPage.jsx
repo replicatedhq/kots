@@ -120,6 +120,16 @@ class WatchDetailPage extends React.Component {
     })
   }
 
+  /**
+   * Refetch all the GraphQL data for this component and all its children
+   *
+   * @return {undefined}
+   */
+  refetchGraphQLData = () => {
+    this.props.data.refetch();
+    this.props.listWatchesQuery.refetch()
+  }
+
   onDeleteDeployment = async () => {
     const { clusterToRemove } = this.state;
     await this.props.deleteWatch(clusterToRemove.id).then(() => {
@@ -128,7 +138,7 @@ class WatchDetailPage extends React.Component {
         selectedWatchName: "",
         displayRemoveClusterModal: false
       });
-      this.props.data.refetch();
+      this.refetchGraphQLData();
     })
   }
 
@@ -175,7 +185,7 @@ class WatchDetailPage extends React.Component {
                   <Route exact path="/watch/:owner/:slug" render={() =>
                     <DetailPageApplication
                       watch={watch}
-                      updateCallback={this.props.data.refetch}
+                      updateCallback={this.refetchGraphQLData}
                     />
                   } />
                 }
