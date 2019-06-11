@@ -1,5 +1,11 @@
-$cell-width: 100px;
+$cell-width: 124px;
 
+.cluster-cell-title {
+  padding: 8px;
+  margin-bottom: -5px;
+  background-color: #F5F8FC;
+
+}
 .watch-cell {
   width: $cell-width;
 }
