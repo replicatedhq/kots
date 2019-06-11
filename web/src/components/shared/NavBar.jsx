@@ -131,7 +131,7 @@ export class NavBar extends PureComponent {
               </div>
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
-                  <div className="flex-column flex-auto u-marginRight--5 justifyContent--center">
+                  <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
                     <Link className="btn secondary green rounded" to="/watch/create/init">
                       Add a new application
                     </Link>

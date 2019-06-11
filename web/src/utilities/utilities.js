@@ -57,6 +57,8 @@ export function getApplicationType(watch) {
     console.error(error);
     return "Error fetching applicationType";
   }
+}
+
  /** 
  * @param {String} - 
  * @return {Object} - 
