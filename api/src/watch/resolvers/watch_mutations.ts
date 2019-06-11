@@ -90,29 +90,27 @@ export function WatchMutations(stores: Stores) {
       const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
       watch.addContributor(stores, context)
 
-      // await storeTransaction(this.userStore, async store => {
-      //   // Remove existing contributors
-      //   await store.removeExistingWatchContributorsExcept(span.context(), watch.id!, context.session.userId);
+        // Remove existing contributors
+        await stores.userStoreOld.removeExistingWatchContributorsExcept(watch.id!, context.session.userId);
 
-      //   // For each contributor, get user, if !user then create user
-      //   for (const contributor of contributors) {
-      //     const { githubId, login, avatar_url } = contributor!;
+        // For each contributor, get user, if !user then create user
+        for (const contributor of contributors) {
+          const { githubId, login, avatar_url, email } = contributor!;
 
-      //     let shipUser = await store.getUser(span.context(), githubId!);
-      //     if (!shipUser.length) {
-      //       await store.createGithubUser(span.context(), githubId!, login!, avatar_url!);
-      //       await store.createShipUser(span.context(), githubId!, login!);
-      //       shipUser = await store.getUser(span.context(), githubId!);
+          let shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
+          if (!shipUser) {
+            await stores.userStore.createGitHubUser(githubId!, login!, avatar_url!, email || "");
+            await stores.userStore.createPasswordUser(githubId!, login!, "", "");
+            shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
 
-      //       const allUsersClusters = await this.clusterStore.listAllUsersClusters(span.context());
-      //       for (const allUserCluster of allUsersClusters) {
-      //         await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
-      //       }
-      //     }
-      //     // tslint:disable-next-line:curly
-      //     if (shipUser[0].id !== context.session.userId) await store.saveWatchContributor(span.context(), shipUser[0].id, watch.id!);
-      //   }
-      // });
+            const allUsersClusters = await stores.clusterStore.listAllUsersClusters();
+            for (const allUserCluster of allUsersClusters) {
+              await stores.clusterStore.addUserToCluster(allUserCluster.id!, shipUser[0].id);
+            }
+          }
+          // tslint:disable-next-line:curly
+          if (shipUser && shipUser.id !== context.session.userId) await stores.userStoreOld.saveWatchContributor(shipUser.id, watch.id!);
+        }
 
       return stores.watchStore.listWatchContributors(id);
     },

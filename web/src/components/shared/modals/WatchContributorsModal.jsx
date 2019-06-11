@@ -13,6 +13,7 @@ import keyBy from "lodash/keyBy";
 import merge from "lodash/merge";
 import omitBy from "lodash/omitBy";
 import get from "lodash/get";
+import isEmpty from "lodash/isEmpty";
 
 import "../../../scss/components/watches/WatchContributorsModal.scss";
 
@@ -162,7 +163,7 @@ export class WatchContributorsModal extends React.Component {
         if(typeof this.props.submitCallback === "function") {
           this.props.submitCallback();
         }
-        this.setState({ savingContributors: false, showSaved: true, org: null });
+        this.setState({ savingContributors: false, showSaved: true });
         setTimeout(() => {
           this.setState({ showSaved: false })
         }, 2000)
@@ -191,12 +192,12 @@ export class WatchContributorsModal extends React.Component {
     }
   }
 
-  goNextOrgMemberPage = async() => {
+  goNextOrgMemberPage = async () => {
     const { contributors, org, orgMembersPage, nextPageMembers } = this.state;
     const { login: orgName } = org;
 
     const newContributors = this.makeStateContributors(nextPageMembers);
-    const nextOrgMembersPage = this.fetchOrgMembers(orgName, orgMembersPage + 1);
+    const nextOrgMembersPage = await this.fetchOrgMembers(orgName, orgMembersPage + 1);
     this.setState({
       nextPageMembers: nextOrgMembersPage,
       orgMembersPage: orgMembersPage + 1,
@@ -262,33 +263,33 @@ export class WatchContributorsModal extends React.Component {
               </div>
               <div className="flex1"></div>
             </div>
-            { !loadingMembers ?
-              <div>
-                <p className="u-fontWeight--medium u-fontSize--small">Organization Members</p>
-                <div className="flex flex-column u-borderTop--gray u-marginTop--10">
-                  <div className="contributer-wrapper">
-                    {contributors !== {} && Object.keys(contributors).map((key, i) =>
-                      <WatchContributorCheckbox
-                        item={contributors[key]}
-                        key={i}
-                        contributors={contributors}
-                        handleCheckboxChange={(field, e) => this.handleCheckboxChange(field, e)}
-                        githubLogin={getGithubUser && this.props.getUserInfo.userInfo.username.toLowerCase()}
-                      />
-                    )}
-                  </div>
-                  <div className="more-contributors flex justifyContent--center u-paddingBottom--10 u-borderTop--gray">
-                    { nextPageMembers.length > 0 ?
-                      <button className="btn secondary green u-marginTop--20" disabled={savingContributors} onClick={this.goNextOrgMemberPage}>Load more</button>
-                      : null
-                    }
-                  </div>
+            <div>
+              <p className="u-fontWeight--medium u-fontSize--small">Organization Members</p>
+              <div className="flex flex-column u-borderTop--gray u-marginTop--10 u-position--relative">
+                <div className="contributer-wrapper">
+                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) =>
+                    <WatchContributorCheckbox
+                      item={contributors[key]}
+                      key={i}
+                      contributors={contributors}
+                      handleCheckboxChange={(field, e) => this.handleCheckboxChange(field, e)}
+                      githubLogin={getGithubUser && this.props.getUserInfo.userInfo.username.toLowerCase()}
+                    />
+                  )}
                 </div>
-              </div> :
-              <div className="flex flex1 alignItems--center justifyContent--center">
-                <Loader size="50" />
+                <div className="more-contributors flex justifyContent--center u-paddingBottom--10 u-borderTop--gray">
+                  { nextPageMembers.length > 0 ?
+                    <button className="btn secondary green u-marginTop--20" disabled={savingContributors} onClick={this.goNextOrgMemberPage}>Load more</button>
+                    : null
+                  }
+                </div>
+                {loadingMembers &&
+                  <div className="flex flex1 alignItems--center justifyContent--center contributors-loading">
+                    <Loader size="50" />
+                  </div>
+                }
               </div>
-            }
+            </div>
             <div className="flex flex1 justifyContent--flexEnd alignItems--center u-marginTop--20">
               { showSaved && <p className="u-fontSize--small u-color--chateauGreen u-marginRight--20 u-fontWeight--medium">Contributors have been updated</p> }
               <button onClick={this.handleModalClose} className="btn secondary u-marginRight--10">Close</button>
