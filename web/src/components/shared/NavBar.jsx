@@ -45,17 +45,6 @@ export class NavBar extends PureComponent {
     }
   }
 
-  handleGoToWatches = () => {
-    if (this.props.location.pathname === "/watches") {
-      this.props.client.query({
-        query: listWatches,
-        fetchPolicy: "network-only",
-      });
-    } else {
-      this.props.history.push("/watches");
-    }
-  }
-
   handleGoToClusters = () => {
     if (this.props.location.pathname === "/clusters") {
       this.props.client.query({
@@ -110,7 +99,11 @@ export class NavBar extends PureComponent {
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
+<<<<<<< HEAD
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+=======
+                        <span className="text u-color--tuna u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+>>>>>>> Handle navbar route change
                           <span>Clusters</span>
                         </span>
                       </span>
