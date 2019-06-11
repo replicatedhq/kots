@@ -190,7 +190,7 @@ class WatchDetailPage extends React.Component {
                   } />
                 }
                 {!watch.cluster &&
-                  <Route exact path="/watch/:owner/:slug/deployment-clusters" render={() =>
+                  <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
                     <div className="container">
                       <DeploymentClusters
                         appDetailPage={true}
