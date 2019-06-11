@@ -26,6 +26,39 @@ export function getCurrentWatch(params) {
   return params?.slug?.params?.slug;
 }
 
+/**
+ * Takes a watched app object and returns its parsed metadata
+ *
+ * @param {Object} watch Watched app to retrieve metadata for
+ * @return {Object}
+ */
+export function getWatchMetadata(watch) {
+  try {
+    return JSON.parse(watch.metadata);
+  } catch (error) {
+    console.error(error);
+    return { error };
+  }
+}
+
+/**
+ * Retrieves the type of application via a watched app's metadata
+ *
+ * @param {Object} watch The watched application to check
+ * @return {String} one of {"replicated.app"|"helm"}
+ */
+export function getApplicationType(watch) {
+  try {
+    const { metadata } = watch;
+    const parsedMetadata = JSON.parse(metadata);
+    return parsedMetadata.applicationType;
+
+  } catch (error) {
+    console.error(error);
+    return "Error fetching applicationType";
+  }
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
