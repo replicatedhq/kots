@@ -13,6 +13,7 @@ import keyBy from "lodash/keyBy";
 import merge from "lodash/merge";
 import omitBy from "lodash/omitBy";
 import get from "lodash/get";
+import isEmpty from "lodash/isEmpty";
 
 import "../../../scss/components/watches/WatchContributorsModal.scss";
 
@@ -266,7 +267,7 @@ export class WatchContributorsModal extends React.Component {
               <p className="u-fontWeight--medium u-fontSize--small">Organization Members</p>
               <div className="flex flex-column u-borderTop--gray u-marginTop--10 u-position--relative">
                 <div className="contributer-wrapper">
-                  {contributors !== {} && Object.keys(contributors).map((key, i) =>
+                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) =>
                     <WatchContributorCheckbox
                       item={contributors[key]}
                       key={i}
