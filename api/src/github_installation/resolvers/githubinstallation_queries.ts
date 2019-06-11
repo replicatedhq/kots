@@ -129,7 +129,7 @@ export function GithubInstallationQueries(stores: any) {
 
       const { data: membersData } = await github.orgs.getMembers({
         org,
-        page: githubPage,
+        page: githubPage
       });
 
       return membersData;

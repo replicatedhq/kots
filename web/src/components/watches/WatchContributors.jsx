@@ -71,8 +71,7 @@ class WatchContributors extends React.Component {
             toggleContributorsModal={() => { this.toggleContributorsModal() }}
             watchBeingEdited={this.state.editContributorsFor}
             submitCallback={() => {
-              this.props.data.refetch();
-              if(typeof this.props.watchCallback === "function") {
+              if (typeof this.props.watchCallback === "function") {
                 this.props.watchCallback();
               }
             }}

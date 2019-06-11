@@ -102,7 +102,7 @@ export const createEditSessionRaw = `
 export const createEditSession = gql(createEditSessionRaw);
 
 export const saveWatchContributors = gql`
-  mutation saveWatchContributors($id: String!, $contributors: [ContributorItemInput]!) {
+  mutation saveWatchContributors($id: String!, $contributors: [ContributorInput]!) {
     saveWatchContributors(id: $id, contributors: $contributors) {
       id
       createdAt

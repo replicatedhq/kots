@@ -91,6 +91,7 @@ export class UserStore {
     let q = `select id, created_at from ship_user where id = $1`;
     let v = [id];
     let result = await this.pool.query(q, v);
+
     user.id = result.rows[0].id;
     user.createdAt = result.rows[0].created_at;
 
