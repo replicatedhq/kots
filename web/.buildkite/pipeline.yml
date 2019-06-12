@@ -31,14 +31,6 @@ steps:
     artifact_paths:
       - "web/dist/**/*"
 
-  - wait
-
-  - commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-enterprise
-      - make -C web publish-enterprise
-    branches: "master"
-
   - commands:
       - make -C web deps build-staging
     label: "build-staging"
@@ -50,7 +42,24 @@ steps:
     artifact_paths:
       - "web/dist/**/*"
 
+  - commands:
+      - make -C web deps build-production
+    label: "build-production"
+    branches: "master"
+    plugins:
+      - docker#v3.0.1:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo/web
+    artifact_paths:
+      - "web/dist/**/*"
+
   - wait
+
+  - commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-enterprise
+      - make -C web publish-enterprise
+    branches: "master"
 
   - commands:
       - mkdir -p web/dist
@@ -63,17 +72,6 @@ steps:
       - ecr#v2.0.0:
           login: true
           account_ids: "923411875752"
-
-  - commands:
-      - make -C web deps build-production
-    label: "build-production"
-    branches: "master"
-    plugins:
-      - docker#v3.0.1:
-          image: replicated/gitops-builder:buildkite
-          workdir: /repo/web
-    artifact_paths:
-      - "web/dist/**/*"
 
   - block: "Release to production"
     branches: "master"

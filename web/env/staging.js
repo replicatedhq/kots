@@ -12,7 +12,7 @@ module.exports = {
   GITHUB_INSTALL_URL: "https://github.com/apps/ship-cloud-staging",
   BUGSNAG_API_KEY: "a7504e4a1632ad844b789721e8982b19",
   SHOW_SCM_LEADS: true,
-  AVALIABLE_LOGIN_TYPES: ["github"],
+  AVAILABLE_LOGIN_TYPES: ["github"],
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"
