@@ -331,7 +331,7 @@ export class WatchContributorsModal extends React.Component {
             <div className="flex flex1 justifyContent--flexEnd alignItems--center u-marginTop--20">
               { showSaved && <p className="u-fontSize--small u-color--chateauGreen u-marginRight--20 u-fontWeight--medium">Contributors have been updated</p> }
               <button onClick={this.handleModalClose} className="btn secondary u-marginRight--10">Close</button>
-              <button className="btn primary" disabled={savingContributors} onClick={() => { this.onSaveContributors() }}>{savingContributors ? "Saving" : "Save contributors"}</button>
+              <button className="btn primary" disabled={savingContributors} onClick={this.onSaveContributors}>{savingContributors ? "Saving" : "Save contributors"}</button>
             </div>
           </div>
         </div>
