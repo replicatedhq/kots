@@ -96,7 +96,7 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
-publish-productino: GITOPS_FILENAME = ship-cluster-worker
+publish-production: GITOPS_FILENAME = ship-cluster-worker
 publish-production: build_and_publish
 
 .PHONY: publish-staging
