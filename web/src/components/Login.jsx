@@ -8,7 +8,7 @@ import TraditionalAuth from "./TraditionalAuth";
 import ForgotPasswordModal from "./shared/modals/ForgotPasswordModal";
 
 class Login extends React.Component {
-  
+
   state = {
     traditionalAuth: false,
     displayForgotPasswordModal: false
@@ -16,7 +16,7 @@ class Login extends React.Component {
 
   componentDidMount() {
     if (!Utilities.localStorageEnabled()) {
-      this.props.history.push("/unsupported") 
+      this.props.history.push("/unsupported")
     }
 
     const { search } = this.props.location;
@@ -54,7 +54,7 @@ class Login extends React.Component {
   render() {
     const { traditionalAuth } = this.state;
     const showSCM = window.env.SHOW_SCM_LEADS;
-    const allowedLogins = window.env.AVALIABLE_LOGIN_TYPES;
+    const allowedLogins = window.env.AVAILABLE_LOGIN_TYPES;
     const scmLeadsStyle = showSCM ? { width: "100%", maxWidth: "960px"} : {};
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">

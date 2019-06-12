@@ -31,14 +31,6 @@ steps:
     artifact_paths:
       - "web/dist/**/*"
 
-  - wait
-
-  - commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-enterprise
-      - make -C web publish-enterprise
-    branches: "master"
-
   - commands:
       - make -C web deps build-staging
     label: "build-staging"
@@ -49,20 +41,6 @@ steps:
           workdir: /repo/web
     artifact_paths:
       - "web/dist/**/*"
-
-  - wait
-
-  - commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-staging
-      - make -C web publish-staging
-    branches: "master"
-    env:
-      AWS_PROFILE: replicated-staging
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "923411875752"
 
   - commands:
       - make -C web deps build-production
@@ -75,10 +53,33 @@ steps:
     artifact_paths:
       - "web/dist/**/*"
 
+  - wait
+
+  - label: publish-enterprise
+    commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-enterprise
+      - make -C web publish-enterprise
+    branches: "master"
+
+  - label: publish-staging
+    commands:
+      - mkdir -p web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-staging
+      - make -C web publish-staging
+    branches: "master"
+    env:
+      AWS_PROFILE: replicated-staging
+    plugins:
+      - ecr#v2.0.0:
+          login: true
+          account_ids: "923411875752"
+
   - block: "Release to production"
     branches: "master"
 
-  - commands:
+  - label: publish-production
+    commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-production
       - make -C web publish-production

@@ -7,9 +7,9 @@ Contributions are definitely welcome! We've published documentation on how to se
 The recommended configuration to build and run Ship Cluster locally is to run everything on a Docker Desktop environment, with the local, Docker-supplied Kubernetes installation.
 
 Required Software:
-- [Skaffold](https://skaffold.dev) 0.28.0 or later
+- [Skaffold](https://skaffold.dev) 0.29.0 or later
 - [Kustomize](https://kustomize.io) 2.0 or later
-- NodeJS 8.x
+- NodeJS 10.x with yarn
 - Kubernetes (Recommended to run microk8s)
 
 ### Environment

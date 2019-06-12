@@ -8,13 +8,9 @@ env:
   browser: true
 globals:
   ENVIRONMENT: true
-  VENDOR_API_ENDPOINT: true
-  VENDOR_API_ENDPOINT_V2: true
-  VENDOR_WEB_BUILD_VERSION: true
   GITHUB_CLIENTID: true,
   BUGSNAG_RELEASE_STAGE: true,
   INTERCOM_APP_ID: true,
-  RETRACED: true
 rules:
   id-length:
     - 2
