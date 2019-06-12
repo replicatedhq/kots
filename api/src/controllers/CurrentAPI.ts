@@ -20,7 +20,6 @@ export class CurrentAPI {
     @HeaderParams("Authorization") auth: string,
     @BodyParams("") body: CurrentStateRequest,
   ): Promise<{} | ErrorResponse> {
-    console.log(body)
     const credentials: BasicAuth.Credentials = BasicAuth.parse(auth);
 
     let cluster;

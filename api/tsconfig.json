@@ -3,7 +3,7 @@
         "target": "es2017",
         "module": "commonjs",
         "lib": ["es6", "dom"],
-        "types": ["reflect-metadata"],
+        "types": ["reflect-metadata", "node"],
         "noImplicitAny": false,
         "noEmitOnError": true,
         "sourceMap": true,

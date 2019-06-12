@@ -9,10 +9,9 @@ export class WatchDownloadAPI {
     @Res() response: Express.Response,
     @PathParams("watchId") watchId: string
   ): Promise<void> {
-    const { userId = "" } = response.locals.context || {};
-    const watch = await request.app.locals.stores.watchStore.findUserWatch(userId, { id: watchId });
+    const watch = await response.locals.context.getWatch(watchId);
 
-    const { filename, contents, contentType } = await request.app.locals.stores.watchDownload.downloadDeploymentYAML(watch.id!);
+    const { filename, contents, contentType } = await request.app.locals.stores.watchDownload.downloadDeploymentYAML(watch);
 
     response.setHeader("Content-Disposition", `attachment; filename=${filename}`);
     response.setHeader("Content-Type", contentType);
@@ -26,10 +25,9 @@ export class WatchDownloadAPI {
     @PathParams("watchId") watchId: string,
     @PathParams("sequence") sequence: number):
   Promise<void> {
-    const { userId = "" } = response.locals.context || {};
-    const watch = await request.app.locals.stores.watchStore.findUserWatch(userId, { id: watchId });
+    const watch = await response.locals.context.getWatch(watchId);
 
-    const { filename, contents, contentType } = await request.app.locals.stores.watchDownload.downloadDeploymentYAMLForSequence(watch.id!, sequence);
+    const { filename, contents, contentType } = await request.app.locals.stores.watchDownload.downloadDeploymentYAMLForSequence(watch, sequence);
 
     response.setHeader("Content-Disposition", `attachment; filename=${filename}`);
     response.setHeader("Content-Type", contentType);

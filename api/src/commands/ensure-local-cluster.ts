@@ -96,8 +96,8 @@ async function main(argv): Promise<any> {
 
 async function runCommand(fullCommand) {
   const command = exec(fullCommand);
-  command.stdout.pipe(process.stdout);
-  command.stderr.pipe(process.stderr);
+  command.stdout!.pipe(process.stdout);
+  command.stderr!.pipe(process.stderr);
 
   return new Promise((resolve, reject) => {
     command.on("exit", (code) => {
