@@ -59,7 +59,6 @@ export const listWatchesRaw = `
         updatedOn
         triggeredOn
         enabled
-        isDefault
         webhook {
           uri
         }
@@ -110,7 +109,6 @@ export const listWatchesRaw = `
           updatedOn
           triggeredOn
           enabled
-          isDefault
           webhook {
             uri
           }
@@ -185,7 +183,6 @@ export const searchWatches = gql`
         updatedOn
         triggeredOn
         enabled
-        isDefault
         webhook {
           uri
         }
@@ -242,7 +239,6 @@ export const getWatch = gql`
         updatedOn
         triggeredOn
         enabled
-        isDefault
         webhook {
           uri
         }
@@ -308,7 +304,6 @@ export const getWatch = gql`
           updatedOn
           triggeredOn
           enabled
-          isDefault
           webhook {
             uri
           }
@@ -396,7 +391,6 @@ export const getWatchById = gql`
         updatedOn
         triggeredOn
         enabled
-        isDefault
         webhook {
           uri
         }
@@ -447,7 +441,6 @@ export const getWatchById = gql`
           updatedOn
           triggeredOn
           enabled
-          isDefault
           webhook {
             uri
           }
@@ -484,7 +477,6 @@ export const listNotificationsQuery = gql`
       updatedOn
       triggeredOn
       enabled
-      isDefault
       webhook {
         uri
       }
@@ -503,7 +495,6 @@ export const getNotification = gql`
       updatedOn
       triggeredOn
       enabled
-      isDefault
       webhook {
         uri
       }

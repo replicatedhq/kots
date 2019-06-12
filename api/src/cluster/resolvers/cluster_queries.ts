@@ -6,9 +6,8 @@ import { Stores } from "../../schema/stores";
 export function ClusterQueries(stores: Stores) {
   return {
     async listClusters(root: any, args: any, context: Context) {
-      const clusters = await stores.clusterStore.listClusters(context.session.userId);
-      const result = _.map(clusters, async (cluster: Cluster) => {
-        const applicationCount = await stores.clusterStore.getApplicationCount(cluster.id!);
+      const result = _.map(await context.listClusters(), async (cluster: Cluster) => {
+        const applicationCount = await stores.clusterStore.getApplicationCount(cluster.id);
         return toSchemaCluster(cluster, applicationCount);
       });
 

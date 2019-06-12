@@ -1,8 +1,5 @@
 import * as Express from "express";
 import { Controller, Get, Res, Req, QueryParams, PathParams } from "ts-express-decorators";
-import * as jaeger from "jaeger-client";
-import { tracer } from "../server/tracing";
-import * as _ from "lodash";
 
 interface ErrorResponse {
   error: {};

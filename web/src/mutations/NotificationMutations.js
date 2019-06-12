@@ -24,7 +24,6 @@ export const enableNotification = gql`
       updatedOn
       triggeredOn
       enabled
-      isDefault
       webhook {
         uri
       }

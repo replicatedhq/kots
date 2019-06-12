@@ -1,0 +1,9 @@
+bases:
+  - ../enterprise
+
+resources:
+  - ./rbac.yaml
+
+patches:
+  - ./s3.yaml
+  - ./ensure-local-cluster.yaml

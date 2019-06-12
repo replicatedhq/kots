@@ -476,7 +476,7 @@ export class WatchStore {
     }
 
     if (!exists || !params) {
-      throw new ReplicatedError("File not found", "404");
+      throw new ReplicatedError("File not found");
     }
     return params;
   }

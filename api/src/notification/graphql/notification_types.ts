@@ -8,7 +8,6 @@ type Notification {
   updatedOn: String
   triggeredOn: String
   enabled: Int
-  isDefault: Boolean
   pending: Boolean
 }
 `;

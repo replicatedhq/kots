@@ -1,11 +1,8 @@
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
 
 export function UnforkMutations(stores: any) {
   return {
     async createUnforkSession(root: any, args: any, context: Context) {
-      const span = tracer().startSpan("mutation.createUnforkSession");
-
       const { upstreamUri, forkUri } = args;
 
       const unforkSession = await stores.unforkStore.createUnforkSession(context.session.userId, upstreamUri, forkUri);
@@ -17,8 +14,6 @@ export function UnforkMutations(stores: any) {
       while (new Date() < abortAfter) {
         const maybeUpdatedSession = await stores.unforkStore.getSession(deployedUnforkSession.id!);
         if (maybeUpdatedSession.result === "failed") {
-          span.finish();
-
           return {
             result: "error unforking application",
           };
@@ -27,15 +22,11 @@ export function UnforkMutations(stores: any) {
           const updateSession = await stores.updateStore.createUpdateSession(context.session.userId, maybeUpdatedSession.id!);
           const deployedUpdateSession = await stores.updateStore.deployUpdateSession(updateSession.id);
 
-          span.finish();
-
           return deployedUpdateSession;
         }
 
         await sleep(100);
       };
-
-      span.finish();
 
       return {
         result: "timeout unforking application",

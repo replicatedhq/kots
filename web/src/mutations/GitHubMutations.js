@@ -14,34 +14,9 @@ export const createGithubAuthToken = gql`
   }
 `;
 
-export const setUpWatchPullRequests = gql`
-  mutation setUpWatchPullRequests($id: String!, $org: String!, $target: String!) {
-    setUpWatchPullRequests(id: $id, org: $org, target: $target) {
-      id
-      githubInstallationId
-      stateJSON
-      watchName
-      watchIcon
-      lastUpdated
-      createdOn
-    }
-  }
-`;
-
 export const logout = gql`
   mutation {
     logout
   }
 `;
 
-export const updatePullRequestHistory = gql`
-  mutation updatePullRequestHistory($notificationId: String!) {
-    updatePullRequestHistory(notificationId: $notificationId) {
-      title
-      status
-      createdOn
-      number
-      uri
-    }
-  }
-`;

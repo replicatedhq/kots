@@ -27,7 +27,7 @@ class DetailPageIntegrations extends React.Component {
   toggleEmailModal = (id) => {
     const state = this.state;
     state.displayEmailModal = !state.displayEmailModal;
-    state.notificationId = id || null
+    state.notificationId = id || null;
     if (state.displayEmailModal) {
       state.displayNotificationsModal = false;
     }
@@ -67,7 +67,7 @@ class DetailPageIntegrations extends React.Component {
     switch (type) {
     case "webhook":
       return this.toggleWebhookModal(id);
-    default:
+    case "email":
       return this.toggleEmailModal(id);
     }
   }
@@ -154,7 +154,7 @@ class DetailPageIntegrations extends React.Component {
             appIdSelected={appIdSelected}
           />
         }
-        {displayEmailModal && 
+        {displayEmailModal &&
           <SetUpEmailModal
             show={displayEmailModal}
             appName={appName}

@@ -97,7 +97,7 @@ module.exports = function (env) {
             },
             { loader: "css-loader", options: { importLoaders: 1 } },
             { loader: "sass-loader" },
-            { 
+            {
               loader: "postcss-loader",
               options: {
                 ident: "postcss",

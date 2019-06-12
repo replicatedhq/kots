@@ -6,10 +6,10 @@ import { Stores } from "../../schema/stores";
 
 export function WatchQueries(stores: Stores) {
   return {
-    async getWatchVersion(root: any, args: any): Promise<VersionDetail> {
-      const watch = await stores.watchStore.getWatch(args.id);
-      const versionItem = await stores.watchStore.getOneVersion(args.id, args.sequence!);
-      const params = await stores.watchStore.getLatestGeneratedFileS3Params(watch!.id!, args.sequence!);
+    async getWatchVersion(root: any, args: any, context: Context): Promise<VersionDetail> {
+      const watch = await context.getWatch(args.id);
+      const versionItem = await stores.watchStore.getOneVersion(watch.id, args.sequence!);
+      const params = await stores.watchStore.getLatestGeneratedFileS3Params(watch.id, args.sequence!);
       const download = await stores.watchDownload.findDeploymentFile(params);
 
       const versionItemDetail = {
@@ -27,8 +27,7 @@ export function WatchQueries(stores: Stores) {
     },
 
     async searchWatches(root: any, args: any, context: Context): Promise<Watch[]> {
-      const { watchName } = args;
-      const watches = await stores.watchStore.searchWatches(context.session.userId, watchName);
+      const watches = await stores.watchStore.searchWatches(context.session.userId, args.watchName);
       return watches.map(watch => watch.toSchema(root, stores, context));
     },
 
@@ -42,25 +41,23 @@ export function WatchQueries(stores: Stores) {
     },
 
     async watchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
-      const { id } = args;
-      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
+      const watch = await context.getWatch(args.id);
       return watch.getContributors(stores);
     },
 
-    async listPendingWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
-      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+    async listPendingWatchVersions(root: any, args: any, context: Context): Promise<Version[]> {
+      const watch = await context.getWatch(args.watchId);
       return watch.getPendingVersions(stores);
     },
 
-    async listPastWatchVersions(root: any, { watchId }: any, context: Context): Promise<Version[]> {
-      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+    async listPastWatchVersions(root: any, args: any, context: Context): Promise<Version[]> {
+      const watch = await context.getWatch(args.watchId);
       return watch.getPastVersions(stores);
     },
 
     async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<Version|undefined> {
-      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id: args.watchId });
+      const watch = await context.getWatch(args.watchId);
       return watch.getCurrentVersion(stores);
     }
-
   }
 }

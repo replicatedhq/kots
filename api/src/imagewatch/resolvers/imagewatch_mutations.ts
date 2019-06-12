@@ -1,5 +1,4 @@
 import { Context } from "../../context";
-import { tracer } from "../../server/tracing";
 
 export function ImageWatchMutations(stores: any) {
   return {

@@ -114,6 +114,16 @@ publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: build_and_publish
 
+.PHONY: publish-enterprise-aka
+publish-enterprise-aka: REGISTRY = registry.replicated.com/ship-enterprise
+publish-enterprise-aka: OVERLAY = enterprise-aka
+publish-enterprise-aka: GITOPS_OWNER = replicatedhq
+publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
+publish-enterprise-aka: GITOPS_BRANCH = master
+publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-worker-aka.yaml
+publish-enterprise-aka: docker
+publish-enterprise-aka: gitops
+
 build_and_publish:
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 
@@ -121,7 +131,7 @@ build_and_publish:
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
 	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
 
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${PROJECT_NAME}.yaml
+	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${GITOPS_FILENAME:-PROJECT_NAME}.yaml
 
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\

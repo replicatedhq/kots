@@ -10,12 +10,11 @@ import { Watch, Contributor } from "../";
 export function WatchMutations(stores: Stores) {
   return {
     async deployWatchVersion(root: any, args: any, context: Context): Promise<boolean> {
-
-      const watch = await stores.watchStore.getWatch(args.watchId);
+      const watch = await context.getWatch(args.watchId);
 
       // TODO should probablly disallow this if it's a midtream or a gitops cluster?
 
-      await stores.watchStore.setCurrentVersion(watch.id!, args.sequence!);
+      await stores.watchStore.setCurrentVersion(watch.id, args.sequence!);
 
       return true;
     },
@@ -38,33 +37,27 @@ export function WatchMutations(stores: Stores) {
     },
 
     async updateWatch(root: any, args: any, context: Context): Promise<Watch> {
-      const { watchId, watchName, iconUri } = args;
+      const watch = await context.getWatch(args.watchId);
 
-      let watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
+      await stores.watchStore.updateWatch(watch.id, args.watchName, args.iconUri);
+      const updatedWatch = await stores.watchStore.getWatch(watch.id);
 
-      await stores.watchStore.updateWatch(watchId, watchName || undefined, iconUri || undefined);
-
-      watch = await stores.watchStore.getWatch(watchId);
-
-      return watch.toSchema(root, stores, context);
+      return updatedWatch.toSchema(root, stores, context);
     },
 
     async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: any, context: Context): Promise<Watch> {
-
       validateJson(stateJSON, schema);
 
       const metadata = JSON.parse(stateJSON).v1.metadata;
-
       const newWatch = await stores.watchStore.createNewWatch(stateJSON, owner, context.session.userId, metadata);
 
       return newWatch;
     },
 
-    async deleteWatch(root: any, { watchId, childWatchIds }: any, context: Context): Promise<boolean> {
+    async deleteWatch(root: any, args: any, context: Context): Promise<boolean> {
+      const watch = await context.getWatch(args.watchId);
 
-      const watch = await stores.watchStore.findUserWatch(context.session.userId, { id: watchId });
-
-      const notifications = await stores.notificationStore.listNotifications(watch.id!);
+      const notifications = await stores.notificationStore.listNotifications(watch.id);
       for (const notification of notifications) {
         await stores.notificationStore.deleteNotification(notification.id!);
       }
@@ -72,9 +65,9 @@ export function WatchMutations(stores: Stores) {
       // TODO delete from s3
       // They are still listed in ship_output_files, so we can reconcile this.
 
-      await stores.watchStore.deleteWatch(watch.id!);
-      if (childWatchIds) {
-        for (const id of childWatchIds) {
+      await stores.watchStore.deleteWatch(watch.id);
+      if (args.childWatchIds) {
+        for (const id of args.childWatchIds) {
           if (id) {
             await stores.watchStore.deleteWatch(id);
           }
@@ -85,16 +78,15 @@ export function WatchMutations(stores: Stores) {
     },
 
     async saveWatchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
+      const watch = await context.getWatch(args.id);
 
-      const { id, contributors } = args;
-      const watch: Watch = await stores.watchStore.findUserWatch(context.session.userId, { id });
       watch.addContributor(stores, context)
 
         // Remove existing contributors
-        await stores.userStoreOld.removeExistingWatchContributorsExcept(watch.id!, context.session.userId);
+        await stores.userStoreOld.removeExistingWatchContributorsExcept(watch.id, context.session.userId);
 
         // For each contributor, get user, if !user then create user
-        for (const contributor of contributors) {
+        for (const contributor of args.contributors) {
           const { githubId, login, avatar_url, email } = contributor!;
 
           let shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
@@ -112,7 +104,7 @@ export function WatchMutations(stores: Stores) {
           if (shipUser && shipUser.id !== context.session.userId) await stores.userStoreOld.saveWatchContributor(shipUser.id, watch.id!);
         }
 
-      return stores.watchStore.listWatchContributors(id);
+      return stores.watchStore.listWatchContributors(watch.id);
     },
 
 

@@ -22,9 +22,13 @@ export default class WatchCard extends React.Component {
       webhook: [],
       email: []
     };
-    notifications.filter((i) => !i.isDefault).map(n => {
-      if (n.webhook) {parsed.webhook.push(n.webhook);}
-      if (n.email) {parsed.email.push(n.email);}
+    notifications.map(n => {
+      if (n.webhook) {
+        parsed.webhook.push(n.webhook);
+      }
+      if (n.email) {
+        parsed.email.push(n.email);
+      }
     })
 
     return parsed;

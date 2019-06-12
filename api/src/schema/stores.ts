@@ -2,7 +2,7 @@ import { SessionStore } from "../session/session_store";
 import { UserStore } from "../user";
 import { ClusterStore } from "../cluster";
 import { WatchStore } from "../watch/watch_store";
-import { NotificationStore } from "../notification/store";
+import { NotificationStore } from "../notification";
 import { UpdateStore } from "../update/update_store";
 import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";

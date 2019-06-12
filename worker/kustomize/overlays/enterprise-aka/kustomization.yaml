@@ -1,0 +1,12 @@
+bases:
+  - ../enterprise
+
+patches:
+  - ./init-rolebinding.yaml
+  - ./edit-rolebinding.yaml
+  - ./update-rolebinding.yaml
+  - ./watch-rolebinding.yaml
+  - ./init-s3.yaml
+  - ./edit-s3.yaml
+  - ./update-s3.yaml
+  - ./watch-s3.yaml

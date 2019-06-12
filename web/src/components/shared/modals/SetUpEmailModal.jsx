@@ -7,13 +7,14 @@ import { Utilities } from "../../../utilities/utilities";
 import "../../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../../mutations/NotificationMutations";
 import { getNotification } from "../../../queries/WatchQueries";
+import Loader from "../Loader";
 
 export class SetUpEmailModal extends React.Component {
   constructor() {
     super();
     this.state = {
       recipient: "",
-      isLoading: false,
+      isLoading: true,
       emailError: false,
       emailToastMessage: false
     };
@@ -84,7 +85,8 @@ export class SetUpEmailModal extends React.Component {
       this.setState({
         recipient: "",
         emailError: false,
-        emailToastMessage: false
+        emailToastMessage: false,
+        isLoading: false,
       });
     }
   }
@@ -95,14 +97,14 @@ export class SetUpEmailModal extends React.Component {
         query: getNotification,
         variables: { notificationId: this.props.notificationId }
       })
-        .then((res) => {
-          const resValue = res.data.getNotification.email.recipientAddress === "placeholder" ? "" : res.data.getNotification.email.recipientAddress;
-          this.setState({ recipient: resValue });
-        })
-        .catch();
+      .then((res) => {
+        const resValue = res.data.getNotification.email.recipientAddress === "placeholder" ? "" : res.data.getNotification.email.recipientAddress;
+        this.setState({ recipient: resValue, isLoading: false });
+      })
+      .catch();
     }
   }
-  
+
   onChange = (field, ev) => {
     const state = this.state;
     state[field] = ev.target.value;
@@ -110,10 +112,10 @@ export class SetUpEmailModal extends React.Component {
   }
 
   render() {
-    const { 
+    const {
       emailError,
       emailToastMessage
-    } = this.state; 
+    } = this.state;
 
     const {
       show,
@@ -121,15 +123,13 @@ export class SetUpEmailModal extends React.Component {
       appName
     } = this.props;
 
-    return (
-      <Modal
-        isOpen={show}
-        onRequestClose={toggle}
-        shouldReturnFocusAfterClose={false}
-        contentLabel="Install Application Modal"
-        ariaHideApp={false}
-        className="SetUpAutoPRsModal--wrapper Modal DefaultSize"
-      >
+    const content = this.state.isLoading ?
+      (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      ) :
+      (
         <div className="Modal-body flex flex-column flex1 u-overflow--auto">
           <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Configure email notifications for {appName}</h2>
           <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Ship will send an email when an update is available.</p>
@@ -151,6 +151,18 @@ export class SetUpEmailModal extends React.Component {
             </div>
           </div>
         </div>
+      );
+
+    return (
+      <Modal
+        isOpen={show}
+        onRequestClose={toggle}
+        shouldReturnFocusAfterClose={false}
+        contentLabel="Install Application Modal"
+        ariaHideApp={false}
+        className="SetUpAutoPRsModal--wrapper Modal DefaultSize"
+      >
+        {content}
       </Modal>
     );
   }
