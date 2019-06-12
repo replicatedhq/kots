@@ -3,16 +3,25 @@ import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
 import { ReplicatedError } from "../server/errors";
 import { isAfter } from "date-fns";
+import { Cluster } from "../cluster";
+import * as _ from "lodash";
+import { Stores } from "../schema/stores";
+import { Watch } from "../watch";
+import {
+  Notification,
+} from "../generated/types";
 
 export class Context {
+  constructor(private readonly stores: Stores) {}
+
   public session: Session;
 
-  public static async fetch(token: string): Promise<Context> {
+  public static async fetch(stores: Stores, token: string): Promise<Context> {
     const pool = await getPostgresPool();
     const params = await Params.getParams();
     const sessionStore = new SessionStore(pool, params);
 
-    const context = new Context();
+    const context = new Context(stores);
     context.session = await sessionStore.decode(token);
     return context;
   }
@@ -27,14 +36,51 @@ export class Context {
 
   public hasValidSession(): ReplicatedError | null {
     if (this.getGitHubToken().length === 0) {
-      return new ReplicatedError("Unauthorized", "401");
+      return new ReplicatedError("Unauthorized");
     }
 
     const currentTime = new Date(Date.now()).toUTCString();
     if (isAfter(currentTime, this.session.expiresAt)) {
-      return new ReplicatedError("Expired session", "401");
+      return new ReplicatedError("Expired session");
     }
 
     return null
+  }
+
+  public async listClusters(): Promise<Cluster[]> {
+    return this.stores.clusterStore.listClusters(this.session.userId);
+  }
+
+  public async getCluster(id: string): Promise<Cluster> {
+    const clusters = await this.stores.clusterStore.listClusters(this.session.userId);
+    const cluster = _.find(clusters, (cluster: Cluster) => {
+      return cluster.id === id;
+    });
+
+    if (!cluster) {
+      throw new ReplicatedError("Cluster not found");
+    }
+
+    return cluster;
+  }
+
+  public async getWatch(id: string): Promise<Watch> {
+    const watch = await this.stores.watchStore.findUserWatch(this.session.userId, { id });
+
+    if (!watch) {
+      throw new ReplicatedError("Watch not found");
+    }
+
+    return watch;
+  }
+
+  public async getNotification(id: string): Promise<Notification> {
+    const notification = await this.stores.notificationStore.findUserNotification(this.session.userId, id);
+
+    if (!notification) {
+      throw new ReplicatedError("Notification not found");
+    }
+
+    return notification;
   }
 }

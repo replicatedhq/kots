@@ -2,7 +2,6 @@ import * as React from "react";
 import { Utilities } from "../../utilities/utilities";
 
 export default class IntegrationCard extends React.Component {
-
   constructor() {
     super();
     this.state = {

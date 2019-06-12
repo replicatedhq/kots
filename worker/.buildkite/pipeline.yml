@@ -58,7 +58,7 @@ steps:
   - wait
 
   - commands:
-      - make -C worker publish-enterprise
+      - make -C worker publish-enterprise publish-enterprise-aka
     branches: "master"
     retry:
       automatic: true

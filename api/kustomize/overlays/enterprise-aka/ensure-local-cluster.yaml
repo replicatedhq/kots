@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ship-cluster-local-cluster
+spec:
+  template:
+    spec:
+      serviceAccountName: ship-cluster-api
+      containers:
+        - name: ship-cluster-local-cluster
+          env:
+            - name: ENSURE_LOCAL_CLUSTER
+              value: '1'

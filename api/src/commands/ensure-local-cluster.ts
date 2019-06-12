@@ -8,7 +8,6 @@ import * as which from "which";
 import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";
 import { ClusterStore } from "../cluster/cluster_store";
-import { tracer } from "../server/tracing";
 import { UserStore } from "../user/user_store";
 
 const config = Api.config;
@@ -36,8 +35,6 @@ async function main(argv): Promise<any> {
     process.exit(0);
     return;
   }
-
-  const span = tracer().startSpan("ensure-local-cluster");
 
   console.log(`Attempting to ensure local cluster is provisioned`);
 

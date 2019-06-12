@@ -29,9 +29,6 @@ type Mutation {
   createEditSession(watchId: ID!): EditSession!
 
   uploadImageWatchBatch(imageList: String!): String
-
-  createFirstPullRequest(watchId: String! notificationId: String, pullRequest: PullRequestNotificationInput): Int
-  updatePullRequestHistory(notificationId: String!): [PullRequestHistory]
 }
 `;
 

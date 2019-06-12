@@ -40,7 +40,11 @@ export default class ForgotPasswordModal extends React.Component {
               type="text"
               placeholder="you@example.com"
               value={this.state.email}
-              onChange={(e) => { this.setState({ email: e.target.value }); }}
+              onChange={(e) => {
+                this.setState({
+                  email: e.target.value,
+                });
+              }}
             />
           </div>
           <div className="button-wrapper u-textAlign--right">

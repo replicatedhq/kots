@@ -21,7 +21,7 @@ import { Stores } from "../schema/stores";
 import { SessionStore } from "../session";
 import { ClusterStore } from "../cluster";
 import { WatchStore } from "../watch/watch_store";
-import { NotificationStore } from "../notification/store";
+import { NotificationStore } from "../notification";
 import { UpdateStore } from "../update/update_store";
 import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
@@ -78,15 +78,6 @@ export class Server extends ServerLoader {
     const bodyParser = require("body-parser");
     this.use(bodyParser.json());
 
-    const setContext = async (req: Request, res: Response, next: NextFunction) => {
-      const token = req.get("Authorization") || "";
-
-      const context = await Context.fetch(token);
-      res.locals.context = context;
-
-      next();
-    };
-
     const pool = await getPostgresPool();
     const watchStore = new WatchStore(pool, params);
     const stores: Stores = {
@@ -96,7 +87,7 @@ export class Server extends ServerLoader {
       githubNonceStore: new GithubNonceStore(pool),
       clusterStore: new ClusterStore(pool, params),
       watchStore: watchStore,
-      notificationStore: new NotificationStore(pool, params),
+      notificationStore: new NotificationStore(pool),
       updateStore: new UpdateStore(pool, params),
       unforkStore: new UnforkStore(pool, params),
       initStore: new InitStore(pool, params),
@@ -108,6 +99,15 @@ export class Server extends ServerLoader {
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
     }
+
+    const setContext = async (req: Request, res: Response, next: NextFunction) => {
+      const token = req.get("Authorization") || "";
+
+      const context = await Context.fetch(stores, token);
+      res.locals.context = context;
+
+      next();
+    };
 
     this.expressApp.locals.stores = stores;
 
@@ -123,7 +123,6 @@ export class Server extends ServerLoader {
       return {
         schema: shipClusterSchema.getSchema(stores, params),
         context: res.locals.context,
-        tracing: true,
         cacheControl: true,
         formatError: (error: any) => {
           return {

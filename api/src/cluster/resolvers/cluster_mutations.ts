@@ -13,15 +13,18 @@ export function ClusterMutations(stores: Stores) {
       return result;
     },
 
-    async updateCluster(root: any, { clusterId, clusterName, gitOpsRef }: any, context: Context) {
-      await stores.clusterStore.updateCluster(context.session.userId, clusterId, clusterName, gitOpsRef);
-      const updatedCluster = stores.clusterStore.getCluster(clusterId);
+    async updateCluster(root: any, args: any, context: Context) {
+      const cluster = await context.getCluster(args.clusterId);
+
+      await stores.clusterStore.updateCluster(context.session.userId, cluster.id, args.clusterName, args.gitOpsRef);
+      const updatedCluster = await context.getCluster(args.clusterId);
 
       return updatedCluster;
     },
 
-    async deleteCluster(root: any, { clusterId }: any, context: Context) {
-      await stores.clusterStore.deleteCluster(context.session.userId, clusterId);
+    async deleteCluster(root: any, args: any, context: Context) {
+      const cluster = await context.getCluster(args.clusterId);
+      await stores.clusterStore.deleteCluster(context.session.userId, cluster.id);
 
       return true;
     },

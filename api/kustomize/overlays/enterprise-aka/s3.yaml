@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ship-cluster-api
+spec:
+  template:
+    spec:
+      serviceAccountName: ship-cluster-api
+      containers:
+        - name: ship-cluster-api
+          env:
+            - name: S3_ENDPOINT
+              value: |
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}http://minio.{{repl Namespace}}.svc.cluster.local:9000/{{repl else}}{{repl ConfigOption "s3_endpoint"}}{{repl end}}
+            - name: SHIP_API_ENDPOINT
+              value: http://ship-cluster-api.{{repl Namespace}}.svc.cluster.local:3000
+

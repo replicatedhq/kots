@@ -40,7 +40,7 @@ steps:
   - wait
 
   - commands:
-      - make -C api build-enterprise publish-enterprise
+      - make -C api build-enterprise publish-enterprise publish-enterprise-aka
     branches: "master"
 
   - commands:

@@ -105,7 +105,7 @@ class Root extends React.Component {
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
         </Helmet>
-        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, window.env.REST_ENDPOINT, () => { return Utilities.getToken(); })}>
+        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, window.env.REST_ENDPOINT, () => {return Utilities.getToken(); })}>
           <Router history={history}>
             <div className="flex-column flex1">
               <NavBar />

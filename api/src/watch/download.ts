@@ -1,11 +1,9 @@
 import { S3 } from "aws-sdk";
 import * as Bluebird from "bluebird";
 import * as Gunzip from "gunzip-maybe";
-import * as jaeger from "jaeger-client";
 import { Writable } from "stream";
 import { extract, Extract } from "tar-stream";
 import { logger } from "../server/logger";
-import { tracer } from "../server/tracing";
 import { getS3 } from "../util/s3";
 import { WatchStore } from "./watch_store";
 import { Params } from "../server/params";

@@ -10,7 +10,6 @@ import { logger } from "./logger";
  */
 export interface ClientErrorDetails {
   message: string;
-  code: string;
   extra?: {};
 }
 
@@ -31,7 +30,6 @@ export class ReplicatedError extends Error {
     super(
       JSON.stringify({
         replicatedMessage: msg || ReplicatedError.INTERNAL_ERROR_MESSAGE,
-        replicatedCode: code || msg || "internal_server_error",
         replicatedExtra: extra,
       }),
     );
@@ -63,7 +61,6 @@ export class ReplicatedError extends Error {
       if (_.has(parsed, "replicatedMessage")) {
         return {
           message: parsed.replicatedMessage,
-          code: parsed.replicatedCode,
           extra: parsed.replicatedExtra,
         };
       }
@@ -74,12 +71,9 @@ export class ReplicatedError extends Error {
     // hack hack hack, if its a GraphQLError,
     // then it might be a client error in
     // syntax/query
-    //
-    // I can't wait for this to break
     if (!error.originalError) {
       return {
         message: error.message,
-        code: "bad_request",
       };
     }
 
@@ -89,7 +83,6 @@ export class ReplicatedError extends Error {
 
     return {
       message: ReplicatedError.INTERNAL_ERROR_MESSAGE,
-      code: "internal_server_error",
     };
   }
 
@@ -98,13 +91,12 @@ export class ReplicatedError extends Error {
       errors: [
         {
           message: "Unauthorized",
-          code: "unauthorized",
           locations: [],
         },
       ],
     };
   }
   isNotFound() {
-    return this.code === "not_found" || this.originalMessage === ReplicatedError.notFound().originalMessage;
+    return this.originalMessage === ReplicatedError.notFound().originalMessage;
   }
 }
