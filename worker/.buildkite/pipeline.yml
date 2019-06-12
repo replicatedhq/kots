@@ -63,7 +63,7 @@ steps:
     retry:
       automatic: true
 
-    - commands:
+  - commands:
       - make -C worker publish-enterprise-aka
     branches: "master"
     retry:
