@@ -155,12 +155,7 @@ class DetailPageApplication extends React.Component {
   }
 
   render() {
-<<<<<<< HEAD
-    const { isDownloadingAssets, isDownloadingMidstreamAssets } = this.state;
     const { watch, updateCallback } = this.props;
-=======
-    const { watch } = this.props;
->>>>>>> updates to downstreams tab and copy updates
     const childWatches = watch.watches;
     const appMeta = getAppData(watch.metadata);
 
