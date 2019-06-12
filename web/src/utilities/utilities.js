@@ -57,18 +57,12 @@ export function getApplicationType(watch) {
     console.error(error);
     return "Error fetching applicationType";
   }
- /** 
- * @param {String} - 
- * @return {Object} - 
- */
-export function getAppData(metadata) {
-  return JSON.parse(metadata);
 }
 
 /**
- * 
- * @param {String} - 
- * @return {String} - 
+ *
+ * @param {String} -
+ * @return {String} -
  */
 export function getReadableLicenseType(type) {
   let readableType = "Development";
@@ -86,21 +80,6 @@ export function getReadableLicenseType(type) {
  */
 export function getAppData(metadata) {
   return JSON.parse(metadata);
-}
-
-/**
- *
- * @param {String} -
- * @return {String} -
- */
-export function getReadableLicenseType(type) {
-  let readableType = "Development";
-  if (type === "paid") {
-    readableType = "Production"
-  } else if (type === "trial") {
-    readableType = "Trial"
-  }
-  return readableType;
 }
 
 export const Utilities = {
