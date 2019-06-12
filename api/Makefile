@@ -99,6 +99,7 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
+publish-production: GITOPS_FILENAME = ship-cluster-api
 publish-production: build_and_publish
 
 .PHONY: publish-staging
@@ -107,6 +108,7 @@ publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
 publish-staging: GITOPS_BRANCH = master
+publish-staging: GITOPS_FILENAME = ship-cluster-api
 publish-staging: build_and_publish
 
 .PHONY: publish-enterprise
@@ -115,6 +117,7 @@ publish-enterprise: OVERLAY = enterprise
 publish-enterprise: GITOPS_OWNER = replicatedhq
 publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
+publish-enterprise: GITOPS_FILENAME = ship-cluster-api
 publish-enterprise: build_and_publish
 
 .PHONY: publish-enterprise-aka
@@ -123,7 +126,7 @@ publish-enterprise-aka: OVERLAY = enterprise-aka
 publish-enterprise-aka: GITOPS_OWNER = replicatedhq
 publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise-aka: GITOPS_BRANCH = master
-publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-api-aka.yaml
+publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-api-aka
 publish-enterprise-aka: build_and_publish
 
 build_and_publish:
@@ -133,7 +136,7 @@ build_and_publish:
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
 	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
 
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${GITOPS_FILENAME:-$PROJECT_NAME}.yaml
+	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${GITOPS_FILENAME}
 
 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
 	  git add . ;\
