@@ -40,7 +40,11 @@ steps:
   - wait
 
   - commands:
-      - make -C api build-enterprise publish-enterprise publish-enterprise-aka
+      - make -C api build-enterprise publish-enterprise
+    branches: "master"
+
+  - commands:
+      - make -C api build-enterprise publish-enterprise-aka
     branches: "master"
 
   - commands:
