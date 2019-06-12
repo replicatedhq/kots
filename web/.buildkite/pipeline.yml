@@ -55,13 +55,15 @@ steps:
 
   - wait
 
-  - commands:
+  - label: publish-enterprise
+    commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-enterprise
       - make -C web publish-enterprise
     branches: "master"
 
-  - commands:
+  - label: publish-staging
+    commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-staging
       - make -C web publish-staging
@@ -76,7 +78,8 @@ steps:
   - block: "Release to production"
     branches: "master"
 
-  - commands:
+  - label: publish-production
+    commands:
       - mkdir -p web/dist
       - buildkite-agent artifact download web/dist/* . --step build-production
       - make -C web publish-production
