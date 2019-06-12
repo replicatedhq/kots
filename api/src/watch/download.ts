@@ -7,6 +7,7 @@ import { logger } from "../server/logger";
 import { getS3 } from "../util/s3";
 import { WatchStore } from "./watch_store";
 import { Params } from "../server/params";
+import { Watch } from "./watch";
 
 export enum ContentType {
   TarGZ = "application/gzip",
@@ -30,24 +31,21 @@ const FileExtensions = {
 export class WatchDownload {
   constructor(private readonly watchStore: WatchStore) {}
 
-  async downloadDeploymentYAML(watchId: string): Promise<DeploymentFile> {
-    const watch = await this.watchStore.getWatch(watchId);
-    const params = await this.watchStore.getLatestGeneratedFileS3Params(watchId);
-
+  async downloadDeploymentYAML(watch: Watch): Promise<DeploymentFile> {
+    const params = await this.watchStore.getLatestGeneratedFileS3Params(watch.id);
     const download = await this.findDeploymentFile(params);
-    const filename = this.determineFileName(download, watch.watchName!);
+    const filename = this.determineFileName(download, watch.watchName);
     return {
       ...download,
       filename,
     };
   }
 
-  async downloadDeploymentYAMLForSequence(watchId: string, sequence: number): Promise<DeploymentFile> {
-    const params = await this.watchStore.getLatestGeneratedFileS3Params(watchId, sequence);
+  async downloadDeploymentYAMLForSequence(watch: Watch, sequence: number): Promise<DeploymentFile> {
+    const params = await this.watchStore.getLatestGeneratedFileS3Params(watch.id, sequence);
 
     const download = await this.findDeploymentFile(params);
-    const watch = await this.watchStore.getWatch(watchId);
-    const filename = this.determineFileName(download, watch.watchName!);
+    const filename = this.determineFileName(download, watch.watchName);
     return {
       ...download,
       filename,

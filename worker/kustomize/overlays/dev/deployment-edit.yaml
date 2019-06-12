@@ -22,9 +22,9 @@ spec:
             - name: S3_BUCKET_ENDPOINT
               value: "true"
             - name: S3_ACCESS_KEY_ID
-              value: fake
+              value: not-a-key
             - name: S3_SECRET_ACCESS_KEY
-              value: fake
+              value: not-a-secret
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:

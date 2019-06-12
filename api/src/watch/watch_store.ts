@@ -265,10 +265,10 @@ export class WatchStore {
     let v;
 
     if (opts.id) {
-      q = "SELECT watch_id FROM user_watch WHERE watch_id = $1 and user_id = $2";
+      q = "select watch_id from user_watch where watch_id = $1 and user_id = $2";
       v = [opts.id, userId];
     } else if (opts.slug) {
-      q = "SELECT watch_id FROM user_watch INNER JOIN watch ON watch.id = user_watch.watch_id WHERE watch.slug = $1 and user_watch.user_id = $2";
+      q = "select watch_id from user_watch inner join watch on watch.id = user_watch.watch_id where watch.slug = $1 and user_watch.user_id = $2";
       v = [opts.slug, userId];
     }
 
@@ -434,7 +434,7 @@ export class WatchStore {
     if (_.isUndefined(sequence)) {
       generatedFiles = await this.listGeneratedFiles(watchId);
     } else {
-      generatedFiles = [await this.getGeneratedFileForSequence(watchId, sequence)];
+      generatedFiles = [await this.getGeneratedFileForSequence(watchId, sequence!)];
     }
 
     let exists = false;

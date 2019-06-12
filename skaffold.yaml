@@ -54,9 +54,6 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: fake-s3
-      context: "./util/s3"
-
 deploy:
   kustomize:
     path: "./kustomize/overlays/dev"
