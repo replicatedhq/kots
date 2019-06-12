@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import classNames from "classnames";
 import { getClusterType } from "@src/utilities/utilities";
 
@@ -18,7 +18,7 @@ export default function WatchVersionHistory(props) {
         <p className="u-fontSize--large">Most recent version</p>
         <div className="flex flex1 justifyContent--flexEnd">
           {watches.length > 0 && (
-            <>
+            <Fragment>
               {watches.map(({ cluster }) => {
                 const icon = getClusterType(cluster.gitOpsRef) === "git"
                   ? "icon github-button-icon"
@@ -35,7 +35,7 @@ export default function WatchVersionHistory(props) {
                   </div>
                 );
               })}
-            </>
+            </Fragment>
           )}
         </div>
       </div>
