@@ -131,7 +131,7 @@ class DetailPageApplication extends React.Component {
 
   render() {
     const { isDownloadingAssets, isDownloadingMidstreamAssets } = this.state;
-    const { watch } = this.props;
+    const { watch, updateCallback } = this.props;
     const childWatches = watch.watches;
     let options = [];
     if (watch.cluster) {
@@ -249,6 +249,7 @@ class DetailPageApplication extends React.Component {
               contributors={watch.contributors || []}
               watchName={watch.watchName}
               watchId={watch.id}
+              watchCallback={updateCallback}
               slug={watch.slug}
             />
           </div>

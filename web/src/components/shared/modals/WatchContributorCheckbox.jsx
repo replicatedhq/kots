@@ -1,8 +1,13 @@
 import * as React from "react";
+import classNames from "classnames";
 
 export const WatchContributorCheckbox = ({ handleCheckboxChange, contributors, githubLogin, item }) => (
   <div data-qa={`Checkbox--${item.login}`} className="BoxedCheckbox-wrapper flex-column">
-    <div className={`BoxedCheckbox flex1 flex ${contributors[item.login] && contributors[item.login].isActive ? "is-active" : ""}`}>
+    <div className={
+      classNames("BoxedCheckbox flex1 flex", {
+        "is-active": contributors[item.login] && contributors[item.login].isActive,
+        "is-disabled": githubLogin && githubLogin.toLowerCase() === item.login
+      })}>
       <div className="flex-column flex-verticalCenter input-wrapper">
         <input
           type="checkbox"

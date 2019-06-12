@@ -217,10 +217,10 @@ export class WatchContributorsModal extends React.Component {
       displayContributorsModal,
       toggleContributorsModal,
       watchBeingEdited,
-      getGithubUser,
+      getUserInfo,
       getWatchContributorsQuery
     } = this.props;
-    const loading = getGithubUser && this.props.getUserInfo.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading
+    const loading = getUserInfo && this.props.getUserInfo.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading
     const {
       org,
       orgs,
@@ -267,13 +267,13 @@ export class WatchContributorsModal extends React.Component {
               <p className="u-fontWeight--medium u-fontSize--small">Organization Members</p>
               <div className="flex flex-column u-borderTop--gray u-marginTop--10 u-position--relative">
                 <div className="contributer-wrapper">
-                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) =>
+                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) => 
                     <WatchContributorCheckbox
-                      item={contributors[key]}
                       key={i}
+                      item={contributors[key]}
                       contributors={contributors}
                       handleCheckboxChange={(field, e) => this.handleCheckboxChange(field, e)}
-                      githubLogin={getGithubUser && this.props.getUserInfo.userInfo.username.toLowerCase()}
+                      githubLogin={getUserInfo && getUserInfo.userInfo.username.toLowerCase()}
                     />
                   )}
                 </div>
