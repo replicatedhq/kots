@@ -121,8 +121,7 @@ publish-enterprise-aka: GITOPS_OWNER = replicatedhq
 publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise-aka: GITOPS_BRANCH = master
 publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-worker-aka.yaml
-publish-enterprise-aka: docker
-publish-enterprise-aka: gitops
+publish-enterprise-aka: build_and_publish
 
 build_and_publish:
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
