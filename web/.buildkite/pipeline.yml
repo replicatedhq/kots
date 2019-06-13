@@ -1,7 +1,4 @@
 steps:
-  - commands:
-      - make -C web build-cache publish-cache
-
   - command: cd web && make deps test && yarn run publish:pact
     label: "test-and-build"
     plugins:

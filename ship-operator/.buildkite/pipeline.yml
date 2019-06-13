@@ -1,7 +1,4 @@
 steps:
-  - commands:
-      - cd ship-operator
-      - make build-cache publish-cache
 
   - command: make ci
     label: test-and-build

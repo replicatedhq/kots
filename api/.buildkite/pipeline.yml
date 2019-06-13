@@ -1,8 +1,5 @@
 steps:
   - commands:
-      - make -C api build-cache publish-cache
-
-  - commands:
       - docker-compose -f api/test/docker-compose.yml down
       - docker-compose -f api/test/docker-compose.yml pull
       - docker-compose -f api/test/docker-compose.yml build
