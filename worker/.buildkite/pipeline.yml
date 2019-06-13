@@ -1,9 +1,5 @@
 steps:
   - commands:
-      - make -C worker build-cache publish-cache
-    branches: "master"
-
-  - commands:
       - make -C worker build
     label: test-and-build
     plugins:
