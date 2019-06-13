@@ -190,16 +190,15 @@
         },
         "body": {
           "operationName": "createWatch",
-          "query": "\n  mutation createWatch($stateJSON: String!, $owner: String!) {\n    createWatch(stateJSON: $stateJSON, owner: $owner) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
+          "query": "\n  mutation createWatch($stateJSON: String!) {\n    createWatch(stateJSON: $stateJSON) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
           "variables": {
-            "owner": "solo-account",
             "stateJSON": "{\n  \"v1\": {\n    \"config\": {},\n    \"releaseName\": \"factorio\",\n    \"helmValuesDefaults\": \"\",\n    \"upstream\": \"https://github.com/helm/charts/tree/ffb84f85a861e765caade879491a75a6dd3091a5/stable/factorio\",\n    \"metadata\": {\n      \"applicationType\": \"helm\",\n      \"icon\": \"https://us1.factorio.com/assets/img/factorio-logo.png\",\n      \"name\": \"factorio\",\n      \"releaseNotes\": \"\",\n      \"license\": {\n        \"assignee\": \"\",\n        \"createdAt\": \"0001-01-01T00:00:00Z\",\n        \"expiresAt\": \"0001-01-01T00:00:00Z\",\n        \"id\": \"\",\n        \"type\": \"\"\n      },\n      \"sequence\": 0,\n      \"version\": \"0.3.1\"\n    },\n    \"contentSHA\": \"126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e\"\n  }\n}"
           }
         },
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!,\\s*\\$owner:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON,\\s*owner:\\s*\\$owner\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -350,7 +349,7 @@
         },
         "body": {
           "operationName": "createWatch",
-          "query": "\n  mutation createWatch($stateJSON: String!, $owner: String!) {\n    createWatch(stateJSON: $stateJSON, owner: $owner) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
+          "query": "\n  mutation createWatch($stateJSON: String!) {\n    createWatch(stateJSON: $stateJSON) {\n      id\n      slug\n      watchName\n      createdOn\n      lastUpdated\n    }\n  }\n",
           "variables": {
             "owner": "duplicate-slug-account",
             "stateJSON": "{\n  \"v1\": {\n    \"config\": {},\n    \"releaseName\": \"factorio\",\n    \"helmValuesDefaults\": \"\",\n    \"upstream\": \"\",\n    \"metadata\": {\n      \"applicationType\": \"helm\",\n      \"icon\": \"https://us1.factorio.com/assets/img/factorio-logo.png\",\n      \"name\": \"duplicate-slug-one\",\n      \"releaseNotes\": \"\",\n      \"sequence\": 0,\n      \"version\": \"0.3.1\"\n    },\n    \"contentSHA\": \"126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e\"\n  }\n}"
@@ -359,7 +358,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!,\\s*\\$owner:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON,\\s*owner:\\s*\\$owner\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*mutation\\s*createWatch\\(\\$stateJSON:\\s*String!\\)\\s*\\{\\s*createWatch\\(stateJSON:\\s*\\$stateJSON\\)\\s*\\{\\s*id\\s*slug\\s*watchName\\s*createdOn\\s*lastUpdated\\s*\\}\\s*\\}\\s*"
           }
         }
       },

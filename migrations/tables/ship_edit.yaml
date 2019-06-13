@@ -33,3 +33,5 @@ spec:
           notNull: true
       - name: finished_at
         type: timestamp without time zone
+      - name: is_headless
+        type: boolean

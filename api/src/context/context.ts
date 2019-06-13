@@ -7,6 +7,7 @@ import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import { Stores } from "../schema/stores";
 import { Watch } from "../watch";
+import slugify from "slugify";
 import {
   Notification,
 } from "../generated/types";
@@ -45,6 +46,17 @@ export class Context {
     }
 
     return null
+  }
+
+  public async getUsername(): Promise<string> {
+    const shipUser = await this.stores.userStore.getUser(this.session.userId);
+    if (shipUser.githubUser) {
+      return shipUser.githubUser.login;
+    } else if (shipUser.shipUser) {
+      return slugify(`${shipUser.shipUser.firstName}-${shipUser.shipUser.lastName}`).toLowerCase();
+    }
+
+    throw new ReplicatedError("unable to get username");
   }
 
   public async listClusters(): Promise<Cluster[]> {

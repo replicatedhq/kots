@@ -159,6 +159,11 @@ func (s *EditServer) CreateEditHandler(c *gin.Context) {
 		return
 	}
 
+	if shipEdit.IsHeadless {
+		c.Status(http.StatusCreated)
+		return
+	}
+
 	// Block until the new service is responding
 	quickClient := &http.Client{
 		Timeout: time.Millisecond * 200,

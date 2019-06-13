@@ -13,7 +13,7 @@ import (
 
 func (s *SQLStore) GetEdit(ctx context.Context, editID string) (*types.EditSession, error) {
 	shipEditQuery := `select ship_edit.id, ship_edit.watch_id, ship_edit.user_id, ship_edit.result,
-	ship_edit.created_at, ship_edit.finished_at, watch.current_state
+	ship_edit.created_at, ship_edit.finished_at, ship_edit.is_headless, watch.current_state
 	from ship_edit
 	inner join watch on watch.id = ship_edit.watch_id
 	where ship_edit.id = $1`
@@ -22,9 +22,10 @@ func (s *SQLStore) GetEdit(ctx context.Context, editID string) (*types.EditSessi
 	editSession := types.EditSession{}
 	var finishedAt pq.NullTime
 	var result sql.NullString
+	var isHeadless sql.NullBool
 
 	err := row.Scan(&editSession.ID, &editSession.WatchID, &editSession.UserID, &result,
-		&editSession.CreatedAt, &finishedAt, &editSession.StateJSON)
+		&editSession.CreatedAt, &finishedAt, &isHeadless, &editSession.StateJSON)
 	if err != nil {
 		return nil, errors.Wrap(err, "scan ship_edit")
 	}
@@ -36,6 +37,10 @@ func (s *SQLStore) GetEdit(ctx context.Context, editID string) (*types.EditSessi
 	if result.Valid {
 		editSession.Result = result.String
 	}
+
+	if isHeadless.Valid {
+		editSession.IsHeadless = isHeadless.Bool
+	} /* edit default to false */
 
 	nextSequence, err := s.GetNextUploadSequence(ctx, editSession.WatchID)
 	if err != nil {

@@ -11,6 +11,7 @@ type EditSession struct {
 	WatchID        string
 	CreatedAt      time.Time
 	FinishedAt     time.Time
+	IsHeadless     bool
 	Result         string
 	UserID         string
 	StateJSON      []byte
@@ -39,6 +40,13 @@ func (s *EditSession) GetName() string {
 }
 
 func (s *EditSession) GetShipArgs() []string {
+	if s.IsHeadless {
+		return []string{
+			"edit",
+			"--headless",
+		}
+	}
+
 	return []string{
 		"edit",
 	}

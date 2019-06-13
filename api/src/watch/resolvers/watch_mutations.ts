@@ -6,6 +6,7 @@ import { Context } from "../../context";
 import { schema } from "../schema";
 import { Stores } from "../../schema/stores";
 import { Watch, Contributor } from "../";
+import { Params } from "../../server/params";
 
 export function WatchMutations(stores: Stores) {
   return {
@@ -45,13 +46,33 @@ export function WatchMutations(stores: Stores) {
       return updatedWatch.toSchema(root, stores, context);
     },
 
-    async createWatch(root: any, { stateJSON, owner, clusterID, githubPath }: any, context: Context): Promise<Watch> {
+    async createWatch(root: any, { stateJSON }: any, context: Context): Promise<Watch> {
       validateJson(stateJSON, schema);
 
       const metadata = JSON.parse(stateJSON).v1.metadata;
-      const newWatch = await stores.watchStore.createNewWatch(stateJSON, owner, context.session.userId, metadata);
+      const newWatch = await stores.watchStore.createNewWatch(stateJSON, await context.getUsername(), context.session.userId, metadata);
 
-      return newWatch;
+      const editSession = await stores.editStore.createEditSession(context.session.userId, newWatch.id, true);
+
+      const params = await Params.getParams();
+      if (params.skipDeployToWorker) {
+        return newWatch;
+      }
+
+      const deployedEditSession = await stores.editStore.deployEditSession(editSession.id);
+
+      const now = new Date();
+      const abortAfter = new Date(now.getTime() + (1000 * 60));
+      while (new Date() < abortAfter) {
+        const updatedEditSession = await stores.editStore.getSession(deployedEditSession.id);
+        if (updatedEditSession.finishedOn) {
+          return newWatch;
+        }
+
+        await sleep(1000);
+      }
+
+      throw new ReplicatedError("unable to create watch from state");
     },
 
     async deleteWatch(root: any, args: any, context: Context): Promise<boolean> {
@@ -106,9 +127,6 @@ export function WatchMutations(stores: Stores) {
 
       return stores.watchStore.listWatchContributors(watch.id);
     },
-
-
-
   }
 }
 
@@ -129,4 +147,8 @@ function validateJson(json, checkedSchema) {
     const upperCaseErr = err.charAt(0).toUpperCase() + err.substr(1);
     throw new ReplicatedError(upperCaseErr);
   }
+}
+
+function sleep(ms = 0) {
+  return new Promise(r => setTimeout(r, ms));
 }

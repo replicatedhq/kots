@@ -4,4 +4,5 @@ export interface EditSession {
   createdOn: Date;
   finishedOn?: Date;
   result?: string;
+  isHeadless: boolean;
 }

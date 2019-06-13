@@ -6,6 +6,7 @@ import isEmpty from "lodash/isEmpty";
 import { createNewWatch, updateStateJSON } from "../../mutations/WatchMutations";
 import { getWatchJson } from "../../queries/WatchQueries";
 import { userInfo } from "../../queries/UserQueries";
+import Loader from "../shared/Loader";
 
 import "../../scss/components/state/StateFileViewer.scss";
 
@@ -68,7 +69,6 @@ class StateFileViewer extends React.Component {
   handleSaveValues = () => {
     const { specValue } = this.state;
     const { owner, slug } = this.props.match.params;
-    const { username } = this.props.getUserInfo;
     const watchSlug = `${owner}/${slug}`;
     this.setState({ saving: true, specValueError: false, serverEror: false });
 
@@ -76,7 +76,7 @@ class StateFileViewer extends React.Component {
 
     if (this.props.isNew) {
       if (isValid) {
-        this.props.createNewWatch(specValue, username)
+        this.props.createNewWatch(specValue)
           .then(() => {
             this.setState({ saving: false });
             this.savedValues();
@@ -154,6 +154,14 @@ class StateFileViewer extends React.Component {
       saving
     } = this.state;
 
+    if (saving) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">We're moving as fast as we can but it may take a moment.</p>
+          <Loader size="60" />
+        </div>
+      );
+    }
 
     return (
       <div className={`flex-column flex1 HelmValues--wrapper ${this.props.isNew ? "u-paddingTop--30" : ""}`}>
@@ -208,7 +216,7 @@ export default compose(
   withRouter,
   graphql(createNewWatch, {
     props: ({ mutate }) => ({
-      createNewWatch: (stateJSON, owner) => mutate({ variables: { stateJSON, owner } })
+      createNewWatch: (stateJSON) => mutate({ variables: { stateJSON } })
     })
   }),
   graphql(updateStateJSON, {
