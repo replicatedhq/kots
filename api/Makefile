@@ -55,11 +55,13 @@ test: export S3_SECRET_ACCESS_KEY = S3RVER
 test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
 test:
-	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 ||:
+	@-docker stop ship-cluster-fixtures > /dev/null 2>&1 || :
+	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 || :
 	docker run --rm -d --name ship-cluster-fixtures -p 15432:5432 replicated/ship-cluster-fixtures:local
 	yarn run test:local
 	@-sleep 1
-	docker rm -f ship-cluster-fixtures
+	docker stop ship-cluster-fixtures
+	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 || :
 
 .PHONY: pkg
 pkg:

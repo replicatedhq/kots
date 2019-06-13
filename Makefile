@@ -26,7 +26,8 @@ test:
 .PHONY: bitbucket-server
 bitbucket-server:
 	docker volume create --name bitbucketVolume
-	@-docker rm -f bitbucket > /dev/null 2>&1 ||:
+	@-docker stop bitbucket > /dev/null 2>&1 || :
+	@-docker rm -f bitbucket > /dev/null 2>&1 || :
 	docker run \
 		-v bitbucketVolume:/var/atlassian/application-data/bitbucket \
 		--name="bitbucket" \
