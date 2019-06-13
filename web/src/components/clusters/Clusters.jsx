@@ -182,7 +182,7 @@ export class Clusters extends React.Component {
               :
               <div className="u-flexTabletReflow flex-auto installed-clusters-wrapper flexWrap--wrap">
                 {listClustersQuery.listClusters.map((cluster, i) => (
-                  <div key={cluster.id} className="installed-cluster-wrapper flex flex1 u-paddingBottom--20">
+                  <div key={cluster.id} className="installed-cluster-wrapper flex flex-auto u-paddingBottom--20">
                     <ClusterCard
                       index={i}
                       item={cluster}

@@ -8,6 +8,10 @@ import ShipClusterSuccess from "./ShipClusterSuccess";
 import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
 export class CreateCluster extends React.Component {
+  constructor() {
+    super();
+    this.clusterNameInputRef = React.createRef();
+  }
   state = {
     title: "",
     titleError: false,
@@ -71,7 +75,23 @@ export class CreateCluster extends React.Component {
     this.setState({ opsType: omit(selectedOption, ["uiInfo"]) });
   }
 
+  createOnEnterKey = (e) => {
+    const { createSuccess, saving } = this.state;
+    const enterKey = e.keyCode === 13;
+    if (createSuccess || saving) { return; }
+    if (enterKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.onClickCreate();
+    }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("keydown", this.createOnEnterKey);
+  }
+
   async componentDidMount() {
+    window.addEventListener("keydown", this.createOnEnterKey);
     const { search } = this.props.location;
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
@@ -88,6 +108,10 @@ export class CreateCluster extends React.Component {
         createSuccess: true
       });
     }
+
+    setTimeout(() => {
+      this.clusterNameInputRef.current.focus();
+    }, 100);
   }
 
   render() {
@@ -143,7 +167,7 @@ export class CreateCluster extends React.Component {
                 <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">What's the name of your cluster?</p>
                 <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Maybe this is Production, or Europe or something descriptive.</p>
                 <div className="flex flex1">
-                  <input value={this.state.title} onChange={(e) => { this.onTitleChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="Production" />
+                  <input ref={this.clusterNameInputRef} value={this.state.title} onChange={(e) => { this.onTitleChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="Production" />
                 </div>
                 {this.state.createClusterErr && <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{this.state.createClusterErr.message}</p>}
               </div>
