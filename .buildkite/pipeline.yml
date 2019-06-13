@@ -8,7 +8,7 @@ steps:
     branches: master
 
   - commands:
-      - make -C workerbuild-cache publish-cache
+      - make -C worker build-cache publish-cache
     branches: master
 
   - label: "schema-fixtures"
