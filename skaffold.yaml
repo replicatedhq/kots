@@ -28,9 +28,9 @@ build:
       context: "./web"
       sync:
         manual:
-          - src: "src/**/*.js"
-            dest: "./"
           - src: "src/**/*.jsx"
+            dest: "./"
+          - src: "src/**/*.js"
             dest: "./"
           - src: "src/**/*.png"
             dest: "./"

@@ -2,33 +2,7 @@
 import { addMinutes } from "date-fns";
 import * as randomstring from "randomstring";
 import * as pg from "pg";
-import { GithubNonce, ScmLead } from "./";
-
-export class UserStoreOld {
-  constructor(readonly pool: pg.Pool) {}
-
-  async saveWatchContributor(userId: String, id: String) {
-    const q = "INSERT INTO user_watch (user_id, watch_id) VALUES ($1, $2)";
-
-    const v = [userId, id];
-
-    await this.pool.query(q, v);
-  }
-
-  async removeExistingWatchContributorsExcept(id: string, userIdToExclude: string) {
-    const q = `
-    DELETE FROM
-      user_watch
-    WHERE
-      watch_id = $1 AND
-      user_id != $2
-    `;
-
-    const v = [id, userIdToExclude];
-
-    await this.pool.query(q, v);
-  }
-}
+import { GithubNonce } from "./";
 
 export class GithubNonceStore {
   constructor(private readonly pool: pg.Pool) {}

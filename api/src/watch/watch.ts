@@ -54,29 +54,6 @@ export class Watch {
     return stores.watchStore.listWatchContributors(this.id);
   }
 
-  public async addContributor(stores: Stores, context: Context): Promise<Contributor[]> {
-    // Remove existing contributors
-    await stores.userStoreOld.removeExistingWatchContributorsExcept(this.id, context.session.userId);
-
-    // For each contributor, get user, if !user then create a new user
-    for (const contributor of this.contributors) {
-      const { githubId, login, avatar_url } = contributor!;
-
-      let shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
-      if (!shipUser) {
-        shipUser = await stores.userStore.createGitHubUser(githubId!, login!, avatar_url!, "");
-
-        const allUsersClusters = await stores.clusterStore.listAllUsersClusters();
-        for (const allUserCluster of allUsersClusters) {
-          await stores.clusterStore.addUserToCluster(allUserCluster.id!, shipUser[0].id);
-        }
-      }
-      // tslint:disable-next-line:curly
-      if (shipUser[0].id !== context.session.userId) await stores.userStoreOld.saveWatchContributor(shipUser[0].id, this.id);
-    }
-    return this.getContributors(stores);
-  }
-
   // Features Methods
   public async getFeatures(stores: Stores): Promise<Feature[]> {
     const features = await stores.featureStore.listWatchFeatures(this.id);

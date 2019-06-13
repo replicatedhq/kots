@@ -101,17 +101,29 @@ export const createEditSessionRaw = `
 `;
 export const createEditSession = gql(createEditSessionRaw);
 
-export const saveWatchContributors = gql`
-  mutation saveWatchContributors($id: String!, $contributors: [ContributorInput]!) {
-    saveWatchContributors(id: $id, contributors: $contributors) {
+export const addWatchContributorRaw = `
+  mutation addWatchContributor($watchId: ID!, $githubId: Int!, $login: String!, $avatarUrl: String) {
+    addWatchContributor(watchId: $watchId, githubId: $githubId, login: $login, avatarUrl: $avatarUrl) {
       id
       createdAt
       githubId
       login
       avatar_url
     }
-  }
-`
+  }`;
+export const addWatchContributor = gql(addWatchContributorRaw);
+
+export const removeWatchContributorRaw = `
+  mutation removeWatchContributor($watchId: ID!, $contributorId: String!) {
+    removeWatchContributor(watchId: $watchId, contributorId: $contributorId) {
+      id
+      createdAt
+      githubId
+      login
+      avatar_url
+    }
+  }`;
+export const removeWatchContributor = gql(removeWatchContributorRaw);
 
 export const deleteNotification = gql`
   mutation deleteNotification ($id: String!, $isPending: Boolean) {

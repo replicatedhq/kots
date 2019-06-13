@@ -98,34 +98,58 @@ export function WatchMutations(stores: Stores) {
       return true;
     },
 
-    async saveWatchContributors(root: any, args: any, context: Context): Promise<Contributor[]> {
-      const watch = await context.getWatch(args.id);
+    async addWatchContributor(root: any, args: any, context: Context): Promise<Contributor[]> {
+      const watch = await context.getWatch(args.watchId);
 
-      watch.addContributor(stores, context)
+      let shipUser = await stores.userStore.tryGetGitHubUser(args.githubId);
+      if (!shipUser) {
+        await stores.userStore.createGitHubUser(args.githubId, args.login, args.avatarUrl, "");
+        shipUser = await stores.userStore.tryGetGitHubUser(args.githubId);
+      }
 
-        // Remove existing contributors
-        await stores.userStoreOld.removeExistingWatchContributorsExcept(watch.id, context.session.userId);
+      if (!shipUser) {
+        throw new ReplicatedError("Unknown user");
+      }
 
-        // For each contributor, get user, if !user then create user
-        for (const contributor of args.contributors) {
-          const { githubId, login, avatar_url, email } = contributor!;
+      await stores.watchStore.addUserToWatch(watch.id, shipUser.id);
 
-          let shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
-          if (!shipUser) {
-            await stores.userStore.createGitHubUser(githubId!, login!, avatar_url!, email || "");
-            await stores.userStore.createPasswordUser(githubId!, login!, "", "");
-            shipUser = await stores.userStore.tryGetGitHubUser(githubId!);
+      const userIds = await stores.watchStore.listUsersForWatch(watch.id);
+      const contributors = Promise.all(
+        _.map(userIds, async (userId): Promise<Contributor> => {
+          const contributor = await stores.userStore.getUser(userId);
+          return {
+            id: contributor.id,
+            createdAt: contributor.createdAt.toString(),
+            githubId: contributor.githubUser!.githubId,
+            login: contributor.githubUser!.login,
+            avatar_url: contributor.githubUser!.avatarUrl,
+          };
+        })
+      );
 
-            const allUsersClusters = await stores.clusterStore.listAllUsersClusters();
-            for (const allUserCluster of allUsersClusters) {
-              await stores.clusterStore.addUserToCluster(allUserCluster.id!, shipUser[0].id);
-            }
-          }
-          // tslint:disable-next-line:curly
-          if (shipUser && shipUser.id !== context.session.userId) await stores.userStoreOld.saveWatchContributor(shipUser.id, watch.id!);
-        }
+      return contributors;
+    },
 
-      return stores.watchStore.listWatchContributors(watch.id);
+    async removeWatchContributor(root: any, args: any, context: Context): Promise<Contributor[]> {
+      const watch = await context.getWatch(args.watchId);
+
+      await stores.watchStore.removeUserFromWatch(watch.id, args.contributorId);
+
+      const userIds = await stores.watchStore.listUsersForWatch(watch.id);
+      const contributors = Promise.all(
+        _.map(userIds, async (userId): Promise<Contributor> => {
+          const contributor = await stores.userStore.getUser(userId);
+          return {
+            id: contributor.id,
+            createdAt: contributor.createdAt.toString(),
+            githubId: contributor.githubUser!.githubId,
+            login: contributor.githubUser!.login,
+            avatar_url: contributor.githubUser!.avatarUrl,
+          };
+        })
+      );
+
+      return contributors;
     },
   }
 }

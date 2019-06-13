@@ -7,7 +7,8 @@ import { WatchContributorCheckbox } from "./WatchContributorCheckbox";
 import { getWatchContributors } from "../../../queries/WatchQueries";
 import { githubUserOrgs, getOrgMembers } from "../../../queries/GitHubQueries";
 import { userInfo } from "../../../queries/UserQueries";
-import { saveWatchContributors } from "../../../mutations/WatchMutations";
+import map from "lodash/map";
+import { addWatchContributor, removeWatchContributor } from "../../../mutations/WatchMutations";
 import Select from "react-select";
 import keyBy from "lodash/keyBy";
 import merge from "lodash/merge";
@@ -27,6 +28,7 @@ export class WatchContributorsModal extends React.Component {
       loadingMembers: false,
       contributors: {},
       activeContributors: {},
+
       orgMembersPage: 1,
       nextPageMembers: [],
     };
@@ -155,23 +157,57 @@ export class WatchContributorsModal extends React.Component {
 
   onSaveContributors = async () => {
     const { id } = this.props.watchBeingEdited;
-    const contributorsArr = this.getActiveContributorsArr();
+
+    const desiredContributors = this.getActiveContributorsArr();
+    const desiredContributorGithubIds = map(desiredContributors, "githubId");
+
+    const currentContributors = this.props.getWatchContributorsQuery.watchContributors;
+    const currentContributorGithubIds = map(currentContributors, "githubId");
+
+    const addContributors = [];
+    const removeContributors = [];
+
+    for (const desiredContributor of desiredContributors) {
+      if (currentContributorGithubIds.indexOf(desiredContributor.githubId) === -1) {
+        addContributors.push(desiredContributor);
+      }
+    }
+
+    for (const currentContributor of currentContributors) {
+      if (desiredContributorGithubIds.indexOf(currentContributor.githubId) === -1) {
+        removeContributors.push(currentContributor);
+      }
+    }
+
     this.setState({ savingContributors: true });
-    await this.props.saveWatchContributors(id, contributorsArr)
-      .then(() => {
-        this.props.getWatchContributorsQuery.refetch();
-        if(typeof this.props.submitCallback === "function") {
-          this.props.submitCallback();
-        }
-        this.setState({ savingContributors: false, showSaved: true });
-        setTimeout(() => {
-          this.setState({ showSaved: false })
-        }, 2000)
-      })
-      .catch((err) => {
-        console.log(err);
-        this.setState({ savingContributors: false });
-      })
+
+    try {
+      for (const addContributor of addContributors) {
+        await this.props.client.mutate({
+          mutation: addWatchContributor,
+          variables: {
+            watchId: id,
+            githubId: addContributor.githubId,
+            login: addContributor.login,
+            avatarUrl: addContributor.avatar_url,
+          }
+        });
+      }
+
+      for (const removeContributor of removeContributors) {
+        await this.props.client.mutate({
+          mutation: removeWatchContributor,
+          variables: {
+            watchId: id,
+            contributorId: removeContributor.id,
+          },
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      this.setState({ savingContributors: false });
+    }
   }
 
   handleMenuScrollToBottomOrgs = async() => {
@@ -220,7 +256,6 @@ export class WatchContributorsModal extends React.Component {
       getUserInfo,
       getWatchContributorsQuery
     } = this.props;
-    const loading = getUserInfo && this.props.getUserInfo.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading
     const {
       org,
       orgs,
@@ -230,7 +265,11 @@ export class WatchContributorsModal extends React.Component {
       showSaved,
       nextPageMembers,
     } = this.state;
-    if (loading) {return null}
+    const loading = getUserInfo && this.props.getUserInfo.loading || getWatchContributorsQuery && getWatchContributorsQuery.loading;
+
+    if (loading) {
+      return null;
+    }
 
     return (
       <Modal
@@ -239,8 +278,7 @@ export class WatchContributorsModal extends React.Component {
         shouldReturnFocusAfterClose={false}
         contentLabel="Modal"
         ariaHideApp={false}
-        className="WatchContributorsModal--wrapper Modal SmallSize"
-      >
+        className="WatchContributorsModal--wrapper Modal SmallSize">
         <div className="Modal-body flex flex-column flex1 u-overflow--auto">
           <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Edit contributors for {watchBeingEdited.name}</h2>
           <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">Select the users that are allowed to make changes to this application. If you don't see who your looking for, head over to GitHub and add the desired user(s) to your org and they will be visible here.</p>
@@ -267,7 +305,7 @@ export class WatchContributorsModal extends React.Component {
               <p className="u-fontWeight--medium u-fontSize--small">Organization Members</p>
               <div className="flex flex-column u-borderTop--gray u-marginTop--10 u-position--relative">
                 <div className="contributer-wrapper">
-                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) => 
+                  {!isEmpty(contributors) && Object.keys(contributors).map((key, i) =>
                     <WatchContributorCheckbox
                       key={i}
                       item={contributors[key]}
@@ -319,10 +357,5 @@ export default compose(
   }),
   graphql(userInfo, {
     name: "getUserInfo"
-  }),
-  graphql(saveWatchContributors, {
-    props: ({ mutate }) => ({
-      saveWatchContributors: (id, contributors) => mutate({ variables: { id, contributors }})
-    })
   }),
 )(WatchContributorsModal);

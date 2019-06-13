@@ -629,6 +629,16 @@ export class WatchStore {
     }
   }
 
+  async removeUserFromWatch(watchId: string, userId: string): Promise<void> {
+    const q = `delete from user_watch where user_id = $1 and watch_id = $2`;
+    const v = [
+      userId,
+      watchId,
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   async addUserToWatch(watchId: string, userId: string): Promise<void> {
     const q = `insert into user_watch (user_id, watch_id) values ($1, $2)`;
     const v = [

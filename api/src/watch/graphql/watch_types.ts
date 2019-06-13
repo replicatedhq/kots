@@ -59,19 +59,10 @@ const Contributor = `
   }
 `;
 
-const ContributorInput = `
-  input ContributorInput {
-    githubId: Int
-    login: String
-    avatar_url: String
-  }
-`;
-
 export default [
   Watch,
   StateMetadata,
   Contributor,
-  ContributorInput,
   Version,
   VersionDetail,
 ];

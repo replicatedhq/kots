@@ -8,7 +8,7 @@ import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
 import { ImageWatchStore } from "../imagewatch/imagewatch_store";
 import { FeatureStore } from "../feature/feature_store";
-import { GithubNonceStore, UserStoreOld } from "../user/store";
+import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/store";
 import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
@@ -18,7 +18,6 @@ import { HelmChartStore } from "../helmchart";
 export interface Stores {
   sessionStore: SessionStore;
   userStore: UserStore;
-  userStoreOld: UserStoreOld
   githubNonceStore: GithubNonceStore;
   clusterStore: ClusterStore;
   watchStore: WatchStore,
