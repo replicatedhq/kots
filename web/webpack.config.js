@@ -156,9 +156,6 @@ module.exports = function (env) {
           }
         ],
         scripts: appEnv.WEBPACK_SCRIPTS,
-        links: [
-          "style[hash].css"
-        ],
         inject: false,
         window: {
           env: appEnv,
