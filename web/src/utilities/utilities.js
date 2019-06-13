@@ -29,12 +29,12 @@ export function getCurrentWatch(params) {
 /**
  * Takes a watched app object and returns its parsed metadata
  *
- * @param {Object} watch Watched app to retrieve metadata for
+ * @param {Object} watchMeta Metadata from watched app to parse
  * @return {Object}
  */
-export function getWatchMetadata(watch) {
+export function getWatchMetadata(watchMeta) {
   try {
-    return JSON.parse(watch.metadata);
+    return JSON.parse(watchMeta);
   } catch (error) {
     console.error(error);
     return { error };
