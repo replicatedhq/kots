@@ -14,7 +14,6 @@ export default () => {
     const result = await getShipClient("solo-account-session-1").mutate({
         mutation: createNewWatch,
         variables: {
-          owner: "solo-account",
           stateJSON: `{
   "v1": {
     "config": {},
@@ -58,7 +57,6 @@ const createMidstreamWatchInteraction = new Pact.GraphQLInteraction()
   .withOperation("createWatch")
   .withQuery(createNewWatchRaw)
   .withVariables({
-    owner: "solo-account",
     stateJSON: `{
   "v1": {
     "config": {},

@@ -1,8 +1,8 @@
 import gql from "graphql-tag";
 
 export const createNewWatchRaw = `
-  mutation createWatch($stateJSON: String!, $owner: String!) {
-    createWatch(stateJSON: $stateJSON, owner: $owner) {
+  mutation createWatch($stateJSON: String!) {
+    createWatch(stateJSON: $stateJSON) {
       id
       slug
       watchName
