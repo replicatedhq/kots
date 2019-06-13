@@ -7,7 +7,7 @@ import Loader from "../shared/Loader";
 import {
   Utilities,
   getClusterType,
-  getAppData,
+  getWatchMetadata,
   getReadableLicenseType
 } from "@src/utilities/utilities";
 import {
@@ -157,7 +157,7 @@ class DetailPageApplication extends React.Component {
   render() {
     const { watch, updateCallback } = this.props;
     const childWatches = watch.watches;
-    const appMeta = getAppData(watch.metadata);
+    const appMeta = getWatchMetadata(watch.metadata);
 
     // TODO: We shuold probably return something different if it never expires to avoid this hack string check.
     const expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");

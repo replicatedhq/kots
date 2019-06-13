@@ -57,13 +57,6 @@ export function getApplicationType(watch) {
     console.error(error);
     return "Error fetching applicationType";
   }
- /** 
- * @param {String} - 
- * @return {Object} - 
- */
-export function getAppData(metadata) {
-  return JSON.parse(metadata);
-}
 
 /**
  * 
@@ -93,14 +86,6 @@ export function getReadableLicenseType(type) {
     readableType = "Trial"
   }
   return readableType;
-}
-
- /**
- * @param {String} -
- * @return {Object} -
- */
-export function getAppData(metadata) {
-  return JSON.parse(metadata);
 }
 
 export const Utilities = {
