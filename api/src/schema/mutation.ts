@@ -16,7 +16,8 @@ type Mutation {
   deleteWatch(watchId: String!, childWatchIds: [String]): Boolean
   updateStateJSON(slug: String!, stateJSON: String!): Watch
   deployWatchVersion(watchId: String!, sequence: Int): Boolean
-  saveWatchContributors(id: String!, contributors: [ContributorInput]!): [Contributor]
+  addWatchContributor(watchId: ID!, githubId: Int!, login: String!, avatarUrl: String): [Contributor]
+  removeWatchContributor(watchId: ID!, contributorId: String!): [Contributor]
 
   createNotification(watchId: String!, webhook: WebhookNotificationInput, email: EmailNotificationInput): Notification
   updateNotification(watchId: String!, notificationId: String!, webhook: WebhookNotificationInput, email: EmailNotificationInput): Notification
