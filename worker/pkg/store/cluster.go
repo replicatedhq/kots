@@ -36,6 +36,7 @@ func (s SQLStore) GetClusterForWatch(ctx context.Context, watchID string) (*type
 	if err != nil {
 		return nil, errors.Wrap(err, "get clusterid from watchid")
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		// No clusters
@@ -51,7 +52,7 @@ func (s SQLStore) GetClusterForWatch(ctx context.Context, watchID string) (*type
 }
 
 func (s SQLStore) GetGitHubPathForClusterWatch(ctx context.Context, clusterID string, watchID string) (string, error) {
-	query := `select github_path from watch_cluster where watch_id = $1 and cluster_id = $2`;
+	query := `select github_path from watch_cluster where watch_id = $1 and cluster_id = $2`
 	row := s.db.QueryRowContext(ctx, query, watchID, clusterID)
 
 	githubPath := ""
