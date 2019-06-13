@@ -257,6 +257,8 @@ export class WatchStore {
   }
 
   async findUserWatch(userId: string, opts: FindWatchOpts): Promise<Watch> {
+    console.log(`findUserWatch with userId ${userId} and opts ${JSON.stringify(opts)}`);
+
     if (!opts.id && !opts.slug) {
       throw new TypeError("one of slug or id is required");
     }

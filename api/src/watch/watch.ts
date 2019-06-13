@@ -34,7 +34,7 @@ export class Watch {
     const parentWatchId = await stores.watchStore.getParentWatchId(this.id)
     return stores.watchStore.getWatch(parentWatchId);
   }
-  public async getChildWatches(stores): Promise<Watch[]> {
+  public async getChildWatches(stores: Stores): Promise<Watch[]> {
     return stores.watchStore.listWatches(undefined, this.id);
   }
 
