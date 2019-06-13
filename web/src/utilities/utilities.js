@@ -57,20 +57,6 @@ export function getApplicationType(watch) {
     console.error(error);
     return "Error fetching applicationType";
   }
-
-/**
- * 
- * @param {String} - 
- * @return {String} - 
- */
-export function getReadableLicenseType(type) {
-  let readableType = "Development";
-  if (type === "paid") {
-    readableType = "Production"
-  } else if (type === "trial") {
-    readableType = "Trial"
-  }
-  return readableType;
 }
 
 /**
