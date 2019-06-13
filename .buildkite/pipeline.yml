@@ -1,17 +1,19 @@
 steps:
   - commands:
       - make -C api build-cache publish-cache
+    branches: master
 
   - commands:
       - make -C web build-cache publish-cache
+    branches: master
 
   - commands:
       - make -C workerbuild-cache publish-cache
+    branches: master
 
   - label: "schema-fixtures"
     artifact_paths:
       - "migrations/fixtures/schema/fixtures.sql"
-    branches: "master"
     plugins:
       - docker#v3.0.1:
           image: schemahero/schemahero:alpha
@@ -38,7 +40,6 @@ steps:
           workdir: /repo
     artifact_paths:
       - "migrations/fixtures/fixtures.sql"
-    branches: "master"
 
   - wait
 
