@@ -274,6 +274,7 @@ export class WatchStore {
       if (watchId === "") {
         const qq = "select watch_id from user_watch where user_id = $1 and watch_id = (select parent_watch_id from watch where id = $2)";
         const vv = [userId, opts.id];
+        const result = await this.pool.query(qq, vv);
         if (result.rows.length === 1) {
           watchId = result.rows[0].watch_id;
         }
