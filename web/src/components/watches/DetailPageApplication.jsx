@@ -34,7 +34,8 @@ class DetailPageApplication extends React.Component {
         label: "Select a cluster",
         watchId: ""
       },
-      errorCustomizingCluster: false
+      errorCustomizingCluster: false,
+      preparingAppUpdate: false
     }
 
   onFormChange = (event) => {
@@ -124,20 +125,36 @@ class DetailPageApplication extends React.Component {
     }
   }
 
-  handleClusterMangeClick = (watchId) => {
-    this.setState({ errorCustomizingCluster: false, [`preparing${watchId}`]: true });
+  handleEditWatchClick = (watch) => {
+    const isCluster = watch.cluster;
+    if (isCluster) {
+      this.setState({ errorCustomizingCluster: false, [`preparing${watch.id}`]: true });
+    } else {
+      this.setState({ preparingAppUpdate: true });
+    }
+
     this.props.client.mutate({
       mutation: createEditSession,
       variables: {
-        watchId: watchId,
+        watchId: watch.id,
       },
     })
     .then(({ data }) => {
-      this.setState({ [`preparing${watchId}`]: false });
+      if (isCluster) {
+        this.setState({ [`preparing${watch.id}`]: false });
+      } else {
+        this.setState({ preparingAppUpdate: false });
+      }
       this.props.onActiveInitSession(data.createEditSession.id);
       this.props.history.push("/ship/edit");
     })
-    .catch(() => this.setState({ errorCustomizingCluster: true, [`preparing${watchId}`]: false }));
+    .catch(() => {
+      if (isCluster) {
+        this.setState({ errorCustomizingCluster: true, [`preparing${watch.id}`]: false })
+      } else {
+        this.setState({ preparingAppUpdate: false });
+      }
+    });
   }
 
   componentDidUpdate(lastProps) {
@@ -156,6 +173,7 @@ class DetailPageApplication extends React.Component {
 
   render() {
     const { watch, updateCallback } = this.props;
+    const { preparingAppUpdate } = this.state;
     const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
 
@@ -169,7 +187,7 @@ class DetailPageApplication extends React.Component {
               <div className="flex flex-auto">
                 <span style={{ backgroundImage: `url(${watch.watchIcon})`}} className="DetailPageApplication--appIcon"></span>
               </div>
-              <div className="flex-column flex1 u-marginLeft--10 u-paddingLeft--5">
+              <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>
                 {appMeta.applicationType === "replicated.app" &&
                   <div className="u-marginTop--10 flex-column">
@@ -184,9 +202,18 @@ class DetailPageApplication extends React.Component {
             </div>
 
             <div className="u-marginTop--30 u-paddingTop--10">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
+              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your applicaiton. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
+              <div className="u-marginTop--10 u-paddingTop--5">
+                <button disabled={preparingAppUpdate} onClick={() => this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {watch.watchName}</button>
+              </div>
+            </div>
+
+            <div className="u-marginTop--30 u-paddingTop--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Your app can be deployed to as many clusters as you would like. Each cluster can have it’s own configuration and patches for your kubernetes YAML.</p>
               <div className="flex flex-column u-marginTop--10 u-paddingTop--5">
+                {/* TODO: empty state if you have no downstreams yet */}
                 {childWatches && childWatches.map((childWatch) => {
                   const childCluster = childWatch.cluster;
                   const clusterType = getClusterType(childCluster.gitOpsRef);
@@ -203,7 +230,7 @@ class DetailPageApplication extends React.Component {
                           {this.state[`preparing${childWatch.id}`] ?
                             <Loader size="16"/>
                           :
-                            <span onClick={() => this.handleClusterMangeClick(childWatch.id)} className="u-fontSize--small replicated-link">Customize</span>
+                            <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
                           }
                         </div>
                       </div>
@@ -216,7 +243,7 @@ class DetailPageApplication extends React.Component {
               </div>
             </div>
 
-            <div className="u-marginTop--30 u-paddingTop--10 flex">
+            <div className="u-marginTop--30 u-paddingTop--10 u-marginBottom--10 flex">
               <div className="flex1 u-paddingRight--15">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Get help with your application</p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Generate a support bundle for your application to send to the vendor.</p>

@@ -186,6 +186,7 @@ class WatchDetailPage extends React.Component {
                     <DetailPageApplication
                       watch={watch}
                       updateCallback={this.refetchGraphQLData}
+                      onActiveInitSession={this.props.onActiveInitSession}
                     />
                   } />
                 }

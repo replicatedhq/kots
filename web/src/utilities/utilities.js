@@ -29,7 +29,7 @@ export function getCurrentWatch(params) {
 /**
  * Takes a watched app object and returns its parsed metadata
  *
- * @param {Object} watchMeta Metadata from watched app to parse
+ * @param {String} watchMeta Metadata from watched app to parse
  * @return {Object}
  */
 export function getWatchMetadata(watchMeta) {
