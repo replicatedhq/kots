@@ -257,29 +257,42 @@ export class WatchStore {
   }
 
   async findUserWatch(userId: string, opts: FindWatchOpts): Promise<Watch> {
-    console.log(`findUserWatch with userId ${userId} and opts ${JSON.stringify(opts)}`);
-
     if (!opts.id && !opts.slug) {
       throw new TypeError("one of slug or id is required");
     }
 
-    let q;
-    let v;
+    let watchId: string = "";
 
     if (opts.id) {
-      q = "select watch_id from user_watch where watch_id = $1 and user_id = $2";
-      v = [opts.id, userId];
+      const q = "select watch_id from user_watch where watch_id = $1 and user_id = $2";
+      const v = [opts.id, userId];
+      const result = await this.pool.query(q, v);
+      if (result.rows.length === 1) {
+        watchId = result.rows[0].watch_id;
+      }
+
+      if (watchId === "") {
+        const qq = "select watch_id from user_watch where user_id = $1 and watch_id = (select parent_watch_id from watch where id = $2)";
+        const vv = [userId, opts.id];
+        const result = await this.pool.query(qq, vv);
+        if (result.rows.length === 1) {
+          watchId = result.rows[0].watch_id;
+        }
+      }
     } else if (opts.slug) {
-      q = "select watch_id from user_watch inner join watch on watch.id = user_watch.watch_id where watch.slug = $1 and user_watch.user_id = $2";
-      v = [opts.slug, userId];
+      const q = "select watch_id from user_watch inner join watch on watch.id = user_watch.watch_id where watch.slug = $1 and user_watch.user_id = $2";
+      const v = [opts.slug, userId];
+      const result = await this.pool.query(q, v);
+      if (result.rows.length === 1) {
+        watchId = result.rows[0].watch_id;
+      }
     }
 
-    const result = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
+    if (watchId === "") {
       throw new ReplicatedError("Watch not found");
     }
 
-    const watch = await this.getWatch(result.rows[0].watch_id);
+    const watch = await this.getWatch(watchId);
     return watch;
   }
 
