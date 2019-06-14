@@ -8,12 +8,16 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
+    "test:unit": "jest",
     "test": "npm run test:pact:api",
     "test:pact:api": "cross-env CI=true `npm bin`/jest --runInBand --setupFiles ./pact/setup-api.js --setupFilesAfterEnv ./pact/jest-wrapper.js --testMatch \"**/ship-cloud-api.pact.js\"",
     "publish:pact": "node pact/publish.js",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "jest": {
+    "setupFilesAfterEnv": [
+      "<rootDir>src/setupTests.js"
+    ],
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
       "\\.(scss|css|less)$": "<rootDir>/__mocks__/styleMock.js",
@@ -35,6 +39,7 @@
     "babel-cli": "^6.26.0",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^10.0.1",
+    "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
@@ -73,7 +78,7 @@
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "npm:@hot-loader/react-dom",
-    "react-hot-loader": "^4.8.7",
+    "react-hot-loader": "^4.11.0",
     "react-router": "^5.0.0",
     "react-router-dom": "^5.0.0",
     "sass-loader": "^7.1.0",
