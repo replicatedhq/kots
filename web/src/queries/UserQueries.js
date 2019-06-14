@@ -1,10 +1,11 @@
 import gql from "graphql-tag";
 
-export const userInfo = gql`
-  query {
+export const userInfoRaw = `
+  query userInfo {
     userInfo {
-      username,
+      username
       avatarUrl
     }
-  }
+}
 `;
+export const userInfo = gql(userInfoRaw);

@@ -36,6 +36,7 @@ const ClusterScope = lazy(() => import("./components/clusterscope/ClusterScope")
 const UnsupportedBrowser = lazy(() => import("./components/static/UnsupportedBrowser"));
 const ComingSoon = lazy(() => import("./components/ComingSoon"));
 const NotFound = lazy(() => import("./components/static/NotFound"));
+const ReplicatedGraphiQL = lazy(() => import("./components/ReplicatedGraphiQL"));
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
@@ -120,6 +121,9 @@ class Root extends React.Component {
                     <Route exact path="/coming-soon" component={ComingSoon} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
+                    {window.env.ENVIRONMENT === "development" &&
+                      <ProtectedRoute path="/graphiql" component={ReplicatedGraphiQL} />
+                    }
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute path="/watches" render={(props) => <WatchedApps {...props} onActiveInitSession={this.handleActiveInitSession} />} />
