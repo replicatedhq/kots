@@ -6,11 +6,12 @@ import { enableNotification } from "../../mutations/NotificationMutations";
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 import SetUpNotificationsModal from "../shared/modals/SetUpNotificationsModal";
-import SetUpEmailModal from "../shared/modals/SetUpEmailModal";
 import SetUpWebhookModal from "../shared/modals/SetUpWebhookModal";
+import SetUpEmailModal from "../shared/modals/SetUpEmailModal";
 import IntegrationCard from "./IntegrationCard";
 
 import "../../scss/components/watches/IntegrationCard.scss";
+import "../../scss/components/watches/NotificationsModal.scss";
 
 class DetailPageIntegrations extends React.Component {
   constructor(props) {

@@ -11,11 +11,11 @@ import { createEditSession, deleteWatch, deployWatchVersion } from "../../mutati
 import ShipLoading from "../ShipLoading";
 import Modal from "react-modal";
 import AddClusterModal from "../shared/modals/AddClusterModal";
+import find from "lodash/find";
 import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
-import find from "lodash/find";
 
 export class WatchedApps extends React.Component {
   static propTypes = {

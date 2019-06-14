@@ -2,7 +2,6 @@ import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallationId } from "../../queries/GitHubQueries";
-import "../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
 import { createGitOpsCluster } from "../../mutations/ClusterMutations";
 import Loader from "@src/components/shared/Loader";

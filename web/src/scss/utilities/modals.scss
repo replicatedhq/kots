@@ -57,7 +57,8 @@
     }
   }
 
-  .ReactModal__Content.AddNewClusterModal--wrapper {
+  .ReactModal__Content.AddNewClusterModal--wrapper,
+  .ReactModal__Content.SetUpAutoPRsModal--wrapper {
     overflow: visible;
     .Modal-body {
       overflow: visible;

@@ -3,8 +3,8 @@ import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { createShipOpsCluster } from "../../mutations/ClusterMutations";
 import omit from "lodash/omit";
-import "../../scss/components/clusters/CreateCluster.scss";
 import ShipClusterSuccess from "./ShipClusterSuccess";
+import "../../scss/components/clusters/CreateCluster.scss";
 import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
 export class CreateCluster extends React.Component {

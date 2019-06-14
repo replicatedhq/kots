@@ -5,7 +5,6 @@ import { withRouter } from "react-router-dom";
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
 import Modal from "react-modal";
-import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 import Loader from "../shared/Loader";
 import Clipboard from "clipboard";
 import { listClusters } from "../../queries/ClusterQueries";
@@ -14,6 +13,7 @@ import { updateCluster, deleteCluster } from "../../mutations/ClusterMutations";
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
 import "../../scss/components/clusters/CreateCluster.scss";
+import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
 export class Clusters extends React.Component {
   static propTypes = {
