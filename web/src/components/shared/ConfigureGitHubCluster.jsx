@@ -55,6 +55,16 @@ export class ConfigureGitHub extends React.Component {
     }
   }
 
+  componentDidMount() {
+    const { getGithubUserOrgs } = this.props;
+    if (getGithubUserOrgs && getGithubUserOrgs.installationOrganizations) {
+      const NEW_INSTALLATION_ORG = { login: NEW_ORG_LOGIN };
+      this.setState({
+        orgs: [ NEW_INSTALLATION_ORG, ...getGithubUserOrgs.installationOrganizations.installations ],
+      });
+    }
+  }
+
   populateReposAndBranches = async (integration) => {
     const { owner: orgName, repo: repoName, branch: branchName } =  integration;
     const { data: orgData } = await this.getOrgRepos(orgName);
