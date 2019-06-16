@@ -84,7 +84,7 @@ export function UserMutations(stores: Stores, params: Params) {
     },
 
     async trackScmLead(root: any, args: any, context: Context): Promise<string> {
-      return await this.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
+      return await stores.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 
     async logout(root: any, args: any, context: Context): Promise<void> {
