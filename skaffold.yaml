@@ -1,4 +1,4 @@
-apiVersion: skaffold/v1beta10
+apiVersion: skaffold/v1beta11
 kind: Config
 
 profiles:
@@ -18,6 +18,9 @@ profiles:
             - --validate=false  ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
 
 build:
+  local:
+    useBuildkit: true
+
   artifacts:
     - image: ship-cluster-api
       context: "./api"

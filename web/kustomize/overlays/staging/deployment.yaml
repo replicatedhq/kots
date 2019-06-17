@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: ship-cluster-ui
 spec:
+  replicas: 3
   template:
     spec:
       containers:
