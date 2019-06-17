@@ -35,3 +35,8 @@ spec:
                 secretKeyRef:
                   name: github-app-private-key
                   key: private-key.pem
+            - name: GITHUB_INTEGRATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: github-app
+                  key: integration-id
