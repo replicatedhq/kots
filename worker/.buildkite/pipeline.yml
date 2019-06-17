@@ -13,18 +13,20 @@ steps:
   - wait
 
   - commands:
-      - mkdir -p worker/bin
+      - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - chmod +x worker/bin/ship-cluster-worker
+      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
+      - chmod +x worker/deploy/bin/ship-cluster-worker
       - make -C worker build-enterprise
     branches: "master"
     retry:
       automatic: true
 
   - commands:
-      - mkdir -p worker/bin
+      - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - chmod +x worker/bin/ship-cluster-worker
+      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
+      - chmod +x worker/deploy/bin/ship-cluster-worker
       - make -C worker build-staging
     branches: "master"
     retry:
@@ -37,9 +39,10 @@ steps:
           account_ids: "923411875752"
 
   - commands:
-      - mkdir -p worker/bin
+      - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - chmod +x worker/bin/ship-cluster-worker
+      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
+      - chmod +x worker/deploy/bin/ship-cluster-worker
       - make -C worker build-production
     branches: "master"
     retry:

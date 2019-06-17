@@ -90,7 +90,7 @@ build-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
 build-enterprise: build_and_push
 
 build_and_push:
-	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
+	docker build -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} ./deploy
 	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 
