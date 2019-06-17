@@ -225,7 +225,7 @@ class DetailPageApplication extends React.Component {
                     return (
                       <div key={childCluster.id} className="DetailPage--downstreamRow flex">
                         <div className="flex1 flex alignItems--center">
-                          <span className={`icon clusterType ${clusterType}`}></span>
+                          <span className={`flex-auto icon clusterType ${clusterType}`}></span>
                           <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{childCluster.title}</span>
                         </div>
                         <div className="flex1">
@@ -273,10 +273,14 @@ class DetailPageApplication extends React.Component {
             </div>
           </div>
           <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
-            <p className="uppercase-title">Current Version</p>
-            <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
-              {watch?.currentVersion?.title}
-            </p>
+            {watch?.currentVersion &&
+            <div>
+              <p className="uppercase-title">Current Version</p>
+              <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
+                {watch?.currentVersion?.title}
+              </p>
+            </div>
+            }
             <WatchContributors
               title="contributors"
               className="u-marginTop--30"

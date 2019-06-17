@@ -98,19 +98,26 @@ export class NavBar extends PureComponent {
                 {Utilities.isLoggedIn() && (
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={() => this.props.history.push("/")}>
+                        <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                          <span>Dashboard</span>
+                        </span>
+                      </span>
+                    </div>
+                    <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Clusters</span>
                         </span>
                       </span>
                     </div>
-                    <div className="NavItem u-position--relative flex ${clustersEnabled">
+                    {/* <div className="NavItem u-position--relative flex ${clustersEnabled">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToTeams}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Teams</span>
                         </span>
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                   )
                 }

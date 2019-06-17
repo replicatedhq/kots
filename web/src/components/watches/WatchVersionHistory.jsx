@@ -12,7 +12,7 @@ export default function WatchVersionHistory(props) {
     <div className="container flex-column u-position--relative u-overflow--auto">
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
         <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
-          {currentVersion.title}
+          {currentVersion?.title}
         </p>
         <div className="icon checkmark-icon flex-auto u-marginLeft--10 u-marginRight--5"></div>
         <p className="u-fontSize--large">Most recent version</p>
