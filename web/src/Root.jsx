@@ -66,7 +66,11 @@ class ProtectedRoute extends React.Component {
   }
 }
 
-const ThemeContext = React.createContext(() => {});
+const ThemeContext = React.createContext({
+  setThemeState: () => {},
+  getThemeState: () => ({}),
+  clearThemeState: () => {}
+});
 
 class Root extends React.Component {
   state = {
