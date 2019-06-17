@@ -48,7 +48,7 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
   const errorLink = onError(({ graphQLErrors, networkError }) => {
     if (graphQLErrors) {
       graphQLErrors.map(({ message, locations, path }) => {
-        const unauthorized = message === "Unauthorized" || message.indexOf("Unknown session type") === 0;
+        const unauthorized = message === "Unauthorized" || message.includes("Unknown session type");
         if (unauthorized) {
           Utilities.logoutUser();
         } else if (message === "Forbidden") {
