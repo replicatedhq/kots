@@ -1,4 +1,5 @@
 import React, {Suspense, lazy} from "react";
+import classNames from "classnames";
 import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import omit from "lodash/omit";
@@ -168,13 +169,15 @@ class WatchDetailPage extends React.Component {
           sidebar={(
             <SideBar
               className="flex flex1"
-              items={this.props.listWatchesQuery?.listWatches.map( (item, idx) =>
-                <WatchSidebarItem key={idx} watch={item} />
-              )}
+              items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
+                <WatchSidebarItem
+                  key={idx}
+                  className={classNames({ selected: item.watchName === watch.watchName})}
+                  watch={item} />
+              ))}
               currentWatch={watch.watchName}
             />
-          )}
-        >
+          )}>
           <div className="flex-column flex3 u-width--full">
             <SubNavBar
               className="flex u-marginBottom--30"

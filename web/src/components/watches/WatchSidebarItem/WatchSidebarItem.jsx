@@ -13,13 +13,13 @@ export default function WatchSidebarItem(props) {
     : pendingVersions.length
 
   return (
-    <div className={className}>
+    <div className={classNames('sidebar-link', className)}>
       <Link
         className="flex"
         to={`/watch/${owner}/${slug}`}>
           <img className="sidebar-link-icon" src={watchIcon} />
           <div className="flex-column">
-            <p className="u-color--tuna u-fontWeight--bold u-marginBottom--5">{watch.watchName}</p>
+            <p className="u-color--tuna u-fontWeight--bold u-marginBottom--5">{watchName}</p>
             <div className="flex alignItems--center">
               <div className={classNames("icon", {
                 "checkmark-icon": !isBehind,

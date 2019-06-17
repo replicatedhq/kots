@@ -1,7 +1,6 @@
 import React, { Fragment } from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
 
 import "@src/scss/components/shared/SideBar.scss";
 
@@ -27,6 +26,11 @@ SideBar.displayName = "SideBar";
 
 SideBar.propTypes = {
   className: PropTypes.string,
-  currentWatch: PropTypes.string
+  items: PropTypes.array.isRequired
 };
+
+SideBar.defaultProps = {
+  items: []
+};
+
 export default SideBar;
