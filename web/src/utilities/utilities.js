@@ -34,6 +34,7 @@ export function getCurrentWatch(params) {
  */
 export function getWatchMetadata(watchMeta) {
   try {
+    if (!watchMeta) return {};
     return JSON.parse(watchMeta);
   } catch (error) {
     console.error(error);
@@ -50,6 +51,7 @@ export function getWatchMetadata(watchMeta) {
 export function getApplicationType(watch) {
   try {
     const { metadata } = watch;
+    if (!metadata) return "";
     const parsedMetadata = JSON.parse(metadata);
     return parsedMetadata.applicationType;
 
