@@ -7,13 +7,13 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { getWatch, listWatches } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
+import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
-
 
 const NotFound = lazy(() => import("../static/NotFound"));
 const DetailPageApplication = lazy(() => import("./DetailPageApplication"));
@@ -164,10 +164,13 @@ class WatchDetailPage extends React.Component {
         <SidebarLayout
           className="flex u-minHeight--full"
           condition={this.props.listWatchesQuery?.listWatches?.length > 1}
+          isSidebarLoading={this.props.listWatchesQuery.loading}
           sidebar={(
             <SideBar
               className="flex flex1"
-              watches={this.props.listWatchesQuery?.listWatches}
+              items={this.props.listWatchesQuery?.listWatches.map( (item, idx) =>
+                <WatchSidebarItem key={idx} watch={item} />
+              )}
               currentWatch={watch.watchName}
             />
           )}
