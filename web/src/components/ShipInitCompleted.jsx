@@ -65,9 +65,9 @@ export class ShipInitCompleted extends React.Component {
 
   handleGotoWatches = () => {
     const { history, onActiveInitSessionCompleted } = this.props;
-    const { watchId } = this.state;
+    const { watchSlug } = this.state;
     onActiveInitSessionCompleted();
-    history.push(`/watches?add_cluster_id=${watchId}`);
+    history.push(`/watch/${watchSlug}/downstreams`);
   }
 
   render() {
