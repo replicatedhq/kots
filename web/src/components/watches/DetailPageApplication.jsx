@@ -15,6 +15,7 @@ import {
   deleteWatch,
   createEditSession
  } from "@src/mutations/WatchMutations";
+ import isEmpty from "lodash/isEmpty";
 
 class DetailPageApplication extends React.Component {
 
@@ -178,7 +179,10 @@ class DetailPageApplication extends React.Component {
     const appMeta = getWatchMetadata(watch.metadata);
 
     // TODO: We shuold probably return something different if it never expires to avoid this hack string check.
-    const expDate = appMeta?.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
+    let expDate = "";
+    if (!isEmpty(appMeta)) {
+      expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
+    }
     return (
       <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingBottom--20">
         <div className="DetailPageApplication flex flex1">
@@ -189,7 +193,7 @@ class DetailPageApplication extends React.Component {
               </div>
               <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>
-                {appMeta?.applicationType === "replicated.app" &&
+                {(!isEmpty(appMeta) && appMeta.applicationType === "replicated.app") &&
                   <div className="u-marginTop--10 flex-column">
                     <div className="flex u-color--dustyGray u-fontWeight--medium u-fontSize--normal">
                       <span className="u-marginRight--30">Expires: <span className="u-fontWeight--bold u-color--tundora">{expDate}</span></span>
