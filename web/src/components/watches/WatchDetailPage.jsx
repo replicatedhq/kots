@@ -1,12 +1,11 @@
-import React, {Suspense, lazy} from "react";
+import React, { Component, Suspense, lazy } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route } from "react-router-dom";
+import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import omit from "lodash/omit";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { getWatch, listWatches } from "@src/queries/WatchQueries";
+import { listWatches } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import SubNavBar from "@src/components/shared/SubNavBar";
@@ -27,9 +26,9 @@ const WatchConfig = lazy ( () => import("./WatchConfig"));
 const WatchTroubleshoot = lazy(() => import("./WatchTroubleshoot"));
 const WatchLicense = lazy(() => import("./WatchLicense"));
 
-class WatchDetailPage extends React.Component {
-  constructor() {
-    super();
+class WatchDetailPage extends Component {
+  constructor(props) {
+    super(props);
     this.state = {
       watch: null,
       displayRemoveClusterModal: false,
@@ -43,16 +42,25 @@ class WatchDetailPage extends React.Component {
     }
   }
 
-  componentDidUpdate(lastProps) {
-    const { getThemeState, setThemeState } = this.props;
-    const { getWatch } = this.props.data;
+  componentDidUpdate(/* lastProps */) {
+    const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
     const { watch } = this.state;
-    if (getWatch !== lastProps.data.getWatch && getWatch) {
-      this.setState({ watch: omit(getWatch, ["__typename"]) });
-      if (getWatch.cluster) {
-        this.props.history.replace(`/watch/${getWatch.slug}/state`);
-      }
+
+
+    if (!watch && listWatchesQuery.listWatches) {
+      const firstWatch = listWatchesQuery.listWatches[0];
+      return this.setState({
+        watch: firstWatch
+      });
     }
+
+    const slug = `${match.params.owner}/${match.params.slug}`;
+    if (watch?.slug !== slug && listWatchesQuery.listWatches) {
+      this.setState({
+        watch: listWatchesQuery.listWatches.find( w => w.slug === slug )
+      });
+    }
+
     if (watch?.watchIcon) {
       const { navbarLogo } = getThemeState();
       if (navbarLogo === null || navbarLogo !== watch.watchIcon) {
@@ -63,12 +71,7 @@ class WatchDetailPage extends React.Component {
     }
   }
 
-  componentDidMount() {
-    const { getWatch } = this.props.data;
-    if (getWatch) {
-      this.setState({ watch: omit(getWatch, ["__typename"]) });
-    }
-  }
+  componentDidMount() {}
 
   componentWillUnmount() {
     clearInterval(this.interval);
@@ -144,7 +147,7 @@ class WatchDetailPage extends React.Component {
   }
 
   render() {
-    const { match } = this.props;
+    const { match, history } = this.props;
     const {
       watch,
       displayRemoveClusterModal,
@@ -152,20 +155,35 @@ class WatchDetailPage extends React.Component {
       clusterToRemove
     } = this.state;
 
+    if (history.location.pathname == "/watches") {
+      if (this.props.listWatchesQuery.loading) {
+        return (
+          <div className="flex-column flex1 alignItems--center justifyContent--center">
+            <Loader size="60" />
+          </div>
+        );
+      } else {
+        const { slug } = this.props.listWatchesQuery.listWatches[0];
+        return (
+          <Redirect to={`/watch/${slug}`} />
+        );
+      }
+    }
+
     const slug = `${match.params.owner}/${match.params.slug}`;
-    if (!watch || this.props.data.loading) {
+    if (!watch || this.props.listWatchesQuery.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       );
     }
+
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <SidebarLayout
           className="flex u-minHeight--full"
           condition={this.props.listWatchesQuery?.listWatches?.length > 1}
-          isSidebarLoading={this.props.listWatchesQuery.loading}
           sidebar={(
             <SideBar
               className="flex flex1"
@@ -295,14 +313,6 @@ export default compose(
       fetchPolicy: "network-only"
     }
   }),
-  graphql(
-    getWatch, {
-      options: ({ match }) => ({
-        variables: { slug: `${match.params.owner}/${match.params.slug}` },
-        fetchPolicy: "network-only"
-      })
-    }
-  ),
   graphql(createUpdateSession, {
     props: ({ mutate }) => ({
       createUpdateSession: (watchId) => mutate({ variables: { watchId }})

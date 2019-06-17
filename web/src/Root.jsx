@@ -22,7 +22,6 @@ const GitHubAuth = lazy(() => import("./components/github_auth/GitHubAuth"));
 const GitHubInstall = lazy(() => import("./components/github_install/GitHubInstall"));
 const Clusters = lazy(() => import("./components/clusters/Clusters"));
 const CreateCluster = lazy(() => import("./components/clusters/CreateCluster"));
-const WatchedApps = lazy(() => import("./components/watches/WatchedApps"));
 const VersionHistory = lazy(() => import("./components/watches/VersionHistory"));
 const DiffShipReleases = lazy(() => import("./components/watches/DiffShipReleases"));
 const DiffGitHubReleases = lazy(() => import("./components/watches/DiffGitHubReleases"));
@@ -174,7 +173,7 @@ class Root extends React.Component {
                       }
                       <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                       <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
-                      <ProtectedRoute path="/watches" render={(props) => <WatchedApps {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                      <ProtectedRoute path="/watches" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
                       <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
                       <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
                       <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
