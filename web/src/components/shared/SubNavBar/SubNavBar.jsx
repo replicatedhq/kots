@@ -39,4 +39,3 @@ SubNavBar.propTypes = {
   slug: PropTypes.string,
   watch: PropTypes.object
 };
-

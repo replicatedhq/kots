@@ -1,6 +1,7 @@
+$icon-size: 36px;
 .WatchContributors--wrapper {
-  .contributer-icon-wrapper:not(:first-child) {
-    margin-left: -10px;
+  .watch-icon-wrapper:not(:first-child) {
+    margin-left: -12px;
   }
   .contributer-icon {
     display: block;
@@ -8,8 +9,8 @@
     background-repeat: no-repeat;
     border-radius: 100%;
     overflow: hidden;
-    width: 24px;
-    height: 24px;
+    width: $icon-size;
+    height: $icon-size;
     border: 2px solid #ffffff;
 
     &.additional-contributors {

@@ -39,7 +39,7 @@ const CardHeader = ({ watch, watchIntegrations, onEditApplication, isPending }) 
     : null}
     <div className="installed-watch-actions alignItems--center flex">
       {!isPending && <Link to={`/watch/${watch.slug}`} className="u-marginRight--10 u-fontSize--small replicated-link">Application Details</Link>}
-      <button className="btn primary" onClick={() => onEditApplication(watch)}>{isPending ? "Install application" : "Edit application"}</button>
+      <button className="btn secondary green" onClick={() => onEditApplication(watch)}>{isPending ? "Install application" : "Edit application"}</button>
     </div>
   </div>
 );

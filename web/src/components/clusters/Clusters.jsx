@@ -5,7 +5,6 @@ import { withRouter } from "react-router-dom";
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
 import Modal from "react-modal";
-import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 import Loader from "../shared/Loader";
 import Clipboard from "clipboard";
 import { listClusters } from "../../queries/ClusterQueries";
@@ -13,6 +12,8 @@ import { updateCluster, deleteCluster } from "../../mutations/ClusterMutations";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
+import "../../scss/components/clusters/CreateCluster.scss";
+import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
 export class Clusters extends React.Component {
   static propTypes = {
@@ -181,7 +182,7 @@ export class Clusters extends React.Component {
               :
               <div className="u-flexTabletReflow flex-auto installed-clusters-wrapper flexWrap--wrap">
                 {listClustersQuery.listClusters.map((cluster, i) => (
-                  <div key={cluster.id} className="installed-cluster-wrapper flex flex1 u-paddingBottom--20">
+                  <div key={cluster.id} className="installed-cluster-wrapper flex flex-auto u-paddingBottom--20">
                     <ClusterCard
                       index={i}
                       item={cluster}

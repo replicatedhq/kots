@@ -4,7 +4,6 @@ import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import isEmpty from "lodash/isEmpty";
 import { Utilities } from "../../../utilities/utilities";
-import "../../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../../mutations/NotificationMutations";
 import { getNotification } from "../../../queries/WatchQueries";
 import Loader from "../Loader";

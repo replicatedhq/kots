@@ -2,9 +2,9 @@ import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallationId } from "../../queries/GitHubQueries";
-import "../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
 import { createGitOpsCluster } from "../../mutations/ClusterMutations";
+import Loader from "@src/components/shared/Loader";
 import dayjs from "dayjs";
 import find from "lodash/find";
 import get from "lodash/get";
@@ -29,6 +29,9 @@ export class ConfigureGitHub extends React.Component {
       orgReposTotalCount: 0,
       repoBranchesPage: 1,
       orgsPage: 1,
+      orgsLoading: false,
+      reposLoading: false,
+      branchesLoading: false
     }
   }
 
@@ -142,8 +145,9 @@ export class ConfigureGitHub extends React.Component {
   onOrgChange = async(org) => {
     const { login: orgName } = org;
     if (orgName === NEW_ORG_LOGIN) {
-      this.handleInstallGitHubApp();
+      return this.handleInstallGitHubApp();
     }
+    this.setState({ orgsLoading: true });
 
     const { data: orgData } = await this.getOrgRepos(orgName);
     const { data: installIdData } = await this.getInstallId();
@@ -156,7 +160,8 @@ export class ConfigureGitHub extends React.Component {
       orgRepos: get(orgData, ["orgRepos", "repos"], []),
       orgReposTotalCount: orgData.orgRepos.totalCount,
       repoBranches: [],
-      installationId
+      installationId,
+      orgsLoading: false
     });
     if (this.props.gatherGitHubData) {
       this.props.gatherGitHubData("owner", orgName);
@@ -167,6 +172,7 @@ export class ConfigureGitHub extends React.Component {
     const { name: repoName } = repo;
     const { org } = this.state;
     const defaultBranch = get(repo, "default_branch", "master");
+    this.setState({ reposLoading: true });
 
     const { data: repoData } = await this.getRepoBranches(org.login, repoName);
     const branch = find(repoData.repoBranches, { name: defaultBranch }) || null;
@@ -174,6 +180,7 @@ export class ConfigureGitHub extends React.Component {
       repo,
       repoBranches: repoData.repoBranches,
       branch,
+      reposLoading: false
     });
     if (this.props.gatherGitHubData) {
       this.props.gatherGitHubData("repo", repo.name);
@@ -214,6 +221,7 @@ export class ConfigureGitHub extends React.Component {
 
     // add one for the new org installation
     if (orgs.length < getGithubUserOrgs.installationOrganizations.totalCount + 1) {
+      this.setState({ orgsLoading: true });
       const newOrgsPage = orgsPage + 1;
       const { data } = await this.props.client.query({
         query: githubUserOrgs,
@@ -222,6 +230,7 @@ export class ConfigureGitHub extends React.Component {
       this.setState({
         orgsPage: newOrgsPage,
         orgs: [...orgs, ...data.installationOrganizations.installations],
+        orgsLoading: false
       });
     }
   }
@@ -230,11 +239,13 @@ export class ConfigureGitHub extends React.Component {
     const { orgReposPage, org, orgRepos, orgReposTotalCount} = this.state;
 
     if (orgRepos.length < orgReposTotalCount) {
+      this.setState({ reposLoading: true });
       const newOrgReposPage = orgReposPage + 1;
       const { data } = await this.getOrgRepos(org.login, newOrgReposPage);
       this.setState({
         orgReposPage: newOrgReposPage,
         orgRepos: [...orgRepos, ...data.orgRepos.repos],
+        reposLoading: false
       });
     }
   }
@@ -243,11 +254,13 @@ export class ConfigureGitHub extends React.Component {
     const { repoBranches, org, repo, repoBranchesPage } = this.state;
     const { login: orgLogin } = org;
     const { name: repoName } = repo;
+    this.setState({ branchesLoading: true });
     const newRepoBranchPage = repoBranchesPage + 1;
     const { data } = await this.getRepoBranches(orgLogin, repoName, newRepoBranchPage);
     this.setState({
       repoBranchesPage: newRepoBranchPage,
       orgRepos: [...repoBranches, ...data.repoBranches.branches],
+      branchesLoading: false
     });
   }
 
@@ -265,7 +278,10 @@ export class ConfigureGitHub extends React.Component {
       org,
       repo,
       branch,
-      rootPath
+      rootPath,
+      orgsLoading,
+      reposLoading,
+      branchesLoading
     } = this.state;
 
     const excludeShipBranches = repoBranches.filter(repo => !repo.name.includes("ship-") )
@@ -300,51 +316,72 @@ export class ConfigureGitHub extends React.Component {
             <div className="flex flex1 flex-column u-marginRight--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Owner</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Who will be the owner of this application?</p>
-              <Select
-                className="replicated-select-container"
-                classNamePrefix="replicated-select"
-                options={orgs}
-                getOptionLabel={(org) => org.login}
-                onMenuScrollToBottom={this.handleMenuScrollToBottomOrgs}
-                placeholder="Please select an owner"
-                onChange={this.onOrgChange}
-                value={org}
-                isOptionSelected={(option) => {option.login === get(org, "login")}}
-              />
+              <div className="u-position--relative">
+                <Select
+                  className="replicated-select-container"
+                  classNamePrefix="replicated-select"
+                  options={orgs}
+                  getOptionLabel={(org) => org.login}
+                  onMenuScrollToBottom={this.handleMenuScrollToBottomOrgs}
+                  placeholder="Please select an owner"
+                  onChange={this.onOrgChange}
+                  value={org}
+                  isOptionSelected={(option) => {option.login === get(org, "login")}}
+                />
+                {orgsLoading &&
+                  <div className="select-loader">
+                    <Loader size="25" />
+                  </div>
+                }
+              </div>
             </div>
             <div className="flex flex1 flex-column u-marginLeft--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Repository</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Which repo will the app be installed in?</p>
-              <Select
-                className="replicated-select-container"
-                classNamePrefix="replicated-select"
-                isDisabled={orgRepos.length === 0}
-                options={orgRepos}
-                getOptionLabel={(orgRepo) => orgRepo.name}
-                onMenuScrollToBottom={this.handleMenuScrollToBottomRepos}
-                placeholder="Please select a repository"
-                onChange={this.onRepoChange}
-                value={repo}
-                isOptionSelected={(option) => {option.name === get(repo, "name")}}
-              />
+              <div className="u-position--relative">
+                <Select
+                  className="replicated-select-container"
+                  classNamePrefix="replicated-select"
+                  isDisabled={orgRepos.length === 0}
+                  options={orgRepos}
+                  getOptionLabel={(orgRepo) => orgRepo.name}
+                  onMenuScrollToBottom={this.handleMenuScrollToBottomRepos}
+                  placeholder={org && orgRepos.length === 0 ? "Organization has no repositories" : "Please select a repository"}
+                  onChange={this.onRepoChange}
+                  value={repo}
+                  isOptionSelected={(option) => {option.name === get(repo, "name")}}
+                />
+                {reposLoading &&
+                  <div className="select-loader">
+                    <Loader size="25" />
+                  </div>
+                }
+              </div>
             </div>
           </div>
           <div className="flex flex1">
             <div className="flex flex1 flex-column u-marginRight--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Branch</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">If no branch is specified, master will be used.</p>
-              <Select
-                className="replicated-select-container"
-                classNamePrefix="replicated-select"
-                isDisabled={excludeShipBranches.length === 0}
-                options={excludeShipBranches}
-                getOptionLabel={(excludeShipBranches) => excludeShipBranches.name}
-                onMenuScrollToBottom={this.handleMenuScrollToBottomBranches}
-                placeholder="Please select a branch"
-                value={branch}
-                onChange={this.onBranchChange}
-                isOptionSelected={(option) => {option.name === get(branch, "name")}}
-              />
+              <div className="u-position--relative">
+                <Select
+                  className="replicated-select-container"
+                  classNamePrefix="replicated-select"
+                  isDisabled={excludeShipBranches.length === 0}
+                  options={excludeShipBranches}
+                  getOptionLabel={(excludeShipBranches) => excludeShipBranches.name}
+                  onMenuScrollToBottom={this.handleMenuScrollToBottomBranches}
+                  placeholder={org && orgRepos.length === 0 ? "Organization has no repositories" : "Please select a branch"}
+                  value={branch}
+                  onChange={this.onBranchChange}
+                  isOptionSelected={(option) => {option.name === get(branch, "name")}}
+                />
+                {branchesLoading &&
+                  <div className="select-loader">
+                    <Loader size="25" />
+                  </div>
+                }
+              </div>
             </div>
             {hideRootPath ?
               <div className="flex1 u-marginLeft--10"></div>

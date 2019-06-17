@@ -11,11 +11,11 @@ import { createEditSession, deleteWatch, deployWatchVersion } from "../../mutati
 import ShipLoading from "../ShipLoading";
 import Modal from "react-modal";
 import AddClusterModal from "../shared/modals/AddClusterModal";
+import find from "lodash/find";
 import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
-import find from "lodash/find";
 
 export class WatchedApps extends React.Component {
   static propTypes = {
@@ -134,7 +134,7 @@ export class WatchedApps extends React.Component {
     });
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     // If redirect from github
     const { location } = this.props;
     const _search = location && location.search;
@@ -147,10 +147,29 @@ export class WatchedApps extends React.Component {
         this.props.history.push(`${appRedirect}?configure`);
       }
     }
+
   }
 
   componentDidUpdate(lastProps) {
     const { listWatchesQuery, pendingWatchesQuery, history, location } = this.props;
+
+
+    // HACK:
+    // This view is no longer being used!
+    // When the watches are fetched, this condition replaces the current view
+    // with the WatchDetailPage.jsx view
+    if (listWatchesQuery.loading) {
+      return;
+    }
+
+    if (listWatchesQuery?.listWatches?.length) {
+      const [firstWatch] = listWatchesQuery.listWatches;
+      history.replace(`/watch/${firstWatch.slug}`);
+    } else {
+      history.replace("/watch/create/init");
+    }
+
+    // Looks like this stuff isn't really being used anymore...
     const _search = location && location.search;
     const searchParams = new URLSearchParams(_search);
     const addClusterId = searchParams.get("add_cluster_id");
@@ -198,8 +217,6 @@ export class WatchedApps extends React.Component {
         <div className="flex-column flex1">
           <ContentHeader
             title="Installed 3rd-party applications"
-            buttonText="Install a new application"
-            onClick={() => this.props.history.push("/watch/create/init")}
             searchCallback={(watches, pendingWatches) => { this.setState({ watches, pendingWatches }) }}
             showUnfork
           />
@@ -254,7 +271,7 @@ export class WatchedApps extends React.Component {
         >
           <div className="Modal-body">
             <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.state.selectedWatchName} to a deployment cluster</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing clusters to deploy to.</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
             <AddClusterModal
               onAddCluster={this.addClusterToWatch}
               onRequestClose={this.closeAddClusterModal}
@@ -272,7 +289,7 @@ export class WatchedApps extends React.Component {
             className="RemoveClusterFromWatchModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from your {clusterToRemove.cluster.title} cluster</h2>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.cluster.title}</h2>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.cluster.title}.</p>
               <div className="u-marginTop--10 flex">
                 <button onClick={() => this.toggleDeleteDeploymentModal({},"")} className="btn secondary u-marginRight--10">Cancel</button>

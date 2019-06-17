@@ -145,3 +145,12 @@
   width: 41px;
   height: 44px;
 }
+.icon.u-grayX-icon {
+  background-position: -32px -719px;
+  width: 14px;
+  height: 14px;
+
+  &:hover {
+    background-position: -48px -719px;
+  }
+}

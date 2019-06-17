@@ -32,6 +32,10 @@
     font-size: 14px;
   }
 
+  &.rounded {
+    border-radius: 60px;
+  }
+
   &.auth {
     padding: 12px 20px 11px;
     border-radius: 40px;
@@ -126,13 +130,27 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
+    border-color: #6D7278;
+    color: #6D7278;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #484F57;
+      color: #484F57;
+    }
+  }
+
+  &.secondary.green {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
     border-color: #44bb66;
     color: #44bb66;
     box-shadow: none;
 
     &:not(:disabled):hover {
-      border-color: #5f8268;
-      color: #5f8268;
+      border-color: #2F8D4A;
+      color: #2F8D4A;
     }
   }
 
@@ -146,14 +164,14 @@
   &.secondary:disabled,
   &.secondary[disabled] {
     cursor: not-allowed;
-    color: #a5d8b3;
-    border-color: #a5d8b3;
+    color: #CBD6E3;
+    border-color: #CBD6E3;
   }
 
   &.github {
     border-color: #24292E;
     color: #24292E;
-    
+
     &:not(:disabled):hover {
       background-color: #F4F4F4;
     }
@@ -162,7 +180,7 @@
   &.gitlab {
     border-color: #E24329;
     color: #E24329;
-    
+
     &:not(:disabled):hover {
       background-color: #FDF5F4;
     }
@@ -171,7 +189,7 @@
   &.bitbucket {
     border-color: #2684FF;
     color: #2684FF;
-    
+
     &:not(:disabled):hover {
       background-color: #F5FAFF;
     }
@@ -180,7 +198,7 @@
   &.traditional {
     border-color: #44bb66;
     color: #44bb66;
-    
+
     &:not(:disabled):hover {
       background-color: #F7FFF9;
     }

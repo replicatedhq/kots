@@ -3,7 +3,6 @@ import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { Utilities } from "../../../utilities/utilities";
-import "../../../scss/components/watches/NotificationsModal.scss"
 
 export class SetUpNotificationsModal extends React.Component {
   constructor() {

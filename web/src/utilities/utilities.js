@@ -7,6 +7,73 @@ import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
 
+/**
+ *
+ * @param {Object} - gitOpsRef - Object from GraphQL DB
+ * @return {String} - "git" if a github deployment, otherwise "ship"
+ */
+export function getClusterType(gitOpsRef) {
+  return gitOpsRef
+    ? "git"
+    : "ship";
+}
+
+/**
+ * @param {Object} params - React Router History params object
+ * @return {String} - slug of watch
+ */
+export function getCurrentWatch(params) {
+  return params?.slug?.params?.slug;
+}
+
+/**
+ * Takes a watched app object and returns its parsed metadata
+ *
+ * @param {String} watchMeta Metadata from watched app to parse
+ * @return {Object}
+ */
+export function getWatchMetadata(watchMeta) {
+  try {
+    return JSON.parse(watchMeta);
+  } catch (error) {
+    console.error(error);
+    return { error };
+  }
+}
+
+/**
+ * Retrieves the type of application via a watched app's metadata
+ *
+ * @param {Object} watch The watched application to check
+ * @return {String} one of {"replicated.app"|"helm"}
+ */
+export function getApplicationType(watch) {
+  try {
+    const { metadata } = watch;
+    const parsedMetadata = JSON.parse(metadata);
+    return parsedMetadata.applicationType;
+
+  } catch (error) {
+    console.error(error);
+    return "Error fetching applicationType";
+  }
+}
+
+/**
+ *
+ * @param {String} -
+ * @return {String} -
+ */
+export function getReadableLicenseType(type) {
+  let readableType = "Development";
+  if (type === "paid") {
+    readableType = "Production"
+  } else if (type === "trial") {
+    readableType = "Trial"
+  }
+  return readableType;
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {

@@ -7,8 +7,14 @@ import { validateUpstreamURL } from "../queries/GitHubQueries";
 import ShipLoading from "./ShipLoading";
 import { Utilities } from "../utilities/utilities";
 import Modal from "react-modal";
+import "../scss/components/Login.scss";
 
 export class ShipInitPre extends React.Component {
+  constructor() {
+    super();
+    this.initFieldInputRef = React.createRef();
+    this.licenseIdInputRef = React.createRef();
+  }
   static propTypes = {
     onActiveInitSession: PropTypes.func.isRequired,
   };
@@ -39,8 +45,11 @@ export class ShipInitPre extends React.Component {
       githubPath: githubPath || ""
     });
     if (autoStart === "1") {
-      this.onShipInitUrlSubmitted(url);
+      return this.onShipInitUrlSubmitted(url);
     }
+    setTimeout(() => {
+      this.initFieldInputRef.current.focus();
+    }, 100);
   }
 
   componentWillUnmount() {
@@ -55,6 +64,11 @@ export class ShipInitPre extends React.Component {
       if (autoStart === "1") {
         this.onShipInitUrlSubmitted(this.state.url);
       }
+    }
+    if (this.state.displayLicenseIdModal !== lastState.displayLicenseIdModal && this.state.displayLicenseIdModal) {
+      setTimeout(() => {
+        this.licenseIdInputRef.current.focus();
+      }, 100);
     }
   }
 
@@ -150,7 +164,7 @@ export class ShipInitPre extends React.Component {
                 <p className="u-fontSize--small u-color--chestnut u-marginBottom--5 u-paddingBottom--20">Please enter a valid url to the kubernetes application to continue</p>
               }
               <div className="flex flex1">
-                <input value={this.state.url} onChange={(e) => { this.onUrlChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="https://github.com/helm/charts/stable/grafana" />
+                <input ref={this.initFieldInputRef} value={this.state.url} onChange={(e) => { this.onUrlChange(e.target.value) }} type="text" className="Input jumbo flex1" placeholder="https://github.com/helm/charts/stable/grafana" />
                 <div className="flex-auto u-marginLeft--10">
                   <button onClick={this.onShipInitUrlSubmitted.bind(this, this.state.url)} className="btn primary large">Ship init</button>
                 </div>
@@ -201,7 +215,7 @@ export class ShipInitPre extends React.Component {
             <p className="u-lineHeight--normal u-fontSize--larger u-color--tuna u-fontWeight--bold">License ID</p>
             <p className="u-lineHeight--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-marginTop--5">You must provide a license ID to fetch this app</p>
             <div className="u-marginTop--15">
-              <input value={this.state.licenseId} onChange={(e) => { this.onLicenseIdChange(e.target.value) }} type="text" className="Input flex1" />
+              <input ref={this.licenseIdInputRef} value={this.state.licenseId} onChange={(e) => { this.onLicenseIdChange(e.target.value) }} type="text" className="Input flex1" />
             </div>
             <div className="u-marginTop--15">
               <button type="button" className="btn primary green" onClick={this.onShipInitUrlSubmitted.bind(this, this.state.url)}>Fetch application</button>

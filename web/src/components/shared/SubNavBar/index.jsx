@@ -1,3 +1,3 @@
-import SubNavBar from './SubNavBar';
+import SubNavBar from "./SubNavBar";
 
 export default SubNavBar;

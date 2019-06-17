@@ -3,7 +3,6 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import isEmpty from "lodash/isEmpty";
-import "../../../scss/components/watches/NotificationsModal.scss";
 import { createNotification, updateNotification } from "../../../mutations/NotificationMutations";
 import { getNotification } from "../../../queries/WatchQueries";
 

@@ -29,13 +29,6 @@
 
 
 .SetUpAutoPRsModal--wrapper {
-  &.Modal.MediumSize {
-    overflow: visible;
-    .Modal-body {
-      overflow: visible;
-    }
-  }
-
   .Warning {
     padding: 12px;
     background: #FFF9F0;

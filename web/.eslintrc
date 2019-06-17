@@ -31,6 +31,7 @@
     "no-mixed-spaces-and-tabs": ["error"],
     "jsx-quotes": ["error", "prefer-double"],
     "react/prop-types": [0, { "skipUndeclared": true }],
+    "react/display-name": [0],
     "react/no-unescaped-entities": [0],
     "react/no-string-refs": [1],
     "react/no-deprecated": [0],

@@ -1,12 +1,20 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import WatchContributors from "./WatchContributors";
 import Modal from "react-modal";
-import { Utilities } from "../../utilities/utilities";
-import { updateWatch, deleteWatch } from "../../mutations/WatchMutations";
-import Select from "react-select";
 import Loader from "../shared/Loader";
+import {
+  Utilities,
+  getClusterType,
+  getWatchMetadata,
+  getReadableLicenseType
+} from "@src/utilities/utilities";
+import {
+  updateWatch,
+  deleteWatch,
+  createEditSession
+ } from "@src/mutations/WatchMutations";
 
 class DetailPageApplication extends React.Component {
 
@@ -25,13 +33,15 @@ class DetailPageApplication extends React.Component {
         value: "",
         label: "Select a cluster",
         watchId: ""
-      }
+      },
+      errorCustomizingCluster: false,
+      preparingAppUpdate: false
     }
 
   onFormChange = (event) => {
     const { value, name } = event.target;
     this.setState({
-      [name]: value 
+      [name]: value
     });
   }
 
@@ -115,6 +125,38 @@ class DetailPageApplication extends React.Component {
     }
   }
 
+  handleEditWatchClick = (watch) => {
+    const isCluster = watch.cluster;
+    if (isCluster) {
+      this.setState({ errorCustomizingCluster: false, [`preparing${watch.id}`]: true });
+    } else {
+      this.setState({ preparingAppUpdate: true });
+    }
+
+    this.props.client.mutate({
+      mutation: createEditSession,
+      variables: {
+        watchId: watch.id,
+      },
+    })
+    .then(({ data }) => {
+      if (isCluster) {
+        this.setState({ [`preparing${watch.id}`]: false });
+      } else {
+        this.setState({ preparingAppUpdate: false });
+      }
+      this.props.onActiveInitSession(data.createEditSession.id);
+      this.props.history.push("/ship/edit");
+    })
+    .catch(() => {
+      if (isCluster) {
+        this.setState({ errorCustomizingCluster: true, [`preparing${watch.id}`]: false })
+      } else {
+        this.setState({ preparingAppUpdate: false });
+      }
+    });
+  }
+
   componentDidUpdate(lastProps) {
     const { watch } = this.props;
     if (watch !== lastProps.watch && watch) {
@@ -130,111 +172,94 @@ class DetailPageApplication extends React.Component {
   }
 
   render() {
-    const { isDownloadingAssets, isDownloadingMidstreamAssets } = this.state;
     const { watch, updateCallback } = this.props;
+    const { preparingAppUpdate } = this.state;
     const childWatches = watch.watches;
-    let options = [];
-    if (watch.cluster) {
-      options = [{
-        value: watch.cluster.id,
-        label: watch.cluster.title,
-        watchId: watch.id
-      }]
-    } else {
-      options = childWatches && childWatches.map((childWatch) => {
-        const childCluster = childWatch.cluster;
-        if (childCluster) {
-          return ({
-            value: childCluster.id,
-            label: childCluster.title,
-            watchId: childWatch.id
-          });
-        } else {
-          return {}
-        }
-      });
-    }
+    const appMeta = getWatchMetadata(watch.metadata);
 
+    // TODO: We shuold probably return something different if it never expires to avoid this hack string check.
+    const expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
     return (
       <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingBottom--20">
         <div className="DetailPageApplication flex flex1">
           <div className="flex1 flex-column u-paddingRight--30">
-            <div className="flex-column">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App name</p>
-              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You can name your app whatever you want.</p>
-              <div className="flex">
-                <input 
-                  type="text" 
-                  className="Input" 
-                  placeholder="What is your application called?" 
-                  value={this.state.appName || ""} 
-                  name="appName"
-                  onChange={this.onFormChange} 
-                />
-                <div className="u-marginLeft--10">
-                  <button type="button" className="btn secondary" onClick={this.updateName} disabled={this.state.nameLoading}>{this.state.nameLoading ? "Saving" : "Save"}</button>
-                </div>
+            <div className="flex">
+              <div className="flex flex-auto">
+                <span style={{ backgroundImage: `url(${watch.watchIcon})`}} className="DetailPageApplication--appIcon"></span>
               </div>
-            </div>
-            <div className="u-marginTop--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">App icon</p>
-              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Link to any URI for an app icon.</p>
-              <div className="flex">
-                <input 
-                  type="text" 
-                  className="Input" 
-                  placeholder="Add a URL" 
-                  value={this.state.iconUri || ""} 
-                  name="iconUri"
-                  onChange={this.onFormChange} 
-                />
-                <div className="u-marginLeft--10">
-                  <button type="button" className="btn secondary" onClick={this.updateIcon} disabled={this.state.iconLoading}>{this.state.iconLoading ? "Saving" : "Save"}</button>
-                </div>
-              </div>
-            </div>
-            {!watch.cluster &&
-              <div className="u-marginTop--30">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets for {watch.watchName}</p>
-                <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--medium">This will download the YAML for your mid-stream watch.</p>
-                {isDownloadingMidstreamAssets ?
-                  <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <Loader size="60" />
-                  </div>
-                  :
-                  <div className="u-marginTop--10">
-                    <button onClick={() => this.downloadAssetsForMidsttream(watch.id)} className="btn green secondary">Download generated YAML</button>
+              <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
+                <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>
+                {appMeta.applicationType === "replicated.app" &&
+                  <div className="u-marginTop--10 flex-column">
+                    <div className="flex u-color--dustyGray u-fontWeight--medium u-fontSize--normal">
+                      <span className="u-marginRight--30">Expires: <span className="u-fontWeight--bold u-color--tundora">{expDate}</span></span>
+                      <span>Type: <span className="u-fontWeight--bold u-color--tundora">{getReadableLicenseType(appMeta.license.type)}</span></span>
+                    </div>
+                    <Link to={`/watch/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
                   </div>
                 }
               </div>
-            }
-            <div className="u-marginTop--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets from a deployment cluster</p>
-              <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--medium">Select the cluster you would like to download your Ship YAML assets from.</p>
-              <div className="u-marginTop--10 flex">
-                <div className="flex1">
-                  <Select
-                    className="replicated-select-container"
-                    classNamePrefix="replicated-select"
-                    options={options}
-                    getOptionLabel={(downloadCluster) => downloadCluster.label}
-                    value={this.state.downloadCluster}
-                    onChange={this.onDownloadClusterChange}
-                    isOptionSelected={(option) => {option.value === this.state.downloadCluster.value}}
-                  />
-                </div>
-                <div className="flex1"></div>
-              </div>
-              {isDownloadingAssets ?
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="60" />
-                </div>
-                :
-                <div className="u-marginTop--10">
-                  <button disabled={this.state.downloadCluster.value === ""} onClick={() => this.downloadAssetsForCluster()} className="btn green secondary">Download generated YAML</button>
-                </div>
-              }
             </div>
+
+            <div className="u-marginTop--30 u-paddingTop--10">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
+              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your applicaiton. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
+              <div className="u-marginTop--10 u-paddingTop--5">
+                <button disabled={preparingAppUpdate} onClick={() => this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {watch.watchName}</button>
+              </div>
+            </div>
+
+            <div className="u-marginTop--30 u-paddingTop--10">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
+              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Your app can be deployed to as many clusters as you would like. Each cluster can have it’s own configuration and patches for your kubernetes YAML.</p>
+              <div className="flex flex-column u-marginTop--10 u-paddingTop--5">
+                {/* TODO: empty state if you have no downstreams yet */}
+                {childWatches && childWatches.map((childWatch) => {
+                  const childCluster = childWatch.cluster;
+                  const clusterType = getClusterType(childCluster.gitOpsRef);
+                  if (childCluster) {
+                    return (
+                      <div key={childCluster.id} className="DetailPage--downstreamRow flex">
+                        <div className="flex1 flex alignItems--center">
+                          <span className={`icon clusterType ${clusterType}`}></span>
+                          <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{childCluster.title}</span>
+                        </div>
+                        <div className="flex1">
+                        </div>
+                        <div className="flex-auto">
+                          {this.state[`preparing${childWatch.id}`] ?
+                            <Loader size="16"/>
+                          :
+                            <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
+                          }
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+              <div className="u-marginTop--10 u-paddingTop--5">
+                <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
+              </div>
+            </div>
+
+            <div className="u-marginTop--30 u-paddingTop--10 u-marginBottom--10 flex">
+              <div className="flex1 u-paddingRight--15">
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Get help with your application</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Generate a support bundle for your application to send to the vendor.</p>
+                <div className="u-marginTop--10">
+                  <Link to={`/watch/${watch.slug}/troubleshoot`} className="btn secondary">Generate a support bundle</Link>
+                </div>
+              </div>
+              <div className="flex1 u-paddingLeft--15">
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application config</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Quickly see a ready-only preview of your application config for reference.</p>
+                <div className="u-marginTop--10">
+                  <Link to={`/watch/${watch.slug}/config`} className="btn secondary">See application config</Link>
+                </div>
+              </div>
+            </div>
+
             <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Delete application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Removing {this.state.appName} will permanently delete all data and integrations associated with it and will not be&nbsp;recoverable.</p>
@@ -244,8 +269,15 @@ class DetailPageApplication extends React.Component {
             </div>
           </div>
           <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
+            <div>
+                <p className="uppercase-title">Current Version</p>
+                <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
+                  {watch.currentVersion.title}
+                </p>
+            </div>
             <WatchContributors
               title="contributors"
+              className="u-marginTop--30"
               contributors={watch.contributors || []}
               watchName={watch.watchName}
               watchId={watch.id}
@@ -265,15 +297,15 @@ class DetailPageApplication extends React.Component {
           <div className="Modal-body flex-column flex1">
             <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Are you sure you want to delete {this.state.appName}?</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To delete {this.state.appName}, type its name in the field below</p>
-            <input 
-              type="text" 
-              className="Input" 
-              placeholder="Type the app name here" 
-              value={this.state.confirmAppName} 
-              onKeyPress={this.handleEnterPress} 
+            <input
+              type="text"
+              className="Input"
+              placeholder="Type the app name here"
+              value={this.state.confirmAppName}
+              onKeyPress={this.handleEnterPress}
               name="confirmAppName"
-              onChange={this.onFormChange} 
-              autoFocus 
+              onChange={this.onFormChange}
+              autoFocus
             />
             {this.state.confirmDeleteErr && <p className="u-fontSize--small u-color--chestnut u-marginTop--10">Names did not match</p>}
             <div className="u-marginTop--20 flex justifyContent--flexEnd">
