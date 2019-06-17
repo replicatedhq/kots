@@ -6,6 +6,9 @@ import (
 
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/initworker"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/kubernetes"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +17,24 @@ func Init(c *config.Config, out io.Writer) *cobra.Command {
 		Use:   "init",
 		Short: "run the init worker",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			w, err := initworker.Get(c, out)
+			s, err := store.NewSQLStore(c)
 			if err != nil {
 				return err
 			}
 
-			return w.Run(context.Background())
+			k, err := kubernetes.NewClient()
+			if err != nil {
+				return err
+			}
+
+			worker := &initworker.Worker{
+				Config:    c,
+				Logger:    logger.New(c, out),
+				Store:     s,
+				K8sClient: k,
+			}
+
+			return worker.Run(context.Background())
 		},
 	}
 

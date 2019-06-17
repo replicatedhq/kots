@@ -54,8 +54,8 @@
   version = "1.2.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/replicatedhq/ship-operator"
+  name = "github.com/replicatedhq/ship"
+  revision = "e6e5ad2b2b0e9b297b9bf3ee407ac7a14f237424"
 
 [[constraint]]
   name = "github.com/google/go-github"
@@ -75,7 +75,7 @@
 
 [[constraint]]
   name = "github.com/hashicorp/go-version"
-  version = "1.0.0"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"

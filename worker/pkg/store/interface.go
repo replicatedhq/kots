@@ -22,8 +22,10 @@ type Store interface {
 	GetNextUploadSequence(ctx context.Context, watchID string) (int, error)
 	UpdateWatchFromState(ctx context.Context, watchID string, stateJSON []byte) error
 
+	ListReadyUpdateIDs(ctx context.Context) ([]string, error)
 	GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error)
 	SetUpdateStatus(ctx context.Context, updateID string, status string) error
+	SetUpdateStarted(ctx context.Context, updateID string) error
 
 	GetEdit(ctx context.Context, editID string) (*types.EditSession, error)
 	SetEditStatus(ctx context.Context, edit string, status string) error
@@ -34,6 +36,10 @@ type Store interface {
 	GetWatches(ctx context.Context, userID string) ([]*types.Watch, error)
 	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, setCurrent bool) error
 	GetMostRecentWatchVersion(ctx context.Context, watchID string) (*types.WatchVersion, error)
+	CreateWatchUpdate(ctx context.Context, watchID string) error
+	CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error
+	SetWatchChecked(ctx context.Context, watchID string) error
+	ListDownstreamWatchIDs(ctx context.Context, watchID string) ([]string, error)
 
 	GetNotificationWatchID(ctx context.Context, notificationID string) (string, error)
 	GetPullRequestNotification(ctx context.Context, notificationID string) (*types.PullRequestNotification, error)

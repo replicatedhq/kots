@@ -11,13 +11,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+type outputYaml struct {
+	name     string
+	contents string
+}
+
 // this function is not perfect, and has known limitations. One of these is that it does not account for `\n---\n` in multiline strings.
 func MaybeSplitMultidocYaml(ctx context.Context, fs afero.Afero, localPath string) error {
-	type outputYaml struct {
-		name     string
-		contents string
-	}
-
 	files, err := fs.ReadDir(localPath)
 	if err != nil {
 		return errors.Wrapf(err, "read files in %s", localPath)
@@ -47,25 +47,13 @@ func MaybeSplitMultidocYaml(ctx context.Context, fs afero.Afero, localPath strin
 		// generate replacement yaml files
 		for idx, fileString := range filesStrings {
 
-			thisOutputFile := outputYaml{contents: fileString}
-
-			thisMetadata := MinimalK8sYaml{}
-			_ = yaml.Unmarshal([]byte(fileString), &thisMetadata)
-
-			if thisMetadata.Kind == "" {
-				// ignore invalid k8s yaml
-				continue
+			newOutputFiles, newCRDs, err := generateOutputYaml(idx, fileString)
+			if err != nil {
+				return errors.Wrapf(err, "at path %s", file.Name())
 			}
 
-			if thisMetadata.Kind == "CustomResourceDefinition" {
-				// collate CRDs into one file
-				crds = append(crds, fileString)
-				continue
-			}
-
-			fileName := GenerateNameFromMetadata(thisMetadata, idx)
-			thisOutputFile.name = fileName
-			outputFiles = append(outputFiles, thisOutputFile)
+			outputFiles = append(outputFiles, newOutputFiles...)
+			crds = append(crds, newCRDs...)
 		}
 
 		if len(crds) > 0 {
@@ -94,4 +82,55 @@ func MaybeSplitMultidocYaml(ctx context.Context, fs afero.Afero, localPath strin
 	}
 
 	return nil
+}
+
+// this function drops files with no parsable 'kind', separates out CRD definitions, and splits list yaml into multiple files
+func generateOutputYaml(idx int, fileString string) ([]outputYaml, []string, error) {
+
+	thisOutputFile := outputYaml{contents: fileString}
+	theseOutputFiles := []outputYaml{}
+	crds := []string{}
+
+	thisMetadata := MinimalK8sYaml{}
+	_ = yaml.Unmarshal([]byte(fileString), &thisMetadata)
+
+	if thisMetadata.Kind == "" {
+		// ignore invalid k8s yaml
+		return nil, nil, nil
+	}
+
+	if thisMetadata.Kind == "CustomResourceDefinition" {
+		// collate CRDs into one file
+		crds = append(crds, fileString)
+		return theseOutputFiles, crds, nil
+	}
+
+	if thisMetadata.Kind == "List" {
+		// split list yaml into multiple files
+		thisList := ListK8sYaml{}
+		_ = yaml.Unmarshal([]byte(fileString), &thisList)
+
+		for itemIdx, item := range thisList.Items {
+			itemYaml, err := yaml.Marshal(item)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "marshal item %d from file %d", itemIdx, idx)
+			}
+
+			newOutput, newCRDs, err := generateOutputYaml(itemIdx, string(itemYaml))
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "at file %d", idx)
+			}
+
+			theseOutputFiles = append(theseOutputFiles, newOutput...)
+			crds = append(crds, newCRDs...)
+		}
+
+		return theseOutputFiles, crds, nil
+	}
+
+	fileName := GenerateNameFromMetadata(thisMetadata, idx)
+	thisOutputFile.name = fileName
+
+	theseOutputFiles = []outputYaml{thisOutputFile}
+	return theseOutputFiles, crds, nil
 }

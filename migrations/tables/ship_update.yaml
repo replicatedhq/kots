@@ -23,13 +23,16 @@ spec:
           notNull: true
       - name: user_id
         type: text
-        constraints:
-          notNull: true
       - name: result
         type: text
       - name: created_at
         type: timestamp without time zone
         constraints:
           notNull: true
+      - name: started_at
+        type: timestamp without time zone
       - name: finished_at
         type: timestamp without time zone
+
+
+# alter table ship_update alter column user_id drop not null;

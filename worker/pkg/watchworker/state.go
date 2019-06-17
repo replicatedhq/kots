@@ -11,8 +11,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (w *Worker) GetStateJSONFromArchive(logger log.Logger, file multipart.File) ([]byte, error) {
@@ -47,13 +45,4 @@ func (w *Worker) GetStateJSONFromArchive(logger log.Logger, file multipart.File)
 	}
 
 	return data, nil
-}
-
-func (w *Worker) GetStateJSONFromSecret(namespace string, name string, key string) ([]byte, error) {
-	secret, err := w.K8sClient.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil, errors.Wrap(err, "secret not found")
-	}
-
-	return secret.Data[key], nil
 }

@@ -36,58 +36,7 @@ type ListK8sYaml struct {
 	Items      []interface{} `json:"items" yaml:"items"`
 }
 
-func RebuildListYaml(debug log.Logger, lists []List, kustomizedYamlFiles []PostKustomizeFile) ([]PostKustomizeFile, error) {
-	yamlMap := make(map[MinimalK8sYaml]PostKustomizeFile)
-
-	for _, PostKustomizeFile := range kustomizedYamlFiles {
-		yamlMap[PostKustomizeFile.Minimal] = PostKustomizeFile
-	}
-
-	fullReconstructedRendered := make([]PostKustomizeFile, 0)
-	for _, list := range lists {
-		var allListItems []interface{}
-		for _, item := range list.Items {
-			if pkFile, exists := yamlMap[item]; exists {
-				delete(yamlMap, item)
-				allListItems = append(allListItems, pkFile.Full)
-			}
-		}
-
-		// don't render empty lists
-		if len(allListItems) == 0 {
-			continue
-		}
-
-		debug.Log("event", "reconstruct list")
-		reconstructedList := ListK8sYaml{
-			APIVersion: list.APIVersion,
-			Kind:       "List",
-			Items:      allListItems,
-		}
-
-		postKustomizeList := PostKustomizeFile{
-			Minimal: MinimalK8sYaml{
-				Kind: "List",
-			},
-			Full: reconstructedList,
-		}
-
-		fullReconstructedRendered = append(fullReconstructedRendered, postKustomizeList)
-	}
-
-	for nonListYamlMinimal, pkFile := range yamlMap {
-		fullReconstructedRendered = append(fullReconstructedRendered, PostKustomizeFile{
-			Order:   pkFile.Order,
-			Minimal: nonListYamlMinimal,
-			Full:    pkFile.Full,
-		})
-	}
-
-	return fullReconstructedRendered, nil
-}
-
 func WritePostKustomizeFiles(debug log.Logger, FS afero.Afero, dest string, postKustomizeFiles []PostKustomizeFile) error {
-
 	sort.Stable(PostKustomizeFileCollection(postKustomizeFiles))
 
 	var joinedFinal string

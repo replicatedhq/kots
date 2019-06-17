@@ -25,6 +25,30 @@
   version = "v10.15.4"
 
 [[projects]]
+  digest = "1:3b10c6fd33854dc41de2cf78b7bae105da94c2789b6fa5b9ac9e593ea43484ac"
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "41ac8693c5c10a92ea1ff5ac3a7f95646f6123b0"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:55388fd080150b9a072912f97b1f5891eb0b50df43401f8b75fb4273d3fec9fc"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
+  digest = "1:ab506cfc00b11d6d406789c15abb0b341e8db076640e3f5255615a7e327398c1"
+  name = "github.com/Masterminds/sprig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "258b00ffa7318e8b109a141349980ffbd30a35db"
+  version = "v2.20.0"
+
+[[projects]]
   digest = "1:d1665c44bd5db19aaee18d1b6233c99b0b9a986e8bccb24ef54747547a48027f"
   name = "github.com/PuerkitoBio/purell"
   packages = ["."]
@@ -515,6 +539,14 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  digest = "1:582b704bebaa06b48c29b0cec224a6058a09c86883aaddabde889cd1a5f73e1b"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
+  version = "v1.1.1"
+
+[[projects]]
   digest = "1:65c4414eeb350c47b8de71110150d0ea8a281835b1f386eacaa3ad7325929c21"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -629,12 +661,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:77395dd3847dac9c45118c668f5dab85aedf0163dc3b38aea6578c5cf0d502f9"
+  branch = "master"
+  digest = "1:14f3dc47ce9fec6a2696a28cf21ffd5aef579584897acfdeb0190bc8cf7b1132"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b5a281d3160aa11950a6182bd9a9dc2cb1e02d50"
-  version = "v1.0.0"
+  revision = "192140e6f3e645d971b134d4e35b5191adb9dfd3"
 
 [[projects]]
   digest = "1:8ec8d88c248041a6df5f6574b87bc00e7e0b493881dad2e7ef47b11dc69093b5"
@@ -722,6 +754,14 @@
   pruneopts = "UT"
   revision = "12bf5f6afec2a9dcc97357671fdfa9fb972884eb"
   version = "v0.11.14"
+
+[[projects]]
+  digest = "1:f9a5e090336881be43cfc1cf468330c1bdd60abdc9dd194e0b1ab69f4b94dd7c"
+  name = "github.com/huandu/xstrings"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f02667b379e2fb5916c3cda2cf31e0eb885d79f8"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:8eb1de8112c9924d59bf1d3e5c26f5eaa2bfc2a5fcbb92dc1c2e4546d695f277"
@@ -1020,34 +1060,31 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:e0658249ce5d803939df239ff01d1989ed5c5cf18ced9262891cca29043398a6"
+  digest = "1:8ae9a1ca9125d35d6eb15f8cc0b37860af533d2ea4c9f7e4bf21c8aa5726cb87"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
     "pkg/api/amazoneks",
     "pkg/constants",
+    "pkg/fs",
+    "pkg/helpers/flags",
     "pkg/patch",
+    "pkg/specs",
+    "pkg/specs/apptype",
+    "pkg/specs/githubclient",
+    "pkg/specs/gogetter",
+    "pkg/specs/localgetter",
+    "pkg/specs/replicatedapp",
+    "pkg/specs/stategetter",
     "pkg/state",
+    "pkg/templates",
     "pkg/util",
+    "pkg/util/errors",
     "pkg/util/warnings",
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "d27319bdc04982cb3d295d6bf860edfce6abeacc"
-  version = "v0.44.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:966e073f34f8936d1cf2fdba2d01557eb1495e8bd9d3dc84a1dbc49926885f52"
-  name = "github.com/replicatedhq/ship-operator"
-  packages = [
-    "pkg/apis/ship/v1beta1",
-    "pkg/client/shipwatchclientset",
-    "pkg/client/shipwatchclientset/scheme",
-    "pkg/client/shipwatchclientset/typed/ship/v1beta1",
-  ]
-  pruneopts = "UT"
-  revision = "804980507afbd81a89a9e27f36e6c74b64c98da6"
+  revision = "e6e5ad2b2b0e9b297b9bf3ee407ac7a14f237424"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
@@ -1157,20 +1194,8 @@
   revision = "fd76348b9329dc6f3bd4b87a45ae9e5fb72bffbc"
 
 [[projects]]
-  digest = "1:15b8c7dfaa421c7a5f4a9ccdee8eef607adc8f3d77812fa8f413833cc0d2871a"
-  name = "go.uber.org/dig"
-  packages = [
-    ".",
-    "internal/digreflect",
-    "internal/dot",
-  ]
-  pruneopts = "UT"
-  revision = "d6ba99365e475c24e8ac02392eb3f78ccab2a6f3"
-  version = "v1.4.0"
-
-[[projects]]
   branch = "master"
-  digest = "1:9a265a9cfebea20b327d27ef2ca56a8e1fb4f706a3c846af4c641cf1bb1ce3b1"
+  digest = "1:74c3727a24888e22642b2f731b0651d369f731f487dbc9a2d9ce91c7dcd0f663"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -1187,8 +1212,10 @@
     "openpgp/errors",
     "openpgp/packet",
     "openpgp/s2k",
+    "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
+    "scrypt",
     "ssh/terminal",
   ]
   pruneopts = "UT"
@@ -1494,14 +1521,6 @@
   revision = "9dfdf9be683f61f82cda12362c44c784e0778b56"
 
 [[projects]]
-  digest = "1:84a8609383bec11b71d52dd813f33f1d16614b91966940bdc2aa79bea864fa25"
-  name = "sigs.k8s.io/controller-runtime"
-  packages = ["pkg/runtime/scheme"]
-  pruneopts = "UT"
-  revision = "79f06014d49b565e2d980fcd9519b33874ddb8d6"
-  version = "v0.1.3"
-
-[[projects]]
   digest = "1:baee1c50267701e19e15b9d80d8934ce4e4f90db0928296270f7a7818014f6d3"
   name = "sigs.k8s.io/kustomize"
   packages = [
@@ -1560,19 +1579,17 @@
     "github.com/google/go-github/github",
     "github.com/gorilla/mux",
     "github.com/gosimple/slug",
-    "github.com/hashicorp/go-multierror",
+    "github.com/hashicorp/go-uuid",
     "github.com/hashicorp/go-version",
     "github.com/lib/pq",
     "github.com/pkg/errors",
-    "github.com/replicatedhq/ship-operator/pkg/apis/ship/v1beta1",
-    "github.com/replicatedhq/ship-operator/pkg/client/shipwatchclientset",
+    "github.com/replicatedhq/ship/pkg/specs",
     "github.com/replicatedhq/ship/pkg/state",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
-    "go.uber.org/dig",
     "k8s.io/api/core/v1",
     "k8s.io/api/networking/v1",
     "k8s.io/api/rbac/v1",

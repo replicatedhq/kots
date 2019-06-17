@@ -41,8 +41,6 @@ type Manager interface {
 	SerializeContentSHA(contentSHA string) error
 	SerializeShipMetadata(api.ShipAppMetadata, string) error
 	SerializeAppMetadata(api.ReleaseMetadata) error
-	SerializeListsMetadata(util.List) error
-	ClearListsMetadata() error
 	SerializeUpstreamContents(contents *UpstreamContents) error
 	Save(v State) error
 	ResetLifecycle() error
@@ -225,35 +223,6 @@ func (m *MManager) SerializeConfig(assets []api.Asset, meta api.ReleaseMetadata,
 	debug.Log("event", "safeStateUpdate")
 	_, err := m.StateUpdate(func(state State) (State, error) {
 		state.V1.Config = templateContext
-		return state, nil
-	})
-	return err
-}
-
-func (m *MManager) SerializeListsMetadata(list util.List) error {
-	debug := level.Debug(log.With(m.Logger, "method", "serializeListMetadata"))
-
-	debug.Log("event", "safeStateUpdate")
-	_, err := m.StateUpdate(func(state State) (State, error) {
-		if state.V1.Metadata == nil {
-			state.V1.Metadata = &Metadata{}
-		}
-		state.V1.Metadata.Lists = append(state.V1.Metadata.Lists, list)
-		return state, nil
-	})
-	return err
-}
-
-func (m *MManager) ClearListsMetadata() error {
-	debug := level.Debug(log.With(m.Logger, "method", "clearListMetadata"))
-
-	debug.Log("event", "safeStateUpdate")
-	_, err := m.StateUpdate(func(state State) (State, error) {
-		if state.V1.Metadata == nil {
-			return state, nil
-		}
-
-		state.V1.Metadata.Lists = []util.List{}
 		return state, nil
 	})
 	return err

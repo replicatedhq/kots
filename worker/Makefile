@@ -69,14 +69,6 @@ bin/ship-cluster-worker: $(SRC)
 .PHONY: build
 build: bin/ship-cluster-worker
 
-.PHONY: build-cache
-build-cache:
-	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
-
-.PHONY: publish-cache
-publish-cache:
-	docker push repldev/${PROJECT_NAME}:latest
-
 .PHONY: build-staging
 build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
 build-staging: build_and_push

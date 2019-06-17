@@ -227,9 +227,6 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 	if err := json.Unmarshal(secret.Data["state.json"], &shipState); err != nil {
 		return errors.Wrap(err, "unmarshal state")
 	}
-	fmt.Printf("shipState = %#v\n", shipState)
-	fmt.Printf("V1 = %#v\n", shipState.V1)
-	fmt.Printf("Metadata = %#v\n", shipState.V1.Metadata)
 
 	// title is the parent's title, if there is a parent
 	title := ""

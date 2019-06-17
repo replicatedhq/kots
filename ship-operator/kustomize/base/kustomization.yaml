@@ -1,9 +1,0 @@
-namespace: ship-operator-system
-
-namePrefix: ship-operator-
-
-resources:
-- ./config/rbac/rbac_role.yaml
-- ./config/rbac/rbac_role_binding.yaml
-- ./config/manager/manager.yaml
-- ./ship_v1beta1_shipwatch.yaml

@@ -8,11 +8,11 @@ import (
 	"mime/multipart"
 	"os"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (w *Worker) postUpdateActions(watchID string, sequence int, s3Filepath string) error {
@@ -21,6 +21,15 @@ func (w *Worker) postUpdateActions(watchID string, sequence int, s3Filepath stri
 		return errors.Wrap(err, "get watch")
 	}
 
+	downstreamWatchIDs, err := w.Store.ListDownstreamWatchIDs(context.TODO(), watchID)
+	if err != nil {
+		level.Error(w.Logger).Log("event", "get downstream watch ids", "err", err)
+	}
+	for _, downstreamWatchID := range downstreamWatchIDs {
+		if err := w.Store.CreateWatchUpdate(context.TODO(), downstreamWatchID); err != nil {
+			level.Error(w.Logger).Log("event", "create downstream watch update", "err", err)
+		}
+	}
 	archive, err := w.fetchArchiveFromS3(watchID, s3Filepath)
 	if err != nil {
 		return errors.Wrap(err, "fetch archive")
@@ -29,10 +38,6 @@ func (w *Worker) postUpdateActions(watchID string, sequence int, s3Filepath stri
 
 	if err := w.triggerIntegrations(watch, sequence, archive); err != nil {
 		return errors.Wrap(err, "trigger integraitons")
-	}
-
-	if err := w.restartOperator(watch); err != nil {
-		return errors.Wrap(err, "restart operator")
 	}
 
 	return nil
@@ -50,15 +55,6 @@ func (w *Worker) fetchArchiveFromS3(watchID string, s3Filepath string) (*os.File
 	}
 
 	return archive, nil
-}
-
-func (w *Worker) restartOperator(watch *types.Watch) error {
-	// if we delete the namespace for the watch, it will be recreated by the watch worker
-	if err := w.K8sClient.CoreV1().Namespaces().Delete(watch.Namespace(), &metav1.DeleteOptions{}); err != nil {
-		return errors.Wrap(err, "delete namespace")
-	}
-
-	return nil
 }
 
 func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *os.File) error {

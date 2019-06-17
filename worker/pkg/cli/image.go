@@ -6,6 +6,8 @@ import (
 
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/imageworker"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +16,18 @@ func Image(c *config.Config, out io.Writer) *cobra.Command {
 		Use:   "image",
 		Short: "run the image worker",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			w, err := imageworker.Get(c, out)
+			s, err := store.NewSQLStore(c)
 			if err != nil {
 				return err
 			}
 
-			return w.Run(context.Background())
+			worker := &imageworker.Worker{
+				Config: c,
+				Logger: logger.New(c, out),
+				Store:  s,
+			}
+
+			return worker.Run(context.Background())
 		},
 	}
 

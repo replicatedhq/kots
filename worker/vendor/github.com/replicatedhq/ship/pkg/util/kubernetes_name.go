@@ -4,12 +4,6 @@ import (
 	"fmt"
 )
 
-type List struct {
-	APIVersion string           `json:"apiVersion" yaml:"apiVersion"`
-	Path       string           `json:"path" yaml:"path"`
-	Items      []MinimalK8sYaml `json:"items" yaml:"items"`
-}
-
 type MinimalK8sYaml struct {
 	Kind     string             `json:"kind" yaml:"kind" hcl:"kind"`
 	Metadata MinimalK8sMetadata `json:"metadata" yaml:"metadata" hcl:"metadata"`

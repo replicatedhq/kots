@@ -5,6 +5,9 @@ import (
 	"io"
 
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/kubernetes"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/updateworker"
 	"github.com/spf13/cobra"
 )
@@ -14,12 +17,24 @@ func Update(c *config.Config, out io.Writer) *cobra.Command {
 		Use:   "update",
 		Short: "run the update worker",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			w, err := updateworker.Get(c, out)
+			s, err := store.NewSQLStore(c)
 			if err != nil {
 				return err
 			}
 
-			return w.Run(context.Background())
+			k, err := kubernetes.NewClient()
+			if err != nil {
+				return err
+			}
+
+			worker := &updateworker.Worker{
+				Config:    c,
+				Logger:    logger.New(c, out),
+				Store:     s,
+				K8sClient: k,
+			}
+
+			return worker.Run(context.Background())
 		},
 	}
 
