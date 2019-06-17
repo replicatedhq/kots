@@ -1,18 +1,15 @@
-FROM golang:1.12 as deps
-RUN go get -u github.com/golang/dep/cmd/dep
-RUN go get github.com/sqs/goreturns
-RUN go get -u golang.org/x/lint/golint
-
-
 FROM golang:1.12
 
-EXPOSE 3000
-EXPOSE 6060
+RUN go get github.com/golang/dep/cmd/dep
+RUN go get github.com/sqs/goreturns
+RUN go get golang.org/x/lint/golint
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/ship-cluster/worker
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 
 RUN make build
-
 RUN cp ./bin/ship-cluster-worker /opt/ship-cluster-worker
+
+EXPOSE 3000
+EXPOSE 6060

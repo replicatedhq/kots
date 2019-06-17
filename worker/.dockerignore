@@ -5,3 +5,4 @@
 deploy
 hack
 kustomize
+bin/

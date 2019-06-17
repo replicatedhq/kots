@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := all
+
 SHELL := /bin/bash -o pipefail
 PROJECT_NAME ?= ship-cluster-worker
 
@@ -17,6 +19,9 @@ define LDFLAGS
 endef
 
 LOG_LEVEL ?= debug
+
+.PHONY: all
+all: vet test build
 
 .PHONY: clean
 clean:
@@ -49,7 +54,6 @@ vet: lint
 	go vet ./pkg/...
 	go vet ./cmd/...
 
-
 .PHONY: test
 test:
 	time go test ./pkg/... | grep -v '?'
@@ -63,7 +67,7 @@ bin/ship-cluster-worker: $(SRC)
 	@echo built bin/ship-cluster-worker
 
 .PHONY: build
-build: bin/ship-cluster-worker test
+build: bin/ship-cluster-worker
 
 .PHONY: build-cache
 build-cache:
@@ -139,4 +143,3 @@ build_and_publish:
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
           git push origin $(GITOPS_BRANCH)
-

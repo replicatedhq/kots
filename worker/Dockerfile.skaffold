@@ -1,7 +1,8 @@
 FROM repldev/ship-cluster-worker as deps
 
-ADD . /go/src/github.com/replicatedhq/ship-cluster/worker
-WORKDIR /go/src/github.com/replicatedhq/ship-cluster/worker
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/ship-cluster/worker
+WORKDIR $PROJECTPATH
+ADD . $PROJECTPATH
 
 RUN make build
 RUN cp ./bin/ship-cluster-worker /opt/ship-cluster-worker

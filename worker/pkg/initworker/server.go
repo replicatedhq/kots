@@ -25,7 +25,7 @@ type InitServer struct {
 type CreateSessionRequest struct {
 	ID          string `json:"id"`
 	UpstreamURI string `json:"upstreamUri"`
-	ForkURI     string `json:"forkUri`
+	ForkURI     string `json:"forkUri"`
 }
 
 func (s *InitServer) Serve(ctx context.Context, addr string) error {

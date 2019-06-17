@@ -3,7 +3,7 @@ package store
 import (
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // driver
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 )

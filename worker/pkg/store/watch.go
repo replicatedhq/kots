@@ -185,13 +185,13 @@ select watch_id from ship_notification where id = $1
 `
 	row := s.db.QueryRowContext(ctx, query, notificationID)
 
-	var watchId string
-	err := row.Scan(&watchId)
+	var watchID string
+	err := row.Scan(&watchID)
 	if err != nil {
 		return "", errors.Wrap(err, "scan getNotificationWatchID")
 	}
 
-	return watchId, nil
+	return watchID, nil
 }
 
 func (s *SQLStore) GetWatches(ctx context.Context, userID string) ([]*types.Watch, error) {
