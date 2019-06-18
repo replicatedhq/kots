@@ -155,6 +155,9 @@ class WatchDetailPage extends Component {
     }
 
     const slug = `${match.params.owner}/${match.params.slug}`;
+
+    // @TODO: Add an extra condition here to show the user we couldn't find a watch
+    // after a certain number of tries
     const watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
 
     if (!watch || this.props.listWatchesQuery.loading) {
