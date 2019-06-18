@@ -1,6 +1,6 @@
 bases:
   - ../../tables
 
-resources:
-  - ./schemahero.yaml
+# resources:
+#   - ./schemahero.yaml
 

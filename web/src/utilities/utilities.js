@@ -68,7 +68,7 @@ export function getApplicationType(watch) {
  */
 export function getReadableLicenseType(type) {
   let readableType = "Development";
-  if (type === "paid") {
+  if (type === "prod") {
     readableType = "Production"
   } else if (type === "trial") {
     readableType = "Trial"
