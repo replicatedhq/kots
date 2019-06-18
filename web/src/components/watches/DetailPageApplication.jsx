@@ -231,7 +231,6 @@ class DetailPageApplication extends React.Component {
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Your app can be deployed to as many clusters as you would like. Each cluster can have it’s own configuration and patches for your kubernetes YAML.</p>
                 <div className="flex flex-column u-marginTop--10 u-paddingTop--5">
-                  {/* TODO: empty state if you have no downstreams yet */}
                   {childWatches && childWatches.map((childWatch) => {
                     const childCluster = childWatch.cluster;
                     const clusterType = getClusterType(childCluster.gitOpsRef);
