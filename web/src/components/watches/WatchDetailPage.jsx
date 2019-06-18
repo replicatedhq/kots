@@ -155,9 +155,31 @@ class WatchDetailPage extends Component {
 
     const slug = `${match.params.owner}/${match.params.slug}`;
 
-    // @TODO: Add an extra condition here to show the user we couldn't find a watch
-    // after a certain number of tries
-    const watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
+
+    let watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
+
+    // Requested watch is a child watch / downstream cluster watch
+    if (!watch && !this.props.listWatchesQuery.loading) {
+
+      // NOTE:
+      // This flat array could get really really big should someone have 10 clusters
+      // and 25 bajillion children watches. In our current state, I don't feel we need
+      // to scale to this as most of our users just have a couple of watches and clusters.
+      // This is a non-existant scaling issue, and I think we'll be OK with just a big
+      // flat array.
+      const childWatches = this.props.listWatchesQuery.listWatches
+        .map( mainWatch => mainWatch.watches)
+        .flat();
+
+      watch = childWatches.find(w => w.slug === slug);
+      if (!watch) {
+        return (
+          <div className="flex-column flex1 alignItems--center justifyContent--center">
+            Sorry! We ran into an issue finding the right Watch. Please refresh your browser :(
+          </div>
+        );
+      }
+    }
 
     if (!watch || this.props.listWatchesQuery.loading) {
       return (

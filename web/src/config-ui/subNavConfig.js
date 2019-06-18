@@ -45,6 +45,14 @@ export default [
     displayRule: watch => {
       return getApplicationType(watch) === "replicated.app";
     }
+  },
+  {
+    tabName: "state",
+    displayName: "State",
+    to: slug => `/watch/${slug}/state`,
+    displayRule: watch => {
+      return Boolean(watch.cluster);
+    }
   }
   // {
   //   tabName: "integrations",

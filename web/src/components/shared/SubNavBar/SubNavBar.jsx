@@ -7,7 +7,7 @@ import navConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
   const { className, activeTab, slug, watch } = props;
-  
+
   return (
     <div className={classNames("details-subnav", className)}>
       <ul>
