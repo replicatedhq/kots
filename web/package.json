@@ -21,7 +21,8 @@
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
       "\\.(scss|css|less)$": "<rootDir>/__mocks__/styleMock.js",
-      "monaco-editor": "<rootDir>/node_modules/react-monaco-editor"
+      "monaco-editor": "<rootDir>/node_modules/react-monaco-editor",
+      "@src/(.*)$": "<rootDir>/src/$1"
     }
   },
   "devDependencies": {
@@ -121,7 +122,6 @@
     "isomorphic-fetch": "^2.2.1",
     "jest-enzyme": "^6.0.4",
     "moment": "^2.24.0",
-    "monaco-editor": "^0.17.0",
     "monaco-editor-webpack-plugin": "^1.7.0",
     "react-apollo": "^2.5.5",
     "react-helmet": "^5.2.1",

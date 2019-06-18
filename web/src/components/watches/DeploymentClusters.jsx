@@ -65,7 +65,11 @@ export default class DeploymentClusters extends React.Component {
                           <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentClusterName)}></span>
                         </div>
                         <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5">{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
-                        <Link to={`/watch/${childWatch.slug}/state`} className="replicated-link u-marginTop--5 u-fontSize--small u-lineHeight--normal">View state.json</Link>
+                        <Link
+                          to={`/watch/${childWatch.slug}/state`}
+                          className="replicated-link u-marginTop--5 u-fontSize--small u-lineHeight--normal">
+                          View state.json
+                        </Link>
                       </div>
                     </div>
                     <div className="u-marginTop--10">
@@ -90,7 +94,7 @@ export default class DeploymentClusters extends React.Component {
                           </div>
                         }
                       </div>
-                      <Link to={`/watch/${childWatch.slug}/history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
+                      <Link to={`/watch/${childWatch.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
                     </div>
                     {currentVersion && childWatch.pendingVersions.length >= 1 &&
                       <div className="flex justifyContent--spaceBetween alignItems--center u-marginTop--10">

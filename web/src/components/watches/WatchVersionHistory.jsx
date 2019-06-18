@@ -17,7 +17,7 @@ export default function WatchVersionHistory(props) {
         <div className="icon checkmark-icon flex-auto u-marginLeft--10 u-marginRight--5"></div>
         <p className="u-fontSize--large">Most recent version</p>
         <div className="flex flex1 justifyContent--flexEnd">
-          {watches.length > 0 && (
+          {watches?.length > 0 && (
             <Fragment>
               {watches.map(({ cluster }) => {
                 const icon = getClusterType(cluster.gitOpsRef) === "git"
