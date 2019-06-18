@@ -56,7 +56,12 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
           return message;
         } else {
           if (process.env.NODE_ENV === "development") {
-            console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
+            console.log(
+              "[GraphQL error]:",
+              "Message:", message, "|",
+              "Location:", locations, "|",
+              "Path:", path
+            );
           }
         }
       })

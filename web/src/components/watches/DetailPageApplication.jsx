@@ -204,7 +204,6 @@ class DetailPageApplication extends React.Component {
                 }
               </div>
             </div>
-
             <div className="u-marginTop--30 u-paddingTop--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your applicaiton. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
