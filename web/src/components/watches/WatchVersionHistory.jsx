@@ -21,13 +21,13 @@ export default function WatchVersionHistory(props) {
             <Fragment>
               {watches.map(({ cluster }) => {
                 const icon = getClusterType(cluster.gitOpsRef) === "git"
-                  ? "icon github-button-icon"
-                  : "icon traditional-button-icon";
+                  ? "icon github-small-size"
+                  : "icon ship-small-size";
 
                 return (
                   <div key={cluster.slug} className="watch-cell flex">
-                    <div className="flex cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-                      <span className={classNames(icon, "u-marginRight--10")} />
+                    <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
+                      <span className={classNames(icon, "u-marginRight--5")} />
                       <p className="u-fontSize--normal">
                         {cluster.slug}
                       </p>

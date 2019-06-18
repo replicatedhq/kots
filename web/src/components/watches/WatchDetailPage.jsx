@@ -115,7 +115,6 @@ class WatchDetailPage extends Component {
    * @return {undefined}
    */
   refetchGraphQLData = () => {
-    this.props.data.refetch();
     this.props.listWatchesQuery.refetch()
   }
 

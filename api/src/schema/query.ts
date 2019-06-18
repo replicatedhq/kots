@@ -26,6 +26,7 @@ export const Query = `
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]
     getWatch(slug: String, id: String): Watch
+    getParentWatch(id: String): Watch
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
 

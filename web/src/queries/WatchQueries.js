@@ -469,6 +469,135 @@ export const getWatchById = gql`
   }
 `;
 
+export const getParentWatchRaw = `
+  query getParentWatch($id: String) {
+    getParentWatch(id: $id) {
+      watchName
+      slug
+      metadata
+      cluster {
+        id
+        title
+        slug
+        createdOn
+        lastUpdated
+        gitOpsRef {
+          owner
+          repo
+          branch
+          path
+        }
+        shipOpsRef {
+          token
+        }
+      }
+      currentVersion {
+        title
+        status
+        createdOn
+        sequence
+        pullrequestNumber
+      }
+      pendingVersions {
+        title
+        status
+        createdOn
+        sequence
+        pullrequestNumber
+      }
+      pastVersions {
+        title
+        status
+        createdOn
+        sequence
+        pullrequestNumber
+      }
+      notifications {
+        id
+        createdOn
+        updatedOn
+        triggeredOn
+        enabled
+        webhook {
+          uri
+        }
+        email {
+          recipientAddress
+        }
+      }
+      watches {
+        id
+        stateJSON
+        watchName
+        slug
+        watchIcon
+        createdOn
+        lastUpdated
+        metadata
+        contributors {
+          id
+          createdAt
+          githubId
+          login
+          avatar_url
+        }
+        currentVersion {
+          title
+          status
+          createdOn
+          sequence
+          pullrequestNumber
+        }
+        pendingVersions {
+          title
+          status
+          createdOn
+          sequence
+          pullrequestNumber
+        }
+        pastVersions {
+          title
+          status
+          createdOn
+          sequence
+          pullrequestNumber
+        }
+        notifications {
+          id
+          createdOn
+          updatedOn
+          triggeredOn
+          enabled
+          webhook {
+            uri
+          }
+          email {
+            recipientAddress
+          }
+        }
+        cluster {
+          id
+          title
+          slug
+          createdOn
+          lastUpdated
+          gitOpsRef {
+            owner
+            repo
+            branch
+            path
+          }
+          shipOpsRef {
+            token
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const getParentWatch = gql(getParentWatchRaw);
+
 export const listNotificationsQuery = gql`
   query listNotifications($watchId: String!) {
     listNotifications(watchId: $watchId) {
