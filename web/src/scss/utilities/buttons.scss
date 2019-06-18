@@ -101,6 +101,16 @@
     background-color: rgb(177, 243, 196);
   }
 
+  &.primary.red.is-disabled,
+  &.primary.red.is-disabled:hover,
+  &.primary.red:disabled,
+  &.primary.red[disabled] {
+    cursor: not-allowed;
+    border-color: #DDA3A8;
+    color: #ffffff;
+    background-color: #DDA3A8;
+  }
+
   &.primary.blue {
     background-color: #337AB7;
     border-width: 1px;

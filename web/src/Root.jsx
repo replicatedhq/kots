@@ -34,7 +34,7 @@ const WatchDetailPage = lazy(() => import("./components/watches/WatchDetailPage"
 const ClusterScope = lazy(() => import("./components/clusterscope/ClusterScope"));
 const UnsupportedBrowser = lazy(() => import("./components/static/UnsupportedBrowser"));
 const NotFound = lazy(() => import("./components/static/NotFound"));
-// const ReplicatedGraphiQL = lazy(() => import("./components/ReplicatedGraphiQL"));
+const ReplicatedGraphiQL = lazy(() => import("./components/ReplicatedGraphiQL"));
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 

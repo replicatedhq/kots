@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import ShipLoading from "./ShipLoading";
-import { getWatchById } from "../queries/WatchQueries";
+import { getWatchById, getParentWatch } from "../queries/WatchQueries";
 import { Utilities } from "../utilities/utilities";
 import Loader from "./shared/Loader";
 
@@ -48,7 +48,12 @@ export class ShipInitCompleted extends React.Component {
     if (data.getWatch && data.getWatch.watchName) {
       clearInterval(this.interval);
       if (data.getWatch.cluster) {
-        return this.props.history.push("/watches");
+        const parentResult = await client.query({
+          query: getParentWatch,
+          variables: { id: initSessionId },
+          fetchPolicy: "network-only"
+        });
+        return this.props.history.push(`/watch/${parentResult.data.getParentWatch.slug}/downstreams`);
       }
       this.setState({ loadingWatch: false, watchSlug: data.getWatch.slug, watchId: initSessionId });
     }
