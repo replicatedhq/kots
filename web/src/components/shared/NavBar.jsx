@@ -89,7 +89,7 @@ export class NavBar extends PureComponent {
                   <div className="HeaderLogo">
                     <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
                       {logo
-                        ? <img className="watch-logo clickable" src={logo} />
+                        ? <span className="watch-logo clickable" style={{ backgroundImage: `url(${logo})` }}></span>
                         : <span className="logo icon clickable" />
                       }
                     </Link>

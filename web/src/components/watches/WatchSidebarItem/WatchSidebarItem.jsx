@@ -17,7 +17,7 @@ export default function WatchSidebarItem(props) {
       <Link
         className="flex"
         to={`/watch/${owner}/${slug}`}>
-          <img className="sidebar-link-icon" src={watchIcon} />
+          <span className="sidebar-link-icon" style={{ backgroundImage: `url(${watchIcon})` }}></span>
           <div className="flex-column">
             <p className="u-color--tuna u-fontWeight--bold u-marginBottom--5">{watchName}</p>
             <div className="flex alignItems--center">
