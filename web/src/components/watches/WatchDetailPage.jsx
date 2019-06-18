@@ -30,7 +30,6 @@ class WatchDetailPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      watch: null,
       displayRemoveClusterModal: false,
       addNewClusterModal: false,
       preparingUpdate: "",
@@ -44,47 +43,18 @@ class WatchDetailPage extends Component {
 
   componentDidUpdate(/* lastProps */) {
     const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
-    const { watch } = this.state;
-
-    // If no watch is currently selected, pick the first one
-    // Ex: going to /watches
-    if (!watch && listWatchesQuery.listWatches) {
-      const firstWatch = listWatchesQuery.listWatches[0];
-      return this.setState({
-        watch: firstWatch
-      });
-    }
-
-    // If user clicks on a sidebar link, grab the currently selected watch and
-    // set it to the current view
     const slug = `${match.params.owner}/${match.params.slug}`;
-    if (watch?.slug !== slug && listWatchesQuery.listWatches) {
-      this.setState({
-        watch: listWatchesQuery.listWatches.find( w => w.slug === slug )
-      });
-    }
 
-    if (watch?.watchIcon) {
+    const currentWatch = listWatchesQuery?.listWatches?.find( w => w.slug === slug);
+
+    // Handle updating the navbar logo when a watch changes.
+    if (currentWatch?.watchIcon) {
       const { navbarLogo } = getThemeState();
-      if (navbarLogo === null || navbarLogo !== watch.watchIcon) {
+      if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
         setThemeState({
-          navbarLogo: watch.watchIcon
+          navbarLogo: currentWatch.watchIcon
         });
       }
-    }
-  }
-
-
-  static getDerivedStateFromProps(nextProps, prevState) {
-    const { watch } = prevState;
-    const currentWatch = nextProps.listWatchesQuery?.listWatches?.find( w => w.slug === watch.slug );
-
-    // If the watch changes from a GraphQL mutation, use the watch that lives inside the listWatches query
-    // to update the watch currently in state.
-    if (currentWatch) {
-      return {
-        watch: currentWatch
-      };
     }
   }
 
@@ -162,9 +132,8 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history } = this.props;
+    const { match, history, listWatchesQuery } = this.props;
     const {
-      watch,
       displayRemoveClusterModal,
       addNewClusterModal,
       clusterToRemove
@@ -186,6 +155,8 @@ class WatchDetailPage extends Component {
     }
 
     const slug = `${match.params.owner}/${match.params.slug}`;
+    const watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
+
     if (!watch || this.props.listWatchesQuery.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -325,8 +296,6 @@ export default compose(
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
-      // Poll every 2 seconds
-      pollInterval: 2000,
       fetchPolicy: "network-only"
     }
   }),
