@@ -46,7 +46,8 @@ class WatchDetailPage extends Component {
     const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
     const { watch } = this.state;
 
-
+    // If no watch is currently selected, pick the first one
+    // Ex: going to /watches
     if (!watch && listWatchesQuery.listWatches) {
       const firstWatch = listWatchesQuery.listWatches[0];
       return this.setState({
@@ -54,6 +55,8 @@ class WatchDetailPage extends Component {
       });
     }
 
+    // If user clicks on a sidebar link, grab the currently selected watch and
+    // set it to the current view
     const slug = `${match.params.owner}/${match.params.slug}`;
     if (watch?.slug !== slug && listWatchesQuery.listWatches) {
       this.setState({
@@ -68,6 +71,20 @@ class WatchDetailPage extends Component {
           navbarLogo: watch.watchIcon
         });
       }
+    }
+  }
+
+
+  static getDerivedStateFromProps(nextProps, prevState) {
+    const { watch } = prevState;
+    const currentWatch = nextProps.listWatchesQuery?.listWatches?.find( w => w.slug === watch.slug );
+
+    // If the watch changes from a GraphQL mutation, use the watch that lives inside the listWatches query
+    // to update the watch currently in state.
+    if (currentWatch) {
+      return {
+        watch: currentWatch
+      };
     }
   }
 
@@ -308,6 +325,8 @@ export default compose(
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
+      // Poll every 2 seconds
+      pollInterval: 2000,
       fetchPolicy: "network-only"
     }
   }),
