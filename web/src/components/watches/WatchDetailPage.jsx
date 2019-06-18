@@ -190,7 +190,7 @@ class WatchDetailPage extends Component {
               items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
-                  className={classNames({ selected: item.watchName === watch.watchName})}
+                  className={classNames({ selected: item.slug === watch.slug})}
                   watch={item} />
               ))}
               currentWatch={watch.watchName}
