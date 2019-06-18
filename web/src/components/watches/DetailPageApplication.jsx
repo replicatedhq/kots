@@ -220,37 +220,47 @@ class DetailPageApplication extends React.Component {
             </div>
 
             <div className="u-marginTop--30 u-paddingTop--10">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
-              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Your app can be deployed to as many clusters as you would like. Each cluster can have it’s own configuration and patches for your kubernetes YAML.</p>
-              <div className="flex flex-column u-marginTop--10 u-paddingTop--5">
-                {/* TODO: empty state if you have no downstreams yet */}
-                {childWatches && childWatches.map((childWatch) => {
-                  const childCluster = childWatch.cluster;
-                  const clusterType = getClusterType(childCluster.gitOpsRef);
-                  if (childCluster) {
-                    return (
-                      <div key={childCluster.id} className="DetailPage--downstreamRow flex">
-                        <div className="flex1 flex alignItems--center">
-                          <span className={`flex-auto icon clusterType ${clusterType}`}></span>
-                          <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{childCluster.title}</span>
-                        </div>
-                        <div className="flex1">
-                        </div>
-                        <div className="flex-auto">
-                          {this.state[`preparing${childWatch.id}`] ?
-                            <Loader size="16"/>
-                          :
-                            <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
-                          }
-                        </div>
-                      </div>
-                    );
-                  }
-                })}
+            {!childWatches?.length ?
+              <div>
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You have not deployed your application to any downstream clusters. Get started by selecting a downstream cluster from the Downstreams tab.</p>
+                <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">Select a downstream cluster</Link>
               </div>
-              <div className="u-marginTop--10 u-paddingTop--5">
-                <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
+            :
+              <div>
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Your app can be deployed to as many clusters as you would like. Each cluster can have it’s own configuration and patches for your kubernetes YAML.</p>
+                <div className="flex flex-column u-marginTop--10 u-paddingTop--5">
+                  {/* TODO: empty state if you have no downstreams yet */}
+                  {childWatches && childWatches.map((childWatch) => {
+                    const childCluster = childWatch.cluster;
+                    const clusterType = getClusterType(childCluster.gitOpsRef);
+                    if (childCluster) {
+                      return (
+                        <div key={childCluster.id} className="DetailPage--downstreamRow flex">
+                          <div className="flex1 flex alignItems--center">
+                            <span className={`flex-auto icon clusterType ${clusterType}`}></span>
+                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{childCluster.title}</span>
+                          </div>
+                          <div className="flex1">
+                          </div>
+                          <div className="flex-auto">
+                            {this.state[`preparing${childWatch.id}`] ?
+                              <Loader size="16"/>
+                            :
+                              <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
+                            }
+                          </div>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+                <div className="u-marginTop--10 u-paddingTop--5">
+                  <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
+                </div>
               </div>
+            }
             </div>
 
             {(!isEmpty(appMeta) && appMeta.applicationType === "replicated.app") &&
