@@ -227,6 +227,9 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 	if err := json.Unmarshal(secret.Data["state.json"], &shipState); err != nil {
 		return errors.Wrap(err, "unmarshal state")
 	}
+	fmt.Printf("shipState = %#v\n", shipState)
+	fmt.Printf("V1 = %#v\n", shipState.V1)
+	fmt.Printf("Metadata = %#v\n", shipState.V1.Metadata)
 
 	// title is the parent's title, if there is a parent
 	title := ""
@@ -309,7 +312,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 	}
 
 	versionLabel := "Unknown"
-	if shipState.V1.Metadata.Version != "" {
+	if shipState.V1 != nil && shipState.V1.Metadata != nil && shipState.V1.Metadata.Version != "" {
 		versionLabel = shipState.V1.Metadata.Version
 	} else if parentWatch != nil {
 		parentWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), parentWatch.ID)
