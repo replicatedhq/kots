@@ -71,8 +71,6 @@ class WatchDetailPage extends Component {
     }
   }
 
-  componentDidMount() {}
-
   componentWillUnmount() {
     clearInterval(this.interval);
     this.props.clearThemeState();
