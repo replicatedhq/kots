@@ -227,9 +227,6 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 	if err := json.Unmarshal(secret.Data["state.json"], &shipState); err != nil {
 		return errors.Wrap(err, "unmarshal state")
 	}
-	fmt.Printf("shipState = %#v\n", shipState)
-	fmt.Printf("V1 = %#v\n", shipState.V1)
-	fmt.Printf("Metadata = %#v\n", shipState.V1.Metadata)
 
 	// title is the parent's title, if there is a parent
 	title := ""
@@ -403,11 +400,11 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 }
 
 func createWatchName(shipState shipstate.State, uri string) string {
-	if shipState.V1.Metadata.ApplicationType == "replicated.app" {
-		return shipState.UpstreamContents().AppRelease.ChannelName
-	}
-
 	if shipState.V1.Metadata != nil {
+		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
+			return shipState.UpstreamContents().AppRelease.ChannelName
+		}
+
 		if shipState.V1.Metadata.Name != "" {
 			return shipState.V1.Metadata.Name
 		} else {
