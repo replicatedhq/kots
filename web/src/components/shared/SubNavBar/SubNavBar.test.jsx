@@ -23,7 +23,7 @@ describe("<SubNavBar> tests", () => {
   it("Renders appropriate tabs for a top level watch", () => {
     const wrapper = shallow(<SubNavBar watch={topLevelWatch} />);
 
-    expect(wrapper.find("li")).toHaveLength(3);
+    expect(wrapper.find("li")).toHaveLength(4);
   });
 
   it("... for a child watch", () => {
