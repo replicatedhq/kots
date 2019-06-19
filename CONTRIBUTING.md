@@ -29,10 +29,14 @@ export SHIP_CLUSTER_GITHUB_PRIVATE_KEY_PATH=
 To configure your local environment, copy/paste the following scripts, once the above variables have been set. This will persist these changes across reboots.
 
 ```
-echo "export SHIP_CLUSTER_GITHUB_INSTALL_URL=${SHIP_CLUSTER_GITHUB_INSTALL_URL}" \
-  | tee -a ~/.bash_profile > /dev/null
 echo "export SHIP_CLUSTER_GITHUB_CLIENT_ID=${SHIP_CLUSTER_GITHUB_CLIENT_ID}" \
-  | tee -a ~/.bash_profile > /dev/null
+  | tee -a ~/.profile > /dev/null
+echo "export SHIP_CLUSTER_GITHUB_CLIENT_SECRET=${SHIP_CLUSTER_GITHUB_CLIENT_SECRET}" \
+  | tee -a ~/.profile > /dev/null
+echo "export SHIP_CLUSTER_GITHUB_INSTALLATION_ID=${SHIP_CLUSTER_GITHUB_INSTALLATION_ID}" \
+  | tee -a ~/.profile > /dev/null
+echo "export SHIP_CLUSTER_GITHUB_INSTALL_URL=${SHIP_CLUSTER_GITHUB_INSTALL_URL}" \
+  | tee -a ~/.profile > /dev/null
 
 mkdir -p kustomize/overlays/github/secrets
 kubectl create secret generic github-app \
@@ -40,6 +44,7 @@ kubectl create secret generic github-app \
   --from-literal=client-id=${SHIP_CLUSTER_GITHUB_CLIENT_ID} \
   --from-literal=client-secret=${SHIP_CLUSTER_GITHUB_CLIENT_SECRET} \
   --from-literal=integration-id=${SHIP_CLUSTER_GITHUB_INSTALLATION_ID} \
+  --from-literal=install-url=${SHIP_CLUSTER_GITHUB_INSTALL_URL} \
   -o yaml \
   > kustomize/overlays/github/secrets/github-app.yaml
 
