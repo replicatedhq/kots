@@ -8,23 +8,14 @@ export const TSEDVerboseLogging = process.env.NODE_ENV !== "production" && proce
 export const pinoLevel = process.env.PINO_LOG_LEVEL || process.env.LOG_LEVEL || "info";
 
 function initLoggerFromEnv(): pino.Logger {
-  const dest = process.env.LOG_FILE ? fs.createWriteStream(process.env.LOG_FILE) : process.stdout;
-
   const component = `ship-cluster-api`;
   let options = {
     name: component,
+    version: process.env.VERSION,
     level: pinoLevel,
-    prettifier: undefined,
+    prettifier: pinoPretty,
   };
 
-  if (!process.env.PINO_LOG_PRETTY) {
-    return pino(options, dest as stream.Writable).child({
-      version: process.env.VERSION,
-      component,
-    });
-  }
-
-  options.prettifier = pinoPretty;
   return pino(options);
 }
 
