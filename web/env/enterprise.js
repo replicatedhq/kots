@@ -11,6 +11,7 @@ module.exports = {
   GITHUB_REDIRECT_URI: "###_GITHUB_REDIRECT_URI_###",
   GITHUB_INSTALL_URL: "###_GITHUB_INSTALL_URL_###",
   SHOW_SCM_LEADS: false,
+  PROD_PERFECT_WRITE_KEY: "",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional", "bitbucket", "gitlab"],
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
