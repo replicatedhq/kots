@@ -1,5 +1,4 @@
 import React from "react";
-// import "../../scss/components/watches/WatchDetailPage.scss";
 
 export default function WatchLicense(/*props*/) {
 
