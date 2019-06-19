@@ -7,8 +7,13 @@ import "@src/scss/components/shared/SideBar.scss";
 
 class SideBar extends Component {
   static propTypes = {
+    /** @type {String} className to use for styling */
     className: PropTypes.string,
+
+    /** @type {Array<JSX>} array of JSX elements to render */
     items: PropTypes.array.isRequired,
+
+    /** @type {Boolean} if true, only show loading for initial mount, and not subsequent loads */
     aggressive: PropTypes.bool
   }
 
@@ -22,7 +27,9 @@ class SideBar extends Component {
     const { aggressive } = this.props;
 
     // Don't show a loader if there is a refetch and
-    // the component is set to aggressive
+    // the component is set to aggressive.
+    // Note this method only runs on *update*, and not for
+    // the initial mount.
     if (loading && aggressive) {
       return false;
     }

@@ -138,7 +138,6 @@ class WatchDetailPage extends Component {
       addNewClusterModal,
       clusterToRemove
     } = this.state;
-    console.log("isLoading:", listWatchesQuery.loading);
     if (history.location.pathname == "/watches") {
       if (this.props.listWatchesQuery.loading) {
         return (
@@ -153,6 +152,7 @@ class WatchDetailPage extends Component {
         return (
          <Redirect to="/watch/create/init" />
         );
+      // Render everything normally with the data existing n' stuff
       } else {
       const { slug } = this.props.listWatchesQuery.listWatches[0];
       return (
@@ -187,14 +187,6 @@ class WatchDetailPage extends Component {
       }
     }
 
-    // if (!watch || this.props.listWatchesQuery.loading) {
-    //   return (
-    //     <div className="flex-column flex1 alignItems--center justifyContent--center">
-    //       <Loader size="60" />
-    //     </div>
-    //   );
-    // }
-
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <SidebarLayout
@@ -220,11 +212,11 @@ class WatchDetailPage extends Component {
               slug={slug}
               watch={watch}
             />
-            <Suspense fallback={ <div>Oh the suspense!</div>/*(
+            <Suspense fallback={(
               <div className="flex-column flex1 alignItems--center justifyContent--center">
                 <Loader size="60" />
-                </div>
-            )*/}>
+              </div>
+            )}>
               <Switch>
                 {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug" render={() =>
