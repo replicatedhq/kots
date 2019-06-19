@@ -286,7 +286,7 @@ export class WatchContributorsModal extends React.Component {
             <div className="flex flex1 u-position--relative u-marginBottom--20">
               <div>
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Organization</p>
-                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Select the organization you want to add uesrs from.</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Select the organization you want to add users from.</p>
                 <Select
                   className="replicated-select-container"
                   classNamePrefix="replicated-select"
