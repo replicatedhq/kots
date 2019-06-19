@@ -39,6 +39,7 @@ type Store interface {
 	CreateWatchUpdate(ctx context.Context, watchID string) error
 	CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error
 	SetWatchChecked(ctx context.Context, watchID string) error
+	SetWatchDeferred(ctx context.Context, watchID string) error
 	ListDownstreamWatchIDs(ctx context.Context, watchID string) ([]string, error)
 
 	GetNotificationWatchID(ctx context.Context, notificationID string) (string, error)

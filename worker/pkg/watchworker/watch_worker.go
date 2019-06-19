@@ -104,6 +104,18 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 		return err
 	}
 
+	isSuccess := false
+	defer func() error {
+		if !isSuccess {
+			if err := w.Store.SetWatchDeferred(ctx, watchID); err != nil {
+				level.Error(logger).Log("event", "set watch deferred", "err", err)
+				return err
+			}
+		}
+
+		return nil
+	}()
+
 	existingState := state.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &existingState); err != nil {
 		level.Error(logger).Log("event", "unmarshalState", "err", err)
@@ -141,6 +153,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 		}
 	}
 
+	isSuccess = true
 	if err := w.Store.SetWatchChecked(ctx, watchID); err != nil {
 		level.Error(logger).Log("event", "set watch checked", "err", err)
 		return err

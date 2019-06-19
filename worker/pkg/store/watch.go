@@ -311,3 +311,16 @@ func (s *SQLStore) SetWatchChecked(ctx context.Context, watchID string) error {
 
 	return nil
 }
+
+func (s *SQLStore) SetWatchDeferred(ctx context.Context, watchID string) error {
+	// this is a hack to back off the watch polling for now
+	now := time.Now()
+
+	query := `update watch set last_watch_check_at = $1 where id = $2`
+	_, err := s.db.ExecContext(ctx, query, now.Add(time.Duration(time.Minute*45)), watchID)
+	if err != nil {
+		return errors.Wrap(err, "set watch last checked")
+	}
+
+	return nil
+}
