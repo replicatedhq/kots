@@ -153,16 +153,14 @@ class WatchDetailPage extends Component {
          <Redirect to="/watch/create/init" />
         );
       } else {
-        const { slug } = this.props.listWatchesQuery.listWatches[0];
-        return (
-          <Redirect to={`/watch/${slug}`} />
-        );
+      const { slug } = this.props.listWatchesQuery.listWatches[0];
+      return (
+        <Redirect to={`/watch/${slug}`} />
+      );
       }
     }
 
     const slug = `${match.params.owner}/${match.params.slug}`;
-
-
     let watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
 
     // Requested watch is a child watch / downstream cluster watch
@@ -173,7 +171,7 @@ class WatchDetailPage extends Component {
       // and 25 bajillion children watches. In our current state, I don't feel we need
       // to scale to this as most of our users just have a couple of watches and clusters.
       // This is a non-existant scaling issue, and I think we'll be OK with just a big
-      // flat array.
+      // happy flat array.
       const childWatches = this.props.listWatchesQuery.listWatches
         .map( mainWatch => mainWatch.watches)
         .flat();
@@ -188,13 +186,13 @@ class WatchDetailPage extends Component {
       }
     }
 
-    if (!watch || this.props.listWatchesQuery.loading) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
+    // if (!watch || this.props.listWatchesQuery.loading) {
+    //   return (
+    //     <div className="flex-column flex1 alignItems--center justifyContent--center">
+    //       <Loader size="60" />
+    //     </div>
+    //   );
+    // }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
@@ -204,13 +202,14 @@ class WatchDetailPage extends Component {
           sidebar={(
             <SideBar
               className="flex flex1"
+              loading={this.props.listWatchesQuery.loading}
               items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
                   className={classNames({ selected: item.slug === watch.slug})}
                   watch={item} />
               ))}
-              currentWatch={watch.watchName}
+              currentWatch={watch?.watchName}
             />
           )}>
           <div className="flex-column flex3 u-width--full">
@@ -222,7 +221,7 @@ class WatchDetailPage extends Component {
             />
             <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
               <Switch>
-                {!watch.cluster &&
+                {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug" render={() =>
                     <DetailPageApplication
                       watch={watch}
@@ -231,7 +230,7 @@ class WatchDetailPage extends Component {
                     />
                   } />
                 }
-                {!watch.cluster &&
+                {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
                     <div className="container">
                       <DeploymentClusters
@@ -271,7 +270,7 @@ class WatchDetailPage extends Component {
                     watch={watch}
                   />
                 } />
-                <Route component={NotFound} />
+                {!this.props.listWatchesQuery.loading && <Route component={NotFound} /> }
               </Switch>
             </Suspense>
           </div>

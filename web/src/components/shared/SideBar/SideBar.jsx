@@ -2,10 +2,18 @@ import React, { Fragment } from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
 
+import Loader from "@src/components/shared/Loader";
 import "@src/scss/components/shared/SideBar.scss";
 
 function SideBar(props) {
-  const { className, items } = props;
+  const { className, items, loading } = props;
+  if (loading) {
+    return (
+      <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <Loader size="60" />
+      </div>
+    );
+  }
 
   return (
     <div className={classNames("sidebar u-minHeight--full", className)}>
