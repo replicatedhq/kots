@@ -76,7 +76,7 @@ export class Server extends ServerLoader {
     this.use("/api/v1/edit/:id", EditProxy);
 
     const bodyParser = require("body-parser");
-    this.use(bodyParser.json());
+    this.use(bodyParser.json({limit: "5mb"}));
 
     const pool = await getPostgresPool();
     const watchStore = new WatchStore(pool, params);
