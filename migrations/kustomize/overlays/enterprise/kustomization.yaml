@@ -5,4 +5,5 @@ bases:
 
 resources:
   - ./secret.yaml
+  - ./ship-cluster-postgres.yaml
 
