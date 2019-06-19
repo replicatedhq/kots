@@ -199,10 +199,10 @@ class WatchDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <SidebarLayout
           className="flex u-minHeight--full"
-          condition={this.props.listWatchesQuery?.listWatches?.length > 1}
           sidebar={(
             <SideBar
               className="flex flex1"
+              aggressive={true}
               loading={this.props.listWatchesQuery.loading}
               items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
                 <WatchSidebarItem
