@@ -48,10 +48,10 @@ export default [
   },
   {
     tabName: "state",
-    displayName: "State",
+    displayName: "State JSON",
     to: slug => `/watch/${slug}/state`,
     displayRule: watch => {
-      return Boolean(watch.cluster);
+      return Boolean(watch.cluster) || getApplicationType(watch) !== "replicated.app";
     }
   }
   // {
