@@ -24,7 +24,7 @@ export default function SubNavBar(props) {
             </li>
           );
           if (link.displayRule) {
-            return link.displayRule(watch) && generatedMenuItem;
+            return link.displayRule(watch || {}) && generatedMenuItem;
           }
           return generatedMenuItem;
         }).filter(Boolean)}

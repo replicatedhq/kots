@@ -137,7 +137,6 @@ class WatchDetailPage extends Component {
       addNewClusterModal,
       clusterToRemove
     } = this.state;
-
     if (history.location.pathname == "/watches") {
       if (this.props.listWatchesQuery.loading) {
         return (
@@ -152,17 +151,16 @@ class WatchDetailPage extends Component {
         return (
          <Redirect to="/watch/create/init" />
         );
+      // Render everything normally with the data existing n' stuff
       } else {
-        const { slug } = this.props.listWatchesQuery.listWatches[0];
-        return (
-          <Redirect to={`/watch/${slug}`} />
-        );
+      const { slug } = this.props.listWatchesQuery.listWatches[0];
+      return (
+        <Redirect to={`/watch/${slug}`} />
+      );
       }
     }
 
     const slug = `${match.params.owner}/${match.params.slug}`;
-
-
     let watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
 
     // Requested watch is a child watch / downstream cluster watch
@@ -173,7 +171,7 @@ class WatchDetailPage extends Component {
       // and 25 bajillion children watches. In our current state, I don't feel we need
       // to scale to this as most of our users just have a couple of watches and clusters.
       // This is a non-existant scaling issue, and I think we'll be OK with just a big
-      // flat array.
+      // happy flat array.
       const childWatches = this.props.listWatchesQuery.listWatches
         .map( mainWatch => mainWatch.watches)
         .flat();
@@ -188,29 +186,22 @@ class WatchDetailPage extends Component {
       }
     }
 
-    if (!watch || this.props.listWatchesQuery.loading) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1">
         <SidebarLayout
           className="flex u-minHeight--full"
-          condition={this.props.listWatchesQuery?.listWatches?.length > 1}
           sidebar={(
             <SideBar
               className="flex flex1"
+              aggressive={true}
+              loading={this.props.listWatchesQuery.loading}
               items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
                   className={classNames({ selected: item.slug === watch.slug})}
                   watch={item} />
               ))}
-              currentWatch={watch.watchName}
+              currentWatch={watch?.watchName}
             />
           )}>
           <div className="flex-column flex3 u-width--full">
@@ -220,9 +211,13 @@ class WatchDetailPage extends Component {
               slug={slug}
               watch={watch}
             />
-            <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
+            <Suspense fallback={(
+              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                <Loader size="60" />
+              </div>
+            )}>
               <Switch>
-                {!watch.cluster &&
+                {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug" render={() =>
                     <DetailPageApplication
                       watch={watch}
@@ -231,7 +226,7 @@ class WatchDetailPage extends Component {
                     />
                   } />
                 }
-                {!watch.cluster &&
+                {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
                     <div className="container">
                       <DeploymentClusters
@@ -271,7 +266,7 @@ class WatchDetailPage extends Component {
                     watch={watch}
                   />
                 } />
-                <Route component={NotFound} />
+                {!this.props.listWatchesQuery.loading && <Route component={NotFound} /> }
               </Switch>
             </Suspense>
           </div>
@@ -327,7 +322,7 @@ export default compose(
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
-      fetchPolicy: "network-only"
+      fetchPolicy: "cache-and-network"
     }
   }),
   graphql(createUpdateSession, {

@@ -6,7 +6,7 @@ export default function SidebarLayout(props) {
     className,
     children,
     sidebar,
-    condition
+    condition = true
   } = props;
 
   return (

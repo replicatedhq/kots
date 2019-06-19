@@ -6,6 +6,12 @@ import "@src/scss/components/watches/WatchVersionHistory.scss";
 
 export default function WatchVersionHistory(props) {
   const { watch } = props;
+
+  // Sanity check for null watches
+  if (!watch) {
+    return null;
+  }
+
   const { currentVersion, watches, pastVersions } = watch;
 
   return (
