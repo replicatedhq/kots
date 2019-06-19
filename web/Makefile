@@ -23,6 +23,7 @@ clean:
 test:
 	rm -rf pacts/ship-cluster-ui-ship-cluster-api.json
 	yarn test
+	yarn test:unit
 
 .PHONY: verify_local
 verify_local:

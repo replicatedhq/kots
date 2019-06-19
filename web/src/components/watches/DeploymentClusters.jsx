@@ -33,7 +33,7 @@ export default class DeploymentClusters extends React.Component {
     } = this.props;
 
     return (
-      <div className={classNames("installed-watch-github flex-column u-width--full", {
+      <div className={classNames("installed-watch-github flex-column u-paddingTop--20 u-width--full", {
         padded: !appDetailPage
       })}>
         {childWatches?.length ?

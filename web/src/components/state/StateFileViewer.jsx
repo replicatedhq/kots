@@ -1,4 +1,5 @@
 import React from "react";
+import classNames from "classnames";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import MonacoEditor from "react-monaco-editor";
@@ -156,7 +157,7 @@ class StateFileViewer extends React.Component {
 
     if (saving) {
       return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <div className="flex-column flex1 alignItems--center justifyContent--center u-paddingTop--20">
           <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">We're moving as fast as we can but it may take a moment.</p>
           <Loader size="60" />
         </div>
@@ -164,7 +165,10 @@ class StateFileViewer extends React.Component {
     }
 
     return (
-      <div className={`flex-column flex1 HelmValues--wrapper ${this.props.isNew ? "u-paddingTop--30" : ""}`}>
+      <div className={classNames("flex-column flex1 HelmValues--wrapper", {
+        "u-paddingTop--30": this.props.isNew,
+        "u-paddingTop--20": !this.props.isNew
+        })}>
         <div className="flex-column flex-1-auto u-overflow--auto container">
           {this.props.headerText && <p className="u-color--tuna u-fontWeight--medium u-fontSize--large">{this.props.headerText}</p>}
           {this.props.subText && <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium u-marginTop--10 u-lineHeight--normal">{this.props.subText}</p>}

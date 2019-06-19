@@ -187,9 +187,9 @@ class WatchDetailPage extends Component {
     }
 
     return (
-      <div className="WatchDetailPage--wrapper flex-column flex1">
+      <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
-          className="flex u-minHeight--full"
+          className="flex u-minHeight--full u-overflow--hidden"
           sidebar={(
             <SideBar
               className="flex flex1"
@@ -204,9 +204,9 @@ class WatchDetailPage extends Component {
               currentWatch={watch?.watchName}
             />
           )}>
-          <div className="flex-column flex3 u-width--full">
+          <div className="flex-column flex3 u-width--full u-height--full">
             <SubNavBar
-              className="flex u-marginBottom--30"
+              className="flex"
               activeTab={match.params.tab || "app"}
               slug={slug}
               watch={watch}
@@ -277,7 +277,6 @@ class WatchDetailPage extends Component {
                   </Switch>
                 )
               }
-
             </Suspense>
           </div>
         </SidebarLayout>

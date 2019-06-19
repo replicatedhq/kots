@@ -159,7 +159,7 @@ class Root extends React.Component {
               <div className="flex-column flex1">
                 <NavBar logo={themeState.navbarLogo}/>
                 <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
-                  <div className="flex-1-auto flex-column u-overflow--hidden">
+                  <div className="flex1 flex-column u-overflow--hidden">
                     <Switch>
                       <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
                       <Route exact path="/login" component={Login} />

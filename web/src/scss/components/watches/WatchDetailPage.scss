@@ -24,6 +24,10 @@
   }
 
   .details-subnav {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     padding: 0 20px;
     background-color: #f8f8f8;
     border-top: 1px solid #DFDFDF;

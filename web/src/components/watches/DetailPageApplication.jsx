@@ -185,7 +185,7 @@ class DetailPageApplication extends React.Component {
       expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
     }
     return (
-      <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingBottom--20">
+      <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto u-paddingBottom--20">
         <div className="DetailPageApplication flex flex1">
           <div className="flex1 flex-column u-paddingRight--30">
             <div className="flex">
