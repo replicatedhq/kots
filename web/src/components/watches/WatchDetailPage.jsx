@@ -115,6 +115,7 @@ class WatchDetailPage extends Component {
    * @return {undefined}
    */
   refetchGraphQLData = () => {
+    console.log("Callback!");
     this.props.listWatchesQuery.refetch()
   }
 
@@ -137,7 +138,7 @@ class WatchDetailPage extends Component {
       addNewClusterModal,
       clusterToRemove
     } = this.state;
-
+    console.log("isLoading:", listWatchesQuery.loading);
     if (history.location.pathname == "/watches") {
       if (this.props.listWatchesQuery.loading) {
         return (
@@ -219,7 +220,11 @@ class WatchDetailPage extends Component {
               slug={slug}
               watch={watch}
             />
-            <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
+            <Suspense fallback={ <div>Oh the suspense!</div>/*(
+              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                <Loader size="60" />
+                </div>
+            )*/}>
               <Switch>
                 {watch && !watch.cluster &&
                   <Route exact path="/watch/:owner/:slug" render={() =>
@@ -326,7 +331,7 @@ export default compose(
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
-      fetchPolicy: "network-only"
+      fetchPolicy: "cache-and-network"
     }
   }),
   graphql(createUpdateSession, {
