@@ -10,15 +10,11 @@ module.exports = {
   SHIPEDIT_ENDPOINT: "###_SHIPEDIT_ENDPOINT_###",
   GITHUB_REDIRECT_URI: "###_GITHUB_REDIRECT_URI_###",
   GITHUB_INSTALL_URL: "###_GITHUB_INSTALL_URL_###",
-  PROD_PERFECT_WRITE_KEY: "VDFMDV5Z2FVHU9L20S58LHPX69Z0ZQQ0ZXXIRKHTI37MY1MTSQ8KLFB01QCKEIHY57AQBKPVD9O2VUFKNOV8BA8ZBSBPWVD460ORHLDVPPBFKAKUH2W3WFLJQF1JERKM16LXG1Q4D12JDT3ZIX6PZ51O2UQMTEUXIVG1MX6I3LVC5HDMBSAGJBAD9CUQQA5L",
   SHOW_SCM_LEADS: false,
+  PROD_PERFECT_WRITE_KEY: "",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional", "bitbucket", "gitlab"],
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js",
-    {
-      src: "/prodPerfect.js",
-      type: "text/javascript",
-    },
   ],
 };

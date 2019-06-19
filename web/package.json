@@ -12,8 +12,7 @@
     "test": "npm run test:pact:api",
     "test:pact:api": "cross-env CI=true `npm bin`/jest --runInBand --setupFiles ./pact/setup-api.js --setupFilesAfterEnv ./pact/jest-wrapper.js --testMatch \"**/ship-cloud-api.pact.js\"",
     "publish:pact": "node pact/publish.js",
-    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev",
-    "prodperfect": "prodperfectqa-runner --browser=chrome:headless"
+    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "jest": {
     "setupFilesAfterEnv": [
@@ -78,7 +77,6 @@
     "node-sass": "^4.12.0",
     "object-assign": "^4.1.1",
     "postcss-loader": "^3.0.0",
-    "prodperfectqa-runner": "^0.3.23",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "npm:@hot-loader/react-dom",
