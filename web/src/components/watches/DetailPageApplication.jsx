@@ -2,6 +2,7 @@ import * as React from "react";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import WatchContributors from "./WatchContributors";
+import truncateMiddle from "truncate-middle";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import {
@@ -239,10 +240,9 @@ class DetailPageApplication extends React.Component {
                         <div key={childCluster.id} className="DetailPage--downstreamRow flex">
                           <div className="flex1 flex alignItems--center">
                             <span className={`flex-auto icon clusterType ${clusterType}`}></span>
-                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{childCluster.title}</span>
+                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
                           </div>
-                          <div className="flex1">
-                          </div>
+                          <div className="flex1"></div>
                           <div className="flex-auto">
                             {this.state[`preparing${childWatch.id}`] ?
                               <Loader size="16"/>

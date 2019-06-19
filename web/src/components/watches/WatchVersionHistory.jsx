@@ -1,5 +1,6 @@
 import React, { Fragment } from "react";
 import classNames from "classnames";
+import truncateMiddle from "truncate-middle";
 import { getClusterType } from "@src/utilities/utilities";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
@@ -33,9 +34,9 @@ export default function WatchVersionHistory(props) {
                 return (
                   <div key={cluster.slug} className="watch-cell flex">
                     <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-                      <span className={classNames(icon, "u-marginRight--5")} />
-                      <p className="u-fontSize--normal">
-                        {cluster.slug}
+                      <span className={classNames(icon, "flex-auto u-marginRight--5")} />
+                      <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
+                        {truncateMiddle(cluster.slug, 8, 6, "...")}
                       </p>
                     </div>
                   </div>

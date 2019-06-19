@@ -61,7 +61,7 @@ export default class DeploymentClusters extends React.Component {
                       <span className={`normal u-marginRight--5 icon clusterType ${type}`}></span>
                       <div className="flex1 justifyContent--center">
                         <div className="flex justifyContent--spaceBetween">
-                          <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora">{cluster && cluster.title || "Downstream deployment"}</p>
+                          <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster && cluster.title || "Downstream deployment"}</p>
                           <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentClusterName)}></span>
                         </div>
                         <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5">{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
