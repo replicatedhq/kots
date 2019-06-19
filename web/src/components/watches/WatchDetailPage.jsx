@@ -145,6 +145,13 @@ class WatchDetailPage extends Component {
             <Loader size="60" />
           </div>
         );
+
+      // Redirect user to ship-init if they have zero watches
+      // (New user)
+      } else if (this.props.listWatchesQuery.listWatches.length === 0) {
+        return (
+         <Redirect to="/watch/create/init" />
+        );
       } else {
         const { slug } = this.props.listWatchesQuery.listWatches[0];
         return (
