@@ -16,7 +16,7 @@ export default function WatchVersionHistory(props) {
   const { currentVersion, watches, pastVersions } = watch;
 
   return (
-    <div className="container flex-column u-position--relative u-overflow--auto">
+    <div className="centered-container flex-column u-position--relative u-overflow--auto">
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
         <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
           {currentVersion?.title}
