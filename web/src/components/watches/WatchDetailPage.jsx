@@ -115,7 +115,6 @@ class WatchDetailPage extends Component {
    * @return {undefined}
    */
   refetchGraphQLData = () => {
-    console.log("Callback!");
     this.props.listWatchesQuery.refetch()
   }
 
