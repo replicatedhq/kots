@@ -8,9 +8,10 @@ env:
   browser: true
 globals:
   ENVIRONMENT: true
-  GITHUB_CLIENTID: true,
-  BUGSNAG_RELEASE_STAGE: true,
-  INTERCOM_APP_ID: true,
+  SHIP_CLUSTER_BUILD_VERSION: true
+  GITHUB_CLIENTID: true
+  BUGSNAG_RELEASE_STAGE: true
+  INTERCOM_APP_ID: true
 rules:
   id-length:
     - 2
