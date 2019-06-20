@@ -43,6 +43,8 @@ func (w *Worker) Run(ctx context.Context) error {
 	errCh := make(chan error, 1)
 
 	go func() {
+		os.Setenv("GITHUB_TOKEN", w.Config.GithubToken)
+
 		level.Info(logger).Log("event", "db.poller.ready.start")
 		err := w.startPollingDBForReadyWatches(context.Background())
 		level.Info(logger).Log("event", "db.poller.ready.fail", "err", err)
