@@ -2,7 +2,7 @@ FROM debian:stretch-slim
 WORKDIR /src
 COPY ./bin/ship-cluster-worker /ship-cluster-worker
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
+    curl ca-certificates git \
   && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000
