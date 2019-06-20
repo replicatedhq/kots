@@ -66,10 +66,16 @@ build-local: webpack_build_local
 webpack_build_local:
 	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode development
 
+.PHONY: webpack_build
 webpack_build: SHIP_CLUSTER_BUILD_VERSION = $(shell echo ${BUILDKITE_COMMIT} | cut -c1-7)
 webpack_build:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
-	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode production
+	node \
+	--max_old_space_size=6144 \
+	./node_modules/webpack/bin/webpack.js \
+	--config webpack.config.js \
+	--env ${SHIP_CLOUD_ENV} \
+	--mode production
 
 .PHONY: publish-production
 publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
@@ -77,8 +83,11 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
-publish-production: docker
-publish-production: gitops
+publish-production: version-production docker gitops
+
+.PHONY: version-production
+version-production:
+	sed 's/_DOMAIN_PREFIX_//g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
 
 .PHONY: publish-staging
 publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
@@ -86,8 +95,11 @@ publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
 publish-staging: GITOPS_BRANCH = master
-publish-staging: docker
-publish-staging: gitops
+publish-staging: version-staging docker gitops
+
+.PHONY: version-staging
+version-staging:
+	sed 's/_DOMAIN_PREFIX_/staging\./g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
 
 .PHONY: publish-enterprise
 publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
@@ -95,8 +107,11 @@ publish-enterprise: OVERLAY = enterprise
 publish-enterprise: GITOPS_OWNER = replicatedhq
 publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: docker
-publish-enterprise: gitops
+publish-enterprise: version-enterprise docker gitops
+
+.PHONY: version-enterprise
+version-staging:
+	sed 's/_DOMAIN_PREFIX_/enterprise\./g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
 
 docker:
 	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
