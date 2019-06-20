@@ -76,6 +76,14 @@ export function getReadableLicenseType(type) {
   return readableType;
 }
 
+/**
+ *
+ * @param {String} - Returns the commit SHA of the current build
+ */
+export function getBuildVersion() {
+  return window.env.SHIP_CLUSTER_BUILD_VERSION;
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {

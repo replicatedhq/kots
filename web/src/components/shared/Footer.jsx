@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, withRouter } from "react-router-dom";
-
+import { getBuildVersion } from "../../utilities/utilities";
 import "../../scss/components/shared/Footer.scss";
 
 export class Footer extends React.Component {
@@ -14,6 +14,9 @@ export class Footer extends React.Component {
       {
         label: "Privacy",
         linkTo: "/privacy",
+      },
+      {
+        label: getBuildVersion()
       }
     ];
   }
@@ -30,14 +33,21 @@ export class Footer extends React.Component {
           </div>
           <div className="flex flex1 justifyContent--flexEnd">
             {footerItems.filter(item => item).map((item, i) => {
+              let node = (
+                <span className="FooterItem">{item.label}</span>
+              );
+              if (item.linkTo) {
+                node = (
+                  <Link to={item.linkTo} target="_blank" rel="noopener noreferrer" className="FooterItem">{item.label}</Link>
+                );
+              } else if (item.href) {
+                node = (
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="FooterItem">{item.label}</a>
+                );
+              }
               return (
                 <div key={i} className="FooterItem-wrapper">
-                  {item.linkTo
-                    ? <Link to={item.linkTo} target="_blank" rel="noopener noreferrer" className="FooterItem">{item.label}</Link>
-                    : item.href ?
-                      <a href={item.href} target="_blank" rel="noopener noreferrer" className="FooterItem">{item.label}</a>
-                      : <span className="FooterItem">{item.label}</span>
-                  }
+                  {node}
                 </div>
               );
             })}
