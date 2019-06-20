@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -34,6 +35,17 @@ func (w *Worker) Run(ctx context.Context) error {
 	)
 
 	errCh := make(chan error, 3)
+
+	go func() {
+		updateServer := UpdateServer{
+			Logger: logger,
+			Viper:  viper.New(),
+			Worker: w,
+			Store:  w.Store,
+		}
+
+		updateServer.Serve(ctx, w.Config.UpdateServerAddress)
+	}()
 
 	go func() {
 		level.Info(logger).Log("event", "db.poller.ready.start")

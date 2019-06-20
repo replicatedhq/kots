@@ -40,6 +40,10 @@ func (w *Worker) Run(ctx context.Context) error {
 		"buildTimeFallback", version.GetBuild().TimeFallback,
 	)
 
+	go func() {
+		Serve(ctx, w.Config.InitServerAddress)
+	}()
+
 	errCh := make(chan error, 1)
 
 	go func() {
