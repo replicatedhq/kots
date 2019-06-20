@@ -25,6 +25,8 @@ steps:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
           workdir: /repo/web
+          environment:
+            - BUILDKITE_COMMIT
     artifact_paths:
       - "web/dist/**/*"
 
@@ -36,6 +38,8 @@ steps:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
           workdir: /repo/web
+          environment:
+            - BUILDKITE_COMMIT
     artifact_paths:
       - "web/dist/**/*"
 
@@ -47,6 +51,8 @@ steps:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
           workdir: /repo/web
+          environment:
+            - BUILDKITE_COMMIT
     artifact_paths:
       - "web/dist/**/*"
 
