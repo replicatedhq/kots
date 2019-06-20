@@ -43,6 +43,8 @@ func (w *Worker) Run(ctx context.Context) error {
 	errCh := make(chan error, 1)
 
 	go func() {
+		os.Setenv("GITHUB_TOKEN", w.Config.GithubToken)
+
 		level.Info(logger).Log("event", "db.poller.ready.start")
 		err := w.startPollingDBForReadyWatches(context.Background())
 		level.Info(logger).Log("event", "db.poller.ready.fail", "err", err)
@@ -126,6 +128,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 
 	shipViper := viper.New()
 	shipViper.Set("customer-endpoint", "https://pg.replicated.com/graphql")
+	shipViper.Set("prefer-git", true)
 
 	contentProcessor, err := shipspecs.NewContentProcessor(shipViper)
 	if err != nil {
