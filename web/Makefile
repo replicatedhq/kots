@@ -110,7 +110,7 @@ publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: version-enterprise docker gitops
 
 .PHONY: version-enterprise
-version-staging:
+version-enterprise:
 	sed 's/_DOMAIN_PREFIX_/enterprise\./g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
 
 docker:
