@@ -72,9 +72,9 @@ spec:
             - -i
             - -c
             - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
-          initialDelaySeconds: 5
+          initialDelaySeconds: 1
           timeoutSeconds: 1
-          periodSeconds: 10
+          periodSeconds: 1
         volumeMounts:
         - name: datadir
           mountPath: /var/lib/postgresql/data
