@@ -7,10 +7,6 @@ steps:
       - make -C web build-cache publish-cache
     branches: master
 
-  - commands:
-      - make -C worker build-cache publish-cache
-    branches: master
-
   - label: "schema-fixtures"
     artifact_paths:
       - "migrations/fixtures/schema/fixtures.sql"
