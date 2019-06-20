@@ -30,6 +30,9 @@ type Mutation {
   createEditSession(watchId: ID!): EditSession!
 
   uploadImageWatchBatch(imageList: String!): String
+
+  uploadSupportBundle(size: Int!, notes: String): SupportBundle
+  markSupportBundleUploaded(id: String!): SupportBundle
 }
 `;
 

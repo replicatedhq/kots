@@ -33,6 +33,7 @@ import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
+import { TroubleshootStore } from "../troubleshoot";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -76,7 +77,7 @@ export class Server extends ServerLoader {
     this.use("/api/v1/edit/:id", EditProxy);
 
     const bodyParser = require("body-parser");
-    this.use(bodyParser.json({limit: "5mb"}));
+    this.use(bodyParser.json({ limit: "5mb" }));
 
     const pool = await getPostgresPool();
     const watchStore = new WatchStore(pool, params);
@@ -97,6 +98,7 @@ export class Server extends ServerLoader {
       editStore: new EditStore(pool, params),
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
+      troubleshootStore: new TroubleshootStore(pool),
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
