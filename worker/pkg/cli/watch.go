@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/watchworker"
 	"github.com/spf13/cobra"
 )
@@ -14,12 +16,18 @@ func Watch(c *config.Config, out io.Writer) *cobra.Command {
 		Use:   "watch",
 		Short: "run the watch worker",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			w, err := watchworker.Get(c, out)
+			s, err := store.NewSQLStore(c)
 			if err != nil {
 				return err
 			}
 
-			return w.Run(context.Background())
+			worker := &watchworker.Worker{
+				Config: c,
+				Logger: logger.New(c, out),
+				Store:  s,
+			}
+
+			return worker.Run(context.Background())
 		},
 	}
 

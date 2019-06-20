@@ -3,9 +3,6 @@ SHELL := /bin/bash
 .PHONY: cache
 cache:
 	make -C api build-cache
-	make -C worker build-cache
-	make -C ship-operator build-cache
-	make -C ship-operator-tools build-cache
 	make -C web build-cache
 
 .PHONY: test

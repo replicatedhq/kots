@@ -54,18 +54,17 @@ type License struct {
 }
 
 type Metadata struct {
-	ApplicationType string      `json:"applicationType" yaml:"applicationType" hcl:"applicationType"`
-	Sequence        int64       `json:"sequence" yaml:"sequence" hcl:"sequence" meta:"sequence"`
-	Icon            string      `json:"icon,omitempty" yaml:"icon,omitempty" hcl:"icon,omitempty"`
-	Name            string      `json:"name,omitempty" yaml:"name,omitempty" hcl:"name,omitempty"`
-	ReleaseNotes    string      `json:"releaseNotes" yaml:"releaseNotes" hcl:"releaseNotes"`
-	Version         string      `json:"version" yaml:"version" hcl:"version"`
-	CustomerID      string      `json:"customerID,omitempty" yaml:"customerID,omitempty" hcl:"customerID,omitempty"`
-	InstallationID  string      `json:"installationID,omitempty" yaml:"installationID,omitempty" hcl:"installationID,omitempty"`
-	LicenseID       string      `json:"licenseID,omitempty" yaml:"licenseID,omitempty" hcl:"licenseID,omitempty"`
-	AppSlug         string      `json:"appSlug,omitempty" yaml:"appSlug,omitempty" hcl:"appSlug,omitempty"`
-	Lists           []util.List `json:"lists,omitempty" yaml:"lists,omitempty" hcl:"lists,omitempty"`
-	License         License     `json:"license" yaml:"license" hcl:"license"`
+	ApplicationType string  `json:"applicationType" yaml:"applicationType" hcl:"applicationType"`
+	Sequence        int64   `json:"sequence" yaml:"sequence" hcl:"sequence" meta:"sequence"`
+	Icon            string  `json:"icon,omitempty" yaml:"icon,omitempty" hcl:"icon,omitempty"`
+	Name            string  `json:"name,omitempty" yaml:"name,omitempty" hcl:"name,omitempty"`
+	ReleaseNotes    string  `json:"releaseNotes" yaml:"releaseNotes" hcl:"releaseNotes"`
+	Version         string  `json:"version" yaml:"version" hcl:"version"`
+	CustomerID      string  `json:"customerID,omitempty" yaml:"customerID,omitempty" hcl:"customerID,omitempty"`
+	InstallationID  string  `json:"installationID,omitempty" yaml:"installationID,omitempty" hcl:"installationID,omitempty"`
+	LicenseID       string  `json:"licenseID,omitempty" yaml:"licenseID,omitempty" hcl:"licenseID,omitempty"`
+	AppSlug         string  `json:"appSlug,omitempty" yaml:"appSlug,omitempty" hcl:"appSlug,omitempty"`
+	License         License `json:"license" yaml:"license" hcl:"license"`
 }
 
 type UpstreamContents struct {
@@ -358,6 +357,12 @@ func (v State) ReleaseMetadata() *api.ReleaseMetadata {
 				baseMeta.CustomerID = v.V1.Metadata.CustomerID
 				baseMeta.InstallationID = v.V1.Metadata.InstallationID
 				baseMeta.LicenseID = v.V1.Metadata.LicenseID
+				baseMeta.AppSlug = v.V1.Metadata.AppSlug
+				baseMeta.License.ID = v.V1.Metadata.License.ID
+				baseMeta.License.Assignee = v.V1.Metadata.License.Assignee
+				baseMeta.License.CreatedAt = v.V1.Metadata.License.CreatedAt
+				baseMeta.License.ExpiresAt = v.V1.Metadata.License.ExpiresAt
+				baseMeta.License.Type = v.V1.Metadata.License.Type
 			}
 			return &baseMeta
 		}

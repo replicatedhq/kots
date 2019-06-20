@@ -1,6 +1,6 @@
-namespace: ship-operator-system
+namespace: ship-cd-system
 
-namePrefix: ship-operator-
+namePrefix: ship-cd-
 
 resources:
 - ./config/rbac/rbac_role.yaml

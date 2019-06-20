@@ -49,16 +49,6 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: ship-operator
-      context: "./ship-operator"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
-
-    - image: ship-operator-tools
-      context: "./ship-operator-tools"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
-
 deploy:
   kustomize:
     path: "./kustomize/overlays/dev"

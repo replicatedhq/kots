@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: controller-manager
-  namespace: ship-operator-system
+  namespace: ship-cd-system
 spec:
   template:
     spec:

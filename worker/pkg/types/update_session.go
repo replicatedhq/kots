@@ -12,10 +12,10 @@ type UpdateSession struct {
 	CreatedAt      time.Time
 	FinishedAt     time.Time
 	Result         string
-	UserID         string
 	StateJSON      []byte
 	UploadURL      string
 	UploadSequence int
+	UserID         string
 }
 
 func (s *UpdateSession) GetID() string {
@@ -39,6 +39,12 @@ func (s *UpdateSession) GetName() string {
 }
 
 func (s *UpdateSession) GetShipArgs() []string {
+	if s.UserID == "" {
+		return []string{
+			"update",
+		}
+	}
+
 	return []string{
 		"update",
 		"--headed",

@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-
 	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
@@ -93,69 +92,8 @@ func (s *UpdateServer) CreateUpdateHandler(c *gin.Context) {
 		return
 	}
 
-	debug.Log("event", "set upload url", "id", shipUpdate.ID)
-	uploadURL, err := s.Store.GetS3StoreURL(shipUpdate)
-	if err != nil {
-		level.Error(s.Logger).Log("getUpdateUploadURL", err)
-		return
-	}
-	shipUpdate.UploadURL = uploadURL
-
-	debug.Log("event", "set output filepath", "watchId", shipUpdate.WatchID, "sequence", shipUpdate.UploadSequence)
-	err = s.Store.SetOutputFilepath(context.TODO(), shipUpdate)
-	if err != nil {
-		level.Error(s.Logger).Log("setUpdateOutputFilepath", err)
-		return
-	}
-
-	debug.Log("event", "get namespace", "id", shipUpdate.ID)
-	namespace := ship.GetNamespace(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureNamespace(context.TODO(), namespace); err != nil {
-		level.Error(s.Logger).Log("ensureNamespace", err)
-		return
-	}
-
-	networkPolicy := ship.GetNetworkPolicySpec(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureNetworkPolicy(context.TODO(), networkPolicy); err != nil {
-		level.Error(s.Logger).Log("networkPolicy", err)
-		return
-	}
-
-	secret := ship.GetSecretSpec(context.TODO(), shipUpdate, shipUpdate.StateJSON)
-	if err := s.Worker.ensureSecret(context.TODO(), secret); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
-		return
-	}
-
-	serviceAccount := ship.GetServiceAccountSpec(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureServiceAccount(context.TODO(), serviceAccount); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
-		return
-	}
-
-	role := ship.GetRoleSpec(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureRole(context.TODO(), role); err != nil {
-		level.Error(s.Logger).Log("ensureRole", err)
-		return
-	}
-
-	rolebinding := ship.GetRoleBindingSpec(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureRoleBinding(context.TODO(), rolebinding); err != nil {
-		level.Error(s.Logger).Log("ensureRoleBinding", err)
-		return
-	}
-
-	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipUpdate, s.Worker.Config.GithubToken)
-	if err := s.Worker.ensurePod(context.TODO(), pod); err != nil {
-		level.Error(s.Logger).Log("ensurePod", err)
-		return
-	}
-
-	// Wait for the pod to be ready here, or clean up and return an error
-
-	service := ship.GetServiceSpec(context.TODO(), shipUpdate)
-	if err := s.Worker.ensureService(context.TODO(), service); err != nil {
-		level.Error(s.Logger).Log("ensureService", err)
+	if err := s.Worker.deployUpdate(shipUpdate); err != nil {
+		level.Error(s.Logger).Log("deployUpdate", err)
 		return
 	}
 
@@ -163,6 +101,9 @@ func (s *UpdateServer) CreateUpdateHandler(c *gin.Context) {
 	quickClient := &http.Client{
 		Timeout: time.Millisecond * 200,
 	}
+
+	namespace := ship.GetNamespace(context.TODO(), shipUpdate)
+	service := ship.GetServiceSpec(context.TODO(), shipUpdate)
 
 	start := time.Now()
 	for {

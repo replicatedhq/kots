@@ -41,3 +41,8 @@ spec:
         type: integer
       - name: metadata
         type: text
+      - name: last_watch_check_at
+        type: timestamp without time zone
+      - name: is_update_required
+        type: boolean
+        default: "false"
