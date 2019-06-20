@@ -126,6 +126,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 
 	shipViper := viper.New()
 	shipViper.Set("customer-endpoint", "https://pg.replicated.com/graphql")
+	shipViper.Set("prefer-git", true)
 
 	contentProcessor, err := shipspecs.NewContentProcessor(shipViper)
 	if err != nil {
