@@ -22,7 +22,6 @@ steps:
           debug: true
           environment:
             - "uid=999"
-            - BUILDKITE_COMMIT
           volumes:
             - "./migrations/fixtures:/out"
             - "./migrations/tables:/in"
@@ -39,8 +38,6 @@ steps:
           image: replicated/gitops-builder:buildkite
           always-pull: true
           workdir: /repo
-          environment:
-            - BUILDKITE_COMMIT
     artifact_paths:
       - "migrations/fixtures/fixtures.sql"
 

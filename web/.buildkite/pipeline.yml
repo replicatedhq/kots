@@ -8,7 +8,6 @@ steps:
           environment:
             - PACT_BROKER_USERNAME
             - PACT_BROKER_PASSWORD
-            - BUILDKITE_COMMIT
 
   - wait
 
