@@ -10,6 +10,9 @@ module.exports = {
   SHOW_SCM_LEADS: false,
   GITHUB_REDIRECT_URI: "http://localhost:30065/auth/github/callback",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional"],
+  SHIP_CLUSTER_BUILD_VERSION: (function () {
+    return String(Date.now());
+  }()),
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.development.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.development.js"

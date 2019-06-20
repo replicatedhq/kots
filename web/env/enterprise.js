@@ -13,6 +13,9 @@ module.exports = {
   SHOW_SCM_LEADS: false,
   PROD_PERFECT_WRITE_KEY: "",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional", "bitbucket", "gitlab"],
+  SHIP_CLUSTER_BUILD_VERSION: (function () {
+    return process.env.SHIP_CLUSTER_BUILD_VERSION;
+  }()),
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js",
