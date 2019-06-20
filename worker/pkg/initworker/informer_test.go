@@ -76,7 +76,12 @@ func Test_createWatchName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := createWatchName(tt.metadata, tt.uri); got != tt.want {
+			s := state.State{
+				V1: &state.V1{
+					Metadata: &tt.metadata,
+				},
+			}
+			if got := createWatchName(s, tt.uri); got != tt.want {
 				t.Errorf("createWatchName() = %v, want %v", got, tt.want)
 			}
 		})
