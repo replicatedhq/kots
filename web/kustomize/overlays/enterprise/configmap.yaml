@@ -13,7 +13,7 @@ data:
     sed -i 's/###_SHIPUPDATE_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/update\//g' /usr/share/nginx/html/index.html
     sed -i 's/###_SHIPEDIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/edit\//g' /usr/share/nginx/html/index.html
     sed -i 's/###_GITHUB_REDIRECT_URI_###/https:\/\/{{repl ConfigOption "hostname"}}\/auth\/github\/callback/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_GITHUB_INSTALL_URL_###/{{repl ConfigOption "github-installurl" | replace "/" "\/"}}/g' /usr/share/nginx/html/index.html
+    sed -i 's/###_GITHUB_INSTALL_URL_###/{{repl ConfigOption "github-installurl" | replace "/" "\\/"}}/g' /usr/share/nginx/html/index.html
     sed -i 's/###_INSTALL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/install/g' /usr/share/nginx/html/index.html
 
     nginx -g "daemon off;"
