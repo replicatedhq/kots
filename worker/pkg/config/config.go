@@ -17,7 +17,9 @@ import (
 const EncryptedFlag = "encrypted"
 
 type Config struct {
-	LogLevel         string `mapstructure:"log_level"`
+	LogLevel  string `mapstructure:"log_level"`
+	LogFormat string `mapstructure:"log_format"`
+
 	UseEC2Parameters string `mapstructure:"use_ec2_parameters"`
 	AWSRegion        string `mapstructure:"aws_region"`
 
@@ -57,6 +59,7 @@ type Config struct {
 func New() *Config {
 	return &Config{
 		LogLevel:              "info",
+		LogFormat:             "json",
 		InitServerAddress:     ":3000",
 		WatchServerAddress:    ":3000",
 		UpdateServerAddress:   ":3000",

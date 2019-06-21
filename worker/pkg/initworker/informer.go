@@ -10,14 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -25,10 +24,6 @@ import (
 )
 
 func (w *Worker) runInformer(ctx context.Context) error {
-	debug := level.Debug(log.With(w.Logger, "method", "initworker.Worker.runInformer"))
-
-	debug.Log("event", "runInformer")
-
 	restClient := w.K8sClient.CoreV1().RESTClient()
 	watchlist := cache.NewListWatchFromClient(restClient, "pods", "", fields.Everything())
 
@@ -39,13 +34,13 @@ func (w *Worker) runInformer(ctx context.Context) error {
 			DeleteFunc: func(obj interface{}) {
 				err := w.deleteFunc(obj)
 				if err != nil {
-					level.Error(w.Logger).Log("event", "init.session.informer.pod.delete", "err", err)
+					w.Logger.Errorw("error in initworker informer deleteFunc", zap.Error(err))
 				}
 			},
 			UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 				err := w.updateFunc(oldObj, newObj)
 				if err != nil {
-					level.Error(w.Logger).Log("event", "init.session.informer.pod.update", "err", err)
+					w.Logger.Errorw("error in initworker informer update", zap.Error(err))
 				}
 			},
 		},
@@ -56,8 +51,6 @@ func (w *Worker) runInformer(ctx context.Context) error {
 }
 
 func (w *Worker) deleteFunc(obj interface{}) error {
-	// debug := level.Debug(log.With(w.Logger, "method", "initworker.Worker.deleteFunc"))
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("unexpected type %T", obj)
@@ -75,8 +68,6 @@ func (w *Worker) deleteFunc(obj interface{}) error {
 }
 
 func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
-	// debug := level.Debug(log.With(w.Logger, "method", "initworker.Worker.updateFunc"))
-
 	oldPod, ok := oldObj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("unexpected type %T", oldObj)
@@ -105,7 +96,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 	}
 
 	if id == "" {
-		level.Error(w.Logger).Log("event", "no ship init/unfork id label")
+		w.Logger.Errorw("initworker informer, no ship init/unfork id label", zap.String("pod.name", newPod.Name))
 		return nil
 	}
 

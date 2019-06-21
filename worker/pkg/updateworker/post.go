@@ -8,11 +8,11 @@ import (
 	"mime/multipart"
 	"os"
 
-	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
+	"go.uber.org/zap"
 )
 
 func (w *Worker) postUpdateActions(watchID string, sequence int, s3Filepath string) error {
@@ -23,11 +23,11 @@ func (w *Worker) postUpdateActions(watchID string, sequence int, s3Filepath stri
 
 	downstreamWatchIDs, err := w.Store.ListDownstreamWatchIDs(context.TODO(), watchID)
 	if err != nil {
-		level.Error(w.Logger).Log("event", "get downstream watch ids", "err", err)
+		w.Logger.Errorw("updateworker post update actions unable to get downstream watch ids", zap.String("watchID", watchID), zap.Error(err))
 	}
 	for _, downstreamWatchID := range downstreamWatchIDs {
 		if err := w.Store.CreateWatchUpdate(context.TODO(), downstreamWatchID); err != nil {
-			level.Error(w.Logger).Log("event", "create downstream watch update", "err", err)
+			w.Logger.Errorw("updateworker post update actions unable to create downstream watch update", zap.String("watchID", watchID), zap.Error(err))
 		}
 	}
 	archive, err := w.fetchArchiveFromS3(watchID, s3Filepath)

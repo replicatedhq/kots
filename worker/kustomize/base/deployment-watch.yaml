@@ -33,6 +33,8 @@ spec:
           env:
             - name: LOG_LEVEL
               value: info
+            - name: LOG_FORMAT
+              value: json
           ports:
             - name: watch-server
               containerPort: 3000

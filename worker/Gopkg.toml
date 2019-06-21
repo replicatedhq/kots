@@ -80,3 +80,11 @@
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "1.15.41"
+
+[[constraint]]
+  name = "github.com/go-kit/kit"
+  version = "0.6.0"
+
+[[constraint]]
+  name = "go.uber.org/zap"
+  version = "1.10.0"

@@ -7,16 +7,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type InitServer struct {
-	Logger log.Logger
+	Logger *zap.SugaredLogger
 	Viper  *viper.Viper
 	Store  store.Store
 	Worker *Worker
@@ -28,19 +27,16 @@ type CreateSessionRequest struct {
 	ForkURI     string `json:"forkUri"`
 }
 
-func (s *InitServer) Serve(ctx context.Context, addr string) error {
-	debug := level.Debug(log.With(s.Logger, "method", "serve"))
-
+func (s *InitServer) Serve(ctx context.Context, address string) error {
 	g := gin.New()
 
-	debug.Log("event", "routes.configure")
 	s.configureRoutes(g)
 
-	server := http.Server{Addr: addr, Handler: g}
+	server := http.Server{Addr: address, Handler: g}
 	errChan := make(chan error)
 
 	go func() {
-		debug.Log("event", "server.listen", "server.addr", addr)
+		s.Logger.Infow("starting initserver", zap.String("address", address))
 		errChan <- server.ListenAndServe()
 	}()
 
@@ -78,77 +74,70 @@ func (s *InitServer) Metricz(c *gin.Context) {
 }
 
 func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
-	debug := level.Debug(log.With(s.Logger, "method", "initworker.Server.CreateInitHandler"))
-
 	var createUnforkRequest CreateSessionRequest
 	if err := c.BindJSON(&createUnforkRequest); err != nil {
-		level.Warn(s.Logger).Log("bindJSON", err)
+		s.Logger.Warnw("initserver failed to read json request", zap.Error(err))
 		return
 	}
-
-	debug.Log("event", "getunfork", "id", createUnforkRequest.ID)
 
 	shipUnfork, err := s.Store.GetUnfork(context.TODO(), createUnforkRequest.ID)
 	if err != nil {
-		level.Error(s.Logger).Log("getInit", err)
+		s.Logger.Errorw("initserver failed to get init object", zap.Error(err))
 		return
 	}
 
-	debug.Log("event", "set upload url", "id", shipUnfork.ID)
 	uploadURL, err := s.Store.GetS3StoreURL(shipUnfork)
 	if err != nil {
-		level.Error(s.Logger).Log("getInitUploadURL", err)
+		s.Logger.Errorw("initserver failed to get uploadURL", zap.Error(err))
 		return
 	}
 	shipUnfork.UploadURL = uploadURL
 
-	debug.Log("event", "set output filepath", "id", shipUnfork.ID)
 	err = s.Store.SetOutputFilepath(context.TODO(), shipUnfork)
 	if err != nil {
-		level.Error(s.Logger).Log("setUnforkFilePath", err)
+		s.Logger.Errorw("initserver failed to set unfork filepath", zap.Error(err))
 		return
 	}
 
-	debug.Log("event", "get namespace", "id", shipUnfork.ID)
 	namespace := ship.GetNamespace(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureNamespace(context.TODO(), namespace); err != nil {
-		level.Error(s.Logger).Log("ensureNamespace", err)
+		s.Logger.Errorw("initserver failed to create namespace", zap.Error(err))
 		return
 	}
 
 	networkPolicy := ship.GetNetworkPolicySpec(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureNetworkPolicy(context.TODO(), networkPolicy); err != nil {
-		level.Error(s.Logger).Log("ensureNetworkPolicy", err)
+		s.Logger.Errorw("initserver failed to create network policy", zap.Error(err))
 		return
 	}
 
 	secret := ship.GetSecretSpec(context.TODO(), shipUnfork, []byte(""))
 	if err := s.Worker.ensureSecret(context.TODO(), secret); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
+		s.Logger.Errorw("initserver failed to create secret", zap.Error(err))
 		return
 	}
 
 	serviceAccount := ship.GetServiceAccountSpec(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureServiceAccount(context.TODO(), serviceAccount); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
+		s.Logger.Errorw("initserver failed to create secret", zap.Error(err))
 		return
 	}
 
 	role := ship.GetRoleSpec(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureRole(context.TODO(), role); err != nil {
-		level.Error(s.Logger).Log("ensureRole", err)
+		s.Logger.Errorw("initserver failed to create role", zap.Error(err))
 		return
 	}
 
 	rolebinding := ship.GetRoleBindingSpec(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureRoleBinding(context.TODO(), rolebinding); err != nil {
-		level.Error(s.Logger).Log("ensureRoleBinding", err)
+		s.Logger.Errorw("initserver failed to create rolebinding", zap.Error(err))
 		return
 	}
 
 	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipUnfork, s.Worker.Config.GithubToken)
 	if err := s.Worker.ensurePod(context.TODO(), pod); err != nil {
-		level.Error(s.Logger).Log("ensurePod", err)
+		s.Logger.Errorw("initserver failed to create pod", zap.Error(err))
 		return
 	}
 
@@ -156,7 +145,7 @@ func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
 
 	service := ship.GetServiceSpec(context.TODO(), shipUnfork)
 	if err := s.Worker.ensureService(context.TODO(), service); err != nil {
-		level.Error(s.Logger).Log("ensureService", err)
+		s.Logger.Errorw("initserver failed to create service", zap.Error(err))
 		return
 	}
 
@@ -167,77 +156,70 @@ func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
 }
 
 func (s *InitServer) CreateInitHandler(c *gin.Context) {
-	debug := level.Debug(log.With(s.Logger, "method", "initworker.Server.CreateInitHandler"))
-
 	var createInitRequest CreateSessionRequest
 	if err := c.BindJSON(&createInitRequest); err != nil {
-		level.Warn(s.Logger).Log("bindJSON", err)
+		s.Logger.Warnw("initserver failed to read json request", zap.Error(err))
 		return
 	}
-
-	debug.Log("event", "getinit", "id", createInitRequest.ID)
 
 	shipInit, err := s.Store.GetInit(context.TODO(), createInitRequest.ID)
 	if err != nil {
-		level.Error(s.Logger).Log("getInit", err)
+		s.Logger.Errorw("initserver failed to get init", zap.Error(err))
 		return
 	}
 
-	debug.Log("event", "set upload url", "id", shipInit.ID)
 	uploadURL, err := s.Store.GetS3StoreURL(shipInit)
 	if err != nil {
-		level.Error(s.Logger).Log("getInitUploadURL", err)
+		s.Logger.Errorw("initserver failed to get upload url", zap.Error(err))
 		return
 	}
 	shipInit.UploadURL = uploadURL
 
-	debug.Log("event", "set output filepath", "id", shipInit.ID)
 	err = s.Store.SetOutputFilepath(context.TODO(), shipInit)
 	if err != nil {
-		level.Error(s.Logger).Log("setInitOutputFilepath", err)
+		s.Logger.Errorw("initserver failed to set output filepath", zap.Error(err))
 		return
 	}
 
-	debug.Log("event", "get namespace", "id", shipInit.ID)
 	namespace := ship.GetNamespace(context.TODO(), shipInit)
 	if err := s.Worker.ensureNamespace(context.TODO(), namespace); err != nil {
-		level.Error(s.Logger).Log("ensureNamespace", err)
+		s.Logger.Errorw("initserver failed to get create namespace", zap.Error(err))
 		return
 	}
 
 	networkPolicy := ship.GetNetworkPolicySpec(context.TODO(), shipInit)
 	if err := s.Worker.ensureNetworkPolicy(context.TODO(), networkPolicy); err != nil {
-		level.Error(s.Logger).Log("ensureNetworkPolicy", err)
+		s.Logger.Errorw("initserver failed to get create network policy", zap.Error(err))
 		return
 	}
 
 	secret := ship.GetSecretSpec(context.TODO(), shipInit, []byte(""))
 	if err := s.Worker.ensureSecret(context.TODO(), secret); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
+		s.Logger.Errorw("initserver failed to get create secret", zap.Error(err))
 		return
 	}
 
 	serviceAccount := ship.GetServiceAccountSpec(context.TODO(), shipInit)
 	if err := s.Worker.ensureServiceAccount(context.TODO(), serviceAccount); err != nil {
-		level.Error(s.Logger).Log("ensureSecret", err)
+		s.Logger.Errorw("initserver failed to get create serviceaccount", zap.Error(err))
 		return
 	}
 
 	role := ship.GetRoleSpec(context.TODO(), shipInit)
 	if err := s.Worker.ensureRole(context.TODO(), role); err != nil {
-		level.Error(s.Logger).Log("ensureRole", err)
+		s.Logger.Errorw("initserver failed to get create role", zap.Error(err))
 		return
 	}
 
 	rolebinding := ship.GetRoleBindingSpec(context.TODO(), shipInit)
 	if err := s.Worker.ensureRoleBinding(context.TODO(), rolebinding); err != nil {
-		level.Error(s.Logger).Log("ensureRoleBinding", err)
+		s.Logger.Errorw("initserver failed to get create rolebinding", zap.Error(err))
 		return
 	}
 
 	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipInit, s.Worker.Config.GithubToken)
 	if err := s.Worker.ensurePod(context.TODO(), pod); err != nil {
-		level.Error(s.Logger).Log("ensurePod", err)
+		s.Logger.Errorw("initserver failed to get create pod", zap.Error(err))
 		return
 	}
 
@@ -245,7 +227,7 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 
 	service := ship.GetServiceSpec(context.TODO(), shipInit)
 	if err := s.Worker.ensureService(context.TODO(), service); err != nil {
-		level.Error(s.Logger).Log("ensureService", err)
+		s.Logger.Errorw("initserver failed to get create service", zap.Error(err))
 		return
 	}
 
@@ -258,12 +240,11 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 	for {
 		response, err := quickClient.Get(fmt.Sprintf("http://%s.%s.svc.cluster.local:8800/healthz", namespace.Name, service.Name))
 		if err == nil && response.StatusCode == http.StatusOK {
-			debug.Log("init health", response.StatusCode)
 			c.Status(http.StatusCreated)
 			return
 		}
 		if time.Now().Sub(start) > time.Duration(time.Second*60) {
-			level.Error(s.Logger).Log("timeout creating init worker", shipInit.ID)
+			s.Logger.Errorw("editserver timeout creating init worker", zap.Error(err))
 			c.AbortWithStatus(http.StatusGatewayTimeout)
 			return
 		}

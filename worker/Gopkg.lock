@@ -1060,7 +1060,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:8ae9a1ca9125d35d6eb15f8cc0b37860af533d2ea4c9f7e4bf21c8aa5726cb87"
+  digest = "1:3d213b87954282aeca6530a5644bbe2e8d3db6109466962129bb661616b1edb3"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "e6e5ad2b2b0e9b297b9bf3ee407ac7a14f237424"
+  revision = "ed3fda6426cc9403b4e00dafe000d0e438fa3fb8"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
@@ -1192,6 +1192,37 @@
   ]
   pruneopts = "UT"
   revision = "fd76348b9329dc6f3bd4b87a45ae9e5fb72bffbc"
+
+[[projects]]
+  digest = "1:a5158647b553c61877aa9ae74f4015000294e47981e6b8b07525edcbb0747c81"
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "df976f2515e274675050de7b3f42545de80594fd"
+  version = "v1.4.0"
+
+[[projects]]
+  digest = "1:60bf2a5e347af463c42ed31a493d817f8a72f102543060ed992754e689805d1a"
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:676160e6a4722b08e0e26b11521d575c2cb2b6f0c679e1ee6178c5d8dee51e5e"
+  name = "go.uber.org/zap"
+  packages = [
+    ".",
+    "buffer",
+    "internal/bufferpool",
+    "internal/color",
+    "internal/exit",
+    "zapcore",
+  ]
+  pruneopts = "UT"
+  revision = "27376062155ad36be76b0f12cf1572a221d3a48c"
+  version = "v1.10.0"
 
 [[projects]]
   branch = "master"
@@ -1590,6 +1621,7 @@
     "github.com/spf13/viper",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "go.uber.org/zap",
     "k8s.io/api/core/v1",
     "k8s.io/api/networking/v1",
     "k8s.io/api/rbac/v1",

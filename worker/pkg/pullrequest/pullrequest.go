@@ -11,13 +11,12 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/util"
 	"github.com/replicatedhq/ship/pkg/state"
+	"go.uber.org/zap"
 )
 
 type PullRequestRequest struct {
@@ -99,7 +98,7 @@ func NewPullRequestRequest(watch *types.Watch, file multipart.File, owner string
 	}, nil
 }
 
-func ShouldCreatePullRequest(logger log.Logger, privateKey string, integrationID int, prRequest *PullRequestRequest) (bool, error) {
+func ShouldCreatePullRequest(logger *zap.SugaredLogger, privateKey string, integrationID int, prRequest *PullRequestRequest) (bool, error) {
 	client, err := initGithubClient(integrationID, privateKey, prRequest.installationID)
 	if err != nil {
 		return false, errors.Wrap(err, "init github client")
@@ -130,7 +129,7 @@ func ShouldCreatePullRequest(logger log.Logger, privateKey string, integrationID
 	return false, nil
 }
 
-func CreatePullRequest(logger log.Logger, privateKey string, integrationID int, prRequest *PullRequestRequest) (int, string, error) {
+func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integrationID int, prRequest *PullRequestRequest) (int, string, error) {
 	client, err := initGithubClient(integrationID, privateKey, prRequest.installationID)
 	if err != nil {
 		return 0, "", errors.Wrap(err, "init github client")
@@ -150,7 +149,7 @@ func CreatePullRequest(logger log.Logger, privateKey string, integrationID int, 
 	headRef, _, err := client.Git.GetRef(context.TODO(), prRequest.owner, prRequest.repo, fmt.Sprintf("refs/heads/%s", sourceBranch))
 	if err != nil {
 		// if the head SHA does not exist, try again with the dest branch
-		level.Warn(logger).Log("event", "getSourceBranch", "err", err)
+		logger.Warnw("failed to get source branch from sha", zap.Error(err))
 		headRef, _, err = client.Git.GetRef(context.TODO(), prRequest.owner, prRequest.repo, fmt.Sprintf("refs/heads/%s", destBranch))
 		if err != nil {
 			return 0, "", errors.Wrap(err, "get head ref")
@@ -236,7 +235,7 @@ func GenerateBranchBame() string {
 	return fmt.Sprintf("ship-%s", id)
 }
 
-func createTreeEntriesForPullRequest(logger log.Logger, prRequest *PullRequestRequest) ([]github.TreeEntry, error) {
+func createTreeEntriesForPullRequest(logger *zap.SugaredLogger, prRequest *PullRequestRequest) ([]github.TreeEntry, error) {
 	entries := make([]github.TreeEntry, 0, 0)
 
 	fullRenderedFilenamePath := strings.Replace(prRequest.fileName, "rendered.yaml", prRequest.renderedFileName, 1)

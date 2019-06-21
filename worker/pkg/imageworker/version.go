@@ -7,10 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-kit/kit/log/level"
+	"go.uber.org/zap"
 
 	"github.com/genuinetools/reg/registry"
-	"github.com/go-kit/kit/log"
 	semver "github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 )
@@ -165,7 +164,7 @@ func (c SemverTagCollection) RemoveLeastSpecific() []*semver.Version {
 	return cleanedVersions
 }
 
-func resolveTagDates(logger log.Logger, reg *registry.Registry, imageName string, sortedVersions []*semver.Version) ([]*VersionTag, error) {
+func resolveTagDates(logger *zap.SugaredLogger, reg *registry.Registry, imageName string, sortedVersions []*semver.Version) ([]*VersionTag, error) {
 	var wg sync.WaitGroup
 	var mux sync.Mutex
 	versionTags := make([]*VersionTag, 0)
@@ -181,7 +180,7 @@ func resolveTagDates(logger log.Logger, reg *registry.Registry, imageName string
 		go func(versionFromTag string) {
 			date, err := getTagDate(reg, imageName, versionFromTag)
 			if err != nil {
-				level.Debug(logger).Log("unable to get date for tag", versionFromTag, "error", err)
+				logger.Debugw("unable to get date for tag", versionFromTag, zap.Error(err))
 			} else {
 				versionTag.Date = date
 			}

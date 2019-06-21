@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
@@ -17,11 +15,12 @@ import (
 	shipspecs "github.com/replicatedhq/ship/pkg/specs"
 	"github.com/replicatedhq/ship/pkg/state"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type Worker struct {
 	Config *config.Config
-	Logger log.Logger
+	Logger *zap.SugaredLogger
 
 	Store store.Store
 }
@@ -31,13 +30,10 @@ func init() {
 }
 
 func (w *Worker) Run(ctx context.Context) error {
-	logger := log.With(w.Logger, "method", "watchworker.Worker.Execute")
-
-	level.Info(logger).Log("phase", "initialize",
-		"version", version.Version(),
-		"gitSHA", version.GitSHA(),
-		"buildTime", version.BuildTime(),
-		"buildTimeFallback", version.GetBuild().TimeFallback,
+	w.Logger.Infow("starting watchworker",
+		zap.String("version", version.Version()),
+		zap.String("gitSHA", version.GitSHA()),
+		zap.Time("buildTime", version.BuildTime()),
 	)
 
 	go func() {
@@ -49,9 +45,8 @@ func (w *Worker) Run(ctx context.Context) error {
 	go func() {
 		os.Setenv("GITHUB_TOKEN", w.Config.GithubToken)
 
-		level.Info(logger).Log("event", "db.poller.ready.start")
 		err := w.startPollingDBForReadyWatches(context.Background())
-		level.Info(logger).Log("event", "db.poller.ready.fail", "err", err)
+		w.Logger.Errorw("watchworker dbpoller failed", zap.Error(err))
 		errCh <- errors.Wrap(err, "ready poller ended")
 	}()
 
@@ -68,19 +63,17 @@ func (w *Worker) Run(ctx context.Context) error {
 }
 
 func (w *Worker) startPollingDBForReadyWatches(ctx context.Context) error {
-	logger := log.With(w.Logger, "method", "watchworker.Worker.startPollingDBForReadyWatches")
-
 	for {
 		select {
 		case <-time.After(w.Config.DBPollInterval):
 			watchIDs, err := w.Store.ListReadyWatchIDs(ctx)
 			if err != nil {
-				level.Error(logger).Log("event", "store.list.ready.watches.fail", "err", err)
+				w.Logger.Errorw("watchworker polling failed", zap.Error(err))
 				continue
 			}
 
 			if err := w.runWatches(ctx, watchIDs); err != nil {
-				level.Error(logger).Log("event", "ensure.watch.running.fail", "err", err)
+				w.Logger.Errorw("watchworker checkimage failed", zap.Error(err))
 				continue
 			}
 		case <-ctx.Done():
@@ -90,11 +83,9 @@ func (w *Worker) startPollingDBForReadyWatches(ctx context.Context) error {
 }
 
 func (w *Worker) runWatches(ctx context.Context, watchIDs []string) error {
-	logger := log.With(w.Logger, "method", "watchworker.Worker.runWatches")
-
 	for _, watchID := range watchIDs {
 		if err := w.runWatch(ctx, watchID); err != nil {
-			level.Error(logger).Log("event", "runWatch.fail", "err", err)
+			w.Logger.Errorw("watchworker run watch failed", zap.Error(err))
 		}
 	}
 
@@ -102,11 +93,9 @@ func (w *Worker) runWatches(ctx context.Context, watchIDs []string) error {
 }
 
 func (w *Worker) runWatch(ctx context.Context, watchID string) error {
-	logger := log.With(w.Logger, "method", "watchworker.Worker.runWatch")
-
 	watch, err := w.Store.GetWatch(ctx, watchID)
 	if err != nil {
-		level.Error(logger).Log("event", "getWatch", "err", err)
+		w.Logger.Errorw("watchworker get watch failed", zap.Error(err))
 		return err
 	}
 
@@ -114,7 +103,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 	defer func() error {
 		if !isSuccess {
 			if err := w.Store.SetWatchDeferred(ctx, watchID); err != nil {
-				level.Error(logger).Log("event", "set watch deferred", "err", err)
+				w.Logger.Errorw("watchworker set watch defered failed", zap.Error(err))
 				return err
 			}
 		}
@@ -124,7 +113,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 
 	existingState := state.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &existingState); err != nil {
-		level.Error(logger).Log("event", "unmarshalState", "err", err)
+		w.Logger.Errorw("watchworker unmarshal state failed", zap.Error(err))
 		return err
 	}
 
@@ -152,18 +141,18 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 
 	if existingSHA != latestSHA {
 		if err := w.Store.CancelIncompleteWatchUpdates(ctx, watchID); err != nil {
-			level.Error(logger).Log("event", "cancel incomplete watch updates", "err", err)
+			w.Logger.Errorw("watchworker cancel uncomplete watch updates failed", zap.Error(err))
 			return err
 		}
 		if err := w.Store.CreateWatchUpdate(ctx, watchID); err != nil {
-			level.Error(logger).Log("event", "set watch update needed", "err", err)
+			w.Logger.Errorw("watchworker create watch update failed", zap.Error(err))
 			return err
 		}
 	}
 
 	isSuccess = true
 	if err := w.Store.SetWatchChecked(ctx, watchID); err != nil {
-		level.Error(logger).Log("event", "set watch checked", "err", err)
+		w.Logger.Errorw("watchworker set watch checked failed", zap.Error(err))
 		return err
 	}
 	return nil
