@@ -31,7 +31,7 @@ type Mutation {
 
   uploadImageWatchBatch(imageList: String!): String
 
-  uploadTokenSupportBundle(token: String, size: Int!, notes: String): SupportBundleUpload
+  uploadTokenSupportBundle(token: String!, size: Int, notes: String): SupportBundleUpload
   markSupportBundleUploaded(id: String!): SupportBundle
 }
 `;

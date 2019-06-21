@@ -22,6 +22,7 @@ export function TroubleshootMutations(stores: Stores) {
 
     async markSupportBundleUploaded(root: any, args: any, context: Context): Promise<SupportBundle> {
       // TODO: size?
+      // TODO: async analysis
       return await stores.troubleshootStore.markSupportBundleUploaded(args.id)
     },
   }
