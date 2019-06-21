@@ -7,16 +7,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type UpdateServer struct {
-	Logger log.Logger
+	Logger *zap.SugaredLogger
 	Viper  *viper.Viper
 	Store  store.Store
 	Worker *Worker
@@ -28,18 +27,15 @@ type CreateUpdateRequest struct {
 }
 
 func (s *UpdateServer) Serve(ctx context.Context, address string) error {
-	debug := level.Debug(log.With(s.Logger, "method", "serve"))
-
 	g := gin.New()
 
-	debug.Log("event", "routes.configure")
 	s.configureRoutes(g)
 
 	server := http.Server{Addr: address, Handler: g}
 	errChan := make(chan error)
 
 	go func() {
-		debug.Log("event", "server.listen", "server.address", address)
+		s.Logger.Infow("starting updateworker", zap.String("address", address))
 		errChan <- server.ListenAndServe()
 	}()
 
@@ -76,24 +72,20 @@ func (s *UpdateServer) Metricz(c *gin.Context) {
 }
 
 func (s *UpdateServer) CreateUpdateHandler(c *gin.Context) {
-	debug := level.Debug(log.With(s.Logger, "method", "updateworker.Server.CreateUpdateHandler"))
-
 	var createUpdateRequest CreateUpdateRequest
 	if err := c.BindJSON(&createUpdateRequest); err != nil {
-		level.Warn(s.Logger).Log("bindJSON", err)
+		s.Logger.Warnw("updateserver failed to read json request", zap.Error(err))
 		return
 	}
 
-	debug.Log("event", "getupdate", "id", createUpdateRequest.ID)
-
 	shipUpdate, err := s.Store.GetUpdate(context.TODO(), createUpdateRequest.ID)
 	if err != nil {
-		level.Error(s.Logger).Log("getUpdate", err)
+		s.Logger.Errorw("updateserver failed to get edit object", zap.Error(err))
 		return
 	}
 
 	if err := s.Worker.deployUpdate(shipUpdate); err != nil {
-		level.Error(s.Logger).Log("deployUpdate", err)
+		s.Logger.Errorw("updateserver failed to get uploadURL", zap.Error(err))
 		return
 	}
 
@@ -108,14 +100,12 @@ func (s *UpdateServer) CreateUpdateHandler(c *gin.Context) {
 	start := time.Now()
 	for {
 		response, err := quickClient.Get(fmt.Sprintf("http://%s.%s.svc.cluster.local:8800/healthz", namespace.Name, service.Name))
-		debug.Log("update health err", err)
 		if err == nil && response.StatusCode == http.StatusOK {
-			debug.Log("update health", response.StatusCode)
 			c.Status(http.StatusCreated)
 			return
 		}
 		if time.Now().Sub(start) > time.Duration(time.Second*30) {
-			level.Error(s.Logger).Log("timeout creating update worker", shipUpdate.ID)
+			s.Logger.Errorw("update timeout creating edit worker", zap.Error(err))
 			c.AbortWithStatus(http.StatusGatewayTimeout)
 			return
 		}

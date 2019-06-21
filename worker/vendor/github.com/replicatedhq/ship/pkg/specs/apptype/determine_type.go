@@ -144,7 +144,7 @@ func (i *inspector) determineTypeFromContents(ctx context.Context, upstream stri
 		if _, ok := err.(errors2.FetchFilesError); ok {
 			i.ui.Info(fmt.Sprintf("Failed to retrieve upstream %s", upstream))
 
-			var retryError error
+			var retryError = err
 			retries := i.viper.GetInt("retries")
 			hasSucceeded := false
 			for idx := 1; idx <= retries && !hasSucceeded; idx++ {

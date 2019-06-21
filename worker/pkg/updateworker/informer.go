@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -21,10 +20,6 @@ import (
 var updateSession types.UpdateSession
 
 func (w *Worker) runInformer(ctx context.Context) error {
-	debug := level.Debug(log.With(w.Logger, "method", "updateworker.Worker.runInformer"))
-
-	debug.Log("event", "runInformer")
-
 	restClient := w.K8sClient.CoreV1().RESTClient()
 	watchlist := cache.NewListWatchFromClient(restClient, "pods", "", fields.Everything())
 
@@ -35,13 +30,13 @@ func (w *Worker) runInformer(ctx context.Context) error {
 			DeleteFunc: func(obj interface{}) {
 				err := w.deleteFunc(obj)
 				if err != nil {
-					level.Error(w.Logger).Log("event", "update.session.informer.pod.delete", "err", err)
+					w.Logger.Errorw("error in updateworker informer deleteFunc", zap.Error(err))
 				}
 			},
 			UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 				err := w.updateFunc(oldObj, newObj)
 				if err != nil {
-					level.Error(w.Logger).Log("event", "update.session.informer.pod.update", "err", err)
+					w.Logger.Errorw("error in updateworker informer updateFunc", zap.Error(err))
 				}
 			},
 		},
@@ -52,14 +47,10 @@ func (w *Worker) runInformer(ctx context.Context) error {
 }
 
 func (w *Worker) deleteFunc(obj interface{}) error {
-	debug := level.Debug(log.With(w.Logger, "method", "updateworker.Worker.deleteFunc"))
-
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("unexpected type %T", obj)
 	}
-
-	debug.Log("event", "deleteFunc", "pod", pod.Name)
 
 	shipCloudRole, ok := pod.ObjectMeta.Labels["shipcloud-role"]
 	if !ok || shipCloudRole != updateSession.GetRole() {
@@ -68,12 +59,9 @@ func (w *Worker) deleteFunc(obj interface{}) error {
 
 	id, ok := pod.ObjectMeta.Labels[updateSession.GetType()]
 	if !ok {
-		level.Error(w.Logger).Log("event", "no update label")
+		w.Logger.Errorw("updateworker delete informer, no id found in pod labels", zap.String("id", id), zap.String("pod.name", pod.Name))
 		return nil
 	}
-
-	// Why did the pod exit?
-	debug.Log("update-id", id, "pod phase", pod.Status.Phase)
 
 	return nil
 }
@@ -96,7 +84,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 
 	id, ok := newPod.ObjectMeta.Labels[updateSession.GetType()]
 	if !ok {
-		level.Error(w.Logger).Log("event", "no update label")
+		w.Logger.Errorw("updateworker informer, no id found in pod labels", zap.String("pod.name", newPod.Name))
 		return nil
 	}
 
@@ -146,7 +134,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 
 			s3Filepath, ok := newPod.ObjectMeta.Labels["s3-filepath"]
 			if !ok {
-				level.Error(w.Logger).Log("event", "no s3filepath")
+				w.Logger.Errorw("updateworker informer, no s3filepath found in pod labels", zap.String("pod.name", newPod.Name))
 				return nil
 			}
 			decodedS3Filepath, err := base64.RawStdEncoding.DecodeString(s3Filepath)
@@ -156,12 +144,12 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 
 			updateSequenceStr, ok := newPod.ObjectMeta.Labels["update-sequence"]
 			if !ok {
-				level.Error(w.Logger).Log("event", "no update sequence")
+				w.Logger.Errorw("updateworker informer, no updatesequence found in pod labels", zap.String("pod.name", newPod.Name))
 				return nil
 			}
 			updateSequence, err := strconv.Atoi(string(updateSequenceStr))
 			if err != nil {
-				level.Error(w.Logger).Log("event", "convert update sequence")
+				w.Logger.Errorw("updateworker informer, unable to convert update sequence from string", zap.String("updateSequenceStr", updateSequenceStr), zap.String("pod.name", newPod.Name))
 				return nil
 			}
 

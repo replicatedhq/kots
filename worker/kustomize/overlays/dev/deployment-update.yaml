@@ -11,6 +11,8 @@ spec:
           env:
             - name: LOG_LEVEL
               value: debug
+            - name: LOG_FORMAT
+              value: human
             - name: SHIP_IMAGE
               value: "replicated/ship"
             - name: SHIP_TAG

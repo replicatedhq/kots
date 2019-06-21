@@ -32,6 +32,8 @@ spec:
           env:
             - name: LOG_LEVEL
               value: info
+            - name: LOG_FORMAT
+              value: json
           resources:
             limits:
               memory: 512Mi

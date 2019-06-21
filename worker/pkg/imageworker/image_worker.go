@@ -9,38 +9,33 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/genuinetools/reg/registry"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	semver "github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"go.uber.org/zap"
 )
 
 type Worker struct {
 	Config *config.Config
-	Logger log.Logger
+	Logger *zap.SugaredLogger
 
 	Store store.Store
 }
 
 func (w *Worker) Run(ctx context.Context) error {
-	logger := log.With(w.Logger, "method", "imageworker.Worker.Execute")
-
-	level.Info(logger).Log("phase", "initialize",
-		"version", version.Version(),
-		"gitSHA", version.GitSHA(),
-		"buildTime", version.BuildTime(),
-		"buildTimeFallback", version.GetBuild().TimeFallback,
+	w.Logger.Infow("starting initworker",
+		zap.String("version", version.Version()),
+		zap.String("gitSHA", version.GitSHA()),
+		zap.Time("buildTime", version.BuildTime()),
 	)
 
 	errCh := make(chan error, 2)
 
 	go func() {
-		level.Info(logger).Log("event", "db.poller.ready.start")
 		err := w.startPollingDBForImagesNeedingCheck(context.Background())
-		level.Info(logger).Log("event", "db.poller.ready.fail", "err", err)
+		w.Logger.Errorw("imageworker dbpoller failed", zap.Error(err))
 		errCh <- errors.Wrap(err, "ready poller ended")
 	}()
 
@@ -57,14 +52,12 @@ func (w *Worker) Run(ctx context.Context) error {
 }
 
 func (w *Worker) startPollingDBForImagesNeedingCheck(ctx context.Context) error {
-	logger := log.With(w.Logger, "method", "watchworker.Worker.startPollingDBForImagesNeedingCheck")
-
 	for {
 		select {
 		case <-time.After(w.Config.DBPollInterval):
 			imageCheckIDs, err := w.Store.ListReadyImageChecks(ctx)
 			if err != nil {
-				level.Error(logger).Log("event", "store.list.ready.image.checks.fail", "err", err)
+				w.Logger.Errorw("imageworker polling failed", zap.Error(err))
 				continue
 			}
 			if len(imageCheckIDs) == 0 {
@@ -72,7 +65,7 @@ func (w *Worker) startPollingDBForImagesNeedingCheck(ctx context.Context) error 
 			}
 			for _, imageCheckID := range imageCheckIDs {
 				if err := w.checkImage(imageCheckID); err != nil {
-					level.Error(logger).Log("event", "check.image", "err", err)
+					w.Logger.Errorw("imageworker checkimage failed", zap.Error(err))
 				}
 			}
 
@@ -83,15 +76,10 @@ func (w *Worker) startPollingDBForImagesNeedingCheck(ctx context.Context) error 
 }
 
 func (w *Worker) checkImage(imageCheckID string) error {
-	debug := level.Debug(log.With(w.Logger, "method", "imageworker.Worker.checkImage"))
-	debug.Log("event", "checkImage", "imageWatchID", imageCheckID)
-
 	imageCheck, err := w.Store.GetImageCheck(context.TODO(), imageCheckID)
 	if err != nil {
 		return errors.Wrap(err, "get imagecheck")
 	}
-
-	debug.Log("name", imageCheck.Name)
 
 	completedSuccessfully := false
 
@@ -99,7 +87,7 @@ func (w *Worker) checkImage(imageCheckID string) error {
 	defer func() {
 		if !completedSuccessfully {
 			if err := w.Store.UpdateImageCheck(context.TODO(), imageCheck); err != nil {
-				level.Error(w.Logger).Log("event", "update image check with err", "err", err)
+				w.Logger.Errorw("imageworker update image check failed", zap.Error(err))
 			}
 		}
 	}()
@@ -149,7 +137,6 @@ func (w *Worker) checkImage(imageCheckID string) error {
 		behind := len(trueVersionsBehind) - 1
 		imageCheck.VersionsBehind = int64(behind)
 
-		debug.Log("event", "resolveTagDates")
 		versionPaths, err := resolveTagDates(w.Logger, reg, imageName, trueVersionsBehind)
 		if err != nil {
 			imageCheck.CheckError = err.Error()
