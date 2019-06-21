@@ -43,5 +43,8 @@ export const Query = `
     imageWatches(batchId: String!): [ImageWatch]
 
     getGitHubInstallationId: String!
+
+    listSupportBundles(watchId: String!): [SupportBundle]
+    getSupportBundle(id: String!): SupportBundle
   }
 `;

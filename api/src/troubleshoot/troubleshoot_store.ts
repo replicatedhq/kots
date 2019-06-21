@@ -1,5 +1,6 @@
 import * as pg from "pg";
 import * as randomstring from "randomstring";
+import * as _ from "lodash";
 import { Params } from "../server/params";
 import { S3Signer } from "../util/persistence/s3";
 import { ReplicatedError } from "../server/errors";
@@ -46,6 +47,19 @@ export class TroubleshootStore {
       throw new ReplicatedError(`Support Bundle ${id} not found`);
     }
     return await this.mapSupportBundle(result.rows[0]);
+  }
+
+  public async listSupportBundles(watchId: string): Promise<SupportBundle[]> {
+    const q = `SELECT id
+      FROM supportbundle
+      WHERE watch_id = $1`;
+    const v = [watchId];
+    const result = await this.pool.query(q, v);
+    const supportBundles: SupportBundle[] = [];
+    for (const row of result.rows) {
+      supportBundles.push(await this.getSupportBundle(row.id));
+    }
+    return _.sortBy(supportBundles, ["createdAt"]);
   }
 
   public async createSupportBundle(watchId: string, size: number, notes?: string): Promise<SupportBundle> {
