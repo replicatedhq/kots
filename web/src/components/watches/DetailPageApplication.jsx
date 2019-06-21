@@ -190,7 +190,15 @@ class DetailPageApplication extends React.Component {
           <div className="flex1 flex-column u-paddingRight--30">
             <div className="flex">
               <div className="flex flex-auto">
-                <span style={{ backgroundImage: `url(${watch.watchIcon})`}} className="DetailPageApplication--appIcon"></span>
+                <span
+                  style={{ backgroundImage: `url(${watch.watchIcon})`}}
+                  className="DetailPageApplication--appIcon u-position--relative">
+                  <span
+                    className="edit-wrapper clickable flex alignItems--center justifyContent--center u-position--absolute"
+                    onClick={() => {}}>
+                    <span className="icon edit-icon" />
+                  </span>
+                </span>
               </div>
               <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>

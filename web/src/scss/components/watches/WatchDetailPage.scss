@@ -88,6 +88,21 @@
       box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
     }
 
+    .edit-wrapper {
+      top: 25%;
+      right: -12px;
+      height: 26px;
+      width: 26px;
+      background-color: #FFFFFF;
+      border-radius: 100%;
+      box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
+      transition: box-shadow .2s ease;
+
+      &:hover {
+        box-shadow: 0 0 4px rgba(0,0,0,0.4);
+      }
+    }
+
     .midstream-banner {
       padding: 8px 12px;
       background-color: #F5F8FC;
