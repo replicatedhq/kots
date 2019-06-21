@@ -16,13 +16,11 @@ export const UpdateProxy = proxyMiddleware({
 
     // tslint:disable-next-line:no-http-string
     const shipUpdateInstanceHost = `http://shipupdate-${updateId}.shipupdate-${updateId}.svc.cluster.local:8800`;
-    logger.debug("proxy path", { shipUpdateInstanceHost, path: pathname });
 
     return shipUpdateInstanceHost;
   },
   pathRewrite(path: string): string {
     const shipUpdateAPIPath = path.replace(/^\/api\/v1\/update\/[\w\d]+/, "");
-    logger.debug("rewritten Ship Update API path", { shipUpdateAPIPath });
 
     return shipUpdateAPIPath;
   },

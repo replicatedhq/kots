@@ -71,7 +71,7 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
         return JSON.stringify(scope);
       } catch (err) {
-        logger.error({ error: err });
+        logger.error({ msg: "error logging message", error: err });
       }
 
       return "";

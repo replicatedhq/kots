@@ -40,7 +40,7 @@ export class EditStore {
 
     const parsedBody = await rp(options);
     logger.debug({
-      message: "editserver-parsedbody",
+      msg: "received parsed body from edit server",
       parsedBody,
     });
 

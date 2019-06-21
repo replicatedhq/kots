@@ -16,13 +16,11 @@ export const EditProxy = proxyMiddleware({
 
     // tslint:disable-next-line:no-http-string
     const shipEditInstanceHost = `http://shipedit-${editId}.shipedit-${editId}.svc.cluster.local:8800`;
-    logger.debug("proxy path", { shipEditInstanceHost, path: pathname });
 
     return shipEditInstanceHost;
   },
   pathRewrite(path: string): string {
     const shipEditAPIPath = path.replace(/^\/api\/v1\/edit\/[\w\d]+/, "");
-    logger.debug("rewritten Ship Edit API path", { shipEditAPIPath });
 
     return shipEditAPIPath;
   },

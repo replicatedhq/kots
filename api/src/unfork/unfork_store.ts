@@ -35,7 +35,7 @@ export class UnforkStore {
     };
 
     const parsedBody = await rp(options);
-    logger.debug({ msg: "response from deploy unfork", parsedBody });
+    logger.debug({msg: "response from deploy unfork", parsedBody});
 
     return unforkSession;
   }

@@ -183,8 +183,8 @@ export function WatchMutations(stores: Stores) {
 function validateJson(json, checkedSchema) {
   try {
     JSON.parse(json);
-  } catch (e) {
-    logger.info("JSON is not valid", e.message);
+  } catch (err) {
+    logger.info({msg: "JSON is not valid", err});
     throw new ReplicatedError("JSON is not valid");
   }
 

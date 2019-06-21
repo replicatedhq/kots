@@ -1,7 +1,5 @@
 import * as bugsnag from "bugsnag";
 import * as _ from "lodash";
-import * as util from "util";
-import { logger } from "./logger";
 
 /**
  * ClientErrorDetails is a payload that
@@ -9,8 +7,7 @@ import { logger } from "./logger";
  * sent to the client.
  */
 export interface ClientErrorDetails {
-  message: string;
-  extra?: {};
+  msg: string;
 }
 
 /**
@@ -26,32 +23,23 @@ export class ReplicatedError extends Error {
 
   readonly originalMessage: string;
 
-  constructor(readonly msg: string, readonly code?: string, readonly extra?: {}) {
+  constructor(readonly msg: string) {
     super(
       JSON.stringify({
         replicatedMessage: msg || ReplicatedError.INTERNAL_ERROR_MESSAGE,
-        replicatedExtra: extra,
       }),
     );
     this.originalMessage = msg;
-    this.extra = extra;
   }
 
   static forbidden() {
-    return new ReplicatedError("Forbidden", "forbidden");
+    return new ReplicatedError("Forbidden");
   }
 
-  static isNotFound(err: {}) {
-    return err instanceof ReplicatedError && err.isNotFound();
-  }
-
-  static notFound() {
-    return new ReplicatedError("Not Found", "not_found");
-  }
 
   static requireNonEmpty(item: {}, name?: string) {
     if (_.isEmpty(item)) {
-      throw new ReplicatedError(`${name || "value"} may not be empty`, "bad_request", { name });
+      throw new ReplicatedError(`${name || "value"} may not be empty`);
     }
   }
 
@@ -60,8 +48,7 @@ export class ReplicatedError extends Error {
       const parsed = JSON.parse(error.message);
       if (_.has(parsed, "replicatedMessage")) {
         return {
-          message: parsed.replicatedMessage,
-          extra: parsed.replicatedExtra,
+          msg: parsed.replicatedMessage,
         };
       }
     } catch {
@@ -73,16 +60,15 @@ export class ReplicatedError extends Error {
     // syntax/query
     if (!error.originalError) {
       return {
-        message: error.message,
+        msg: error.message,
       };
     }
 
     // only log it if its an unknown error
-    logger.child({ location: "src/server/errors.ts" }).error(util.inspect(error));
     bugsnag.notify(error);
 
     return {
-      message: ReplicatedError.INTERNAL_ERROR_MESSAGE,
+      msg: ReplicatedError.INTERNAL_ERROR_MESSAGE,
     };
   }
 
@@ -95,8 +81,5 @@ export class ReplicatedError extends Error {
         },
       ],
     };
-  }
-  isNotFound() {
-    return this.originalMessage === ReplicatedError.notFound().originalMessage;
   }
 }
