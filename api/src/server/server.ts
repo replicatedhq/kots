@@ -6,6 +6,7 @@ import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
+import { S3Signer } from "../util/persistence/s3";
 import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { UpdateProxy } from "../update/proxy";
@@ -80,6 +81,7 @@ export class Server extends ServerLoader {
     this.use(bodyParser.json({ limit: "5mb" }));
 
     const pool = await getPostgresPool();
+    const s3Signer = new S3Signer();
     const watchStore = new WatchStore(pool, params);
     const stores: Stores = {
       sessionStore: new SessionStore(pool, params),
@@ -98,7 +100,7 @@ export class Server extends ServerLoader {
       editStore: new EditStore(pool, params),
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
-      troubleshootStore: new TroubleshootStore(pool),
+      troubleshootStore: new TroubleshootStore(pool, params, s3Signer),
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {

@@ -7,7 +7,6 @@ type SupportBundle {
   size: Int!
   notes: String
   status: String!
-  uri: String!
   resolution: String
   treeIndex: String
   viewed: Boolean!
@@ -15,8 +14,8 @@ type SupportBundle {
   uploadedAt: String
   isArchived: Boolean
 
-  signedUri: String
   analysis: SupportBundleAnalysis
+
   watchSlug: String!
   watchName: String!
 }`;

@@ -1,4 +1,6 @@
 
+export type SupportBundleStatus = "pending" | "uploaded" | "analyzing" | "analyzed" | "analysis_error";
+
 export interface SupportBundle {
   id: string;
   slug: string;
@@ -6,8 +8,7 @@ export interface SupportBundle {
   name: string;
   size: number;
   notes: string;
-  status: string;
-  uri: string;
+  status: SupportBundleStatus;
   resolution: string;
   treeIndex: string;
   viewed: boolean;
@@ -15,7 +16,6 @@ export interface SupportBundle {
   uploadedAt: string;
   isArchived: boolean;
 
-  signedUri: string;
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;

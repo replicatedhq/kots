@@ -1,7 +1,11 @@
 import * as pg from "pg";
+import * as randomstring from "randomstring";
+import { Params } from "../server/params";
+import { S3Signer } from "../util/persistence/s3";
 import { ReplicatedError } from "../server/errors";
-import { SupportBundle, SupportBundleAnalysis, SupportBundleInsight } from "./types";
+import { SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./types";
 import { parseWatchName } from "../watch";
+
 
 const supportBundleFields = [
   "supportbundle.id",
@@ -11,7 +15,6 @@ const supportBundleFields = [
   "supportbundle.size",
   "supportbundle.notes",
   "supportbundle.status",
-  "supportbundle.uri",
   "supportbundle.resolution",
   "supportbundle.tree_index",
   "supportbundle.viewed",
@@ -31,33 +34,68 @@ const supportBundleAnalysisFields = [
 export class TroubleshootStore {
   constructor(
     private readonly pool: pg.Pool,
+    private readonly params: Params,
+    private readonly s3Signer: S3Signer,
   ) {
   }
 
-  async getSupportBundle(id: string): Promise<SupportBundle> {
+  public async getSupportBundle(id: string): Promise<SupportBundle> {
     const q = `SELECT
         ${supportBundleFields}, ${supportBundleAnalysisFields},
         watch.slug as watch_slug, watch.title as watch_title
       FROM supportbundle
         INNER JOIN watch on supportbundle.watch_id = watch.id
         LEFT JOIN supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
-      WHERE supportbundle.id = ?
+      WHERE supportbundle.id = $1
         AND supportbundle_analysis.id = (
           SELECT sa2.id
           FROM supportbundle_analysis AS sa2
-          WHERE sa2.supportbundle_id = ?
+          WHERE sa2.supportbundle_id = $1
           ORDER BY sa2.created_at DESC
           LIMIT 1
         )`;
-    const v = [id, id];
+    const v = [id];
     const result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`Support Bundle ${id} was not found`);
+      throw new ReplicatedError(`Support Bundle ${id} not found`);
     }
-    return this.mapSupportBundle(result.rows[0]);
+    return await this.mapSupportBundle(result.rows[0]);
   }
 
-  private mapSupportBundle(row: any): SupportBundle {
+  public async createSupportBundle(watchId: string, size: number, notes?: string): Promise<SupportBundle> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const createdAt = new Date();
+    const status: SupportBundleStatus = "pending";
+
+    const q = `INSERT INTO supportbundle
+      (id, slug, watch_id, size, notes, status, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+    let v = [
+      id,
+      id, // TODO: slug
+      watchId,
+      size,
+      notes,
+      status,
+      createdAt,
+    ]
+    const result = await this.pool.query(q, v);
+    return await this.getSupportBundle(id);
+  }
+
+  public async markSupportBundleUploaded(id: string): Promise<SupportBundle> {
+    const status: SupportBundleStatus = "uploaded";
+
+    const q = `
+    UPDATE supportbundle
+    SET status = $2, uploaded_at = $3
+    WHERE id = $1`;
+    const v = [id, status, new Date()];
+    await this.pool.query(q, v);
+    return await this.getSupportBundle(id);
+  }
+
+  private async mapSupportBundle(row: any): Promise<SupportBundle> {
     const supportBundle: SupportBundle = {
       id: row.id,
       slug: row.slug,
@@ -66,14 +104,12 @@ export class TroubleshootStore {
       size: row.size,
       notes: row.notes,
       status: row.status,
-      uri: row.uri,
       resolution: row.resolution,
       treeIndex: row.tree_index,
       viewed: row.viewed,
       createdAt: row.created_at,
       uploadedAt: row.uploaded_at,
       isArchived: row.is_archived,
-      signedUri: "TODO",
       analysis: {
         id: row.analysis_id,
         error: row.analysis_error,
@@ -87,7 +123,38 @@ export class TroubleshootStore {
     return supportBundle;
   }
 
-  private mapSupportBundleInsights(insightsMarshalled: string): [SupportBundleInsight] {
+  private mapSupportBundleInsights(insightsMarshalled: string): SupportBundleInsight[] {
+    const insights: SupportBundleInsight[] = [];
+    if (!insightsMarshalled) {
+      return insights;
+    }
+    return JSON.parse(insightsMarshalled) as SupportBundleInsight[]
+  }
 
+  public async signSupportBundlePutRequest(supportBundle: SupportBundle): Promise<any> {
+    if (status !== "pending") {
+      throw new ReplicatedError(`Unable to generate signed put request for a support bundle in status ${supportBundle.status}`);
+    }
+
+    // shipOutputBucket is awkward
+    const signed = await this.s3Signer.signPutRequest({
+      Bucket: this.params.shipOutputBucket,
+      Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
+      ContentType: "application/tar+gzip",
+    });
+    return signed.signedUrl;
+  }
+
+  public async signSupportBundleGetRequest(supportBundle: SupportBundle): Promise<string | undefined> {
+    if (status === "pending") {
+      throw new ReplicatedError(`Unable to generate signed get request for a support bundle in status ${supportBundle.status}`);
+    }
+
+    // shipOutputBucket is awkward
+    const signed = await this.s3Signer.signGetRequest({
+      Bucket: this.params.shipOutputBucket,
+      Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
+    });
+    return signed.signedUrl;
   }
 }
