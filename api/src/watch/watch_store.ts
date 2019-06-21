@@ -28,6 +28,16 @@ export class WatchStore {
     private readonly params: Params
   ) {}
 
+  async queueCheckForUpdates(watchId: string): Promise<void> {
+    const now = new Date();
+    const q = `update watch set last_watch_check_at = $1 where id = $2`;
+    const v = [
+      new Date(now.setHours(now.getHours() - 1)),
+      watchId,
+    ];
+
+    await this.pool.query(q, v);
+  }
   async setCurrentVersion(watchId: string, sequence: number): Promise<void> {
     const q = `update watch set current_sequence = $1 where id = $2`;
     const v = [

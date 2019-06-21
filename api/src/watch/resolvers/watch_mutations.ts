@@ -130,10 +130,10 @@ export function WatchMutations(stores: Stores) {
       return contributors;
     },
 
-    async removeWatchContributor(root: any, args: any, context: Context): Promise<Contributor[]> {
-      const watch = await context.getWatch(args.watchId);
+    async removeWatchContributor(root: any, { watchId, contributorId }, context: Context): Promise<Contributor[]> {
+      const watch = await context.getWatch(watchId);
 
-      await stores.watchStore.removeUserFromWatch(watch.id, args.contributorId);
+      await stores.watchStore.removeUserFromWatch(watch.id, contributorId);
 
       const userIds = await stores.watchStore.listUsersForWatch(watch.id);
       const contributors = Promise.all(
@@ -151,6 +151,32 @@ export function WatchMutations(stores: Stores) {
 
       return contributors;
     },
+
+    async checkForUpdates(root: any, { watchId }, context: Context): Promise<boolean> {
+      const watch = await context.getWatch(watchId);
+
+      await stores.watchStore.queueCheckForUpdates(watch.id);
+
+      // we don't have a good way to determine if there are updates availabe...
+      // so, we spin for a bit, check if there are pending versions, and return that
+
+      // we need to get gql subscriptions hooked up so the worker can actually trigger events
+
+      let pendingVersions = await stores.watchStore.listPendingVersions(watchId);
+      if (pendingVersions.length > 0) {
+        return true;
+      }
+
+      for (let i = 0; i < 15; i++) {
+        await sleep(1000);
+        pendingVersions = await stores.watchStore.listPendingVersions(watchId);
+        if (pendingVersions.length > 0) {
+          return true;
+        }
+      }
+
+      return false;
+    }
   }
 }
 
