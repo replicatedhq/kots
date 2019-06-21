@@ -22,7 +22,6 @@ import WatchDetailPage from "./components/watches/WatchDetailPage";
 import ClusterScope from "./components/clusterscope/ClusterScope";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
-import ReplicatedGraphiQL from "./components/ReplicatedGraphiQL";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import { Helmet } from "react-helmet";
@@ -165,9 +164,6 @@ class Root extends React.Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
-                    {window.env.ENVIRONMENT === "development" &&
-                      <ProtectedRoute path="/graphiql" component={ReplicatedGraphiQL} />
-                    }
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute path="/watches" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />

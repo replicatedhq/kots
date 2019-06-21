@@ -116,7 +116,6 @@
     "dayjs": "^1.8.14",
     "downloadjs": "^1.4.7",
     "enzyme-adapter-react-16": "^1.13.1",
-    "graphiql": "^0.13.0",
     "graphql": "^14.3.0",
     "graphql-tag": "^2.10.1",
     "history": "^4.9.0",
