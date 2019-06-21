@@ -20,7 +20,7 @@ class ClusterScope extends React.Component {
 
   render() {
     return (
-      <div className="WatchDetailPage--wrapper flex-column flex1">
+      <div className="flex-column flex1 u-overflow--auto">
         <div className="flex-column flex1 HelmValues--wrapper">
           <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
             <Switch>
