@@ -83,11 +83,7 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
-publish-production: version-production docker gitops
-
-.PHONY: version-production
-version-production:
-	sed 's/_DOMAIN_PREFIX_//g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
+publish-production: docker gitops
 
 .PHONY: publish-staging
 publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
@@ -95,11 +91,7 @@ publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
 publish-staging: GITOPS_BRANCH = master
-publish-staging: version-staging docker gitops
-
-.PHONY: version-staging
-version-staging:
-	sed 's/_DOMAIN_PREFIX_/staging\./g' deploy/nginx.conf.src | sed 's/_VERSION_/'$${BUILDKITE_COMMIT:0:7}'/g' > deploy/nginx.conf
+publish-staging: docker gitops
 
 .PHONY: publish-enterprise
 publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
