@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import WatchContributors from "./WatchContributors";
@@ -18,14 +18,14 @@ import {
  } from "@src/mutations/WatchMutations";
  import isEmpty from "lodash/isEmpty";
 
-class DetailPageApplication extends React.Component {
+class DetailPageApplication extends Component {
 
     state = {
       appName: "",
       iconUri: "",
-      nameLoading: false,
-      iconLoading: false,
+      editWatchLoading: false,
       showConfirmDelete: false,
+      showEditModal: false,
       confirmAppName: "",
       deleteAppLoading: false,
       confirmDeleteErr: false,
@@ -54,30 +54,32 @@ class DetailPageApplication extends React.Component {
     });
   }
 
-  updateName = async () => {
-    const { appName } = this.state;
-    const { watch, updateCallback } = this.props;
-    this.setState({ nameLoading: true })
-    await this.props.updateWatch(watch.id, appName, null)
-      .then(() => {
-        this.setState({ nameLoading: false });
-        if (updateCallback && typeof updateCallback === "function") {
-          updateCallback();
-        }
-      }).catch(() => this.setState({ nameLoading: false }));
+  updateWatchInfo = async e => {
+    e.preventDefault();
+    try {
+      const { appName, iconUri } = this.state;
+      const { watch, updateCallback } = this.props;
+      this.setState({ editWatchLoading: true });
+      await this.props.updateWatch(watch.id, appName, iconUri);
+      this.setState({
+        editWatchLoading: false
+      });
+      if (updateCallback && typeof updateCallback === "function") {
+        updateCallback();
+      }
+    } catch (error) {
+      console.error("[DetailPageApplication]: Error updating Watch info: ", error);
+      this.setState({
+        editWatchLoading: false
+      });
+    }
   }
 
-  updateIcon = async () => {
-    const { iconUri } = this.state;
-    const { watch, updateCallback } = this.props;
-    this.setState({ iconLoading: true });
-    await this.props.updateWatch(watch.id, null, iconUri)
-      .then(() => {
-        this.setState({ iconLoading: false });
-        if (updateCallback && typeof updateCallback === "function") {
-          updateCallback();
-        }
-      }).catch(() => this.setState({ iconLoading: false }));
+  toggleEditModal = () => {
+    const { showEditModal } = this.state;
+    this.setState({
+      showEditModal: !showEditModal
+    });
   }
 
   onDownloadClusterChange = (selectedOption) => {
@@ -194,9 +196,9 @@ class DetailPageApplication extends React.Component {
                   style={{ backgroundImage: `url(${watch.watchIcon})`}}
                   className="DetailPageApplication--appIcon u-position--relative">
                   <span
-                    className="edit-wrapper clickable flex alignItems--center justifyContent--center u-position--absolute"
-                    onClick={() => {}}>
-                    <span className="icon edit-icon" />
+                    className="edit-wrapper flex alignItems--center justifyContent--center u-position--absolute"
+                    onClick={this.toggleEditModal}>
+                    <span className="icon edit-icon clickable" />
                   </span>
                 </span>
               </div>
@@ -252,10 +254,9 @@ class DetailPageApplication extends React.Component {
                           </div>
                           <div className="flex1"></div>
                           <div className="flex-auto">
-                            {this.state[`preparing${childWatch.id}`] ?
-                              <Loader size="16"/>
-                            :
-                              <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
+                            {this.state[`preparing${childWatch.id}`]
+                              ? <Loader size="16"/>
+                              : <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
                             }
                           </div>
                         </div>
@@ -318,6 +319,59 @@ class DetailPageApplication extends React.Component {
             />
           </div>
         </div>
+        <Modal
+          isOpen={this.state.showEditModal}
+          onRequestClose={this.toggleEditModal}
+          contentLabel="Yes"
+          ariaHideApp={false}
+          className="Modal SmallSize EditWatchModal">
+          <div className="Modal-body flex-column flex1">
+            <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Edit Application</h2>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">You can edit the name and icon of your application</p>
+            <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Application Name</h3>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This name will be shown throughout this dashboard.</p>
+            <form className="EditWatchForm flex-column" onSubmit={this.updateWatchInfo}>
+              <input
+                type="text"
+                className="Input u-marginBottom--20"
+                placeholder="Type the app name here"
+                value={this.state.appName}
+                onKeyPress={this.handleEnterPress}
+                name="appName"
+                onChange={this.onFormChange}
+              />
+              <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Application Icon</h3>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Provide a link to a URI to use as your app icon.</p>
+              <input
+                type="text"
+                className="Input u-marginBotton--20"
+                placeholder="Type the app name here"
+                value={this.state.iconUri}
+                onKeyPress={this.handleEnterPress}
+                name="iconUri"
+                onChange={this.onFormChange}
+              />
+              <div className="flex justifyContent--flexEnd u-marginTop--20">
+                <button
+                  type="button"
+                  onClick={this.toggleEditModal}
+                  className="btn secondary force-gray u-marginRight--20">
+                  Cancel
+              </button>
+                <button
+                  type="submit"
+                  className="btn secondary green">
+                   {
+                     this.state.editWatchLoading
+                      ? "Saving..."
+                      : "Save Application Details"
+                    }
+              </button>
+              </div>
+            </form>
+          </div>
+
+        </Modal>
         <Modal
           isOpen={this.state.showConfirmDelete}
           onRequestClose={this.toggleConfirmDelete}

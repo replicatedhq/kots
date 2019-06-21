@@ -89,10 +89,11 @@
     }
 
     .edit-wrapper {
-      top: 25%;
+      top: 5px;
       right: -12px;
       height: 26px;
       width: 26px;
+      cursor: pointer;
       background-color: #FFFFFF;
       border-radius: 100%;
       box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
@@ -136,5 +137,15 @@
     }
   }
 
+}
+
+// Used outside because of React.Portal in <Modal>
+.EditWatchModal .EditWatchForm .btn.secondary.force-gray {
+  background-color: #ffffff;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #6D7278;
+  color: #6D7278;
+  box-shadow: none;
 }
 
