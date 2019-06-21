@@ -1,4 +1,4 @@
-import React, { Component, Suspense, lazy } from "react";
+import React, { Component } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
@@ -8,23 +8,22 @@ import withTheme from "@src/components/context/withTheme";
 import { listWatches } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
+import NotFound from "../static/NotFound";
+import DetailPageApplication from "./DetailPageApplication";
+import DetailPageIntegrations from "./DetailPageIntegrations";
+import StateFileViewer from "../state/StateFileViewer";
+import DeploymentClusters from "../watches/DeploymentClusters";
+import AddClusterModal from "../shared/modals/AddClusterModal";
+import WatchVersionHistory from "./WatchVersionHistory";
+import WatchConfig from "./WatchConfig";
+import WatchTroubleshoot from "./WatchTroubleshoot";
+import WatchLicense from "./WatchLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
-
-const NotFound = lazy(() => import("../static/NotFound"));
-const DetailPageApplication = lazy(() => import("./DetailPageApplication"));
-const DetailPageIntegrations = lazy(() => import("./DetailPageIntegrations"));
-const StateFileViewer = lazy(() => import("../state/StateFileViewer"));
-const DeploymentClusters = lazy(() => import("../watches/DeploymentClusters"));
-const AddClusterModal = lazy(() => import("../shared/modals/AddClusterModal"));
-const WatchVersionHistory = lazy (() => import("./WatchVersionHistory"));
-const WatchConfig = lazy ( () => import("./WatchConfig"));
-const WatchTroubleshoot = lazy(() => import("./WatchTroubleshoot"));
-const WatchLicense = lazy(() => import("./WatchLicense"));
 
 class WatchDetailPage extends Component {
   constructor(props) {
@@ -221,74 +220,67 @@ class WatchDetailPage extends Component {
               slug={slug}
               watch={watch}
             />
-            <Suspense fallback={(
-              <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <Loader size="60" />
-              </div>
-            )}>
-              {
-                this.props.listWatchesQuery.loading ? (
-                  <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <Loader size="60" />
-                  </div>
-                ) :
-                (
-                  <Switch>
-                    {watch && !watch.cluster &&
-                      <Route exact path="/watch/:owner/:slug" render={() =>
-                        <DetailPageApplication
-                          watch={watch}
-                          updateCallback={this.refetchGraphQLData}
-                          onActiveInitSession={this.props.onActiveInitSession}
+            {
+              this.props.listWatchesQuery.loading ? (
+                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                  <Loader size="60" />
+                </div>
+              ) :
+              (
+                <Switch>
+                  {watch && !watch.cluster &&
+                    <Route exact path="/watch/:owner/:slug" render={() =>
+                      <DetailPageApplication
+                        watch={watch}
+                        updateCallback={this.refetchGraphQLData}
+                        onActiveInitSession={this.props.onActiveInitSession}
+                      />
+                    } />
+                  }
+                  {watch && !watch.cluster &&
+                    <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
+                      <div className="container">
+                        <DeploymentClusters
+                          appDetailPage={true}
+                          parentClusterName={watch.watchName}
+                          preparingUpdate={this.state.preparingUpdate}
+                          childWatches={watch.watches}
+                          handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
+                          onEditApplication={this.onEditApplicationClicked}
+                          toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
                         />
-                      } />
-                    }
-                    {watch && !watch.cluster &&
-                      <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
-                        <div className="container">
-                          <DeploymentClusters
-                            appDetailPage={true}
-                            parentClusterName={watch.watchName}
-                            preparingUpdate={this.state.preparingUpdate}
-                            childWatches={watch.watches}
-                            handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
-                            onEditApplication={this.onEditApplicationClicked}
-                            toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
-                          />
-                        </div>
-                      } />
-                    }
-                    { /* ROUTE UNUSED */}
-                    <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
-                    { /* ROUTE UNUSED */}
-                    <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
+                      </div>
+                    } />
+                  }
+                  { /* ROUTE UNUSED */}
+                  <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
+                  { /* ROUTE UNUSED */}
+                  <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
 
-                    <Route exact path="/watch/:owner/:slug/version-history" render={() =>
-                      <WatchVersionHistory
-                        watch={watch}
-                        onCheckForUpdates={this.onCheckForUpdates}
-                      />
-                    } />
-                    <Route exact path="/watch/:owner/:slug/config" render={() =>
-                      <WatchConfig
-                        watch={watch}
-                      />
-                    } />
-                    <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
-                      <WatchTroubleshoot
-                        watch={watch}
-                      />
-                    } />
-                    <Route exact path="/watch/:owner/:slug/license" render={() =>
-                      <WatchLicense
-                        watch={watch}
-                      />
-                    } />
-                    {!this.props.listWatchesQuery.loading && <Route component={NotFound} />}
-                  </Switch>
-                )
-              }
-            </Suspense>
+                  <Route exact path="/watch/:owner/:slug/version-history" render={() =>
+                    <WatchVersionHistory
+                      watch={watch}
+                    />
+                  } />
+                  <Route exact path="/watch/:owner/:slug/config" render={() =>
+                    <WatchConfig
+                      watch={watch}
+                    />
+                  } />
+                  <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
+                    <WatchTroubleshoot
+                      watch={watch}
+                    />
+                  } />
+                  <Route exact path="/watch/:owner/:slug/license" render={() =>
+                    <WatchLicense
+                      watch={watch}
+                    />
+                  } />
+                  {!this.props.listWatchesQuery.loading && <Route component={NotFound} />}
+                </Switch>
+              )
+            }
           </div>
         </SidebarLayout>
         {addNewClusterModal &&
