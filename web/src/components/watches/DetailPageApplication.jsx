@@ -56,23 +56,25 @@ class DetailPageApplication extends Component {
 
   updateWatchInfo = async e => {
     e.preventDefault();
-    try {
-      const { appName, iconUri } = this.state;
-      const { watch, updateCallback } = this.props;
-      this.setState({ editWatchLoading: true });
-      await this.props.updateWatch(watch.id, appName, iconUri);
-      this.setState({
-        editWatchLoading: false
-      });
-      if (updateCallback && typeof updateCallback === "function") {
-        updateCallback();
-      }
-    } catch (error) {
+    const { appName, iconUri } = this.state;
+    const { watch, updateCallback } = this.props;
+    this.setState({ editWatchLoading: true });
+
+    await this.props.updateWatch(watch.id, appName, iconUri).catch( error => {
       console.error("[DetailPageApplication]: Error updating Watch info: ", error);
       this.setState({
         editWatchLoading: false
       });
+    });
+
+    this.setState({
+      editWatchLoading: false
+    });
+
+    if (updateCallback && typeof updateCallback === "function") {
+      updateCallback();
     }
+
   }
 
   toggleEditModal = () => {
