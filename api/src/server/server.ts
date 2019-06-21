@@ -10,7 +10,6 @@ import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { UpdateProxy } from "../update/proxy";
 import { EditProxy } from "../edit/proxy";
-import { ReplicatedError } from "./errors";
 import { logger } from "./logger";
 import { Context } from "../context";
 
@@ -77,7 +76,7 @@ export class Server extends ServerLoader {
     this.use("/api/v1/edit/:id", EditProxy);
 
     const bodyParser = require("body-parser");
-    this.use(bodyParser.json({limit: "5mb"}));
+    this.use(bodyParser.json({ limit: "5mb" }));
 
     const pool = await getPostgresPool();
     const watchStore = new WatchStore(pool, params);
