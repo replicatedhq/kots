@@ -352,18 +352,6 @@ export class WatchStore {
     }
   }
 
-  async listAllWatchesForAllTeams(): Promise<Watch[]> {
-    const q = `select id from watch`;
-    const result = await this.pool.query(q);
-    const watches: Watch[] = [];
-    for (const row of result.rows) {
-      const watch = await this.getWatch(row.id);
-      watches.push(watch);
-    }
-
-    return watches;
-  }
-
   async listUsersForWatch(watchId: string): Promise<string[]> {
     const q = `select user_id from user_watch where watch_id = $1`;
     const v = [watchId];

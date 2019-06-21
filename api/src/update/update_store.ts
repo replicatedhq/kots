@@ -39,7 +39,7 @@ export class UpdateStore {
 
     const parsedBody = await rp(options);
     logger.debug({
-      message: "updateserver-parsedbody",
+      message: "received response from update server",
       parsedBody,
     });
 

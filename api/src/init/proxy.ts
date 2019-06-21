@@ -16,13 +16,11 @@ export const InitProxy = proxyMiddleware({
 
     // tslint:disable-next-line:no-http-string
     const shipInitInstanceHost = `http://shipinit-${initId}.shipinit-${initId}.svc.cluster.local:8800`;
-    logger.debug("proxy path", { shipInitInstanceHost, path: pathname });
 
     return shipInitInstanceHost;
   },
   pathRewrite(path: string): string {
     const shipInitAPIPath = path.replace(/^\/api\/v1\/init\/[\w\d]+/, "");
-    logger.debug("rewritten Ship Init API path", { shipInitAPIPath });
 
     return shipInitAPIPath;
   },

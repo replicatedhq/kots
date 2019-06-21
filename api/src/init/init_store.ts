@@ -36,7 +36,7 @@ export class InitStore {
     const initSession = await this.getSession(id);
 
     if (this.params.skipDeployToWorker) {
-      logger.info("skipping deploy to worker");
+      logger.info({msg: "skipping deploy to worker"});
       return initSession;
     }
 

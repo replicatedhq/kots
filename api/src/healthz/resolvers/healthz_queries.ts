@@ -10,7 +10,7 @@ export function HealthzQueries(stores: Stores) {
     },
 
     async ping(): Promise<string> {
-      logger.info("got ping");
+      logger.info({msg: "got ping"});
 
       return "pong";
     }

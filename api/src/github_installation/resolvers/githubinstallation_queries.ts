@@ -168,7 +168,7 @@ async function getToken(params: Params, accessTokenUrl: string): Promise<string>
     .catch(StatusCodeError, error => {
       const { statusCode } = error;
       if (statusCode === 400) {
-        logger.info("Bad input provided to exchange token");
+        logger.info({msg: "Bad input provided to exchange token"});
       }
       if (statusCode === 404) {
         throw new GithubAuthError();

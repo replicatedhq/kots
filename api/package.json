@@ -33,7 +33,7 @@
     "moment": "^2.24.0",
     "pg": "^7.10.0",
     "pino": "^5.12.3",
-    "pino-pretty": "^3.0.0",
+    "pino-pretty": "^3.2.0",
     "randomstring": "^1.1.5",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",

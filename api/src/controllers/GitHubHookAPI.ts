@@ -54,7 +54,7 @@ export class GitHubHookAPI {
     @HeaderParams("x-github-event") eventType: string,
     @BodyParams("") body?: { action?: string }, // we're just gonna cast this later
   ): Promise<{} | ErrorResponse> {
-    logger.info(`received github hook for eventType ${eventType}`);
+    logger.info({msg: `received github hook for eventType ${eventType}`});
 
     const action = body && body.action;
 
@@ -80,7 +80,7 @@ export class GitHubHookAPI {
 
       // default is an error
       default: {
-        logger.info(`Unexpected event type in GitHub hook: ${eventType}`);
+        logger.info({msg: `Unexpected event type in GitHub hook: ${eventType}`});
         response.status(204);
         return {};
       }
@@ -140,6 +140,6 @@ export class GitHubHookAPI {
       }
     }
 
-    logger.warn(`received unhandled github pull request event`);
+    logger.warn({msg: `received unhandled github pull request event`});
   }
 }

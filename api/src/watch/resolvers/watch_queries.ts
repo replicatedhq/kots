@@ -35,7 +35,7 @@ export function WatchQueries(stores: Stores) {
     async getWatch(root: any, args: any, context: Context): Promise<Watch> {
       const { slug, id } = args;
       if (!id && !slug) {
-        throw new ReplicatedError("One of slug or id is required", "bad_request");
+        throw new ReplicatedError("One of slug or id is required");
       }
       const result = await stores.watchStore.findUserWatch(context.session.userId, { slug: slug!, id: id! });
       return result.toSchema(root, stores, context);
@@ -44,7 +44,7 @@ export function WatchQueries(stores: Stores) {
     async getParentWatch(root: any, args: any, context: Context): Promise<Watch> {
       const { id } = args;
       if (!id) {
-        throw new ReplicatedError("ID is required to find a parent watch", "bad_request");
+        throw new ReplicatedError("ID is required to find a parent watch");
       }
       const parentId = await stores.watchStore.getParentWatchId(id);
       const parentWatch = await stores.watchStore.getWatch(parentId);

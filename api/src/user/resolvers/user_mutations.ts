@@ -72,8 +72,8 @@ export function UserMutations(stores: Stores, params: Params) {
         return {
           access_token: session,
         };
-      } catch (e) {
-        logger.error(e);
+      } catch (err) {
+        logger.error({msg: err.message, err});
         throw new ReplicatedError("Unable to log in now");
       }
     },

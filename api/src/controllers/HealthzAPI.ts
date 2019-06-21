@@ -8,7 +8,6 @@ export class HealthzAPI {
   public async getDatabaseInfo(
     @Req() request: Express.Request
   ): Promise<any> {
-
     return request.app.locals.stores.healthzStore.getHealthz();
   }
 }

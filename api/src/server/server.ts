@@ -123,28 +123,26 @@ export class Server extends ServerLoader {
         schema: shipClusterSchema.getSchema(stores, params),
         context: res.locals.context,
         cacheControl: true,
-        formatError: (error: any) => {
-          return {
-            state: error.originalError && error.originalError.state,
-            locations: error.locations,
-            path: error.path,
-            ...ReplicatedError.getDetails(error),
-          };
-        },
+        // formatError: (error: any) => {
+        //   console.log("asdasdasd");
+        //   return {
+        //     state: error.originalError && error.originalError.state,
+        //     locations: error.locations,
+        //     path: error.path,
+        //     ...ReplicatedError.getDetails(error),
+        //   };
+        // },
       };
     }));
 
     this.expressApp.get("/graphiql", graphiqlExpress({ endpointURL: "/graphql" }));
-    this.use((error: ReplicatedError | Error, request: Request, response: Response, next: NextFunction) => {
-      if (error instanceof ReplicatedError) {
-        if (error.code) {
-          logger.error(error);
-          logger.error(error.stack!);
-          return response.send(+error.code, { message: error.originalMessage });
-        }
-      }
-      throw error;
-    });
+    // this.use((error: ReplicatedError | Error, request: Request, response: Response, next: NextFunction) => {
+    //   if (error instanceof ReplicatedError) {
+    //     // logger.error({msg: error.message, error, "stack": error.stack});
+    //     return response.send(500, { message: error.originalMessage });
+    //   }
+    //   throw error;
+    // });
 
     if (process.env.NODE_ENV === "production") {
       $log.level = "OFF";
@@ -153,10 +151,10 @@ export class Server extends ServerLoader {
 
   $onReady() {
     this.expressApp.get("*", (req: Request, res: Response) => res.sendStatus(404));
-    logger.info("Server started...");
+    logger.info({msg: "Server started..."});
   }
 
   $onServerInitError(err: Error) {
-    logger.error(err);
+    logger.error({msg: err.message, err});
   }
 }

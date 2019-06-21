@@ -68,7 +68,7 @@ export class WatchDownload {
       gunzip.on("error", reject);
       extractor.on("error", reject);
       extractor.on("pipe", () => {
-        logger.debug("Tar reader stream started");
+        logger.debug({msg: "Tar reader stream started"});
       });
 
       let deploymentYAMLFound = false;
@@ -76,13 +76,13 @@ export class WatchDownload {
         stream.on("error", reject);
 
         if ((name.endsWith("rendered.yaml")) || (name.endsWith("ship-enterprise.yaml"))) {
-          logger.debug("Found rendered.yaml or ship-enterprise.yaml");
+          logger.debug({msg: "Found rendered.yaml or ship-enterprise.yaml"});
           deploymentYAMLFound = true;
           stream.on("data", (chunk: Buffer) => {
             yamlBuffer = Buffer.concat([yamlBuffer, chunk]);
           });
           stream.on("finish", () => {
-            logger.debug("Streamed rendered.yaml or ship-enterprise.yaml to yamlBuffer");
+            logger.debug({msg: "Streamed rendered.yaml or ship-enterprise.yaml to yamlBuffer"});
             next();
           });
         } else {
@@ -92,7 +92,7 @@ export class WatchDownload {
       });
 
       extractor.on("finish", () => {
-        logger.debug("Finished reading tar");
+        logger.debug({msg: "Finished reading tar"});
 
         let download: Download;
         if (deploymentYAMLFound) {
@@ -101,7 +101,7 @@ export class WatchDownload {
             contentType: ContentType.YAML,
           };
         } else {
-          logger.debug("No deployment YAML found, falling back to tar");
+          logger.debug({msg: "No deployment YAML found, falling back to tar"});
           download = {
             contents: tarGzBuffer,
             contentType: ContentType.TarGZ,
