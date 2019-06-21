@@ -25,7 +25,7 @@ type Worker struct {
 }
 
 func (w *Worker) Run(ctx context.Context) error {
-	w.Logger.Infow("starting initworker",
+	w.Logger.Infow("starting imageworker",
 		zap.String("version", version.Version()),
 		zap.String("gitSHA", version.GitSHA()),
 		zap.Time("buildTime", version.BuildTime()),

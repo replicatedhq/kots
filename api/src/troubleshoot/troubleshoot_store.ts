@@ -1,10 +1,9 @@
 import { Collector, Analyzer } from "./";
-import { Params } from "../server/params";
 import * as pg from "pg";
 import * as randomstring from "randomstring";
 import * as _ from "lodash";
 import { Params } from "../server/params";
-import { S3Signer } from "../util/persistence/s3";
+import { signPutRequest, signGetRequest } from "../util/persistence/s3";
 import { ReplicatedError } from "../server/errors";
 import { SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./types";
 import { parseWatchName } from "../watch";
@@ -12,7 +11,7 @@ import { parseWatchName } from "../watch";
 export class TroubleshootStore {
   constructor(
     private readonly pool: pg.Pool,
-    private readonly params: Params
+    private readonly params: Params,
   ) {
   }
 
@@ -182,13 +181,7 @@ export class TroubleshootStore {
       throw new ReplicatedError(`Unable to generate signed put request for a support bundle in status ${supportBundle.status}`);
     }
 
-    // NOTE: shipOutputBucket is awkward
-    const signed = await this.s3Signer.signPutRequest({
-      Bucket: this.params.shipOutputBucket,
-      Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
-      ContentType: "application/tar+gzip",
-    });
-    return signed.signedUrl;
+    return signPutRequest(this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`, "application/tar+gzip");
   }
 
   public async signSupportBundleGetRequest(supportBundle: SupportBundle): Promise<string | undefined> {
@@ -196,11 +189,6 @@ export class TroubleshootStore {
       throw new ReplicatedError(`Unable to generate signed get request for a support bundle in status ${supportBundle.status}`);
     }
 
-    // NOTE: shipOutputBucket is awkward
-    const signed = await this.s3Signer.signGetRequest({
-      Bucket: this.params.shipOutputBucket,
-      Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
-    });
-    return signed.signedUrl;
+    return await signGetRequest(this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`);
   }
 }
