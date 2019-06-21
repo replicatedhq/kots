@@ -47,9 +47,16 @@ type Label {
   value: String
 }`;
 
+const SupportBundleUpload = `
+type SupportBundleUpload {
+  uploadUri: String!
+  supportBundle: SupportBundle
+}`;
+
 export default [
   SupportBundle,
   SupportBundleAnalysis,
   SupportBundleInsight,
   Label,
+  SupportBundleUpload,
 ];

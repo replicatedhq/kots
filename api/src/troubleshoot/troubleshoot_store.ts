@@ -6,31 +6,6 @@ import { ReplicatedError } from "../server/errors";
 import { SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./types";
 import { parseWatchName } from "../watch";
 
-
-const supportBundleFields = [
-  "supportbundle.id",
-  "supportbundle.slug",
-  "supportbundle.watch_id",
-  "supportbundle.name",
-  "supportbundle.size",
-  "supportbundle.notes",
-  "supportbundle.status",
-  "supportbundle.resolution",
-  "supportbundle.tree_index",
-  "supportbundle.viewed",
-  "supportbundle.created_at",
-  "supportbundle.uploaded_at",
-  "supportbundle.is_archived",
-];
-
-const supportBundleAnalysisFields = [
-  "supportbundle_analysis.id AS analysis_id",
-  "supportbundle_analysis.error AS analysis_error",
-  "supportbundle_analysis.max_severity AS analysis_max_severity",
-  "supportbundle_analysis.insights_marshalled AS analysis_insights_marshalled",
-  "supportbundle_analysis.created_at AS analysis_created_at",
-];
-
 export class TroubleshootStore {
   constructor(
     private readonly pool: pg.Pool,
@@ -41,19 +16,30 @@ export class TroubleshootStore {
 
   public async getSupportBundle(id: string): Promise<SupportBundle> {
     const q = `SELECT
-        ${supportBundleFields}, ${supportBundleAnalysisFields},
-        watch.slug as watch_slug, watch.title as watch_title
+        supportbundle.id,
+        supportbundle.slug,
+        supportbundle.watch_id,
+        supportbundle.name,
+        supportbundle.size,
+        supportbundle.notes,
+        supportbundle.status,
+        supportbundle.resolution,
+        supportbundle.tree_index,
+        supportbundle.viewed,
+        supportbundle.created_at,
+        supportbundle.uploaded_at,
+        supportbundle.is_archived,
+        supportbundle.analysis_id,
+        supportbundle_analysis.error AS analysis_error,
+        supportbundle_analysis.max_severity AS analysis_max_severity,
+        supportbundle_analysis.insights_marshalled AS analysis_insights_marshalled,
+        supportbundle_analysis.created_at AS analysis_created_at,
+        watch.slug as watch_slug,
+        watch.title as watch_title
       FROM supportbundle
         INNER JOIN watch on supportbundle.watch_id = watch.id
-        LEFT JOIN supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
-      WHERE supportbundle.id = $1
-        AND supportbundle_analysis.id = (
-          SELECT sa2.id
-          FROM supportbundle_analysis AS sa2
-          WHERE sa2.supportbundle_id = $1
-          ORDER BY sa2.created_at DESC
-          LIMIT 1
-        )`;
+        LEFT JOIN supportbundle_analysis on supportbundle.analysis_id = supportbundle_analysis.id
+      WHERE supportbundle.id = $1`;
     const v = [id];
     const result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
@@ -68,8 +54,8 @@ export class TroubleshootStore {
     const status: SupportBundleStatus = "pending";
 
     const q = `INSERT INTO supportbundle
-      (id, slug, watch_id, size, notes, status, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+        (id, slug, watch_id, size, notes, status, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)`;
     let v = [
       id,
       id, // TODO: slug
@@ -86,13 +72,24 @@ export class TroubleshootStore {
   public async markSupportBundleUploaded(id: string): Promise<SupportBundle> {
     const status: SupportBundleStatus = "uploaded";
 
-    const q = `
-    UPDATE supportbundle
-    SET status = $2, uploaded_at = $3
-    WHERE id = $1`;
+    const q = `UPDATE supportbundle
+      SET status = $2, uploaded_at = $3
+      WHERE id = $1`;
     const v = [id, status, new Date()];
     await this.pool.query(q, v);
     return await this.getSupportBundle(id);
+  }
+
+  public async getWatchIdFromToken(token: string): Promise<string> {
+    const q = `SELECT watch_id
+      FROM supportbundle_upload_token
+      WHERE token = $1`;
+    const v = [token];
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`Watch id for token ${token} not found`);
+    }
+    return result.rows[0].watch_id;
   }
 
   private async mapSupportBundle(row: any): Promise<SupportBundle> {
@@ -136,7 +133,7 @@ export class TroubleshootStore {
       throw new ReplicatedError(`Unable to generate signed put request for a support bundle in status ${supportBundle.status}`);
     }
 
-    // shipOutputBucket is awkward
+    // NOTE: shipOutputBucket is awkward
     const signed = await this.s3Signer.signPutRequest({
       Bucket: this.params.shipOutputBucket,
       Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
@@ -150,7 +147,7 @@ export class TroubleshootStore {
       throw new ReplicatedError(`Unable to generate signed get request for a support bundle in status ${supportBundle.status}`);
     }
 
-    // shipOutputBucket is awkward
+    // NOTE: shipOutputBucket is awkward
     const signed = await this.s3Signer.signGetRequest({
       Bucket: this.params.shipOutputBucket,
       Key: `supportbundles/${supportBundle.id}/supportbundle.tar.gz`,
