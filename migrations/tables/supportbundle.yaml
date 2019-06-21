@@ -33,6 +33,8 @@ spec:
         type: text
       - name: status
         type: text
+        constraints:
+          notNull: true
       - name: resolution
         type: text
       - name: tree_index
