@@ -112,3 +112,17 @@ export interface Contributor {
   login: string;
   avatar_url: string;
 }
+
+export function parseWatchName(watchName: string): string {
+  if (watchName.startsWith("replicated.app") || watchName.startsWith("staging.replicated.app") || watchName.startsWith("local.replicated.app")) {
+    const splitReplicatedApp = watchName.split("/");
+    if (splitReplicatedApp.length < 2) {
+      return watchName;
+    }
+
+    const splitReplicatedAppParams = splitReplicatedApp[1].split("?");
+    return splitReplicatedAppParams[0];
+  }
+
+  return watchName;
+}

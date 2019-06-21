@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
-import { Watch, Version, StateMetadata, Contributor } from "./"
+import { Watch, Version, StateMetadata, Contributor, parseWatchName } from "./"
 import { ReplicatedError } from "../server/errors";
 import { Params } from "../server/params";
 import * as pg from "pg";
@@ -26,7 +26,7 @@ export class WatchStore {
   constructor(
     private readonly pool: pg.Pool,
     private readonly params: Params
-  ) {}
+  ) { }
 
   async queueCheckForUpdates(watchId: string): Promise<void> {
     const now = new Date();
@@ -71,7 +71,7 @@ export class WatchStore {
     return versionItem;
   }
 
-  async getCurrentVersion(watchId: string): Promise<Version|undefined> {
+  async getCurrentVersion(watchId: string): Promise<Version | undefined> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -456,11 +456,11 @@ export class WatchStore {
       const { filepath } = file;
 
       if (this.params.objectStoreInDatabase) {
-         // used in testing only, not recommended for any real use
-         const q = `select encoded_block from object_store where filepath = $1`;
-         const v = [
-           filepath,
-         ];
+        // used in testing only, not recommended for any real use
+        const q = `select encoded_block from object_store where filepath = $1`;
+        const v = [
+          filepath,
+        ];
 
         const result = await this.pool.query(q, v);
         const buffer = new Buffer(result.rows[0].encoded_block, "base64");
@@ -682,7 +682,7 @@ export class WatchStore {
   }
 
   private mapWatch(row: any): Watch {
-    const parsedWatchName = this.parseWatchName(row.title);
+    const parsedWatchName = parseWatchName(row.title);
     const watch = new Watch();
     watch.id = row.id;
     watch.stateJSON = row.current_state;
@@ -723,19 +723,5 @@ export class WatchStore {
       sequence: row.sequence,
       pullrequestNumber: row.pullrequest_number,
     };
-  }
-
-  private parseWatchName(watchName: string): string {
-    if (watchName.startsWith("replicated.app") || watchName.startsWith("staging.replicated.app") || watchName.startsWith("local.replicated.app")) {
-      const splitReplicatedApp = watchName.split("/");
-      if (splitReplicatedApp.length < 2) {
-        return watchName;
-      }
-
-      const splitReplicatedAppParams = splitReplicatedApp[1].split("?");
-      return splitReplicatedAppParams[0];
-    }
-
-    return watchName;
   }
 }

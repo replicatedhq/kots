@@ -14,6 +14,7 @@ import { Params } from "../server/params";
 import { Stores } from "./stores";
 import { GithubInstallationQueries, GithubInstallationMutations } from "../github_installation";
 import { HelmChartQueries, HelmChartMutations } from "../helmchart";
+import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
@@ -30,7 +31,8 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...EditQueries(stores),
     ...PendingQueries(stores),
     ...HelmChartQueries(stores),
-    ...ImageWatchQueries(stores)
+    ...ImageWatchQueries(stores),
+    ...TroubleshootQueries(stores),
   },
 
   Mutation: {
@@ -45,6 +47,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...GithubInstallationMutations(stores),
     ...EditMutations(stores),
     ...HelmChartMutations(stores),
-    ...ImageWatchMutations(stores)
+    ...ImageWatchMutations(stores),
+    ...TroubleshootMutations(stores),
   }
 })

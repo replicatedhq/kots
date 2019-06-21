@@ -45,5 +45,7 @@ export const Query = `
     getGitHubInstallationId: String!
 
     watchTroubleshootCollectors(watchId: String!): TroubleshootCollectSpec
+    listSupportBundles(watchId: String!): [SupportBundle]
+    getSupportBundle(id: String!): SupportBundle
   }
 `;
