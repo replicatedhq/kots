@@ -19,11 +19,11 @@ export default function WatchVersionHistory(props) {
     <div className="centered-container flex-column u-position--relative u-overflow--auto">
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
         <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
-          {currentVersion?.title} 
+          {currentVersion?.title}
         </p>
         <div className="icon checkmark-icon flex-auto u-marginLeft--10 u-marginRight--5"></div>
         <p className="u-fontSize--large">Most recent version</p>
-        <p className="u-fonSize--small u-marginLeft--10 replicated-link">Check for update</p>
+        <p className="u-fonSize--small u-marginLeft--10 replicated-link"><button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button></p>
         <div className="flex flex1 justifyContent--flexEnd">
           {watches?.length > 0 && (
             <Fragment>

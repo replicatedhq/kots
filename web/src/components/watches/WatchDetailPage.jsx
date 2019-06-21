@@ -6,7 +6,7 @@ import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
 import { listWatches } from "@src/queries/WatchQueries";
-import { createUpdateSession, deleteWatch } from "../../mutations/WatchMutations";
+import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -61,6 +61,16 @@ class WatchDetailPage extends Component {
   componentWillUnmount() {
     clearInterval(this.interval);
     this.props.clearThemeState();
+  }
+
+  onCheckForUpdates = () => {
+    let watch = this.props.listWatchesQuery.listWatches.find( w => w.slug === `${this.props.match.params.owner}/${this.props.match.params.slug}` );
+    this.props.client.mutate({
+      mutation: checkForUpdates,
+      variables: {
+        watchId: watch.id,
+      }
+    });
   }
 
   addClusterToWatch = (clusterId, githubPath) => {
@@ -256,6 +266,7 @@ class WatchDetailPage extends Component {
                     <Route exact path="/watch/:owner/:slug/version-history" render={() =>
                       <WatchVersionHistory
                         watch={watch}
+                        onCheckForUpdates={this.onCheckForUpdates}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/config" render={() =>

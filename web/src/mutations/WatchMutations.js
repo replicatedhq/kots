@@ -1,5 +1,12 @@
 import gql from "graphql-tag";
 
+export const checkForUpdatesRaw = `
+  mutation checkForUpdates($watchId: ID!) {
+    checkForUpdates(watchId: $watchId)
+  }
+`
+export const checkForUpdates = gql(checkForUpdatesRaw);
+
 export const createNewWatchRaw = `
   mutation createWatch($stateJSON: String!) {
     createWatch(stateJSON: $stateJSON) {

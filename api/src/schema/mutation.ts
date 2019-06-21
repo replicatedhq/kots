@@ -18,6 +18,7 @@ type Mutation {
   deployWatchVersion(watchId: String!, sequence: Int): Boolean
   addWatchContributor(watchId: ID!, githubId: Int!, login: String!, avatarUrl: String): [Contributor]
   removeWatchContributor(watchId: ID!, contributorId: String!): [Contributor]
+  checkForUpdates(watchId: ID!): Boolean
 
   createNotification(watchId: String!, webhook: WebhookNotificationInput, email: EmailNotificationInput): Notification
   updateNotification(watchId: String!, notificationId: String!, webhook: WebhookNotificationInput, email: EmailNotificationInput): Notification
