@@ -33,6 +33,7 @@ import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
+import { TroubleshootStore } from "../troubleshoot";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -97,6 +98,7 @@ export class Server extends ServerLoader {
       editStore: new EditStore(pool, params),
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
+      troubleshootStore: new TroubleshootStore(pool, params),
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {

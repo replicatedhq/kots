@@ -14,6 +14,7 @@ import { WatchDownload } from "../watch/download";
 import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
+import { TroubleshootStore } from "../troubleshoot";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -32,4 +33,5 @@ export interface Stores {
   watchDownload: WatchDownload,
   editStore: EditStore,
   helmChartStore: HelmChartStore,
+  troubleshootStore: TroubleshootStore,
 }

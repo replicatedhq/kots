@@ -43,5 +43,7 @@ export const Query = `
     imageWatches(batchId: String!): [ImageWatch]
 
     getGitHubInstallationId: String!
+
+    watchTroubleshootCollectors(watchId: String!): TroubleshootCollectSpec
   }
 `;
