@@ -55,7 +55,7 @@
 
 [[constraint]]
   name = "github.com/replicatedhq/ship"
-  revision = "ed3fda6426cc9403b4e00dafe000d0e438fa3fb8"
+  revision = "d940fe1fbc60ca188d770da6f47381f29a10648b"
 
 [[constraint]]
   name = "github.com/google/go-github"
