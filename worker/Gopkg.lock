@@ -1060,7 +1060,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:3d213b87954282aeca6530a5644bbe2e8d3db6109466962129bb661616b1edb3"
+  digest = "1:add7dc55e5c49d3a3f04dd90abea7a4fc808cff319dbab3c858d1352c61147ed"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "ed3fda6426cc9403b4e00dafe000d0e438fa3fb8"
+  revision = "d940fe1fbc60ca188d770da6f47381f29a10648b"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
@@ -1606,7 +1606,6 @@
     "github.com/go-kit/kit/log",
     "github.com/go-kit/kit/log/level",
     "github.com/go-mail/mail",
-    "github.com/go-stack/stack",
     "github.com/google/go-github/github",
     "github.com/gorilla/mux",
     "github.com/gosimple/slug",

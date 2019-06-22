@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -39,7 +40,7 @@ type ContentProcessor struct {
 }
 
 func NewContentProcessor(v *viper.Viper) (*ContentProcessor, error) {
-	logger := log.NewLogfmtLogger(os.Stdout)
+	logger := level.NewFilter(log.NewLogfmtLogger(os.Stdout), level.AllowInfo())
 	fs := fs.NewBaseFilesystem()
 
 	dir, err := fs.TempDir("", "watch")
@@ -54,7 +55,7 @@ func NewContentProcessor(v *viper.Viper) (*ContentProcessor, error) {
 
 	ui := &cli.BasicUi{
 		Reader:      os.Stdin,
-		Writer:      os.Stdout,
+		Writer:      ioutil.Discard,
 		ErrorWriter: os.Stderr,
 	}
 	gqlClient, err := replicatedapp.NewGraphqlClient(v, http.DefaultClient)
