@@ -6,7 +6,8 @@ import { Link } from "react-router-dom";
 import navConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, slug, watch } = props;
+  const { className, activeTab, watch } = props;
+  const { slug } = watch;
 
   return (
     <div className={classNames("details-subnav", className)}>

@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
@@ -40,6 +40,10 @@ class WatchDetailPage extends Component {
     }
   }
 
+  static defaultProps = {
+    listWatches: []
+  }
+
   componentDidUpdate(/* lastProps */) {
     const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
     const slug = `${match.params.owner}/${match.params.slug}`;
@@ -63,8 +67,9 @@ class WatchDetailPage extends Component {
   }
 
   onCheckForUpdates = () => {
-    let watch = this.props.listWatchesQuery.listWatches.find( w => w.slug === `${this.props.match.params.owner}/${this.props.match.params.slug}` );
-    this.props.client.mutate({
+    const { client, getWatchQuery } = this.props;
+    const { getWatch: watch } = getWatchQuery;
+    client.mutate({
       mutation: checkForUpdates,
       variables: {
         watchId: watch.id,
@@ -140,31 +145,33 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history, getWatchQuery } = this.props;
+    const { match, history, getWatchQuery, listWatches } = this.props;
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
       clusterToRemove
     } = this.state;
+    const centeredLoader = (
+      <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <Loader size="60" />
+      </div>
+    );
 
-    const { getWatch: watch, slug, loading } = getWatchQuery;
+    const { getWatch: watch, loading } = getWatchQuery;
 
-    if (history.location.pathname == "/watches" || loading) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
+    if (history.location.pathname == "/watches") {
+      return centeredLoader;
     }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex u-minHeight--full u-overflow--hidden"
+          condition={listWatches.length > 2}
           sidebar={(
             <SideBar
               className="flex flex1"
-              items={[].map( (item, idx) => (
+              items={listWatches.map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
                   className={classNames({ selected: item.slug === watch.slug})}
@@ -174,64 +181,71 @@ class WatchDetailPage extends Component {
             />
           )}>
           <div className="flex-column flex3 u-width--full u-height--full">
-            <SubNavBar
-              className="flex"
-              activeTab={match.params.tab || "app"}
-              slug={slug}
-              watch={watch}
-            />
-            <Switch>
-              {watch && !watch.cluster &&
-                <Route exact path="/watch/:owner/:slug" render={() =>
-                  <DetailPageApplication
+            {loading
+              ? centeredLoader
+              : (
+                <Fragment>
+                  <SubNavBar
+                    className="flex"
+                    activeTab={match.params.tab || "app"}
+                    slug={watch.slug}
                     watch={watch}
-                    updateCallback={this.refetchGraphQLData}
-                    onActiveInitSession={this.props.onActiveInitSession}
                   />
-                } />
-              }
-              {watch && !watch.cluster &&
-                <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
-                  <div className="container">
-                    <DeploymentClusters
-                      appDetailPage={true}
-                      parentClusterName={watch.watchName}
-                      preparingUpdate={this.state.preparingUpdate}
-                      childWatches={watch.watches}
-                      handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
-                      onEditApplication={this.onEditApplicationClicked}
-                      toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
-                    />
-                  </div>
-                } />
-              }
-              { /* ROUTE UNUSED */}
-              <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
-              { /* ROUTE UNUSED */}
-              <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
+                  <Switch>
+                    {watch && !watch.cluster &&
+                      <Route exact path="/watch/:owner/:slug" render={() =>
+                        <DetailPageApplication
+                          watch={watch}
+                          updateCallback={this.refetchGraphQLData}
+                          onActiveInitSession={this.props.onActiveInitSession}
+                        />
+                      } />
+                    }
+                    {watch && !watch.cluster &&
+                      <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
+                        <div className="container">
+                          <DeploymentClusters
+                            appDetailPage={true}
+                            parentClusterName={watch.watchName}
+                            preparingUpdate={this.state.preparingUpdate}
+                            childWatches={watch.watches}
+                            handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
+                            onEditApplication={this.onEditApplicationClicked}
+                            toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
+                          />
+                        </div>
+                      } />
+                    }
+                    { /* ROUTE UNUSED */}
+                    <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
+                    { /* ROUTE UNUSED */}
+                    <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
 
-              <Route exact path="/watch/:owner/:slug/version-history" render={() =>
-                <WatchVersionHistory
-                  watch={watch}
-                />
-              } />
-              <Route exact path="/watch/:owner/:slug/config" render={() =>
-                <WatchConfig
-                  watch={watch}
-                />
-              } />
-              <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
-                <WatchTroubleshoot
-                  watch={watch}
-                />
-              } />
-              <Route exact path="/watch/:owner/:slug/license" render={() =>
-                <WatchLicense
-                  watch={watch}
-                />
-              } />
-              <Route component={NotFound} />
-            </Switch>
+                    <Route exact path="/watch/:owner/:slug/version-history" render={() =>
+                      <WatchVersionHistory
+                        watch={watch}
+                      />
+                    } />
+                    <Route exact path="/watch/:owner/:slug/config" render={() =>
+                      <WatchConfig
+                        watch={watch}
+                      />
+                    } />
+                    <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
+                      <WatchTroubleshoot
+                        watch={watch}
+                      />
+                    } />
+                    <Route exact path="/watch/:owner/:slug/license" render={() =>
+                      <WatchLicense
+                        watch={watch}
+                      />
+                    } />
+                    <Route component={NotFound} />
+                  </Switch>
+                </Fragment>
+              )
+            }
           </div>
         </SidebarLayout>
         {addNewClusterModal &&

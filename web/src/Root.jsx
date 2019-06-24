@@ -81,6 +81,7 @@ const ThemeContext = React.createContext({
 
 class Root extends Component {
   state = {
+    listWatches: [],
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
@@ -147,21 +148,40 @@ class Root extends Component {
     this.handleActiveInitSessionCompleted()
   }
 
+  refetchListWatches = async () => {
+    const { data } = await GraphQLClient.query({
+      query: listWatches,
+      fetchPolicy: "cache-first"
+    }).catch( error => {
+      throw error;
+    });
+
+    this.setState({
+      listWatches: data.listWatches
+    });
+
+    return data.listWatches;
+  }
+
   onRootMounted = () => {
-    if (Utilities.isLoggedIn() && window.location.pathname === "/watches") {
-      GraphQLClient.query({
-        query: listWatches
-      }).then( ({ data }) => {
-        if (data.listWatches.length > 0) {
-          const { slug }= data.listWatches[0];
-          history.replace(`/watch/${slug}`);
+    if (Utilities.isLoggedIn()) {
+      this.refetchListWatches().then((listWatches) => {
+        if (listWatches.length > 0) {
+          this.setState({ listWatches });
+
+          if (window.location.pathname === "/watches") {
+            const { slug } = listWatches[0];
+            history.replace(`/watch/${slug}`);
+          }
+
+        // No watches. Redirect to ship init
         } else {
           history.replace("/watch/create/init");
         }
-      })
+      });
     } else {
       // Hey, you are not logged in
-      // history.replace("/watch/create/init");
+      history.replace("/login");
     }
   }
 
@@ -170,7 +190,7 @@ class Root extends Component {
   }
 
   render() {
-    const { initSessionId, themeState } = this.state;
+    const { initSessionId, themeState, listWatches } = this.state;
 
     return (
       <div className="flex-column flex1">
@@ -199,7 +219,19 @@ class Root extends Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
-                    <ProtectedRoute path="/watches" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute
+                      path="/watches"
+                      render={
+                        props => (
+                          <WatchDetailPage
+                            {...props}
+                            listWatches={listWatches}
+                            refetchListWatches={this.refetchListWatches}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
@@ -222,7 +254,19 @@ class Root extends Component {
                         />
                       }
                     />
-                    <ProtectedRoute path="/watch/:owner/:slug/:tab?" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute
+                      path="/watch/:owner/:slug/:tab?"
+                      render={
+                        props => (
+                          <WatchDetailPage
+                            {...props}
+                            listWatches={listWatches}
+                            refetchListWatches={this.refetchListWatches}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute
                       path="/ship/init"
                       render={
