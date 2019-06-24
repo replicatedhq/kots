@@ -1,9 +1,10 @@
 import { hot } from "react-hot-loader/root";
-import React from "react";
+import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
+import { Helmet } from "react-helmet";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import GitHubAuth from "./components/github_auth/GitHubAuth";
@@ -24,8 +25,9 @@ import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
-import { Helmet } from "react-helmet";
 
+
+import { listWatches } from "@src/queries/WatchQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -46,7 +48,16 @@ if(process.env.NODE_ENV === "production") {
   history = piwik.connectToHistory(history);
 }
 
-class ProtectedRoute extends React.Component {
+/**
+ * Create our GraphQL Client
+ */
+const GraphQLClient = ShipClientGQL(
+  window.env.GRAPHQL_ENDPOINT,
+  window.env.REST_ENDPOINT,
+  () => Utilities.getToken()
+);
+
+class ProtectedRoute extends Component {
   render() {
     return (
       <Route path={this.props.path} render={(innerProps) => {
@@ -68,7 +79,7 @@ const ThemeContext = React.createContext({
   clearThemeState: () => {}
 });
 
-class Root extends React.Component {
+class Root extends Component {
   state = {
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
@@ -130,11 +141,33 @@ class Root extends React.Component {
     () => {
       history.push("/watch/init/complete");
     }
-  handleUpdateCompletion = history =>
-    () => {
-      history.push("/watches");
-      this.handleActiveInitSessionCompleted()
+
+  handleUpdateCompletion = history => () => {
+    history.push("/watches");
+    this.handleActiveInitSessionCompleted()
+  }
+
+  onRootMounted = () => {
+    if (Utilities.isLoggedIn() && window.location.pathname === "/watches") {
+      GraphQLClient.query({
+        query: listWatches
+      }).then( ({ data }) => {
+        if (data.listWatches.length > 0) {
+          const { slug }= data.listWatches[0];
+          history.replace(`/watch/${slug}`);
+        } else {
+          history.replace("/watch/create/init");
+        }
+      })
+    } else {
+      // Hey, you are not logged in
+      // history.replace("/watch/create/init");
     }
+  }
+
+  componentDidMount() {
+    this.onRootMounted();
+  }
 
   render() {
     const { initSessionId, themeState } = this.state;
@@ -146,7 +179,7 @@ class Root extends React.Component {
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
         </Helmet>
-        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, window.env.REST_ENDPOINT, () => { return Utilities.getToken(); })}>
+        <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{
             setThemeState: this.setThemeState,
             getThemeState: this.getThemeState,

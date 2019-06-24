@@ -1,11 +1,11 @@
 import React, { Component } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route, Redirect } from "react-router-dom";
+import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { listWatches } from "@src/queries/WatchQueries";
+import { getWatch } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -124,7 +124,7 @@ class WatchDetailPage extends Component {
    * @return {undefined}
    */
   refetchGraphQLData = () => {
-    this.props.listWatchesQuery.refetch()
+    this.props.getWatchQuery.refetch()
   }
 
   onDeleteDeployment = async () => {
@@ -140,59 +140,21 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history, listWatchesQuery } = this.props;
+    const { match, history, getWatchQuery } = this.props;
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
       clusterToRemove
     } = this.state;
-    if (history.location.pathname == "/watches") {
-      if (this.props.listWatchesQuery.loading) {
-        return (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            <Loader size="60" />
-          </div>
-        );
 
-      // Redirect user to ship-init if they have zero watches
-      // (New user)
-      } else if (this.props.listWatchesQuery.listWatches.length === 0) {
-        return (
-         <Redirect to="/watch/create/init" />
-        );
-      // Render everything normally with the data existing n' stuff
-      } else {
-      const { slug } = this.props.listWatchesQuery.listWatches[0];
+    const { getWatch: watch, slug, loading } = getWatchQuery;
+
+    if (history.location.pathname == "/watches" || loading) {
       return (
-        <Redirect to={`/watch/${slug}`} />
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
       );
-      }
-    }
-
-    const slug = `${match.params.owner}/${match.params.slug}`;
-    let watch = listWatchesQuery?.listWatches?.find( w => w.slug === slug );
-
-    // Requested watch is a child watch / downstream cluster watch
-    if (!watch && !this.props.listWatchesQuery.loading) {
-
-      // NOTE:
-      // This flat array could get really really big should someone have 10 clusters
-      // and 25 bajillion children watches. In our current state, I don't feel we need
-      // to scale to this as most of our users just have a couple of watches and clusters.
-      // This is a non-existant scaling issue, and I think we'll be OK with just a big
-      // happy flat array.
-      const childWatches = this.props.listWatchesQuery.listWatches
-        .map( mainWatch => mainWatch.watches)
-        .flat();
-
-      watch = childWatches.find(w => w.slug === slug);
-      if (!watch) {
-        return (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            Sorry! We ran into an issue finding the right Watch. Please refresh your browser :(
-          </div>
-        );
-      }
     }
 
     return (
@@ -202,9 +164,7 @@ class WatchDetailPage extends Component {
           sidebar={(
             <SideBar
               className="flex flex1"
-              aggressive={true}
-              loading={this.props.listWatchesQuery.loading}
-              items={this.props.listWatchesQuery?.listWatches?.map( (item, idx) => (
+              items={[].map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
                   className={classNames({ selected: item.slug === watch.slug})}
@@ -220,67 +180,58 @@ class WatchDetailPage extends Component {
               slug={slug}
               watch={watch}
             />
-            {
-              this.props.listWatchesQuery.loading ? (
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="60" />
-                </div>
-              ) :
-              (
-                <Switch>
-                  {watch && !watch.cluster &&
-                    <Route exact path="/watch/:owner/:slug" render={() =>
-                      <DetailPageApplication
-                        watch={watch}
-                        updateCallback={this.refetchGraphQLData}
-                        onActiveInitSession={this.props.onActiveInitSession}
-                      />
-                    } />
-                  }
-                  {watch && !watch.cluster &&
-                    <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
-                      <div className="container">
-                        <DeploymentClusters
-                          appDetailPage={true}
-                          parentClusterName={watch.watchName}
-                          preparingUpdate={this.state.preparingUpdate}
-                          childWatches={watch.watches}
-                          handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
-                          onEditApplication={this.onEditApplicationClicked}
-                          toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
-                        />
-                      </div>
-                    } />
-                  }
-                  { /* ROUTE UNUSED */}
-                  <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
-                  { /* ROUTE UNUSED */}
-                  <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
+            <Switch>
+              {watch && !watch.cluster &&
+                <Route exact path="/watch/:owner/:slug" render={() =>
+                  <DetailPageApplication
+                    watch={watch}
+                    updateCallback={this.refetchGraphQLData}
+                    onActiveInitSession={this.props.onActiveInitSession}
+                  />
+                } />
+              }
+              {watch && !watch.cluster &&
+                <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
+                  <div className="container">
+                    <DeploymentClusters
+                      appDetailPage={true}
+                      parentClusterName={watch.watchName}
+                      preparingUpdate={this.state.preparingUpdate}
+                      childWatches={watch.watches}
+                      handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
+                      onEditApplication={this.onEditApplicationClicked}
+                      toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
+                    />
+                  </div>
+                } />
+              }
+              { /* ROUTE UNUSED */}
+              <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
+              { /* ROUTE UNUSED */}
+              <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
 
-                  <Route exact path="/watch/:owner/:slug/version-history" render={() =>
-                    <WatchVersionHistory
-                      watch={watch}
-                    />
-                  } />
-                  <Route exact path="/watch/:owner/:slug/config" render={() =>
-                    <WatchConfig
-                      watch={watch}
-                    />
-                  } />
-                  <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
-                    <WatchTroubleshoot
-                      watch={watch}
-                    />
-                  } />
-                  <Route exact path="/watch/:owner/:slug/license" render={() =>
-                    <WatchLicense
-                      watch={watch}
-                    />
-                  } />
-                  {!this.props.listWatchesQuery.loading && <Route component={NotFound} />}
-                </Switch>
-              )
-            }
+              <Route exact path="/watch/:owner/:slug/version-history" render={() =>
+                <WatchVersionHistory
+                  watch={watch}
+                />
+              } />
+              <Route exact path="/watch/:owner/:slug/config" render={() =>
+                <WatchConfig
+                  watch={watch}
+                />
+              } />
+              <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
+                <WatchTroubleshoot
+                  watch={watch}
+                />
+              } />
+              <Route exact path="/watch/:owner/:slug/license" render={() =>
+                <WatchLicense
+                  watch={watch}
+                />
+              } />
+              <Route component={NotFound} />
+            </Switch>
           </div>
         </SidebarLayout>
         {addNewClusterModal &&
@@ -331,10 +282,15 @@ export default compose(
   withApollo,
   withRouter,
   withTheme,
-  graphql(listWatches, {
-    name: "listWatchesQuery",
-    options: {
-      fetchPolicy: "cache-and-network"
+  graphql(getWatch, {
+    name: "getWatchQuery",
+    options: props => {
+      const { owner, slug } = props.match.params;
+      return {
+        variables: {
+          slug: `${owner}/${slug}`
+        }
+      }
     }
   }),
   graphql(createUpdateSession, {
