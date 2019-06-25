@@ -34,29 +34,6 @@ func GetNamespace(ctx context.Context, session types.Session) *corev1.Namespace 
 	return &namespace
 }
 
-func GetSecretSpec(ctx context.Context, session types.Session, stateJSON []byte) *corev1.Secret {
-	labels := make(map[string]string)
-	labels[session.GetType()] = session.GetID()
-	labels["shipcloud-role"] = session.GetRole()
-
-	secret := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      session.GetName(),
-			Namespace: session.GetName(),
-			Labels:    labels,
-		},
-		Data: map[string][]byte{
-			"state.json": stateJSON,
-		},
-	}
-
-	return &secret
-}
-
 func GetServiceAccountSpec(ctx context.Context, session types.Session) *corev1.ServiceAccount {
 	labels := make(map[string]string)
 	labels[session.GetType()] = session.GetID()
@@ -85,12 +62,13 @@ func GetServiceAccountSpec(ctx context.Context, session types.Session) *corev1.S
 	return &serviceAccount
 }
 
-func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag string, shipPullPolicy string, secretName string, serviceAccountName string, session types.Session, githubToken string) *corev1.Pod {
+func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag string, shipPullPolicy string, s3State *S3State, serviceAccountName string, session types.Session, githubToken string) *corev1.Pod {
 	labels := make(map[string]string)
 	labels[session.GetType()] = session.GetID()
 	labels["shipcloud-role"] = session.GetRole()
 	labels["s3-filepath"] = base64.RawStdEncoding.EncodeToString([]byte(session.GetS3Filepath()))
 	labels["update-sequence"] = strconv.Itoa(session.GetUploadSequence())
+	labels["state-id"] = s3State.ID
 
 	if shipImage == "" {
 		shipImage = "replicated/ship"
@@ -146,13 +124,11 @@ func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag 
 							logLevel,
 							"--prefer-git",
 							"--state-from",
-							"secret",
-							"--secret-namespace",
-							session.GetName(),
-							"--secret-name",
-							secretName,
-							"--secret-key",
-							"state.json",
+							"url",
+							"--state-put-url",
+							s3State.PutURL,
+							"--state-get-url",
+							s3State.GetURL,
 							"--upload-assets-to",
 							session.GetUploadURL(),
 							"--no-outro",

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -88,74 +89,90 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 		return nil
 	}
 
-	if oldPod.Status.Phase != newPod.Status.Phase {
-		if newPod.Status.Phase == corev1.PodFailed {
-			if err := w.Store.SetUpdateStatus(context.TODO(), id, "failed"); err != nil {
-				return errors.Wrap(err, "set update status to failed")
-			}
+	if oldPod.Status.Phase == newPod.Status.Phase {
+		return nil
+	}
 
-			// Leaving these sitting around for now...  we should
-			// be grabbing the logs from these and writing them to
-			// somewhere for analysis of failures
+	shipState := ship.NewStateManager(w.Config)
+	stateID := newPod.ObjectMeta.Labels["state-id"]
+	deleteState := func() {
+		if stateID == "" {
+			return
+		}
+		if err := shipState.DeleteState(stateID); err != nil {
+			w.Logger.Errorw("failed to delete state from S3", zap.String("state-id", stateID), zap.Error(err))
+		}
+	}
 
-			// if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
-			// 	return errors.Wrap(err, "delete namespace")
-			// }
+	if newPod.Status.Phase == corev1.PodFailed {
+		defer deleteState()
 
-		} else if newPod.Status.Phase == corev1.PodSucceeded {
-			updateSession, err := w.Store.GetUpdate(context.TODO(), id)
-			if err != nil {
-				return errors.Wrap(err, "get update session")
-			}
+		if err := w.Store.SetUpdateStatus(context.TODO(), id, "failed"); err != nil {
+			return errors.Wrap(err, "set update status to failed")
+		}
 
-			// read the secret, put the state in the database
-			secret, err := w.K8sClient.CoreV1().Secrets(newPod.Namespace).Get(newPod.Name, metav1.GetOptions{})
-			if err != nil {
-				return errors.Wrap(err, "get secret")
-			}
+		// Leaving these sitting around for now...  we should
+		// be grabbing the logs from these and writing them to
+		// somewhere for analysis of failures
 
-			var stateMetadata types.ShipStateMetadata
-			err = json.Unmarshal(secret.Data["state.json"], &stateMetadata)
-			if err != nil {
-				return errors.Wrap(err, "unmarshal state json")
-			}
+		// if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
+		// 	return errors.Wrap(err, "delete namespace")
+		// }
 
-			if err := w.Store.UpdateWatchFromState(context.TODO(), updateSession.WatchID, secret.Data["state.json"]); err != nil {
-				return errors.Wrap(err, "update watch from state")
-			}
+	} else if newPod.Status.Phase == corev1.PodSucceeded {
+		defer deleteState()
 
-			if err := w.Store.SetUpdateStatus(context.TODO(), id, "completed"); err != nil {
-				return errors.Wrap(err, "set update status to completed")
-			}
+		updateSession, err := w.Store.GetUpdate(context.TODO(), id)
+		if err != nil {
+			return errors.Wrap(err, "get update session")
+		}
 
-			if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "delete namespace")
-			}
+		stateJSON, err := shipState.GetState(stateID)
+		if err != nil {
+			return errors.Wrap(err, "get secret")
+		}
 
-			s3Filepath, ok := newPod.ObjectMeta.Labels["s3-filepath"]
-			if !ok {
-				w.Logger.Errorw("updateworker informer, no s3filepath found in pod labels", zap.String("pod.name", newPod.Name))
-				return nil
-			}
-			decodedS3Filepath, err := base64.RawStdEncoding.DecodeString(s3Filepath)
-			if err != nil {
-				return errors.Wrap(err, "decode filepath")
-			}
+		var stateMetadata types.ShipStateMetadata
+		err = json.Unmarshal(stateJSON, &stateMetadata)
+		if err != nil {
+			return errors.Wrap(err, "unmarshal state json")
+		}
 
-			updateSequenceStr, ok := newPod.ObjectMeta.Labels["update-sequence"]
-			if !ok {
-				w.Logger.Errorw("updateworker informer, no updatesequence found in pod labels", zap.String("pod.name", newPod.Name))
-				return nil
-			}
-			updateSequence, err := strconv.Atoi(string(updateSequenceStr))
-			if err != nil {
-				w.Logger.Errorw("updateworker informer, unable to convert update sequence from string", zap.String("updateSequenceStr", updateSequenceStr), zap.String("pod.name", newPod.Name))
-				return nil
-			}
+		if err := w.Store.UpdateWatchFromState(context.TODO(), updateSession.WatchID, stateJSON); err != nil {
+			return errors.Wrap(err, "update watch from state")
+		}
 
-			if err := w.postUpdateActions(updateSession.WatchID, updateSequence, string(decodedS3Filepath)); err != nil {
-				return errors.Wrap(err, "postUpdateActions")
-			}
+		if err := w.Store.SetUpdateStatus(context.TODO(), id, "completed"); err != nil {
+			return errors.Wrap(err, "set update status to completed")
+		}
+
+		if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "delete namespace")
+		}
+
+		s3Filepath, ok := newPod.ObjectMeta.Labels["s3-filepath"]
+		if !ok {
+			w.Logger.Errorw("updateworker informer, no s3filepath found in pod labels", zap.String("pod.name", newPod.Name))
+			return nil
+		}
+		decodedS3Filepath, err := base64.RawStdEncoding.DecodeString(s3Filepath)
+		if err != nil {
+			return errors.Wrap(err, "decode filepath")
+		}
+
+		updateSequenceStr, ok := newPod.ObjectMeta.Labels["update-sequence"]
+		if !ok {
+			w.Logger.Errorw("updateworker informer, no updatesequence found in pod labels", zap.String("pod.name", newPod.Name))
+			return nil
+		}
+		updateSequence, err := strconv.Atoi(string(updateSequenceStr))
+		if err != nil {
+			w.Logger.Errorw("updateworker informer, unable to convert update sequence from string", zap.String("updateSequenceStr", updateSequenceStr), zap.String("pod.name", newPod.Name))
+			return nil
+		}
+
+		if err := w.postUpdateActions(updateSession.WatchID, updateSequence, string(decodedS3Filepath)); err != nil {
+			return errors.Wrap(err, "postUpdateActions")
 		}
 	}
 

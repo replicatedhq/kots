@@ -9,6 +9,13 @@ import (
 )
 
 func (w *Worker) deployUpdate(shipUpdate *types.UpdateSession) error {
+	shipState := ship.NewStateManager(w.Config)
+	s3State, err := shipState.CreateS3State(shipUpdate.StateJSON)
+	if err != nil {
+		w.Logger.Errorw("updateworker failed to upload state to S3", zap.Error(err))
+		return err
+	}
+
 	uploadURL, err := w.Store.GetS3StoreURL(shipUpdate)
 	if err != nil {
 		w.Logger.Errorw("updateworker failed to get s3 store url", zap.Error(err))
@@ -34,12 +41,6 @@ func (w *Worker) deployUpdate(shipUpdate *types.UpdateSession) error {
 		return err
 	}
 
-	secret := ship.GetSecretSpec(context.TODO(), shipUpdate, shipUpdate.StateJSON)
-	if err := w.ensureSecret(context.TODO(), secret); err != nil {
-		w.Logger.Errorw("updateworker failed to create secret", zap.Error(err))
-		return err
-	}
-
 	serviceAccount := ship.GetServiceAccountSpec(context.TODO(), shipUpdate)
 	if err := w.ensureServiceAccount(context.TODO(), serviceAccount); err != nil {
 		w.Logger.Errorw("updateworker failed to create serviceaccount", zap.Error(err))
@@ -58,7 +59,7 @@ func (w *Worker) deployUpdate(shipUpdate *types.UpdateSession) error {
 		return err
 	}
 
-	pod := ship.GetPodSpec(context.TODO(), w.Config.LogLevel, w.Config.ShipImage, w.Config.ShipTag, w.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipUpdate, w.Config.GithubToken)
+	pod := ship.GetPodSpec(context.TODO(), w.Config.LogLevel, w.Config.ShipImage, w.Config.ShipTag, w.Config.ShipPullPolicy, s3State, serviceAccount.Name, shipUpdate, w.Config.GithubToken)
 	if err := w.ensurePod(context.TODO(), pod); err != nil {
 		w.Logger.Errorw("updateworker failed to create pod", zap.Error(err))
 		return err

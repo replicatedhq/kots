@@ -111,9 +111,10 @@ func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
 		return
 	}
 
-	secret := ship.GetSecretSpec(context.TODO(), shipUnfork, []byte(""))
-	if err := s.Worker.ensureSecret(context.TODO(), secret); err != nil {
-		s.Logger.Errorw("initserver failed to create secret", zap.Error(err))
+	shipState := ship.NewStateManager(s.Worker.Config)
+	s3State, err := shipState.CreateS3State([]byte(""))
+	if err != nil {
+		s.Logger.Errorw("initserver failed to upload state to S3", zap.Error(err))
 		return
 	}
 
@@ -135,7 +136,7 @@ func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
 		return
 	}
 
-	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipUnfork, s.Worker.Config.GithubToken)
+	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, s3State, serviceAccount.Name, shipUnfork, s.Worker.Config.GithubToken)
 	if err := s.Worker.ensurePod(context.TODO(), pod); err != nil {
 		s.Logger.Errorw("initserver failed to create pod", zap.Error(err))
 		return
@@ -193,9 +194,10 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 		return
 	}
 
-	secret := ship.GetSecretSpec(context.TODO(), shipInit, []byte(""))
-	if err := s.Worker.ensureSecret(context.TODO(), secret); err != nil {
-		s.Logger.Errorw("initserver failed to get create secret", zap.Error(err))
+	shipState := ship.NewStateManager(s.Worker.Config)
+	s3State, err := shipState.CreateS3State([]byte(""))
+	if err != nil {
+		s.Logger.Errorw("initserver failed to upload state to S3", zap.Error(err))
 		return
 	}
 
@@ -217,7 +219,7 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 		return
 	}
 
-	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, secret.Name, serviceAccount.Name, shipInit, s.Worker.Config.GithubToken)
+	pod := ship.GetPodSpec(context.TODO(), s.Worker.Config.LogLevel, s.Worker.Config.ShipImage, s.Worker.Config.ShipTag, s.Worker.Config.ShipPullPolicy, s3State, serviceAccount.Name, shipInit, s.Worker.Config.GithubToken)
 	if err := s.Worker.ensurePod(context.TODO(), pod); err != nil {
 		s.Logger.Errorw("initserver failed to get create pod", zap.Error(err))
 		return
