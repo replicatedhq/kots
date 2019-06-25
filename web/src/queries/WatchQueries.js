@@ -679,6 +679,25 @@ export const listPendingInitRaw = `
 
 export const listPendingInit = gql(listPendingInitRaw);
 
+export const listHelmChartsRaw = `
+  query listHelmCharts {
+    listHelmCharts {
+      id
+      clusterID
+      helmName
+      namespace
+      version
+      firstDeployedAt
+      lastDeployedAt
+      isDeleted
+      chartVersion
+      appVersion
+    }
+  }
+`;
+
+export const listHelmCharts = gql(listHelmChartsRaw);
+
 export const searchPendingInitSessionsRaw = `
   query searchPendingInitSessions($title: String!) {
     searchPendingInitSessions(title: $title) {

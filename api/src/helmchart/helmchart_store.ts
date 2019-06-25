@@ -12,13 +12,12 @@ export class HelmChartStore {
     const v = [
       clusterId,
     ];
-
     const result = await this.pool.query(q, v);
     const helmCharts: HelmChart[] = [];
     for (const row of result.rows) {
       const helmChart: HelmChart = {
         id: row.id,
-        clusterId: clusterId,
+        clusterID: clusterId,
         helmName: row.helm_name,
         namespace: row.namespace,
         version: row.version,
