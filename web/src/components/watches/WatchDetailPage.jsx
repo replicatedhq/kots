@@ -8,6 +8,7 @@ import withTheme from "@src/components/context/withTheme";
 import { getWatch } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
+import HelmChartSidebarItem from "@src/components/watches/WatchSidebarItem/HelmChartSidebarItem";
 import NotFound from "../static/NotFound";
 import DetailPageApplication from "./DetailPageApplication";
 import DetailPageIntegrations from "./DetailPageIntegrations";
@@ -169,10 +170,6 @@ class WatchDetailPage extends Component {
       }
       return centeredLoader;
     }
-    // const pendingInits = listPendingInitQuery?.listPendingInitSessions;
-    // const helmCharts = listHelmChartsQuery?.listHelmCharts;
-    // const watches = listWatchesQuery?.listWatches;
-    // const allWatches = watches?.concat(pendingInits, helmCharts);
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -182,12 +179,25 @@ class WatchDetailPage extends Component {
           sidebar={(
             <SideBar
               className="flex flex1"
-              items={listWatches.map( (item, idx) => (
-                <WatchSidebarItem
-                  key={idx}
-                  className={classNames({ selected: item.slug === watch?.slug})}
-                  watch={item} />
-              ))}
+              items={listWatches.map( (item, idx) => {
+                let sidebarItemNode;
+                if (item.slug) {
+                  sidebarItemNode = (
+                    <WatchSidebarItem
+                      key={idx}
+                      className={classNames({ selected: item.slug === watch?.slug})}
+                      watch={item} />
+                  );
+                } else if (item.helmName) {
+                  sidebarItemNode = (
+                    <HelmChartSidebarItem
+                      key={idx}
+                      className={classNames({ selected: item.slug === watch?.slug})}
+                      watch={item} />
+                  );
+                }
+                return sidebarItemNode;
+              })}
               currentWatch={watch?.watchName}
             />
           )}>

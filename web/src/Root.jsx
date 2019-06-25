@@ -27,7 +27,7 @@ import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 
 
-import { listWatches } from "@src/queries/WatchQueries";
+import { listWatches, listPendingInit, listHelmCharts } from "@src/queries/WatchQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -150,28 +150,46 @@ class Root extends Component {
 
   refetchListWatches = async () => {
 
-    const { data } = await GraphQLClient.query({
+    // Fetch list of your watches
+    const watchList = await GraphQLClient.query({
       query: listWatches,
       fetchPolicy: "network-only"
     }).catch( error => {
       throw error;
     });
 
-    this.setState({
-      listWatches: data.listWatches
+    // Fetch list of pending inits
+    const pendingInits = await GraphQLClient.query({
+      query: listPendingInit,
+      fetchPolicy: "network-only"
+    }).catch( error => {
+      throw error;
     });
 
-    return data.listWatches;
+    // Fetch list of pending unforks
+    const pendingUnforks = await GraphQLClient.query({
+      query: listHelmCharts,
+      fetchPolicy: "network-only"
+    }).catch( error => {
+      throw error;
+    });
+
+    const allWatches = watchList.data.listWatches.concat(pendingInits.data.listPendingInitSessions, pendingUnforks.data.listHelmCharts);
+    this.setState({
+      listWatches: allWatches,
+    });
+
+    return allWatches;
   }
 
   onRootMounted = () => {
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then((listWatches) => {
-        if (listWatches.length > 0) {
-          this.setState({ listWatches });
+      this.refetchListWatches().then((watchesList) => {
+        if (watchesList.length > 0) {
+          this.setState({ watchesList });
 
           if (window.location.pathname === "/watches") {
-            const { slug } = listWatches[0];
+            const { slug } = watchesList[0];
             history.replace(`/watch/${slug}`);
           }
 
