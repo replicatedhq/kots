@@ -41,14 +41,17 @@ class WatchDetailPage extends Component {
   }
 
   static defaultProps = {
-    listWatches: []
+    listWatches: [],
+    getWatch: {
+      loading: true
+    }
   }
 
   componentDidUpdate(/* lastProps */) {
-    const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
-    const slug = `${match.params.owner}/${match.params.slug}`;
+    const { getThemeState, setThemeState, match, listWatches } = this.props;
 
-    const currentWatch = listWatchesQuery?.listWatches?.find( w => w.slug === slug);
+    const slug = `${match.params.owner}/${match.params.slug}`;
+    const currentWatch = listWatches.find( w => w.slug === slug);
 
     // Handle updating the navbar logo when a watch changes.
     if (currentWatch?.watchIcon) {
@@ -145,7 +148,7 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history, getWatchQuery, listWatches } = this.props;
+    const { match, history, getWatchQuery, listWatches, refetchListWatches } = this.props;
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
@@ -160,6 +163,9 @@ class WatchDetailPage extends Component {
     const { getWatch: watch, loading } = getWatchQuery;
 
     if (history.location.pathname == "/watches") {
+      if (listWatches[0]) {
+        history.replace(`/watch/${listWatches[0].slug}`);
+      }
       return centeredLoader;
     }
 
@@ -167,14 +173,14 @@ class WatchDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex u-minHeight--full u-overflow--hidden"
-          condition={listWatches.length > 2}
+          condition={listWatches.length > 1}
           sidebar={(
             <SideBar
               className="flex flex1"
               items={listWatches.map( (item, idx) => (
                 <WatchSidebarItem
                   key={idx}
-                  className={classNames({ selected: item.slug === watch.slug})}
+                  className={classNames({ selected: item.slug === watch?.slug})}
                   watch={item} />
               ))}
               currentWatch={watch?.watchName}
@@ -188,7 +194,6 @@ class WatchDetailPage extends Component {
                   <SubNavBar
                     className="flex"
                     activeTab={match.params.tab || "app"}
-                    slug={watch.slug}
                     watch={watch}
                   />
                   <Switch>
@@ -196,6 +201,7 @@ class WatchDetailPage extends Component {
                       <Route exact path="/watch/:owner/:slug" render={() =>
                         <DetailPageApplication
                           watch={watch}
+                          refetchListWatches={refetchListWatches}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
                         />

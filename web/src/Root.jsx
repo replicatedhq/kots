@@ -145,13 +145,14 @@ class Root extends Component {
 
   handleUpdateCompletion = history => () => {
     history.push("/watches");
-    this.handleActiveInitSessionCompleted()
+    this.handleActiveInitSessionCompleted();
   }
 
   refetchListWatches = async () => {
+
     const { data } = await GraphQLClient.query({
       query: listWatches,
-      fetchPolicy: "cache-first"
+      fetchPolicy: "network-only"
     }).catch( error => {
       throw error;
     });
@@ -249,6 +250,7 @@ class Root extends Component {
                       render={
                         (props) => <ShipInitCompleted
                           {...props}
+                          refetchListWatches={this.refetchListWatches}
                           initSessionId={initSessionId}
                           onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
                         />

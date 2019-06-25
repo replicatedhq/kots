@@ -57,18 +57,21 @@ class DetailPageApplication extends Component {
   updateWatchInfo = async e => {
     e.preventDefault();
     const { appName, iconUri } = this.state;
-    const { watch, updateCallback } = this.props;
+    const { watch, updateCallback, updateWatch, refetchListWatches } = this.props;
     this.setState({ editWatchLoading: true });
 
-    await this.props.updateWatch(watch.id, appName, iconUri).catch( error => {
+    await updateWatch(watch.id, appName, iconUri).catch( error => {
       console.error("[DetailPageApplication]: Error updating Watch info: ", error);
       this.setState({
         editWatchLoading: false
       });
     });
 
+    await refetchListWatches();
+
     this.setState({
-      editWatchLoading: false
+      editWatchLoading: false,
+      showEditModal: false
     });
 
     if (updateCallback && typeof updateCallback === "function") {
@@ -124,7 +127,11 @@ class DetailPageApplication extends Component {
     if (canDelete) {
       this.setState({ deleteAppLoading: true });
       await this.props.deleteWatch(watch.id, childWatchIds)
-        .then(() => this.props.history.push("/watches"))
+        .then(() => {
+          this.props.refetchListWatches().then(() => {
+            this.props.history.push("/watches");
+          });
+        })
         .catch(() => this.setState({ deleteAppLoading: false }));
     } else {
       this.setState({ confirmDeleteErr: true });

@@ -34,6 +34,10 @@ export default function SubNavBar(props) {
   );
 }
 
+SubNavBar.defaultProps = {
+  watch: {}
+};
+
 SubNavBar.propTypes = {
   className: PropTypes.string,
   activeTab: PropTypes.string,
