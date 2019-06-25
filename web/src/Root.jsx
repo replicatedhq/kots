@@ -1,9 +1,10 @@
 import { hot } from "react-hot-loader/root";
-import React from "react";
+import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
+import { Helmet } from "react-helmet";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import GitHubAuth from "./components/github_auth/GitHubAuth";
@@ -24,8 +25,9 @@ import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
-import { Helmet } from "react-helmet";
 
+
+import { listWatches } from "@src/queries/WatchQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -46,7 +48,16 @@ if(process.env.NODE_ENV === "production") {
   history = piwik.connectToHistory(history);
 }
 
-class ProtectedRoute extends React.Component {
+/**
+ * Create our GraphQL Client
+ */
+const GraphQLClient = ShipClientGQL(
+  window.env.GRAPHQL_ENDPOINT,
+  window.env.REST_ENDPOINT,
+  () => Utilities.getToken()
+);
+
+class ProtectedRoute extends Component {
   render() {
     return (
       <Route path={this.props.path} render={(innerProps) => {
@@ -68,8 +79,9 @@ const ThemeContext = React.createContext({
   clearThemeState: () => {}
 });
 
-class Root extends React.Component {
+class Root extends Component {
   state = {
+    listWatches: [],
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
@@ -130,14 +142,56 @@ class Root extends React.Component {
     () => {
       history.push("/watch/init/complete");
     }
-  handleUpdateCompletion = history =>
-    () => {
-      history.push("/watches");
-      this.handleActiveInitSessionCompleted()
+
+  handleUpdateCompletion = history => () => {
+    history.push("/watches");
+    this.handleActiveInitSessionCompleted();
+  }
+
+  refetchListWatches = async () => {
+
+    const { data } = await GraphQLClient.query({
+      query: listWatches,
+      fetchPolicy: "network-only"
+    }).catch( error => {
+      throw error;
+    });
+
+    this.setState({
+      listWatches: data.listWatches
+    });
+
+    return data.listWatches;
+  }
+
+  onRootMounted = () => {
+    if (Utilities.isLoggedIn()) {
+      this.refetchListWatches().then((listWatches) => {
+        if (listWatches.length > 0) {
+          this.setState({ listWatches });
+
+          if (window.location.pathname === "/watches") {
+            const { slug } = listWatches[0];
+            history.replace(`/watch/${slug}`);
+          }
+
+        // No watches. Redirect to ship init
+        } else {
+          history.replace("/watch/create/init");
+        }
+      });
+    } else {
+      // Hey, you are not logged in
+      history.replace("/login");
     }
+  }
+
+  componentDidMount() {
+    this.onRootMounted();
+  }
 
   render() {
-    const { initSessionId, themeState } = this.state;
+    const { initSessionId, themeState, listWatches } = this.state;
 
     return (
       <div className="flex-column flex1">
@@ -146,7 +200,7 @@ class Root extends React.Component {
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
         </Helmet>
-        <ApolloProvider client={ShipClientGQL(window.env.GRAPHQL_ENDPOINT, window.env.REST_ENDPOINT, () => { return Utilities.getToken(); })}>
+        <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{
             setThemeState: this.setThemeState,
             getThemeState: this.getThemeState,
@@ -166,7 +220,19 @@ class Root extends React.Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
-                    <ProtectedRoute path="/watches" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute
+                      path="/watches"
+                      render={
+                        props => (
+                          <WatchDetailPage
+                            {...props}
+                            listWatches={listWatches}
+                            refetchListWatches={this.refetchListWatches}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
@@ -184,12 +250,25 @@ class Root extends React.Component {
                       render={
                         (props) => <ShipInitCompleted
                           {...props}
+                          refetchListWatches={this.refetchListWatches}
                           initSessionId={initSessionId}
                           onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
                         />
                       }
                     />
-                    <ProtectedRoute path="/watch/:owner/:slug/:tab?" render={(props) => <WatchDetailPage {...props} onActiveInitSession={this.handleActiveInitSession} />} />
+                    <ProtectedRoute
+                      path="/watch/:owner/:slug/:tab?"
+                      render={
+                        props => (
+                          <WatchDetailPage
+                            {...props}
+                            listWatches={listWatches}
+                            refetchListWatches={this.refetchListWatches}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute
                       path="/ship/init"
                       render={

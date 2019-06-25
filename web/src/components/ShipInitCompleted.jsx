@@ -47,6 +47,7 @@ export class ShipInitCompleted extends React.Component {
 
     if (data.getWatch && data.getWatch.watchName) {
       clearInterval(this.interval);
+      await this.props.refetchListWatches();
       if (data.getWatch.cluster) {
         const parentResult = await client.query({
           query: getParentWatch,

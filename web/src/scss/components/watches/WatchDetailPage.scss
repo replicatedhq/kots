@@ -138,14 +138,3 @@
   }
 
 }
-
-// Used outside because of React.Portal in <Modal>
-.EditWatchModal .EditWatchForm .btn.secondary.force-gray {
-  background-color: #ffffff;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #6D7278;
-  color: #6D7278;
-  box-shadow: none;
-}
-
