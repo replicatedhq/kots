@@ -86,7 +86,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 
 	id, ok := newPod.ObjectMeta.Labels[editSession.GetType()]
 	if !ok {
-		w.Logger.Errorw("editworker informer expected to find upodate label in pod", zap.String("pod.name", oldPod.Name))
+		w.Logger.Errorw("editworker informer expected to find update label in pod", zap.String("pod.name", oldPod.Name))
 		return nil
 	}
 
