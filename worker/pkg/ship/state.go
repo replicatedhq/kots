@@ -1,177 +1,164 @@
 package ship
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
+	"regexp"
 	"strings"
-	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/hashicorp/go-uuid"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	shipstate "github.com/replicatedhq/ship/pkg/state"
 )
 
-type StateManager struct {
-	c *config.Config
+type ReplicatedAppWatch struct {
 }
 
-type S3State struct {
-	ID     string
-	PutURL string
-	GetURL string
+func stateFromData(stateJSON []byte) (*shipstate.State, error) {
+	shipState := shipstate.State{}
+	if err := json.Unmarshal(stateJSON, &shipState); err != nil {
+		return nil, errors.Wrap(err, "unmarshal state")
+	}
+
+	return &shipState, nil
 }
 
-func NewStateManager(c *config.Config) *StateManager {
-	return &StateManager{c: c}
+func WatchNameFromState(stateJSON []byte) string {
+	shipState, err := stateFromData(stateJSON)
+	if err != nil {
+		fmt.Println("failed to parse")
+		return "Unknown watch"
+	}
+
+	if shipState.V1 == nil {
+		fmt.Println("no v1")
+		return "Unknown watch"
+	}
+
+	if shipState.V1.Metadata != nil {
+		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
+			return shipState.UpstreamContents().AppRelease.ChannelName
+		}
+
+		if shipState.V1.Metadata.Name != "" {
+			return shipState.V1.Metadata.Name
+		} else {
+			return shipState.V1.Metadata.AppSlug
+		}
+	}
+
+	repoRegex := regexp.MustCompile(`github(?:usercontent)?\.com\/([\w-]+)\/([\w-]+)(?:(?:/tree|/blob)?\/([\w-\._]+))?`)
+	// attempt to extract a more human-friendly name than the uri
+	if repoRegex.MatchString(shipState.V1.Upstream) {
+		matches := repoRegex.FindStringSubmatch(shipState.V1.Upstream)
+
+		if len(matches) >= 3 {
+			var repoName, version string
+			owner := matches[1]
+			repo := matches[2]
+
+			if strings.HasPrefix(repo, owner) {
+				repoName = repo
+			} else {
+				repoName = owner + "/" + repo
+			}
+
+			if len(matches) >= 4 {
+				version = matches[3]
+			}
+
+			if version != "" {
+				return repoName + "@" + version
+			}
+
+			return repoName
+		}
+	}
+
+	urlRegex := regexp.MustCompile(`(?:https?://)([\w\.\/\-_]+)`)
+	if urlRegex.MatchString(shipState.V1.Upstream) {
+		matches := urlRegex.FindStringSubmatch(shipState.V1.Upstream)
+		if len(matches) >= 2 {
+			return matches[1]
+		}
+	}
+
+	return shipState.V1.Upstream
 }
 
-func (m *StateManager) NewStateID() (string, error) {
-	id, err := uuid.GenerateUUID()
+func WatchIconFromState(stateJSON []byte) string {
+	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		return "", errors.Wrap(err, "generate uuid")
+		return ""
 	}
 
-	return id, nil
+	icon := ""
+	if shipState.V1 != nil && shipState.V1.Metadata != nil {
+		icon = shipState.V1.Metadata.Icon
+		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
+			if shipState.V1.UpstreamContents != nil {
+				if shipState.V1.UpstreamContents.AppRelease != nil {
+					icon = shipState.V1.UpstreamContents.AppRelease.ChannelIcon
+				}
+			}
+		}
+	}
+
+	return icon
 }
 
-func (m *StateManager) PutState(stateID string, stateJSON []byte) error {
-	sess, err := session.NewSession(m.getS3Config())
+func WatchVersionFromState(stateJSON []byte) string {
+	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		return errors.Wrap(err, "new s3 session")
+		return ""
 	}
-	svc := s3.New(sess)
 
-	_, err = svc.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
-		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
-		Body:   bytes.NewReader(stateJSON),
-	})
+	versionLabel := "Unknown"
+	if shipState.V1 != nil && shipState.V1.Metadata != nil && shipState.V1.Metadata.Version != "" {
+		versionLabel = shipState.V1.Metadata.Version
+	}
 
-	return errors.Wrap(err, "put state to s3")
+	return versionLabel
 }
 
-func (m *StateManager) GetState(stateID string) ([]byte, error) {
-	sess, err := session.NewSession(m.getS3Config())
+func ShipClusterMetadataFromState(stateJSON []byte) []byte {
+	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "new session")
+		return nil
 	}
-	svc := s3.New(sess)
 
-	result, err := svc.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
-		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
-	})
+	marshaledMetadata, err := json.Marshal(shipState.V1.Metadata)
 	if err != nil {
-		return nil, errors.Wrap(err, "get state from s3")
+		return nil
 	}
-	defer result.Body.Close()
 
-	var stateJSON bytes.Buffer
-	if _, err := io.Copy(&stateJSON, result.Body); err != nil {
-		return nil, err
-	}
-	return stateJSON.Bytes(), nil
+	return marshaledMetadata
 }
 
-func (m *StateManager) DeleteState(stateID string) error {
-	sess, err := session.NewSession(m.getS3Config())
+func TroubleshootCollectorsFromState(stateJSON []byte) []byte {
+	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		return errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
-		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
-	})
-	if err != nil {
-		return errors.Wrap(err, "get state from s3")
+		fmt.Printf("failed\n")
+		fmt.Printf("%#v\n", err)
+		return nil
 	}
 
-	return nil
+	if shipState.V1 == nil || shipState.V1.UpstreamContents == nil || shipState.V1.UpstreamContents.AppRelease == nil {
+		fmt.Printf("nil")
+		return nil
+	}
+
+	return []byte(shipState.V1.UpstreamContents.AppRelease.CollectSpec)
 }
 
-func (m *StateManager) GetPresignedURLs(stateID string) (*S3State, error) {
-	sess, err := session.NewSession(m.getS3Config())
+func TroubleshootAnalyzersFromState(stateJSON []byte) []byte {
+	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	objectKey := fmt.Sprintf("/state/%s.json", stateID)
-
-	putResp, _ := svc.PutObjectRequest(&s3.PutObjectInput{
-		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
-		Key:    aws.String(objectKey),
-	})
-
-	putURL, err := putResp.Presign(30 * time.Minute)
-	if err != nil {
-		return nil, errors.Wrap(err, "presign response")
+		return nil
 	}
 
-	getResp, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
-		Key:    aws.String(objectKey),
-	})
-
-	getURL, err := getResp.Presign(30 * time.Minute)
-	if err != nil {
-		return nil, errors.Wrap(err, "presign response")
+	if shipState.V1 == nil || shipState.V1.UpstreamContents == nil || shipState.V1.UpstreamContents.AppRelease == nil {
+		return nil
 	}
 
-	return &S3State{
-		ID:     stateID,
-		PutURL: putURL,
-		GetURL: getURL,
-	}, nil
-}
-
-func (m *StateManager) CreateS3State(stateJSON []byte) (*S3State, error) {
-	stateID, err := m.NewStateID()
-	if err != nil {
-		return nil, errors.Wrap(err, "create state ID")
-	}
-
-	if err := m.PutState(stateID, stateJSON); err != nil {
-		return nil, errors.Wrap(err, "create s3 state")
-	}
-
-	s3State, err := m.GetPresignedURLs(stateID)
-	if err != nil {
-		return nil, errors.Wrap(err, "sign state URLs")
-	}
-
-	return s3State, nil
-}
-
-func (m *StateManager) getS3Config() *aws.Config {
-	region := "us-east-1"
-	if os.Getenv("AWS_REGION") != "" {
-		region = os.Getenv("AWS_REGION")
-	}
-
-	s3config := &aws.Config{
-		Region: aws.String(region),
-	}
-
-	if strings.TrimSpace(m.c.S3Endpoint) != "" {
-		s3config.Endpoint = aws.String(strings.TrimSpace(m.c.S3Endpoint))
-	}
-
-	if strings.TrimSpace(m.c.S3AccessKeyID) != "" && strings.TrimSpace(m.c.S3SecretAccessKey) != "" {
-		s3config.Credentials = credentials.NewStaticCredentials(strings.TrimSpace(m.c.S3AccessKeyID), strings.TrimSpace(m.c.S3SecretAccessKey), "")
-	}
-
-	if strings.TrimSpace(m.c.S3BucketEndpoint) != "" {
-		s3config.S3ForcePathStyle = aws.Bool(true)
-	}
-
-	return s3config
+	return []byte(shipState.V1.UpstreamContents.AppRelease.AnalyzeSpec)
 }

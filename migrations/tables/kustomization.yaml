@@ -35,3 +35,4 @@ resources:
 - ./helm_chart_source.yaml
 - ./helm_chart.yaml
 - ./watch_troubleshoot_collector.yaml
+- ./watch_troubleshoot_analyzer.yaml

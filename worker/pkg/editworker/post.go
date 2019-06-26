@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (w *Worker) postEditActions(watchID string, sequence int, s3Filepath string) error {
@@ -31,10 +30,6 @@ func (w *Worker) postEditActions(watchID string, sequence int, s3Filepath string
 		return errors.Wrap(err, "trigger integraitons")
 	}
 
-	if err := w.restartOperator(watch); err != nil {
-		return errors.Wrap(err, "restart operator")
-	}
-
 	return nil
 }
 
@@ -50,15 +45,6 @@ func (w *Worker) fetchArchiveFromS3(watchID string, s3Filepath string) (*os.File
 	}
 
 	return archive, nil
-}
-
-func (w *Worker) restartOperator(watch *types.Watch) error {
-	// if we delete the namespace for the watch, it will be recreated by the watch worker
-	if err := w.K8sClient.CoreV1().Namespaces().Delete(watch.Namespace(), &metav1.DeleteOptions{}); err != nil {
-		return errors.Wrap(err, "delete namespace")
-	}
-
-	return nil
 }
 
 func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *os.File) error {

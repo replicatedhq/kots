@@ -324,3 +324,13 @@ func (s *SQLStore) SetWatchDeferred(ctx context.Context, watchID string) error {
 
 	return nil
 }
+
+func (s *SQLStore) UpdateWatchState(ctx context.Context, watchID string, stateJSON []byte, metadata []byte) error {
+	query := `update watch set current_state = $1, metadata = $2, updated_at = $3 where id = $4`
+	_, err := s.db.ExecContext(ctx, query, stateJSON, metadata, time.Now(), watchID)
+	if err != nil {
+		return errors.Wrap(err, "update watch")
+	}
+
+	return nil
+}

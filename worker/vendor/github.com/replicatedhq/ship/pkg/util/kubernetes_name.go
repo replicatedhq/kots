@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 )
 
 type MinimalK8sYaml struct {
@@ -23,6 +24,8 @@ func GenerateNameFromMetadata(k8sYaml MinimalK8sYaml, idx int) string {
 			fileName += "-" + k8sYaml.Metadata.Namespace
 		}
 	}
+
+	fileName = regexp.MustCompile(`[/\\:]`).ReplaceAllString(fileName, "-")
 
 	return fileName
 }

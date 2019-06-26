@@ -24,7 +24,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type shaSummer func([]byte) string
+type shaSummer func(release state.ShipRelease) string
 type dater func() string
 type resolver struct {
 	Logger               log.Logger
@@ -65,8 +65,14 @@ func NewAppResolver(
 		RunbookReleaseSemver: v.GetString("release-semver"),
 		IsEdit:               v.GetBool("isEdit"),
 		StateManager:         stateManager,
-		ShaSummer: func(bytes []byte) string {
-			return fmt.Sprintf("%x", sha256.Sum256(bytes))
+		ShaSummer: func(release state.ShipRelease) string {
+			release.Entitlements.Signature = "" // entitlements signature is not stable
+			releaseJSON, err := json.Marshal(release)
+			if err != nil {
+				panic(errors.Wrap(err, "marshal release to json for content sha"))
+			}
+
+			return fmt.Sprintf("%x", sha256.Sum256(releaseJSON))
 		},
 		Dater: func() string {
 			// format consistent with what we get from GQL
@@ -171,7 +177,7 @@ func (r *resolver) FetchLicense(ctx context.Context, selector *Selector) (*licen
 		return &license{}, nil
 	}
 
-	license, err := r.Client.getLicense(selector)
+	license, err := r.Client.GetLicense(selector)
 	if err != nil {
 		return nil, errors.Wrapf(err, "get license")
 	}
@@ -218,7 +224,7 @@ func (r *resolver) persistRelease(release *state.ShipRelease, license *license, 
 		return nil, errors.Wrap(err, "serialize app metadata")
 	}
 
-	contentSHA := r.ShaSummer([]byte(release.Spec))
+	contentSHA := r.ShaSummer(*release)
 	if err := r.StateManager.SerializeContentSHA(contentSHA); err != nil {
 		return nil, errors.Wrap(err, "serialize content sha")
 	}
@@ -334,6 +340,9 @@ func (r *resolver) SetRunbook(runbook string) {
 
 func (r *resolver) loadFakeEntitlements() (*api.Entitlements, error) {
 	var entitlements api.Entitlements
+	if r.SetEntitlementsJSON == "" {
+		return &entitlements, nil
+	}
 	err := json.Unmarshal([]byte(r.SetEntitlementsJSON), &entitlements)
 	if err != nil {
 		return nil, errors.Wrap(err, "load entitlements json")

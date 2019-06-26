@@ -3,6 +3,7 @@ package specs
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -68,7 +69,7 @@ func NewContentProcessor(v *viper.Viper) (*ContentProcessor, error) {
 		Logger:           logger,
 		FS:               fs,
 		AppResolver:      replicatedapp.NewAppResolver(v, logger, fs, gqlClient, stateManager, ui),
-		GitHubFetcher:    githubclient.NewGithubClient(logger),
+		GitHubFetcher:    githubclient.NewGithubClient(fs, logger),
 		ui:               ui,
 		appTypeInspector: appTypeInspector,
 		shaSummer:        calculateContentSHA,
@@ -177,7 +178,13 @@ func (c *ContentProcessor) ReadContentSHAForWatch(ctx context.Context, upstream 
 			return "", errors.Wrap(err, "fetch release")
 		}
 
-		return fmt.Sprintf("%x", sha256.Sum256([]byte(release.Spec))), nil
+		release.Entitlements.Signature = "" // entitlements signature is not stable
+		releaseJSON, err := json.Marshal(release)
+		if err != nil {
+			return "", errors.Wrap(err, "marshal release for sha256")
+		}
+
+		return fmt.Sprintf("%x", sha256.Sum256(releaseJSON)), nil
 	}
 
 	return "", errors.Errorf("Could not continue with application type %q of upstream %s", app.GetType(), upstream)

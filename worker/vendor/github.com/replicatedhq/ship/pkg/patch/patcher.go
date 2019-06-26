@@ -2,8 +2,6 @@ package patch
 
 import (
 	"encoding/json"
-	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -14,7 +12,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship/pkg/api"
-	"github.com/replicatedhq/ship/pkg/constants"
 	"github.com/replicatedhq/ship/pkg/util"
 	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -164,32 +161,26 @@ func (p *ShipPatcher) MergePatches(original []byte, path []string, step api.Kust
 
 func (p *ShipPatcher) ApplyPatch(patch []byte, step api.Kustomize, resource string) ([]byte, error) {
 	debug := level.Debug(log.With(p.Logger, "struct", "patcher", "handler", "applyPatch"))
-	defer p.applyPatchCleanup()
 
-	debug.Log("event", "writeFile.tempBaseKustomizationYaml")
-	if err := p.writeTempKustomization(step, resource); err != nil {
-		return nil, errors.Wrap(err, "create temp base kustomization yaml")
-	}
 	defer p.deleteTempKustomization(step)
 
-	debug.Log("event", "mkdir.tempApplyOverlayPath")
-	if err := p.FS.MkdirAll(constants.TempApplyOverlayPath, 0755); err != nil {
-		return nil, errors.Wrap(err, "create temp apply overlay path")
+	if err := p.FS.MkdirAll(step.TempRenderPath(), 0777); err != nil {
+		return nil, errors.Wrap(err, "ensure temp patch overlay dir exists")
 	}
 
 	debug.Log("event", "writeFile.tempPatch")
-	if err := p.FS.WriteFile(path.Join(constants.TempApplyOverlayPath, TempYamlPath), patch, 0755); err != nil {
+	if err := p.FS.WriteFile(path.Join(step.TempRenderPath(), TempYamlPath), patch, 0755); err != nil {
 		return nil, errors.Wrap(err, "write temp patch overlay")
 	}
 
 	debug.Log("event", "relPath")
-	relativePathToBases, err := filepath.Rel(constants.TempApplyOverlayPath, constants.KustomizeBasePath)
+	relativePathToResource, err := filepath.Rel(step.TempRenderPath(), resource)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find relative path")
 	}
 
 	kustomizationYaml := k8stypes.Kustomization{
-		Bases:                 []string{relativePathToBases},
+		Resources:             []string{relativePathToResource},
 		PatchesStrategicMerge: []kustomizepatch.StrategicMerge{TempYamlPath},
 	}
 
@@ -199,12 +190,12 @@ func (p *ShipPatcher) ApplyPatch(patch []byte, step api.Kustomize, resource stri
 	}
 
 	debug.Log("event", "writeFile.tempKustomizationYaml")
-	if err := p.FS.WriteFile(path.Join(constants.TempApplyOverlayPath, "kustomization.yaml"), kustomizationYamlBytes, 0755); err != nil {
+	if err := p.FS.WriteFile(path.Join(step.TempRenderPath(), "kustomization.yaml"), kustomizationYamlBytes, 0755); err != nil {
 		return nil, errors.Wrap(err, "write temp kustomization yaml")
 	}
 
 	debug.Log("event", "run.kustomizeBuild")
-	merged, err := p.RunKustomize(constants.TempApplyOverlayPath)
+	merged, err := p.RunKustomize(step.TempRenderPath())
 	if err != nil {
 		return nil, err
 	}
@@ -212,77 +203,23 @@ func (p *ShipPatcher) ApplyPatch(patch []byte, step api.Kustomize, resource stri
 	return merged, nil
 }
 
-// TODO(Robert): Mostly a copy of writeBase in kustomize package, but for writing a temporary kustomization yaml
-// with a single base resource to which the patch is being applied. Needs refactor and testing around
-// matching the targetPath and resource.
-func (p *ShipPatcher) writeTempKustomization(step api.Kustomize, resource string) error {
-	debug := level.Debug(log.With(p.Logger, "struct", "patcher", "handler", "writeTempKustomization"))
-
-	tempBaseKustomization := k8stypes.Kustomization{}
-	if err := p.FS.Walk(
-		step.Base,
-		func(targetPath string, info os.FileInfo, err error) error {
-			if err != nil {
-				debug.Log("event", "walk.fail", "path", targetPath)
-				return errors.Wrap(err, "failed to walk path")
-			}
-
-			relativePath, err := filepath.Rel(step.Base, targetPath)
-			if err != nil {
-				debug.Log("event", "relativepath.fail", "base", step.Base, "target", targetPath)
-				return errors.Wrap(err, "failed to get relative path")
-			}
-
-			if filepath.Clean(targetPath) == filepath.Clean(resource) {
-				tempBaseKustomization.Resources = append(tempBaseKustomization.Resources, relativePath)
-			}
-			return nil
-		},
-	); err != nil {
-		return err
-	}
-
-	if len(tempBaseKustomization.Resources) == 0 {
-		level.Error(p.Logger).Log("event", "unable to find", "resource", resource)
-		return fmt.Errorf("temp base directory is empty - base resource %s not found in %s", resource, step.Base)
-	}
-
-	marshalled, err := yaml.Marshal(tempBaseKustomization)
-	if err != nil {
-		return errors.Wrap(err, "marshal base kustomization.yaml")
-	}
-
-	// write base kustomization
-	name := path.Join(step.Base, "kustomization.yaml")
-	err = p.FS.WriteFile(name, []byte(marshalled), 0666)
-	if err != nil {
-		return errors.Wrapf(err, "write file %s", name)
-	}
-	return nil
-}
-
 func (p *ShipPatcher) deleteTempKustomization(step api.Kustomize) error {
 	debug := level.Debug(log.With(p.Logger, "struct", "patcher", "handler", "deleteTempKustomization"))
 
-	baseKustomizationPath := path.Join(step.Base, "kustomization.yaml")
+	tempKustomizationPath := path.Join(step.TempRenderPath(), "kustomization.yaml")
 
 	debug.Log("event", "remove.tempKustomizationYaml")
-	err := p.FS.Remove(baseKustomizationPath)
+	err := p.FS.Remove(tempKustomizationPath)
 	if err != nil {
 		return errors.Wrap(err, "remove temp base kustomization.yaml")
 	}
 
-	return nil
-}
-
-func (p *ShipPatcher) applyPatchCleanup() {
-	debug := level.Debug(log.With(p.Logger, "struct", "patcher", "handler", "patchCleanup"))
-
-	debug.Log("event", "remove temp directory")
-	err := p.FS.RemoveAll(constants.TempApplyOverlayPath)
+	err = p.FS.Remove(path.Join(step.TempRenderPath(), TempYamlPath))
 	if err != nil {
-		level.Error(log.With(p.Logger, "clean up"))
+		return errors.Wrap(err, "remove temp patch yaml")
 	}
+
+	return nil
 }
 
 func (p *ShipPatcher) ModifyField(original []byte, path []string) ([]byte, error) {

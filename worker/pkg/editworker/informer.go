@@ -3,7 +3,6 @@ package editworker
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -87,7 +86,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 
 	id, ok := newPod.ObjectMeta.Labels[editSession.GetType()]
 	if !ok {
-		w.Logger.Errorw("editworker informer expected to find udpate label in pod", zap.String("pod.name", oldPod.Name))
+		w.Logger.Errorw("editworker informer expected to find update label in pod", zap.String("pod.name", oldPod.Name))
 		return nil
 	}
 
@@ -134,14 +133,17 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "get secret")
 		}
 
-		var stateMetadata types.ShipStateMetadata
-		err = json.Unmarshal(stateJSON, &stateMetadata)
-		if err != nil {
-			return errors.Wrap(err, "unmarshal state json")
+		if err := w.Store.UpdateWatchState(context.TODO(), editSession.WatchID, stateJSON, ship.ShipClusterMetadataFromState(stateJSON)); err != nil {
+			return errors.Wrap(err, "update watch from state")
 		}
 
-		if err := w.Store.UpdateWatchFromState(context.TODO(), editSession.WatchID, stateJSON); err != nil {
-			return errors.Wrap(err, "update watch from state")
+		collectors := ship.TroubleshootCollectorsFromState(stateJSON)
+		if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), editSession.WatchID, collectors); err != nil {
+			return errors.Wrap(err, "set troubleshoot collectors")
+		}
+		analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
+		if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), editSession.WatchID, analyzers); err != nil {
+			return errors.Wrap(err, "set troubleshoot collectors")
 		}
 
 		if err := w.Store.SetEditStatus(context.TODO(), id, "completed"); err != nil {

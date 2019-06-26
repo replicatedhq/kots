@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
-	"github.com/replicatedhq/ship/pkg/state"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -161,13 +159,7 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 		return errors.Wrap(err, "get unfork session")
 	}
 
-	shipState := shipstate.State{}
-	if err := json.Unmarshal(stateJSON, &shipState); err != nil {
-		return errors.Wrap(err, "unmarshal state")
-	}
-
-	title := createWatchName(shipState, unforkSession.UpstreamURI)
-
+	title := ship.WatchNameFromState(stateJSON)
 	watchSlug := fmt.Sprintf("%s/%s", unforkSession.Username, slug.Make(title))
 
 	watches, err := w.Store.GetWatches(context.TODO(), unforkSession.UserID)
@@ -186,26 +178,19 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 		watchSlug = fmt.Sprintf("%s-%d", watchSlug, len(matchingWatchSlugs))
 	}
 
-	marshaledMetadata, err := json.Marshal(shipState.V1.Metadata)
-	if err != nil {
-		return errors.Wrap(err, "marshal state metadata")
-	}
+	icon := ship.WatchIconFromState(stateJSON)
 
-	icon := ""
-	if shipState.V1 != nil && shipState.V1.Metadata != nil {
-		icon = shipState.V1.Metadata.Icon
-		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
-			if shipState.V1.UpstreamContents != nil {
-				if shipState.V1.UpstreamContents.AppRelease != nil {
-					icon = shipState.V1.UpstreamContents.AppRelease.ChannelIcon
-
-				}
-			}
-		}
-	}
-
-	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, marshaledMetadata, title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
+	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
 		return errors.Wrap(err, "create watch from state")
+	}
+
+	collectors := ship.TroubleshootCollectorsFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), unforkSession.ID, collectors); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
+	}
+	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), unforkSession.ID, analyzers); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
 	}
 
 	if err := w.Store.SetUnforkStatus(context.TODO(), id, "completed"); err != nil {
@@ -252,7 +237,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 
 		title = parentWatch.Title
 	} else {
-		title = createWatchName(shipState, initSession.UpstreamURI)
+		title = ship.WatchNameFromState(stateJSON)
 	}
 
 	// Slug
@@ -279,30 +264,23 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 		}
 	}
 
-	marshaledMetadata, err := json.Marshal(shipState.V1.Metadata)
-	if err != nil {
-		return errors.Wrap(err, "marshal state metadata")
-	}
-
-	icon := ""
-	if shipState.V1 != nil && shipState.V1.Metadata != nil {
-		icon = shipState.V1.Metadata.Icon
-		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
-			if shipState.V1.UpstreamContents != nil {
-				if shipState.V1.UpstreamContents.AppRelease != nil {
-					icon = shipState.V1.UpstreamContents.AppRelease.ChannelIcon
-
-				}
-			}
-		}
-	}
+	icon := ship.WatchIconFromState(stateJSON)
 
 	parentWatchID := ""
 	if parentWatch != nil {
 		parentWatchID = parentWatch.ID
 	}
-	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, marshaledMetadata, title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
+	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
 		return errors.Wrap(err, "create watch from state")
+	}
+
+	collectors := ship.TroubleshootCollectorsFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), initSession.ID, collectors); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
+	}
+	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), initSession.ID, analyzers); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
 	}
 
 	prNumber, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)
@@ -310,10 +288,10 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 		return errors.Wrap(err, "maybe create pull request")
 	}
 
-	versionLabel := "Unknown"
-	if shipState.V1 != nil && shipState.V1.Metadata != nil && shipState.V1.Metadata.Version != "" {
-		versionLabel = shipState.V1.Metadata.Version
-	} else if parentWatch != nil {
+	versionLabel := ""
+	if parentWatch == nil {
+		versionLabel = ship.WatchVersionFromState(stateJSON)
+	} else {
 		parentWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), parentWatch.ID)
 		if err != nil {
 			return errors.Wrap(err, "get parent watch version")
@@ -359,7 +337,7 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 	if err != nil {
 		return 0, "", "", err
 	}
-	watchState := state.State{}
+	watchState := shipstate.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
 		return 0, "", "", errors.Wrap(err, "unmarshal watch state")
 	}
@@ -399,58 +377,6 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 	}
 
 	return prNumber, "pending", branchName, nil
-}
-
-func createWatchName(shipState shipstate.State, uri string) string {
-	if shipState.V1.Metadata != nil {
-		if shipState.V1.Metadata.ApplicationType == "replicated.app" {
-			return shipState.UpstreamContents().AppRelease.ChannelName
-		}
-
-		if shipState.V1.Metadata.Name != "" {
-			return shipState.V1.Metadata.Name
-		} else {
-			return shipState.V1.Metadata.AppSlug
-		}
-	}
-
-	repoRegex := regexp.MustCompile(`github(?:usercontent)?\.com\/([\w-]+)\/([\w-]+)(?:(?:/tree|/blob)?\/([\w-\._]+))?`)
-	// attempt to extract a more human-friendly name than the uri
-	if repoRegex.MatchString(uri) {
-		matches := repoRegex.FindStringSubmatch(uri)
-
-		if len(matches) >= 3 {
-			var repoName, version string
-			owner := matches[1]
-			repo := matches[2]
-
-			if strings.HasPrefix(repo, owner) {
-				repoName = repo
-			} else {
-				repoName = owner + "/" + repo
-			}
-
-			if len(matches) >= 4 {
-				version = matches[3]
-			}
-
-			if version != "" {
-				return repoName + "@" + version
-			}
-
-			return repoName
-		}
-	}
-
-	urlRegex := regexp.MustCompile(`(?:https?://)([\w\.\/\-_]+)`)
-	if urlRegex.MatchString(uri) {
-		matches := urlRegex.FindStringSubmatch(uri)
-		if len(matches) >= 2 {
-			return matches[1]
-		}
-	}
-
-	return uri
 }
 
 func stringInSlice(a string, list []string) bool {

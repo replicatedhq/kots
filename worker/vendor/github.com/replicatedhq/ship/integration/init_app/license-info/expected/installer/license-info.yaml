@@ -44,6 +44,8 @@ entitlements:
     - key: entitlements.replicated.com/type
       value: number
   utilizations: []
+collectSpec: ""
+analyzeSpec: ""
 type: replicated.app
 license:
   id: hLHawMDiyQIeFS7kqVFtD2f44LNh8u5Z

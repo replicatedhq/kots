@@ -195,7 +195,7 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 	}
 
 	shipState := ship.NewStateManager(s.Worker.Config)
-	s3State, err := shipState.CreateS3State([]byte(""))
+	s3State, err := shipState.CreateS3State([]byte("{}"))
 	if err != nil {
 		s.Logger.Errorw("initserver failed to upload state to S3", zap.Error(err))
 		return
@@ -233,7 +233,7 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 		return
 	}
 
-	// Block until the new service is responding, limited to 30 seconds
+	// Block until the new service is responding, limited to (math) seconds
 	quickClient := &http.Client{
 		Timeout: time.Millisecond * 200,
 	}

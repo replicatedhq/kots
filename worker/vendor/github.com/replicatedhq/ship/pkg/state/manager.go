@@ -1,11 +1,7 @@
 package state
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/go-kit/kit/log"
@@ -19,9 +15,6 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type Manager interface {
@@ -48,6 +41,11 @@ type Manager interface {
 
 	AddCert(name string, newCert util.CertType) error
 	AddCA(name string, newCA util.CAType) error
+}
+
+type stateSerializer interface {
+	Load() (State, error)
+	Save(State) error
 }
 
 var _ Manager = &MManager{}
@@ -241,26 +239,40 @@ func (m *MManager) SerializeUpstreamContents(contents *UpstreamContents) error {
 	return err
 }
 
-// TryLoad will attempt to load a state file from disk, if present
-func (m *MManager) TryLoad() (State, error) {
-	m.StateRWMut.RLock()
-	defer m.StateRWMut.RUnlock()
+func (m *MManager) getStateSerializer() (stateSerializer, error) {
 	stateFrom := m.V.GetString("state-from")
 	if stateFrom == "" {
 		stateFrom = "file"
 	}
 
-	// TODO consider an interface
-
 	switch stateFrom {
 	case "file":
-		return m.tryLoadFromFile()
+		return newFileSerializer(m.FS, m.Logger), nil
 	case "secret":
-		return m.tryLoadFromSecret()
+		return newSecretSerializer(m.Logger, m.V.GetString("secret-namespace"), m.V.GetString("secret-name"), m.V.GetString("secret-key")), nil
+	case "url":
+		return newURLSerializer(m.Logger, m.V.GetString("state-get-url"), m.V.GetString("state-put-url")), nil
 	default:
-		err := fmt.Errorf("unsupported state-from value: %q", stateFrom)
-		return State{}, errors.Wrap(err, "try load state")
+		return nil, fmt.Errorf("unsupported state-from value: %q", stateFrom)
 	}
+}
+
+// TryLoad will attempt to load a state file from disk, if present
+func (m *MManager) TryLoad() (State, error) {
+	m.StateRWMut.RLock()
+	defer m.StateRWMut.RUnlock()
+
+	s, err := m.getStateSerializer()
+	if err != nil {
+		return State{}, errors.Wrap(err, "create state serializer")
+	}
+
+	state, err := s.Load()
+	if err != nil {
+		return State{}, errors.Wrap(err, "load state")
+	}
+
+	return state, nil
 }
 
 // ResetLifecycle is used by `ship update --headed` to reset the saved stepsCompleted
@@ -275,84 +287,6 @@ func (m *MManager) ResetLifecycle() error {
 		return state, nil
 	})
 	return err
-}
-
-// tryLoadFromSecret will attempt to load the state from a secret
-// currently only supports in-cluster execution
-func (m *MManager) tryLoadFromSecret() (State, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return State{}, errors.Wrap(err, "get in cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return State{}, errors.Wrap(err, "get kubernetes client")
-	}
-
-	ns := m.V.GetString("secret-namespace")
-	if ns == "" {
-		return State{}, errors.New("secret-namespace is not set")
-	}
-	secretName := m.V.GetString("secret-name")
-	if secretName == "" {
-		return State{}, errors.New("secret-name is not set")
-	}
-	secretKey := m.V.GetString("secret-key")
-	if secretKey == "" {
-		return State{}, errors.New("secret-key is not set")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		return State{}, errors.Wrap(err, "get secret")
-	}
-
-	serialized, ok := secret.Data[secretKey]
-	if !ok {
-		err := fmt.Errorf("key %q not found in secret %q", secretKey, secretName)
-		return State{}, errors.Wrap(err, "get state from secret")
-	}
-
-	// An empty secret should be treated as empty state
-	if len(strings.TrimSpace(string(serialized))) == 0 {
-		return State{}, nil
-	}
-
-	var state State
-	if err := json.Unmarshal(serialized, &state); err != nil {
-		return State{}, errors.Wrap(err, "unmarshal state")
-	}
-
-	level.Debug(m.Logger).Log(
-		"event", "state.unmarshal",
-		"type", "versioned",
-		"source", "secret",
-		"value", fmt.Sprintf("%+v", state),
-	)
-
-	level.Debug(m.Logger).Log("event", "state.resolve", "type", "versioned")
-	return state, nil
-}
-
-func (m *MManager) tryLoadFromFile() (State, error) {
-	if _, err := m.FS.Stat(constants.StatePath); os.IsNotExist(err) {
-		level.Debug(m.Logger).Log("msg", "no saved state exists", "path", constants.StatePath)
-		return State{}, nil
-	}
-
-	serialized, err := m.FS.ReadFile(constants.StatePath)
-	if err != nil {
-		return State{}, errors.Wrap(err, "read state file")
-	}
-
-	var state State
-	if err := json.Unmarshal(serialized, &state); err != nil {
-		return State{}, errors.Wrap(err, "unmarshal state")
-	}
-
-	level.Debug(m.Logger).Log("event", "state.resolve", "type", "versioned")
-	return state, nil
 }
 
 func (m *MManager) SaveKustomize(kustomize *Kustomize) error {
@@ -385,76 +319,15 @@ func (m *MManager) RemoveStateFile() error {
 func (m *MManager) serializeAndWriteState(state State) error {
 	m.StateRWMut.Lock()
 	defer m.StateRWMut.Unlock()
-	debug := level.Debug(log.With(m.Logger, "method", "serializeAndWriteState"))
 	state = state.migrateDeprecatedFields()
 
-	stateFrom := m.V.GetString("state-from")
-	if stateFrom == "" {
-		stateFrom = "file"
-	}
-
-	debug.Log("stateFrom", stateFrom)
-
-	switch stateFrom {
-	case "file":
-		return m.serializeAndWriteStateFile(state)
-	case "secret":
-		return m.serializeAndWriteStateSecret(state)
-	default:
-		err := fmt.Errorf("unsupported state-from value: %q", stateFrom)
-		return errors.Wrap(err, "serializeAndWriteState")
-	}
-}
-
-func (m *MManager) serializeAndWriteStateFile(state State) error {
-
-	serialized, err := json.MarshalIndent(state, "", "  ")
+	s, err := m.getStateSerializer()
 	if err != nil {
-		return errors.Wrap(err, "serialize state")
+		return errors.Wrap(err, "create state serializer")
 	}
 
-	err = m.FS.MkdirAll(filepath.Dir(constants.StatePath), 0700)
-	if err != nil {
-		return errors.Wrap(err, "mkdir state")
-	}
-
-	err = m.FS.WriteFile(constants.StatePath, serialized, 0644)
-	if err != nil {
-		return errors.Wrap(err, "write state file")
-	}
-
-	return nil
-}
-
-func (m *MManager) serializeAndWriteStateSecret(state State) error {
-	serialized, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return errors.Wrap(err, "serialize state")
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "get in cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return errors.Wrap(err, "get kubernetes client")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(m.V.GetString("secret-namespace")).Get(m.V.GetString("secret-name"), metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "get secret")
-	}
-
-	secret.Data[m.V.GetString("secret-key")] = serialized
-	debug := level.Debug(log.With(m.Logger, "method", "serializeHelmValues"))
-
-	debug.Log("event", "serializeAndWriteStateSecret", "name", secret.Name, "key", m.V.GetString("secret-key"))
-
-	_, err = clientset.CoreV1().Secrets(m.V.GetString("secret-namespace")).Update(secret)
-	if err != nil {
-		return errors.Wrap(err, "update secret")
+	if err := s.Save(state); err != nil {
+		return errors.Wrap(err, "save state")
 	}
 
 	return nil
