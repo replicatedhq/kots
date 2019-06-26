@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -21,14 +20,4 @@ func (s *SQLStore) GetNextUploadSequence(ctx context.Context, watchID string) (i
 		return currentSequence, errors.Wrap(err, "scan ship_output_files")
 	}
 	return currentSequence + 1, nil
-}
-
-func (s *SQLStore) UpdateWatchFromState(ctx context.Context, watchID string, stateJSON []byte) error {
-	query := `update watch set current_state = $1, updated_at = $2 where id = $3`
-	_, err := s.db.ExecContext(ctx, query, stateJSON, time.Now(), watchID)
-	if err != nil {
-		return errors.Wrap(err, "update watch")
-	}
-
-	return nil
 }

@@ -20,7 +20,7 @@ type Store interface {
 	DownloadFromS3(ctx context.Context, path string) (string, error)
 
 	GetNextUploadSequence(ctx context.Context, watchID string) (int, error)
-	UpdateWatchFromState(ctx context.Context, watchID string, stateJSON []byte) error
+	UpdateWatchState(ctx context.Context, watchID string, stateJSON []byte, metadata []byte) error
 
 	ListReadyUpdateIDs(ctx context.Context) ([]string, error)
 	GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error)
@@ -56,4 +56,7 @@ type Store interface {
 	GetCluster(ctx context.Context, clusterID string) (*types.Cluster, error)
 	GetClusterForWatch(ctx context.Context, watchID string) (*types.Cluster, error)
 	GetGitHubPathForClusterWatch(ctx context.Context, clusterID string, watchID string) (string, error)
+
+	SetWatchTroubleshootCollectors(ctx context.Context, watchID string, collectors []byte) error
+	SetWatchTroubleshootAnalyzers(ctx context.Context, watchID string, analyzers []byte) error
 }

@@ -159,11 +159,6 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 		return errors.Wrap(err, "get unfork session")
 	}
 
-	shipState := shipstate.State{}
-	if err := json.Unmarshal(stateJSON, &shipState); err != nil {
-		return errors.Wrap(err, "unmarshal state")
-	}
-
 	title := ship.WatchNameFromState(stateJSON)
 	watchSlug := fmt.Sprintf("%s/%s", unforkSession.Username, slug.Make(title))
 
@@ -187,6 +182,15 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 
 	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
 		return errors.Wrap(err, "create watch from state")
+	}
+
+	collectors := ship.TroubleshootCollectorsFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), unforkSession.ID, collectors); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
+	}
+	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), unforkSession.ID, analyzers); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
 	}
 
 	if err := w.Store.SetUnforkStatus(context.TODO(), id, "completed"); err != nil {
@@ -268,6 +272,15 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	}
 	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
 		return errors.Wrap(err, "create watch from state")
+	}
+
+	collectors := ship.TroubleshootCollectorsFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), initSession.ID, collectors); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
+	}
+	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
+	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), initSession.ID, analyzers); err != nil {
+		return errors.Wrap(err, "set troubleshoot collectors")
 	}
 
 	prNumber, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)

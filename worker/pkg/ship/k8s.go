@@ -67,8 +67,14 @@ func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag 
 	labels[session.GetType()] = session.GetID()
 	labels["shipcloud-role"] = session.GetRole()
 	labels["s3-filepath"] = base64.RawStdEncoding.EncodeToString([]byte(session.GetS3Filepath()))
-	labels["update-sequence"] = strconv.Itoa(session.GetUploadSequence())
 	labels["state-id"] = s3State.ID
+
+	if session.GetType() == "ship-update" {
+		labels["update-sequence"] = strconv.Itoa(session.GetUploadSequence())
+	}
+	if session.GetType() == "ship-edit" {
+		labels["edit-sequence"] = strconv.Itoa(session.GetUploadSequence())
+	}
 
 	if shipImage == "" {
 		shipImage = "replicated/ship"

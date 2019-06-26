@@ -44,7 +44,9 @@ var shipEnterpriseStateJSON = `{
 		  "customer_id": ""
 		},
 		"signature": "signed"
-	      }
+	      },
+	      "collectSpec": "collect:\n  v1:[]",
+	      "analyzeSpec": "analyze:\n  v1:[]"
 	    }
 	  },
 	  "shipVersion": {
