@@ -13,6 +13,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
@@ -100,52 +101,68 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 		return nil
 	}
 
-	if oldPod.Status.Phase != newPod.Status.Phase {
-		if newPod.Status.Phase == corev1.PodFailed {
-			if shipCloudRole == "init" {
-				if err := w.Store.SetInitStatus(context.TODO(), id, "failed"); err != nil {
-					return errors.Wrap(err, "set init status to failed")
-				}
-			} else if shipCloudRole == "unfork" {
-				if err := w.Store.SetUnforkStatus(context.TODO(), id, "failed"); err != nil {
-					return errors.Wrap(err, "set unfork status to failed")
-				}
+	if oldPod.Status.Phase == newPod.Status.Phase {
+		return nil
+	}
+
+	shipState := ship.NewStateManager(w.Config)
+	stateID := newPod.ObjectMeta.Labels["state-id"]
+	deleteState := func() {
+		if stateID == "" {
+			return
+		}
+		if err := shipState.DeleteState(stateID); err != nil {
+			w.Logger.Errorw("failed to delete state from S3", zap.String("state-id", stateID), zap.Error(err))
+		}
+	}
+
+	if newPod.Status.Phase == corev1.PodFailed {
+		defer deleteState()
+
+		if shipCloudRole == "init" {
+			if err := w.Store.SetInitStatus(context.TODO(), id, "failed"); err != nil {
+				return errors.Wrap(err, "set init status to failed")
 			}
-
-			// Leaving these sitting around for now...  we should
-			// be grabbing the logs from these and writing them to
-			// somewhere for analysis of failures
-
-			// if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
-			// 	return errors.Wrap(err, "delete namespace")
-			// }
-
-		} else if newPod.Status.Phase == corev1.PodSucceeded {
-			if shipCloudRole == "init" {
-				return w.initSessionToWatch(id, newPod)
-			} else if shipCloudRole == "unfork" {
-				return w.unforkSessionToWatch(id, newPod)
+		} else if shipCloudRole == "unfork" {
+			if err := w.Store.SetUnforkStatus(context.TODO(), id, "failed"); err != nil {
+				return errors.Wrap(err, "set unfork status to failed")
 			}
+		}
+
+		// Leaving these sitting around for now...  we should
+		// be grabbing the logs from these and writing them to
+		// somewhere for analysis of failures
+
+		// if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
+		// 	return errors.Wrap(err, "delete namespace")
+		// }
+
+	} else if newPod.Status.Phase == corev1.PodSucceeded {
+		defer deleteState()
+
+		stateJSON, err := shipState.GetState(stateID)
+		if err != nil {
+			return errors.Wrap(err, "get state")
+		}
+
+		if shipCloudRole == "init" {
+			return w.initSessionToWatch(id, newPod, stateJSON)
+		} else if shipCloudRole == "unfork" {
+			return w.unforkSessionToWatch(id, newPod, stateJSON)
 		}
 	}
 
 	return nil
 }
 
-func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod) error {
+func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON []byte) error {
 	unforkSession, err := w.Store.GetUnfork(context.TODO(), id)
 	if err != nil {
 		return errors.Wrap(err, "get unfork session")
 	}
 
-	// read the secret, put the state in the database
-	secret, err := w.K8sClient.CoreV1().Secrets(newPod.Namespace).Get(newPod.Name, metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "get secret")
-	}
-
 	shipState := shipstate.State{}
-	if err := json.Unmarshal(secret.Data["state.json"], &shipState); err != nil {
+	if err := json.Unmarshal(stateJSON, &shipState); err != nil {
 		return errors.Wrap(err, "unmarshal state")
 	}
 
@@ -187,7 +204,7 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod) error {
 		}
 	}
 
-	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], marshaledMetadata, title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
+	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, marshaledMetadata, title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
 		return errors.Wrap(err, "create watch from state")
 	}
 
@@ -202,20 +219,14 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod) error {
 	return nil
 }
 
-func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
+func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []byte) error {
 	initSession, err := w.Store.GetInit(context.TODO(), id)
 	if err != nil {
 		return errors.Wrap(err, "get init session")
 	}
 
-	// read the secret, put the state in the database
-	secret, err := w.K8sClient.CoreV1().Secrets(newPod.Namespace).Get(newPod.Name, metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "get secret")
-	}
-
 	shipState := shipstate.State{}
-	if err := json.Unmarshal(secret.Data["state.json"], &shipState); err != nil {
+	if err := json.Unmarshal(stateJSON, &shipState); err != nil {
 		return errors.Wrap(err, "unmarshal state")
 	}
 
@@ -290,7 +301,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod) error {
 	if parentWatch != nil {
 		parentWatchID = parentWatch.ID
 	}
-	if err := w.Store.CreateWatchFromState(context.TODO(), secret.Data["state.json"], marshaledMetadata, title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
+	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, marshaledMetadata, title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
 		return errors.Wrap(err, "create watch from state")
 	}
 
