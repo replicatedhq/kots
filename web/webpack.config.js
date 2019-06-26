@@ -7,15 +7,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-
-/**
- * In the latest version of monaco-editor (0.26.x), monaco is using
- * a background web worker to make the UI pretty and fast, but
- * this internal code splitting broke a ton of stuff. To avoid this,
- * we can just not import the webpack plugin and use the peer
- * dependency inside of react-monaco-editor to just keep things working(tm)
- */
-// const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
+const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -191,6 +183,21 @@ module.exports = function (env) {
       }),
       new webpack.DefinePlugin({
         "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT),
+      }),
+      new MonacoWebpackPlugin({
+        languages: [
+          "yaml",
+          "json"
+        ],
+        features: [
+          "coreCommands",
+          "folding",
+          "bracketMatching",
+          "clipboard",
+          "find",
+          "colorDetector",
+          "codelens"
+        ]
       }),
       new CopyWebpackPlugin([
         {
