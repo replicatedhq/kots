@@ -17,57 +17,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const GetAppspecQuery = `
-query($semver: String) {
-  shipRelease (semver: $semver) {
-    id
-    channelId
-    channelName
-    channelIcon
-    semver
-    releaseNotes
-    spec
-    images {
-      url
-      source
-      appSlug
-      imageKey
-    }
-    githubContents {
-      repo
-      path
-      ref
-      files {
-        name
-        path
-        sha
-        size
-        data
-      }
-    }
-    entitlements {
-      values {
-        key
-        value
-        labels {
-          key
-          value
-        }
-      }
-      meta {
-        customerID
-        lastUpdated
-      }
-      signature
-    }
-    created
-    registrySecret
-  }
-}`
-
-const getSlugAppSpecQuery = `
-query($appSlug: String!, $licenseID: String, $releaseID: String, $semver: String) {
-  shipSlugRelease (appSlug: $appSlug, licenseID: $licenseID, releaseID: $releaseID, semver: $semver) {
+const ShipRelease = `
     id
     sequence
     channelId
@@ -117,10 +67,24 @@ query($appSlug: String!, $licenseID: String, $releaseID: String, $semver: String
     }
     created
     registrySecret
+    collectSpec
+    analyzeSpec`
+
+const GetAppspecQuery = `
+query($semver: String) {
+  shipRelease (semver: $semver) {
+` + ShipRelease + `
   }
 }`
 
-const getLicenseQuery = `
+const GetSlugAppSpecQuery = `
+query($appSlug: String!, $licenseID: String, $releaseID: String, $semver: String) {
+  shipSlugRelease (appSlug: $appSlug, licenseID: $licenseID, releaseID: $releaseID, semver: $semver) {
+` + ShipRelease + `
+  }
+}`
+
+const GetLicenseQuery = `
 query($licenseId: String) {
   license (licenseId: $licenseId) {
     id
@@ -281,7 +245,7 @@ func (c *GraphQLClient) GetRelease(selector *Selector) (*state.ShipRelease, erro
 // GetSlugRelease gets a release from the graphql server by app slug
 func (c *GraphQLClient) GetSlugRelease(selector *Selector) (*state.ShipRelease, error) {
 	requestObj := GraphQLRequest{
-		Query: getSlugAppSpecQuery,
+		Query: GetSlugAppSpecQuery,
 		Variables: map[string]string{
 			"appSlug":   selector.AppSlug,
 			"licenseID": selector.LicenseID,
@@ -314,9 +278,9 @@ func (c *GraphQLClient) GetSlugRelease(selector *Selector) (*state.ShipRelease, 
 	return &shipResponse.Data.ShipSlugRelease, nil
 }
 
-func (c *GraphQLClient) getLicense(selector *Selector) (*license, error) {
+func (c *GraphQLClient) GetLicense(selector *Selector) (*license, error) {
 	requestObj := GraphQLRequest{
-		Query: getLicenseQuery,
+		Query: GetLicenseQuery,
 		Variables: map[string]string{
 			"licenseId": selector.LicenseID,
 		},

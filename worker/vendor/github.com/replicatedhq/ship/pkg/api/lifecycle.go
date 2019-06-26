@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/replicatedhq/ship/pkg/constants"
 )
@@ -127,7 +128,7 @@ func (k *Unfork) OverlayPath() string {
 func (u *Unfork) Shared() *StepShared { return &u.StepShared }
 func (k *Unfork) ShortName() string   { return "unfork" }
 
-// Kustomize is a lifeycle step to generate overlays for generated assets.
+// Kustomize is a lifecycle step to generate overlays for generated assets.
 // It does not take a kustomization.yml, rather it will generate one in the .ship/ folder
 type Kustomize struct {
 	StepShared `json:",inline" yaml:",inline" hcl:",inline"`
@@ -143,8 +144,9 @@ func (k *Kustomize) OverlayPath() string {
 	return k.Overlay
 }
 
-func (k *Kustomize) Shared() *StepShared { return &k.StepShared }
-func (k *Kustomize) ShortName() string   { return "kustomize" }
+func (k *Kustomize) Shared() *StepShared    { return &k.StepShared }
+func (k *Kustomize) ShortName() string      { return "kustomize" }
+func (k *Kustomize) TempRenderPath() string { return filepath.Join(constants.KustomizeRenderPath, k.ID) }
 
 // KustomizeIntro is a lifeycle step to display an informative intro page for kustomize
 type KustomizeIntro struct {

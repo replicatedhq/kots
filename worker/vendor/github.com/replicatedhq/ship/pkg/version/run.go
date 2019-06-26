@@ -11,4 +11,5 @@ var RunAtEpoch string
 func init() {
 	RunAt = time.Now()
 	RunAtEpoch = fmt.Sprintf("%d", RunAt.Unix())
+	initBuild()
 }

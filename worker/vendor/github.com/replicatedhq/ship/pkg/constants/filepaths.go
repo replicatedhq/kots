@@ -30,6 +30,8 @@ var (
 	ReleasePath string
 	// TempHelmValuesPath is the folder path used to store the updated values.yaml
 	TempHelmValuesPath string
+	// DefaultOverlaysPath is the folder path used for the default k8s patches removing helm and tiller labels
+	DefaultOverlaysPath string
 	// TempApplyOverlayPath is the folder path used to apply patch
 	TempApplyOverlayPath string
 	// HelmChartPath is the path used to store Helm chart contents
@@ -39,7 +41,9 @@ var (
 	// UnforkForkedBasePath is the path that unfork will save the forked in when unforking
 	UnforkForkedBasePath string
 	// HelmLocalDependencyPath is the local temp path that local dependencies are initially saved to
-	HelmLocalDependencyPath string
+	HelmLocalDependencyPath = path.Join(ShipPathInternalTmp, "dependencies")
+	// Kustomize render path is the local path that kustomize steps will use to render yaml for display
+	KustomizeRenderPath string
 )
 
 func SetShipRootDir(dir string) {
@@ -50,9 +54,11 @@ func SetShipRootDir(dir string) {
 	StatePath = path.Join(ShipPathInternal, "state.json")
 	ReleasePath = path.Join(ShipPathInternal, "release.yml")
 	TempHelmValuesPath = path.Join(HelmChartPath, "tmp")
+	DefaultOverlaysPath = path.Join("overlays", "defaults")
 	TempApplyOverlayPath = path.Join("overlays", "tmp-apply")
 	HelmChartPath = path.Join(ShipPathInternalTmp, "chart")
 	HelmChartForkedPath = path.Join(ShipPathInternalTmp, "chart-forked")
 	UnforkForkedBasePath = path.Join(ShipPathInternalTmp, "fork", "base")
 	HelmLocalDependencyPath = path.Join(ShipPathInternalTmp, "dependencies")
+	KustomizeRenderPath = path.Join(ShipPathInternalTmp, "kustomize")
 }

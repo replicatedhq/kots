@@ -82,3 +82,34 @@ func BailIfPresent(fs afero.Afero, basePath string, logger log.Logger) error {
 	level.Debug(logger).Log("method", "BailIfPresent", "event", "target.present", "path", basePath)
 	return warnings.WarnShouldMoveDirectory(basePath)
 }
+
+func RecursiveCopy(fs afero.Afero, sourceDir, destDir string) error {
+	err := fs.MkdirAll(destDir, os.ModePerm)
+	if err != nil {
+		return errors.Wrapf(err, "create dest dir %s", destDir)
+	}
+	srcFiles, err := fs.ReadDir(sourceDir)
+	if err != nil {
+		return errors.Wrapf(err, "")
+	}
+	for _, file := range srcFiles {
+		if file.IsDir() {
+			err = RecursiveCopy(fs, filepath.Join(sourceDir, file.Name()), filepath.Join(destDir, file.Name()))
+			if err != nil {
+				return errors.Wrapf(err, "copy dir %s", file.Name())
+			}
+		} else {
+			// is file
+			contents, err := fs.ReadFile(filepath.Join(sourceDir, file.Name()))
+			if err != nil {
+				return errors.Wrapf(err, "read file %s to copy", file.Name())
+			}
+
+			err = fs.WriteFile(filepath.Join(destDir, file.Name()), contents, file.Mode())
+			if err != nil {
+				return errors.Wrapf(err, "write file %s to copy", file.Name())
+			}
+		}
+	}
+	return nil
+}

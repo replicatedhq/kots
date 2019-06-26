@@ -303,6 +303,8 @@ type ShipRelease struct {
 	Created        string           `json:"created"` // TODO: this time is not in RFC 3339 format
 	RegistrySecret string           `json:"registrySecret,omitempty"`
 	Entitlements   api.Entitlements `json:"entitlements,omitempty"`
+	CollectSpec    string           `json:"collectSpec,omitempty"`
+	AnalyzeSpec    string           `json:"analyzeSpec,omitempty"`
 }
 
 // ToReleaseMeta linter
@@ -320,6 +322,8 @@ func (r *ShipRelease) ToReleaseMeta() api.ReleaseMetadata {
 		Images:         r.apiImages(),
 		GithubContents: r.githubContents(),
 		Entitlements:   r.Entitlements,
+		CollectSpec:    r.CollectSpec,
+		AnalyzeSpec:    r.AnalyzeSpec,
 	}
 }
 

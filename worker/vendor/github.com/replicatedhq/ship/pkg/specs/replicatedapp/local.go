@@ -56,12 +56,13 @@ func (r *resolver) resolveRunbookRelease(selector *Selector) (*state.ShipRelease
 		Semver:         semver,
 		GithubContents: fakeGithubContents,
 		Entitlements:   *fakeEntitlements,
+		Images:         []state.Image{},
 	}, nil
 }
 
 func (r *resolver) loadLocalGitHubContents() ([]state.GithubContent, error) {
 	debug := level.Debug(log.With(r.Logger, "method", "loadLocalGitHubContents"))
-	var fakeGithubContents []state.GithubContent
+	fakeGithubContents := []state.GithubContent{}
 	for _, content := range r.SetGitHubContents {
 		debug.Log("event", "githubcontents.set", "received", content)
 		split := strings.Split(content, ":")

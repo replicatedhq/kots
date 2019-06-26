@@ -100,6 +100,8 @@ type ReleaseMetadata struct {
 	GithubContents  []GithubContent `json:"githubContents" yaml:"githubContents" hcl:"githubContents" meta:"githubContents"`
 	ShipAppMetadata ShipAppMetadata `json:"shipAppMetadata" yaml:"shipAppMetadata" hcl:"shipAppMetadata" meta:"shipAppMetadata"`
 	Entitlements    Entitlements    `json:"entitlements" yaml:"entitlements" hcl:"entitlements" meta:"entitlements"`
+	CollectSpec     string          `json:"collectSpec" yaml:"collectSpec" hcl:"collectSpec" meta:"collectSpec"`
+	AnalyzeSpec     string          `json:"analyzeSpec" yaml:"analyzeSpec" hcl:"analyzeSpec" meta:"analyzeSpec"`
 	Type            string          `json:"type" yaml:"type" hcl:"type" meta:"type"`
 	License         License         `json:"license" yaml:"license" hcl:"license" meta:"license"`
 }
