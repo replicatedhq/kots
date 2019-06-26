@@ -1060,7 +1060,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:add7dc55e5c49d3a3f04dd90abea7a4fc808cff319dbab3c858d1352c61147ed"
+  digest = "1:b007db57f172e00a8070e9fce3387d29a762552c1b14f630498564d758b49354"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "d940fe1fbc60ca188d770da6f47381f29a10648b"
+  revision = "v0.47.0"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"

@@ -166,7 +166,7 @@ func (s *EditServer) CreateEditHandler(c *gin.Context) {
 			c.Status(http.StatusCreated)
 			return
 		}
-		if time.Now().Sub(start) > time.Duration(time.Second*30) {
+		if time.Now().Sub(start) > time.Duration(time.Minute*30) {
 			s.Logger.Errorw("editserver timeout creating edit worker", zap.Error(err))
 			c.AbortWithStatus(http.StatusGatewayTimeout)
 			return
