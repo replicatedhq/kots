@@ -5,9 +5,9 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const HtmlWebpackTemplate = require("html-webpack-template");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
-const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -184,6 +184,21 @@ module.exports = function (env) {
       new webpack.DefinePlugin({
         "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT),
       }),
+      new MonacoWebpackPlugin({
+        languages: [
+          "yaml",
+          "json"
+        ],
+        features: [
+          "coreCommands",
+          "folding",
+          "bracketMatching",
+          "clipboard",
+          "find",
+          "colorDetector",
+          "codelens"
+        ]
+      }),
       new CopyWebpackPlugin([
         {
           from: "./src/services/prodPerfect.js",
@@ -194,19 +209,6 @@ module.exports = function (env) {
           }
         }
       ]),
-      new MonacoWebpackPlugin({
-        languages: [
-          "yaml",
-          "json",
-        ],
-        features: [
-          "coreCommands",
-          "folding",
-          "bracketMatching",
-          "clipboard",
-          "find",
-        ],
-      }),
       new webpack.LoaderOptionsPlugin({
         options: {
           postcss: [
