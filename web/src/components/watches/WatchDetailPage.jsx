@@ -11,6 +11,7 @@ import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import HelmChartSidebarItem from "@src/components/watches/WatchSidebarItem/HelmChartSidebarItem";
 import NotFound from "../static/NotFound";
 import DetailPageApplication from "./DetailPageApplication";
+import DetailPageHelmChart from "./DetailPageHelmChart";
 import DetailPageIntegrations from "./DetailPageIntegrations";
 import StateFileViewer from "../state/StateFileViewer";
 import DeploymentClusters from "../watches/DeploymentClusters";
@@ -237,6 +238,15 @@ class WatchDetailPage extends Component {
                         </div>
                       } />
                     }
+
+                      <Route exact path="/watch/helm/:id" render={() =>
+                        <DetailPageHelmChart
+                          chart={watch}
+                          refetchListWatches={refetchListWatches}
+                          updateCallback={this.refetchGraphQLData}
+                        />
+                      } />
+
                     { /* ROUTE UNUSED */}
                     <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
                     { /* ROUTE UNUSED */}
