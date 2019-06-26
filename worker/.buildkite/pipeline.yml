@@ -4,7 +4,7 @@ steps:
     label: test-and-build
     plugins:
       - docker#v3.0.1:
-          image: replicated/gitops-builder:buildkite
+          image: replicated/gitops-builder:buildkite-go12-node10
           always-pull: true
           workdir: /go/src/github.com/replicatedhq/ship-cluster
     artifact_paths:
