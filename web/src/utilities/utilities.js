@@ -52,7 +52,7 @@ export function getWatchMetadata(watchMeta) {
 export function getApplicationType(watch) {
   try {
     const { metadata } = watch;
-    if (!metadata) return "";
+    if (!metadata || metadata === "null") return "";
     const parsedMetadata = JSON.parse(metadata);
     return parsedMetadata.applicationType;
 
