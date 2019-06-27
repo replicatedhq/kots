@@ -98,7 +98,6 @@ func (w *Worker) startAnalysis(ctx context.Context, supportBundleID string) erro
 		w.Logger.Errorw("analysisworker get supportbundle failed", zap.String("supportBundleID", supportBundleID), zap.Error(err))
 		return err
 	}
-
 	if err := w.deployAnalyzer(supportBundle); err != nil {
 		w.Logger.Errorw("analysis deploy update failed", zap.String("supportBundleID", supportBundleID), zap.Error(err))
 		return err

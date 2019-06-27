@@ -37,7 +37,7 @@ func (w *Worker) Run(ctx context.Context) error {
 	)
 
 	go func() {
-		Serve(ctx, w.Config.InitServerAddress)
+		Serve(ctx, w.Config.WatchServerAddress)
 	}()
 
 	errCh := make(chan error, 1)

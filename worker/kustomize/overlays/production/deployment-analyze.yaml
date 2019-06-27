@@ -21,3 +21,5 @@ spec:
               value: "0.26.0"
             - name: ANALYZE_PULL_POLICY
               value: "Always"
+            - name: ANALYZE_NODE_SELECTOR
+              value: untrusted

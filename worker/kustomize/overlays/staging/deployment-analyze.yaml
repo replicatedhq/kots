@@ -15,11 +15,11 @@ spec:
               value: "1"
             - name: AWS_REGION
               value: us-east-1
-            - name: GITHUB_INTEGRATION_ID
-              value: "17891"
             - name: ANALYZE_IMAGE
               value: "replicated/support-bundle"
             - name: ANALYZE_TAG
               value: "alpha"
             - name: ANALYZE_PULL_POLICY
               value: "Always"
+            - name: ANALYZE_NODE_SELECTOR
+              value: untrusted

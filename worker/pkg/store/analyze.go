@@ -25,12 +25,13 @@ func (s *SQLStore) ListReadyAnalysisIDs(ctx context.Context) ([]string, error) {
 
 		supportBundleIDs = append(supportBundleIDs, supportBundleID)
 	}
+
 	return supportBundleIDs, rows.Err()
 }
 
 func (s *SQLStore) SetAnalysisStarted(ctx context.Context, supportBundleID string) error {
 	query := `update supportbundle set status = $1 where id = $2`
-	_, err := s.db.ExecContext(ctx, query, supportBundleID, "analyzing")
+	_, err := s.db.ExecContext(ctx, query, "analyzing", supportBundleID)
 	return err
 }
 

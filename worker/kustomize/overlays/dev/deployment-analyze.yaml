@@ -18,3 +18,9 @@ spec:
                 secretKeyRef:
                   name: ship-postgres   # This secret is created in the ship-cluster-db project
                   key: uri
+            - name: ANALYZE_IMAGE
+              value: "replicated/support-bundle"
+            - name: ANALYZE_TAG
+              value: "alpha"
+            - name: ANALYZE_PULL_POLICY
+              value: Always
