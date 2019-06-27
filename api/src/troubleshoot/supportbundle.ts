@@ -1,24 +1,34 @@
 
 export type SupportBundleStatus = "pending" | "uploaded" | "analyzing" | "analyzed" | "analysis_error";
 
-export interface SupportBundle {
+export class SupportBundle {
   id: string;
   slug: string;
   watchId: string;
   name: string;
   size: number;
-  notes: string;
   status: SupportBundleStatus;
-  resolution: string;
   treeIndex: string;
-  viewed: boolean;
-  createdAt: string;
-  uploadedAt: string;
+  createdAt: Date;
+  uploadedAt: Date;
   isArchived: boolean;
-
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;
+
+  public toSchema() {
+    return {
+      id: this.id,
+      slug: this.slug,
+      name: this.name,
+      size: this.size,
+      status: this.status,
+      treeIndex: this.treeIndex,
+      createdAt: this.createdAt.toISOString(),
+      uploadedAt: this.uploadedAt.toISOString(),
+      isArchived: this.isArchived,
+    };
+  }
 };
 
 export interface SupportBundleAnalysis {

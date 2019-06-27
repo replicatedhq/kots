@@ -1,6 +1,7 @@
 const TroubleshootCollectSpec = `
 type TroubleshootCollectSpec {
   spec: String
+  hydrated: String
 }`;
 
 const TroubleshootAnalyzeSpec = `

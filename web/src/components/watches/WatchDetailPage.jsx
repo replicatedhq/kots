@@ -322,6 +322,5 @@ export default compose(
     props: ({ mutate }) => ({
       deleteWatch: (watchId) => mutate({ variables: { watchId }})
     })
-  })
-
+  }),
 )(WatchDetailPage);
