@@ -59,4 +59,8 @@ type Store interface {
 
 	SetWatchTroubleshootCollectors(ctx context.Context, watchID string, collectors []byte) error
 	SetWatchTroubleshootAnalyzers(ctx context.Context, watchID string, analyzers []byte) error
+
+	ListReadyAnalysisIDs(ctx context.Context) ([]string, error)
+	SetAnalysisStarted(ctx context.Context, supportBundleID string) error
+	GetSupportBundle(ctx context.Context, supportBundleID string) (*types.SupportBundle, error)
 }
