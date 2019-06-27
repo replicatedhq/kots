@@ -36,6 +36,11 @@ type Config struct {
 	UpdateServerAddress   string        `mapstructure:"update_server_address"`
 	EditServerAddress     string        `mapstructure:"edit_server_address"`
 	WatchServerAddress    string        `mapstructure:"watch_server_address"`
+	AnalyzeServerAddress  string        `mapstructure:"analyze_server_address"`
+
+	AnalyzeImage      string `mapstructure:"analyze_image"`
+	AnalyzeTag        string `mapstructure:"analyze_tab"`
+	AnalyzePullPolicy string `mapstructure:"analyze_pull_policy"`
 
 	ShipImage      string `mapstructure:"ship_image"`
 	ShipTag        string `mapstructure:"ship_tag"`
@@ -63,6 +68,7 @@ func New() *Config {
 		InitServerAddress:     ":3000",
 		WatchServerAddress:    ":3000",
 		UpdateServerAddress:   ":3000",
+		AnalyzeServerAddress:  ":3000",
 		EditServerAddress:     ":3000",
 		DBPollInterval:        time.Second * 2,
 		WatchCreationInterval: time.Second * 5,
