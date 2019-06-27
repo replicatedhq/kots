@@ -1,19 +1,34 @@
-import React from "react";
+import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
+import { graphql, compose, withApollo } from "react-apollo";
+import { listSupportBundles } from "@src/queries/TroubleshootQueries";
+import withTheme from "@src/components/context/withTheme";
 
-export default function WatchTroubleshoot() {
-  const command = "kubectl exec `kubectl get pods --selector=tier=support-bundle -o jsonpath='{.items[*].metadata.name}'` -- support-bundle generate --out - --quiet --yes-upload > support-bundle.tar.gz";
-  return (
-    <div className="TroubleshootCode--wrapper flex-auto">
-      <div className="flex1 flex-column">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Generate a support bundle</p>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--5">If you’re having issues with your application, run the command below to generate a support bundle to send to the vendor for analysis.</p>
-        <code className="u-lineHeight--normal u-fontSize--small u-overflow--auto">
-          {command}
-        </code>
+class WatchTroubleshoot extends Component {
+
+  render() {
+    return (
+      <div className="TroubleshootCode--wrapper flex-auto">
+
       </div>
-      <div>
-        <span className="replicated-link u-fontSize--small">Copy command</span>
-      </div>
-    </div>
-  );
+    );
+  }
 }
+
+export default compose(
+  withApollo,
+  withRouter,
+  withTheme,
+  graphql(listSupportBundles, {
+    name: "supportBundles",
+    options: props => {
+      const { owner, slug } = props.match.params;
+      return {
+        variables: {
+          watchSlug: `${owner}/${slug}`
+        }
+      }
+    }
+  }),
+)(WatchTroubleshoot);
+

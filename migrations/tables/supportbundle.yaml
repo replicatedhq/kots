@@ -29,18 +29,12 @@ spec:
         type: text
       - name: size
         type: integer
-      - name: notes
-        type: text
       - name: status
         type: text
         constraints:
           notNull: true
-      - name: resolution
-        type: text
       - name: tree_index
         type: text
-      - name: viewed
-        type: boolean
       - name: analysis_id
         type: text
       - name: created_at

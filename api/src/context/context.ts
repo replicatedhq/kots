@@ -76,6 +76,16 @@ export class Context {
     return cluster;
   }
 
+  public async findWatch(slug: string): Promise<Watch> {
+    const watch = await this.stores.watchStore.findUserWatch(this.session.userId, { slug });
+
+    if (!watch) {
+      throw new ReplicatedError("Watch not found");
+    }
+
+    return watch;
+  }
+
   public async getWatch(id: string): Promise<Watch> {
     const watch = await this.stores.watchStore.findUserWatch(this.session.userId, { id });
 
