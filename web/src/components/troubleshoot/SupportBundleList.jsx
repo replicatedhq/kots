@@ -1,0 +1,133 @@
+import * as React from "react";
+import { withRouter } from "react-router-dom";
+import { graphql, compose, withApollo } from "react-apollo";
+
+import { listSupportBundles } from "../../queries/TroubleshootQueries";
+// import { archiveSupportBundle } from "../../mutations/SupportBundleMutations";
+
+import Modal from "react-modal";
+import Loader from "../shared/Loader";
+import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
+import SupportBundleRow from "./SupportBundleRow";
+
+import "../../scss/components/support/SupportBundleList.scss";
+
+class SupportBundleList extends React.Component {
+
+  state = {
+    displayUploadModal: false
+  };
+
+  toggleModal = () => {
+    this.setState({
+      displayUploadModal: !this.state.displayUploadModal
+    })
+  }
+
+  render() {
+    const { loading, error, supportBundles } = this.props.listSupportBundles;
+    
+    if (error) {
+      <p>{error.message}</p>
+    }
+
+    let bundlesNode;
+    if (supportBundles?.length) {
+      bundlesNode = (
+        supportBundles.map(bundle => (
+          <SupportBundleRow
+            key={bundle.id}
+            bundle={bundle}
+          />
+        ))
+      );
+    } else {
+      bundlesNode = (
+        <div className="flex1 flex-column justifyContent--center alignItems--center">
+          <div className="flex-column u-textAlign--center alignItems--center">
+            <p className="u-fontSize--largest u-color--tundora u-lineHeight--normal u-fontWeight--bold">You haven't generated any support bundles</p>
+            <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <span onClick={this.toggleModal} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</span></p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container console u-paddingBottom--30 flex1 flex">
+        <div className="flex1 flex-column">
+          <div className="flex flex1">
+            <div className="flex1 flex-column">
+              <div className="u-position--relative flex-auto u-paddingBottom--normal flex u-borderBottom--gray">
+                <div className="flex flex1">
+                  <div className="flex1 u-flexTabletReflow">
+                    <div className="flex flex1">
+                      <div className="flex-auto alignSelf--center">
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center">Support bundles</h2>
+                      </div>
+                    </div>
+                    <div className="RightNode flex-auto flex-column flex-verticalCenter u-position--relative">
+                      <button className="Button primary button" onClick={this.toggleModal}>Generate a support bundle</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex1 flex-column u-overflow--auto">
+                {loading ?
+                  <div className="flex1 flex-column justifyContent--center alignItems--center">
+                    <Loader size="60" color="#337AB7" />
+                  </div>
+                :
+                  bundlesNode
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+        <Modal
+          isOpen={this.state.displayUploadModal}
+          onRequestClose={this.toggleModal}
+          shouldReturnFocusAfterClose={false}
+          ariaHideApp={false}
+          contentLabel="Modal"
+          className="Modal MediumSize"
+        >
+          <div className="u-modalPadding">
+            <GenerateSupportBundleModal
+              apps={this.props.apps}
+              getChannelList={this.props.getChannelList}
+              channels={this.props.channels}
+              getAppList={this.props.getAppList}
+              selectedApp={this.props.selectedApp}
+              currentApp={this.props.currentApp}
+              submitCallback={(bundle) => {
+                this.props.history.push(`/troubleshoot/analyze/${bundle.slug}`);
+                this.props.listSupportBundles.refetch();
+              }}
+            />
+          </div>
+        </Modal>
+      </div>
+    );
+  }
+}
+
+export default withRouter(compose(
+  withApollo,
+  graphql(listSupportBundles, {
+    name: "listSupportBundles",
+    options: props => {
+      const { owner, slug } = props.match.params;
+      return {
+        variables: {
+          slug: `${owner}/${slug}`
+        },
+        fetchPolicy: "no-cache",
+      }
+    }
+  }),
+  // graphql(archiveSupportBundle, {
+  //   props: ({ mutate }) => ({
+  //     archiveSupportBundle: (id) => mutate({ variables: { id } })
+  //   })
+  // }),
+)(SupportBundleList));
