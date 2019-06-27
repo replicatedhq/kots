@@ -3,7 +3,7 @@ import { Params } from "../server/params";
 
 export function getS3(params: Params): AWS.S3 {
   const s3Params: AWS.S3.ClientConfiguration = {
-    signatureVersion: "v4",
+    // signatureVersion: "v4",
   };
 
   if (params.s3Endpoint && params.s3Endpoint.trim() !== "") {
@@ -42,16 +42,46 @@ export async function putObject(params: Params, filepath: string, body: any, buc
    });
 }
 
-export async function signGetRequest(params: any): Promise<any> {
-  const s3 = new AWS.S3({signatureVersion: 'v4'});
+export async function signGetRequest(params: Params, bucket: string, key: string): Promise<any> {
+  const s3 = getS3(params);
 
   return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: bucket,
+      Key: key,
+    };
+
     s3.getSignedUrl("getObject", params, (err: any, url: string) => {
       if (err) {
         reject(err);
         return;
       }
       resolve(url);
+    });
+  });
+}
+
+export async function signPutRequest(params: Params, bucket: string, key: string, contentType: string): Promise<string> {
+  const s3 = getS3(params);
+
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType,
+    };
+
+    s3.getSignedUrl("putObject", params, (err, uploadUrl) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (process.env["S3_ENDPOINT"]) {
+        uploadUrl = uploadUrl.replace(process.env["S3_ENDPOINT"]!, `http://localhost:30456/${bucket}/`);
+      }
+
+      resolve(uploadUrl);
     });
   });
 }

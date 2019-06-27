@@ -32,7 +32,7 @@ type Mutation {
 
   uploadImageWatchBatch(imageList: String!): String
 
-  uploadSupportBundle(token: String!, size: Int): SupportBundleUpload
+  uploadSupportBundle(watchId: String!, size: Int): SupportBundleUpload
   markSupportBundleUploaded(id: String!): SupportBundle
 }
 `;

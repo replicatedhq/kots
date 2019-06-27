@@ -2,7 +2,7 @@ import * as pg from "pg";
 import * as randomstring from "randomstring";
 import * as _ from "lodash";
 import { Params } from "../server/params";
-import { signPutRequest, signGetRequest } from "../util/persistence/s3";
+import { signPutRequest, signGetRequest } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
@@ -26,13 +26,17 @@ export class TroubleshootStore {
 
     const row = result.rows[0];
 
-    let releaseIsNewer: boolean = false;
+    let useUpdatedCollector = false;
+    if (row.use_updated_collector) {
+      useUpdatedCollector = true;
+    }
+
     if (row.updated_collector_updated_at) {
-      releaseIsNewer = new Date(row.updated_collector_updated_at) < new Date(row.release_collector_updated_at);
+      useUpdatedCollector = new Date(row.updated_collector_updated_at) > new Date(row.release_collector_updated_at);
     };
 
     let collector: Collector = new Collector();
-    if (row.use_updated_collector || !releaseIsNewer) {
+    if (useUpdatedCollector) {
       collector.spec = row.updated_collector;
     } else {
       collector.spec = row.release_collector;
@@ -61,7 +65,7 @@ export class TroubleshootStore {
         supportbundle.analysis_id,
         supportbundle_analysis.error AS analysis_error,
         supportbundle_analysis.max_severity AS analysis_max_severity,
-        supportbundle_analysis.insights_marshalled AS analysis_insights_marshalled,
+        supportbundle_analysis.insights AS analysis_insights_marshalled,
         supportbundle_analysis.created_at AS analysis_created_at,
         watch.slug as watch_slug,
         watch.title as watch_title
@@ -148,18 +152,18 @@ export class TroubleshootStore {
   }
 
   public async signSupportBundlePutRequest(supportBundle: SupportBundle): Promise<string> {
-    if (status !== "pending") {
+    if (supportBundle.status !== "pending") {
       throw new ReplicatedError(`Unable to generate signed put request for a support bundle in status ${supportBundle.status}`);
     }
 
-    return signPutRequest(this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`, "application/tar+gzip");
+    return signPutRequest(this.params, this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`, "application/tar+gzip");
   }
 
   public async signSupportBundleGetRequest(supportBundle: SupportBundle): Promise<string> {
-    if (status === "pending") {
+    if (supportBundle.status === "pending") {
       throw new ReplicatedError(`Unable to generate signed get request for a support bundle in status ${supportBundle.status}`);
     }
 
-    return await signGetRequest(this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`);
+    return await signGetRequest(this.params, this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`);
   }
 }

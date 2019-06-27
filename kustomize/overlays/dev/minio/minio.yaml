@@ -110,10 +110,11 @@ spec:
     port: 4569
     protocol: TCP
     targetPort: 9000
+    nodePort: 30456
   selector:
     app: minio
     release: minio
-  type: ClusterIP
+  type: NodePort
 ---
 apiVersion: apps/v1beta2
 kind: Deployment

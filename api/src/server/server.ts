@@ -125,7 +125,6 @@ export class Server extends ServerLoader {
         context: res.locals.context,
         cacheControl: true,
         // formatError: (error: any) => {
-        //   console.log("asdasdasd");
         //   return {
         //     state: error.originalError && error.originalError.state,
         //     locations: error.locations,
