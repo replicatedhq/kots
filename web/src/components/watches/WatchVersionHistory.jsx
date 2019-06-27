@@ -51,7 +51,7 @@ export default function WatchVersionHistory(props) {
               {truncateMiddle(watch.cluster.slug, 8, 6, "...")}
             </p>
           </div>
-            </div>
+        </div>
       </Fragment>
     );
   }
@@ -67,7 +67,7 @@ export default function WatchVersionHistory(props) {
             "blueCircleMinus--icon": !currentVersion
           })}/>
         <p className="u-fontSize--large">{currentVersion ? "Most recent version" : "No deployments made"}</p>
-        <p className="u-fonSize--small u-marginLeft--10 replicated-link"><button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button></p>
+        {!watch.cluster && <p className="u-fonSize--small u-marginLeft--10 replicated-link"><button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button></p>}
         <div className="flex flex1 justifyContent--flexEnd">
           {clustersNode}
         </div>
