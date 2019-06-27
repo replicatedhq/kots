@@ -6,6 +6,7 @@ import { ReplicatedError } from "../../server/errors";
 export function TroubleshootQueries(stores: Stores) {
   return {
     async watchCollectors(root: any, { watchId }, context: Context) {
+      // watchCollectors is called by the support bundle container, and is not authenticated
       const collector = await stores.troubleshootStore.getPreferedWatchCollector(watchId);
 
       return {
