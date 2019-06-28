@@ -243,7 +243,7 @@ class WatchDetailPage extends Component {
                         watch={watch}
                       />
                     } />
-                    <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
+                    <Route path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
                       <SupportBundleAnalysis
                         watch={watch}
                       />

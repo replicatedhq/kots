@@ -162,13 +162,13 @@ export class SupportBundleAnalysis extends React.Component {
                       </div>
                       <div className="flex flex1 action-content u-marginBottom--30">
                         <Switch>
-                          <Route render={() => 
+                          <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() => 
                             <AnalyzerInsights
                               insights={bundle.insights}
                               reAnalyzeBundle={this.reAnalyzeBundle}
                             />
                           } />
-                          <Route path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
+                          <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
                             <AnalyzerFileTree
                               watch={watch}
                             />
