@@ -9,8 +9,7 @@ import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import SupportBundleRow from "./SupportBundleRow";
-
-import "../../scss/components/support/SupportBundleList.scss";
+import "../../scss/components/troubleshoot/SupportBundleList.scss";
 
 class SupportBundleList extends React.Component {
 
@@ -25,16 +24,16 @@ class SupportBundleList extends React.Component {
   }
 
   render() {
-    const { loading, error, supportBundles } = this.props.listSupportBundles;
+    const { loading, error, listSupportBundles } = this.props.listSupportBundles;
     
     if (error) {
       <p>{error.message}</p>
     }
 
     let bundlesNode;
-    if (supportBundles?.length) {
+    if (listSupportBundles?.length) {
       bundlesNode = (
-        supportBundles.map(bundle => (
+        listSupportBundles.map(bundle => (
           <SupportBundleRow
             key={bundle.id}
             bundle={bundle}
@@ -53,11 +52,11 @@ class SupportBundleList extends React.Component {
     }
 
     return (
-      <div className="container console u-paddingBottom--30 flex1 flex">
+      <div className="container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
         <div className="flex1 flex-column">
           <div className="flex flex1">
             <div className="flex1 flex-column">
-              <div className="u-position--relative flex-auto u-paddingBottom--normal flex u-borderBottom--gray">
+              <div className="u-position--relative flex-auto u-paddingBottom--10 flex u-borderBottom--gray">
                 <div className="flex flex1">
                   <div className="flex1 u-flexTabletReflow">
                     <div className="flex flex1">
@@ -66,7 +65,7 @@ class SupportBundleList extends React.Component {
                       </div>
                     </div>
                     <div className="RightNode flex-auto flex-column flex-verticalCenter u-position--relative">
-                      <button className="Button primary button" onClick={this.toggleModal}>Generate a support bundle</button>
+                      <button className="btn secondary" onClick={this.toggleModal}>Generate a support bundle</button>
                     </div>
                   </div>
                 </div>
@@ -74,7 +73,7 @@ class SupportBundleList extends React.Component {
               <div className="flex1 flex-column u-overflow--auto">
                 {loading ?
                   <div className="flex1 flex-column justifyContent--center alignItems--center">
-                    <Loader size="60" color="#337AB7" />
+                    <Loader size="60" color="#44bb66" />
                   </div>
                 :
                   bundlesNode
@@ -88,19 +87,15 @@ class SupportBundleList extends React.Component {
           onRequestClose={this.toggleModal}
           shouldReturnFocusAfterClose={false}
           ariaHideApp={false}
-          contentLabel="Modal"
+          contentLabel="GenerateBundle-Modal"
           className="Modal MediumSize"
         >
-          <div className="u-modalPadding">
+          <div className="Modal-body">
             <GenerateSupportBundleModal
-              apps={this.props.apps}
-              getChannelList={this.props.getChannelList}
-              channels={this.props.channels}
-              getAppList={this.props.getAppList}
-              selectedApp={this.props.selectedApp}
-              currentApp={this.props.currentApp}
+              watch={this.props.watch}
               submitCallback={(bundle) => {
-                this.props.history.push(`/troubleshoot/analyze/${bundle.slug}`);
+                console.log(`navigate to analyze page bundle with id ${bundle.id}`);
+                // this.props.history.push(`/troubleshoot/analyze/${bundle.slug}`);
                 this.props.listSupportBundles.refetch();
               }}
             />
@@ -116,10 +111,9 @@ export default withRouter(compose(
   graphql(listSupportBundles, {
     name: "listSupportBundles",
     options: props => {
-      const { owner, slug } = props.match.params;
       return {
         variables: {
-          slug: `${owner}/${slug}`
+          watchSlug: props.watch.slug
         },
         fetchPolicy: "no-cache",
       }

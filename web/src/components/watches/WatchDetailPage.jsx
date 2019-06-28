@@ -16,7 +16,7 @@ import DeploymentClusters from "../watches/DeploymentClusters";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import WatchVersionHistory from "./WatchVersionHistory";
 import WatchConfig from "./WatchConfig";
-import WatchTroubleshoot from "./WatchTroubleshoot";
+// import WatchTroubleshoot from "./WatchTroubleshoot";
 import WatchLicense from "./WatchLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -24,6 +24,7 @@ import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
+import SupportBundleList from "../troubleshoot/SupportBundleList";
 
 class WatchDetailPage extends Component {
   constructor(props) {
@@ -238,7 +239,7 @@ class WatchDetailPage extends Component {
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>
-                      <WatchTroubleshoot
+                      <SupportBundleList
                         watch={watch}
                       />
                     } />
