@@ -6,6 +6,7 @@ import { signPutRequest, signGetRequest } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
+import { SupportBundleAnalysis } from "./supportbundle";
 
 export class TroubleshootStore {
   constructor(
@@ -62,16 +63,16 @@ export class TroubleshootStore {
         supportbundle.created_at,
         supportbundle.uploaded_at,
         supportbundle.is_archived,
-        supportbundle.analysis_id,
+        supportbundle_analysis.id as analysis_id,
         supportbundle_analysis.error AS analysis_error,
         supportbundle_analysis.max_severity AS analysis_max_severity,
-        supportbundle_analysis.insights AS analysis_insights_marshalled,
+        supportbundle_analysis.insights AS analysis_insights,
         supportbundle_analysis.created_at AS analysis_created_at,
         watch.slug as watch_slug,
         watch.title as watch_title
       from supportbundle
         inner join watch on supportbundle.watch_id = watch.id
-        left join supportbundle_analysis on supportbundle.analysis_id = supportbundle_analysis.id
+        left join supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
       where supportbundle.id = $1`;
     const v = [id];
     const result = await this.pool.query(q, v);
@@ -92,13 +93,30 @@ export class TroubleshootStore {
     supportBundle.createdAt = row.created_at;
     supportBundle.uploadedAt = row.uploaded_at;
     supportBundle.isArchived = row.is_archived;
-    supportBundle.analysis = {
-      id: row.analysis_id,
-      error: row.analysis_error,
-      maxSeverity: row.analysis_max_severity,
-      insights: this.mapSupportBundleInsights(row.analysis_insights_marshalled),
-      createdAt: row.analysis_created_at,
-    };
+
+    const insights: SupportBundleInsight[] = [];
+    const marsheledInsights = JSON.parse(row.analysis_insights);
+    for (const marshaledInsight of marsheledInsights) {
+      const insight = new SupportBundleInsight();
+      insight.key = marshaledInsight.name;
+      insight.severity = marshaledInsight.severity;
+      insight.primary = marshaledInsight.insight.primary;
+      insight.detail = marshaledInsight.insight.detail;
+      insight.icon = marshaledInsight.labels.icon;
+      insight.iconKey = marshaledInsight.labels.iconKey;
+      insight.desiredPosition = marshaledInsight.labels.desiredPosition;
+
+      insights.push(insight);
+    }
+
+    const analysis = new SupportBundleAnalysis();
+    analysis.id = row.analysis_id;
+    analysis.error = row.analysis_error,
+    analysis.maxSeverity = row.analysis_max_severity,
+    analysis.insights = insights;
+    analysis.createdAt = row.analysis_created_at,
+    supportBundle.analysis = analysis;
+
     supportBundle.watchSlug = row.watch_slug;
     supportBundle.watchName = parseWatchName(row.watch_title);
 
@@ -141,14 +159,6 @@ export class TroubleshootStore {
     const v = [id, status, new Date()];
     await this.pool.query(q, v);
     return await this.getSupportBundle(id);
-  }
-
-  private mapSupportBundleInsights(insightsMarshalled: string): SupportBundleInsight[] {
-    const insights: SupportBundleInsight[] = [];
-    if (!insightsMarshalled) {
-      return insights;
-    }
-    return JSON.parse(insightsMarshalled) as SupportBundleInsight[]
   }
 
   public async signSupportBundlePutRequest(supportBundle: SupportBundle): Promise<string> {

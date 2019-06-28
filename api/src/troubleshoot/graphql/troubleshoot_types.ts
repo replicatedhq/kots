@@ -50,13 +50,6 @@ type SupportBundleInsight {
   icon: String
   icon_key: String
   desiredPosition: Int
-  labels: [Label]
-}`;
-
-const Label = `
-type Label {
-  key: String!
-  value: String
 }`;
 
 const SupportBundleUpload = `
@@ -71,6 +64,5 @@ export default [
   SupportBundle,
   SupportBundleAnalysis,
   SupportBundleInsight,
-  Label,
   SupportBundleUpload,
 ];
