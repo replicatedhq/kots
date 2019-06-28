@@ -8,10 +8,12 @@ import withTheme from "@src/components/context/withTheme";
 import { getWatch } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
-import HelmChartSidebarItem from "@src/components/watches/WatchSidebarItem/HelmChartSidebarItem";
+import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
+import PendingHelmChartDetailPage from "./PendingHelmChartDetailPage";
+// import PendingHelmChartDetail from "./PendingHelmChartDetail";
 import DetailPageApplication from "./DetailPageApplication";
-import DetailPageHelmChart from "./DetailPageHelmChart";
+// import DetailPageHelmChart from "./DetailPageHelmChart";
 import DetailPageIntegrations from "./DetailPageIntegrations";
 import StateFileViewer from "../state/StateFileViewer";
 import DeploymentClusters from "../watches/DeploymentClusters";
@@ -172,6 +174,10 @@ class WatchDetailPage extends Component {
       return centeredLoader;
     }
 
+    // This is all temporary. Delete me!
+    const isHelmChartUrl = match.params.owner === "helm";
+    const pendingHelmChart = listWatches.find(c => c.helmName === "exasperated-oyster");
+
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
@@ -186,15 +192,20 @@ class WatchDetailPage extends Component {
                   sidebarItemNode = (
                     <WatchSidebarItem
                       key={idx}
-                      className={classNames({ selected: item.slug === watch?.slug})}
+                      className={classNames({ selected: (
+                        item.slug === watch?.slug &&
+                        match.params.owner !== "helm"
+                      )})}
                       watch={item} />
                   );
                 } else if (item.helmName) {
+                  console.log("Helm id:", match.params.slug);
+
                   sidebarItemNode = (
                     <HelmChartSidebarItem
                       key={idx}
-                      className={classNames({ selected: item.slug === watch?.slug})}
-                      watch={item} />
+                      className={classNames({ selected: item.id === match.params.slug})}
+                      helmChart={item} />
                   );
                 }
                 return sidebarItemNode;
@@ -210,9 +221,16 @@ class WatchDetailPage extends Component {
                   <SubNavBar
                     className="flex"
                     activeTab={match.params.tab || "app"}
-                    watch={watch}
+                    watch={isHelmChartUrl ? pendingHelmChart : watch}
                   />
                   <Switch>
+                    <Route
+                      exact
+                      path="/watch/helm/:id"
+                      render={() =>
+                        <PendingHelmChartDetailPage helmChart={pendingHelmChart} />
+                      }
+                    />
                     {watch && !watch.cluster &&
                       <Route exact path="/watch/:owner/:slug" render={() =>
                         <DetailPageApplication
@@ -220,8 +238,8 @@ class WatchDetailPage extends Component {
                           refetchListWatches={refetchListWatches}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
-                        />
-                      } />
+                        />}
+                      />
                     }
                     {watch && !watch.cluster &&
                       <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
@@ -238,15 +256,11 @@ class WatchDetailPage extends Component {
                         </div>
                       } />
                     }
-
+                    { /*
                       <Route exact path="/watch/helm/:id" render={() =>
-                        <DetailPageHelmChart
-                          chart={watch}
-                          refetchListWatches={refetchListWatches}
-                          updateCallback={this.refetchGraphQLData}
-                        />
+                        <DetailPageHelmChart chart={watch} refetchListWatches={refetchListWatches} updateCallback={this.refetchGraphQLData} />
                       } />
-
+                    */ }
                     { /* ROUTE UNUSED */}
                     <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
                     { /* ROUTE UNUSED */}

@@ -174,7 +174,14 @@ class Root extends Component {
       throw error;
     });
 
-    const allWatches = watchList.data.listWatches.concat(pendingInits.data.listPendingInitSessions, pendingUnforks.data.listHelmCharts);
+    const allWatches = watchList.data.listWatches.concat(
+      pendingInits.data.listPendingInitSessions,
+      pendingUnforks.data.listHelmCharts
+    );
+
+    console.log("PENDING INITS", pendingInits.data);
+    console.log("PENDING UNFORKZ", pendingUnforks.data);
+
     this.setState({
       listWatches: allWatches,
     });

@@ -3,16 +3,21 @@ import classNames from "classnames";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 
-import navConfig from "@src/config-ui/subNavConfig";
+import { isHelmChart } from "@src/utilities/utilities";
+import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
   const { className, activeTab, watch } = props;
-  const { slug } = watch;
+  let { slug } = watch;
+
+  if(isHelmChart(watch)) {
+    slug = `helm/${watch.id}`;
+  }
 
   return (
     <div className={classNames("details-subnav", className)}>
       <ul>
-        {navConfig.map( (link, idx) => {
+        {subNavConfig.map( (link, idx) => {
           const generatedMenuItem = (
             <li
               key={idx}
