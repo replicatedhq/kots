@@ -1,4 +1,5 @@
 import { HelmChart } from "./";
+import { ReplicatedError } from "../server/errors";
 import * as pg from "pg";
 
 export class HelmChartStore {
@@ -32,6 +33,20 @@ export class HelmChartStore {
     }
 
     return helmCharts;
+  }
+
+  public async getChartInCluster(chartId: string, clusterId: string): Promise<HelmChart> {
+    const q = `select id, helm_name, namespace, version, first_deployed_at, last_deployed_at, is_deleted, app_version, chart_version from helm_chart where id = $1 and cluster_id = $2`;
+    const v = [
+      chartId,
+      clusterId,
+    ];
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No helm chart found for ID ${chartId}. Check your watch dashboard to see if you have already unforked this chart`);
+    }
+    
+    return result.rows[0]; 
   }
 
 }

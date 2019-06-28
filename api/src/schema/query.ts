@@ -23,6 +23,7 @@ export const Query = `
     getPendingIniSession(id: String!): PendingInitSession
 
     listHelmCharts: [HelmChart]
+    getHelmChart(id: String!, clusterId: String!): HelmChart
 
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]
