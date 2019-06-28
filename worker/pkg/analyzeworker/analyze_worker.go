@@ -38,12 +38,18 @@ func (w *Worker) Run(ctx context.Context) error {
 		Serve(ctx, w.Config.AnalyzeServerAddress)
 	}()
 
-	errCh := make(chan error, 1)
+	errCh := make(chan error, 2)
 
 	go func() {
 		err := w.startPollingDBForReadyAnalysis(context.Background())
 		w.Logger.Errorw("analyzeworker dbpoller failed", zap.Error(err))
 		errCh <- errors.Wrap(err, "ready poller ended")
+	}()
+
+	go func() {
+		err := w.runInformer(context.Background())
+		w.Logger.Errorw("analyzeworker informer failed", zap.Error(err))
+		errCh <- errors.Wrap(err, "controller ended")
 	}()
 
 	c := make(chan os.Signal, 1)
@@ -98,7 +104,6 @@ func (w *Worker) startAnalysis(ctx context.Context, supportBundleID string) erro
 		w.Logger.Errorw("analysisworker get supportbundle failed", zap.String("supportBundleID", supportBundleID), zap.Error(err))
 		return err
 	}
-
 	if err := w.deployAnalyzer(supportBundle); err != nil {
 		w.Logger.Errorw("analysis deploy update failed", zap.String("supportBundleID", supportBundleID), zap.Error(err))
 		return err

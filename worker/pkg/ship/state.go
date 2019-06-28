@@ -137,13 +137,10 @@ func ShipClusterMetadataFromState(stateJSON []byte) []byte {
 func TroubleshootCollectorsFromState(stateJSON []byte) []byte {
 	shipState, err := stateFromData(stateJSON)
 	if err != nil {
-		fmt.Printf("failed\n")
-		fmt.Printf("%#v\n", err)
 		return nil
 	}
 
 	if shipState.V1 == nil || shipState.V1.UpstreamContents == nil || shipState.V1.UpstreamContents.AppRelease == nil {
-		fmt.Printf("nil")
 		return nil
 	}
 

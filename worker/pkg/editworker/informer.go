@@ -27,12 +27,6 @@ func (w *Worker) runInformer(ctx context.Context) error {
 
 	_, controller := cache.NewInformer(watchlist, &corev1.Pod{}, resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
-			DeleteFunc: func(obj interface{}) {
-				err := w.deleteFunc(obj)
-				if err != nil {
-					w.Logger.Errorw("error in editworker informer deleteFunc", zap.Error(err))
-				}
-			},
 			UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 				err := w.updateFunc(oldObj, newObj)
 				if err != nil {
@@ -44,28 +38,6 @@ func (w *Worker) runInformer(ctx context.Context) error {
 
 	controller.Run(ctx.Done())
 	return ctx.Err()
-}
-
-func (w *Worker) deleteFunc(obj interface{}) error {
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		return fmt.Errorf("unexpected type %T", obj)
-	}
-
-	w.Logger.Debugw("editworker is starting deleteFunc for pod", zap.String("pod.name", pod.Name))
-
-	shipCloudRole, ok := pod.ObjectMeta.Labels["shipcloud-role"]
-	if !ok || shipCloudRole != editSession.GetRole() {
-		return nil
-	}
-
-	id, ok := pod.ObjectMeta.Labels[editSession.GetType()]
-	if !ok {
-		w.Logger.Errorw("editworker informer expected to find edit label in pod", zap.String("id", id), zap.String("pod.name", pod.Name))
-		return nil
-	}
-
-	return nil
 }
 
 func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
