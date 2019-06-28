@@ -44,7 +44,7 @@ func (s *SQLStore) SetAnalysisFailed(ctx context.Context, supportBundleID string
 
 func (s *SQLStore) SetAnalysisSucceeded(ctx context.Context, supportBundleID string, insights string) error {
 	id := types.GenerateID()
-	query := `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at
+	query := `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at)
 		values ($1, $2, null, null, $3, $4)`
 	_, err := s.db.ExecContext(ctx, query, id, supportBundleID, insights, time.Now())
 	return err
