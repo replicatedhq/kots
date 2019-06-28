@@ -26,13 +26,13 @@ class SupportBundleRow extends React.Component {
   }
 
   render() {
-    const { bundle } = this.props;
+    const { bundle, watchSlug } = this.props;
 
     if (!bundle) return null;
 
     return (
       <div className="SupportBundle--Row u-position--relative">
-        <Link to={`/troubleshoot/analyze/${bundle.slug}`}>
+        <Link to={`/watch/${watchSlug}/troubleshoot/analyze/${bundle.slug}`}>
           <div className="bundle-row-wrapper">
             <div className="bundle-row flex-column flex1">
               <div className="flex flex1">

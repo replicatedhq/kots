@@ -1,16 +1,14 @@
 import gql from "graphql-tag";
 
 export const uploadSupportBundle = gql`
-  mutation uploadSupportBundle($appId: String, $customerId: String, $size: Int) {
-    uploadSupportBundle(appId: $appId, customerId: $customerId, size: $size) {
+  mutation uploadSupportBundle($watchId: String!, $size: Int) {
+    uploadSupportBundle(watchId: $watchId, size: $size) {
       uploadUri,
       supportBundle {
         id,
         size,
         status,
         createdAt,
-        uri,
-        signedUri
       }
     }
   }

@@ -31,6 +31,7 @@ export const listSupportBundlesRaw = `
   }
 `;
 export const listSupportBundles = gql(listSupportBundlesRaw);
+
 export const getAnalysisInsights = gql`
   query getAnalysisInsights($slug: String!) {
     getAnalysisInsights(slug: $slug) {
@@ -72,6 +73,24 @@ export const getAnalysisInsights = gql`
   }
 `;
 
+export const getSupportBundleRaw = `
+  query getSupportBundle($watchSlug: String!) {
+    getSupportBundle(watchSlug: $watchSlug) {
+      id
+      slug
+      name
+      size
+      status
+      treeIndex
+      createdAt
+      uploadedAt
+      isArchived
+    }
+  }
+`;
+
+export const getSupportBundle = gql(getSupportBundleRaw);
+
 export const analysisFiles = gql`
   query analysisFiles($bundleId: ID!, $fileNames: [String!]) {
     analysisFiles(bundleId: $bundleId, fileNames: $fileNames)
@@ -79,7 +98,7 @@ export const analysisFiles = gql`
 `;
 
 export const getGenerateBundleCommand = gql`
-query getGenerateBundleCommand($customerId: ID, $channelId: ID) {
-  getGenerateBundleCommand(customerId: $customerId, channelId: $channelId)
-}
+  query getGenerateBundleCommand($customerId: ID, $channelId: ID) {
+    getGenerateBundleCommand(customerId: $customerId, channelId: $channelId)
+  }
 `;

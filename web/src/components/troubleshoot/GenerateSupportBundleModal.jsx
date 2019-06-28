@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
-// import { uploadSupportBundle, markSupportBundleUploaded } from "../../mutations/SupportBundleMutations";
+import { uploadSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
 
 import "../../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import Dropzone from "react-dropzone";
@@ -63,13 +63,8 @@ class GenerateSupportBundleModal extends React.Component {
   }
 
   getBundleS3Url = (file) => {
-    let appId;
-    if (this.props.currentApp) {
-      appId = this.props.currentApp.id || this.props.currentApp.Id;
-    } else {
-      appId = null;
-    }
-    this.props.uploadSupportBundle(appId, file.size)
+    const { watch } = this.props
+    this.props.uploadSupportBundle(watch.id, file.size)
       .then((response) => {
         this.setState({
           bundleS3Url: response.data.uploadSupportBundle.uploadUri,
@@ -255,14 +250,14 @@ export default compose(
       }
     }
   }),
-  // graphql(uploadSupportBundle, {
-  //   props: ({ mutate }) => ({
-  //     uploadSupportBundle: (appId, size) => mutate({ variables: { appId, size } })
-  //   })
-  // }),
-  // graphql(markSupportBundleUploaded, {
-  //   props: ({ mutate }) => ({
-  //     markSupportBundleUploaded: (id) => mutate({ variables: { id } })
-  //   })
-  // })
+  graphql(uploadSupportBundle, {
+    props: ({ mutate }) => ({
+      uploadSupportBundle: (watchId, size) => mutate({ variables: { watchId, size } })
+    })
+  }),
+  graphql(markSupportBundleUploaded, {
+    props: ({ mutate }) => ({
+      markSupportBundleUploaded: (id) => mutate({ variables: { id } })
+    })
+  })
 )(GenerateSupportBundleModal);

@@ -1,18 +1,17 @@
 import * as React from "react";
-import autoBind from "react-autobind";
 import AceEditor from "react-ace";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import { getFileFormat, getRootPath } from "../../utilities/utilities";
+import { getFileFormat, rootPath } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import has from "lodash/has";
 
 import Loader from "../shared/Loader";
-import FileTree from "../shared/FileTree";
-import { analysisFiles, getAnalysisInsights } from "../../queries/SupportBundleQueries";
+import FileTree from "./FileTree";
+import { analysisFiles, getAnalysisInsights } from "../../queries/TroubleshootQueries";
 
-import "../../scss/components/support/SupportBundleFileTree.scss";
+import "../../scss/components/troubleshoot/SupportBundleFileTree.scss";
 
 import "brace/mode/json";
 import "brace/mode/text";
@@ -34,10 +33,9 @@ class AnalyzerFileTree extends React.Component {
       activeMarkers: [],
       analysisError: false
     };
-    autoBind(this);
   }
 
-  hasContentAlready(path) {
+  hasContentAlready = (path) => {
     const { fileContents } = this.state;
     let i;
     for (i = 0; i < fileContents.length; i++) {
@@ -46,7 +44,7 @@ class AnalyzerFileTree extends React.Component {
     return false;
   }
 
-  buildFileContent(data) {
+  buildFileContent = (data) => {
     const nextFiles = this.state.fileContents;
     const key = Object.keys(data);
     let newObj = {};
@@ -57,14 +55,14 @@ class AnalyzerFileTree extends React.Component {
   }
 
   async setSelectedFile(path) {
-    const newPath = getRootPath(path);
+    const newPath = rootPath(path);
     this.props.history.replace(`/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`)
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) { return; } // Don't go fetch it if we already have that content in our state
     this.fetchFiles(this.state.bundleId, newPath)
   }
 
-  fetchFiles(bundleId, path) {
+  fetchFiles = (bundleId, path) => {
     this.setState({ fileLoading: true, fileLoadErr: false });
     this.props.client.query({
       query: analysisFiles,
@@ -88,7 +86,7 @@ class AnalyzerFileTree extends React.Component {
       })
   }
 
-  setFileTree() {
+  setFileTree = () => {
     if (!this.state.fileTree) { return; }
     const parsedTree = JSON.parse(this.state.fileTree);
     let sortedTree = sortBy(parsedTree, (dir) => {
@@ -169,7 +167,6 @@ class AnalyzerFileTree extends React.Component {
         }
       }
     }
-    this.props.loadingCallback(false);
   }
 
   onSelectionChange = (selection) => {
@@ -187,7 +184,7 @@ class AnalyzerFileTree extends React.Component {
     }
   }
 
-  reAnalyzeBundle() {
+  reAnalyzeBundle = () => {
     this.setState({ isReanalyzing: true });
     this.props.reAnalyzeBundle((response, analysisError) => {
       this.setState({ isReanalyzing: false, analysisError });
@@ -208,11 +205,11 @@ class AnalyzerFileTree extends React.Component {
           {!files || !files.length || isOld ?
             <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
               <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--normal">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
-              <div className="u-marginTop--most">
-                <button className="Button primary" onClick={() => this.reAnalyzeBundle()} disabled={this.state.isReanalyzing}>{this.state.isReanalyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
+              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
+              <div className="u-marginTop--20">
+                <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={this.state.isReanalyzing}>{this.state.isReanalyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
               </div>
-              {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-lineHeight--normal u-fontWeight--bold u-color--error u-marginTop--more u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+              {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-lineHeight--normal u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
             </div>
             :
             <div className="flex flex1">
@@ -237,14 +234,14 @@ class AnalyzerFileTree extends React.Component {
                   : fileLoadErr ?
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
                       <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
-                      <p className="u-marginTop--normal u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
+                      <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
                       <div className="u-marginTop--20">
-                        <button className="Button primary button" onClick={this.props.downloadBundle}>Download bundle</button>
+                        <button className="btn secondary green" onClick={this.props.downloadBundle}>Download bundle</button>
                       </div>
                     </div>
                     : fileLoading || !fileToView ?
                       <div className="flex-column flex1 alignItems--center justifyContent--center">
-                        <Loader size="50" color="#337AB7" />
+                        <Loader size="50" color="#44bb66" />
                       </div>
                       :
                       <AceEditor

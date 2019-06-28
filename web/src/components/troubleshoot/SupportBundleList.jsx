@@ -37,6 +37,7 @@ class SupportBundleList extends React.Component {
           <SupportBundleRow
             key={bundle.id}
             bundle={bundle}
+            watchSlug={this.props.watch.slug}
           />
         ))
       );
@@ -94,8 +95,7 @@ class SupportBundleList extends React.Component {
             <GenerateSupportBundleModal
               watch={this.props.watch}
               submitCallback={(bundle) => {
-                console.log(`navigate to analyze page bundle with id ${bundle.id}`);
-                // this.props.history.push(`/troubleshoot/analyze/${bundle.slug}`);
+                this.props.history.push(`${this.props.match.url}/analyze/${bundle.slug}`);
                 this.props.listSupportBundles.refetch();
               }}
             />

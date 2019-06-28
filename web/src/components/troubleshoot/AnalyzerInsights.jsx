@@ -1,5 +1,4 @@
 import * as React from "react";
-import autoBind from "react-autobind";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
@@ -14,7 +13,6 @@ export class AnalyzerInsights extends React.Component {
       filterTiles: "0",
       analysisError: false
     };
-    autoBind(this);
   }
 
   componentDidUpdate(lastProps) {
@@ -47,7 +45,7 @@ export class AnalyzerInsights extends React.Component {
     }
   }
 
-  handleFilterTiles(field, e) {
+  handleFilterTiles = (field, e) => {
     let nextState = {};
     const val = e.target.checked ? "1" : "0";
     nextState[field] = val;
@@ -76,7 +74,7 @@ export class AnalyzerInsights extends React.Component {
     });
   }
 
-  reAnalyzeBundle() {
+  reAnalyzeBundle = () => {
     this.setState({ analyzing: true });
     this.props.reAnalyzeBundle((response, analysisError) => {
       this.setState({ analyzing: false, analysisError });
@@ -95,17 +93,17 @@ export class AnalyzerInsights extends React.Component {
         {isEmpty(insights) ?
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--normal">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--normal">We're adding new bundle analyzers all the time, so check back soon.</p>
-            <div className="u-marginTop--most">
-              <button className="Button primary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
+            <div className="u-marginTop--20">
+              <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
             </div>
-            {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--more u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+            {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
           </div>
           :
           <div className="flex-column flex1">
             <div className="flex-auto">
-              <div className="u-position--relative flex u-marginBottom--more u-paddingLeft--10 u-paddingRight--10">
+              <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
                 <input
                   type="checkbox"
                   className=""
@@ -114,9 +112,9 @@ export class AnalyzerInsights extends React.Component {
                   value={filterTiles}
                   onChange={(e) => { this.handleFilterTiles("filterTiles", e) }}
                 />
-                <label htmlFor="filterTiles" className="flex1 u-width--full u-position--relative u-marginLeft--small u-cursor--pointer">
+                <label htmlFor="filterTiles" className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer">
                   <div className="flex-column">
-                    <span className="u-fontWeight--medium u-color--tuna u-fontSize--normal u-marginBottom--small u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
+                    <span className="u-fontWeight--medium u-color--tuna u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
                     <span className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-userSelect--none">By default we show you everything that was analyzed but you can choose to see only errors and warnings.</span>
                   </div>
                 </label>
@@ -125,14 +123,14 @@ export class AnalyzerInsights extends React.Component {
             {isEmpty(filteredInsights) ?
               <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
                 <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">There were no errors or warnings found.</p>
-                <p className="u-fontSize--small u-fontWeight--regular u-marginTop--normal">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
+                <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
               </div>
               :
               <div className="flex flexWrap--wrap u-overflow--auto">
                 {filteredInsights && filteredInsights.map((tile, i) => (
                   <div key={i} className="insight-tile-wrapper flex-column">
                     <div className={`insight-tile flex1 u-textAlign--center flex-verticalCenter flex-column ${tile.level}`}>
-                      <div className="flex justifyContent--center u-marginBottom--normal">
+                      <div className="flex justifyContent--center u-marginBottom--10">
                         {tile.icon_key ?
                           <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
                           : tile.icon ?
@@ -150,9 +148,9 @@ export class AnalyzerInsights extends React.Component {
             }
             <div className="flex-column flex1">
               <div className="flex-auto u-paddingLeft--10">
-                <button className="Button primary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
+                <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
               </div>
-              {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--more u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+              {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
             </div>
           </div>
         }

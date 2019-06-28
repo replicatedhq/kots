@@ -23,8 +23,8 @@ export function TroubleshootQueries(stores: Stores) {
       });
     },
 
-    async getSupportBundle(root: any, { id }, context: Context) {
-      const supportBundle = await stores.troubleshootStore.getSupportBundle(id);
+    async getSupportBundle(root: any, { watchSlug }, context: Context) {
+      const supportBundle = await stores.troubleshootStore.getSupportBundle(watchSlug);
       const watch = context.getWatch(supportBundle.watchId);
       if (!watch) {
         throw new ReplicatedError("not found");

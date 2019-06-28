@@ -46,6 +46,6 @@ export const Query = `
 
     watchCollectors(watchId: String!): TroubleshootCollectSpec
     listSupportBundles(watchSlug: String!): [SupportBundle]
-    getSupportBundle(id: String!): SupportBundle
+    getSupportBundle(watchSlug: String!): SupportBundle
   }
 `;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter, Switch, Route, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import dayjs from "dayjs";
 import Modal from "react-modal";
@@ -8,11 +8,11 @@ import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 
-import { getAnalysisInsights } from "../../queries/TroubleshootQueries";
-import { updateSupportBundle, markSupportBundleUploaded } from "../../mutations/SupportBundleMutations";
-import "../../scss/components/support/SupportBundleAnalysis.scss";
+import { getAnalysisInsights, getSupportBundle } from "../../queries/TroubleshootQueries";
+import { updateSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
+import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 
-export class AnalysisDetailView extends React.Component {
+export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
     this.state = {
@@ -24,11 +24,13 @@ export class AnalysisDetailView extends React.Component {
   }
 
   shareBundle = (unShare = false) => {
+    const { getSupportBundle } = this.props;
+    const bundle = getSupportBundle.getSupportBundle;
     this.setState({ shareBundleLoading: true });
     this.props.client.mutate({
       mutation: updateSupportBundle,
       variables: {
-        id: this.state.bundle.id,
+        id: bundle.id,
         shareTeamIDs: unShare ? [] : [
           "replicated",
         ],
@@ -78,74 +80,27 @@ export class AnalysisDetailView extends React.Component {
     }
   }
 
-  renderAnalysisTab = () => {
-    switch (this.state.activeTab) {
-    case "bundleAnalysis":
-      return (
-        <div className="flex flex-column flex1 insights-wrapper u-overflow--hidden">
-          <AnalyzerInsights
-            insights={this.props.data.supportBundleForSlug.insights}
-            reAnalyzeBundle={this.reAnalyzeBundle}
-          />
-        </div>
-      )
-    case "fileTree":
-      return (
-        <div className={`flex-column flex1 insights-wrapper ${this.state.fullscreenTree ? "fullscreen-tree-view" : ""}`} >
-          <AnalyzerFileTree
-            toggleFullscreen={() => this.toggleFullscreen()}
-            isFullscreen={this.state.fullscreenTree}
-            appSlug={this.props.match.params.appSlug}
-            reAnalyzeBundle={this.reAnalyzeBundle}
-          />
-        </div>
-      )
-    default:
-      return <div>nothing selected</div>
-    }
-  }
-
   renderSharedContext = (bundle) => {
-    const notSameTeam = bundle.teamId !== VendorUtilities.getTeamId();
-    const isSameTeam = !notSameTeam;
     const sharedIds = bundle.teamShareIds || [];
     const isShared = sharedIds.length;
     let shareContext;
 
-    if (notSameTeam) {
-      shareContext = <span className="u-marginRight--normal u-fontSize--normal u-color--chateauGreen">Shared by <span className="u-fontWeight--bold">{bundle.teamName}</span></span>
-    } else if (isSameTeam && isShared) {
+    if (isShared) {
       shareContext = (
         <div className="flex flex-auto">
-          <span className="u-marginRight--normal u-fontSize--normal u-fontWeight--medium u-color--tundora alignSelf--center">Shared with Replicated</span>
-          <button className="Button secondary button flex-auto u-marginRight--normal" onClick={() => this.shareBundle(true)}>Unshare</button>
+          <span className="u-marginRight--10 u-fontSize--normal u-fontWeight--medium u-color--tundora alignSelf--center">Shared with Replicated</span>
+          <button className="btn secondary flex-auto u-marginRight--10" onClick={() => this.shareBundle(true)}>Unshare</button>
         </div>
       )
     } else {
-      shareContext = <button className="Button secondary button flex-auto u-marginRight--normal" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
+      shareContext = <button className="btn secondary flex-auto u-marginRight--10" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
     }
     return shareContext;
   }
 
-  componentDidUpdate(lastProps, lastState) {
-    if (this.props.data.supportBundleForSlug !== lastProps.data.supportBundleForSlug && this.props.data.supportBundleForSlug) {
-      this.setState({
-        bundle: this.props.data.supportBundleForSlug.bundle,
-        insights: ConsoleUtilities.sortAnalyzers(this.props.data.supportBundleForSlug.insights)
-      });
-    }
-
+  componentDidUpdate( lastState) {
     if (this.state.fullscreenTree !== lastState.fullscreenTree && this.state.fullscreenTree) {
       window.addEventListener("keydown", this.handleEscClose);
-    }
-  }
-
-  componentDidMount() {
-    if (this.props.data.supportBundleForSlug) {
-      this.setState({
-        bundle: this.props.data.supportBundleForSlug.bundle,
-        insights: ConsoleUtilities.sortAnalyzers(this.props.data.supportBundleForSlug.insights)
-      });
     }
   }
 
@@ -154,34 +109,34 @@ export class AnalysisDetailView extends React.Component {
   }
 
   render() {
-    const bundle = this.props.data && this.props.data.supportBundleForSlug && this.props.data.supportBundleForSlug.bundle;
+    const { watch, getSupportBundle, getAnalysisInsights } = this.props;
+    const bundle = getSupportBundle?.getSupportBundle;
 
-    if (this.props.data.loading) {
+    if (getSupportBundle.loading || getAnalysisInsights.loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
-          <Loader size="60" color="#337AB7" />
+          <Loader size="60" color="#44bb66" />
         </div>
       )
     }
 
-
     return (
-      <div className="console container u-marginTop--more u-paddingBottom--normal flex1 flex">
+      <div className="console container u-marginTop--20 u-paddingBottom--10 flex1 flex">
         <div className="flex1 flex-column">
           <div className="flex flex1">
             <div className="flex1 flex-column">
-              <div className="CreateAction u-marginBottom--small">
-                <Link to={`/troubleshoot`} className="u-paddingLeft--normal u-marginTop--small
+              <div className="CreateAction u-marginBottom--5">
+                <Link to={`/troubleshoot`} className="u-paddingLeft--normal u-marginTop--5
                           u-fontSize--normal u-color--astral
                           u-fontWeight--medium
                           u-cursor--pointer">
                   <span className="icon clickable u-backArrowIcon"></span>Support bundles
                 </Link>
               </div>
-              {bundle ?
+              {bundle &&
                 <div className="flex1 flex-column">
-                  <div className="u-position--relative flex-auto u-marginBottom--more flex justifyContent--spaceBetween">
-                    <div className="flex flex1 u-marginTop--normal u-marginBottom--normal">
+                  <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
+                    <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
                       <div className="flex1">
                         <div className="flex flex1 justifyContent--spaceBetween">
                           <div className="flex flex-column">
@@ -191,12 +146,9 @@ export class AnalysisDetailView extends React.Component {
                             {this.renderSharedContext(bundle)}
                           </div>
                         </div>
-                        <div className="upload-date-container flex u-marginTop--small alignItems--center">
+                        <div className="upload-date-container flex u-marginTop--5 alignItems--center">
                           <div className="flex alignSelf--center">
-                            <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Uploaded on </p>
-                          </div>
-                          <div className="flex flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">
-                            <span className="u-fontWeight--bold u-marginLeft--small flex-auto"> {dayjs(bundle.createdAt).format("MMMM Do YYYY, h:mm a")}</span>
+                            <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Uploaded on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
                           </div>
                         </div>
                       </div>
@@ -205,16 +157,28 @@ export class AnalysisDetailView extends React.Component {
                   <div className="flex-column flex1">
                     <div className="customer-actions-wrapper flex1 flex-column">
                       <div className="flex action-tab-bar">
-                        <Link to={`/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
-                        <Link to={`/troubleshoot/analyze/${bundle.slug}/contents`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
+                        <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
+                        <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
                       </div>
-                      <div className="flex flex1 action-content u-marginBottom--40">
-                        {this.renderAnalysisTab()}
+                      <div className="flex flex1 action-content u-marginBottom--30">
+                        <Switch>
+                          <Route render={() => 
+                            <AnalyzerInsights
+                              insights={bundle.insights}
+                              reAnalyzeBundle={this.reAnalyzeBundle}
+                            />
+                          } />
+                          <Route path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
+                            <AnalyzerFileTree
+                              watch={watch}
+                            />
+                          } />
+                        </Switch>
                       </div>
                     </div>
                   </div>
                 </div>
-                : null}
+              }
             </div>
           </div>
         </div>
@@ -230,11 +194,11 @@ export class AnalysisDetailView extends React.Component {
             <div className="Modal-header">
               <p>Share this Support Bundle</p>
             </div>
-            <div className="flex flex-column u-paddingLeft--more u-paddingRight--more u-paddingBottom--more">
+            <div className="flex flex-column u-paddingLeft--20 u-paddingRight--20 u-paddingBottom--20">
               <span className="u-fontSize--large u-fontWeight--normal u-color--dustyGray u-lineHeight--more">By sharing this bundle, Replicated will be able to view analyzers and inspect all files. Only this bundle will be visible, no other bundles will be seen by our team.</span>
               <div className="flex justifyContent--flexEnd u-marginTop--30">
-                <button className="btn secondary blue flex-auto u-marginRight--normal" onClick={() => { this.toggleConfirmShareModal() }}>Cancel</button>
-                <button className="btn primary flex-auto" disabled={this.state.shareBundleLoading} onClick={() => this.shareBundle()}>{this.state.shareBundleLoading ? "Sharing" : "Share bundle"}</button>
+                <button className="btn secondary flex-auto u-marginRight--10" onClick={() => { this.toggleConfirmShareModal() }}>Cancel</button>
+                <button className="btn secondary green flex-auto" disabled={this.state.shareBundleLoading} onClick={() => this.shareBundle()}>{this.state.shareBundleLoading ? "Sharing" : "Share bundle"}</button>
               </div>
             </div>
           </Modal>
@@ -246,7 +210,17 @@ export class AnalysisDetailView extends React.Component {
 
 export default withRouter(compose(
   withApollo,
+  graphql(getSupportBundle, {
+    name: "getSupportBundle",
+    options: ({ match }) => ({
+      variables: {
+        watchSlug: match.params.bundleSlug
+      },
+      fetchPolicy: "no-cache"
+    }),
+  }),
   graphql(getAnalysisInsights, {
+    name: "getAnalysisInsights",
     options: ({ match }) => ({
       variables: {
         slug: match.params.bundleSlug
@@ -259,4 +233,4 @@ export default withRouter(compose(
       markSupportBundleUploaded: (id) => mutate({ variables: { id } })
     })
   })
-)(AnalysisDetailView));
+)(SupportBundleAnalysis));
