@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 func (s *SQLStore) SetWatchTroubleshootCollectors(ctx context.Context, watchID string, collectors []byte) error {
@@ -19,4 +22,34 @@ func (s *SQLStore) SetWatchTroubleshootAnalyzers(ctx context.Context, watchID st
 	_, err := s.db.ExecContext(ctx, query, watchID, collectors, time.Now())
 
 	return err
+}
+
+func (s *SQLStore) GetAnalyzeSpec(ctx context.Context, watchID string) (string, error) {
+	query := `select release_analyzer, updated_analyzer, release_analyzer_updated_at, updated_analyzer_updated_at, use_updated_analyzer from
+	watch_troubleshoot_analyzer where watch_id = $1`
+	row := s.db.QueryRowContext(ctx, query, watchID)
+
+	var releaseAnalyzer string
+	var releaseAnalyzerUpdatedAt time.Time
+	var updatedAnalyzer sql.NullString
+	var updatedAnalyzerUpdatedAt pq.NullTime
+	var useUpdatedAnalyzer sql.NullBool
+
+	if err := row.Scan(&releaseAnalyzer, &updatedAnalyzer, &releaseAnalyzerUpdatedAt, &updatedAnalyzerUpdatedAt, &useUpdatedAnalyzer); err != nil {
+		return "", err
+	}
+
+	if !updatedAnalyzer.Valid || !updatedAnalyzerUpdatedAt.Valid {
+		return releaseAnalyzer, nil
+	}
+
+	if useUpdatedAnalyzer.Valid && useUpdatedAnalyzer.Bool {
+		return updatedAnalyzer.String, nil
+	}
+
+	if releaseAnalyzerUpdatedAt.After(updatedAnalyzerUpdatedAt.Time) {
+		return releaseAnalyzer, nil
+	}
+
+	return updatedAnalyzer.String, nil
 }

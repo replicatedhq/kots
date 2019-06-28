@@ -40,7 +40,23 @@ func (w *Worker) deployAnalyzer(supportBundle *types.SupportBundle) error {
 		return err
 	}
 
-	pod := troubleshoot.GetPodSpec(context.TODO(), w.Config.LogLevel, w.Config.AnalyzeImage, w.Config.AnalyzeTag, w.Config.AnalyzePullPolicy, serviceAccount.Name, supportBundle, os.Getenv("ANALYZE_NODE_SELECTOR"))
+	analyzeSpec, err := w.Store.GetAnalyzeSpec(context.TODO(), supportBundle.WatchID)
+	if err != nil {
+		return err
+	}
+
+	configMap := troubleshoot.GetConfigMapSpec(context.TODO(), supportBundle, analyzeSpec)
+	if err := w.ensureConfigMap(context.TODO(), configMap); err != nil {
+		w.Logger.Errorw("analyzeworker failed to create configMap", zap.Error(err))
+		return err
+	}
+
+	getBundlePresignedURI, err := w.Store.GetSupportBundleURL(supportBundle)
+	if err != nil {
+		return err
+	}
+
+	pod := troubleshoot.GetPodSpec(context.TODO(), w.Config.LogLevel, w.Config.AnalyzeImage, w.Config.AnalyzeTag, w.Config.AnalyzePullPolicy, serviceAccount.Name, supportBundle, getBundlePresignedURI, os.Getenv("ANALYZE_NODE_SELECTOR"))
 	if err := w.ensurePod(context.TODO(), pod); err != nil {
 		w.Logger.Errorw("analyzeworker failed to create pod", zap.Error(err))
 		return err

@@ -44,6 +44,17 @@ func (w *Worker) ensureServiceAccount(ctx context.Context, service *corev1.Servi
 	return nil
 }
 
+func (w *Worker) ensureConfigMap(ctx context.Context, configMap *corev1.ConfigMap) error {
+	_, err := w.K8sClient.CoreV1().ConfigMaps(configMap.Namespace).Get(configMap.Name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		if _, err := w.K8sClient.CoreV1().ConfigMaps(configMap.Namespace).Create(configMap); err != nil {
+			return errors.Wrap(err, "create configMap")
+		}
+	}
+
+	return nil
+}
+
 func (w *Worker) ensurePod(ctx context.Context, pod *corev1.Pod) error {
 	_, err := w.K8sClient.CoreV1().Pods(pod.Namespace).Get(pod.Name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {

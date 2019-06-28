@@ -63,13 +63,36 @@ func GetServiceAccountSpec(ctx context.Context, supportBundle *types.SupportBund
 	return &serviceAccount
 }
 
-func GetPodSpec(ctx context.Context, logLevel string, analyzeImage string, analyzeTag string, shipPullPolicy string, serviceAccountName string, supportBundle *types.SupportBundle, desiredNodeSelector string) *corev1.Pod {
+func GetConfigMapSpec(ctx context.Context, supportBundle *types.SupportBundle, analyzeSpec string) *corev1.ConfigMap {
+	labels := make(map[string]string)
+	labels["supportbundle-id"] = supportBundle.ID
+	labels["shipcloud-role"] = "analyze"
+
+	configMap := corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name(supportBundle.ID),
+			Namespace: name(supportBundle.ID),
+			Labels:    labels,
+		},
+		Data: map[string]string{
+			"analyze.yaml": analyzeSpec,
+		},
+	}
+
+	return &configMap
+}
+
+func GetPodSpec(ctx context.Context, logLevel string, analyzeImage string, analyzeTag string, shipPullPolicy string, serviceAccountName string, supportBundle *types.SupportBundle, bundleGetURI string, desiredNodeSelector string) *corev1.Pod {
 	labels := make(map[string]string)
 	labels["supportbundle-id"] = supportBundle.ID
 	labels["shipcloud-role"] = "analyze"
 
 	if analyzeImage == "" {
-		analyzeImage = "replicated/support-bundle"
+		analyzeImage = "replicated/analyze"
 	}
 	if analyzeTag == "" {
 		analyzeTag = "latest"
@@ -116,10 +139,34 @@ func GetPodSpec(ctx context.Context, logLevel string, analyzeImage string, analy
 						Requests: requests,
 					},
 					Args: []string{
-						"analyze",
+						"run",
+						bundleGetURI,
+						"--output",
+						"json",
+						"-f",
+						"/specs/analyze.yaml",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "specs",
+							MountPath: "/specs",
+						},
 					},
 				},
 			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "specs",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: name(supportBundle.ID),
+							},
+						},
+					},
+				},
+			},
+
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}

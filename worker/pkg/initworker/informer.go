@@ -30,12 +30,6 @@ func (w *Worker) runInformer(ctx context.Context) error {
 
 	_, controller := cache.NewInformer(watchlist, &corev1.Pod{}, resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
-			DeleteFunc: func(obj interface{}) {
-				err := w.deleteFunc(obj)
-				if err != nil {
-					w.Logger.Errorw("error in initworker informer deleteFunc", zap.Error(err))
-				}
-			},
 			UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 				err := w.updateFunc(oldObj, newObj)
 				if err != nil {
@@ -47,23 +41,6 @@ func (w *Worker) runInformer(ctx context.Context) error {
 
 	controller.Run(ctx.Done())
 	return ctx.Err()
-}
-
-func (w *Worker) deleteFunc(obj interface{}) error {
-	pod, ok := obj.(*corev1.Pod)
-	if !ok {
-		return fmt.Errorf("unexpected type %T", obj)
-	}
-
-	// debug.Log("event", "deleteFunc", "pod", pod.Name)
-
-	shipCloudRole, ok := pod.ObjectMeta.Labels["shipcloud-role"]
-	if !ok || shipCloudRole != "init" {
-		// debug.Log("has role", ok, "ignoring role", shipCloudRole)
-		return nil
-	}
-
-	return nil
 }
 
 func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {

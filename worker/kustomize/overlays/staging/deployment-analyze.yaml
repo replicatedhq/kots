@@ -16,7 +16,7 @@ spec:
             - name: AWS_REGION
               value: us-east-1
             - name: ANALYZE_IMAGE
-              value: "replicated/support-bundle"
+              value: "replicated/analyze"
             - name: ANALYZE_TAG
               value: "alpha"
             - name: ANALYZE_PULL_POLICY
