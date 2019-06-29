@@ -5,7 +5,6 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { Link } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 
-import { listSupportBundles } from "../../queries/TroubleshootQueries";
 import { uploadSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
 
 import "../../scss/components/troubleshoot/UploadSupportBundleModal.scss";
@@ -169,7 +168,7 @@ class GenerateSupportBundleModal extends React.Component {
                               replicated/support-bundle:alpha \
                               generate \
                               --endpoint http://172.17.0.1:30065/graphql \
-                              --watch-id {this.props.watch.id}`
+                              --watch-id {this.props.watch.id}
                         </code>
                       </pre>
                       <textarea value={trim(this.state.bundleGenerateCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
@@ -239,17 +238,6 @@ class GenerateSupportBundleModal extends React.Component {
 
 export default compose(
   withApollo,
-  graphql(listSupportBundles, {
-    name: "listSupportBundles",
-    options: props => {
-      return {
-        variables: {
-          watchSlug: props.watch.slug
-        },
-        fetchPolicy: "no-cache",
-      }
-    }
-  }),
   graphql(uploadSupportBundle, {
     props: ({ mutate }) => ({
       uploadSupportBundle: (watchId, size) => mutate({ variables: { watchId, size } })
