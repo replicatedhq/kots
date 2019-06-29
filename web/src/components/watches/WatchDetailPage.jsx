@@ -5,7 +5,7 @@ import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { getWatch } from "@src/queries/WatchQueries";
+import { getWatch, getHelmChart } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -153,7 +153,15 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history, getWatchQuery, listWatches, refetchListWatches } = this.props;
+    const {
+      match,
+      history,
+      getWatchQuery,
+      getHelmChartQuery,
+      listWatches,
+      refetchListWatches
+    } = this.props;
+
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
@@ -164,8 +172,17 @@ class WatchDetailPage extends Component {
         <Loader size="60" />
       </div>
     );
+    const isHelmChartUrl = match.params.owner === "helm";
 
-    const { getWatch: watch, loading } = getWatchQuery;
+    let watch;
+    if (!isHelmChartUrl) {
+      watch = getWatchQuery?.getWatch;
+    } else {
+      console.log(getHelmChartQuery);
+      watch = getHelmChartQuery?.getHelmChart;
+    }
+    const loading = getWatchQuery?.loading || getHelmChartQuery?.loading;
+
 
     if (history.location.pathname == "/watches") {
       if (listWatches[0]) {
@@ -173,10 +190,6 @@ class WatchDetailPage extends Component {
       }
       return centeredLoader;
     }
-
-    // This is all temporary. Delete me!
-    const isHelmChartUrl = match.params.owner === "helm";
-    const pendingHelmChart = listWatches.find(c => c.helmName === "exasperated-oyster");
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -221,14 +234,18 @@ class WatchDetailPage extends Component {
                   <SubNavBar
                     className="flex"
                     activeTab={match.params.tab || "app"}
-                    watch={isHelmChartUrl ? pendingHelmChart : watch}
+                    watch={watch}
                   />
                   <Switch>
                     <Route
                       exact
                       path="/watch/helm/:id"
                       render={() =>
-                        <PendingHelmChartDetailPage helmChart={pendingHelmChart} />
+                        <PendingHelmChartDetailPage
+                          chart={watch}
+                          refreshListWatches={this.props.refreshListWatches}
+                          onActiveInitSession={this.props.onActiveInitSession}
+                        />
                       }
                     />
                     {watch && !watch.cluster &&
@@ -348,6 +365,10 @@ export default compose(
   withTheme,
   graphql(getWatch, {
     name: "getWatchQuery",
+    skip: props => {
+      const { owner } = props.match.params;
+      return owner === "helm"
+    },
     options: props => {
       const { owner, slug } = props.match.params;
       return {
@@ -355,6 +376,21 @@ export default compose(
           slug: `${owner}/${slug}`
         }
       }
+    }
+  }),
+  graphql(getHelmChart, {
+    name: "getHelmChartQuery",
+    skip: props => {
+      const { owner } = props.match.params;
+      return owner !== "helm";
+    },
+    options: props => {
+      const { slug: id } = props.match.params;
+      return {
+        variables: {
+          id
+        }
+      };
     }
   }),
   graphql(createUpdateSession, {

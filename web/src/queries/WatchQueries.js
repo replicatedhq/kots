@@ -683,7 +683,7 @@ export const listHelmChartsRaw = `
   query listHelmCharts {
     listHelmCharts {
       id
-      clusterID
+      clusterId
       helmName
       namespace
       version
@@ -709,3 +709,22 @@ export const searchPendingInitSessionsRaw = `
 `;
 
 export const searchPendingInitSessions = gql(searchPendingInitSessionsRaw);
+
+export const getHelmChartRaw = `
+  query getHelmChart($id: String!) {
+      getHelmChart(id: $id) {
+        id
+        clusterId
+        helmName
+        namespace
+        version
+        firstDeployedAt
+        lastDeployedAt
+        isDeleted
+        chartVersion
+        appVersion
+      }
+  }
+`
+
+export const getHelmChart = gql(getHelmChartRaw);
