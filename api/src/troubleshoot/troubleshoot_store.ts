@@ -53,7 +53,7 @@ export class TroubleshootStore {
     return collector;
   }
 
-  public async getSupportBundle(id: string): Promise<SupportBundle> {
+  public async getSupportBundle(slug: string): Promise<SupportBundle> {
     const q = `select supportbundle.id, supportbundle.slug,
         supportbundle.watch_id,
         supportbundle.name,
@@ -72,12 +72,12 @@ export class TroubleshootStore {
         watch.title as watch_title
       from supportbundle
         inner join watch on supportbundle.watch_id = watch.id
-        left join supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
-      where supportbundle.id = $1`;
-    const v = [id];
+        left join supportbundle_analysis on supportbundle.analysis_id = supportbundle_analysis.id
+      where supportbundle.slug = $1`;
+    const v = [slug];
     const result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`Support Bundle ${id} not found`);
+      throw new ReplicatedError(`Support Bundle ${slug} not found`);
     }
 
     const row = result.rows[0];

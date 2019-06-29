@@ -3,6 +3,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import pick from "lodash/pick";
 import filter from "lodash/filter";
+import sortBy from "lodash/sortBy";
 import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -82,6 +83,43 @@ export function getReadableLicenseType(type) {
  */
 export function getBuildVersion() {
   return window.env.SHIP_CLUSTER_BUILD_VERSION;
+}
+
+export function sortAnalyzers(bundleInsight) {
+  return sortBy(bundleInsight, (item) => {
+    switch (item.level) {
+    case "error":
+      return 1;
+    case "warn":
+      return 2;
+    case "info":
+      return 3;
+    case "debug":
+      return 4;
+    default:
+      return 1;
+    }
+  })
+}
+
+export function rootPath(path) {
+  if (path[0] !== "/") {
+    return path = "/"+path;
+  } else {
+    return path;
+  }
+}
+
+export function getFileFormat(selectedFile) {
+  if (selectedFile === "") {
+    return "text";
+  }
+  if (selectedFile.includes(".json")) {
+    return "json";
+  } else if (selectedFile.includes(".human")) {
+    return "yaml";
+  }
+  return "text";
 }
 
 export const Utilities = {

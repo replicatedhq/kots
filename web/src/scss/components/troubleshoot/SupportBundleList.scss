@@ -1,0 +1,86 @@
+.SupportBundle--Row {
+  .actions {
+    top: 15px;
+    right: 15px;
+  }
+  &:hover {
+    background: #F5F8FC;
+  }
+}
+
+.spec-row-wrapper {
+  border-bottom: 1px solid #DFDFDF;
+
+  .spec-wrapper {
+    padding: 17px 12px;
+  }
+}
+
+.spec-row-wrapper:hover {
+  background-color: #F5F8FC;
+  cursor: pointer;
+}
+
+.FilterBundle--wrapper {
+  padding-bottom: 17px;
+}
+
+.SelectApp {
+  position: relative;
+  width: 30%;
+  background: #ffffff;
+  font-size: 14px;
+  color: #323232;
+  line-height: normal;
+  outline: none;
+  height: 40px;
+  align-self: center;
+
+  cursor: pointer;
+  
+  &.has-error,
+  &.has-error:focus,
+  &.has-error:active {
+    border-color: #EE5042;
+  }
+}
+
+.bundle-row-wrapper {
+  padding: 17px 12px;
+  border-bottom: 1px solid #DFDFDF;
+  cursor: pointer;
+
+  .spacer-div {
+    width: 20px;
+  }
+
+  .bundle-row {
+    padding: 0 12px;
+  }
+
+  .analysis-icon-wrapper {
+    margin-right: 12px;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .avatar-wrapper {
+    width: 20px;
+    height: 20px;
+
+    span {
+      border-radius: 100%;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      display: block;
+      width: 100%;
+      height: 100%;
+      -webkit-box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
+      -moz-box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
+      box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
+    }
+  }
+}
