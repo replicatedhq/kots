@@ -13,9 +13,9 @@ spec:
           image: registry.replicated.com/ship-enterprise/ship-cluster-worker
           env:
             - name: SHIP_IMAGE
-              value: "replicated/ship"
+              value: "laverya/ship"
             - name: SHIP_TAG
-              value: "0.42.0"
+              value: "v0.48.0-testing"
             - name: SHIP_PULL_POLICY
               value: "IfNotPresent"
             - name: LOG_LEVEL
