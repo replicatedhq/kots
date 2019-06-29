@@ -53,7 +53,7 @@ export class TroubleshootStore {
     return collector;
   }
 
-  public async getSupportBundle(slug: string): Promise<SupportBundle> {
+  public async getSupportBundle(id: string): Promise<SupportBundle> {
     const q = `select supportbundle.id, supportbundle.slug,
         supportbundle.watch_id,
         supportbundle.name,
@@ -72,12 +72,12 @@ export class TroubleshootStore {
         watch.title as watch_title
       from supportbundle
         inner join watch on supportbundle.watch_id = watch.id
-        left join supportbundle_analysis on supportbundle.analysis_id = supportbundle_analysis.id
-      where supportbundle.slug = $1`;
-    const v = [slug];
+        left join supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
+      where supportbundle.id = $1`;
+    const v = [id];
     const result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`Support Bundle ${slug} not found`);
+      throw new ReplicatedError(`Support Bundle ${id} not found`);
     }
 
     const row = result.rows[0];
@@ -94,28 +94,30 @@ export class TroubleshootStore {
     supportBundle.uploadedAt = row.uploaded_at;
     supportBundle.isArchived = row.is_archived;
 
-    const insights: SupportBundleInsight[] = [];
-    const marsheledInsights = JSON.parse(row.analysis_insights);
-    for (const marshaledInsight of marsheledInsights) {
-      const insight = new SupportBundleInsight();
-      insight.key = marshaledInsight.name;
-      insight.severity = marshaledInsight.severity;
-      insight.primary = marshaledInsight.insight.primary;
-      insight.detail = marshaledInsight.insight.detail;
-      insight.icon = marshaledInsight.labels.icon;
-      insight.iconKey = marshaledInsight.labels.iconKey;
-      insight.desiredPosition = marshaledInsight.labels.desiredPosition;
+=    if (row.analysis_insights) {
+      const insights: SupportBundleInsight[] = [];
+      const marsheledInsights = JSON.parse(row.analysis_insights);
+      for (const marshaledInsight of marsheledInsights) {
+        const insight = new SupportBundleInsight();
+        insight.key = marshaledInsight.name;
+        insight.severity = marshaledInsight.severity;
+        insight.primary = marshaledInsight.insight.primary;
+        insight.detail = marshaledInsight.insight.detail;
+        insight.icon = marshaledInsight.labels.icon;
+        insight.iconKey = marshaledInsight.labels.iconKey;
+        insight.desiredPosition = marshaledInsight.labels.desiredPosition;
 
-      insights.push(insight);
+        insights.push(insight);
+      }
+
+      const analysis = new SupportBundleAnalysis();
+      analysis.id = row.analysis_id;
+      analysis.error = row.analysis_error,
+      analysis.maxSeverity = row.analysis_max_severity,
+      analysis.insights = insights;
+      analysis.createdAt = row.analysis_created_at,
+      supportBundle.analysis = analysis;
     }
-
-    const analysis = new SupportBundleAnalysis();
-    analysis.id = row.analysis_id;
-    analysis.error = row.analysis_error,
-    analysis.maxSeverity = row.analysis_max_severity,
-    analysis.insights = insights;
-    analysis.createdAt = row.analysis_created_at,
-    supportBundle.analysis = analysis;
 
     supportBundle.watchSlug = row.watch_slug;
     supportBundle.watchName = parseWatchName(row.watch_title);

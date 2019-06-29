@@ -29,7 +29,7 @@ export class SupportBundle {
       createdAt: this.createdAt.toISOString(),
       uploadedAt: this.uploadedAt.toISOString(),
       isArchived: this.isArchived,
-      analysis: this.analysis.toSchema(),
+      analysis: this.analysis ? this.analysis.toSchema() : undefined,
     };
   }
 };
