@@ -10,9 +10,9 @@ spec:
         - name: ship-cluster-worker
           env:
             - name: SHIP_IMAGE
-              value: "replicated/ship"
+              value: "laverya/ship"
             - name: SHIP_TAG
-              value: "latest"
+              value: "v0.48.0-testing"
             - name: SHIP_PULL_POLICY
               value: "Always"
             - name: LOG_LEVEL
