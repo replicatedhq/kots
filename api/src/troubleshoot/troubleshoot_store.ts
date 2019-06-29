@@ -94,7 +94,7 @@ export class TroubleshootStore {
     supportBundle.uploadedAt = row.uploaded_at;
     supportBundle.isArchived = row.is_archived;
 
-=    if (row.analysis_insights) {
+    if (row.analysis_insights) {
       const insights: SupportBundleInsight[] = [];
       const marsheledInsights = JSON.parse(row.analysis_insights);
       for (const marshaledInsight of marsheledInsights) {
