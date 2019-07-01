@@ -150,6 +150,18 @@
     }
   }
 
+  &.secondary.red {
+    background-color: #ffffff;
+    border: 1px solid #BC4752;
+    box-shadow: none;
+    color: #BC4752;
+
+    &:not(:disabled):hover {
+      border-color: #A83F49;
+      color: #A83F49;
+    }
+  }
+
   &.secondary.green {
     background-color: #ffffff;
     border-width: 1px;
