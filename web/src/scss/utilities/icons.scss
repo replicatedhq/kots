@@ -169,3 +169,132 @@
   width: 15px;
   height: 14px;
 }
+
+/* Analyzer icons */
+
+/* default catch all "info" icon */
+.icon[class*=" analysis"] {
+  background-position: -55px -363px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-docker_container {
+  background-position: 0 -341px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-docker_whale {
+  background-position: 0 -377px;
+  width: 22px;
+  height: 16px;
+}
+.icon.analysis-no_docker {
+  background-position: 0 -413px;
+  width: 22px;
+  height: 16px;
+}
+.icon.analysis-os_ubuntu {
+  background-position: 0 -359px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_alpine {
+  background-position: 0 -307px;
+  width: 18px;
+  height: 16px;
+}
+.icon.analysis-os_centos {
+  background-position: -29px -289px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_rhel {
+  background-position: -29px -307px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_memory {
+  background-position: -29px -380px;
+  width: 24px;
+  height: 16px;
+}
+.icon.analysis-os_disk_space {
+  background-position: -29px -360px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-os_uptime {
+  background-position: -29px -397px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-os_cpu {
+  background-position: -29px -342px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_loadavg {
+  background-position: -56px -325px;
+  width: 21px;
+  height: 16px;
+}
+.icon.analysis-os_debian {
+  background-position: -29px -324px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-replicated_version {
+  background-position: 0 -395px;
+  width: 14px;
+  height: 16px;
+}
+.icon.analysis-gray_checkmark {
+  background-position: -55px -363px;
+  width: 17px;
+  height: 17px;
+}
+.icon.analysis-disk {
+  background-position: -55px -385px;
+  width: 12px;
+  height: 16px;
+}
+.icon.analysis-disk_full {
+  background-position: -68px -385px;
+  width: 14px;
+  height: 17px;
+}
+.icon.analysis-logs {
+  background-position: -29px -416px;
+  width: 14px;
+  height: 16px;
+}
+.icon.analysis-no_logs {
+  background-position: -29px -434px;
+  width: 14px;
+  height: 16px;
+}
+.icon[class*=" analysis-datacenter"]  {
+  background-position: -55px -943px;
+  width: 12px;
+  height: 16px;
+}
+.icon.analysis-datacenter_aws {
+  background-position: 0 -324px;
+  width: 27px;
+  height: 16px;
+}
+.icon.analysis-datacenter_gce {
+  background-position: 0 -289px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-datacenter_azure {
+  background-position: -55px -289px;
+  width: 21px;
+  height: 16px;
+}
+.icon.analysis-datacenter_unknown {
+  background-position: -55px -346px;
+  width: 16px;
+  height: 16px;
+}

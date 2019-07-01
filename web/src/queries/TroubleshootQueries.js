@@ -85,6 +85,21 @@ export const getSupportBundleRaw = `
       createdAt
       uploadedAt
       isArchived
+      analysis {
+        id
+        error
+        maxSeverity
+        createdAt
+        insights {
+          key
+          severity
+          primary
+          detail
+          icon
+          icon_key
+          desiredPosition
+        }
+      }
     }
   }
 `;

@@ -1,6 +1,6 @@
 import * as React from "react";
 import AceEditor from "react-ace";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { getFileFormat, rootPath } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
@@ -9,7 +9,7 @@ import has from "lodash/has";
 
 import Loader from "../shared/Loader";
 import FileTree from "./FileTree";
-import { analysisFiles, getAnalysisInsights } from "../../queries/TroubleshootQueries";
+import { analysisFiles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/SupportBundleFileTree.scss";
 
@@ -277,13 +277,5 @@ class AnalyzerFileTree extends React.Component {
 }
 
 export default withRouter(compose(
-  withApollo,
-  graphql(getAnalysisInsights, {
-    options: ({ match }) => ({
-      variables: {
-        slug: match.params.bundleSlug
-      },
-      fetchPolicy: "no-cache"
-    }),
-  }),
+  withApollo
 )(AnalyzerFileTree));
