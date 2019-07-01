@@ -3,6 +3,7 @@ import { withRouter /*, Link */  } from "react-router-dom";
 import { compose, withApollo } from "react-apollo";
 
 import Loader from "@src/components/shared/Loader";
+import PaperIcon from "@src/components/shared/PaperIcon";
 
 export function PendingHelmChartDetailPage(props) {
   const { chart } = props;
@@ -23,10 +24,16 @@ export function PendingHelmChartDetailPage(props) {
         <div className="flex1 flex-column u-paddingRight--30">
           <div className="flex">
             <div className="flex flex-auto">
-              <span
+              <div
                 style={{ backgroundImage: `url(${chart.helmIcon})` }}
                 className="DetailPageApplication--appIcon u-position--relative">
-              </span>
+                <PaperIcon
+                  className="u-position--absolute"
+                  iconClass="helm"
+                  height="30px"
+                  width="30px"
+                />
+              </div>
             </div>
             <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
               <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">
@@ -38,9 +45,6 @@ export function PendingHelmChartDetailPage(props) {
                 <div className="flex-auto">
                   <button className="btn secondary u-marginRight--20">See values.yaml</button>
                   <button className="btn secondary">Get chart YAML</button>
-                </div>
-                <div className="flex-auto">
-
                 </div>
               </div>
             </div>

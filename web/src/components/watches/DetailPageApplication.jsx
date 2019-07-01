@@ -5,6 +5,7 @@ import WatchContributors from "./WatchContributors";
 import truncateMiddle from "truncate-middle";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
+import PaperIcon from "../shared/PaperIcon";
 import {
   Utilities,
   getClusterType,
@@ -201,15 +202,17 @@ class DetailPageApplication extends Component {
           <div className="flex1 flex-column u-paddingRight--30">
             <div className="flex">
               <div className="flex flex-auto">
-                <span
+                <div
                   style={{ backgroundImage: `url(${watch.watchIcon})`}}
                   className="DetailPageApplication--appIcon u-position--relative">
-                  <span
-                    className="edit-wrapper flex alignItems--center justifyContent--center u-position--absolute"
-                    onClick={this.toggleEditModal}>
-                    <span className="icon edit-icon clickable" />
-                  </span>
-                </span>
+                  <PaperIcon
+                    className="u-position--absolute"
+                    height="25px"
+                    width="25px"
+                    iconClass="edit-icon"
+                    onClick={this.toggleEditModal}
+                  />
+                </div>
               </div>
               <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>
