@@ -119,6 +119,8 @@ export function getFileFormat(selectedFile) {
     return "yaml";
   }
   return "text";
+}
+
 /**
  * @param {Watch} watch - watch to determine type
  * @return {Boolean}
