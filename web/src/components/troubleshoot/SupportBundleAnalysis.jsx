@@ -61,6 +61,19 @@ export class SupportBundleAnalysis extends React.Component {
       });
   }
 
+  downloadBundle = () => {
+    const hiddenIFrameID = "hiddenDownloader";
+    let iframe = document.getElementById(hiddenIFrameID);
+    const url = this.state.bundle.signedUri;
+    if (iframe === null) {
+      iframe = document.createElement("iframe");
+      iframe.id = hiddenIFrameID;
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+    }
+    iframe.src = url;
+  }
+
   toggleAnalysisAction = (active) => {
     this.setState({
       activeTab: active,
@@ -162,6 +175,7 @@ export class SupportBundleAnalysis extends React.Component {
                         <AnalyzerFileTree
                           watchSlug={watch.slug}
                           bundle={bundle}
+                          downloadBundle={this.downloadBundle}
                         />
                       } />
                     </Switch>

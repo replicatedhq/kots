@@ -187,6 +187,13 @@ class AnalyzerFileTree extends React.Component {
     }
   }
 
+  handleDownload = () => {
+    const { downloadBundle} = this.props;
+    if (downloadBundle && typeof downloadBundle == "function") {
+      downloadBundle();
+    }
+  }
+
   reAnalyzeBundle = () => {
     this.setState({ isReanalyzing: true });
     this.props.reAnalyzeBundle((response, analysisError) => {
@@ -238,7 +245,7 @@ class AnalyzerFileTree extends React.Component {
                     <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
                     <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
                     <div className="u-marginTop--20">
-                      <button className="btn secondary green" onClick={this.props.downloadBundle}>Download bundle</button>
+                      <button className="btn secondary" onClick={this.handleDownload}>Download bundle</button>
                     </div>
                   </div>
                   : fileLoading || !fileToView ?
