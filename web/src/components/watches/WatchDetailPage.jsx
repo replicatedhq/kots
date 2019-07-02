@@ -11,9 +11,7 @@ import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import PendingHelmChartDetailPage from "./PendingHelmChartDetailPage";
-// import PendingHelmChartDetail from "./PendingHelmChartDetail";
 import DetailPageApplication from "./DetailPageApplication";
-// import DetailPageHelmChart from "./DetailPageHelmChart";
 import DetailPageIntegrations from "./DetailPageIntegrations";
 import StateFileViewer from "../state/StateFileViewer";
 import DeploymentClusters from "../watches/DeploymentClusters";
@@ -239,6 +237,7 @@ class WatchDetailPage extends Component {
                       path="/watch/helm/:id"
                       render={() =>
                         <PendingHelmChartDetailPage
+                          loading={loading}
                           chart={watch}
                           refreshListWatches={this.props.refreshListWatches}
                           onActiveInitSession={this.props.onActiveInitSession}

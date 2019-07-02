@@ -3,21 +3,30 @@ import { withRouter } from "react-router-dom";
 import { compose } from "react-apollo";
 
 import Loader from "@src/components/shared/Loader";
+import ClusterScopeBatchPath from "@src/components/clusterscope/ClusterScopeBatchPath";
 import PaperIcon from "@src/components/shared/PaperIcon";
 
 export function PendingHelmChartDetailPage(props) {
-  const { chart } = props;
+  const { chart, loading } = props;
 
-  // Sometimes the chart isn't quite loaded yet, so throw in a loader
-  // just in case we're waiting on the `loading` prop in WatchDetailPage
-  // This will probably have to change...
-  if (!chart) {
+  if (loading) {
     return (
       <div className="flex1 flex-column alignItems--center justifyContent--center">
         <Loader size="60" />
       </div>
     );
   }
+
+  // NOTE: This is just dummy data for <ClusterScopeBatchPath>. It's probably going
+  // to get changed once we get ourselves some real data on here.
+  const dummy_data = [
+    { version: "1.2.3" },
+    { version: "1.2.4" },
+    { version: "1.2.5" },
+    { version: "1.3.0" },
+    { version: "1.3.1" },
+    { version: "1.3.2" }
+  ];
 
   return (
     <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingTop--20 u-paddingBottom--20">
@@ -57,7 +66,7 @@ export function PendingHelmChartDetailPage(props) {
                   This is a pending watch from an upstream Helm chart. You should unfork it so you can better manage updates directly from the upstream and set up automatic deployments.
                 </p>
               </div>
-              <div className="flex1 flex-column u-textAlign--left u-paddingLeft--20">
+              <div className="flex-column flex-auto u-textAlign--left u-paddingLeft--20">
                 <button className="btn secondary red u-marginBottom--10">
                   Ignore application
                 </button>
@@ -86,13 +95,17 @@ export function PendingHelmChartDetailPage(props) {
           </div>
         </div>
 
-        <div className="unfork-item flex-auto flex-column">
+        <div className="unfork-item flex-auto flex-column u-filter--grayscale">
           <div className="flex-column flex1 u-marginBottom--10">
             <p className="u-color--tuna u-fontWeight--bold u-fontSize--large">Current version x.x.x</p>
           </div>
+          <ClusterScopeBatchPath
+            path={dummy_data}
+            loading={false}
+          />
           <div className="flex-column flex-auto alignItems--center justifyContent--flexEnd">
             <button className="btn primary green u-marginTop--10">
-              Unfork {chart.helmName}
+              Unfork to keep it up to date
             </button>
           </div>
         </div>

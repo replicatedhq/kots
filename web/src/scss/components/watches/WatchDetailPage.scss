@@ -87,6 +87,10 @@
 
     .unfork-item {
       max-width: 380px;
+
+      .ClusterScopeBatchPath--wrapper {
+        padding-right: 0;
+      }
     }
 
   }
