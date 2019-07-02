@@ -87,7 +87,7 @@ export function getBuildVersion() {
 
 export function sortAnalyzers(bundleInsight) {
   return sortBy(bundleInsight, (item) => {
-    switch (item.level) {
+    switch (item.severity) {
     case "error":
       return 1;
     case "warn":

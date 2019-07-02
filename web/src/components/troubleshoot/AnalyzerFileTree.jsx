@@ -1,6 +1,6 @@
 import * as React from "react";
 import AceEditor from "react-ace";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { getFileFormat, rootPath } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
@@ -9,7 +9,7 @@ import has from "lodash/has";
 
 import Loader from "../shared/Loader";
 import FileTree from "./FileTree";
-import { analysisFiles, getAnalysisInsights } from "../../queries/TroubleshootQueries";
+import { supportBundleFiles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/SupportBundleFileTree.scss";
 
@@ -24,7 +24,7 @@ class AnalyzerFileTree extends React.Component {
     super();
     this.state = {
       files: [],
-      selectedFile: "/" + props.location.pathname.split("/").slice(5, props.location.pathname.length).join("/"),
+      selectedFile: "/" + props.location.pathname.split("/").slice(8, props.location.pathname.length).join("/"),
       fileContents: [],
       fileLoading: false,
       fileLoadErr: false,
@@ -55,8 +55,9 @@ class AnalyzerFileTree extends React.Component {
   }
 
   async setSelectedFile(path) {
+    const { watchSlug } = this.props;
     const newPath = rootPath(path);
-    this.props.history.replace(`/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`)
+    this.props.history.replace(`/watch/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`);
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) { return; } // Don't go fetch it if we already have that content in our state
     this.fetchFiles(this.state.bundleId, newPath)
@@ -65,14 +66,14 @@ class AnalyzerFileTree extends React.Component {
   fetchFiles = (bundleId, path) => {
     this.setState({ fileLoading: true, fileLoadErr: false });
     this.props.client.query({
-      query: analysisFiles,
+      query: supportBundleFiles,
       variables: {
         bundleId: bundleId,
         fileNames: [path]
       }
     })
       .then((res) => {
-        this.buildFileContent(JSON.parse(res.data.analysisFiles));
+        this.buildFileContent(JSON.parse(res.data.supportBundleFiles));
         this.setState({ fileLoading: false });
       })
       .catch((err) => {
@@ -97,6 +98,7 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
+    const { bundle } = this.props;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
@@ -105,14 +107,14 @@ class AnalyzerFileTree extends React.Component {
         this.refAceEditor.editor.resize(); // ace editor needs to resize itself so that content does not get cut off
       }
     }
-    if (this.props.data.supportBundleForSlug !== lastProps.data.supportBundleForSlug && this.props.data.supportBundleForSlug) {
+    if (bundle !== lastProps.bundle && bundle) {
       this.setState({
-        bundleId: this.props.data.supportBundleForSlug.bundle.id,
-        fileTree: this.props.data.supportBundleForSlug.bundle.treeIndex
+        bundleId: bundle.id,
+        fileTree: bundle.treeIndex
       });
       if (this.props.location) {
         if (this.props.location.pathname) {
-          this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+          this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
         }
         if (this.props.location.hash) {
           let newMarker = [];
@@ -127,8 +129,8 @@ class AnalyzerFileTree extends React.Component {
       }
 
       if (this.props.location !== lastProps.location && this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
@@ -144,17 +146,18 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidMount() {
+    const { bundle } = this.props;
     if (this.state.fileTree) {
       this.setFileTree();
     }
-    if (this.props.data.supportBundleForSlug) {
+    if (bundle) {
       this.setState({
-        bundleId: this.props.data.supportBundleForSlug.bundle.id,
-        fileTree: this.props.data.supportBundleForSlug.bundle.treeIndex
+        bundleId: bundle.id,
+        fileTree: bundle.treeIndex
       })
       if (this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
@@ -201,89 +204,79 @@ class AnalyzerFileTree extends React.Component {
 
     return (
       <div className="flex-column flex1">
-        <div className="flex flex1">
-          {!files || !files.length || isOld ?
-            <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
-              <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
-              <div className="u-marginTop--20">
-                <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={this.state.isReanalyzing}>{this.state.isReanalyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
-              </div>
-              {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-lineHeight--normal u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+        {!files || !files.length || isOld ?
+          <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
+            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
+            <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
+            <div className="u-marginTop--20">
+              <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={this.state.isReanalyzing}>{this.state.isReanalyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
             </div>
-            :
-            <div className="flex flex1">
-              <div className={`flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay ${this.props.isFullscreen ? "fs-mode" : ""}`}>
-                <div className="u-overflow--auto dirtree">
-                  <FileTree
-                    files={files}
-                    isRoot={true}
-                    handleFileSelect={(path) => this.setSelectedFile(path)}
-                    selectedFile={this.state.selectedFile}
-                  />
-                </div>
+            {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-lineHeight--normal u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+          </div>
+          :
+          <div className="flex flex1">
+            <div className={`flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay ${this.props.isFullscreen ? "fs-mode" : ""}`}>
+              <div className="u-overflow--auto dirtree">
+                <FileTree
+                  files={files}
+                  isRoot={true}
+                  handleFileSelect={(path) => this.setSelectedFile(path)}
+                  selectedFile={this.state.selectedFile}
+                />
               </div>
-              <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
-                <div className="fullscreen-icon-wrapper" onClick={() => this.props.toggleFullscreen()}>
-                  <span className={`icon u-fullscreen${this.props.isFullscreen ? "Close" : "Open"}Icon clickable`}></span>
+            </div>
+            <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
+              <div className="fullscreen-icon-wrapper" onClick={() => this.props.toggleFullscreen()}>
+                <span className={`icon u-fullscreen${this.props.isFullscreen ? "Close" : "Open"}Icon clickable`}></span>
+              </div>
+              {selectedFile === "" || selectedFile === "/" ?
+                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                  <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
                 </div>
-                {selectedFile === "" || selectedFile === "/" ?
+                : fileLoadErr ?
                   <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
-                  </div>
-                  : fileLoadErr ?
-                    <div className="flex-column flex1 alignItems--center justifyContent--center">
-                      <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
-                      <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
-                      <div className="u-marginTop--20">
-                        <button className="btn secondary green" onClick={this.props.downloadBundle}>Download bundle</button>
-                      </div>
+                    <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
+                    <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
+                    <div className="u-marginTop--20">
+                      <button className="btn secondary green" onClick={this.props.downloadBundle}>Download bundle</button>
                     </div>
-                    : fileLoading || !fileToView ?
-                      <div className="flex-column flex1 alignItems--center justifyContent--center">
-                        <Loader size="50" color="#44bb66" />
-                      </div>
-                      :
-                      <AceEditor
-                        ref={(input) => this.refAceEditor = input}
-                        mode={format}
-                        theme="chrome"
-                        className="flex1 flex"
-                        readOnly={true}
-                        value={fileToView.content}
-                        height="100%"
-                        width="100%"
-                        markers={this.state.activeMarkers}
-                        editorProps={{
-                          $blockScrolling: Infinity,
-                          useSoftTabs: true,
-                          tabSize: 2,
-                        }}
-                        onLoad={(editor) => editor.gotoLine(this.props.location.hash !== "" && parseInt(this.props.location.hash.substring(2)))}
-                        onSelectionChange={this.onSelectionChange}
-                        setOptions={{
-                          scrollPastEnd: false,
-                          showGutter: true,
-                        }}
-                      />
-                }
-              </div>
+                  </div>
+                  : fileLoading || !fileToView ?
+                    <div className="flex-column flex1 alignItems--center justifyContent--center">
+                      <Loader size="50" color="#44bb66" />
+                    </div>
+                    :
+                    <AceEditor
+                      ref={(input) => this.refAceEditor = input}
+                      mode={format}
+                      theme="chrome"
+                      className="flex1 flex"
+                      readOnly={true}
+                      value={fileToView.content}
+                      height="100%"
+                      width="100%"
+                      markers={this.state.activeMarkers}
+                      editorProps={{
+                        $blockScrolling: Infinity,
+                        useSoftTabs: true,
+                        tabSize: 2,
+                      }}
+                      onLoad={(editor) => editor.gotoLine(this.props.location.hash !== "" && parseInt(this.props.location.hash.substring(2)))}
+                      onSelectionChange={this.onSelectionChange}
+                      setOptions={{
+                        scrollPastEnd: false,
+                        showGutter: true,
+                      }}
+                    />
+              }
             </div>
-          }
-        </div>
+          </div>
+        }
       </div>
     );
   }
 }
 
 export default withRouter(compose(
-  withApollo,
-  graphql(getAnalysisInsights, {
-    options: ({ match }) => ({
-      variables: {
-        slug: match.params.bundleSlug
-      },
-      fetchPolicy: "no-cache"
-    }),
-  }),
+  withApollo
 )(AnalyzerFileTree));

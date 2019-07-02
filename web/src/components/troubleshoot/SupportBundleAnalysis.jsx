@@ -8,7 +8,7 @@ import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 
-import { getAnalysisInsights, getSupportBundle } from "../../queries/TroubleshootQueries";
+import { getSupportBundle } from "../../queries/TroubleshootQueries";
 import { updateSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 
@@ -109,10 +109,10 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   render() {
-    const { watch, getSupportBundle, getAnalysisInsights } = this.props;
+    const { watch, getSupportBundle } = this.props;
     const bundle = getSupportBundle?.getSupportBundle;
 
-    if (getSupportBundle.loading || getAnalysisInsights.loading) {
+    if (getSupportBundle.loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
           <Loader size="60" color="#44bb66" />
@@ -121,66 +121,55 @@ export class SupportBundleAnalysis extends React.Component {
     }
 
     return (
-      <div className="console container u-marginTop--20 u-paddingBottom--10 flex1 flex">
+      <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
         <div className="flex1 flex-column">
-          <div className="flex flex1">
+          {bundle &&
             <div className="flex1 flex-column">
-              <div className="CreateAction u-marginBottom--5">
-                <Link to={`/troubleshoot`} className="u-paddingLeft--normal u-marginTop--5
-                          u-fontSize--normal u-color--astral
-                          u-fontWeight--medium
-                          u-cursor--pointer">
-                  <span className="icon clickable u-backArrowIcon"></span>Support bundles
-                </Link>
-              </div>
-              {bundle &&
-                <div className="flex1 flex-column">
-                  <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
-                    <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
-                      <div className="flex1">
-                        <div className="flex flex1 justifyContent--spaceBetween">
-                          <div className="flex flex-column">
-                            <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
-                          </div>
-                          <div className="flex flex-auto alignItems--center">
-                            {this.renderSharedContext(bundle)}
-                          </div>
-                        </div>
-                        <div className="upload-date-container flex u-marginTop--5 alignItems--center">
-                          <div className="flex alignSelf--center">
-                            <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Uploaded on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
-                          </div>
-                        </div>
+              <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
+                <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
+                  <div className="flex1">
+                    <div className="flex flex1 justifyContent--spaceBetween">
+                      <div className="flex flex-column">
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
+                      </div>
+                      <div className="flex flex-auto alignItems--center">
+                        {this.renderSharedContext(bundle)}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex-column flex1">
-                    <div className="customer-actions-wrapper flex1 flex-column">
-                      <div className="flex action-tab-bar">
-                        <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
-                        <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
-                      </div>
-                      <div className="flex flex1 action-content u-marginBottom--30">
-                        <Switch>
-                          <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() => 
-                            <AnalyzerInsights
-                              insights={bundle.insights}
-                              reAnalyzeBundle={this.reAnalyzeBundle}
-                            />
-                          } />
-                          <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
-                            <AnalyzerFileTree
-                              watch={watch}
-                            />
-                          } />
-                        </Switch>
+                    <div className="upload-date-container flex u-marginTop--5 alignItems--center">
+                      <div className="flex alignSelf--center">
+                        <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Uploaded on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
                       </div>
                     </div>
                   </div>
                 </div>
-              }
+              </div>
+              <div className="flex-column flex1">
+                <div className="customer-actions-wrapper flex1 flex-column">
+                  <div className="flex action-tab-bar">
+                    <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
+                    <Link to={`/watch/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
+                  </div>
+                  <div className="flex-column flex1 action-content">
+                    <Switch>
+                      <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() => 
+                        <AnalyzerInsights
+                          insights={bundle.analysis?.insights}
+                          reAnalyzeBundle={this.reAnalyzeBundle}
+                        />
+                      } />
+                      <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
+                        <AnalyzerFileTree
+                          watchSlug={watch.slug}
+                          bundle={bundle}
+                        />
+                      } />
+                    </Switch>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          }
         </div>
         {this.state.displayShareBundleModal &&
           <Modal
@@ -215,15 +204,6 @@ export default withRouter(compose(
     options: ({ match }) => ({
       variables: {
         watchSlug: match.params.bundleSlug
-      },
-      fetchPolicy: "no-cache"
-    }),
-  }),
-  graphql(getAnalysisInsights, {
-    name: "getAnalysisInsights",
-    options: ({ match }) => ({
-      variables: {
-        slug: match.params.bundleSlug
       },
       fetchPolicy: "no-cache"
     }),

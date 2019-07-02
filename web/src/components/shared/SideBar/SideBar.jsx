@@ -31,8 +31,8 @@ class SideBar extends Component {
     }
 
     return (
-      <div className={classNames("sidebar u-minHeight--full", className)}>
-        <div className="flex-column u-width--full u-overflow--auto">
+      <div className={classNames("sidebar flex-column flex1 u-overflow--auto", className)}>
+        <div className="flex-column u-width--full">
           {items?.map((jsx, idx) => {
             return (
               <Fragment key={idx}>

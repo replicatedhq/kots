@@ -18,13 +18,13 @@ export class AnalyzerInsights extends React.Component {
   componentDidUpdate(lastProps) {
     let isError, isWarn;
     if (this.props.insights !== lastProps.insights && this.props.insights) {
-      isError = this.props.insights.some(i => i.level === "error");
-      isWarn = this.props.insights.some(i => i.level === "warn");
+      isError = this.props.insights.some(i => i.severity === "error");
+      isWarn = this.props.insights.some(i => i.severity === "warn");
       this.setState({
         insights: sortAnalyzers(this.props.insights),
       });
       if (isWarn || isError) {
-        const insights = filter(this.props.insights, (i) => { return i.level !== "debug" && i.level !== "info" });
+        const insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
         this.setState({ filterTiles: "1", insights: insights })
       }
     }
@@ -33,13 +33,13 @@ export class AnalyzerInsights extends React.Component {
   componentDidMount() {
     let isError, isWarn;
     if (this.props.insights) {
-      isError = this.props.insights.some(i => i.level === "error");
-      isWarn = this.props.insights.some(i => i.level === "warn");
+      isError = this.props.insights.some(i => i.severity === "error");
+      isWarn = this.props.insights.some(i => i.severity === "warn");
       this.setState({
         insights: sortAnalyzers(this.props.insights),
       });
       if (isError || isWarn) {
-        const insights = filter(this.props.insights, (i) => { return i.level !== "debug" && i.level !== "info" });
+        const insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
         this.setState({ filterTiles: "1", insights: insights })
       }
     }
@@ -51,19 +51,19 @@ export class AnalyzerInsights extends React.Component {
     nextState[field] = val;
     let insights;
     if (val === "1") {
-      insights = filter(this.props.insights, (i) => { return i.level !== "debug" && i.level !== "info" });
+      insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
     } else {
       insights = sortBy(this.props.insights, (item) => {
-        if (item.level === "error") {
+        if (item.severity === "error") {
           return 1
         }
-        if (item.level === "warn") {
+        if (item.severity === "warn") {
           return 2
         }
-        if (item.level === "info") {
+        if (item.severity === "info") {
           return 3
         }
-        if (item.level === "debug") {
+        if (item.severity === "debug") {
           return 4
         }
       })
@@ -106,7 +106,7 @@ export class AnalyzerInsights extends React.Component {
               <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
                 <input
                   type="checkbox"
-                  className=""
+                  className="filter-tiles-checkbox"
                   id="filterTiles"
                   checked={filterTiles === "1"}
                   value={filterTiles}
@@ -126,10 +126,10 @@ export class AnalyzerInsights extends React.Component {
                 <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
               </div>
               :
-              <div className="flex flexWrap--wrap u-overflow--auto">
+              <div className="flex flex1 flexWrap--wrap u-overflow--auto">
                 {filteredInsights && filteredInsights.map((tile, i) => (
                   <div key={i} className="insight-tile-wrapper flex-column">
-                    <div className={`insight-tile flex1 u-textAlign--center flex-verticalCenter flex-column ${tile.level}`}>
+                    <div className={`insight-tile flex1 u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
                       <div className="flex justifyContent--center u-marginBottom--10">
                         {tile.icon_key ?
                           <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
@@ -139,14 +139,14 @@ export class AnalyzerInsights extends React.Component {
                             <span className={`icon analysis tile-icon`}></span>
                         }
                       </div>
-                      <p className={tile.level === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium"}>{tile.detail}</p>
-                      <p className={tile.level === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold u-marginTop--small" : "u-color--tuna u-fontSize--normal u-fontWeight--bold u-marginTop--small"}>{tile.primary}</p>
+                      <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium"}>{tile.detail}</p>
+                      <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold u-marginTop--5" : "u-color--tuna u-fontSize--normal u-fontWeight--bold u-marginTop--5"}>{tile.primary}</p>
                     </div>
                   </div>
                 ))}
               </div>
             }
-            <div className="flex-column flex1">
+            <div className="flex-column flex-auto">
               <div className="flex-auto u-paddingLeft--10">
                 <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
               </div>

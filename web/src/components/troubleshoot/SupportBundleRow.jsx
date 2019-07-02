@@ -54,9 +54,9 @@ class SupportBundleRow extends React.Component {
                 </div>
               </div>
               <div className="flex flex1 u-marginTop--10">
-                {bundle.insights?.length ?
+                {bundle?.analysis?.insights?.length ?
                   <div className="flex flex1 u-marginRight--5">
-                    {sortBy(filter(bundle.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => (
+                    {sortBy(filter(bundle?.analysis?.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => (
                       <div key={i} className="analysis-icon-wrapper">
                         {insight.icon_key ?
                           <span className={`icon clickable analysis-${insight.icon_key}`} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>

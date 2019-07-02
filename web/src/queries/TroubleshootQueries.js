@@ -85,15 +85,30 @@ export const getSupportBundleRaw = `
       createdAt
       uploadedAt
       isArchived
+      analysis {
+        id
+        error
+        maxSeverity
+        createdAt
+        insights {
+          key
+          severity
+          primary
+          detail
+          icon
+          icon_key
+          desiredPosition
+        }
+      }
     }
   }
 `;
 
 export const getSupportBundle = gql(getSupportBundleRaw);
 
-export const analysisFiles = gql`
-  query analysisFiles($bundleId: ID!, $fileNames: [String!]) {
-    analysisFiles(bundleId: $bundleId, fileNames: $fileNames)
+export const supportBundleFiles = gql`
+  query supportBundleFiles($bundleId: ID!, $fileNames: [String!]) {
+    supportBundleFiles(bundleId: $bundleId, fileNames: $fileNames)
   }
 `;
 
