@@ -68,7 +68,7 @@ export function PendingHelmChartDetailPage(props) {
         </div>
       </div>
       <div className="flex flex-auto full-width-container justifyContent--spaceBetween u-marginTop--40 u-textAlign--center">
-        <div className="flex-auto flex-column">
+        <div className="unfork-item flex-auto flex-column">
           <div className="flex-column">
             <div className="unfork-icon-wrapper">
               <span className="flex justifyContent--center">
@@ -84,7 +84,7 @@ export function PendingHelmChartDetailPage(props) {
             </button>
           </div>
         </div>
-        <div className="flex-auto flex-column">
+        <div className="unfork-item flex-auto flex-column">
           <div className="flex-column">
             <p className="u-color--tuna u-fontWeight--bold u-fontSize--large">Current version x.x.x</p>
           </div>
@@ -94,7 +94,7 @@ export function PendingHelmChartDetailPage(props) {
             </button>
           </div>
         </div>
-        <div className="flex-auto flex-column u-filter--grayscale">
+        <div className="unfork-item flex-auto flex-column u-filter--grayscale noclick">
           <div className="flex-column">
             <div className="unfork-icon-wrapper flex-column justifyContent--center alignItems--center u-marginBottom--20">
               <div className="flex alignItems--center">
