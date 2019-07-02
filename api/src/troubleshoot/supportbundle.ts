@@ -3,7 +3,6 @@ import * as zlib from "zlib";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "./util";
 import { getS3 } from "../util/s3";
 import { Params } from "../server/params";
-import {logger} from "../server/logger"
 
 export type SupportBundleStatus = "pending" | "uploaded" | "analyzing" | "analyzed" | "analysis_error";
 
@@ -99,7 +98,6 @@ export class SupportBundle {
     const replicatedParams = await Params.getParams();
 
     return new Promise<FilesAsString>((resolve, reject) => {
-      logger.info({ msg: replicatedParams.shipOutputBucket});
       const params = {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? replicatedParams.shipOutputBucket + "/" : ""}supportbundles/${bundleId}/supportbundle.tar.gz`,
