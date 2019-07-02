@@ -5,10 +5,12 @@ import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { getWatch } from "@src/queries/WatchQueries";
+import { getWatch, getHelmChart } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
+import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
+import PendingHelmChartDetailPage from "./PendingHelmChartDetailPage";
 import DetailPageApplication from "./DetailPageApplication";
 import DetailPageIntegrations from "./DetailPageIntegrations";
 import StateFileViewer from "../state/StateFileViewer";
@@ -149,7 +151,15 @@ class WatchDetailPage extends Component {
   }
 
   render() {
-    const { match, history, getWatchQuery, listWatches, refetchListWatches } = this.props;
+    const {
+      match,
+      history,
+      getWatchQuery,
+      getHelmChartQuery,
+      listWatches,
+      refetchListWatches
+    } = this.props;
+
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
@@ -160,8 +170,16 @@ class WatchDetailPage extends Component {
         <Loader size="60" />
       </div>
     );
+    const isHelmChartUrl = match.params.owner === "helm";
 
-    const { getWatch: watch, loading } = getWatchQuery;
+    let watch;
+    if (!isHelmChartUrl) {
+      watch = getWatchQuery?.getWatch;
+    } else {
+      watch = getHelmChartQuery?.getHelmChart;
+    }
+    const loading = getWatchQuery?.loading || getHelmChartQuery?.loading;
+
 
     if (history.location.pathname == "/watches") {
       if (listWatches[0]) {
@@ -178,12 +196,28 @@ class WatchDetailPage extends Component {
           sidebar={(
             <SideBar
               className="flex flex1"
-              items={listWatches.map( (item, idx) => (
-                <WatchSidebarItem
-                  key={idx}
-                  className={classNames({ selected: item.slug === watch?.slug})}
-                  watch={item} />
-              ))}
+              items={listWatches.map( (item, idx) => {
+                let sidebarItemNode;
+                if (item.slug) {
+                  sidebarItemNode = (
+                    <WatchSidebarItem
+                      key={idx}
+                      className={classNames({ selected: (
+                        item.slug === watch?.slug &&
+                        match.params.owner !== "helm"
+                      )})}
+                      watch={item} />
+                  );
+                } else if (item.helmName) {
+                  sidebarItemNode = (
+                    <HelmChartSidebarItem
+                      key={idx}
+                      className={classNames({ selected: item.id === match.params.slug})}
+                      helmChart={item} />
+                  );
+                }
+                return sidebarItemNode;
+              })}
               currentWatch={watch?.watchName}
             />
           )}>
@@ -198,6 +232,18 @@ class WatchDetailPage extends Component {
                     watch={watch}
                   />
                   <Switch>
+                    <Route
+                      exact
+                      path="/watch/helm/:id"
+                      render={() =>
+                        <PendingHelmChartDetailPage
+                          loading={loading}
+                          chart={watch}
+                          refreshListWatches={this.props.refreshListWatches}
+                          onActiveInitSession={this.props.onActiveInitSession}
+                        />
+                      }
+                    />
                     {watch && !watch.cluster &&
                       <Route exact path="/watch/:owner/:slug" render={() =>
                         <DetailPageApplication
@@ -205,8 +251,8 @@ class WatchDetailPage extends Component {
                           refetchListWatches={refetchListWatches}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
-                        />
-                      } />
+                        />}
+                      />
                     }
                     {watch && !watch.cluster &&
                       <Route exact path="/watch/:owner/:slug/downstreams" render={() =>
@@ -223,6 +269,11 @@ class WatchDetailPage extends Component {
                         </div>
                       } />
                     }
+                    { /*
+                      <Route exact path="/watch/helm/:id" render={() =>
+                        <DetailPageHelmChart chart={watch} refetchListWatches={refetchListWatches} updateCallback={this.refetchGraphQLData} />
+                      } />
+                    */ }
                     { /* ROUTE UNUSED */}
                     <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
                     { /* ROUTE UNUSED */}
@@ -310,6 +361,10 @@ export default compose(
   withTheme,
   graphql(getWatch, {
     name: "getWatchQuery",
+    skip: props => {
+      const { owner } = props.match.params;
+      return owner === "helm"
+    },
     options: props => {
       const { owner, slug } = props.match.params;
       return {
@@ -317,6 +372,21 @@ export default compose(
           slug: `${owner}/${slug}`
         }
       }
+    }
+  }),
+  graphql(getHelmChart, {
+    name: "getHelmChartQuery",
+    skip: props => {
+      const { owner } = props.match.params;
+      return owner !== "helm";
+    },
+    options: props => {
+      const { slug: id } = props.match.params;
+      return {
+        variables: {
+          id
+        }
+      };
     }
   }),
   graphql(createUpdateSession, {

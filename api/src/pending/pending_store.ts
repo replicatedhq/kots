@@ -1,5 +1,6 @@
 import { PendingInitSession } from "./";
 import { Params } from "../server/params";
+import { ReplicatedError } from "../server/errors";
 import * as pg from "pg";
 
 export class PendingStore {
@@ -32,6 +33,21 @@ export class PendingStore {
     const result = await this.pool.query(q,v);
 
     return result.rows[0].upstream_uri;
+  }
+
+  public async getPendingInitSession(initId: string, userId: string): Promise<PendingInitSession> {
+    const q = `select id, title, upstream_uri, requested_upstream_uri, created_at, finished_at, result from ship_init_pending
+    inner join ship_init_pending_user on ship_init_pending_id = ship_init_pending.id
+    where id = $1 and user_id = $2`;
+    const v = [initId, userId];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No pending init found for ID ${initId}. Check your watch dashboard to see if the installation was completed`);
+    }
+
+    return result.rows[0];
   }
 
   public async searchPendingInitSessions(userId: string, title: string): Promise<PendingInitSession[]> {

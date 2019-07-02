@@ -1,7 +1,7 @@
 const HelmChart = `
   type HelmChart {
     id: ID
-    clusterID: String
+    clusterId: String
     helmName: String
     namespace: String
     version: Int

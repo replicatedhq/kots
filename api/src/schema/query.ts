@@ -20,8 +20,10 @@ export const Query = `
 
     listPendingInitSessions: [PendingInitSession]
     searchPendingInitSessions(title: String!): [PendingInitSession]
+    getPendingIniSession(id: String!): PendingInitSession
 
     listHelmCharts: [HelmChart]
+    getHelmChart(id: String!): HelmChart
 
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]

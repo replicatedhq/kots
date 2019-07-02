@@ -1,4 +1,4 @@
-import { getApplicationType } from "@src/utilities/utilities";
+import { getApplicationType, isHelmChart } from "@src/utilities/utilities";
 
 export default [
   {
@@ -6,19 +6,25 @@ export default [
     displayName: "Application",
     to: slug => `/watch/${slug}`,
     displayRule: watch => {
-      return !watch.cluster;
+      return isHelmChart(watch) || !watch.cluster;
     }
   },
   {
     tabName: "version-history",
     displayName: "Version history",
-    to: slug => `/watch/${slug}/version-history`
+    to: slug => `/watch/${slug}/version-history`,
+    displayRule: watch => {
+      return !isHelmChart(watch);
+    }
   },
   {
     tabName: "downstreams",
     displayName: "Downstreams",
     to: slug => `/watch/${slug}/downstreams`,
     displayRule: watch => {
+      if (isHelmChart(watch)) {
+        return false;
+      }
       return !watch.cluster;
     }
   },
@@ -51,6 +57,9 @@ export default [
     displayName: "State JSON",
     to: slug => `/watch/${slug}/state`,
     displayRule: watch => {
+      if (isHelmChart(watch)) {
+        return false;
+      }
       return Boolean(watch.cluster) || getApplicationType(watch) !== "replicated.app";
     }
   }

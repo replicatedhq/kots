@@ -1,7 +1,7 @@
-export interface HelmChart {
+export class HelmChart {
   id: string;
   clusterId: string;
-  helmName: string
+  helmName: string;
   namespace: string;
   version: number;
   firstDeployedAt: Date;
@@ -9,4 +9,10 @@ export interface HelmChart {
   isDeleted: boolean;
   chartVersion: string;
   appVersion: string;
+
+  public toSchema() {
+    return {
+      ...this
+    }
+  }
 }

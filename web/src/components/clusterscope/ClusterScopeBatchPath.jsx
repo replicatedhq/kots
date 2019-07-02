@@ -2,7 +2,11 @@ import * as React from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import sortBy from "lodash/sortBy";
+
+import "../../scss/components/image_check/ImageWatchBatch.scss";
+
 dayjs.extend(relativeTime);
+
 
 const Point = ({ point, multi }) => (
   <div className="point flex flex-column alignItems--center">
@@ -12,7 +16,7 @@ const Point = ({ point, multi }) => (
         {multi ? null : <span className="u-fontSize--smaller u-lineHeight--normal">{dayjs(point.date).fromNow()}</span>}
       </p>
     </div>
-    { multi ? 
+    { multi ?
       <div className="dot-wrapper flex">
         <span></span>
         <span></span>
@@ -20,7 +24,7 @@ const Point = ({ point, multi }) => (
       </div> :
       <div className="dot-wrapper flex">
         <span></span>
-      </div> 
+      </div>
     }
   </div>
 );
@@ -30,10 +34,10 @@ const ClusterScopeBatchPath = ({ path, loading }) => {
   const oldest = _path[0];
   const newest = _path[_path.length-1];
   const middle = _path.slice(1, _path.length - 1);
-  const points = _path.length < 5 ? 
+  const points = _path.length < 5 ?
     middle.length ? middle.map((point, i) => (
       <Point point={point} key={i} />
-    )) : null 
+    )) : null
     : <Point multi={middle} />
   return (
     <div className="ClusterScopeBatchPath--wrapper flex flex1">
@@ -43,7 +47,7 @@ const ClusterScopeBatchPath = ({ path, loading }) => {
           {loading ? null : <span className="u-fontSize--smaller u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">{dayjs(oldest.date).fromNow()}</span>}
         </p>
         <p className="u-position--relative u-fontSize--small u-color--dustyGray">
-        Your version 
+        Your version
           <span className={`version--point ${loading ? "gray" : "red"}`}></span>
           <span className="version--line"></span>
         </p>
@@ -61,8 +65,8 @@ const ClusterScopeBatchPath = ({ path, loading }) => {
         </p>
         <p className="u-position--relative u-fontSize--small u-color--dustyGray">
           <span className="version--line"></span>
-          <span className={`version--point ${loading ? "gray" : "green"}`}></span> 
-        Latest version 
+          <span className={`version--point ${loading ? "gray" : "green"}`}></span>
+        Latest version
         </p>
       </div>
     </div>

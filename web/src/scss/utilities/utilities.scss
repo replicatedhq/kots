@@ -67,6 +67,7 @@
 .u-marginTop--15 { margin-top: 15px; }
 .u-marginTop--20 { margin-top: 20px; }
 .u-marginTop--30 { margin-top: 30px; }
+.u-marginTop--40 { margin-top: 40px; }
 
 /* Display utilities */
 
@@ -81,3 +82,16 @@
 .u-borderRight--gray { border-right: 1px solid #DFDFDF; }
 .u-borderBottom--gray { border-bottom: 1px solid #DFDFDF; }
 .u-borderLeft--gray { border-left: 1px solid #DFDFDF; }
+
+/* Filter classes */
+
+.u-filter--grayscale { filter: grayscale(100%); }
+
+.noclick {
+  pointer-events: none;
+
+  &:hover {
+    cursor: not-allowed;
+  }
+
+}

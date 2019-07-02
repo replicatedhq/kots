@@ -20,5 +20,10 @@ export function HelmChartQueries(stores: Stores) {
         };
       });
     },
+
+    async getHelmChart(root: any, args: any, context: Context) {
+      const chart = await stores.helmChartStore.getChart(args.id);
+      return chart.toSchema();
+    }
   }
 }
