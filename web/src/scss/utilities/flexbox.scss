@@ -16,7 +16,10 @@
 .flex-auto { flex: 0 0 auto; }
 .flex-1-auto { flex: 1 1 auto; }
 .flex0 { flex: 0; }
-.flex1 { flex: 1; }
+.flex1 {
+	flex: 1;
+	min-height: 0;
+}
 .flex1-0 { flex: 1 1 0; }
 .flex2 { flex: 2; }
 .flex3 { flex: 3; }
