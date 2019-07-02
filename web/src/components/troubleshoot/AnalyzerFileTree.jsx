@@ -9,7 +9,7 @@ import has from "lodash/has";
 
 import Loader from "../shared/Loader";
 import FileTree from "./FileTree";
-import { analysisFiles } from "../../queries/TroubleshootQueries";
+import { supportBundleFiles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/SupportBundleFileTree.scss";
 
@@ -24,7 +24,7 @@ class AnalyzerFileTree extends React.Component {
     super();
     this.state = {
       files: [],
-      selectedFile: "/" + props.location.pathname.split("/").slice(5, props.location.pathname.length).join("/"),
+      selectedFile: "/" + props.location.pathname.split("/").slice(9, props.location.pathname.length).join("/"),
       fileContents: [],
       fileLoading: false,
       fileLoadErr: false,
@@ -55,8 +55,9 @@ class AnalyzerFileTree extends React.Component {
   }
 
   async setSelectedFile(path) {
+    const { watchSlug } = this.props;
     const newPath = rootPath(path);
-    this.props.history.replace(`/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`)
+    this.props.history.replace(`/watch/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`);
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) { return; } // Don't go fetch it if we already have that content in our state
     this.fetchFiles(this.state.bundleId, newPath)
@@ -65,14 +66,14 @@ class AnalyzerFileTree extends React.Component {
   fetchFiles = (bundleId, path) => {
     this.setState({ fileLoading: true, fileLoadErr: false });
     this.props.client.query({
-      query: analysisFiles,
+      query: supportBundleFiles,
       variables: {
         bundleId: bundleId,
         fileNames: [path]
       }
     })
       .then((res) => {
-        this.buildFileContent(JSON.parse(res.data.analysisFiles));
+        this.buildFileContent(JSON.parse(res.data.supportBundleFiles));
         this.setState({ fileLoading: false });
       })
       .catch((err) => {
@@ -97,6 +98,7 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
+    const { bundle } = this.props;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
@@ -105,14 +107,14 @@ class AnalyzerFileTree extends React.Component {
         this.refAceEditor.editor.resize(); // ace editor needs to resize itself so that content does not get cut off
       }
     }
-    if (this.props.data.supportBundleForSlug !== lastProps.data.supportBundleForSlug && this.props.data.supportBundleForSlug) {
+    if (bundle !== lastProps.bundle && bundle) {
       this.setState({
-        bundleId: this.props.data.supportBundleForSlug.bundle.id,
-        fileTree: this.props.data.supportBundleForSlug.bundle.treeIndex
+        bundleId: bundle.id,
+        fileTree: bundle.treeIndex
       });
       if (this.props.location) {
         if (this.props.location.pathname) {
-          this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+          this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(9, this.props.location.pathname.length).join("/"))
         }
         if (this.props.location.hash) {
           let newMarker = [];
@@ -127,8 +129,8 @@ class AnalyzerFileTree extends React.Component {
       }
 
       if (this.props.location !== lastProps.location && this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(9, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(9, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
@@ -144,17 +146,18 @@ class AnalyzerFileTree extends React.Component {
   }
 
   componentDidMount() {
+    const { bundle } = this.props;
     if (this.state.fileTree) {
       this.setFileTree();
     }
-    if (this.props.data.supportBundleForSlug) {
+    if (bundle) {
       this.setState({
-        bundleId: this.props.data.supportBundleForSlug.bundle.id,
-        fileTree: this.props.data.supportBundleForSlug.bundle.treeIndex
+        bundleId: bundle.id,
+        fileTree: bundle.treeIndex
       })
       if (this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(this.props.data.supportBundleForSlug.bundle.id, "/" + this.props.location.pathname.split("/").slice(5, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(9, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(9, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({

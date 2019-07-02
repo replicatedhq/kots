@@ -50,7 +50,7 @@ export class Params {
     s3AccessKeyId,
     s3SecretAccessKey,
     s3BucketEndpoint,
-    apiAdvertiseEndpoint,
+    apiAdvertiseEndpoint
   }) {
     this.githubAppInstallURL = githubAppInstallURL;
     this.githubClientId = githubClientId;

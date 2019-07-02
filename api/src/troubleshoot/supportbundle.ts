@@ -1,7 +1,16 @@
-
 import * as _ from "lodash";
+import * as zlib from "zlib";
+import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "./util";
+import { getS3 } from "../util/s3";
+import { Params } from "../server/params";
+import {logger} from "../server/logger"
 
 export type SupportBundleStatus = "pending" | "uploaded" | "analyzing" | "analyzed" | "analysis_error";
+
+export interface SupportBundleUpload {
+  uploadUri: string;
+  supportBundle: SupportBundle;
+}
 
 export class SupportBundle {
   id: string;
@@ -17,6 +26,98 @@ export class SupportBundle {
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;
+
+  async generateFileTreeIndex() {
+    const supportBundleIndexJsonPath = "index.json";
+    const indexFiles = await this.downloadFiles(this.id, [{
+      path: supportBundleIndexJsonPath,
+      matcher: eq(supportBundleIndexJsonPath),
+    }]);
+
+    const index = indexFiles.files[supportBundleIndexJsonPath] &&
+      JSON.parse(indexFiles.files[supportBundleIndexJsonPath]);
+
+    let paths: string[] = [];
+    if (!index) {
+      paths = indexFiles.fakeIndex;
+    } else {
+      index.map((p) => (paths.push(p.path)));
+    }
+
+    const dirTree = await this.arrangeIntoTree(paths);
+    return dirTree;
+  }
+
+  arrangeIntoTree(paths) {
+    const tree: any[] = [];
+    _.each(paths, (path) => {
+      const pathParts = path.split("/");
+      if (pathParts[0] === "") {
+        pathParts.shift(); // remove first blank element from the parts array.
+      }
+      let currentLevel = tree; // initialize currentLevel to root
+      _.each(pathParts, (part) => {
+        // check to see if the path already exists.
+        const existingPath = _.find(currentLevel, ["name", part]);
+        if (existingPath) {
+          // the path to this item was already in the tree, so don't add it again.
+          // set the current level to this path's children
+          currentLevel = existingPath.children;
+        } else {
+          const newPart = {
+            name: part,
+            path: `${path}`,
+            children: [],
+          };
+          currentLevel.push(newPart);
+          currentLevel = newPart.children;
+        }
+      });
+    });
+    return tree;
+  }
+
+  async getFiles(bundle: SupportBundle, fileNames: string[]): Promise<FilesAsString> {
+    const fileNameList = fileNames.map((fileName) => ({
+      path: fileName,
+      matcher: eqIgnoringLeadingSlash(fileName),
+    }));
+    const filesWeWant = await this.downloadFiles(bundle.id, fileNameList);
+    return filesWeWant;
+  }
+
+  public static isS3NotFoundError(err) {
+    return (
+      err.code === "NoSuchKey" ||
+      err.code === "AccessDenied" ||
+      err.code === "NotFound" ||
+      err.code === "Forbidden"
+    );
+  }
+
+  async downloadFiles(bundleId: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsString> {
+    const replicatedParams = await Params.getParams();
+
+    return new Promise<FilesAsString>((resolve, reject) => {
+      logger.info({ msg: replicatedParams.shipOutputBucket});
+      const params = {
+        Bucket: replicatedParams.shipOutputBucket,
+        Key: `${replicatedParams.s3BucketEndpoint !== "" ? replicatedParams.shipOutputBucket + "/" : ""}supportbundles/${bundleId}/supportbundle.tar.gz`,
+      };
+
+      const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
+
+      tarGZStream.on("error", reject);
+      const unzipperStream = zlib.createGunzip();
+      unzipperStream.on("error", reject);
+      tarGZStream.pipe(unzipperStream);
+
+      const bundleUnpacker = new TarballUnpacker();
+      bundleUnpacker.unpackFrom(unzipperStream, filesWeCareAbout)
+        .then(resolve)
+        .catch(reject);
+    });
+  }
 
   public toSchema() {
     return {

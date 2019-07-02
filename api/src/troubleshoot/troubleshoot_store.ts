@@ -125,6 +125,15 @@ export class TroubleshootStore {
     return supportBundle;
   }
 
+  public async assignTreeIndex(id: string, index: string): Promise<boolean> {
+    const q = `update supportbundle set tree_index = $1 where id = $2`;
+
+    const v = [index, id];
+    const result = await this.pool.query(q, v);
+
+    return result.rows.length !== 0;
+  }
+
   public async listSupportBundles(watchId: string): Promise<SupportBundle[]> {
     const q = `select id from supportbundle where watch_id = $1 order by created_at`;
     const v = [watchId];

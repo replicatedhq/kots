@@ -47,5 +47,6 @@ export const Query = `
     watchCollectors(watchId: String!): TroubleshootCollectSpec
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
+    supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
   }
 `;

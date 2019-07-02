@@ -162,7 +162,8 @@ export class SupportBundleAnalysis extends React.Component {
                           } />
                           <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*" render={() =>
                             <AnalyzerFileTree
-                              watch={watch}
+                              watchSlug={watch.slug}
+                              bundle={bundle}
                             />
                           } />
                         </Switch>
