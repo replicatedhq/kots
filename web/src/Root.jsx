@@ -149,6 +149,9 @@ class Root extends Component {
   }
 
   refetchListWatches = async () => {
+    // @TODO: Turn all of these queries into just 1 call
+    // @TODO: Lean out the query to only fetch the data that
+    //        We need
 
     // Fetch list of your watches
     const watchList = await GraphQLClient.query({
@@ -178,9 +181,6 @@ class Root extends Component {
       pendingInits.data.listPendingInitSessions,
       pendingUnforks.data.listHelmCharts
     );
-
-    console.log("PENDING INITS", pendingInits.data);
-    console.log("PENDING UNFORKZ", pendingUnforks.data);
 
     this.setState({
       listWatches: allWatches,
