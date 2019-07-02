@@ -68,8 +68,9 @@ export function PendingHelmChartDetailPage(props) {
         </div>
       </div>
       <div className="flex flex-auto full-width-container justifyContent--spaceBetween u-marginTop--40 u-textAlign--center">
+
         <div className="unfork-item flex-auto flex-column">
-          <div className="flex-column">
+          <div className="flex-column flex1 u-marginBottom--10">
             <div className="unfork-icon-wrapper">
               <span className="flex justifyContent--center">
                 <span className="icon folder-unfork" />
@@ -78,24 +79,26 @@ export function PendingHelmChartDetailPage(props) {
             <p className="u-color--tuna u-fontWeight--bold u-fontSize--large u-marginTop--20">Unfork the upstream {chart.helmName} chart</p>
             <p className="u-fontSize--normal u-lineHeight--medium u-marginTop--10">Ship can migrate your forked components to be automatically updated from upstream.</p>
           </div>
-          <div className="flex-column alignItems--center justifyContent--flexEnd">
+          <div className="flex-column flex-auto alignItems--center justifyContent--flexEnd">
             <button className="btn primary green u-marginTop--10">
               Unfork {chart.helmName}
             </button>
           </div>
         </div>
+
         <div className="unfork-item flex-auto flex-column">
-          <div className="flex-column">
+          <div className="flex-column flex1 u-marginBottom--10">
             <p className="u-color--tuna u-fontWeight--bold u-fontSize--large">Current version x.x.x</p>
           </div>
-          <div className="flex-column alignItems--center justifyContent--flexEnd">
+          <div className="flex-column flex-auto alignItems--center justifyContent--flexEnd">
             <button className="btn primary green u-marginTop--10">
               Unfork {chart.helmName}
             </button>
           </div>
         </div>
+
         <div className="unfork-item flex-auto flex-column u-filter--grayscale noclick">
-          <div className="flex-column">
+          <div className="flex-column flex1 u-marginBottom--10">
             <div className="unfork-icon-wrapper flex-column justifyContent--center alignItems--center u-marginBottom--20">
               <div className="flex alignItems--center">
                 <span className="icon ship-complete-icon-gh"></span>
@@ -108,12 +111,13 @@ export function PendingHelmChartDetailPage(props) {
               Convert {chart.helmName} into a watch managed by a gitops workflow or ship deployment.
             </p>
           </div>
-          <div className="flex-column alignItems--center justifyContent--flexEnd">
+          <div className="flex-column flex-auto alignItems--center justifyContent--flexEnd">
             <button className="btn primary green u-marginTop--10">
               Unfork to enable auto updates
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
