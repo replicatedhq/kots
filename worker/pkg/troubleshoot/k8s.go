@@ -143,6 +143,7 @@ func GetPodSpec(ctx context.Context, logLevel string, analyzeImage string, analy
 						bundleGetURI,
 						"--output",
 						"json",
+						"--skip-default",
 						"-f",
 						"/specs/analyze.yaml",
 					},
