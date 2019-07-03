@@ -126,27 +126,29 @@ export class AnalyzerInsights extends React.Component {
                 <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
               </div>
               :
-              <div className="flex flex1 flexWrap--wrap u-overflow--auto">
-                {filteredInsights && filteredInsights.map((tile, i) => (
-                  <div key={i} className="insight-tile-wrapper flex-column">
-                    <div className={`insight-tile flex1 u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
-                      <div className="flex justifyContent--center u-marginBottom--10">
-                        {tile.icon_key ?
-                          <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
-                          : tile.icon ?
-                            <span className="tile-icon" style={{ backgroundImage: `url(${tile.icon})` }}></span>
-                            :
-                            <span className={`icon analysis tile-icon`}></span>
-                        }
+              <div className="flex-column flex1 u-overflow--auto">
+                  <div className="flex flex-auto flexWrap--wrap">
+                  {filteredInsights && filteredInsights.map((tile, i) => (
+                    <div key={i} className="insight-tile-wrapper flex-column">
+                      <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
+                        <div className="flex justifyContent--center u-marginBottom--10">
+                          {tile.icon_key ?
+                            <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
+                            : tile.icon ?
+                              <span className="tile-icon" style={{ backgroundImage: `url(${tile.icon})` }}></span>
+                              :
+                              <span className={`icon analysis tile-icon`}></span>
+                          }
+                        </div>
+                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium"}>{tile.detail}</p>
+                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold u-marginTop--5" : "u-color--tuna u-fontSize--normal u-fontWeight--bold u-marginTop--5"}>{tile.primary}</p>
                       </div>
-                      <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium"}>{tile.detail}</p>
-                      <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold u-marginTop--5" : "u-color--tuna u-fontSize--normal u-fontWeight--bold u-marginTop--5"}>{tile.primary}</p>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             }
-            <div className="flex-column flex-auto">
+            <div className="flex-column flex-auto u-paddingTop--20">
               <div className="flex-auto u-paddingLeft--10">
                 <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
               </div>

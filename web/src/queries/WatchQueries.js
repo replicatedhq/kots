@@ -728,3 +728,17 @@ export const getHelmChartRaw = `
 `
 
 export const getHelmChart = gql(getHelmChartRaw);
+
+export const getDownstreamHistoryRaw = `
+  query getDownstreamHistory($slug: String!) {
+    getDownstreamHistory(slug: $slug) {
+      title
+      status
+      createdOn
+      sequence
+      pullrequestNumber
+    }
+  }
+`;
+
+export const getDownstreamHistory = gql(getDownstreamHistoryRaw);

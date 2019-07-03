@@ -17,6 +17,7 @@ import StateFileViewer from "../state/StateFileViewer";
 import DeploymentClusters from "../watches/DeploymentClusters";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import WatchVersionHistory from "./WatchVersionHistory";
+import DownstreamWatchVersionHistory from "./DownstreamWatchVersionHistory";
 import WatchConfig from "./WatchConfig";
 import WatchLicense from "./WatchLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
@@ -262,6 +263,7 @@ class WatchDetailPage extends Component {
                         <div className="container">
                           <DeploymentClusters
                             appDetailPage={true}
+                            parentWatch={watch}
                             parentClusterName={watch.watchName}
                             preparingUpdate={this.state.preparingUpdate}
                             childWatches={watch.watches}
@@ -284,6 +286,11 @@ class WatchDetailPage extends Component {
 
                     <Route exact path="/watch/:owner/:slug/version-history" render={() =>
                       <WatchVersionHistory
+                        watch={watch}
+                      />
+                    } />
+                    <Route exact path="/watch/:owner/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
+                      <DownstreamWatchVersionHistory
                         watch={watch}
                       />
                     } />
