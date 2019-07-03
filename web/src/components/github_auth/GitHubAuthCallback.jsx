@@ -14,7 +14,7 @@ class GitHubAuthCallback extends React.Component {
     };
   }
 
-  async getUser() {
+  getUser = async () => {
     await this.props.client.query({ query: userInfo })
       .then(() => {
         if (Utilities.localStorageEnabled()) {
@@ -38,7 +38,9 @@ class GitHubAuthCallback extends React.Component {
         .then((res) => {
           if (Utilities.localStorageEnabled()) {
             window.localStorage.setItem("token", res.data.createGithubAuthToken.access_token);
-            this.getUser();
+            this.props.refetchListWatches().then(this.getUser);
+            // this.getUser();
+
           }
         })
         .catch((err) => {

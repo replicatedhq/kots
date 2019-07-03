@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route, Redirect } from "react-router-dom";
+import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 
@@ -45,14 +45,13 @@ class WatchDetailPage extends Component {
   }
 
   static defaultProps = {
-    listWatches: [],
-    getWatch: {
+    getWatchQuery: {
       loading: true
     }
   }
 
-  componentDidUpdate(/* lastProps */) {
-    const { getThemeState, setThemeState, match, listWatches } = this.props;
+  componentDidUpdate(prevProps) {
+    const { getThemeState, setThemeState, match, listWatches, history } = this.props;
 
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listWatches.find( w => w.slug === slug);
@@ -64,6 +63,12 @@ class WatchDetailPage extends Component {
         setThemeState({
           navbarLogo: currentWatch.watchIcon
         });
+      }
+    }
+
+    if (history.location.pathname === "/watches") {
+      if (listWatches && listWatches !== prevProps.listWatches) {
+        this.checkForFirstWatch(listWatches);
       }
     }
   }
@@ -151,10 +156,29 @@ class WatchDetailPage extends Component {
     })
   }
 
+  checkForFirstWatch = listWatches => {
+    const { history } = this.props;
+
+    if (listWatches[0]) {
+      history.replace(`/watch/${listWatches[0].slug}`);
+    } else {
+      history.replace("/watch/create/init");
+    }
+  }
+
+
+
+  componentDidMount() {
+    const { history, listWatches } = this.props;
+    const hasWatches = !!listWatches.length;
+    if (history.location.pathname === "/watches" && hasWatches) {
+      this.checkForFirstWatch(listWatches);
+    }
+  }
+
   render() {
     const {
       match,
-      history,
       getWatchQuery,
       getHelmChartQuery,
       listWatches,
@@ -181,26 +205,19 @@ class WatchDetailPage extends Component {
     }
     const loading = getWatchQuery?.loading || getHelmChartQuery?.loading;
 
-    if (history.location.pathname == "/watches") {
-      if (listWatches[0]) {
-        history.replace(`/watch/${listWatches[0].slug}`);
-      } else if (loading) {
-        return centeredLoader;
-      } else {
-        return <Redirect to="/watch/create/init" />;
-      }
-
-    }
+    // if (loading) {
+    //   return centeredLoader;
+    // }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex u-minHeight--full u-overflow--hidden"
-          condition={listWatches.length > 1}
+          condition={listWatches?.length > 1}
           sidebar={(
             <SideBar
               className="flex flex1"
-              items={listWatches.map( (item, idx) => {
+              items={listWatches?.map( (item, idx) => {
                 let sidebarItemNode;
                 if (item.slug) {
                   sidebarItemNode = (
