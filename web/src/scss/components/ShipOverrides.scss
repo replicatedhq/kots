@@ -8,7 +8,12 @@
 #ship-init-component .StepMessage-wrapper pre,
 #ship-init-component .markdown-wrapper pre code { background-color: #323232; color: #ffffff; }
 
-#ship-init-component .dirtree-wrapper { background-color: #4a4a4a; }
+/* @TODO: See why .dirtree-wrapper is forcing itself to 50% */
+#ship-init-component .Sidebar-wrapper { background-color: #4a4a4a; }
+#ship-init-component .dirtree-wrapper {
+  background-color: #4a4a4a;
+  min-width: 100%;
+}
 #ship-init-component .FileTree-wrapper input[type=checkbox]:checked + label.is-file:after, #ship-init-component .FileTree-wrapper li.is-selected.is-file:after { background-color: #5f8268; }
 #ship-init-component .add-new-resource .Input { background: #2e2e2e }
 #ship-init-component .EmptyState--wrapper { border: 0 }
