@@ -174,6 +174,10 @@ class WatchDetailPage extends Component {
     if (history.location.pathname === "/watches" && hasWatches) {
       this.checkForFirstWatch(listWatches);
     }
+
+    if (!hasWatches) {
+      history.replace("/watch/create/init");
+    }
   }
 
   render() {
