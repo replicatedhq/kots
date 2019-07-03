@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route } from "react-router-dom";
+import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 
@@ -180,12 +180,15 @@ class WatchDetailPage extends Component {
     }
     const loading = getWatchQuery?.loading || getHelmChartQuery?.loading;
 
-
     if (history.location.pathname == "/watches") {
       if (listWatches[0]) {
         history.replace(`/watch/${listWatches[0].slug}`);
+      } else if (loading) {
+        return centeredLoader;
+      } else {
+        return <Redirect to="/watch/create/init" />;
       }
-      return centeredLoader;
+
     }
 
     return (
@@ -362,8 +365,20 @@ export default compose(
   graphql(getWatch, {
     name: "getWatchQuery",
     skip: props => {
-      const { owner } = props.match.params;
-      return owner === "helm"
+      const { owner, slug } = props.match.params;
+
+      // Skip this query if it's a helm chart
+      if (owner === "helm") {
+        return true;
+      }
+
+      // Skip if no variables (user at "/watches" URL)
+      if (!owner && !slug) {
+        return true;
+      }
+
+      return false;
+
     },
     options: props => {
       const { owner, slug } = props.match.params;
