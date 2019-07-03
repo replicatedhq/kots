@@ -1,4 +1,5 @@
 import * as React from "react";
+import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
@@ -82,25 +83,43 @@ export class AnalyzerInsights extends React.Component {
   }
 
   render() {
-    const { insights } = this.props;
+    const { insights, status } = this.props;
     const { filterTiles, analyzing, analysisError } = this.state;
     const filteredInsights = this.state.insights;
 
     const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
 
-    return (
-      <div className="flex flex1">
-        {isEmpty(insights) ?
+    let noInsightsNode;
+    if (isEmpty(insights)) {
+      if (status === "uploaded" || status === "analyzing") {
+        noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
-            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
+            <Loader size="40" color="#44bb66" />
+            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
             <div className="u-marginTop--20">
-              <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
+              <button className="btn secondary" onClick={() => window.location.reload()}>Check again</button>
             </div>
             {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
           </div>
-          :
+        )
+      } else {
+        <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
+          <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
+          <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
+          <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
+          <div className="u-marginTop--20">
+            <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
+          </div>
+          {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
+        </div>
+      }
+    }
+
+    return (
+      <div className="flex flex1">
+        {isEmpty(insights)
+          ? noInsightsNode :
           <div className="flex-column flex1">
             <div className="flex-auto">
               <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">

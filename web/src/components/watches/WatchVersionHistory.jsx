@@ -88,7 +88,7 @@ export default function WatchVersionHistory(props) {
                       className="u-color--astral u-marginLeft--5"
                       href=""
                       target="_blank"
-                      rel="norefeer nofollow">
+                      rel="noopener noreferrer">
                         #{version.pullrequestNumber}
                     </a>
                   </div>
