@@ -57,7 +57,7 @@ export default function WatchVersionHistory(props) {
   }
 
   return (
-    <div className="centered-container flex-column u-position--relative u-overflow--auto">
+    <div className="flex-column u-position--relative u-overflow--auto u-padding--20">
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
         <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
           {currentVersion ? currentVersion.title : "Unknown"}
@@ -74,7 +74,6 @@ export default function WatchVersionHistory(props) {
       </div>
       <div className="flex-column">
         {versionHistory.length > 0 && versionHistory.map( version => {
-          console.log(version);
           if (!version) return null;
           return (
             <div

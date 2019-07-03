@@ -28,7 +28,7 @@ export default class DeploymentClusters extends React.Component {
       appDetailPage,
       childWatches,
       handleAddNewCluster,
-      parentClusterName,
+      parentWatch,
       toggleDeleteDeploymentModal
     } = this.props;
 
@@ -62,7 +62,7 @@ export default class DeploymentClusters extends React.Component {
                       <div className="flex1 justifyContent--center">
                         <div className="flex justifyContent--spaceBetween">
                           <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster && cluster.title || "Downstream deployment"}</p>
-                          <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentClusterName)}></span>
+                          <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentWatch.watchName)}></span>
                         </div>
                         <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5">{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
                         <Link
@@ -100,7 +100,7 @@ export default class DeploymentClusters extends React.Component {
                           </div>
                         }
                       </div>
-                      <Link to={`/watch/${childWatch.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
+                      <Link to={`/watch/${parentWatch.slug}/downstreams/${childWatch.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
                     </div>
                     {currentVersion && childWatch.pendingVersions.length >= 1 &&
                       <div className="flex justifyContent--spaceBetween alignItems--center u-marginTop--10">
@@ -145,7 +145,7 @@ export default class DeploymentClusters extends React.Component {
               </div>
               <div className="u-textAlign--center u-marginTop--10">
                 <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">Deploy to a cluster</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{parentClusterName} has been configured but still needs to be deployed. Select a cluster you would like to deploy {parentClusterName} to.</p>
+                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{parentWatch.watchName} has been configured but still needs to be deployed. Select a cluster you would like to deploy {parentWatch.watchName} to.</p>
               </div>
               <div className="u-marginTop--20">
                 <button className="btn secondary" onClick={handleAddNewCluster}>Add a deployment cluster</button>

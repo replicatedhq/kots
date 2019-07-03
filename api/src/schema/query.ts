@@ -31,6 +31,7 @@ export const Query = `
     getParentWatch(id: String): Watch
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
+    getDownstreamHistory(slug: String!): [VersionDetail]
 
     listPendingWatchVersions(watchId: String!): [Version]
     listPastWatchVersions(watchId: String!): [Version]

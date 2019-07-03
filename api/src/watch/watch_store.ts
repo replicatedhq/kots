@@ -317,6 +317,14 @@ export class WatchStore {
     return watch;
   }
 
+  async getIdFromSlug(slug: string): Promise<string> {
+    const q = "select id from watch where slug = $1";
+    const v = [slug];
+
+    const result = await this.pool.query(q, v);
+    return result.rows[0].id;
+  }
+
   async getParentWatchId(id: string): Promise<string> {
     const q = "select parent_watch_id from watch where id = $1";
     const v = [id];

@@ -69,6 +69,16 @@ export function WatchQueries(stores: Stores) {
     async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<Version|undefined> {
       const watch = await context.getWatch(args.watchId);
       return watch.getCurrentVersion(stores);
+    },
+
+    async getDownstreamHistory(root: any, args: any, context: Context): Promise<Version[]> {
+      const idFromSlug = await stores.watchStore.getIdFromSlug(args.slug);
+      const watch = await context.getWatch(idFromSlug);
+      const past = await watch.getPastVersions(stores);
+      const pending = await watch.getPendingVersions(stores);
+
+      const versions = pending.concat(past)
+      return versions;
     }
   }
 }

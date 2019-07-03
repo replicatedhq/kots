@@ -126,8 +126,8 @@ export class AnalyzerInsights extends React.Component {
                 <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
               </div>
               :
-              <div className="flex-column flex1">
-                  <div className="flex flex-auto flexWrap--wrap u-overflow--auto">
+              <div className="flex-column flex1 u-overflow--auto">
+                  <div className="flex flex-auto flexWrap--wrap">
                   {filteredInsights && filteredInsights.map((tile, i) => (
                     <div key={i} className="insight-tile-wrapper flex-column">
                       <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
@@ -148,7 +148,7 @@ export class AnalyzerInsights extends React.Component {
                 </div>
               </div>
             }
-            <div className="flex-column flex-auto">
+            <div className="flex-column flex-auto u-paddingTop--20">
               <div className="flex-auto u-paddingLeft--10">
                 <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
               </div>
