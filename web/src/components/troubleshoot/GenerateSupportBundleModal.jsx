@@ -20,7 +20,6 @@ class GenerateSupportBundleModal extends React.Component {
       newBundleId: "",
       supportBundle: {},
       currentView: "",
-      bundleGenerateCommand: "",
       showToast: false,
       copySuccess: false,
       copyMessage: "",
@@ -120,7 +119,17 @@ class GenerateSupportBundleModal extends React.Component {
   render() {
     const { currentView } = this.state;
     const hasFile = this.state.supportBundle && !isEmpty(this.state.supportBundle);
-
+    const bundleGenerateCommand = `docker pull replicated/support-bundle:alpha && \
+    docker run -it --rm \
+      --name support-bundle \
+      --volume $PWD:/out \
+      --volume /var/run/docker.sock:/var/run/docker.sock \
+      --net host --pid host --workdir /out  \
+      -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY \
+      replicated/support-bundle:alpha \
+      generate \
+      --endpoint http://172.17.0.1:30065/graphql \
+      --watch-id ${this.props.watch.id}`;
     return (
       <div className="console">
         <div id="UploadSupportBundleModal">
@@ -158,20 +167,10 @@ class GenerateSupportBundleModal extends React.Component {
                       <pre className="language-bash docker-command">
                         <code className="console-code">
                           {/* // TODO: add correct endpoint based on env */}
-                          docker pull replicated/support-bundle:alpha && \
-                          docker run -it --rm \
-                              --name support-bundle \
-                              --volume $PWD:/out \
-                              --volume /var/run/docker.sock:/var/run/docker.sock \
-                              --net host --pid host --workdir /out  \
-                              -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY \
-                              replicated/support-bundle:alpha \
-                              generate \
-                              --endpoint http://172.17.0.1:30065/graphql \
-                              --watch-id {this.props.watch.id}
+                          {bundleGenerateCommand}
                         </code>
                       </pre>
-                      <textarea value={trim(this.state.bundleGenerateCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
+                      <textarea value={trim(bundleGenerateCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
                       <div className="u-marginTop--small u-marginBottom--normal">
                         {this.state.showToast ?
                           <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${this.state.copySuccess ? "u-color--vidaLoca" : "u-color--chestnut"}`}>{this.state.copyMessage}</span>

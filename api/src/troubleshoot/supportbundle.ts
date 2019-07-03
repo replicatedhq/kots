@@ -125,8 +125,8 @@ export class SupportBundle {
       size: this.size,
       status: this.status,
       treeIndex: this.treeIndex,
-      createdAt: this.createdAt.toISOString(),
-      uploadedAt: this.uploadedAt.toISOString(),
+      createdAt: this.createdAt ? this.createdAt.toISOString() : undefined,
+      uploadedAt: this.uploadedAt ? this.uploadedAt.toISOString() : undefined,
       isArchived: this.isArchived,
       analysis: this.analysis ? this.analysis.toSchema() : undefined,
     };
@@ -148,7 +148,7 @@ export class SupportBundleAnalysis {
       insights: _.map(this.insights, (insight) => {
         return insight.toSchema();
       }),
-      createdAt: this.createdAt.toISOString(),
+      createdAt: this.createdAt ? this.createdAt.toISOString() : undefined,
     };
   }
 };
