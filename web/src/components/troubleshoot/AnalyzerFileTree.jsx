@@ -210,7 +210,7 @@ class AnalyzerFileTree extends React.Component {
     const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
 
     return (
-      <div className="flex-column flex1">
+      <div className="flex-column flex1 AnalyzerFileTree--wrapper">
         {!files || !files.length || isOld ?
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
