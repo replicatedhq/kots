@@ -72,13 +72,11 @@ class WatchContributors extends React.Component {
                 </ReactTooltip>
               </div>
             ))}
-          </div>
-          {contributors && contributors.length > max ?
-            <div className="flex-column justifyContent--center u-cursor--pointer u-marginLeft--5 u-marginRight--5" onClick={() => this.toggleContributorsModal({ id: watchId, name: watchName })}>
-              <span className="u-color--tundora u-fontSize--small u-fontWeight--medium">+ {remainingContributors} other{remainingContributors === 1 ? "" : "s"}</span>
-            </div>
-            : null}
-          <div className="flex-column flex1 justifyContent--center u-marginLeft--5">
+            {contributors && contributors.length > max ?
+              <div className="flex-column justifyContent--center u-cursor--pointer u-marginLeft--5 u-marginRight--5" onClick={() => this.toggleContributorsModal({ id: watchId, name: watchName })}>
+                <span className="u-color--tundora u-fontSize--small u-fontWeight--medium">+ {remainingContributors} other{remainingContributors === 1 ? "" : "s"}</span>
+              </div>
+              : null}
           </div>
         </div>
         {this.state.displayContributorsModal &&
