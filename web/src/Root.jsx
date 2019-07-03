@@ -190,13 +190,14 @@ class Root extends Component {
   }
 
   onRootMounted = () => {
+
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then((watchesList) => {
-        if (watchesList.length > 0) {
-          this.setState({ watchesList });
+      this.refetchListWatches().then((listWatches) => {
+        if (listWatches.length > 0) {
+          this.setState({ listWatches });
 
           if (window.location.pathname === "/watches") {
-            const { slug } = watchesList[0];
+            const { slug } = listWatches[0];
             history.replace(`/watch/${slug}`);
           }
 
@@ -205,9 +206,6 @@ class Root extends Component {
           history.replace("/watch/create/init");
         }
       });
-    } else {
-      // Hey, you are not logged in
-      history.replace("/login");
     }
   }
 
@@ -239,7 +237,7 @@ class Root extends Component {
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
                     <Route exact path="/login" component={Login} />
                     <Route exact path="/signup" component={Signup} />
-                    <Route path="/auth/github" component={GitHubAuth} />
+                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
