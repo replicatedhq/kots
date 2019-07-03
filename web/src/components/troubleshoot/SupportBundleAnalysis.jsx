@@ -93,21 +93,21 @@ export class SupportBundleAnalysis extends React.Component {
     }
   }
 
-  renderSharedContext = (bundle) => {
-    const sharedIds = bundle.teamShareIds || [];
-    const isShared = sharedIds.length;
-    let shareContext;
+  renderSharedContext = () => {
+    // const sharedIds = bundle.teamShareIds || [];
+    // const isShared = sharedIds.length;
+    let shareContext = null;
 
-    if (isShared) {
-      shareContext = (
-        <div className="flex flex-auto">
-          <span className="u-marginRight--10 u-fontSize--normal u-fontWeight--medium u-color--tundora alignSelf--center">Shared with Replicated</span>
-          <button className="btn secondary flex-auto u-marginRight--10" onClick={() => this.shareBundle(true)}>Unshare</button>
-        </div>
-      )
-    } else {
-      shareContext = <button className="btn secondary flex-auto u-marginRight--10" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
-    }
+    // if (isShared) {
+    //   shareContext = (
+    //     <div className="flex flex-auto">
+    //       <span className="u-marginRight--10 u-fontSize--normal u-fontWeight--medium u-color--tundora alignSelf--center">Shared with Replicated</span>
+    //       <button className="btn secondary flex-auto u-marginRight--10" onClick={() => this.shareBundle(true)}>Unshare</button>
+    //     </div>
+    //   )
+    // } else {
+    //   shareContext = <button className="btn secondary flex-auto u-marginRight--10" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
+    // }
     return shareContext;
   }
 
@@ -167,6 +167,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <Switch>
                       <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() => 
                         <AnalyzerInsights
+                          status={bundle.status}
                           insights={bundle.analysis?.insights}
                           reAnalyzeBundle={this.reAnalyzeBundle}
                         />

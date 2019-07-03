@@ -1,9 +1,11 @@
 import * as React from "react";
 import { withRouter, Link } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
+import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
+import isEmpty from "lodash/isEmpty";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
@@ -30,6 +32,19 @@ class SupportBundleRow extends React.Component {
 
     if (!bundle) return null;
 
+    let noInsightsMessage;
+    if (bundle && isEmpty(bundle?.analysis?.insights?.length)) {
+      if (bundle.status === "uploaded" || bundle.status === "analyzing") {
+        noInsightsMessage = (
+          <div className="flex">
+            <Loader size="14" color="#44bb66" />
+            <p className="u-fontSize--small u-fontWeight--medium u-marginLeft--5 u-color--doveGray">We are still analyzing your bundle</p>
+          </div>
+        )
+      } else {
+        noInsightsMessage = <p className="u-fontSize--small u-fontWeight--medium u-color--doveGray">Unable to surface insights for this bundle</p>
+      }
+    }
     return (
       <div className="SupportBundle--Row u-position--relative">
         <Link to={`/watch/${watchSlug}/troubleshoot/analyze/${bundle.slug}`}>
@@ -71,7 +86,7 @@ class SupportBundleRow extends React.Component {
                     ))}
                   </div>
                   :
-                  <p className="u-fontSize--small u-fontWeight--medium u-color--doveGray">Unable to surface insights for this bundle</p>
+                  noInsightsMessage
                 }
               </div>
             </div>

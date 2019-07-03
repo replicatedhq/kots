@@ -59,8 +59,8 @@ class DownstreamWatchVersionHistory extends Component {
                       <a
                         className="u-color--astral u-marginLeft--5"
                         href={githubLink}
-                        target="_blank"
-                        rel="norefeer nofollow">
+                        rel="noopener noreferrer"
+                        target="_blank">
                           #{version.pullrequestNumber}
                       </a>
                     </div>
