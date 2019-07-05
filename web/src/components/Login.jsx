@@ -81,7 +81,7 @@ class Login extends React.Component {
           </div>
           {traditionalAuth &&
             <TraditionalAuth
-              refetchListWatches={refetchListWatches}
+              onLoginSuccess={refetchListWatches}
               context="login"
               handleForgotPasswordClick={() => this.setState({ displayForgotPasswordModal: true })}
             />
