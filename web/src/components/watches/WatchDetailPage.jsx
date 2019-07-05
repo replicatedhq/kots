@@ -50,7 +50,7 @@ class WatchDetailPage extends Component {
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate() {
     const { getThemeState, setThemeState, match, listWatches, history } = this.props;
 
     const slug = `${match.params.owner}/${match.params.slug}`;
@@ -66,11 +66,11 @@ class WatchDetailPage extends Component {
       }
     }
 
+    // Used for a fresh reload
     if (history.location.pathname === "/watches") {
-      if (listWatches && listWatches !== prevProps.listWatches) {
-        this.checkForFirstWatch(listWatches);
-      }
+      this.checkForFirstWatch();
     }
+
   }
 
   componentWillUnmount() {
@@ -156,27 +156,27 @@ class WatchDetailPage extends Component {
     })
   }
 
-  checkForFirstWatch = listWatches => {
-    const { history } = this.props;
+  /**
+   *  Runs on mount and on update. Also handles redirect logic
+   *  if no watches are found, or the first watch is found.
+   */
+  checkForFirstWatch = () => {
+    const { history, rootDidInitialWatchFetch, listWatches } = this.props;
+    if (!rootDidInitialWatchFetch) {
+      return;
+    }
 
-    if (listWatches[0]) {
+    if (listWatches.length > 0) {
       history.replace(`/watch/${listWatches[0].slug}`);
     } else {
       history.replace("/watch/create/init");
     }
   }
 
-
-
   componentDidMount() {
-    const { history, listWatches } = this.props;
-    const hasWatches = !!listWatches.length;
-    if (history.location.pathname === "/watches" && hasWatches) {
-      this.checkForFirstWatch(listWatches);
-    }
-
-    if (!hasWatches) {
-      history.replace("/watch/create/init");
+    const { history } = this.props;
+    if (history.location.pathname === "/watches") {
+      this.checkForFirstWatch();
     }
   }
 

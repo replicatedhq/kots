@@ -87,7 +87,8 @@ class Root extends Component {
       : "",
     themeState: {
       navbarLogo: null
-    }
+    },
+    rootDidInitialWatchFetch: false
   };
   /**
    * Sets the Theme State for the whole application
@@ -184,6 +185,7 @@ class Root extends Component {
 
     this.setState({
       listWatches: allWatches,
+      rootDidInitialWatchFetch: true
     });
 
     return allWatches;
@@ -192,18 +194,10 @@ class Root extends Component {
   onRootMounted = () => {
 
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then((listWatches) => {
-        if (listWatches.length > 0) {
-          this.setState({ listWatches });
-
-          if (window.location.pathname === "/watches") {
-            const { slug } = listWatches[0];
-            history.replace(`/watch/${slug}`);
-          }
-
-        // No watches. Redirect to ship init
-        } else {
-          history.replace("/watch/create/init");
+      this.refetchListWatches().then(listWatches => {
+        if (listWatches.length > 0 && window.location.pathname === "/watches") {
+          const { slug } = listWatches[0];
+          history.replace(`/watch/${slug}`);
         }
       });
     }
@@ -214,7 +208,12 @@ class Root extends Component {
   }
 
   render() {
-    const { initSessionId, themeState, listWatches } = this.state;
+    const {
+      initSessionId,
+      themeState,
+      listWatches,
+      rootDidInitialWatchFetch
+    } = this.state;
 
     return (
       <div className="flex-column flex1">
@@ -235,7 +234,7 @@ class Root extends Component {
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
-                    <Route exact path="/login" component={Login} />
+                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListWatches} />) } />
                     <Route exact path="/signup" component={Signup} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
@@ -249,6 +248,7 @@ class Root extends Component {
                         props => (
                           <WatchDetailPage
                             {...props}
+                            rootDidInitialWatchFetch={rootDidInitialWatchFetch}
                             listWatches={listWatches}
                             refetchListWatches={this.refetchListWatches}
                             onActiveInitSession={this.handleActiveInitSession}

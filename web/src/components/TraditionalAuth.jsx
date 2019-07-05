@@ -26,6 +26,7 @@ class TraditionalAuth extends React.Component {
   }
 
   handleLogin = () => {
+    const { onLoginSuccess } = this.props;
     this.setState({ authLoading: true });
     this.props.client.mutate({
       mutation: shipAuthLogin,
@@ -40,7 +41,9 @@ class TraditionalAuth extends React.Component {
       this.setState({ authLoading: false });
       if (Utilities.localStorageEnabled()) {
         window.localStorage.setItem("token", res.data.login.token);
-        this.props.history.push("/watches");
+        onLoginSuccess().then(() => {
+          this.props.history.push("/watches");
+        });
       }
     })
     .catch((err) => {
