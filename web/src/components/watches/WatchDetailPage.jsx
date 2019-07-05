@@ -51,12 +51,7 @@ class WatchDetailPage extends Component {
   }
 
   componentDidUpdate() {
-    const {
-      getThemeState,
-      setThemeState,
-      match,
-      listWatches,
-      history } = this.props;
+    const { getThemeState, setThemeState, match, listWatches, history } = this.props;
 
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listWatches.find( w => w.slug === slug);
