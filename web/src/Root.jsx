@@ -198,10 +198,6 @@ class Root extends Component {
         if (listWatches.length > 0 && window.location.pathname === "/watches") {
           const { slug } = listWatches[0];
           history.replace(`/watch/${slug}`);
-
-        // No watches. Redirect to ship init
-        } else {
-          history.replace("/watch/create/init");
         }
       });
     }
@@ -238,7 +234,7 @@ class Root extends Component {
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
-                    <Route exact path="/login" render={props => (<Login {...props} refetchListWatches={this.refetchListWatches} />) } />
+                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListWatches} />) } />
                     <Route exact path="/signup" component={Signup} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />

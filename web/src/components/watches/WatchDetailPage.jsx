@@ -161,6 +161,10 @@ class WatchDetailPage extends Component {
     })
   }
 
+  /**
+   *  Runs on mount and on update. Also handles redirect logic
+   *  if no watches are found, or the first watch is found.
+   */
   checkForFirstWatch = () => {
     const { history, rootDidInitialWatchFetch, listWatches } = this.props;
     if (!rootDidInitialWatchFetch) {
