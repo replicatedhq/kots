@@ -52,6 +52,7 @@ class Login extends React.Component {
   }
 
   render() {
+    const { refetchListWatches } = this.props;
     const { traditionalAuth } = this.state;
     const showSCM = window.env.SHOW_SCM_LEADS;
     const allowedLogins = window.env.AVAILABLE_LOGIN_TYPES;
@@ -79,7 +80,11 @@ class Login extends React.Component {
             }
           </div>
           {traditionalAuth &&
-            <TraditionalAuth context="login" handleForgotPasswordClick={() => this.setState({ displayForgotPasswordModal: true })} />
+            <TraditionalAuth
+              refetchListWatches={refetchListWatches}
+              context="login"
+              handleForgotPasswordClick={() => this.setState({ displayForgotPasswordModal: true })}
+            />
           }
           {showSCM && !traditionalAuth ?
             <TrackSCMLeads />
