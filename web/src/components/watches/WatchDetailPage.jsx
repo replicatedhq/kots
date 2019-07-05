@@ -163,12 +163,14 @@ class WatchDetailPage extends Component {
 
   checkForFirstWatch = () => {
     const { history, rootDidInitialWatchFetch, listWatches } = this.props;
-    if (rootDidInitialWatchFetch || listWatches[0]) {
-      if (listWatches[0]) {
-        history.replace(`/watch/${listWatches[0].slug}`);
-      } else {
-        history.replace("/watch/create/init");
-      }
+    if (!rootDidInitialWatchFetch) {
+      return;
+    }
+
+    if (listWatches.length > 0) {
+      history.replace(`/watch/${listWatches[0].slug}`);
+    } else {
+      history.replace("/watch/create/init");
     }
   }
 

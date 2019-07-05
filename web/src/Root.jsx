@@ -185,6 +185,7 @@ class Root extends Component {
 
     this.setState({
       listWatches: allWatches,
+      rootDidInitialWatchFetch: true
     });
 
     return allWatches;
@@ -193,29 +194,17 @@ class Root extends Component {
   onRootMounted = () => {
 
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then((listWatches) => {
-        if (listWatches.length > 0) {
-          this.setState({
-            listWatches,
-            rootDidInitialWatchFetch: true
-          });
-
-          if (window.location.pathname === "/watches") {
-            const { slug } = listWatches[0];
-            history.replace(`/watch/${slug}`);
-          }
+      this.refetchListWatches().then(listWatches => {
+        if (listWatches.length > 0 && window.location.pathname === "/watches") {
+          const { slug } = listWatches[0];
+          history.replace(`/watch/${slug}`);
 
         // No watches. Redirect to ship init
         } else {
           history.replace("/watch/create/init");
         }
       });
-    } else {
-      this.setState({
-        rootDidInitialWatchFetch: true
-      });
     }
-
   }
 
   componentDidMount() {
