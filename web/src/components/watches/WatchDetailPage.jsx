@@ -58,9 +58,12 @@ class WatchDetailPage extends Component {
 
     // Handle updating the navbar logo when a watch changes.
     if (currentWatch?.watchIcon) {
-      const { navbarLogo } = getThemeState();
+      const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
+
         setThemeState({
+          ...rest,
+          pageTitle: currentWatch.watchName,
           navbarLogo: currentWatch.watchIcon
         });
       }
