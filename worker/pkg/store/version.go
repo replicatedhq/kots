@@ -19,10 +19,10 @@ func (s *SQLStore) CreateWatchVersion(ctx context.Context, watchID string, versi
 			return errors.Wrap(err, "create gitops watch version")
 		}
 	} else {
-		query := `insert into watch_version (watch_id, created_at, version_label, status, sequence) values
-		($1, $2, $3, $4, $5)`
+		query := `insert into watch_version (watch_id, created_at, version_label, status, sequence, parent_sequence) values
+		($1, $2, $3, $4, $5, $6)`
 
-		_, err := s.db.ExecContext(ctx, query, watchID, time.Now(), versionLabel, status, sequence)
+		_, err := s.db.ExecContext(ctx, query, watchID, time.Now(), versionLabel, status, sequence, parentSequence)
 		if err != nil {
 			return errors.Wrap(err, "create ship watch version")
 		}

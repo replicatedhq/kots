@@ -15,9 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (w *Worker) postUpdateActions(updateSesssion *types.UpdateSession, sequence int, s3Filepath string) error {
-	watchID := updateSesssion.WatchID
-
+func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parentSequence *int, sequence int, s3Filepath string) error {
 	watch, err := w.Store.GetWatch(context.TODO(), watchID)
 	if err != nil {
 		return errors.Wrap(err, "get watch")
@@ -29,7 +27,7 @@ func (w *Worker) postUpdateActions(updateSesssion *types.UpdateSession, sequence
 	}
 	defer os.Remove(archive.Name())
 
-	if err := w.triggerIntegrations(watch, sequence, archive, updateSession.ParentSequence); err != nil {
+	if err := w.triggerIntegrations(watch, sequence, archive, parentSequence); err != nil {
 		return errors.Wrap(err, "trigger integraitons")
 	}
 

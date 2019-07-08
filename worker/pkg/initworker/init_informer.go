@@ -271,7 +271,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 
 	setActive := prNumber == 0 // This isn't obvious and a pretty odd implementation. only set non-gitops clusters to active
 	var parentSeq *int
-	if hasParent {
+	if parentWatch != nil {
 		seq, err := strconv.Atoi(parentSequence)
 		if err != nil {
 			return errors.Wrap(err, "convert parent sequence")
