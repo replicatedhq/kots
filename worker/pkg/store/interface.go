@@ -27,7 +27,7 @@ type Store interface {
 	GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error)
 	SetUpdateStatus(ctx context.Context, updateID string, status string) error
 	SetUpdateStarted(ctx context.Context, updateID string) error
-
+	SetUpdateLogs(ctx context.Context, updateID string, podLogs string) error
 	GetEdit(ctx context.Context, editID string) (*types.EditSession, error)
 	SetEditStatus(ctx context.Context, edit string, status string) error
 
@@ -35,9 +35,9 @@ type Store interface {
 	GetWatchIDFromSlug(ctx context.Context, slug string, userID string) (string, error)
 	GetWatch(ctx context.Context, watchID string) (*types.Watch, error)
 	GetWatches(ctx context.Context, userID string) ([]*types.Watch, error)
-	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, setCurrent bool) error
+	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, setCurrent bool, parentSequence *int) error
 	GetMostRecentWatchVersion(ctx context.Context, watchID string) (*types.WatchVersion, error)
-	CreateWatchUpdate(ctx context.Context, watchID string) error
+	CreateWatchUpdate(ctx context.Context, watchID string, parentSequence *int) error
 	CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error
 	SetWatchChecked(ctx context.Context, watchID string) error
 	SetWatchDeferred(ctx context.Context, watchID string) error

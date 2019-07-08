@@ -134,7 +134,7 @@ func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.
 		versionLabel = previousWatchVersion.VersionLabel
 	}
 
-	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent)
+	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent, nil)
 	if err != nil {
 		return errors.Wrap(err, "create watch version")
 	}

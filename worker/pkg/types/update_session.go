@@ -16,6 +16,7 @@ type UpdateSession struct {
 	UploadURL      string
 	UploadSequence int
 	UserID         string
+	ParentSequence *int
 }
 
 func (s *UpdateSession) GetID() string {

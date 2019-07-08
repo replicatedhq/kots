@@ -1,2 +1,4 @@
 .vscode/
 supportbundle.tar.gz
+/go.mod
+/go.sum

@@ -281,20 +281,21 @@ func (s *SQLStore) GetSequenceNumberForNotificationID(ctx context.Context, notif
 	return currentSequence, nil
 }
 
-func (s *SQLStore) CreateWatchUpdate(ctx context.Context, watchID string) error {
+func (s *SQLStore) CreateWatchUpdate(ctx context.Context, watchID string, parentSequence *int) error {
 	id, err := uuid.GenerateUUID()
 	if err != nil {
 		return errors.Wrap(err, "generate uuid")
 	}
 
-	query := `insert into ship_update (id, watch_id, created_at) values ($1, $2, $3)`
-	_, err = s.db.ExecContext(ctx, query, strings.Replace(id, "-", "", -1), watchID, time.Now())
+	query := `insert into ship_update (id, watch_id, created_at, parent_sequence) values ($1, $2, $3, $4)`
+	_, err = s.db.ExecContext(ctx, query, strings.Replace(id, "-", "", -1), watchID, time.Now(), parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "create watch update")
 	}
 
 	return nil
 }
+
 func (s *SQLStore) CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error {
 	fmt.Printf("canceling incomplete updates for %s\n", watchID)
 	query := `update ship_update set result = $1, finished_at = $2 where watch_id = $3 and finished_at is null`

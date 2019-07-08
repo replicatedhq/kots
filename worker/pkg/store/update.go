@@ -47,9 +47,15 @@ func (s *SQLStore) SetUpdateStarted(ctx context.Context, updateID string) error 
 	return err
 }
 
+func (s *SQLStore) SetUpdateLogs(ctx context.Context, updateID string, podLogs string) error {
+	query := `update ship_update set ship_logs = $1 where id = $2`
+	_, err := s.db.ExecContext(ctx, query, podLogs, updateID)
+	return err
+}
+
 func (s *SQLStore) GetUpdate(ctx context.Context, updateID string) (*types.UpdateSession, error) {
 	shipUpdateQuery := `select ship_update.id, ship_update.watch_id, ship_update.result, ship_update.user_id,
-	ship_update.created_at, ship_update.finished_at, watch.current_state
+	ship_update.created_at, ship_update.finished_at, ship_update.parent_sequence, watch.current_state
 	from ship_update
 	inner join watch on watch.id = ship_update.watch_id
 	where ship_update.id = $1`
@@ -59,9 +65,10 @@ func (s *SQLStore) GetUpdate(ctx context.Context, updateID string) (*types.Updat
 	var finishedAt pq.NullTime
 	var result sql.NullString
 	var userID sql.NullString
+	var parentSequence sql.NullInt64
 
 	err := row.Scan(&updateSession.ID, &updateSession.WatchID, &result, &userID,
-		&updateSession.CreatedAt, &finishedAt, &updateSession.StateJSON)
+		&updateSession.CreatedAt, &finishedAt, &parentSequence, &updateSession.StateJSON)
 	if err != nil {
 		return nil, errors.Wrap(err, "scan ship_update")
 	}
@@ -76,6 +83,11 @@ func (s *SQLStore) GetUpdate(ctx context.Context, updateID string) (*types.Updat
 
 	if userID.Valid {
 		updateSession.UserID = userID.String
+	}
+
+	if parentSequence.Valid {
+		intVal := int(parentSequence.Int64)
+		updateSession.ParentSequence = &intVal
 	}
 
 	nextSequence, err := s.GetNextUploadSequence(ctx, updateSession.WatchID)

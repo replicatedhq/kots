@@ -144,7 +144,7 @@ func (w *Worker) runWatch(ctx context.Context, watchID string) error {
 			w.Logger.Errorw("watchworker cancel uncomplete watch updates failed", zap.Error(err))
 			return err
 		}
-		if err := w.Store.CreateWatchUpdate(ctx, watchID); err != nil {
+		if err := w.Store.CreateWatchUpdate(ctx, watchID, nil); err != nil {
 			w.Logger.Errorw("watchworker create watch update failed", zap.Error(err))
 			return err
 		}

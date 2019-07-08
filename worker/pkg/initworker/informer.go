@@ -277,7 +277,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	}
 
 	setActive := prNumber == 0 // This isn't obvious and a pretty odd implementation. only set non-gitops clusters to active
-	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, setActive); err != nil {
+	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, setActive, nil); err != nil {
 		return errors.Wrap(err, "create watch version")
 	}
 

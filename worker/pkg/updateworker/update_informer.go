@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
+	"bytes"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -100,6 +102,23 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "get update session")
 		}
 
+		// early, get output logs and write to the database
+		podLogOpts := corev1.PodLogOptions{}
+		req := w.K8sClient.CoreV1().Pods(newPod.Namespace).GetLogs(newPod.Name, &podLogOpts)
+		podLogs, err := req.Stream()
+		if err != nil {
+			return errors.Wrap(err, "open pod stream")
+		}
+		defer podLogs.Close()
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		if err != nil {
+			return errors.Wrap(err, "copy logs to buffer")
+		}
+		if err := w.Store.SetUpdateLogs(context.TODO(), id, buf.String()); err != nil {
+			return errors.Wrap(err, "save update logs")
+		}
+
 		stateJSON, err := shipState.GetState(stateID)
 		if err != nil {
 			return errors.Wrap(err, "get secret")
@@ -147,7 +166,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return nil
 		}
 
-		if err := w.postUpdateActions(updateSession.WatchID, updateSequence, string(decodedS3Filepath)); err != nil {
+		if err := w.postUpdateActions(updateSession, updateSequence, string(decodedS3Filepath)); err != nil {
 			return errors.Wrap(err, "postUpdateActions")
 		}
 	}

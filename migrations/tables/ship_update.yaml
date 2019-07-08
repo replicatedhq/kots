@@ -33,6 +33,7 @@ spec:
         type: timestamp without time zone
       - name: finished_at
         type: timestamp without time zone
-
-
-# alter table ship_update alter column user_id drop not null;
+      - name: parent_sequence
+        type: integer
+      - name: ship_logs
+        type: text
