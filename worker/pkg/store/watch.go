@@ -13,9 +13,30 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 )
 
+var (
+	watchPollInterval = time.Minute * 1
+)
+
+func (s *SQLStore) GetParentWatchID(ctx context.Context, watchID string) (*string, error) {
+	query := `select parent_watch_id from watch where id = $1`
+	row := s.db.QueryRowContext(ctx, query, watchID)
+
+	var parentWatchID sql.NullString
+	if err := row.Scan(&parentWatchID); err != nil {
+		return nil, errors.Wrap(err, "row scan")
+	}
+
+	if !parentWatchID.Valid {
+		return nil, nil
+	}
+
+	var str = parentWatchID.String
+	return &str, nil
+}
+
 // ListReadyWatchIDs will return a list of midstream watches that need to be updated
 func (s *SQLStore) ListReadyWatchIDs(ctx context.Context) ([]string, error) {
-	var maxDate = time.Now().Add(0 - time.Minute*15)
+	var maxDate = time.Now().Add(0 - watchPollInterval)
 
 	query := `select id from watch where last_watch_check_at < $1 or last_watch_check_at is null and parent_watch_id is null order by updated_at desc`
 	rows, err := s.db.QueryContext(ctx, query, maxDate)
@@ -281,20 +302,21 @@ func (s *SQLStore) GetSequenceNumberForNotificationID(ctx context.Context, notif
 	return currentSequence, nil
 }
 
-func (s *SQLStore) CreateWatchUpdate(ctx context.Context, watchID string) error {
+func (s *SQLStore) CreateWatchUpdate(ctx context.Context, watchID string, parentSequence *int) error {
 	id, err := uuid.GenerateUUID()
 	if err != nil {
 		return errors.Wrap(err, "generate uuid")
 	}
 
-	query := `insert into ship_update (id, watch_id, created_at) values ($1, $2, $3)`
-	_, err = s.db.ExecContext(ctx, query, strings.Replace(id, "-", "", -1), watchID, time.Now())
+	query := `insert into ship_update (id, watch_id, created_at, parent_sequence) values ($1, $2, $3, $4)`
+	_, err = s.db.ExecContext(ctx, query, strings.Replace(id, "-", "", -1), watchID, time.Now(), parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "create watch update")
 	}
 
 	return nil
 }
+
 func (s *SQLStore) CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error {
 	fmt.Printf("canceling incomplete updates for %s\n", watchID)
 	query := `update ship_update set result = $1, finished_at = $2 where watch_id = $3 and finished_at is null`
@@ -317,7 +339,7 @@ func (s *SQLStore) SetWatchDeferred(ctx context.Context, watchID string) error {
 	now := time.Now()
 
 	query := `update watch set last_watch_check_at = $1 where id = $2`
-	_, err := s.db.ExecContext(ctx, query, now.Add(time.Duration(time.Minute*45)), watchID)
+	_, err := s.db.ExecContext(ctx, query, now.Add(time.Duration(watchPollInterval*3)), watchID)
 	if err != nil {
 		return errors.Wrap(err, "set watch last checked")
 	}

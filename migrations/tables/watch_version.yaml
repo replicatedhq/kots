@@ -34,3 +34,6 @@ spec:
         default: "0"
       - name: pullrequest_number
         type: integer
+      - name: parent_sequence
+        type: integer
+

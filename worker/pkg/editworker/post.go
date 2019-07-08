@@ -12,9 +12,10 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship/pkg/state"
+	"go.uber.org/zap"
 )
 
-func (w *Worker) postEditActions(watchID string, sequence int, s3Filepath string) error {
+func (w *Worker) postEditActions(watchID string, parentWatchID *string, parentSequence *int, sequence int, s3Filepath string) error {
 	watch, err := w.Store.GetWatch(context.TODO(), watchID)
 	if err != nil {
 		return errors.Wrap(err, "get watch")
@@ -26,8 +27,20 @@ func (w *Worker) postEditActions(watchID string, sequence int, s3Filepath string
 	}
 	defer os.Remove(archive.Name())
 
-	if err := w.triggerIntegrations(watch, sequence, archive); err != nil {
+	if err := w.triggerIntegrations(watch, sequence, archive, parentSequence); err != nil {
 		return errors.Wrap(err, "trigger integraitons")
+	}
+
+	downstreamWatchIDs, err := w.Store.ListDownstreamWatchIDs(context.TODO(), watchID)
+	if err != nil {
+		w.Logger.Errorw("editworker post update actions unable to get downstream watch ids", zap.String("watchID", watchID), zap.Error(err))
+		return err
+	}
+	for _, downstreamWatchID := range downstreamWatchIDs {
+		if err := w.Store.CreateWatchUpdate(context.TODO(), downstreamWatchID, &sequence); err != nil {
+			w.Logger.Errorw("editworker post update actions unable to create downstream watch update", zap.String("watchID", watchID), zap.Error(err))
+			return err
+		}
 	}
 
 	return nil
@@ -47,7 +60,7 @@ func (w *Worker) fetchArchiveFromS3(watchID string, s3Filepath string) (*os.File
 	return archive, nil
 }
 
-func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *os.File) error {
+func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *os.File, parentSequence *int) error {
 	cluster, err := w.Store.GetClusterForWatch(context.TODO(), watch.ID)
 	if err != nil {
 		return errors.Wrap(err, "get cluster for watch")
@@ -60,7 +73,7 @@ func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *
 
 	isCurrent := cluster == nil
 
-	if err := w.createVersion(watch, sequence, archive, versionStatus, branchName, prNumber, isCurrent); err != nil {
+	if err := w.createVersion(watch, sequence, archive, versionStatus, branchName, prNumber, isCurrent, parentSequence); err != nil {
 		return errors.Wrap(err, "create version")
 	}
 
@@ -115,26 +128,46 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 	return prNumber, "pending", branchName, nil
 }
 
-func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, isCurrent bool) error {
-	watchState := state.State{}
-	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
-		return errors.Wrap(err, "unmarshal watch state")
-	}
-
+func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, isCurrent bool, parentSequence *int) error {
 	versionLabel := "Unknown"
-	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
-		versionLabel = watchState.V1.Metadata.Version
-	} else {
-		// Hmmm...
-		previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+
+	if parentSequence != nil {
+		// downstream watches should use the parent version label
+		parentWatchID, err := w.Store.GetParentWatchID(context.TODO(), watch.ID)
 		if err != nil {
-			return errors.Wrap(err, "get most recent watch version")
+			return errors.Wrap(err, "get parent watch id")
 		}
 
-		versionLabel = previousWatchVersion.VersionLabel
+		if parentWatchID == nil {
+			return fmt.Errorf("unable to create version with parent sequence but no parent watch: %s", watch.ID)
+		}
+
+		currentVersion, err := w.Store.GetOneWatchVersion(context.TODO(), *parentWatchID, *parentSequence)
+		if err != nil {
+			return errors.Wrap(err, "get one watch version")
+		}
+
+		versionLabel = currentVersion.VersionLabel
+	} else {
+		watchState := state.State{}
+		if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
+			return errors.Wrap(err, "unmarshal watch state")
+		}
+
+		if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
+			versionLabel = watchState.V1.Metadata.Version
+		} else {
+			// Hmmm...
+			previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+			if err != nil {
+				return errors.Wrap(err, "get most recent watch version")
+			}
+
+			versionLabel = previousWatchVersion.VersionLabel
+		}
 	}
 
-	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent)
+	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent, parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "create watch version")
 	}

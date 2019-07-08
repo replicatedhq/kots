@@ -75,7 +75,12 @@ func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag 
 	if session.GetType() == "ship-edit" {
 		labels["edit-sequence"] = strconv.Itoa(session.GetUploadSequence())
 	}
-
+	if session.GetParentWatchID() != nil {
+		labels["parent-watch-id"] = *session.GetParentWatchID()
+	}
+	if session.GetParentSequence() != nil {
+		labels["parent-sequence"] = strconv.Itoa(*session.GetParentSequence())
+	}
 	if shipImage == "" {
 		shipImage = "replicated/ship"
 	}

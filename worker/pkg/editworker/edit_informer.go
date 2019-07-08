@@ -100,6 +100,10 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "get edit session")
 		}
 
+		watchID := editSession.WatchID
+		parentWatchID := editSession.ParentWatchID
+		parentSequence := editSession.ParentSequence
+
 		stateJSON, err := shipState.GetState(stateID)
 		if err != nil {
 			return errors.Wrap(err, "get secret")
@@ -147,7 +151,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return nil
 		}
 
-		if err := w.postEditActions(editSession.WatchID, editSequence, string(decodedS3Filepath)); err != nil {
+		if err := w.postEditActions(watchID, parentWatchID, parentSequence, editSequence, string(decodedS3Filepath)); err != nil {
 			return errors.Wrap(err, "postEditActions")
 		}
 	}

@@ -17,6 +17,8 @@ type UnforkSession struct {
 	Username       string
 	UploadURL      string
 	UploadSequence int
+	ParentWatchID  *string
+	ParentSequence *int
 }
 
 func (s *UnforkSession) GetID() string {
@@ -25,6 +27,14 @@ func (s *UnforkSession) GetID() string {
 
 func (s *UnforkSession) GetWatchID() string {
 	return s.ID
+}
+
+func (s *UnforkSession) GetParentWatchID() *string {
+	return s.ParentWatchID
+}
+
+func (s *UnforkSession) GetParentSequence() *int {
+	return s.ParentSequence
 }
 
 func (s *UnforkSession) GetType() string {

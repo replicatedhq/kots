@@ -13,10 +13,10 @@ export class InitStore {
   ) {
   }
 
-  async createInitSession(userId: string, upstreamUri: string, clusterId: any, githubPath: any, requestedUpstreamUri?: string): Promise<InitSession> {
+  async createInitSession(userId: string, upstreamUri: string, clusterId: any, githubPath: any, parentWatchId?: string, parentSequence?: number, requestedUpstreamUri?: string): Promise<InitSession> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const q = `insert into ship_init (id, user_id, upstream_uri, created_at, cluster_id, github_path, requested_upstream_uri) values ($1, $2, $3, $4, $5, $6, $7)`;
+    const q = `insert into ship_init (id, user_id, upstream_uri, created_at, cluster_id, github_path, requested_upstream_uri, parent_watch_id, parent_sequence) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
     const v = [
       id,
       userId,
@@ -25,6 +25,8 @@ export class InitStore {
       clusterId,
       githubPath,
       requestedUpstreamUri,
+      parentWatchId,
+      parentSequence,
     ];
 
     await this.pool.query(q, v);

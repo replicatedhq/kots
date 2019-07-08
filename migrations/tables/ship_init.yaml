@@ -39,3 +39,8 @@ spec:
         type: text
       - name: requested_upstream_uri
         type: text
+      - name: parent_watch_id
+        type: text
+      - name: parent_sequence
+        type: integer
+
