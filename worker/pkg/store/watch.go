@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	watchPollInterval = time.Minute * 1
+	watchPollInterval = time.Minute * 15
 )
 
 func (s *SQLStore) GetParentWatchID(ctx context.Context, watchID string) (*string, error) {
