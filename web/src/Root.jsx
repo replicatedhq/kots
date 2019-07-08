@@ -86,8 +86,7 @@ class Root extends Component {
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
     themeState: {
-      navbarLogo: null,
-      pageTitle: 'Replicated Ship'
+      navbarLogo: null
     },
     rootDidInitialWatchFetch: false
   };
@@ -223,7 +222,7 @@ class Root extends Component {
           <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
-          <title>{themeState.pageTitle || "Replicated Ship"}</title>
+          <title>"Replicated Ship</title>
         </Helmet>
         <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{
