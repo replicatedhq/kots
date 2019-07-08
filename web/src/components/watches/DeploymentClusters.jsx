@@ -1,5 +1,6 @@
 import React from "react";
 import classNames from "classnames";
+import Helmet from "react-helmet";
 import truncateMiddle from "truncate-middle";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
@@ -36,6 +37,9 @@ export default class DeploymentClusters extends React.Component {
       <div className={classNames("installed-watch-github flex-column u-paddingTop--20 u-width--full", {
         padded: !appDetailPage
       })}>
+        <Helmet>
+          <title>{`${parentWatch.watchName} Downstreams`}</title>
+        </Helmet>
         {childWatches?.length ?
           <div className="flex-column">
             {appDetailPage ?

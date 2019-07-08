@@ -1,13 +1,15 @@
-import * as React from "react";
+import React, { Component } from "react";
+import Helmet from "react-helmet";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import { createShipOpsCluster } from "../../mutations/ClusterMutations";
 import omit from "lodash/omit";
-import ShipClusterSuccess from "./ShipClusterSuccess";
-import "../../scss/components/clusters/CreateCluster.scss";
-import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
-export class CreateCluster extends React.Component {
+import { createShipOpsCluster } from "../../mutations/ClusterMutations";
+import ShipClusterSuccess from "./ShipClusterSuccess";
+import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
+import "../../scss/components/clusters/CreateCluster.scss";
+
+export class CreateCluster extends Component {
   constructor() {
     super();
     this.clusterNameInputRef = React.createRef();
@@ -91,8 +93,9 @@ export class CreateCluster extends React.Component {
   }
 
   async componentDidMount() {
+    const { location } = this.props;
     window.addEventListener("keydown", this.createOnEnterKey);
-    const { search } = this.props.location;
+    const { search } = location;
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
     const clusterName = queryParams.get("name");
@@ -147,6 +150,9 @@ export class CreateCluster extends React.Component {
 
     return (
       <div className="Login-wrapper container flex-column flex1 u-overflow--auto">
+        <Helmet>
+          <title>Connect New Cluster</title>
+        </Helmet>
         <div className="Form flex-column flex1 alignItems--center justifyContent--center">
           {createSuccess ?
             opsType.value === "ship" ?
@@ -217,5 +223,5 @@ export class CreateCluster extends React.Component {
 
 export default compose(
   withRouter,
-  withApollo,
+  withApollo
 )(CreateCluster);

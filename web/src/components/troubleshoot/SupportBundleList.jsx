@@ -1,4 +1,5 @@
 import * as React from "react";
+import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
@@ -24,8 +25,9 @@ class SupportBundleList extends React.Component {
   }
 
   render() {
+    const { watch } = this.props;
     const { loading, error, listSupportBundles } = this.props.listSupportBundles;
-    
+
     if (error) {
       <p>{error.message}</p>
     }
@@ -54,6 +56,9 @@ class SupportBundleList extends React.Component {
 
     return (
       <div className="container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
+        <Helmet>
+          <title>{`${watch.watchName} Troubleshoot`}</title>
+        </Helmet>
         <div className="flex1 flex-column">
           <div className="flex flex1">
             <div className="flex1 flex-column">

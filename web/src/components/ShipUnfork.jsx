@@ -1,5 +1,6 @@
-import * as React from "react";
+import React, { Component } from "react";
 import PropTypes from "prop-types";
+import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import { createUnforkSession } from "../mutations/WatchMutations";
@@ -22,7 +23,7 @@ const ShipUnforkError = ({ handleTryAgain }) => (
   </div>
 )
 
-export class ShipUnfork extends React.Component {
+export class ShipUnfork extends Component {
   static propTypes = {
     onActiveInitSession: PropTypes.func.isRequired,
   };
@@ -66,9 +67,9 @@ export class ShipUnfork extends React.Component {
         url,
         fork
       });
-  
+
       const validUpstream = await this.validateUpstream(url).catch(this.handleInvalidUpstream);
-  
+
       if (validUpstream) {
         this.props.createUnforkSession(url, fork)
           .then(({ data }) => {
@@ -124,6 +125,9 @@ export class ShipUnfork extends React.Component {
 
     return (
       <div className="Login-wrapper container flex-column flex1 u-overflow--auto">
+        <Helmet>
+          <title>Unfork Configuration</title>
+        </Helmet>
         <div className="Form flex-column flex1 alignItems--center justifyContent--center">
           <div className="init-unfork-wrapper flex-auto">
             <div className="flex1 flex-column u-textAlign--center">

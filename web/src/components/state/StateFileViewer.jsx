@@ -1,4 +1,5 @@
 import React from "react";
+import Helmet from "react-helmet";
 import classNames from "classnames";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
@@ -145,6 +146,7 @@ class StateFileViewer extends React.Component {
   }
 
   render() {
+    const { watch } = this.props;
     const {
       specValue,
       specValueError,
@@ -169,6 +171,9 @@ class StateFileViewer extends React.Component {
         "u-paddingTop--30": this.props.isNew,
         "u-paddingTop--20": !this.props.isNew
         })}>
+        <Helmet>
+          <title>{`${watch.watchName} State JSON`}</title>
+        </Helmet>
         <div className="flex-column flex-1-auto u-overflow--auto container">
           {this.props.headerText && <p className="u-color--tuna u-fontWeight--medium u-fontSize--large">{this.props.headerText}</p>}
           {this.props.subText && <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium u-marginTop--10 u-lineHeight--normal">{this.props.subText}</p>}

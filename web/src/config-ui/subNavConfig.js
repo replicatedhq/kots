@@ -67,10 +67,5 @@ export default [
   //   tabName: "integrations",
   //   displayName: "Integrations",
   //   to: slug => `/watch/${slug}/integrations`
-  // },
-  // {
-  //   tabName: "state",
-  //   displayName: "State JSON",
-  //   to: slug => `/watch/${slug}/state`
   // }
 ];
