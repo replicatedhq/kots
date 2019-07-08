@@ -111,7 +111,7 @@ func (m *StateManager) GetPresignedURLs(stateID string) (*S3State, error) {
 		Key:    aws.String(objectKey),
 	})
 
-	putURL, err := putResp.Presign(30 * time.Minute)
+	putURL, err := putResp.Presign(60 * time.Minute)
 	if err != nil {
 		return nil, errors.Wrap(err, "presign response")
 	}
