@@ -34,10 +34,12 @@ func (w *Worker) postEditActions(watchID string, parentWatchID *string, parentSe
 	downstreamWatchIDs, err := w.Store.ListDownstreamWatchIDs(context.TODO(), watchID)
 	if err != nil {
 		w.Logger.Errorw("editworker post update actions unable to get downstream watch ids", zap.String("watchID", watchID), zap.Error(err))
+		return err
 	}
 	for _, downstreamWatchID := range downstreamWatchIDs {
 		if err := w.Store.CreateWatchUpdate(context.TODO(), downstreamWatchID, &sequence); err != nil {
 			w.Logger.Errorw("editworker post update actions unable to create downstream watch update", zap.String("watchID", watchID), zap.Error(err))
+			return err
 		}
 	}
 
