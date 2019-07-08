@@ -36,7 +36,6 @@ export class ShipInitPre extends React.Component {
     const licenseId = searchParams.get("license_id");
     const clusterId = searchParams.get("cluster_id");
     const githubPath = searchParams.get("path");
-    const autoStart = searchParams.get("start");
 
     const url = `${upstream ? upstream : ""}${licenseId ? `?license_id=${licenseId}`: ""}`;
     this.setState({
@@ -44,12 +43,13 @@ export class ShipInitPre extends React.Component {
       url: url || "",
       clusterId: clusterId || "",
       githubPath: githubPath || ""
+    }, () => {
+      if (upstream) {
+        this.onShipInitUrlSubmitted(url);
+      }
     });
-    if (autoStart === "1") {
-      return this.onShipInitUrlSubmitted(url);
-    }
     setTimeout(() => {
-      this.initFieldInputRef.current.focus();
+      this.initFieldInputRef?.current?.focus();
     }, 100);
   }
 
@@ -58,17 +58,9 @@ export class ShipInitPre extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { search } = this.props.location;
-    const searchParams = new URLSearchParams(search);
-    const autoStart = searchParams.get("start");
-    if (this.state.clusterId !== lastState.clusterId && this.state.clusterId.length) {
-      if (autoStart === "1") {
-        this.onShipInitUrlSubmitted(this.state.url);
-      }
-    }
     if (this.state.displayLicenseIdModal !== lastState.displayLicenseIdModal && this.state.displayLicenseIdModal) {
       setTimeout(() => {
-        this.licenseIdInputRef.current.focus();
+        this.licenseIdInputRef?.current?.focus();
       }, 100);
     }
   }
