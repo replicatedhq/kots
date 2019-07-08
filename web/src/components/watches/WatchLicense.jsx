@@ -1,9 +1,13 @@
 import React from "react";
+import Helmet from "react-helmet";
 
-export default function WatchLicense(/*props*/) {
-
+export default function WatchLicense(props) {
+  const { watch } = props;
   return (
     <div className="flex justifyContent--center">
+      <Helmet>
+        <title>{`${watch.watchName} License`}</title>
+      </Helmet>
       <div className="LicenseDetails--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
         <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-marginBottom--20 u-paddingBottom--5 u-lineHeight--normal">License details</p>
         <div className="u-color--tundora u-fontSize--normal u-fontWeight--medium">

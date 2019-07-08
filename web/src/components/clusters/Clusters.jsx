@@ -1,7 +1,9 @@
 import * as React from "react";
 import PropTypes from "prop-types";
+import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
+
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
 import Modal from "react-modal";
@@ -159,6 +161,9 @@ export class Clusters extends React.Component {
 
     return (
       <div className="ClusterDashboard--wrapper container flex-column flex1 u-overflow--auto">
+        <Helmet>
+          <title>Connected Clusters</title>
+        </Helmet>
         <div className="flex-column flex1">
           <ContentHeader
             title="Deployed clusters"

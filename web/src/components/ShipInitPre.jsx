@@ -1,4 +1,5 @@
 import * as React from "react";
+import Helmet from "react-helmet";
 import PropTypes from "prop-types";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
@@ -152,6 +153,9 @@ export class ShipInitPre extends React.Component {
 
     return (
       <div className="Login-wrapper container flex-column flex1 u-overflow--auto">
+        <Helmet>
+          <title>Configure New Application</title>
+        </Helmet>
         <div className="Form flex-column flex1 alignItems--center justifyContent--center">
           <div className="init-pre-wrapper flex-auto">
             <div className="flex1 flex-column u-textAlign--center">

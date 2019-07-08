@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import WatchContributors from "./WatchContributors";
@@ -198,6 +199,9 @@ class DetailPageApplication extends Component {
     }
     return (
       <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto u-paddingBottom--20">
+        <Helmet>
+          <title>{`${watch.watchName} Config Overview`}</title>
+        </Helmet>
         <div className="DetailPageApplication flex flex1">
           <div className="flex1 flex-column u-paddingRight--30">
             <div className="flex">

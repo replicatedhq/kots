@@ -56,11 +56,13 @@ class WatchDetailPage extends Component {
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listWatches.find( w => w.slug === slug);
 
-    // Handle updating the navbar logo when a watch changes.
+    // Handle updating the app theme state when a watch changes.
     if (currentWatch?.watchIcon) {
-      const { navbarLogo } = getThemeState();
+      const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
+
         setThemeState({
+          ...rest,
           navbarLogo: currentWatch.watchIcon
         });
       }
@@ -302,8 +304,8 @@ class WatchDetailPage extends Component {
                     */ }
                     { /* ROUTE UNUSED */}
                     <Route exact path="/watch/:owner/:slug/integrations" render={() => <DetailPageIntegrations watch={watch} />} />
-                    { /* ROUTE UNUSED */}
-                    <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer headerText="Edit your application’s state.json file" />} />
+
+                    <Route exact path="/watch/:owner/:slug/state" render={() => <StateFileViewer watch={watch} headerText="Edit your application’s state.json file" />} />
 
                     <Route exact path="/watch/:owner/:slug/version-history" render={() =>
                       <WatchVersionHistory

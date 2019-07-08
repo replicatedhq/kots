@@ -1,4 +1,5 @@
 import React, { Fragment } from "react";
+import Helmet from "react-helmet";
 import classNames from "classnames";
 import truncateMiddle from "truncate-middle";
 import { getClusterType } from "@src/utilities/utilities";
@@ -58,6 +59,9 @@ export default function WatchVersionHistory(props) {
 
   return (
     <div className="flex-column u-position--relative u-overflow--auto u-padding--20">
+      <Helmet>
+        <title>{`${watch.watchName} Version History`}</title>
+      </Helmet>
       <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
         <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
           {currentVersion ? currentVersion.title : "Unknown"}
