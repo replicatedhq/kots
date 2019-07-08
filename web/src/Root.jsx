@@ -117,8 +117,7 @@ class Root extends Component {
      * Reference object to a blank theme state
      */
     const EMPTY_THEME_STATE = {
-      navbarLogo: null,
-      pageTitle: 'Replicated Ship'
+      navbarLogo: null
     };
 
     this.setState({
@@ -222,7 +221,7 @@ class Root extends Component {
           <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
-          <title>"Replicated Ship</title>
+          <title>Replicated Ship</title>
         </Helmet>
         <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{

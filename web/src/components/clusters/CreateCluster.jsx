@@ -93,9 +93,8 @@ export class CreateCluster extends Component {
   }
 
   async componentDidMount() {
-    const { location } = this.props;
     window.addEventListener("keydown", this.createOnEnterKey);
-    const { search } = location;
+    const { search } = this.props.location;
     const queryParams = new URLSearchParams(search);
     const configStep = queryParams.get("configure");
     const clusterName = queryParams.get("name");
@@ -223,5 +222,5 @@ export class CreateCluster extends Component {
 
 export default compose(
   withRouter,
-  withApollo
+  withApollo,
 )(CreateCluster);
