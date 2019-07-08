@@ -16,6 +16,7 @@ type UpdateSession struct {
 	UploadURL      string
 	UploadSequence int
 	UserID         string
+	ParentWatchID  *string
 	ParentSequence *int
 }
 
@@ -25,6 +26,14 @@ func (s *UpdateSession) GetID() string {
 
 func (s *UpdateSession) GetWatchID() string {
 	return s.WatchID
+}
+
+func (s *UpdateSession) GetParentWatchID() *string {
+	return s.ParentWatchID
+}
+
+func (s *UpdateSession) GetParentSequence() *int {
+	return s.ParentSequence
 }
 
 func (s *UpdateSession) GetType() string {

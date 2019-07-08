@@ -62,3 +62,28 @@ func (s *SQLStore) GetMostRecentWatchVersion(ctx context.Context, watchID string
 
 	return &watchVersion, nil
 }
+
+func (s *SQLStore) GetOneWatchVersion(ctx context.Context, watchID string, sequence int) (*types.WatchVersion, error) {
+	query := `select watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number
+	from watch_version where watch_id = $1 and sequence = $2`
+
+	row := s.db.QueryRowContext(ctx, query, watchID, sequence)
+
+	watchVersion := types.WatchVersion{}
+	var sourceBranch sql.NullString
+	var pullRequestNumber sql.NullInt64
+
+	if err := row.Scan(&watchVersion.WatchID, &watchVersion.CreatedAt, &watchVersion.VersionLabel, &watchVersion.Status,
+		&sourceBranch, &watchVersion.Sequence, &pullRequestNumber); err != nil {
+		return nil, errors.Wrap(err, "read watch version")
+	}
+
+	if sourceBranch.Valid {
+		watchVersion.SourceBranch = sourceBranch.String
+	}
+	if pullRequestNumber.Valid {
+		watchVersion.PullRequestNumber = int(pullRequestNumber.Int64)
+	}
+
+	return &watchVersion, nil
+}

@@ -13,9 +13,30 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 )
 
+var (
+	watchPollInterval = time.Minute * 1
+)
+
+func (s *SQLStore) GetParentWatchID(ctx context.Context, watchID string) (*string, error) {
+	query := `select parent_watch_id from watch where id = $1`
+	row := s.db.QueryRowContext(ctx, query, watchID)
+
+	var parentWatchID sql.NullString
+	if err := row.Scan(&parentWatchID); err != nil {
+		return nil, errors.Wrap(err, "row scan")
+	}
+
+	if !parentWatchID.Valid {
+		return nil, nil
+	}
+
+	var str = parentWatchID.String
+	return &str, nil
+}
+
 // ListReadyWatchIDs will return a list of midstream watches that need to be updated
 func (s *SQLStore) ListReadyWatchIDs(ctx context.Context) ([]string, error) {
-	var maxDate = time.Now().Add(0 - time.Minute*15)
+	var maxDate = time.Now().Add(0 - watchPollInterval)
 
 	query := `select id from watch where last_watch_check_at < $1 or last_watch_check_at is null and parent_watch_id is null order by updated_at desc`
 	rows, err := s.db.QueryContext(ctx, query, maxDate)
@@ -318,7 +339,7 @@ func (s *SQLStore) SetWatchDeferred(ctx context.Context, watchID string) error {
 	now := time.Now()
 
 	query := `update watch set last_watch_check_at = $1 where id = $2`
-	_, err := s.db.ExecContext(ctx, query, now.Add(time.Duration(time.Minute*45)), watchID)
+	_, err := s.db.ExecContext(ctx, query, now.Add(time.Duration(watchPollInterval*3)), watchID)
 	if err != nil {
 		return errors.Wrap(err, "set watch last checked")
 	}

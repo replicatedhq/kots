@@ -31,12 +31,14 @@ type Store interface {
 	GetEdit(ctx context.Context, editID string) (*types.EditSession, error)
 	SetEditStatus(ctx context.Context, edit string, status string) error
 
+	GetParentWatchID(ctx context.Context, watchID string) (*string, error)
 	ListReadyWatchIDs(ctx context.Context) ([]string, error)
 	GetWatchIDFromSlug(ctx context.Context, slug string, userID string) (string, error)
 	GetWatch(ctx context.Context, watchID string) (*types.Watch, error)
 	GetWatches(ctx context.Context, userID string) ([]*types.Watch, error)
 	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, setCurrent bool, parentSequence *int) error
 	GetMostRecentWatchVersion(ctx context.Context, watchID string) (*types.WatchVersion, error)
+	GetOneWatchVersion(ctx context.Context, watchID string, sequence int) (*types.WatchVersion, error)
 	CreateWatchUpdate(ctx context.Context, watchID string, parentSequence *int) error
 	CancelIncompleteWatchUpdates(ctx context.Context, watchID string) error
 	SetWatchChecked(ctx context.Context, watchID string) error

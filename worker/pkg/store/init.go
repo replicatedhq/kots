@@ -16,12 +16,9 @@ func init() {
 }
 
 func (s *SQLStore) GetInit(ctx context.Context, initID string) (*types.InitSession, error) {
-	query := `select
-			ship_init.id, ship_init.upstream_uri, ship_init.created_at, ship_init.finished_at,
-			ship_init.result, ship_init.user_id, ship_init.cluster_id, ship_init.github_path,
-			ship_init.requested_upstream_uri
-		from ship_init
-		where ship_init.id = $1`
+	query := `select id, upstream_uri, created_at, finished_at, result, user_id, cluster_id, github_path,
+		requested_upstream_uri, parent_watch_id, parent_sequence
+		from ship_init where id = $1`
 	row := s.db.QueryRowContext(ctx, query, initID)
 
 	initSession := types.InitSession{}
@@ -30,10 +27,12 @@ func (s *SQLStore) GetInit(ctx context.Context, initID string) (*types.InitSessi
 	var clusterID sql.NullString
 	var githubPath sql.NullString
 	var requestedUpstreamURI sql.NullString
+	var parentWatchID sql.NullString
+	var parentSequence sql.NullInt64
 
 	if err := row.Scan(&initSession.ID, &initSession.UpstreamURI, &initSession.CreatedAt,
 		&finishedAt, &result, &initSession.UserID, &clusterID,
-		&githubPath, &requestedUpstreamURI); err != nil {
+		&githubPath, &requestedUpstreamURI, &parentWatchID, &parentSequence); err != nil {
 		return nil, errors.Wrap(err, "scan")
 	}
 	if finishedAt.Valid {
@@ -50,6 +49,14 @@ func (s *SQLStore) GetInit(ctx context.Context, initID string) (*types.InitSessi
 	}
 	if requestedUpstreamURI.Valid {
 		initSession.RequestedUpstreamURI = requestedUpstreamURI.String
+	}
+	if parentWatchID.Valid {
+		s := parentWatchID.String
+		initSession.ParentWatchID = &s
+	}
+	if parentSequence.Valid {
+		seq := int(parentSequence.Int64)
+		initSession.ParentSequence = &seq
 	}
 
 	user, err := s.GetUser(ctx, initSession.UserID)

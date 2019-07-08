@@ -1,12 +1,12 @@
 package updateworker
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strconv"
-	"bytes"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"

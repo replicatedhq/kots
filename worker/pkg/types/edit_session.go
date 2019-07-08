@@ -17,6 +17,8 @@ type EditSession struct {
 	StateJSON      []byte
 	UploadURL      string
 	UploadSequence int
+	ParentWatchID  *string
+	ParentSequence *int
 }
 
 func (s *EditSession) GetID() string {
@@ -25,6 +27,14 @@ func (s *EditSession) GetID() string {
 
 func (s *EditSession) GetWatchID() string {
 	return s.WatchID
+}
+
+func (s *EditSession) GetParentWatchID() *string {
+	return s.ParentWatchID
+}
+
+func (s *EditSession) GetParentSequence() *int {
+	return s.ParentSequence
 }
 
 func (s *EditSession) GetType() string {

@@ -129,22 +129,42 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 }
 
 func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, isCurrent bool, parentSequence *int) error {
-	watchState := state.State{}
-	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
-		return errors.Wrap(err, "unmarshal watch state")
-	}
-
 	versionLabel := "Unknown"
-	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
-		versionLabel = watchState.V1.Metadata.Version
-	} else {
-		// Hmmm...
-		previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+
+	if parentSequence != nil {
+		// downstream watches should use the parent version label
+		parentWatchID, err := w.Store.GetParentWatchID(context.TODO(), watch.ID)
 		if err != nil {
-			return errors.Wrap(err, "get most recent watch version")
+			return errors.Wrap(err, "get parent watch id")
 		}
 
-		versionLabel = previousWatchVersion.VersionLabel
+		if parentWatchID == nil {
+			return fmt.Errorf("unable to create version with parent sequence but no parent watch: %s", watch.ID)
+		}
+
+		currentVersion, err := w.Store.GetOneWatchVersion(context.TODO(), *parentWatchID, *parentSequence)
+		if err != nil {
+			return errors.Wrap(err, "get one watch version")
+		}
+
+		versionLabel = currentVersion.VersionLabel
+	} else {
+		watchState := state.State{}
+		if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
+			return errors.Wrap(err, "unmarshal watch state")
+		}
+
+		if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
+			versionLabel = watchState.V1.Metadata.Version
+		} else {
+			// Hmmm...
+			previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+			if err != nil {
+				return errors.Wrap(err, "get most recent watch version")
+			}
+
+			versionLabel = previousWatchVersion.VersionLabel
+		}
 	}
 
 	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent, parentSequence)

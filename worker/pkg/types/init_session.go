@@ -29,6 +29,8 @@ type InitSession struct {
 	UploadSequence       int
 	ClusterID            string
 	GitHubPath           string
+	ParentWatchID        *string
+	ParentSequence       *int
 }
 
 func (s *InitSession) GetID() string {
@@ -37,6 +39,14 @@ func (s *InitSession) GetID() string {
 
 func (s *InitSession) GetWatchID() string {
 	return s.ID
+}
+
+func (s *InitSession) GetParentWatchID() *string {
+	return s.ParentWatchID
+}
+
+func (s *InitSession) GetParentSequence() *int {
+	return s.ParentSequence
 }
 
 func (s *InitSession) GetType() string {

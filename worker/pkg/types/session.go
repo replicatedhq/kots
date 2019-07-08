@@ -13,6 +13,8 @@ type Session interface {
 	GetCPURequest() string
 	GetMemoryLimit() string
 	GetMemoryRequest() string
+	GetParentWatchID() *string
+	GetParentSequence() *int
 }
 
 // Output is a shared interface for ship structs that have the ability to produce ship tarballs

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -182,6 +182,9 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 }
 
 func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []byte) error {
+	parentWatchID, hasParent := newPod.ObjectMeta.Labels["parent-watch-id"]
+	parentSequence, _ := newPod.ObjectMeta.Labels["parent-sequence"]
+
 	initSession, err := w.Store.GetInit(context.TODO(), id)
 	if err != nil {
 		return errors.Wrap(err, "get init session")
@@ -195,21 +198,10 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	// title is the parent's title, if there is a parent
 	title := ""
 	var parentWatch *types.Watch
-	if strings.HasPrefix(initSession.RequestedUpstreamURI, "ship://") {
-		parsed, err := url.Parse(initSession.RequestedUpstreamURI)
-		if err != nil {
-			return errors.Wrap(err, "parse init upstream")
-		}
-
-		parentWatchSlug := strings.TrimLeft(parsed.Path, "/")
-		parentWatchID, err := w.Store.GetWatchIDFromSlug(context.TODO(), parentWatchSlug, initSession.UserID)
-		if err != nil {
-			return errors.Wrap(err, "get parent watch id from slug")
-		}
-
+	if hasParent {
 		parentWatch, err = w.Store.GetWatch(context.TODO(), parentWatchID)
 		if err != nil {
-			return errors.Wrap(err, "get parent watch from id")
+			return errors.Wrap(err, "get parent watch")
 		}
 
 		title = parentWatch.Title
@@ -243,10 +235,6 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 
 	icon := ship.WatchIconFromState(stateJSON)
 
-	parentWatchID := ""
-	if parentWatch != nil {
-		parentWatchID = parentWatch.ID
-	}
 	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, initSession.UserID, initSession.ID, initSession.ClusterID, initSession.GitHubPath, parentWatchID); err != nil {
 		return errors.Wrap(err, "create watch from state")
 	}
@@ -269,7 +257,12 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	if parentWatch == nil {
 		versionLabel = ship.WatchVersionFromState(stateJSON)
 	} else {
-		parentWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), parentWatch.ID)
+		seq, err := strconv.Atoi(parentSequence)
+		if err != nil {
+			return errors.Wrap(err, "convert parent sequence")
+		}
+
+		parentWatchVersion, err := w.Store.GetOneWatchVersion(context.TODO(), parentWatchID, seq)
 		if err != nil {
 			return errors.Wrap(err, "get parent watch version")
 		}
@@ -277,7 +270,16 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	}
 
 	setActive := prNumber == 0 // This isn't obvious and a pretty odd implementation. only set non-gitops clusters to active
-	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, setActive, nil); err != nil {
+	var parentSeq *int
+	if hasParent {
+		seq, err := strconv.Atoi(parentSequence)
+		if err != nil {
+			return errors.Wrap(err, "convert parent sequence")
+		}
+
+		parentSeq = &seq
+	}
+	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, setActive, parentSeq); err != nil {
 		return errors.Wrap(err, "create watch version")
 	}
 
