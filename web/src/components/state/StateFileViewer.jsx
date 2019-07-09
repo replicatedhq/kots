@@ -172,7 +172,7 @@ class StateFileViewer extends React.Component {
         "u-paddingTop--20": !this.props.isNew
         })}>
         <Helmet>
-          <title>{`${watch.watchName} State JSON`}</title>
+          <title>{`${watch?.watchName} State JSON`.trim()}</title>
         </Helmet>
         <div className="flex-column flex-1-auto u-overflow--auto container">
           {this.props.headerText && <p className="u-color--tuna u-fontWeight--medium u-fontSize--large">{this.props.headerText}</p>}
