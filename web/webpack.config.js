@@ -182,8 +182,10 @@ module.exports = function (env) {
         }
       }),
       new webpack.DefinePlugin({
-        "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT),
-      }),
+        "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT === "staging"
+          ? "production"
+          : appEnv.ENVIRONMENT
+      )}),
       new MonacoWebpackPlugin({
         languages: [
           "yaml",
