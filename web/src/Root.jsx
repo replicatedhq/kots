@@ -286,6 +286,7 @@ class Root extends Component {
                         props => (
                           <WatchDetailPage
                             {...props}
+                            rootDidInitialWatchFetch={rootDidInitialWatchFetch}
                             listWatches={listWatches}
                             refetchListWatches={this.refetchListWatches}
                             onActiveInitSession={this.handleActiveInitSession}

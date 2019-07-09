@@ -188,7 +188,8 @@ class WatchDetailPage extends Component {
       getWatchQuery,
       getHelmChartQuery,
       listWatches,
-      refetchListWatches
+      refetchListWatches,
+      rootDidInitialWatchFetch
     } = this.props;
 
     const {
@@ -196,6 +197,7 @@ class WatchDetailPage extends Component {
       addNewClusterModal,
       clusterToRemove
     } = this.state;
+
     const centeredLoader = (
       <div className="flex-column flex1 alignItems--center justifyContent--center">
         <Loader size="60" />
@@ -209,11 +211,12 @@ class WatchDetailPage extends Component {
     } else {
       watch = getHelmChartQuery?.getHelmChart;
     }
-    const loading = getWatchQuery?.loading || getHelmChartQuery?.loading;
 
-    // if (loading) {
-    //   return centeredLoader;
-    // }
+    const loading = getWatchQuery?.loading || getHelmChartQuery?.loading || !rootDidInitialWatchFetch;
+
+    if (!rootDidInitialWatchFetch) {
+      return centeredLoader;
+    }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
