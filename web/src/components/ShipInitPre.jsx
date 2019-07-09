@@ -48,9 +48,13 @@ export class ShipInitPre extends React.Component {
         this.onShipInitUrlSubmitted(url);
       }
     });
-    setTimeout(() => {
-      this.initFieldInputRef?.current?.focus();
-    }, 100);
+
+    if (!upstream) {
+      setTimeout(() => {
+        this.initFieldInputRef?.current?.focus();
+      }, 100);
+    }
+
   }
 
   componentWillUnmount() {

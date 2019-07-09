@@ -94,7 +94,7 @@ class WatchDetailPage extends Component {
   addClusterToWatch = (clusterId, githubPath) => {
     const { clusterParentSlug } = this.state;
     const upstreamUrl = `ship://ship-cloud/${clusterParentSlug}`;
-    this.props.history.push(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}&start=1`);
+    this.props.history.push(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
   }
 
   handleAddNewClusterClick = (watch) => {
