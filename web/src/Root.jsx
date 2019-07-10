@@ -220,7 +220,6 @@ class Root extends Component {
           <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
-          <title>Replicated Ship</title>
         </Helmet>
         <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{
