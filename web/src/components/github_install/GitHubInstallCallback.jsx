@@ -20,6 +20,7 @@ class GitHubInstallCallback extends React.Component {
         if (Utilities.localStorageEnabled()) {
           const next = localStorage.getItem("next");
           if (next) {
+            localStorage.removeItem("next");
             return this.props.history.push(next);
           }
         }
