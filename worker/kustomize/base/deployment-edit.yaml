@@ -47,9 +47,9 @@ spec:
             - name: LOG_FORMAT
               value: json
             - name: SHIP_IMAGE
-              value: "laverya/ship"
+              value: "replicated/ship"
             - name: SHIP_TAG
-              value: "v0.48.0-testing"
+              value: "v0.48.1"
             - name: SHIP_PULL_POLICY
               value: "Always"
           ports:
