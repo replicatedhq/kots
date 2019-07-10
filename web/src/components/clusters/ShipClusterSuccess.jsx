@@ -1,9 +1,9 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
 import "../../scss/components/clusters/CreateCluster.scss";
 
 export default class ShipClusterSuccess extends React.Component {
   render() {
+    const { handleCreattionSuccessClick } = this.props;
     return (
       <div className="CreateCluster--wrapper flex-auto">
         <div className="flex1 flex-column">
@@ -14,7 +14,7 @@ export default class ShipClusterSuccess extends React.Component {
           </code>
         </div>
         <div className="flex-auto u-marginTop--20 u-textAlign--center">
-          <Link to="/clusters" className="btn primary large">View all my clusters</Link>
+          <span onClick={handleCreattionSuccessClick} className="btn primary large">Ok, got it!</span>
         </div>
       </div>
     );

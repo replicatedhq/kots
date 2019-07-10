@@ -54,7 +54,7 @@ export class ShipInitCompleted extends React.Component {
           variables: { id: initSessionId },
           fetchPolicy: "network-only"
         });
-        return this.props.history.push(`/watch/${parentResult.data.getParentWatch.slug}/downstreams`);
+        return this.props.history.push(`/watch/${parentResult.data.getParentWatch.slug}/downstreams?add=1`);
       }
       this.setState({ loadingWatch: false, watchSlug: data.getWatch.slug, watchId: initSessionId });
     }
