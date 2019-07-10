@@ -16,7 +16,7 @@ spec:
             - name: SHIP_IMAGE
               value: "replicated/ship"
             - name: SHIP_TAG
-              value: "v0.48.1"
+              value: "0.48.1"
             - name: SHIP_PULL_POLICY
               value: "Always"
             - name: S3_ENDPOINT
