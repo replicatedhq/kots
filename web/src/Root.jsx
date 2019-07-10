@@ -192,7 +192,6 @@ class Root extends Component {
   }
 
   onRootMounted = () => {
-
     if (Utilities.isLoggedIn()) {
       this.refetchListWatches().then(listWatches => {
         if (listWatches.length > 0 && window.location.pathname === "/watches") {
