@@ -31,6 +31,7 @@ class Login extends React.Component {
     if (Utilities.getToken()) {
       const next = URLParams.get("next");
       if (next) {
+        localStorage.removeItem("next");
         const decodedNext = decodeURI(next);
         this.props.history.push(decodedNext);
       } else {

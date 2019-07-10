@@ -50,9 +50,9 @@ class WatchDetailPage extends Component {
     }
   }
 
-  componentDidUpdate() {
-    const { getThemeState, setThemeState, match, listWatches, history } = this.props;
-
+  componentDidUpdate(lastProps) {
+    const { getThemeState, setThemeState, match, listWatches, history, getWatchQuery } = this.props;
+    const { search } = this.props.location;
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listWatches.find( w => w.slug === slug);
 
@@ -65,6 +65,13 @@ class WatchDetailPage extends Component {
           ...rest,
           navbarLogo: currentWatch.watchIcon
         });
+      }
+    }
+
+    if (getWatchQuery.getWatch && getWatchQuery.getWatch !== lastProps.getWatchQuery.getWatch) {
+      const URLParams = new URLSearchParams(search);
+      if (URLParams.get("add")) {
+        this.handleAddNewClusterClick(getWatchQuery.getWatch);
       }
     }
 
@@ -95,6 +102,12 @@ class WatchDetailPage extends Component {
     const { clusterParentSlug } = this.state;
     const upstreamUrl = `ship://ship-cloud/${clusterParentSlug}`;
     this.props.history.push(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
+  }
+
+  createDownstreamForCluster = () => {
+    const { clusterParentSlug } = this.state;
+    localStorage.setItem("clusterRedirect", `/watch/${clusterParentSlug}/downstreams?add=1`);
+    this.props.history.push("/cluster/create");
   }
 
   handleAddNewClusterClick = (watch) => {
@@ -177,9 +190,11 @@ class WatchDetailPage extends Component {
 
   componentDidMount() {
     const { history } = this.props;
+    
     if (history.location.pathname === "/watches") {
-      this.checkForFirstWatch();
+      return this.checkForFirstWatch();
     }
+
   }
 
   render() {
@@ -362,6 +377,7 @@ class WatchDetailPage extends Component {
               <AddClusterModal
                 onAddCluster={this.addClusterToWatch}
                 onRequestClose={this.closeAddClusterModal}
+                createDownstreamForCluster={this.createDownstreamForCluster}
                 existingDeploymentClusters={this.state.existingDeploymentClusters}
               />
             </div>

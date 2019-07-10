@@ -1,6 +1,6 @@
 import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallationId } from "../../queries/GitHubQueries";
 import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
 import { createGitOpsCluster } from "../../mutations/ClusterMutations";
@@ -267,7 +267,8 @@ export class ConfigureGitHub extends React.Component {
   render() {
     const {
       hideRootPath,
-      integrationToManage
+      integrationToManage,
+      handleCreationSuccessClick
     } = this.props;
     const {
       orgs,
@@ -295,7 +296,7 @@ export class ConfigureGitHub extends React.Component {
           </div>
           <div className="flex flex1 u-marginTop--30 u-marginBottom--10">
             <div className="flex flex1 justifyContent--center alignItems--center">
-              <Link to="/clusters" className="btn primary">View your clusters</Link>
+              <span onClick={handleCreationSuccessClick} className="btn primary">Ok, got it!</span>
             </div>
           </div>
         </div>

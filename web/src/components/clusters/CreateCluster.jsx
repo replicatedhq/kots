@@ -88,6 +88,16 @@ export class CreateCluster extends Component {
     }
   }
 
+  handleCreationSuccessClick = () => {
+    const redirect = localStorage.getItem("clusterRedirect");
+    if (redirect) {
+      localStorage.removeItem("clusterRedirect");
+      this.props.history.push(redirect);
+    } else {
+      this.props.history.push("/clusters");
+    }
+  }
+
   componentWillUnmount() {
     window.removeEventListener("keydown", this.createOnEnterKey);
   }
@@ -155,7 +165,11 @@ export class CreateCluster extends Component {
         <div className="Form flex-column flex1 alignItems--center justifyContent--center">
           {createSuccess ?
             opsType.value === "ship" ?
-              <ShipClusterSuccess clusterId={this.state.clusterId} token={this.state.clusterToken} />
+              <ShipClusterSuccess
+                clusterId={this.state.clusterId}
+                token={this.state.clusterToken}
+                handleCreationSuccessClick={this.handleCreationSuccessClick}
+              />
               :
               <div className="CreateCluster--wrapper flex-auto">
                 <div className="flex1 flex-column">
@@ -163,6 +177,7 @@ export class CreateCluster extends Component {
                     clusterTitle={this.state.title}
                     hideRootPath={true}
                     integrationToManage={null}
+                    handleCreationSuccessClick={this.handleCreationSuccessClick}
                   />
                 </div>
               </div>
