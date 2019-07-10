@@ -88,7 +88,7 @@ export class CreateCluster extends Component {
     }
   }
 
-  handleCreattionSuccessClick = () => {
+  handleCreationSuccessClick = () => {
     const redirect = localStorage.getItem("clusterRedirect");
     if (redirect) {
       localStorage.removeItem("clusterRedirect");
@@ -168,7 +168,7 @@ export class CreateCluster extends Component {
               <ShipClusterSuccess
                 clusterId={this.state.clusterId}
                 token={this.state.clusterToken}
-                handleCreattionSuccessClick={this.handleCreattionSuccessClick}
+                handleCreationSuccessClick={this.handleCreationSuccessClick}
               />
               :
               <div className="CreateCluster--wrapper flex-auto">
@@ -177,7 +177,7 @@ export class CreateCluster extends Component {
                     clusterTitle={this.state.title}
                     hideRootPath={true}
                     integrationToManage={null}
-                    handleCreattionSuccessClick={this.handleCreattionSuccessClick}
+                    handleCreationSuccessClick={this.handleCreationSuccessClick}
                   />
                 </div>
               </div>

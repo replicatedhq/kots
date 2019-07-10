@@ -3,7 +3,7 @@ import "../../scss/components/clusters/CreateCluster.scss";
 
 export default class ShipClusterSuccess extends React.Component {
   render() {
-    const { handleCreattionSuccessClick } = this.props;
+    const { handleCreationSuccessClick } = this.props;
     return (
       <div className="CreateCluster--wrapper flex-auto">
         <div className="flex1 flex-column">
@@ -14,7 +14,7 @@ export default class ShipClusterSuccess extends React.Component {
           </code>
         </div>
         <div className="flex-auto u-marginTop--20 u-textAlign--center">
-          <span onClick={handleCreattionSuccessClick} className="btn primary large">Ok, got it!</span>
+          <span onClick={handleCreationSuccessClick} className="btn primary large">Ok, got it!</span>
         </div>
       </div>
     );

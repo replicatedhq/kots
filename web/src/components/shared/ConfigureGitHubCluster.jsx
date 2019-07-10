@@ -268,7 +268,7 @@ export class ConfigureGitHub extends React.Component {
     const {
       hideRootPath,
       integrationToManage,
-      handleCreattionSuccessClick
+      handleCreationSuccessClick
     } = this.props;
     const {
       orgs,
@@ -296,7 +296,7 @@ export class ConfigureGitHub extends React.Component {
           </div>
           <div className="flex flex1 u-marginTop--30 u-marginBottom--10">
             <div className="flex flex1 justifyContent--center alignItems--center">
-              <span onClick={handleCreattionSuccessClick} className="btn primary">Ok, got it!</span>
+              <span onClick={handleCreationSuccessClick} className="btn primary">Ok, got it!</span>
             </div>
           </div>
         </div>
