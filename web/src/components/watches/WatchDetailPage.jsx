@@ -72,6 +72,7 @@ class WatchDetailPage extends Component {
       const URLParams = new URLSearchParams(search);
       if (URLParams.get("add")) {
         this.handleAddNewClusterClick(getWatchQuery.getWatch);
+        history.replace(this.props.location.pathname); // remove query param so refreshing the page doesn't trigger the modal again.
       }
     }
 
