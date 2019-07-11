@@ -4,6 +4,8 @@ import { listClusters } from "../../../queries/ClusterQueries";
 import Select from "react-select";
 import Loader from "../../shared/Loader";
 
+const NEW_DOWNSTREAM = "Create a new downstream cluster";
+
 class AddNewClusterModal extends React.Component {
 
   state = {
@@ -25,6 +27,9 @@ class AddNewClusterModal extends React.Component {
   }
 
   onClusterChange = (selectedOption) => {
+    if (selectedOption.label === NEW_DOWNSTREAM) {
+      return this.handleCreateDownstream();
+    }
     this.setState({ selectedCluster: selectedOption });
   }
 
@@ -54,6 +59,7 @@ class AddNewClusterModal extends React.Component {
           type: cluster.gitOpsRef ? "git" : "ship"
         })
       });
+      options.unshift({ label: NEW_DOWNSTREAM, id: "new-downstream" });
     }
     const buttonDisabled = this.state.selectedCluster.value === "" || (this.state.selectedCluster.type === "git" && this.state.githubPath === "");
     const centeredLoader = (
@@ -61,7 +67,7 @@ class AddNewClusterModal extends React.Component {
         <Loader size="60" />
       </div>
     );
-    
+
     let modalContent = null;
     if (options?.length) {
       modalContent = (
