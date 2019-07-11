@@ -5,12 +5,13 @@ import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallati
 import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
 import { createGitOpsCluster } from "../../mutations/ClusterMutations";
 import Loader from "@src/components/shared/Loader";
-import dayjs from "dayjs";
 import find from "lodash/find";
 import get from "lodash/get";
 import Select from "react-select";
 
 const NEW_ORG_LOGIN = "Install on another GitHub account";
+let externalWindow = window;
+let codeCheck = null;
 
 export class ConfigureGitHub extends React.Component {
   constructor() {
@@ -102,11 +103,37 @@ export class ConfigureGitHub extends React.Component {
   }
 
   handleInstallGitHubApp = () => {
-    const exp = new Date(dayjs().add(30, "m").toDate());
-    // Set cookie with current location, expires 30 mins from current time
-    document.cookie = `appRedirect=/cluster/create?configure=1&name=${this.props.clusterTitle}; expires=${exp.toUTCString()}; path=/`;
-    window.location.replace(window.env.GITHUB_INSTALL_URL)
-  }
+    const url = window.env.GITHUB_INSTALL_URL;
+    const title = "Install Ship Cluster GitHub Application";
+    const left = window.screenX + (window.outerWidth - 1200) / 2;
+    const top = window.screenY + (window.outerHeight - 800) / 2.5;
+    externalWindow = window.open(
+      url,
+      title,
+      `width=1200,height=800,left=${left},top=${top}`
+    );
+
+    codeCheck = setInterval(async () => {
+      try {
+        const externalUrl = externalWindow.location;
+        const params = new URLSearchParams(externalUrl.search);
+        const installId = params.get("installation_id");
+        if (!installId) {
+          return;
+        }
+        clearInterval(codeCheck);
+        await this.props.getGithubUserOrgs.refetch().then(() => {
+          externalWindow.close();
+        });
+      } catch (e) { 
+        // do nothing
+      }
+    }, 20);
+
+    externalWindow.addEventListener("beforeunload", () => {
+      clearInterval(codeCheck);
+    })
+  };
 
   renderInstallWarning = () => {
     return (
@@ -116,7 +143,7 @@ export class ConfigureGitHub extends React.Component {
           <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">In order to connect to GitHub you need to have the app installed to your GitHub account.</p>
         </div>
         <div className="flex-auto u-marginLeft--10">
-          <button onClick={this.handleInstallGitHubApp} className="btn primary">Install GitHub App</button>
+          <span onClick={this.handleInstallGitHubApp} className="btn primary">Install GitHub App</span>
         </div>
       </div>
     );
@@ -287,6 +314,8 @@ export class ConfigureGitHub extends React.Component {
 
     const excludeShipBranches = repoBranches.filter(repo => !repo.name.includes("ship-") )
     const createPRDisabled = org === null || repo === null || branch === null;
+    const filteredOrgs = orgs.filter(org => org.login !== NEW_ORG_LOGIN);
+
     let content;
     if (createSuccess) {
       content = (
@@ -312,7 +341,7 @@ export class ConfigureGitHub extends React.Component {
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">To deploy with GitHub, we need to know where to save your assests.</p>
             </div>
           }
-          { !this.props.getGithubUserOrgs.loading && orgs.length === 0 ? <div className="u-marginBottom--20">{this.renderInstallWarning()}</div>  : null}
+          { !this.props.getGithubUserOrgs.loading && filteredOrgs?.length === 0 ? <div className="u-marginBottom--20">{this.renderInstallWarning()}</div>  : null}
           <div className="flex flex1 u-marginBottom--30">
             <div className="flex flex1 flex-column u-marginRight--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Owner</p>
