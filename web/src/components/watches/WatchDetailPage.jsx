@@ -6,7 +6,7 @@ import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
 import { getWatch, getHelmChart } from "@src/queries/WatchQueries";
-import { createUpdateSession, deleteWatch, checkForUpdates } from "../../mutations/WatchMutations";
+import { createUpdateSession, deleteWatch, checkForUpdates, deployWatchVersion } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -85,6 +85,12 @@ class WatchDetailPage extends Component {
   componentWillUnmount() {
     clearInterval(this.interval);
     this.props.clearThemeState();
+  }
+
+  makeCurrentRelease = async (watchId, sequence) => {
+    await this.props.deployWatchVersion(watchId, sequence).then(() => {
+      this.props.getWatchQuery.refetch();
+    })
   }
 
   onCheckForUpdates = () => {
@@ -310,6 +316,7 @@ class WatchDetailPage extends Component {
                             childWatches={watch.watches}
                             handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
                             onEditApplication={this.onEditApplicationClicked}
+                            installLatestVersion={this.makeCurrentRelease}
                             toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
                           />
                         </div>
@@ -464,4 +471,9 @@ export default compose(
       deleteWatch: (watchId) => mutate({ variables: { watchId }})
     })
   }),
+  graphql(deployWatchVersion, {
+    props: ({ mutate }) => ({
+      deployWatchVersion: (watchId, sequence) => mutate({ variables: { watchId, sequence } })
+    })
+  })
 )(WatchDetailPage);

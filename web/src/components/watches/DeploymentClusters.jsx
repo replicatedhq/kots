@@ -15,7 +15,9 @@ export default class DeploymentClusters extends React.Component {
   }
 
   installLatestVersion = (watchId, sequence) => {
-    this.props.installLatestVersion(watchId, sequence);
+    if (this.props.installLatestVersion && typeof this.props.installLatestVersion === "function") {
+      this.props.installLatestVersion(watchId, sequence);
+    }
   }
 
   downloadAssetsForCluster = async (watchId) => {
