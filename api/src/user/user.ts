@@ -4,6 +4,7 @@ import { ReplicatedError } from "../server/errors";
 export class User {
   public id: string
   public createdAt: string;
+  public lastLogin: string;
 
   public githubUser?: GitHubUser;
   public shipUser?: ShipUser;

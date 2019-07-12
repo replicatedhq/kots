@@ -133,9 +133,10 @@ export class UserStore {
 
       let v: any[] = [];
 
-      let q = `insert into ship_user (id, created_at) values ($1, $2)`;
+      let q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
       v = [
           id,
+          new Date(),
           new Date(),
       ];
       await pg.query(q, v);
@@ -167,9 +168,10 @@ export class UserStore {
     try {
       await pg.query("begin");
 
-      let q = `insert into ship_user (id, created_at) values ($1, $2)`;
+      let q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
       let v = [
           id,
+          new Date(),
           new Date(),
       ];
       await pg.query(q, v);
@@ -212,5 +214,20 @@ export class UserStore {
     await this.pool.query(q, v);
 
     return id;
+  }
+
+  async updateLastLogin(id: string): Promise<boolean> {
+    const currentTime = new Date();
+
+    const q = "UPDATE ship_user SET last_login = $1 where id = $2";
+
+    const v = [
+      currentTime,
+      id
+    ];
+
+    await this.pool.query(q, v);
+
+    return true;
   }
 }

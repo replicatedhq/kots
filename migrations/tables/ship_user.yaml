@@ -21,3 +21,6 @@ spec:
         type: timestamp without time zone
       - name: github_id
         type: integer
+      - name: last_login
+        type: timestamp without time zone
+      
