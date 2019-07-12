@@ -76,10 +76,9 @@ export class WatchStore {
     let v = [
       watchId,
     ];
-
     let result = await this.pool.query(q, v);
     const sequence = result.rows[0].current_sequence;
-
+    
     if (sequence === null) {
       return;
     }
@@ -307,7 +306,7 @@ export class WatchStore {
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata from watch where id = $1";
+    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata, last_watch_check_at from watch where id = $1";
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -700,6 +699,7 @@ export class WatchStore {
     watch.lastUpdated = row.updated_at;
     watch.createdOn = row.created_at;
     watch.metadata = row.metadata;
+    watch.lastUpdateCheck = row.last_watch_check_at;
 
     return watch;
   }

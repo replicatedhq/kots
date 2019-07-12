@@ -23,6 +23,7 @@ export class Watch {
   public pastVersions: [Version];
   public parentWatch: Watch;
   public metadata: string;
+  public lastUpdateCheck: string;
 
   // Watch Cluster Methods
   public async getCluster(stores: Stores): Promise<Cluster | void> {

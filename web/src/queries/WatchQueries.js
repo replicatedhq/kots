@@ -25,6 +25,7 @@ export const listWatchesRaw = `
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -75,6 +76,7 @@ export const listWatchesRaw = `
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -149,6 +151,7 @@ export const searchWatches = gql`
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -205,6 +208,7 @@ export const getWatch = gql`
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -270,6 +274,7 @@ export const getWatch = gql`
         watchIcon
         createdOn
         lastUpdated
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -348,6 +353,7 @@ export const getWatchById = gql`
       watchName
       slug
       metadata
+      lastUpdateCheck
       cluster {
         id
         title
@@ -407,6 +413,7 @@ export const getWatchById = gql`
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -475,6 +482,7 @@ export const getParentWatchRaw = `
       watchName
       slug
       metadata
+      lastUpdateCheck
       cluster {
         id
         title
@@ -534,6 +542,7 @@ export const getParentWatchRaw = `
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt

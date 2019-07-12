@@ -18,6 +18,7 @@ const Watch = `
     currentVersion: Version
     parentWatch: Watch
     metadata: String
+    lastUpdateCheck: String
   }
 `;
 
