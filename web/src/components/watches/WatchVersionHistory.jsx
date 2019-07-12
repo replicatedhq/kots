@@ -8,7 +8,7 @@ import { getClusterType } from "@src/utilities/utilities";
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 
 export default function WatchVersionHistory(props) {
-  const { watch, checkingForUpdates, checkingUpdateText } = props;
+  const { watch, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = props;
 
   // Sanity check for null watches
   if (!watch) {
@@ -66,6 +66,8 @@ export default function WatchVersionHistory(props) {
         <span className="u-marginLeft--5 u-fontSize--small u-color--nevada u-fontWeight--medium">{checkingUpdateText}</span>
       </div>
     );
+  } else if (errorCheckingUpdate) {
+    checkUpdateNode = <p className="u-marginLeft--5 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates <span onClick={props.onCheckForUpdates} className="u-fontWeight--bold u-textDecoration--underline u-cursor--pointer">Try again</span></p>
   } else {
     checkUpdateNode = <button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button>
   }

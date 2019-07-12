@@ -43,7 +43,8 @@ class WatchDetailPage extends Component {
       watchToEdit: {},
       existingDeploymentClusters: [],
       checkingForUpdates: false,
-      checkingUpdateText: "Checking for updates"
+      checkingUpdateText: "Checking for updates",
+      updateError: false,
     }
   }
 
@@ -109,7 +110,9 @@ class WatchDetailPage extends Component {
       variables: {
         watchId: watch.id,
       }
-    }).then(() => {
+    }).catch(() => {
+      this.setState({ updateError: true });
+    }).finally(() => {
       clearTimeout(loadingTextTimer);
       this.setState({
         checkingForUpdates: false,
@@ -231,7 +234,8 @@ class WatchDetailPage extends Component {
       displayRemoveClusterModal,
       addNewClusterModal,
       clusterToRemove,
-      checkingUpdateText
+      checkingUpdateText,
+      updateError
     } = this.state;
 
     const centeredLoader = (
@@ -353,6 +357,7 @@ class WatchDetailPage extends Component {
                         onCheckForUpdates={this.onCheckForUpdates}
                         checkingForUpdates={this.state.checkingForUpdates}
                         checkingUpdateText={checkingUpdateText}
+                        errorCheckingUpdate={updateError}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
