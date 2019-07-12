@@ -66,7 +66,7 @@ export function UserMutations(stores: Stores, params: Params) {
           //   await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
           // }
         }
-
+        await stores.userStore.updateLastLogin(user.id);
         const session = await stores.sessionStore.createGithubSession(user.id, accessToken.access_token);
 
         return {

@@ -6,7 +6,6 @@ import {
   Req,
   Res,
 } from "ts-express-decorators";
-import { ReplicatedError } from "../server/errors";
 
 interface LoginRequest {
   email: string;
