@@ -54,7 +54,7 @@ export default class ClusterCard extends React.Component {
               </div>
               :
               <div className="u-marginTop--10 u-paddingTop--10 u-marginBottom--5 u-borderTop--gray flex flex-auto">
-                <span className="icon status-icon exclamationMark-icon flex-auto u-marginRight--5"></span>
+                <span className="icon status-icon exclamationMark--icon flex-auto u-marginRight--5"></span>
                 <div className="flex1">
                   <p className="u-fontWeight--medium u-fontSize--normal u-lineHeight--normal u-color--orange">?? applications are out of date</p>
                   <a href="/watches" className="u-fontSize--small replicated-link">View out of date applications</a>

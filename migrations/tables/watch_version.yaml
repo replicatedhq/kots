@@ -36,4 +36,6 @@ spec:
         type: integer
       - name: parent_sequence
         type: integer
+      - name: deployed_at
+        type: timestamp without time zone
 

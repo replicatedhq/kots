@@ -38,14 +38,36 @@ export class WatchStore {
 
     await this.pool.query(q, v);
   }
-  async setCurrentVersion(watchId: string, sequence: number): Promise<void> {
-    const q = `update watch set current_sequence = $1 where id = $2`;
-    const v = [
-      sequence,
-      watchId,
-    ];
+  async setCurrentVersion(watchId: string, sequence: number, deployedAt?: string): Promise<void> {
+    const pg = await this.pool.connect();
 
-    await this.pool.query(q, v);
+    try {
+      await pg.query("begin");
+
+      try {
+        let q = `update watch set current_sequence = $1 where id = $2`;
+        let v: any[] = [
+          sequence,
+          watchId,
+        ];
+        await pg.query(q, v);
+
+        q = `update watch_version set deployed_at = $1 where watch_id = $2 and sequence = $3`;
+        v = [
+          deployedAt || new Date(),
+          watchId,
+          sequence,
+        ];
+        await pg.query(q, v);
+
+        await pg.query("commit");
+      } catch (err) {
+        await pg.query("rollback");
+        throw err;
+      }
+    } finally {
+      pg.release();
+    }
   }
 
   async updateVersionStatus(watchId: string, sequence: number, status: string): Promise<void> {
@@ -60,7 +82,7 @@ export class WatchStore {
   }
 
   async getOneVersion(watchId: string, sequence: number): Promise<Version> {
-    const q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence = $2`;
+    const q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and sequence = $2`;
     const v = [
       watchId,
       sequence,
@@ -83,7 +105,7 @@ export class WatchStore {
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and sequence = $2`;
     v = [
       watchId,
       sequence,
@@ -109,7 +131,7 @@ export class WatchStore {
       return [];
     }
 
-    q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence < $2 order by sequence desc`;
+    q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and sequence < $2 order by sequence desc`;
     v = [
       watchId,
       sequence,
@@ -139,7 +161,7 @@ export class WatchStore {
       sequence = -1;
     }
 
-    q = `select created_at, version_label, status, sequence, pullrequest_number from watch_version where watch_id = $1 and sequence > $2 order by sequence desc`;
+    q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and sequence > $2 order by sequence desc`;
     v = [
       watchId,
       sequence,
@@ -730,6 +752,7 @@ export class WatchStore {
       createdOn: row.created_at,
       sequence: row.sequence,
       pullrequestNumber: row.pullrequest_number,
+      deployedAt: row.deployed_at
     };
   }
 }

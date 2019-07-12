@@ -28,13 +28,13 @@ export default function ActiveDownstreamVersionRow(props) {
           }
           {watch.currentVersion && watch.pendingVersions?.length === 1 &&
             <div className="flex-auto flex alignItems--center alignSelf--center">
-              <div className="icon exclamationMark-icon"></div>
+              <div className="icon exclamationMark--icon"></div>
               <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">One version behind</p>
             </div>
           }
           {watch.currentVersion && watch.pendingVersions?.length >= 2 &&
             <div className="flex-auto flex alignItems--center alignSelf--center">
-              <div className="icon exclamationMark-icon"></div>
+              <div className="icon exclamationMark--icon"></div>
               <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">Two or more versions behind</p>
             </div>
           }
@@ -44,11 +44,15 @@ export default function ActiveDownstreamVersionRow(props) {
               <p className="u-fontSize--normal u-color--nevada u-fontWeight--medium u-marginLeft--5">Up to date</p>
             </div>
           }
-          {watch.currentVersion && <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">({isGit ? "Merged" : "Deployed"} on {dayjs(watch.currentVersion.createdOn).format("MMMM D, YYYY")})</span>}
+          {watch.currentVersion?.deployedAt && <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">({isGit ? "Merged" : "Deployed"} on {dayjs(watch.currentVersion.deployedAt).format("MMMM D, YYYY")})</span>}
         </div>
       </div>
       <div className="flex-auto flex-column justifyContent--center">
-        <Link to={`/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
+          {isGit && !watch.currentVersion ?
+            <a href={`https://github.com/${watch.cluster.gitOpsRef.owner}/${watch.cluster.gitOpsRef.repo}/pull/${watch.pendingVersions[0].pullrequestNumber}`} className="btn secondary small" target="_blank" rel="noopener noreferrer">Review PR to deploy application</a>
+          :
+          <Link to={`/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
+          }
       </div>
     </div>
   )

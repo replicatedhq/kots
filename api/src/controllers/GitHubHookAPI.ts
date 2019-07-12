@@ -36,6 +36,7 @@ interface GitHubPullRequestEvent {
       };
     };
   };
+  merged_at: string;
 }
 
 interface ErrorResponse {
@@ -126,7 +127,7 @@ export class GitHubHookAPI {
               if (pendingVersion.sequence! < watch.currentVersion.sequence!) {
                 return;
               }
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
             }
             return;
           }
@@ -137,7 +138,7 @@ export class GitHubHookAPI {
           if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
             await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
             if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!, pullRequestEvent.merged_at);
             }
             return;
           }

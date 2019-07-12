@@ -29,6 +29,7 @@ const Version = `
     createdOn: String!
     sequence: Int
     pullrequestNumber: Int
+    deployedAt: String
   }
 `
 
@@ -40,6 +41,7 @@ const VersionDetail = `
     sequence: Int
     pullrequestNumber: Int
     rendered: String
+    deployedAt: String
   }
 `
 const StateMetadata = `

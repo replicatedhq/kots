@@ -51,7 +51,7 @@ export default function WatchVersionHistory(props) {
                 {currentVersion ? currentVersion.title : "---"}
               </p>
               <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
-              {currentVersion && <p className="u-fontSize--normal u-fontWeight--medium u-marginTop--5 u-color--dustyGray">Released on {dayjs(currentVersion.createdOn).format("MMMM D, YYYY")}</p>}
+              {currentVersion?.deployedAt && <p className="u-fontSize--normal u-fontWeight--medium u-marginTop--5 u-color--dustyGray">Released on {dayjs(currentVersion.deployedAt).format("MMMM D, YYYY")}</p>}
             </div>
           </div>
           {!watch.cluster &&

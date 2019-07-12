@@ -89,6 +89,7 @@ export interface Version {
   createdOn: string;
   sequence: number;
   pullrequestNumber: number;
+  deployedAt: string;
 }
 
 export interface VersionDetail {
@@ -98,6 +99,7 @@ export interface VersionDetail {
   sequence: number;
   pullrequestNumber: number;
   rendered: string;
+  deployedAt: string;
 }
 
 export interface StateMetadata {

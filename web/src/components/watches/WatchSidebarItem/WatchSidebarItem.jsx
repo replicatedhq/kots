@@ -23,7 +23,7 @@ export default function WatchSidebarItem(props) {
             <div className="flex alignItems--center">
               <div className={classNames("icon", {
                 "checkmark-icon": !isBehind,
-                "exclamationMark-icon": isBehind
+                "exclamationMark--icon": isBehind
               })}
               />
               <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {
