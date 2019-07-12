@@ -29,6 +29,7 @@ import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
+let loadingTextTimer = null;
 class WatchDetailPage extends Component {
   constructor(props) {
     super(props);
@@ -40,7 +41,10 @@ class WatchDetailPage extends Component {
       selectedWatchName: "",
       clusterToRemove: {},
       watchToEdit: {},
-      existingDeploymentClusters: []
+      existingDeploymentClusters: [],
+      checkingForUpdates: false,
+      checkingUpdateText: "Checking for updates",
+      updateError: false,
     }
   }
 
@@ -94,14 +98,26 @@ class WatchDetailPage extends Component {
     })
   }
 
-  onCheckForUpdates = () => {
+  onCheckForUpdates = async () => {
     const { client, getWatchQuery } = this.props;
     const { getWatch: watch } = getWatchQuery;
-    client.mutate({
+    this.setState({ checkingForUpdates: true });
+    loadingTextTimer = setTimeout(() => {
+      this.setState({ checkingUpdateText: "Still checking for updates..." });
+    }, 10000);
+    await client.mutate({
       mutation: checkForUpdates,
       variables: {
         watchId: watch.id,
       }
+    }).catch(() => {
+      this.setState({ updateError: true });
+    }).finally(() => {
+      clearTimeout(loadingTextTimer);
+      this.setState({
+        checkingForUpdates: false,
+        checkingUpdateText: "Checking for updates"
+       });
     });
   }
 
@@ -217,7 +233,9 @@ class WatchDetailPage extends Component {
     const {
       displayRemoveClusterModal,
       addNewClusterModal,
-      clusterToRemove
+      clusterToRemove,
+      checkingUpdateText,
+      updateError
     } = this.state;
 
     const centeredLoader = (
@@ -336,6 +354,10 @@ class WatchDetailPage extends Component {
                     <Route exact path="/watch/:owner/:slug/version-history" render={() =>
                       <WatchVersionHistory
                         watch={watch}
+                        onCheckForUpdates={this.onCheckForUpdates}
+                        checkingForUpdates={this.state.checkingForUpdates}
+                        checkingUpdateText={checkingUpdateText}
+                        errorCheckingUpdate={updateError}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>

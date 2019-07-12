@@ -2,12 +2,13 @@ import React, { Fragment } from "react";
 import Helmet from "react-helmet";
 import classNames from "classnames";
 import truncateMiddle from "truncate-middle";
+import Loader from "../shared/Loader";
 import { getClusterType } from "@src/utilities/utilities";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 
 export default function WatchVersionHistory(props) {
-  const { watch } = props;
+  const { watch, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = props;
 
   // Sanity check for null watches
   if (!watch) {
@@ -18,6 +19,7 @@ export default function WatchVersionHistory(props) {
   const versionHistory = pendingVersions.concat(currentVersion, pastVersions);
 
   let clustersNode;
+  let checkUpdateNode;
   if (watches?.length > 0) {
     clustersNode = (
       <Fragment>
@@ -57,6 +59,19 @@ export default function WatchVersionHistory(props) {
     );
   }
 
+  if (checkingForUpdates) {
+    checkUpdateNode = (
+      <div className="flex alignItems--center">
+        <Loader size="26" />
+        <span className="u-marginLeft--5 u-fontSize--small u-color--nevada u-fontWeight--medium">{checkingUpdateText}</span>
+      </div>
+    );
+  } else if (errorCheckingUpdate) {
+    checkUpdateNode = <p className="u-marginLeft--5 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates <span onClick={props.onCheckForUpdates} className="u-fontWeight--bold u-textDecoration--underline u-cursor--pointer">Try again</span></p>
+  } else {
+    checkUpdateNode = <button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button>
+  }
+
   return (
     <div className="flex-column u-position--relative u-overflow--auto u-padding--20">
       <Helmet>
@@ -71,7 +86,7 @@ export default function WatchVersionHistory(props) {
             "blueCircleMinus--icon": !currentVersion
           })}/>
         <p className="u-fontSize--large">{currentVersion ? "Most recent version" : "No deployments made"}</p>
-        {!watch.cluster && <p className="u-fonSize--small u-marginLeft--10 replicated-link"><button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button></p>}
+        {!watch.cluster && <div className="u-marginLeft--10">{checkUpdateNode}</div>}
         <div className="flex flex1 justifyContent--flexEnd">
           {clustersNode}
         </div>
