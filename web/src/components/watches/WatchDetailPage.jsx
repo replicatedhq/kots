@@ -213,7 +213,7 @@ class WatchDetailPage extends Component {
 
   componentDidMount() {
     const { history } = this.props;
-    
+
     if (history.location.pathname === "/watches") {
       return this.checkForFirstWatch();
     }
@@ -252,7 +252,12 @@ class WatchDetailPage extends Component {
       watch = getHelmChartQuery?.getHelmChart;
     }
 
-    const loading = getWatchQuery?.loading || getHelmChartQuery?.loading || !rootDidInitialWatchFetch;
+    let loading;
+    if (isHelmChartUrl) {
+      loading = getHelmChartQuery?.loading || !rootDidInitialWatchFetch;
+    } else {
+      loading = getWatchQuery?.loading || !rootDidInitialWatchFetch;
+    }
 
     if (!rootDidInitialWatchFetch) {
       return centeredLoader;
