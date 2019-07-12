@@ -58,6 +58,7 @@ export class WatchDownload {
     return new Bluebird<Download>((resolve, reject) => {
       const s3 = getS3(shipParams);
       let yamlBuffer = new Buffer("");
+      let otherRootYamlBuffer = new Buffer("");
       let tarGzBuffer = new Buffer("");
 
       const s3TarStream = s3.getObject(params).createReadStream();
@@ -72,10 +73,12 @@ export class WatchDownload {
       });
 
       let deploymentYAMLFound = false;
+      let otherRootYamlFound = false;
+      const otherRootYamlRegexp = new RegExp(`out\/(?!kustomization\.yaml)[0-9a-zA-Z\-_]+\.yaml$`); // match yaml files in the root of 'out' besides kustomization.yaml
       extractor.on("entry", ({ name }, stream, next) => {
         stream.on("error", reject);
 
-        if ((name.endsWith("rendered.yaml")) || (name.endsWith("ship-enterprise.yaml"))) {
+        if ((name.endsWith("rendered.yaml"))) {
           logger.debug({msg: "Found rendered.yaml or ship-enterprise.yaml"});
           deploymentYAMLFound = true;
           stream.on("data", (chunk: Buffer) => {
@@ -83,6 +86,17 @@ export class WatchDownload {
           });
           stream.on("finish", () => {
             logger.debug({msg: "Streamed rendered.yaml or ship-enterprise.yaml to yamlBuffer"});
+            next();
+          });
+        } else if (otherRootYamlRegexp.test(name)) {
+          logger.debug({msg: `Found root yaml candidate ${name}`});
+          otherRootYamlFound = true;
+          otherRootYamlBuffer = new Buffer("");
+          stream.on("data", (chunk: Buffer) => {
+            otherRootYamlBuffer = Buffer.concat([otherRootYamlBuffer, chunk]);
+          });
+          stream.on("finish", () => {
+            logger.debug({msg: `Streamed ${name} to otherRootYamlBuffer`});
             next();
           });
         } else {
@@ -98,6 +112,11 @@ export class WatchDownload {
         if (deploymentYAMLFound) {
           download = {
             contents: yamlBuffer,
+            contentType: ContentType.YAML,
+          };
+        } else if (otherRootYamlFound) {
+          download = {
+            contents: otherRootYamlBuffer,
             contentType: ContentType.YAML,
           };
         } else {
