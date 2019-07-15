@@ -4,13 +4,23 @@ import { Link } from "react-router-dom";
 
 export default function WatchSidebarItem(props) {
   const { className, watch } = props;
-  const { watchIcon, watchName, pendingVersions } = watch;
+  const { watchIcon, watchName } = watch;
 
   const [owner, slug] = watch.slug.split("/");
 
-  const isBehind = pendingVersions?.length > 2
+  let downstreamPendingLengths = [];
+  watch.watches?.map((w) => {
+    downstreamPendingLengths.push(w.pendingVersions.length);
+  });
+
+  let versionsBehind;
+  if (downstreamPendingLengths.length) {
+    versionsBehind = Math.max(...downstreamPendingLengths);
+  }
+
+  const isBehind = versionsBehind > 2
     ? "2+"
-    : pendingVersions.length
+    : versionsBehind;
 
   return (
     <div className={classNames('sidebar-link', className)}>
