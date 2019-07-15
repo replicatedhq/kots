@@ -15,12 +15,12 @@ export function UserMutations(stores: Stores, params: Params) {
     async createGithubAuthToken(root: any, args: any): Promise<AccessToken> {
       const matchingNonce = await stores.githubNonceStore.getNonce(args.state);
       if (!matchingNonce) {
-        throw new ReplicatedError("Invalid GitHub Exchange");
+        throw new ReplicatedError("Invalid GitHub Exchange, no matching nonce found.");
       }
       const currentTime = new Date(Date.now()).toUTCString();
 
       if (isAfter(currentTime, matchingNonce.expire_at!)) {
-        throw new ReplicatedError("Invalid GitHub Exchange");
+        throw new ReplicatedError("Invalid GitHub Exchange, nonce has expired.");
       }
 
       await stores.githubNonceStore.deleteNonce(args.state);
@@ -67,13 +67,13 @@ export function UserMutations(stores: Stores, params: Params) {
           // }
         }
         await stores.userStore.updateLastLogin(user.id);
-        const session = await stores.sessionStore.createGithubSession(user.id, accessToken.access_token);
+        const session = await stores.sessionStore.createGithubSession(user.id, github, accessToken.access_token);
 
         return {
           access_token: session,
         };
       } catch (err) {
-        logger.error({msg: err.message, err});
+        logger.error({ msg: err.message, err, token: accessToken.access_token });
         throw new ReplicatedError("Unable to log in now");
       }
     },

@@ -55,12 +55,7 @@ export class SessionStore {
     );
   }
 
-  async createGithubSession(userId: string, token: string): Promise<string> {
-    const github = new GitHubApi();
-    github.authenticate({
-      type: "token",
-      token,
-    });
+  async createGithubSession(userId: string, github: any, token: string): Promise<string> {
     const { data: installationData } = await github.users.getInstallations({});
     const { installations } = installationData as {
       total_count: number;
