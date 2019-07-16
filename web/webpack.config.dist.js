@@ -54,7 +54,7 @@ module.exports = (env) => {
             comments: false,
           }
         },
-        sourceMap: false,
+        sourceMap: true,
         parallel: true
       })],
     },
