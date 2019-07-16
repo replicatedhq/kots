@@ -14,6 +14,7 @@ function getPlugins(appEnv) {
       apiKey: appEnv.BUGSNAG_API_KEY,
       publicPath: appEnv.PUBLIC_ASSET_PATH,
       releaseStage: appEnv.ENVIRONMENT,
+      appVersion: appEnv.SHIP_CLUSTER_BUILD_VERSION,
       overwrite: true
     }));
   }
