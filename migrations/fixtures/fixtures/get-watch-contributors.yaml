@@ -1,0 +1,30 @@
+users:
+  - id: "get-watch-contributors-user"
+    created_at: "2019-04-18 12:34:56.789"
+    type: github
+    github:
+      username: "get-watch-contributors-username"
+      github_id: 1235
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "get-watch-contributors-email@replicated.com"
+    sessions:
+      - get-watch-contributors-session-1
+
+clusters: []
+
+watches:
+  - id: "get-watch-contributors-watch"
+    current_state: "{}"
+    metadata: "{}"
+    title: "One"
+    icon_uri: ""
+    created_at: "2019-04-18 12:34:56.789"
+    updated_at: "2019-04-19 01:23:45.567"
+    slug: "get-watch-contributors/get-watch-contributors-watch"
+    parent_watch_id: ~
+    current_sequence: 0
+    users:
+      - "get-watch-contributors-user"
+    cluster: ""
+    downstream_tokens: []
+    versions: []
