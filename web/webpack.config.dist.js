@@ -13,7 +13,6 @@ function getPlugins(appEnv) {
     plugins.push(new BugsnagSourceMapUploaderPlugin({
       apiKey: appEnv.BUGSNAG_API_KEY,
       publicPath: appEnv.PUBLIC_ASSET_PATH,
-      appVersion: "1.0.0",
       releaseStage: appEnv.ENVIRONMENT,
       overwrite: true
     }));
