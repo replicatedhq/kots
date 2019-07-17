@@ -30,10 +30,6 @@ export default () => {
       }
     })
       .then(result => {
-        // expect(result.data.getWatchVersion.sequence).to.equal(1);
-        // expect(result.data.getWatchVersion.title).to.equal("3.3.1");
-        // expect(result.data.getWatchVersion.rendered).to.equal("downstream-output-1\n")
-
         global.provider.verify();
         done();
       });
