@@ -10,8 +10,7 @@ dayjs.extend(relativeTime);
 
 export default function WatchVersionHistory(props) {
   const { watch, match, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = props;
-
-  // Sanity check for null watches
+  
   if (!watch) {
     return null;
   }
@@ -19,11 +18,8 @@ export default function WatchVersionHistory(props) {
   const {
     currentVersion,
     watchIcon,
-    // pendingVersions,
-    // pastVersions,
     watches,
   } = watch;
-  // const versionHistory = pendingVersions.concat(currentVersion, pastVersions);
 
   let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(watch.lastUpdateCheck).fromNow()}</p>;
   if (errorCheckingUpdate) {

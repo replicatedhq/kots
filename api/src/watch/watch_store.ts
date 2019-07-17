@@ -38,7 +38,7 @@ export class WatchStore {
 
     await this.pool.query(q, v);
   }
-  async setCurrentVersion(watchId: string, sequence: number, deployedAt?: string): Promise<void> {
+  async setCurrentVersion(watchId: string, sequence: number, deployedAt?: string, status?: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -52,12 +52,15 @@ export class WatchStore {
         ];
         await pg.query(q, v);
 
-        q = `update watch_version set deployed_at = $1 where watch_id = $2 and sequence = $3`;
+        q = `update watch_version set deployed_at = $1${status ? ", status = $4" : " "}where watch_id = $2 and sequence = $3`;
         v = [
           deployedAt || new Date(),
           watchId,
           sequence,
         ];
+        if (status) {
+          v.push(status);
+        }
         await pg.query(q, v);
 
         await pg.query("commit");

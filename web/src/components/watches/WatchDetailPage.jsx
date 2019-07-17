@@ -370,6 +370,7 @@ class WatchDetailPage extends Component {
                     <Route exact path="/watch/:owner/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
                       <DownstreamWatchVersionHistory
                         watch={watch}
+                        makeCurrentVersion={this.makeCurrentRelease}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/config" render={() =>

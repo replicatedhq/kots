@@ -2,13 +2,20 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
-// import ReactTooltip from "react-tooltip"
+import Loader from "../shared/Loader";
 import { getClusterType, Utilities } from "@src/utilities/utilities";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 
 class DownstreamWatchVersionHistory extends Component {
+
+  handleMakeCurrent = (id, sequence) => {
+    if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
+      this.props.makeCurrentVersion(id, sequence);
+    }
+  }
+  
   render() {
     const { watch, match, data } = this.props;
     const { currentVersion, watches} = watch;
@@ -19,8 +26,14 @@ class DownstreamWatchVersionHistory extends Component {
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
     const clusterIcon = getClusterType(isGit) === "git" ? "icon github-small-size" : "icon ship-small-size";
 
+    const centeredLoader = (
+      <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <Loader size="60" />
+      </div>
+    );
+
     return (
-      <div className="flex-column u-position--relative u-overflow--auto u-padding--20">
+      <div className="flex-column flex1 u-position--relative u-overflow--hidden u-padding--20">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--20">Downstream version history: {downstreamSlug}</p>
         <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
           <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
@@ -38,18 +51,28 @@ class DownstreamWatchVersionHistory extends Component {
             </div>
           </div>
         </div>
-        <div className="flex-column">
-          {versionHistory?.length > 0 && versionHistory.map( version => {
+        <div className="flex-column flex1 u-overflow--auto">
+          {data.loading
+          ? centeredLoader
+          : versionHistory?.length > 0 && versionHistory.map( version => {
             if (!version) return null;
             const gitRef = downstreamWatch?.cluster?.gitOpsRef;
             const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
+            let shipInstallnode = null;
+            if (version.status === "pending") {
+              shipInstallnode = (
+                <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
+                  <button className="btn secondary small" onClick={() => this.handleMakeCurrent(downstreamWatch.id, version.sequence)}>Make current version</button>
+                </div>
+              )
+            }
             return (
               <div
                 key={`${version.title}-${version.sequence}`}
                 className="flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
                 <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginLeft--10">
                   Version {version.title}
-                  {version.pullrequestNumber &&
+                  {version.pullrequestNumber ?
                     <div>
                       <span className="icon integration-card-icon-github u-marginLeft--10" />
                       <a
@@ -60,6 +83,8 @@ class DownstreamWatchVersionHistory extends Component {
                           #{version.pullrequestNumber}
                       </a>
                     </div>
+                  :
+                    shipInstallnode
                   }
                 </div>
                 <div className="flex flex1 justifyContent--flexEnd alignItems--center">
