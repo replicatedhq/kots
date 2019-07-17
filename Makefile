@@ -20,10 +20,6 @@ test:
 
 	@echo All contract tests have passed.
 
-.PHONY: reset-pact
-reset-pact:
-	printf '' > ./web/pacts/ship-cluster-ui-ship-cluster-api.json
-
 .PHONY: bitbucket-server
 bitbucket-server:
 	docker volume create --name bitbucketVolume
