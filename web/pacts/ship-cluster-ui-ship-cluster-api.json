@@ -499,14 +499,6 @@
               }
             ]
           }
-        },
-        "matchingRules": {
-          "$.body.data.watchContributors[0].createdAt": {
-            "match": "type"
-          },
-          "$.body.data.watchContributors[0].avatar_url": {
-            "match": "type"
-          }
         }
       }
     }

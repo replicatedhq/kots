@@ -18,22 +18,28 @@ export default () => {
     });
   });
 
-  it("gets a watch's contributors", (done) => {
+  it("gets a watch's contributors", done => {
     global.provider.addInteraction(getWatchContributorsInteraction).then(() => {
-      done();
-    });
+      getShipClient("get-watch-contributors-session-1").query({
+        query: getWatchContributors,
+        variables: {
+          id: "get-watch-contributors-watch"
+        }
+      }).then(result => {
+        const [user] = result.data.watchContributors;
 
-    getShipClient("get-watch-contributors-session-1").query({
-      query: getWatchContributors,
-      variables: {
-        id: "get-watch-contributors-watch"
-      }
-    })
-      .then(result => {
+        expect(user.id).to.equal("get-watch-contributors-user");
+        expect(user.createdAt).to.equal("Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)");
+        expect(user.githubId).to.equal(1235);
+        expect(user.login).to.equal("get-watch-contributors-username");
+        expect(user.avatar_url).to.equal("https://avatars3.githubusercontent.com/u/234567?v=4");
+
         global.provider.verify();
         done();
       });
+    });
   });
+
 }
 
 const getWatchContributorsInteraction = new Pact.GraphQLInteraction()
@@ -59,10 +65,10 @@ const getWatchContributorsInteraction = new Pact.GraphQLInteraction()
         watchContributors: [
           {
             "id": "get-watch-contributors-user",
-            "createdAt": Pact.Matchers.like("Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)"),
+            "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)",
             "githubId": 1235,
             "login": "get-watch-contributors-username",
-            "avatar_url": Pact.Matchers.like("https://avatars3.githubusercontent.com/u/234567?v=4")
+            "avatar_url": "https://avatars3.githubusercontent.com/u/234567?v=4"
           },
         ]
       },
