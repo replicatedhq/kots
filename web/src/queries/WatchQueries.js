@@ -634,7 +634,7 @@ export const getNotification = gql`
   }
 `;
 
-export const getWatchContributors = gql`
+export const getWatchContributorsRaw = `
   query watchContributors($id: String!) {
     watchContributors(id: $id) {
       id
@@ -645,6 +645,8 @@ export const getWatchContributors = gql`
     }
   }
 `;
+
+export const getWatchContributors = gql(getWatchContributorsRaw);
 
 export const pullRequestHistory = gql`
   query pullRequestHistory($notificationId: String!) {

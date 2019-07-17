@@ -11,6 +11,7 @@ import shipauthSignup from "./contracts/shipauth-signup";
 import updateWatch from "./contracts/update-watch";
 import deleteWatch from "./contracts/delete-watch";
 import duplicateSlugCheck from "./contracts/duplicate-slug-check";
+import getWatchContributors from "./contracts/get-watch-contributors";
 
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
@@ -34,4 +35,5 @@ describe("ShipAPI GraphQL Pact", () => {
   // describe("auth:shipAuthSignup", () => shipauthSignup() );
   // describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
   // describe("gitops-cluster-account:getWatchVersion", () => getWatchVersionGitOpsCluster() );
+  describe("get-watch-contributors", () => getWatchContributors() );
 });

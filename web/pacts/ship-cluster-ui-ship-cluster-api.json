@@ -458,6 +458,49 @@
           }
         }
       }
+    },
+    {
+      "description": "a query to get a watch's contributors",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJnZXQtd2F0Y2gtY29udHJpYnV0b3JzLXNlc3Npb24tMSJ9.WTsuohhtb5sFibh7cl5TyOGX554cvnxxLlk7b6HK4TM",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "watchContributors",
+          "query": "\n  query watchContributors($id: String!) {\n    watchContributors(id: $id) {\n      id\n      createdAt\n      githubId\n      login\n      avatar_url\n    }\n  }\n",
+          "variables": {
+            "id": "get-watch-contributors-watch"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*watchContributors\\(\\$id:\\s*String!\\)\\s*\\{\\s*watchContributors\\(id:\\s*\\$id\\)\\s*\\{\\s*id\\s*createdAt\\s*githubId\\s*login\\s*avatar_url\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "watchContributors": [
+              {
+                "id": "get-watch-contributors-user",
+                "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)",
+                "githubId": 1235,
+                "login": "get-watch-contributors-username",
+                "avatar_url": "https://avatars3.githubusercontent.com/u/234567?v=4"
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "metadata": {
