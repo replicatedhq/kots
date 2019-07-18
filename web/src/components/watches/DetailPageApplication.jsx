@@ -261,6 +261,22 @@ class DetailPageApplication extends Component {
                   {childWatches && childWatches.map((childWatch) => {
                     const childCluster = childWatch.cluster;
                     const clusterType = getClusterType(childCluster.gitOpsRef);
+                    let versionNode = (
+                      <div className="flex alignItems--center">
+                        <div className="icon checkmark-icon"/>
+                        <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">Up to date</span>
+                      </div>
+                    );
+                    if (childWatch.pendingVersions?.length) {
+                      versionNode = (
+                        <div className="flex alignItems--center">
+                          <div className="icon exclamationMark--icon"/>
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--orange">
+                            {childWatch.pendingVersions?.length === 1 ? "1" : "2+"} {childWatch.pendingVersions?.length >= 2 ? "versions" : "version"} behind
+                          </span>
+                        </div>
+                      );
+                    }
                     if (childCluster) {
                       return (
                         <div key={childCluster.id} className="DetailPage--downstreamRow flex">
@@ -268,7 +284,9 @@ class DetailPageApplication extends Component {
                             <span className={`flex-auto icon clusterType ${clusterType}`}></span>
                             <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
                           </div>
-                          <div className="flex1"></div>
+                          <div className="flex1">
+                            {versionNode}
+                          </div>
                           <div className="flex-auto">
                             {this.state[`preparing${childWatch.id}`]
                               ? <Loader size="16"/>

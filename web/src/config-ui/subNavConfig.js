@@ -1,4 +1,7 @@
-import { getApplicationType, isHelmChart } from "@src/utilities/utilities";
+import {
+  getApplicationType,
+  isHelmChart
+} from "@src/utilities/utilities";
 
 export default [
   {
@@ -13,9 +16,16 @@ export default [
     tabName: "version-history",
     displayName: "Version history",
     to: slug => `/watch/${slug}/version-history`,
+    hasBadge: watch => {
+      let downstreamPendingLengths = [];
+      watch.watches?.map((w) => {
+        downstreamPendingLengths.push(w.pendingVersions.length);
+      });
+      return downstreamPendingLengths.length > 0;
+    },
     displayRule: watch => {
       return !isHelmChart(watch);
-    }
+    },
   },
   {
     tabName: "downstreams",

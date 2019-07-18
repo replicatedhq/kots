@@ -25,6 +25,7 @@ export const listWatchesRaw = `
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -38,6 +39,7 @@ export const listWatchesRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pendingVersions {
         title
@@ -45,6 +47,7 @@ export const listWatchesRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pastVersions {
         title
@@ -52,6 +55,7 @@ export const listWatchesRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       notifications {
         id
@@ -75,6 +79,7 @@ export const listWatchesRaw = `
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -88,6 +93,7 @@ export const listWatchesRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pendingVersions {
           title
@@ -95,6 +101,7 @@ export const listWatchesRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pastVersions {
           title
@@ -102,6 +109,7 @@ export const listWatchesRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         notifications {
           id
@@ -149,6 +157,7 @@ export const searchWatches = gql`
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -162,6 +171,7 @@ export const searchWatches = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pendingVersions {
         title
@@ -169,6 +179,7 @@ export const searchWatches = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pastVersions {
         title
@@ -176,6 +187,7 @@ export const searchWatches = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       notifications {
         id
@@ -205,6 +217,7 @@ export const getWatch = gql`
       createdOn
       lastUpdated
       metadata
+      lastUpdateCheck
       contributors {
         id
         createdAt
@@ -218,6 +231,7 @@ export const getWatch = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pendingVersions {
         title
@@ -225,6 +239,7 @@ export const getWatch = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pastVersions {
         title
@@ -232,6 +247,7 @@ export const getWatch = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       notifications {
         id
@@ -270,6 +286,7 @@ export const getWatch = gql`
         watchIcon
         createdOn
         lastUpdated
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -283,6 +300,7 @@ export const getWatch = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pendingVersions {
           title
@@ -290,6 +308,7 @@ export const getWatch = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pastVersions {
           title
@@ -297,6 +316,7 @@ export const getWatch = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         notifications {
           id
@@ -348,6 +368,7 @@ export const getWatchById = gql`
       watchName
       slug
       metadata
+      lastUpdateCheck
       cluster {
         id
         title
@@ -370,6 +391,7 @@ export const getWatchById = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pendingVersions {
         title
@@ -377,6 +399,7 @@ export const getWatchById = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pastVersions {
         title
@@ -384,6 +407,7 @@ export const getWatchById = gql`
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       notifications {
         id
@@ -407,6 +431,7 @@ export const getWatchById = gql`
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -420,6 +445,7 @@ export const getWatchById = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pendingVersions {
           title
@@ -427,6 +453,7 @@ export const getWatchById = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pastVersions {
           title
@@ -434,6 +461,7 @@ export const getWatchById = gql`
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         notifications {
           id
@@ -475,6 +503,7 @@ export const getParentWatchRaw = `
       watchName
       slug
       metadata
+      lastUpdateCheck
       cluster {
         id
         title
@@ -497,6 +526,7 @@ export const getParentWatchRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pendingVersions {
         title
@@ -504,6 +534,7 @@ export const getParentWatchRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       pastVersions {
         title
@@ -511,6 +542,7 @@ export const getParentWatchRaw = `
         createdOn
         sequence
         pullrequestNumber
+        deployedAt
       }
       notifications {
         id
@@ -534,6 +566,7 @@ export const getParentWatchRaw = `
         createdOn
         lastUpdated
         metadata
+        lastUpdateCheck
         contributors {
           id
           createdAt
@@ -547,6 +580,7 @@ export const getParentWatchRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pendingVersions {
           title
@@ -554,6 +588,7 @@ export const getParentWatchRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         pastVersions {
           title
@@ -561,6 +596,7 @@ export const getParentWatchRaw = `
           createdOn
           sequence
           pullrequestNumber
+          deployedAt
         }
         notifications {
           id

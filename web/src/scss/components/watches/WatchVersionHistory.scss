@@ -1,5 +1,21 @@
 $cell-width: 140px;
 
+.upstream-version-box-wrapper {
+  background-color: #F5F8FC;
+  border-radius: 4px;
+  padding: 15px;
+  width: 100%;
+  max-width: 560px;
+
+  .watch-icon {
+    width: 48px;
+    height: 48px;
+    background-position: center;
+    background-size: cover;
+    border-radius: 40px;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  }
+}
 .cluster-cell-title {
   padding: 8px;
   margin-bottom: -10px;
@@ -9,4 +25,14 @@ $cell-width: 140px;
 }
 .watch-cell {
   width: $cell-width;
+}
+
+.ActiveDownstreamVersionRow--wrapper {
+  padding: 12px;
+  border-top: 1px solid #DFDFDF;
+}
+
+.gh-version-detail-text {
+  position: relative;
+  top: 1px;
 }

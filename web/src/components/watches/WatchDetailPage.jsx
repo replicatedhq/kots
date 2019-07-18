@@ -103,7 +103,7 @@ class WatchDetailPage extends Component {
     const { getWatch: watch } = getWatchQuery;
     this.setState({ checkingForUpdates: true });
     loadingTextTimer = setTimeout(() => {
-      this.setState({ checkingUpdateText: "Still checking for updates..." });
+      this.setState({ checkingUpdateText: "Almost there, hold tight..." });
     }, 10000);
     await client.mutate({
       mutation: checkForUpdates,
@@ -113,6 +113,7 @@ class WatchDetailPage extends Component {
     }).catch(() => {
       this.setState({ updateError: true });
     }).finally(() => {
+      this.props.getWatchQuery.refetch();
       clearTimeout(loadingTextTimer);
       this.setState({
         checkingForUpdates: false,
@@ -359,15 +360,18 @@ class WatchDetailPage extends Component {
                     <Route exact path="/watch/:owner/:slug/version-history" render={() =>
                       <WatchVersionHistory
                         watch={watch}
+                        match={this.props.match}
                         onCheckForUpdates={this.onCheckForUpdates}
                         checkingForUpdates={this.state.checkingForUpdates}
                         checkingUpdateText={checkingUpdateText}
+                        handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
                         errorCheckingUpdate={updateError}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
                       <DownstreamWatchVersionHistory
                         watch={watch}
+                        makeCurrentVersion={this.makeCurrentRelease}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/config" render={() =>

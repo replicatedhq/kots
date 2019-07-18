@@ -1,132 +1,95 @@
-import React, { Fragment } from "react";
+import React from "react";
 import Helmet from "react-helmet";
-import classNames from "classnames";
-import truncateMiddle from "truncate-middle";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import Loader from "../shared/Loader";
-import { getClusterType } from "@src/utilities/utilities";
+import ActiveDownstreamVersionRow from "./ActiveDownstreamVersionRow";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
+dayjs.extend(relativeTime);
 
 export default function WatchVersionHistory(props) {
-  const { watch, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = props;
-
-  // Sanity check for null watches
+  const { watch, match, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, handleAddNewCluster } = props;
+  
   if (!watch) {
     return null;
   }
 
-  const { currentVersion, pendingVersions, watches, pastVersions } = watch;
-  const versionHistory = pendingVersions.concat(currentVersion, pastVersions);
+  const {
+    currentVersion,
+    watchIcon,
+    watches,
+    watchName,
+  } = watch;
 
-  let clustersNode;
-  let checkUpdateNode;
-  if (watches?.length > 0) {
-    clustersNode = (
-      <Fragment>
-        {watches.map(({ cluster }) => {
-          const icon = getClusterType(cluster.gitOpsRef) === "git"
-            ? "icon github-small-size"
-            : "icon ship-small-size";
-
-          return (
-            <div key={cluster.slug} className="watch-cell flex">
-              <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-                <span className={classNames(icon, "flex-auto u-marginRight--5")} />
-                <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
-                  {truncateMiddle(cluster.slug, 8, 6, "...")}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </Fragment>
-    );
-  } else if (watch.cluster) {
-    const icon = getClusterType(watch.cluster.gitOpsRef) === "git"
-      ? "icon github-small-size"
-      : "icon ship-small-size";
-    clustersNode = (
-      <Fragment>
-        <div key={watch.cluster.slug} className="watch-cell flex">
-          <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-            <span className={classNames(icon, "flex-auto u-marginRight--5")} />
-            <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
-              {truncateMiddle(watch.cluster.slug, 8, 6, "...")}
-            </p>
-          </div>
-        </div>
-      </Fragment>
-    );
+  let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(watch.lastUpdateCheck).fromNow()}</p>;
+  if (errorCheckingUpdate) {
+    updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
+  } else if (checkingForUpdates) {
+    updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateText}</p>
   }
-
-  if (checkingForUpdates) {
-    checkUpdateNode = (
-      <div className="flex alignItems--center">
-        <Loader size="26" />
-        <span className="u-marginLeft--5 u-fontSize--small u-color--nevada u-fontWeight--medium">{checkingUpdateText}</span>
-      </div>
-    );
-  } else if (errorCheckingUpdate) {
-    checkUpdateNode = <p className="u-marginLeft--5 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates <span onClick={props.onCheckForUpdates} className="u-fontWeight--bold u-textDecoration--underline u-cursor--pointer">Try again</span></p>
-  } else {
-    checkUpdateNode = <button className="btn secondary small" onClick={props.onCheckForUpdates}>Check for update</button>
-  }
+              
 
   return (
-    <div className="flex-column u-position--relative u-overflow--auto u-padding--20">
+    <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
       <Helmet>
         <title>{`${watch.watchName} Version History`}</title>
       </Helmet>
-      <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
-        <p className="u-fontSize--header u-fontWeight--bold u-color--tuna">
-          {currentVersion ? currentVersion.title : "Unknown"}
-        </p>
-        <div className={classNames("icon flex-auto u-marginLeft--10 u-marginRight--5",{
-            "checkmark-icon": currentVersion,
-            "blueCircleMinus--icon": !currentVersion
-          })}/>
-        <p className="u-fontSize--large">{currentVersion ? "Most recent version" : "No deployments made"}</p>
-        {!watch.cluster && <div className="u-marginLeft--10">{checkUpdateNode}</div>}
-        <div className="flex flex1 justifyContent--flexEnd">
-          {clustersNode}
+      <div className="flex flex-auto alignItems--center justifyContent--center u-marginTop--10 u-marginBottom--30">
+        <div className="upstream-version-box-wrapper flex">
+          <div className="flex flex1">
+            {watchIcon &&
+              <div className="flex-auto u-marginRight--10">
+                <div className="watch-icon" style={{ backgroundImage: `url(${watchIcon})` }}></div>
+              </div>
+            }
+            <div className="flex1 flex-column">
+              <p className="u-fontSize--34 u-fontWeight--bold u-color--tuna">
+                {currentVersion ? currentVersion.title : "---"}
+              </p>
+              <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
+              {currentVersion?.deployedAt && <p className="u-fontSize--normal u-fontWeight--medium u-marginTop--5 u-color--dustyGray">Released on {dayjs(currentVersion.deployedAt).format("MMMM D, YYYY")}</p>}
+            </div>
+          </div>
+          {!watch.cluster &&
+            <div className="flex-auto flex-column alignItems--center justifyContent--center">
+              {checkingForUpdates ?
+                <Loader size="32" />
+              :
+                <button className="btn secondary green" onClick={props.onCheckForUpdates}>Check for updates</button>
+              }
+              {updateText}
+            </div>
+          }
         </div>
       </div>
-      <div className="flex-column">
-        {versionHistory.length > 0 && versionHistory.map( version => {
-          if (!version) return null;
-          return (
-            <div
-              key={`${version.title}-${version.sequence}`}
-              className="flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
-              <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginLeft--10">
-                Version {version.title}
-                {version.pullrequestNumber &&
-                  <div>
-                    <span className="icon integration-card-icon-github u-marginRight--5 u-marginLeft--5" />
-                    <a
-                      className="u-color--astral u-marginLeft--5"
-                      href=""
-                      target="_blank"
-                      rel="noopener noreferrer">
-                        #{version.pullrequestNumber}
-                    </a>
-                  </div>
-                }
-              </div>
-              <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-                <div className="watch-cell">
-                  <div className="flex justifyContent--center alignItems--center">
-                    <div className={classNames("icon", {
-                      "checkmark-icon": version.status === "deployed",
-                      "exclamationMark-icon": version.status !== "deployed"
-                    })}
-                    />
-                  </div>
+      <div className="flex-column flex1 u-overflow--hidden">
+        <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Active downstream versions</p>
+        <div className="flex1 u-overflow--auto">
+          {watches?.length ? watches.map((watch) => (
+            <ActiveDownstreamVersionRow key={watch.cluster.slug} watch={watch} match={match} />
+          ))
+          :
+          <div className="flex-column flex1">
+            <div className="EmptyState--wrapper flex-column flex1">
+              <div className="EmptyState flex-column flex1 alignItems--center justifyContent--center">
+                <div className="flex alignItems--center justifyContent--center">
+                  <span className="icon ship-complete-icon-gh"></span>
+                  <span className="deployment-or-text">OR</span>
+                  <span className="icon ship-medium-size"></span>
+                </div>
+                <div className="u-textAlign--center u-marginTop--10">
+                  <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">No active downstreams</p>
+                  <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{watchName} has no downstream deployment clusters yet. {watchName} must be deployed to a cluster to get version histories.</p>
+                </div>
+                <div className="u-marginTop--20">
+                  <button className="btn secondary" onClick={handleAddNewCluster}>Add a deployment cluster</button>
                 </div>
               </div>
             </div>
-          );
-        })}
+          </div>
+          }
+        </div>
       </div>
     </div>
   );

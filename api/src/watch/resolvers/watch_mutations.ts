@@ -14,8 +14,7 @@ export function WatchMutations(stores: Stores) {
       const watch = await context.getWatch(args.watchId);
 
       // TODO should probablly disallow this if it's a midtream or a gitops cluster?
-
-      await stores.watchStore.setCurrentVersion(watch.id, args.sequence!);
+      await stores.watchStore.setCurrentVersion(watch.id, args.sequence!, undefined, "deployed");
 
       return true;
     },

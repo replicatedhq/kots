@@ -84,7 +84,7 @@ class VersionHistory extends React.Component {
     const gitOpsRef = watch.cluster && watch.cluster.gitOpsRef;
     const historyTitle = watch.cluster ? watch.cluster.title : watch.watchName;
 
-    if (versionHistory) {    
+    if (versionHistory) {
       let firstSeqNumber, secondSeqNumber;
       if (checkedCards.length === 2) {
         firstSeqNumber = checkedCards[1].sequence;

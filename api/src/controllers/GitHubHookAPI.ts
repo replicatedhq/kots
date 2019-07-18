@@ -36,6 +36,7 @@ interface GitHubPullRequestEvent {
       };
     };
   };
+  merged_at: string;
 }
 
 interface ErrorResponse {
@@ -113,14 +114,20 @@ export class GitHubHookAPI {
 
     for (const cluster of clusters) {
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
-
       for (const watch of watches) {
         const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
         for (const pendingVersion of pendingVersions) {
           if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
             await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
             if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!);
+              // When a pull request closes multiple commits, the order in which hooks come in is random. 
+              // We should not update the current ssequence to something lower than what it already is.
+              // This will create a bug where we show a PR as not merged but GH will show it as merged
+              // because they automatically do it. This will be fixed when we verify commit sha's on our end.
+              if (pendingVersion.sequence! < watch.currentVersion.sequence!) {
+                return;
+              }
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
             }
             return;
           }
@@ -131,7 +138,7 @@ export class GitHubHookAPI {
           if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
             await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
             if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!, pullRequestEvent.merged_at);
             }
             return;
           }

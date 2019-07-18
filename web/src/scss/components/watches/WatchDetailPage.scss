@@ -38,6 +38,7 @@
     ul li {
       display: inline-block;
       margin: 0 20px;
+      position: relative;
       &:first-child { margin-left: 0; }
       &:last-child { margin-right: 0; }
 
@@ -72,6 +73,16 @@
           left: 0;
         }
       }
+    }
+
+    .subnav-badge {
+      width: 6px;
+      height: 6px;
+      position: absolute;
+      border-radius: 100%;
+      background-color: #BC4752;
+      top: 17px;
+      right: 0;
     }
   }
 

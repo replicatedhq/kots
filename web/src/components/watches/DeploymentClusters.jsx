@@ -89,13 +89,13 @@ export default class DeploymentClusters extends React.Component {
                         }
                         {childWatch.currentVersion && childWatch.pendingVersions.length === 1 &&
                           <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
-                            <div className="icon exclamationMark-icon u-marginLeft--10"></div>
+                            <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                             <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">One version behind</p>
                           </div>
                         }
                         {childWatch.currentVersion && childWatch.pendingVersions.length >= 2 &&
                           <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
-                            <div className="icon exclamationMark-icon u-marginLeft--10"></div>
+                            <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                             <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">Two or more versions behind</p>
                           </div>
                         }

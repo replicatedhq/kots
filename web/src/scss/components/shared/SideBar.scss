@@ -14,6 +14,7 @@
   border-radius: 4px;
   box-shadow: 0 0 4px rgba(0,0,0,0.16);
   transition: box-shadow .2s;
+  border: 1px solid transparent;
 
   &:hover {
     box-shadow: 0 0 4px rgba(0,0,0,0.3);
@@ -22,7 +23,7 @@
   &.selected,
   &.selected:hover {
     background-color: #F5F8FC;
-    border: 1px solid #337AB7;
+    border-color: #337AB7;
     box-shadow: none;
   }
 

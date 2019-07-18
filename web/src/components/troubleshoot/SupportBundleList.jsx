@@ -62,12 +62,12 @@ class SupportBundleList extends React.Component {
         <div className="flex1 flex-column">
           <div className="flex flex1">
             <div className="flex1 flex-column">
-              <div className="u-position--relative flex-auto u-paddingBottom--10 flex u-borderBottom--gray">
+              <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
                 <div className="flex flex1">
                   <div className="flex1 u-flexTabletReflow">
                     <div className="flex flex1">
                       <div className="flex-auto alignSelf--center">
-                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center">Support bundles</h2>
+                        <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna flex alignContent--center">Support bundles</h2>
                       </div>
                     </div>
                     <div className="RightNode flex-auto flex-column flex-verticalCenter u-position--relative">
