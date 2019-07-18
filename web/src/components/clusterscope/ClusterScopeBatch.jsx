@@ -83,7 +83,7 @@ class ClusterScopeBatch extends React.Component {
           <div key={item.id} className="flex cluster-scope-row private-image">
             <div className="left flex1 flex-column">
               <div className="flex">
-                <p className="u-fontSize--larger u-lineHeight--normal u-fontWeight--bold u-color--dustyGray">{truncateMiddle(item.name, 30, 40, "...")}</p>
+                <p className="u-fontSize--larger u-lineHeight--normal u-fontWeight--bold u-color--dustyGray" title={item.name}>{truncateMiddle(item.name, 30, 40, "...")}</p>
                 <span className={`versions-behind flex-auto ${isPrivateClass}`}><span className="icon warn-icon"></span>Unknown</span>
               </div>
               <p className="u-marginTop--10 u-fontSize--normal u-fontWeight--medium u-lineHeight--normal">This is a private image so we can't read when it was last updated.</p>
@@ -97,7 +97,7 @@ class ClusterScopeBatch extends React.Component {
         <div key={item.id} className="flex cluster-scope-row alignItems--center">
           <div className="left flex1 flex-column">
             <div className="flex">
-              <p className="u-fontSize--larger u-lineHeight--normal u-fontWeight--bold u-color--tuna">{truncateMiddle(item.name, 30, 40, "...")}</p>
+              <p className="u-fontSize--larger u-lineHeight--normal u-fontWeight--bold u-color--tuna" title={item.name}>{truncateMiddle(item.name, 30, 40, "...")}</p>
               <span className={`versions-behind flex-auto ${upToDateClass} ${warningClass} ${superWarningClass}`}><span className="icon warn-icon"></span>{item.versionsBehind  === 0 ? "Up to date" : `${item.versionsBehind} versions behind`}</span>
             </div>
             { item.versionsBehind === 0 ?
@@ -115,7 +115,7 @@ class ClusterScopeBatch extends React.Component {
               <ClusterScopeBatchPath path={path} />
               :
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">Nice work, <span className="u-fontWeight--bold u-color--tundora">{truncateMiddle(item.name, 30, 40, "...")}</span> is up to date</p>
+                <p className="u-fontSize--large u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">Nice work, <span className="u-fontWeight--bold u-color--tundora" title={item.name}>{truncateMiddle(item.name, 30, 40, "...")}</span> is up to date</p>
               </div> }
           </div>
         </div>

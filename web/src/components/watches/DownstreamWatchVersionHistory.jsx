@@ -42,7 +42,7 @@ class DownstreamWatchVersionHistory extends Component {
           </p>
           <p className="u-fontSize--large u-fontWeight--medium u-marginLeft--10">{currentVersion ? "Current upstream version" : "No deployments made"}</p>
           <div className="flex flex1 justifyContent--flexEnd">
-            <div className="watch-cell flex">
+            <div className="flex">
               <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
                 <span className={classNames(clusterIcon, "flex-auto u-marginRight--5")} />
                 <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">

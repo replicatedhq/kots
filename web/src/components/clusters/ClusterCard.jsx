@@ -34,7 +34,7 @@ export default class ClusterCard extends React.Component {
               <span className={`normal u-marginRight--5 icon clusterType ${type}`}></span>
               <div className="flex1 justifyContent--center">
                 <p className="u-fontWeight--bold u-fontSize--large u-color--tundora">{item.title}</p>
-                <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5">{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
+                <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
               </div>
             </div>
             <div className="u-marginTop--10 u-marginBottom--5 flex flex-auto">

@@ -290,7 +290,7 @@ class DetailPageApplication extends Component {
                         <div key={childCluster.id} className="DetailPage--downstreamRow flex">
                           <div className="flex1 flex alignItems--center">
                             <span className={`flex-auto icon clusterType ${clusterType}`}></span>
-                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
+                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5" title={childCluster.title}>{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
                           </div>
                           <div className="flex1">
                             {versionNode}
