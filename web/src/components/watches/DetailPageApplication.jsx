@@ -271,7 +271,7 @@ class DetailPageApplication extends Component {
                       versionNode = (
                         <div className="flex alignItems--center">
                           <div className="icon exclamationMark--icon"/>
-                          <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--orange">
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--orange">
                             {childWatch.pendingVersions?.length === 1 ? "1" : "2+"} {childWatch.pendingVersions?.length >= 2 ? "versions" : "version"} behind
                           </span>
                         </div>

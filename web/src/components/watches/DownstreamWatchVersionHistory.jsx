@@ -3,6 +3,7 @@ import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
+import dayjs from "dayjs";
 import { getClusterType, Utilities } from "@src/utilities/utilities";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 
@@ -59,32 +60,41 @@ class DownstreamWatchVersionHistory extends Component {
             const gitRef = downstreamWatch?.cluster?.gitOpsRef;
             const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
             let shipInstallnode = null;
-            if (version.status === "pending") {
+            if (!gitRef && version.status === "pending") {
               shipInstallnode = (
                 <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
                   <button className="btn secondary small" onClick={() => this.handleMakeCurrent(downstreamWatch.id, version.sequence)}>Make current version</button>
                 </div>
               )
             }
+            let deployedAtTextNode;
+            if (version.deployedAt) {
+              deployedAtTextNode = `${gitRef ? "Merged" : "Deployed"} on ${dayjs(version.deployedAt).format("MMMM D, YYYY")}`;
+            } else if (gitRef) {
+              deployedAtTextNode = <span className="gh-version-detail-text">Merged on date not available. <a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View the PR</a> to see when it was merged.</span>
+            } else {
+              deployedAtTextNode = "Deployed on date not available.";
+            }
             return (
-              <div
-                key={`${version.title}-${version.sequence}`}
-                className="flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
-                <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginLeft--10">
-                  Version {version.title}
-                  {version.pullrequestNumber ?
-                    <div>
-                      <span className="icon integration-card-icon-github u-marginLeft--10" />
-                      <a
-                        className="u-color--astral u-marginLeft--5"
-                        href={githubLink}
-                        rel="noopener noreferrer"
-                        target="_blank">
-                          #{version.pullrequestNumber}
-                      </a>
-                    </div>
-                  :
-                    shipInstallnode
+              <div key={`${version.title}-${version.sequence}`} className="flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
+                <div className="flex-column flex1">
+                  <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold">
+                    Version {version.title}
+                    {shipInstallnode}
+                  </div>
+                  {version.status === "deployed" || version.status === "merged" &&
+                    <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 flex alignItems--center">
+                      {version.pullrequestNumber &&
+                        <span className="icon integration-card-icon-github u-marginRight--5" />
+                      }
+                      {deployedAtTextNode}
+                    </p>
+                  }
+                  {version.pullrequestNumber && version.status === "opened" &&
+                    <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 flex alignItems--center">
+                      <span className="icon integration-card-icon-github u-marginRight--5" />
+                      <span className="gh-version-detail-text"><a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View this PR on GitHub</a> to review and merged it in for deployment.</span>
+                    </p>
                   }
                 </div>
                 <div className="flex flex1 justifyContent--flexEnd alignItems--center">

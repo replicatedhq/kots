@@ -24,7 +24,7 @@ export default function WatchSidebarItem(props) {
 
   let versionsBehindText =  "Up to date";
   if (!watch.watches?.length) {
-    versionsBehindText = "No deployments found"
+    versionsBehindText = "No downstreams found"
   } else if (isBehind) {
     versionsBehindText = `${isBehind} ${isBehind >= 2 || typeof isBehind === 'string' ? "versions" : "version"} behind`
   }

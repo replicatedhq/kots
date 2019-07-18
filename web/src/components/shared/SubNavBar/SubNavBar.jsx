@@ -18,6 +18,10 @@ export default function SubNavBar(props) {
     <div className={classNames("details-subnav", className)}>
       <ul>
         {subNavConfig.map( (link, idx) => {
+          let hasBadge = false;
+          if (link.hasBadge) {
+            hasBadge = link.hasBadge(watch || {});
+          }
           const generatedMenuItem = (
             <li
               key={idx}
@@ -25,7 +29,7 @@ export default function SubNavBar(props) {
                 "is-active": activeTab === link.tabName
               })}>
               <Link to={link.to(slug)}>
-                {link.displayName}
+                {link.displayName} {hasBadge && <span className="subnav-badge" />}
               </Link>
             </li>
           );
