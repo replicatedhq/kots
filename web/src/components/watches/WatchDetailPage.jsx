@@ -364,6 +364,7 @@ class WatchDetailPage extends Component {
                         onCheckForUpdates={this.onCheckForUpdates}
                         checkingForUpdates={this.state.checkingForUpdates}
                         checkingUpdateText={checkingUpdateText}
+                        handleAddNewCluster={() => this.handleAddNewClusterClick(watch)}
                         errorCheckingUpdate={updateError}
                       />
                     } />

@@ -9,7 +9,7 @@ import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
 
 export default function WatchVersionHistory(props) {
-  const { watch, match, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = props;
+  const { watch, match, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, handleAddNewCluster } = props;
   
   if (!watch) {
     return null;
@@ -19,6 +19,7 @@ export default function WatchVersionHistory(props) {
     currentVersion,
     watchIcon,
     watches,
+    watchName,
   } = watch;
 
   let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(watch.lastUpdateCheck).fromNow()}</p>;
@@ -65,9 +66,29 @@ export default function WatchVersionHistory(props) {
       <div className="flex-column flex1 u-overflow--hidden">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Active downstream versions</p>
         <div className="flex1 u-overflow--auto">
-          {watches.map((watch) => (
+          {watches?.length ? watches.map((watch) => (
             <ActiveDownstreamVersionRow key={watch.cluster.slug} watch={watch} match={match} />
-          ))}
+          ))
+          :
+          <div className="flex-column flex1">
+            <div className="EmptyState--wrapper flex-column flex1">
+              <div className="EmptyState flex-column flex1 alignItems--center justifyContent--center">
+                <div className="flex alignItems--center justifyContent--center">
+                  <span className="icon ship-complete-icon-gh"></span>
+                  <span className="deployment-or-text">OR</span>
+                  <span className="icon ship-medium-size"></span>
+                </div>
+                <div className="u-textAlign--center u-marginTop--10">
+                  <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">No active downstreams</p>
+                  <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{watchName} has no downstream deployment clusters yet. {watchName} must be deployed to a cluster to get version histories.</p>
+                </div>
+                <div className="u-marginTop--20">
+                  <button className="btn secondary" onClick={handleAddNewCluster}>Add a deployment cluster</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
         </div>
       </div>
     </div>
