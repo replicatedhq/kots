@@ -44,6 +44,7 @@ if(process.env.NODE_ENV === "production") {
     siteId: 6,
     trackErrors: true,
     jsFilename: "js/",
+    phpFilename: "js/"
   });
   history = piwik.connectToHistory(history);
 }
