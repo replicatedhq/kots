@@ -264,7 +264,7 @@ class DetailPageApplication extends Component {
                     let versionNode = (
                       <div className="flex alignItems--center">
                         <div className="icon checkmark-icon"/>
-                        <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">Up to date</span>
+                        <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Up to date</span>
                       </div>
                     );
                     if (childWatch.pendingVersions?.length) {
@@ -274,6 +274,14 @@ class DetailPageApplication extends Component {
                           <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--orange">
                             {childWatch.pendingVersions?.length === 1 ? "1" : "2+"} {childWatch.pendingVersions?.length >= 2 ? "versions" : "version"} behind
                           </span>
+                        </div>
+                      );
+                    }
+                    if (!childWatch.currentVersion) {
+                      versionNode = (
+                        <div className="flex alignItems--center">
+                          <div className="icon blueCircleMinus--icon"/>
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--dustyGray">No deployments made</span>
                         </div>
                       );
                     }

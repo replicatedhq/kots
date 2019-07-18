@@ -90,7 +90,7 @@ class DownstreamWatchVersionHistory extends Component {
                       {deployedAtTextNode}
                     </p>
                   }
-                  {version.pullrequestNumber && version.status === "opened" &&
+                  {version.pullrequestNumber && (version.status === "opened" || version.status === "pending") &&
                     <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 flex alignItems--center">
                       <span className="icon integration-card-icon-github u-marginRight--5" />
                       <span className="gh-version-detail-text"><a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View this PR on GitHub</a> to review and merged it in for deployment.</span>
