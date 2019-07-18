@@ -49,7 +49,7 @@ export default function ActiveDownstreamVersionRow(props) {
       </div>
       <div className="flex-auto flex-column justifyContent--center">
           {isGit && !watch.currentVersion ?
-            <a href={`https://github.com/${watch.cluster.gitOpsRef.owner}/${watch.cluster.gitOpsRef.repo}/pull/${watch.pendingVersions[0].pullrequestNumber}`} className="btn secondary small" target="_blank" rel="noopener noreferrer">Review PR to deploy application</a>
+            <a href={`https://github.com/${watch.cluster.gitOpsRef.owner}/${watch.cluster.gitOpsRef.repo}/pull/${watch.pendingVersions[0]?.pullrequestNumber}`} className="btn secondary small" target="_blank" rel="noopener noreferrer">Review PR to deploy application</a>
           :
           <Link to={`/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
           }
