@@ -275,11 +275,12 @@ class WatchDetailPage extends Component {
               items={listWatches?.map( (item, idx) => {
                 let sidebarItemNode;
                 if (item.slug) {
+                  const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
                   sidebarItemNode = (
                     <WatchSidebarItem
                       key={idx}
                       className={classNames({ selected: (
-                        item.slug === watch?.slug &&
+                        item.slug === slugFromRoute &&
                         match.params.owner !== "helm"
                       )})}
                       watch={item} />
@@ -294,7 +295,6 @@ class WatchDetailPage extends Component {
                 }
                 return sidebarItemNode;
               })}
-              currentWatch={watch?.watchName}
             />
           )}>
           <div className="flex-column flex3 u-width--full u-height--full">
