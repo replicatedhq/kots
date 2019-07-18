@@ -21,7 +21,7 @@ export default [
       watch.watches?.map((w) => {
         downstreamPendingLengths.push(w.pendingVersions.length);
       });
-      return downstreamPendingLengths.length > 0;
+      return Math.max(...downstreamPendingLengths) > 0;
     },
     displayRule: watch => {
       return !isHelmChart(watch);
