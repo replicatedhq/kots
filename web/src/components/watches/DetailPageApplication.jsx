@@ -198,7 +198,7 @@ class DetailPageApplication extends Component {
       expDate = appMeta.license.expiresAt === "0001-01-01T00:00:00Z" ? "Never" : Utilities.dateFormat(appMeta.license.expiresAt, "MMM D, YYYY");
     }
     return (
-      <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto u-paddingBottom--20">
+      <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto">
         <Helmet>
           <title>{`${watch.watchName} Config Overview`}</title>
         </Helmet>
@@ -264,7 +264,7 @@ class DetailPageApplication extends Component {
                     let versionNode = (
                       <div className="flex alignItems--center">
                         <div className="icon checkmark-icon"/>
-                        <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">Up to date</span>
+                        <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Up to date</span>
                       </div>
                     );
                     if (childWatch.pendingVersions?.length) {
@@ -277,12 +277,20 @@ class DetailPageApplication extends Component {
                         </div>
                       );
                     }
+                    if (!childWatch.currentVersion) {
+                      versionNode = (
+                        <div className="flex alignItems--center">
+                          <div className="icon blueCircleMinus--icon"/>
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--dustyGray">No deployments made</span>
+                        </div>
+                      );
+                    }
                     if (childCluster) {
                       return (
                         <div key={childCluster.id} className="DetailPage--downstreamRow flex">
                           <div className="flex1 flex alignItems--center">
                             <span className={`flex-auto icon clusterType ${clusterType}`}></span>
-                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5">{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
+                            <span className="u-fontSize--normal u-color--tundora u-fontWeight--bold u-marginLeft--5" title={childCluster.title}>{truncateMiddle(childCluster.title, 15, 10, "...")}</span>
                           </div>
                           <div className="flex1">
                             {versionNode}
@@ -325,7 +333,7 @@ class DetailPageApplication extends Component {
             }
 
 
-            <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30">
+            <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30 u-paddingBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Delete application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Removing {this.state.appName} will permanently delete all data and integrations associated with it and will not be&nbsp;recoverable.</p>
               <div className="u-marginTop--10">

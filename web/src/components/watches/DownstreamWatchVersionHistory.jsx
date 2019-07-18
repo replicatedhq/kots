@@ -42,7 +42,7 @@ class DownstreamWatchVersionHistory extends Component {
           </p>
           <p className="u-fontSize--large u-fontWeight--medium u-marginLeft--10">{currentVersion ? "Current upstream version" : "No deployments made"}</p>
           <div className="flex flex1 justifyContent--flexEnd">
-            <div className="watch-cell flex">
+            <div className="flex">
               <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
                 <span className={classNames(clusterIcon, "flex-auto u-marginRight--5")} />
                 <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
@@ -90,7 +90,7 @@ class DownstreamWatchVersionHistory extends Component {
                       {deployedAtTextNode}
                     </p>
                   }
-                  {version.pullrequestNumber && version.status === "opened" &&
+                  {version.pullrequestNumber && (version.status === "opened" || version.status === "pending") &&
                     <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 flex alignItems--center">
                       <span className="icon integration-card-icon-github u-marginRight--5" />
                       <span className="gh-version-detail-text"><a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View this PR on GitHub</a> to review and merged it in for deployment.</span>

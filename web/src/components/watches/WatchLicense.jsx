@@ -23,7 +23,7 @@ export default function WatchLicense(props) {
   }
 
   return (
-    <div className="flex justifyContent--center">
+    <div className="flex flex1 u-overflow--auto u-paddingTop--20 justifyContent--center">
       <Helmet>
         <title>{`${watch.watchName} License`}</title>
       </Helmet>
