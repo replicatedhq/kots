@@ -217,6 +217,23 @@ export const getWatch = gql`
       createdOn
       lastUpdated
       metadata
+      entitlements {
+        key
+        value
+        name
+      }
+      config {
+        name
+        title
+        description
+        items {
+          name
+          title
+          default
+          type
+          value
+        }
+      }
       lastUpdateCheck
       contributors {
         id

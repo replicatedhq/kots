@@ -13,21 +13,22 @@ import (
 )
 
 type fileSerializer struct {
-	fs     afero.Afero
-	logger log.Logger
+	statePath string
+	fs        afero.Afero
+	logger    log.Logger
 }
 
-func newFileSerializer(fs afero.Afero, logger log.Logger) stateSerializer {
-	return &fileSerializer{fs: fs, logger: logger}
+func newFileSerializer(fs afero.Afero, logger log.Logger, statePath string) stateSerializer {
+	return &fileSerializer{fs: fs, logger: logger, statePath: statePath}
 }
 
 func (s *fileSerializer) Load() (State, error) {
-	if _, err := s.fs.Stat(constants.StatePath); os.IsNotExist(err) {
+	if _, err := s.fs.Stat(s.statePath); os.IsNotExist(err) {
 		level.Debug(s.logger).Log("msg", "no saved state exists", "path", constants.StatePath)
 		return State{}, nil
 	}
 
-	serialized, err := s.fs.ReadFile(constants.StatePath)
+	serialized, err := s.fs.ReadFile(s.statePath)
 	if err != nil {
 		return State{}, errors.Wrap(err, "read state file")
 	}
@@ -52,10 +53,18 @@ func (s *fileSerializer) Save(state State) error {
 		return errors.Wrap(err, "mkdir state")
 	}
 
-	err = s.fs.WriteFile(constants.StatePath, serialized, 0644)
+	err = s.fs.WriteFile(s.statePath, serialized, 0644)
 	if err != nil {
 		return errors.Wrap(err, "write state file")
 	}
 
+	return nil
+}
+
+func (s *fileSerializer) Remove() error {
+	err := s.fs.RemoveAll(s.statePath)
+	if err != nil {
+		return errors.Wrap(err, "remove state file")
+	}
 	return nil
 }

@@ -273,7 +273,7 @@ func (r *Resolver) resolveMetadata(ctx context.Context, upstream, localPath stri
 
 	if r.isEdit {
 		debug.Log("event", "releaseNotes.resolve.cancel")
-		state, err := r.StateManager.TryLoad()
+		state, err := r.StateManager.CachedState()
 		if err != nil {
 			return nil, errors.Wrap(err, "load state to fetch metadata")
 		}

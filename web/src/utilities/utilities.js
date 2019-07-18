@@ -78,6 +78,26 @@ export function getReadableLicenseType(type) {
 }
 
 /**
+ * Retrieves the channel name the release is assigned to from app's stateJSON
+ *
+ * @param {String} watch The watched application to check
+ * @return {String} name of the channel
+ */
+export function getAssignedReleaseChannel(stateJSON) {
+  try {
+    if (!stateJSON) return "";
+    const state = JSON.parse(stateJSON);
+    if (state?.v1?.upstreamContents?.appRelease) {
+      return state.v1.upstreamContents.appRelease.channelName;
+    }
+    return "Unknown";
+  } catch (error) {
+    console.error(error);
+    return "Unknown";
+  }
+}
+
+/**
  * @param {String} - Returns the commit SHA of the current build
  */
 export function getBuildVersion() {

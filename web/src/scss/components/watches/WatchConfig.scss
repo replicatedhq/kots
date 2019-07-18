@@ -1,0 +1,14 @@
+.ConfigOuterWrapper {
+  background: #F8F8F8; 
+  width: 80%;
+  max-width: 783px;
+}
+
+.ConfigInnerWrapper {
+  border-width: 1px;
+  border-radius: 3px;
+  background: white;
+  box-shadow: 0 0 2px rgba(0,0,0,.16);
+  max-height: calc(100% - 30px);
+  overflow-y: scroll;
+}

@@ -87,7 +87,7 @@ func AddAzureAKSPath(name string, path string) {
 func (ctx ShipContext) makeCaKey(caName string, caType string) string {
 	// check if the CA exists - if it does, use the existing one
 	// if it does not, make a new one
-	currentState, err := ctx.Manager.TryLoad()
+	currentState, err := ctx.Manager.CachedState()
 	if err != nil {
 		ctx.Logger.Log("method", "makeCaKey", "action", "tryLoad", "error", err)
 		return ""
@@ -115,7 +115,7 @@ func (ctx ShipContext) makeCaKey(caName string, caType string) string {
 }
 
 func (ctx ShipContext) getCaCert(caName string) string {
-	currentState, err := ctx.Manager.TryLoad()
+	currentState, err := ctx.Manager.CachedState()
 	if err != nil {
 		ctx.Logger.Log("method", "getCaCert", "action", "tryLoad", "error", err)
 		return ""
@@ -135,7 +135,7 @@ func (ctx ShipContext) getCaCert(caName string) string {
 // P256, P384, or P521.
 func (ctx ShipContext) makeCertKey(certName string, caName string, hosts string, certType string) string {
 	// try to find existing cert to use
-	currentState, err := ctx.Manager.TryLoad()
+	currentState, err := ctx.Manager.CachedState()
 	if err != nil {
 		ctx.Logger.Log("method", "makeCertKey", "action", "tryLoad", "error", err)
 		return ""
@@ -177,7 +177,7 @@ func (ctx ShipContext) makeCertKey(certName string, caName string, hosts string,
 }
 
 func (ctx ShipContext) getCert(certName string) string {
-	currentState, err := ctx.Manager.TryLoad()
+	currentState, err := ctx.Manager.CachedState()
 	if err != nil {
 		ctx.Logger.Log("method", "getCert", "action", "tryLoad", "error", err)
 		return ""

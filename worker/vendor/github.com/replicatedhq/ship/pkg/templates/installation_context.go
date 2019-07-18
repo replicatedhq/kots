@@ -42,11 +42,21 @@ func (ctx *InstallationContext) shipCustomerRelease() string {
 	return string(data)
 }
 
+func (ctx *InstallationContext) collectSpec() string {
+	return ctx.Meta.CollectSpec
+}
+
+func (ctx *InstallationContext) analyzeSpec() string {
+	return ctx.Meta.AnalyzeSpec
+}
+
 func (ctx *InstallationContext) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"ShipCustomerRelease": ctx.shipCustomerRelease,
 		"EntitlementValue":    ctx.entitlementValue,
 		"LicenseFieldValue":   ctx.entitlementValue,
+		"CollectSpec":         ctx.collectSpec,
+		"AnalyzeSpec":         ctx.analyzeSpec,
 		"Installation": func(name string) string {
 			switch name {
 			case "state_file_path":

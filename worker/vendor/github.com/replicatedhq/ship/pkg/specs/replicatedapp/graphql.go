@@ -95,6 +95,14 @@ query($licenseId: String) {
   }
 }`
 
+const RegisterInstallQuery = `
+mutation($channelId: String!, $releaseId: String!) {
+  shipRegisterInstall(
+    channelId: $channelId
+    releaseId: $releaseId
+  )
+}`
+
 // GraphQLClient is a client for the graphql Payload API
 type GraphQLClient struct {
 	GQLServer *url.URL
@@ -312,13 +320,7 @@ func (c *GraphQLClient) GetLicense(selector *Selector) (*license, error) {
 
 func (c *GraphQLClient) RegisterInstall(customerID, installationID, channelID, releaseID string) error {
 	requestObj := GraphQLRequest{
-		Query: `
-mutation($channelId: String!, $releaseId: String!) {
-  shipRegisterInstall(
-    channelId: $channelId
-    releaseId: $releaseId
-  )
-}`,
+		Query: RegisterInstallQuery,
 		Variables: map[string]string{
 			"channelId": channelID,
 			"releaseId": releaseID,

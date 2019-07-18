@@ -138,7 +138,7 @@ func (r *resolver) ResolveAppRelease(ctx context.Context, selector *Selector, ap
 }
 
 func (r *resolver) ResolveEditRelease(ctx context.Context) (*api.Release, error) {
-	stateData, err := r.StateManager.TryLoad()
+	stateData, err := r.StateManager.CachedState()
 	if err != nil {
 		return nil, errors.Wrap(err, "load state to resolve release")
 	}
@@ -352,7 +352,7 @@ func (r *resolver) loadFakeEntitlements() (*api.Entitlements, error) {
 
 // read the upstream, get the host/path, and replace the query params with the ones from the provided selector
 func (r *resolver) updateUpstream(selector Selector) error {
-	currentState, err := r.StateManager.TryLoad()
+	currentState, err := r.StateManager.CachedState()
 	if err != nil {
 		return errors.Wrap(err, "retrieve state")
 	}

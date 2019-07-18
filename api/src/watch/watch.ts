@@ -4,6 +4,7 @@ import { Stores } from "../schema/stores";
 import { NotificationQueries } from "../notification";
 import { Context } from "../context";
 import * as _ from "lodash";
+import * as yaml from "js-yaml";
 
 export class Watch {
   public id: string;
@@ -23,6 +24,8 @@ export class Watch {
   public pastVersions: [Version];
   public parentWatch: Watch;
   public metadata: string;
+  public config?: Array<ConfigGroup>;
+  public entitlements?: Array<Entitlement>;
   public lastUpdateCheck: string;
 
   // Watch Cluster Methods
@@ -66,6 +69,52 @@ export class Watch {
     return result;
   }
 
+  generateConfigGroups(stateJSON: string): Array<ConfigGroup> {
+    try {
+      const doc = yaml.safeLoad(stateJSON);
+      const config = doc.v1.config;
+      const configSpecArr = yaml.safeLoad(doc.v1.upstreamContents.appRelease.configSpec);
+
+      const configGroups: Array<ConfigGroup> = [];
+      _.map(configSpecArr.v1, (configSpec: ConfigGroup) => {
+        const filteredConfigSpec: ConfigGroup = { ...configSpec, items: [] };
+        _.map(configSpec.items, (item: ConfigItem) => {
+          if (item.name in config) {
+            item.value = config[item.name]
+            filteredConfigSpec.items.push(item);
+          }
+        });
+        if (filteredConfigSpec.items.length) {
+          configGroups.push(filteredConfigSpec);
+        }
+      })
+      return configGroups;
+    } catch (err) {
+      return [];
+    }
+  }
+
+  getEntitlementsWithNames(stateJSON: string): Array<Entitlement> {
+    try {
+      const doc = yaml.safeLoad(stateJSON);
+      const entitlements = doc.v1.upstreamContents.appRelease.entitlements;
+      const entitlementSpec = yaml.safeLoad(doc.v1.upstreamContents.appRelease.entitlementSpec);
+
+      const entitlementsWithNames: Array<Entitlement> = [];
+      entitlements.values.forEach(entitlement => {
+        const spec: any = _.find(entitlementSpec, ["key", entitlement.key]);
+        entitlementsWithNames.push({
+          key: entitlement.key,
+          value: entitlement.value,
+          name: spec.name
+        });
+      });
+      return entitlementsWithNames;
+    } catch (err) {
+      return [];
+    }
+  }
+
   public toSchema(root: any, stores: Stores, context: Context): any {
     return {
       ...this,
@@ -78,6 +127,8 @@ export class Watch {
       pastVersions: async () => this.getPastVersions(stores),
       currentVersion: async () => this.getCurrentVersion(stores),
       parentWatch: async () => this.getParentWatch(stores),
+      config: async () => this.generateConfigGroups(this.stateJSON),
+      entitlements: async () => this.getEntitlementsWithNames(this.stateJSON)
     };
   }
 
@@ -114,6 +165,27 @@ export interface Contributor {
   githubId: number;
   login: string;
   avatar_url: string;
+}
+
+export interface ConfigItem {
+  name: string;
+  title: string;
+  default: string;
+  value: string;
+  type: string;
+}
+
+export interface ConfigGroup {
+  name: string;
+  title: string;
+  description: string;
+  items: Array<ConfigItem>
+}
+
+export interface Entitlement {
+  key: string,
+  value: string,
+  name: string
 }
 
 export function parseWatchName(watchName: string): string {

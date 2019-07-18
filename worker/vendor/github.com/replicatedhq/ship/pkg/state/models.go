@@ -2,6 +2,7 @@ package state
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -177,11 +178,23 @@ type Terraform struct {
 	State    *terraform.State `json:"state,omitempty" yaml:"state,omitempty" hcl:"state,omitempty"`
 }
 
-func (v State) CurrentConfig() map[string]interface{} {
-	if v.V1 != nil && v.V1.Config != nil {
-		return v.V1.Config
+func (v State) CurrentConfig() (map[string]interface{}, error) {
+	if v.V1 == nil || v.V1.Config == nil {
+		return make(map[string]interface{}), nil
 	}
-	return make(map[string]interface{})
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	dec := json.NewDecoder(&buf)
+	err := enc.Encode(v.V1.Config)
+	if err != nil {
+		return nil, err
+	}
+	var configClone map[string]interface{}
+	err = dec.Decode(&configClone)
+	if err != nil {
+		return nil, err
+	}
+	return configClone, nil
 }
 
 func (v State) CurrentHelmValues() string {

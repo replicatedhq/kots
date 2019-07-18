@@ -18,6 +18,8 @@ const Watch = `
     currentVersion: Version
     parentWatch: Watch
     metadata: String
+    config: [ConfigGroup]
+    entitlements: [Entitlement]
     lastUpdateCheck: String
   }
 `;
@@ -62,10 +64,40 @@ const Contributor = `
   }
 `;
 
+const ConfigItem = `
+  type ConfigItem {
+    name: String
+    title: String
+    default: String
+    value: String
+    type: String
+  }
+`;
+
+const ConfigGroup = `
+  type ConfigGroup {
+    name: String!
+    title: String
+    description: String
+    items: [ConfigItem]
+  }
+`;
+
+const Entitlement = `
+  type Entitlement {
+    key: String
+    value: String
+    name: String
+  }
+`;
+
 export default [
   Watch,
   StateMetadata,
   Contributor,
   Version,
   VersionDetail,
+  ConfigItem,
+  ConfigGroup,
+  Entitlement,
 ];

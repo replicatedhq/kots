@@ -110,3 +110,7 @@ func (s *secretSerializer) Save(state State) error {
 
 	return nil
 }
+
+func (s *secretSerializer) Remove() error {
+	return errors.New("secret based state storage does not support state removal")
+}

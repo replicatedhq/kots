@@ -113,7 +113,7 @@ func (i *inspector) DetermineApplicationType(ctx context.Context, upstream strin
 }
 
 func (i *inspector) fetchEditFiles(ctx context.Context) (app LocalAppCopy, err error) {
-	state, err := i.state.TryLoad()
+	state, err := i.state.CachedState()
 	if err != nil {
 		return nil, errors.Wrap(err, "load app state")
 	}

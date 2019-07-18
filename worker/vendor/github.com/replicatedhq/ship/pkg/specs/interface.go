@@ -426,7 +426,7 @@ func (r *Resolver) resolveRelease(
 		Spec: *spec,
 	}
 
-	currentState, err := r.StateManager.TryLoad()
+	currentState, err := r.StateManager.CachedState()
 	if err != nil {
 		return nil, errors.Wrap(err, "try load")
 	}

@@ -26,7 +26,9 @@ type Manager interface {
 		meta api.ReleaseMetadata,
 		templateContext map[string]interface{},
 	) error
-	TryLoad() (State, error)
+	CachedState() (State, error)
+	CommitState() error
+	ReloadFile() error
 	StateUpdate(updater Update) (State, error)
 	RemoveStateFile() error
 	SaveKustomize(kustomize *Kustomize) error
@@ -46,9 +48,15 @@ type Manager interface {
 type stateSerializer interface {
 	Load() (State, error)
 	Save(State) error
+	Remove() error
 }
 
 var _ Manager = &MManager{}
+
+var newManagerLock = &sync.Mutex{}
+var (
+	managerInstance Manager
+)
 
 // MManager is the saved output of a plan run to load on future runs
 type MManager struct {
@@ -58,6 +66,8 @@ type MManager struct {
 	patcher        patch.Patcher
 	stateUpdateMut sync.Mutex
 	StateRWMut     sync.RWMutex
+
+	cachedState *State
 }
 
 func (m *MManager) Save(v State) error {
@@ -68,43 +78,94 @@ func (m *MManager) Save(v State) error {
 		state = v
 		return state, nil
 	})
-	return err
+	if err != nil {
+		return errors.Wrap(err, "save state")
+	}
+
+	return m.CommitState()
 }
 
-func NewManager(
-	logger log.Logger,
-	fs afero.Afero,
-	v *viper.Viper,
-) Manager {
-	return &MManager{
+func GetSingleton() Manager {
+	return managerInstance
+}
+
+// GetManager will create and return a singleton state manager object.
+// This should be used in everything that isn't a test.
+func GetManager(logger log.Logger, fs afero.Afero, v *viper.Viper) (Manager, error) {
+	newManagerLock.Lock()
+	defer newManagerLock.Unlock()
+
+	if managerInstance != nil {
+		return managerInstance, nil
+	}
+
+	instance := &MManager{
 		Logger: logger,
 		FS:     fs,
 		V:      v,
 	}
+	if err := instance.tryLoad(); err != nil {
+		return nil, errors.Wrap(err, "load state")
+	}
+
+	managerInstance = instance
+
+	return instance, nil
+}
+
+// This will create a new state manager that isn't a singleton.
+// Use this for tests, where state needs to be reset.
+func NewDisposableManager(logger log.Logger, fs afero.Afero, v *viper.Viper) (Manager, error) {
+	instance := &MManager{
+		Logger: logger,
+		FS:     fs,
+		V:      v,
+	}
+	if err := instance.tryLoad(); err != nil {
+		return nil, errors.Wrap(err, "load state")
+	}
+	return instance, nil
 }
 
 type Update func(State) (State, error)
+
+func (m *MManager) ReloadFile() error {
+	newManagerLock.Lock()
+	defer newManagerLock.Unlock()
+
+	if err := m.tryLoad(); err != nil {
+		return errors.Wrap(err, "reload state")
+	}
+
+	return nil
+}
 
 // applies the provided updater to the current state. Returns the new state and err
 func (m *MManager) StateUpdate(updater Update) (State, error) {
 	m.stateUpdateMut.Lock()
 	defer m.stateUpdateMut.Unlock()
 
-	currentState, err := m.TryLoad()
-	if err != nil {
-		return State{}, errors.Wrap(err, "tryLoad in safe updater")
+	if m.cachedState.V1 == nil {
+		m.cachedState.V1 = &V1{}
 	}
 
-	if currentState.V1 == nil {
-		currentState.V1 = &V1{}
-	}
-
-	updatedState, err := updater(currentState.Versioned())
+	updatedState, err := updater(m.cachedState.Versioned())
 	if err != nil {
 		return State{}, errors.Wrap(err, "run state update function in safe updater")
 	}
 
-	return updatedState, errors.Wrap(m.serializeAndWriteState(updatedState), "write state in safe updater")
+	stateFrom := m.V.GetString("state-from")
+	if stateFrom == "" || stateFrom == "file" {
+		// When state source is a file, always flush cached contents to disk.
+		// This is done to preserve current ship behavior.
+		err := m.serializeAndWriteState(updatedState)
+		if err != nil {
+			return State{}, errors.Wrap(err, "write state in safe updater")
+		}
+	}
+
+	m.cachedState = &updatedState
+	return updatedState, nil
 }
 
 // SerializeShipMetadata is used by `ship init` to serialize metadata from ship applications to state file
@@ -247,7 +308,9 @@ func (m *MManager) getStateSerializer() (stateSerializer, error) {
 
 	switch stateFrom {
 	case "file":
-		return newFileSerializer(m.FS, m.Logger), nil
+		// Even thought there's a "state-file" command line argument,
+		// ship has never used it to load state.
+		return newFileSerializer(m.FS, m.Logger, constants.StatePath), nil
 	case "secret":
 		return newSecretSerializer(m.Logger, m.V.GetString("secret-namespace"), m.V.GetString("secret-name"), m.V.GetString("secret-key")), nil
 	case "url":
@@ -257,22 +320,34 @@ func (m *MManager) getStateSerializer() (stateSerializer, error) {
 	}
 }
 
-// TryLoad will attempt to load a state file from disk, if present
-func (m *MManager) TryLoad() (State, error) {
-	m.StateRWMut.RLock()
-	defer m.StateRWMut.RUnlock()
+// CachedState will return currently chached state.
+func (m *MManager) CachedState() (State, error) {
+	if m.cachedState == nil {
+		return State{}, errors.New("state is not initialized")
+	}
+	return *m.cachedState, nil
+}
 
+func (m *MManager) CommitState() error {
+	if m.cachedState == nil {
+		errors.New("cannot save state that has not been initialized")
+	}
+	return errors.Wrap(m.serializeAndWriteState(*m.cachedState), "serialize cached state")
+}
+
+func (m *MManager) tryLoad() error {
 	s, err := m.getStateSerializer()
 	if err != nil {
-		return State{}, errors.Wrap(err, "create state serializer")
+		return errors.Wrap(err, "create state serializer")
 	}
 
 	state, err := s.Load()
 	if err != nil {
-		return State{}, errors.Wrap(err, "load state")
+		return errors.Wrap(err, "load state")
 	}
 
-	return state, nil
+	m.cachedState = &state
+	return nil
 }
 
 // ResetLifecycle is used by `ship update --headed` to reset the saved stepsCompleted
@@ -303,15 +378,17 @@ func (m *MManager) SaveKustomize(kustomize *Kustomize) error {
 
 // RemoveStateFile will attempt to remove the state file from disk
 func (m *MManager) RemoveStateFile() error {
-	statePath := m.V.GetString("state-file")
-	if statePath == "" {
-		statePath = constants.StatePath
+	s, err := m.getStateSerializer()
+	if err != nil {
+		return errors.Wrap(err, "create state serializer")
 	}
 
-	err := m.FS.RemoveAll(statePath)
+	err = s.Remove()
 	if err != nil {
 		return errors.Wrap(err, "remove state file")
 	}
+
+	m.cachedState = &State{}
 
 	return nil
 }

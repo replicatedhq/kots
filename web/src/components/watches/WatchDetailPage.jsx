@@ -377,6 +377,7 @@ class WatchDetailPage extends Component {
                     <Route exact path="/watch/:owner/:slug/config" render={() =>
                       <WatchConfig
                         watch={watch}
+                        onActiveInitSession={this.props.onActiveInitSession}
                       />
                     } />
                     <Route exact path="/watch/:owner/:slug/troubleshoot" render={() =>

@@ -61,9 +61,12 @@ func NewContentProcessor(v *viper.Viper) (*ContentProcessor, error) {
 	}
 	gqlClient, err := replicatedapp.NewGraphqlClient(v, http.DefaultClient)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "create gql client")
 	}
-	stateManager := state.NewManager(logger, fs, v)
+	stateManager, err := state.NewDisposableManager(logger, fs, v)
+	if err != nil {
+		return nil, errors.Wrap(err, "create state manager")
+	}
 	appTypeInspector := apptype.NewInspector(logger, fs, v, stateManager, ui)
 	return &ContentProcessor{
 		Logger:           logger,
