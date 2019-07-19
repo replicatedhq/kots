@@ -405,7 +405,7 @@ class DetailPageApplication extends Component {
                   className="btn secondary green">
                    {
                      this.state.editWatchLoading
-                      ? "Saving..."
+                      ? "Saving"
                       : "Save Application Details"
                     }
               </button>
