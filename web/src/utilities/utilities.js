@@ -103,26 +103,6 @@ export function isLicenseOutOfDate(currentWatchLicense, latestWatchLicense) {
 }
 
 /**
- * Retrieves the entitlement spec from app's stateJSON
- *
- * @param {String} watch The watched application stateJSON
- * @return {String} entitlement spec
- */
-export function getEntitlementSpecFromState(stateJSON) {
-  try {
-    if (!stateJSON) return "";
-    const state = JSON.parse(stateJSON);
-    if (state?.v1?.upstreamContents?.appRelease) {
-      return state.v1.upstreamContents.appRelease.entitlementSpec;
-    }
-    return "";
-  } catch (error) {
-    console.error(error);
-    return "";
-  }
-}
-
-/**
  * Constructs the watch license from app's watch
  *
  * @param {String} watch The watched application to check

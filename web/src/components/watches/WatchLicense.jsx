@@ -5,7 +5,6 @@ import {
   Utilities,
   getReadableLicenseType,
   isLicenseOutOfDate,
-  getEntitlementSpecFromState,
   getWatchMetadata,
   getWatchLicenseFromState,
   getLicenseExpiryDate,
@@ -63,9 +62,8 @@ class WatchLicense extends Component {
 
     const appMeta = getWatchMetadata(watch.metadata);
     const licenseId = appMeta.license.id;
-    const entitlementSpec = getEntitlementSpecFromState(watch.stateJSON);
 
-    this.props.syncWatchLicense(watch.id, licenseId, entitlementSpec)
+    this.props.syncWatchLicense(watch.id, licenseId)
       .then(response => {
         this.setState({ watchLicense: response.data.syncWatchLicense });
       })
@@ -148,11 +146,9 @@ export default compose(
   graphql(getWatchLicense, {
     name: "getWatchLicense",
     options: props => {
-      const entitlementSpec = getEntitlementSpecFromState(props.watch.stateJSON);
       return {
         variables: {
-          watchId: props.watch.id,
-          entitlementSpec
+          watchId: props.watch.id
         },
         fetchPolicy: "no-cache"
       };
@@ -163,11 +159,9 @@ export default compose(
     options: props => {
       const appMeta = getWatchMetadata(props.watch.metadata);
       const licenseId = appMeta.license.id;
-      const entitlementSpec = getEntitlementSpecFromState(props.watch.stateJSON);
       return {
         variables: {
-          licenseId,
-          entitlementSpec
+          licenseId
         },
         fetchPolicy: "no-cache"
       };
@@ -175,7 +169,7 @@ export default compose(
   }),
   graphql(syncWatchLicense, {
     props: ({ mutate }) => ({
-      syncWatchLicense: (watchId, licenseId, entitlementSpec) => mutate({ variables: { watchId, licenseId, entitlementSpec } })
+      syncWatchLicense: (watchId, licenseId) => mutate({ variables: { watchId, licenseId } })
     })
   })
 )(WatchLicense);

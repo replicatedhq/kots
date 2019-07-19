@@ -14,7 +14,7 @@ export class LicenseStore {
   ) {
   }
 
-  public async getWatchLicense(watchId: string, entitlementSpec: string): Promise<License> {
+  public async getWatchLicense(watchId: string): Promise<License> {
     try {
       // Get current watch license
       const q = `select * from watch_license where watch_id = $1`;
@@ -25,15 +25,16 @@ export class LicenseStore {
         throw new ReplicatedError(`No license found for watch with an ID of ${watchId}`);
       }
       const currentWatchLicense = JSON.parse(result.rows[0].license);
-      currentWatchLicense.entitlements = this.getEntitlementsWithNames(currentWatchLicense.entitlements, entitlementSpec);
-
+      if (currentWatchLicense.entitlementSpec) {
+        currentWatchLicense.entitlements = this.getEntitlementsWithNames(currentWatchLicense.entitlements, currentWatchLicense.entitlementSpec);
+      }
       return currentWatchLicense;
     } catch (err) {
       throw new ReplicatedError(`Failed to get watch license ${err}`);
     }
   }
 
-  public async getLatestWatchLicense(licenseId: string, entitlementSpec: string): Promise<License> {
+  public async getLatestWatchLicense(licenseId: string): Promise<License> {
     // Get latest watch license
     const options = {
       method: "POST",
@@ -52,6 +53,7 @@ export class LicenseStore {
             expiresAt
             type
             channel
+            entitlementSpec
             entitlements {
               key
               value
@@ -67,14 +69,14 @@ export class LicenseStore {
     const responseJson = JSON.parse(response);
 
     const latestWatchLicense = responseJson.data.license;
-    latestWatchLicense.entitlements = this.getEntitlementsWithNames(latestWatchLicense.entitlements, entitlementSpec);
+    latestWatchLicense.entitlements = this.getEntitlementsWithNames(latestWatchLicense.entitlements, latestWatchLicense.entitlementSpec);
 
     return latestWatchLicense;
   }
 
-  public async syncWatchLicense(watchId: string, licenseId: string, entitlementSpec: string): Promise<License> {
+  public async syncWatchLicense(watchId: string, licenseId: string): Promise<License> {
     try {
-      const latestWatchLicense = await this.getLatestWatchLicense(licenseId, entitlementSpec);
+      const latestWatchLicense = await this.getLatestWatchLicense(licenseId);
 
       const q = `insert into watch_license (watch_id, license, license_updated_at) values($1, $2, $3)
       on conflict (watch_id) do update set license = EXCLUDED.license, license_updated_at = EXCLUDED.license_updated_at`;

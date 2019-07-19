@@ -193,11 +193,11 @@ class DetailPageApplication extends Component {
     const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
 
-    // TODO: We shuold probably return something different if it never expires to avoid this hack string check.
     let expDate = "";
     if (!isEmpty(appMeta)) {
       expDate = getLicenseExpiryDate(appMeta.license);
     }
+    
     return (
       <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto">
         <Helmet>

@@ -797,8 +797,8 @@ export const getDownstreamHistoryRaw = `
 `;
 
 export const getWatchLicense = gql`
-  query getWatchLicense($watchId: String!, $entitlementSpec: String) {
-    getWatchLicense(watchId: $watchId, entitlementSpec: $entitlementSpec) {
+  query getWatchLicense($watchId: String!) {
+    getWatchLicense(watchId: $watchId) {
       id
       channel
       createdAt
@@ -814,8 +814,8 @@ export const getWatchLicense = gql`
 `;
 
 export const getLatestWatchLicense = gql`
-  query getLatestWatchLicense($licenseId: String!, $entitlementSpec: String) {
-    getLatestWatchLicense(licenseId: $licenseId, entitlementSpec: $entitlementSpec) {
+  query getLatestWatchLicense($licenseId: String!) {
+    getLatestWatchLicense(licenseId: $licenseId) {
       id
       channel
       createdAt
