@@ -1,4 +1,4 @@
-import * as GitHubApi from "@octokit/rest";
+import GitHubApi from "@octokit/rest";
 import { addWeeks } from "date-fns";
 import * as jwt from "jsonwebtoken";
 import * as randomstring from "randomstring";

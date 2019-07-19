@@ -1,8 +1,8 @@
 
-import * as GitHubApi from "@octokit/rest";
+import GitHubApi from "@octokit/rest";
 import * as fs from "fs";
 import * as jwt from "jsonwebtoken";
-import * as request from "request-promise";
+import request from "request-promise";
 import { StatusCodeError } from "request-promise/errors";
 import {
   GetBranchesResponseItem,

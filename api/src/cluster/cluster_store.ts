@@ -4,7 +4,7 @@ import { Cluster } from "./";
 import { ReplicatedError } from "../server/errors";
 import * as randomstring from "randomstring";
 import slugify from "slugify";
-import * as _ from "lodash";
+import _ from "lodash";
 
 export class ClusterStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -580,7 +580,7 @@ items:
     const clusters = await this.listClusters(userId);
     const existingSlugs = clusters.map(cluster => cluster.slug);
     let finalSlug = slugProposal;
-
+    
     if (_.includes(existingSlugs, slugProposal)) {
       const maxNumber =
         _(existingSlugs)

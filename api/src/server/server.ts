@@ -1,6 +1,6 @@
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
 import * as bugsnag from "bugsnag";
-import * as cors from "cors";
+import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import * as path from "path";
 import * as Sigsci from "sigsci-module-nodejs";

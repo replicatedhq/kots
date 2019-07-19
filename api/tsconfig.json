@@ -14,7 +14,9 @@
         "skipLibCheck": true,
         "allowJs": true,
         "outDir": "build",
-        "pretty": true
+        "pretty": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src/**/*.js",

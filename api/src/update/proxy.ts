@@ -1,7 +1,6 @@
 import { IncomingMessage } from "http";
-import * as proxyMiddleware from "http-proxy-middleware";
+import proxyMiddleware from "http-proxy-middleware";
 import { parse } from "url";
-import { logger } from "../server/logger";
 
 export const UpdateProxy = proxyMiddleware({
   target: "Ship Cloud Binary - Update",
