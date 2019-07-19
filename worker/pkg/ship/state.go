@@ -178,6 +178,7 @@ func LicenseFromState(stateJSON []byte) []byte {
 		ExpiresAt: shipState.V1.Metadata.License.ExpiresAt,
 		Type: shipState.V1.Metadata.License.Type,
 		Entitlements: shipState.V1.UpstreamContents.AppRelease.Entitlements.Values,
+		EntitlementSpec: shipState.V1.UpstreamContents.AppRelease.EntitlementSpec,
 	}
 
 	licenseJSON, err := json.Marshal(license)
