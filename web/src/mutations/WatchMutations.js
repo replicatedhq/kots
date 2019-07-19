@@ -139,8 +139,8 @@ export const deleteNotification = gql`
 `;
 
 export const syncWatchLicense = gql`
-  mutation syncWatchLicense ($watchId: String!, $licenseId: String!, $entitlementSpec: String) {
-    syncWatchLicense(watchId: $watchId, licenseId: $licenseId, entitlementSpec: $entitlementSpec) {
+  mutation syncWatchLicense ($watchId: String!, $licenseId: String!) {
+    syncWatchLicense(watchId: $watchId, licenseId: $licenseId) {
       id
       channel
       createdAt

@@ -30,8 +30,8 @@ export const Query = `
     getWatch(slug: String, id: String): Watch
     getParentWatch(id: String): Watch
 
-    getWatchLicense(watchId: String!, entitlementSpec: String): License
-    getLatestWatchLicense(licenseId: String!, entitlementSpec: String): License
+    getWatchLicense(watchId: String!): License
+    getLatestWatchLicense(licenseId: String!): License
 
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
