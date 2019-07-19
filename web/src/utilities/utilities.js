@@ -75,8 +75,8 @@ export function isLicenseOutOfDate(currentWatchLicense, latestWatchLicense) {
     if (
       currentWatchLicense.id !== latestWatchLicense.id ||
       currentWatchLicense.channel !== latestWatchLicense.channel ||
-      currentWatchLicense.expiresAt !== latestWatchLicense.expiresAt ||
-      currentWatchLicense.type !== latestWatchLicense.type
+      currentWatchLicense.type !== latestWatchLicense.type ||
+      getLicenseExpiryDate(currentWatchLicense) !== getLicenseExpiryDate(latestWatchLicense)
     ) {
       return true;
     }
@@ -222,11 +222,14 @@ export function sortAnalyzers(bundleInsight) {
   })
 }
 
-export function getWatchLicenseExpiryDate(watchLicense) {
-  if (!watchLicense) {
+export function getLicenseExpiryDate(license) {
+  if (!license) {
     return "";
   }
-  return !watchLicense.expiresAt ? "Never" : Utilities.dateFormat(watchLicense.expiresAt, "MMM D, YYYY", false);
+  if (!license.expiresAt || license.expiresAt === "0001-01-01T00:00:00Z") {
+    return "Never";
+  }
+  return Utilities.dateFormat(license.expiresAt, "MMM D, YYYY", false);
 }
 
 export function rootPath(path) {

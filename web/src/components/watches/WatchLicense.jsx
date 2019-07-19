@@ -8,7 +8,7 @@ import {
   getEntitlementSpecFromState,
   getWatchMetadata,
   getWatchLicenseFromState,
-  getWatchLicenseExpiryDate
+  getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
 import { graphql, compose, withApollo } from "react-apollo";
@@ -96,7 +96,7 @@ class WatchLicense extends Component {
     const createdAt = Utilities.dateFormat(watchLicense.createdAt, "MMM D, YYYY");
     const licenseType = getReadableLicenseType(watchLicense.type);
     const assignedReleaseChannel = watchLicense.channel;
-    const expiresAt = getWatchLicenseExpiryDate(watchLicense);
+    const expiresAt = getLicenseExpiryDate(watchLicense);
     const isOutOfDate = isLicenseOutOfDate(watchLicense, latestWatchLicense);
 
     return (
