@@ -1,6 +1,6 @@
-import * as pg from "pg";
-import * as bcrypt from "bcrypt";
-import * as randomstring from "randomstring";
+import pg from "pg";
+import bcrypt from "bcrypt";
+import randomstring from "randomstring";
 import { User } from "./";
 
 export class UserStore {

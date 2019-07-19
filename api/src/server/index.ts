@@ -1,9 +1,9 @@
 import { OverrideMiddleware, Req, Res } from "ts-express-decorators";
 
 import { LogIncomingRequestMiddleware } from "ts-express-decorators/lib/mvc/components/LogIncomingRequestMiddleware";
-import * as uuid from "uuid";
+import uuid from "uuid";
 
-import * as Express from "express";
+import Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
 import * as vendor from "./server";
 

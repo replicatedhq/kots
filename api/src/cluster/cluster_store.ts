@@ -1,10 +1,10 @@
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { Cluster } from "./";
 import { ReplicatedError } from "../server/errors";
-import * as randomstring from "randomstring";
+import randomstring from "randomstring";
 import slugify from "slugify";
-import * as _ from "lodash";
+import _ from "lodash";
 
 export class ClusterStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}

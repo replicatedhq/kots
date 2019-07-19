@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { Watch, Contributor, Version, VersionDetail } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";

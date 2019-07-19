@@ -1,6 +1,6 @@
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
-import * as GitHubApi from "@octokit/rest";
+import GitHubApi from "@octokit/rest";
 import { ReplicatedError } from "../../server/errors";
 
 export function UserQueries(stores: Stores) {

@@ -1,6 +1,6 @@
-import * as _ from "lodash";
-import * as randomstring from "randomstring";
-import * as pg from "pg";
+import _ from "lodash";
+import randomstring from "randomstring";
+import pg from "pg";
 import { ImageWatch } from "./";
 
 export class ImageWatchStore {

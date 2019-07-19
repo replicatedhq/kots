@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import * as yargs from "yargs";
+import yargs from "yargs";
 
 import * as ensureLocalCluster from "./commands/ensure-local-cluster";
 

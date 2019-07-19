@@ -1,5 +1,5 @@
 import { Entitlement } from './';
-import * as _ from "lodash";
+import _ from "lodash";
 
 
 export class License {

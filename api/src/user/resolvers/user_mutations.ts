@@ -1,6 +1,6 @@
-import * as GitHubApi from "@octokit/rest";
+import GitHubApi from "@octokit/rest";
 import { isAfter } from "date-fns";
-import * as simpleOauth from "simple-oauth2";
+import simpleOauth from "simple-oauth2";
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";

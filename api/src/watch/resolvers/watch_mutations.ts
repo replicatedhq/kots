@@ -1,5 +1,5 @@
 import { Validator } from "jsonschema";
-import * as _ from "lodash";
+import _ from "lodash";
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";

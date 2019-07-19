@@ -1,7 +1,7 @@
 import { PendingInitSession } from "./";
 import { Params } from "../server/params";
 import { ReplicatedError } from "../server/errors";
-import * as pg from "pg";
+import pg from "pg";
 
 export class PendingStore {
   constructor(

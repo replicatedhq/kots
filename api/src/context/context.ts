@@ -4,7 +4,7 @@ import { Params } from "../server/params";
 import { ReplicatedError } from "../server/errors";
 import { isAfter } from "date-fns";
 import { Cluster } from "../cluster";
-import * as _ from "lodash";
+import _ from "lodash";
 import { Stores } from "../schema/stores";
 import { Watch } from "../watch";
 import slugify from "slugify";

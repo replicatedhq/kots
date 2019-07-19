@@ -1,6 +1,6 @@
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
-import * as _ from "lodash";
+import _ from "lodash";
 import { ReplicatedError } from "../../server/errors";
 
 export function TroubleshootQueries(stores: Stores) {

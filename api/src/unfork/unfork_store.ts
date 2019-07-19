@@ -1,8 +1,8 @@
-import * as randomstring from "randomstring";
-import * as rp from "request-promise";
+import randomstring from "randomstring";
+import rp from "request-promise";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { UnforkSession } from "./";
 
 export class UnforkStore {

@@ -1,8 +1,8 @@
 import { Params } from "../server/params";
-import * as pg from "pg";
-import * as rp from "request-promise";
+import pg from "pg";
+import rp from "request-promise";
 import { EditSession } from "./edit_session";
-import * as randomstring from "randomstring";
+import randomstring from "randomstring";
 import { logger } from "../server/logger";
 
 export class EditStore {

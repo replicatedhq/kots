@@ -1,9 +1,9 @@
-import * as randomstring from "randomstring";
-import * as rp from "request-promise";
+import randomstring from "randomstring";
+import rp from "request-promise";
 import { UpdateSession } from "./";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 
 export class UpdateStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
