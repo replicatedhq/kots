@@ -29,6 +29,10 @@ export const Query = `
     searchWatches(watchName: String!): [Watch]
     getWatch(slug: String, id: String): Watch
     getParentWatch(id: String): Watch
+
+    getWatchLicense(watchId: String!, entitlementSpec: String): License
+    getLatestWatchLicense(licenseId: String!, entitlementSpec: String): License
+
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
     getDownstreamHistory(slug: String!): [VersionDetail]

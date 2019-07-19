@@ -33,6 +33,7 @@ import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
+import { LicenseStore } from "../license";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -98,6 +99,7 @@ export class Server extends ServerLoader {
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
       troubleshootStore: new TroubleshootStore(pool, params),
+      licenseStore: new LicenseStore(pool, params),
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {

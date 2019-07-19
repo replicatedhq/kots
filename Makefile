@@ -39,4 +39,4 @@ reset-ships:
 	kubectl delete ns `kubectl get ns | grep shipwatch- | awk '{print $1}'` || true
 	kubectl delete ns `kubectl get ns | grep shipedit- | awk '{print $1}'` || true
 	kubectl delete ns `kubectl get ns | grep shipupdate- | awk '{print $1}'` || true
-	kubectl delete ns `kubectl get ns | grep shipinit- | awk '{print $1}'` || terue
+	kubectl delete ns `kubectl get ns | grep shipinit- | awk '{print $1}'` || true

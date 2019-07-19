@@ -47,11 +47,13 @@ type V1 struct {
 }
 
 type License struct {
-	ID        string    `json:"id" yaml:"id" hcl:"id"`
-	Assignee  string    `json:"assignee" yaml:"assignee" hcl:"assignee"`
-	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" hcl:"createdAt"`
-	ExpiresAt time.Time `json:"expiresAt" yaml:"expiresAt" hcl:"expiresAt"`
-	Type      string    `json:"type" yaml:"type" hcl:"type"`
+	ID           string                 `json:"id" yaml:"id" hcl:"id"`
+	Assignee     string                 `json:"assignee" yaml:"assignee" hcl:"assignee"`
+	CreatedAt    time.Time              `json:"createdAt" yaml:"createdAt" hcl:"createdAt"`
+	ExpiresAt    time.Time              `json:"expiresAt" yaml:"expiresAt" hcl:"expiresAt"`
+	Type         string                 `json:"type" yaml:"type" hcl:"type"`
+	Channel      string                 `json:"channel,omitempty" yaml:"channel,omitempty" hcl:"channel,omitempty"`
+	Entitlements []api.EntitlementValue `json:"entitlements,omitempty" yaml:"entitlements,omitempty" hcl:"entitlements,omitempty"`
 }
 
 type Metadata struct {

@@ -53,6 +53,8 @@ spec:
               value: http://ship-cluster-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
               value: http://docker.for.mac.localhost:30065
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: http://graphql-api-prem:3000/graphql
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github

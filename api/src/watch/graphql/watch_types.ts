@@ -83,14 +83,6 @@ const ConfigGroup = `
   }
 `;
 
-const Entitlement = `
-  type Entitlement {
-    key: String
-    value: String
-    name: String
-  }
-`;
-
 export default [
   Watch,
   StateMetadata,
@@ -99,5 +91,4 @@ export default [
   VersionDetail,
   ConfigItem,
   ConfigGroup,
-  Entitlement,
 ];

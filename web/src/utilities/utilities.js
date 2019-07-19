@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import pick from "lodash/pick";
+import find from "lodash/find";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
 import { default as download } from "downloadjs";
@@ -63,6 +64,106 @@ export function getApplicationType(watch) {
 }
 
 /**
+ * Checks if current license is out of date (sync)
+ *
+ * @param {Object} currentWatchLicense The watched application current license
+ * @param {Object} latestWatchLicense The watched application latest license from vendor
+ * @return {Boolean}
+ */
+export function isLicenseOutOfDate(currentWatchLicense, latestWatchLicense) {
+  try {
+    if (
+      currentWatchLicense.id !== latestWatchLicense.id ||
+      currentWatchLicense.channel !== latestWatchLicense.channel ||
+      currentWatchLicense.expiresAt !== latestWatchLicense.expiresAt ||
+      currentWatchLicense.type !== latestWatchLicense.type
+    ) {
+      return true;
+    }
+
+    // check for entitlements
+    if (latestWatchLicense.entitlements && currentWatchLicense.entitlements) {
+      if (latestWatchLicense.entitlements.length !== currentWatchLicense.entitlements.length) {
+        return true;
+      }
+      for (let i = 0; i < latestWatchLicense.entitlements.length; i++) {
+        const entitlement = latestWatchLicense.entitlements[i];
+        const currentEntitlement = find(currentWatchLicense.entitlements, ["key", entitlement.key]);
+        if (!currentEntitlement || currentEntitlement.value !== entitlement.value) {
+          return true
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error(error);
+    return true;
+  }
+}
+
+/**
+ * Retrieves the entitlement spec from app's stateJSON
+ *
+ * @param {String} watch The watched application stateJSON
+ * @return {String} entitlement spec
+ */
+export function getEntitlementSpecFromState(stateJSON) {
+  try {
+    if (!stateJSON) return "";
+    const state = JSON.parse(stateJSON);
+    if (state?.v1?.upstreamContents?.appRelease) {
+      return state.v1.upstreamContents.appRelease.entitlementSpec;
+    }
+    return "";
+  } catch (error) {
+    console.error(error);
+    return "";
+  }
+}
+
+/**
+ * Constructs the watch license from app's watch
+ *
+ * @param {String} watch The watched application to check
+ * @return {String} watch license
+ */
+export function getWatchLicenseFromState(watch) {
+  try {
+    if (!watch) return {};
+
+    const state = JSON.parse(watch.stateJSON);
+    if (!state) return {};
+
+    const appMeta = getWatchMetadata(watch.metadata);
+
+    let channel = "";
+    if (state?.v1?.upstreamContents?.appRelease?.channelName) {
+      channel = state.v1.upstreamContents.appRelease.channelName;
+    }
+
+    let entitlements = [];
+    if (watch.entitlements) {
+      entitlements = watch.entitlements;
+    }
+
+    if (appMeta?.license?.expiresAt === "0001-01-01T00:00:00Z") {
+      appMeta.license.expiresAt = null;
+    }
+    
+    const license = {
+      ...appMeta.license,
+      channel,
+      entitlements
+    };
+    return license;
+  } catch (error) {
+    console.error(error);
+    return {};
+  }
+}
+
+/**
  *
  * @param {String} -
  * @return {String} -
@@ -119,6 +220,13 @@ export function sortAnalyzers(bundleInsight) {
       return 1;
     }
   })
+}
+
+export function getWatchLicenseExpiryDate(watchLicense) {
+  if (!watchLicense) {
+    return "";
+  }
+  return !watchLicense.expiresAt ? "Never" : Utilities.dateFormat(watchLicense.expiresAt, "MMM D, YYYY", false);
 }
 
 export function rootPath(path) {

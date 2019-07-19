@@ -159,3 +159,31 @@ func TroubleshootAnalyzersFromState(stateJSON []byte) []byte {
 
 	return []byte(shipState.V1.UpstreamContents.AppRelease.AnalyzeSpec)
 }
+
+func LicenseFromState(stateJSON []byte) []byte {
+	shipState, err := stateFromData(stateJSON)
+	if err != nil {
+		return nil
+	}
+
+	if shipState.V1 == nil || shipState.V1.Metadata == nil || shipState.V1.UpstreamContents == nil || shipState.V1.UpstreamContents.AppRelease == nil {
+		return nil
+	}
+
+	license := shipstate.License{
+		ID:  shipState.V1.Metadata.License.ID,
+		Assignee: shipState.V1.Metadata.License.Assignee,
+		Channel: shipState.V1.UpstreamContents.AppRelease.ChannelName,
+		CreatedAt: shipState.V1.Metadata.License.CreatedAt,
+		ExpiresAt: shipState.V1.Metadata.License.ExpiresAt,
+		Type: shipState.V1.Metadata.License.Type,
+		Entitlements: shipState.V1.UpstreamContents.AppRelease.Entitlements.Values,
+	}
+
+	licenseJSON, err := json.Marshal(license)
+	if err != nil {
+		return nil
+	}
+
+	return licenseJSON
+}

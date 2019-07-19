@@ -15,6 +15,7 @@ import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
+import { LicenseStore } from "../license";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -34,4 +35,5 @@ export interface Stores {
   editStore: EditStore,
   helmChartStore: HelmChartStore,
   troubleshootStore: TroubleshootStore,
+  licenseStore: LicenseStore,
 }

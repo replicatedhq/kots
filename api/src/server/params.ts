@@ -27,6 +27,7 @@ export class Params {
   readonly s3SecretAccessKey: string;
   readonly s3BucketEndpoint: string;
   readonly apiAdvertiseEndpoint: string;
+  readonly graphqlPremEndpoint: string;
 
   constructor({
     githubAppInstallURL,
@@ -50,7 +51,8 @@ export class Params {
     s3AccessKeyId,
     s3SecretAccessKey,
     s3BucketEndpoint,
-    apiAdvertiseEndpoint
+    apiAdvertiseEndpoint,
+    graphqlPremEndpoint,
   }) {
     this.githubAppInstallURL = githubAppInstallURL;
     this.githubClientId = githubClientId;
@@ -70,10 +72,11 @@ export class Params {
     this.skipDeployToWorker = skipDeployToWorker;
     this.objectStoreInDatabase = objectStoreInDatabase;
     this.s3Endpoint = s3Endpoint;
-    this.s3AccessKeyId = s3AccessKeyId,
-    this.s3SecretAccessKey = s3SecretAccessKey,
-    this.s3BucketEndpoint = s3BucketEndpoint,
-    this.apiAdvertiseEndpoint = apiAdvertiseEndpoint
+    this.s3AccessKeyId = s3AccessKeyId;
+    this.s3SecretAccessKey = s3SecretAccessKey;
+    this.s3BucketEndpoint = s3BucketEndpoint;
+    this.apiAdvertiseEndpoint = apiAdvertiseEndpoint;
+    this.graphqlPremEndpoint = graphqlPremEndpoint;
   }
 
   static async getParams(): Promise<Params> {
@@ -104,6 +107,7 @@ export class Params {
       s3SecretAccessKey: await param("S3_SECRET_ACCESS_KEY", "/shipcloud/s3/secret_access_key", true),
       s3BucketEndpoint: await param("S3_BUCKET_ENDPOINT", "/shipcloud/s3/bucket_endpoint", false),
       apiAdvertiseEndpoint: process.env["SHIP_API_ADVERTISE_ENDPOINT"],
+      graphqlPremEndpoint: await param("GRAPHQL_PREM_ENDPOINT", "/graphql/prem_endpoint", false),
     });
 
     return Params.instance;

@@ -46,3 +46,5 @@ spec:
               value: check-ssm
             - name: GITHUB_INTEGRATION_ID
               value: check-ssm
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: https://pg.replicated.com/graphql

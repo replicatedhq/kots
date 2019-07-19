@@ -38,3 +38,4 @@ resources:
 - ./watch_troubleshoot_analyzer.yaml
 - ./supportbundle.yaml
 - ./supportbundle_analysis.yaml
+- ./watch_license.yaml

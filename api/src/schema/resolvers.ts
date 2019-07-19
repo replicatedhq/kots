@@ -15,6 +15,7 @@ import { Stores } from "./stores";
 import { GithubInstallationQueries, GithubInstallationMutations } from "../github_installation";
 import { HelmChartQueries, HelmChartMutations } from "../helmchart";
 import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
+import { LicenseQueries, LicenseMutations } from "../license";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
@@ -33,6 +34,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...HelmChartQueries(stores),
     ...ImageWatchQueries(stores),
     ...TroubleshootQueries(stores),
+    ...LicenseQueries(stores),
   },
 
   Mutation: {
@@ -49,5 +51,6 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...HelmChartMutations(stores),
     ...ImageWatchMutations(stores),
     ...TroubleshootMutations(stores),
+    ...LicenseMutations(stores),
   }
 })

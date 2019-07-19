@@ -136,7 +136,12 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 		}
 		analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
 		if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), updateSession.WatchID, analyzers); err != nil {
-			return errors.Wrap(err, "set troubleshoot collectors")
+			return errors.Wrap(err, "set troubleshoot analyzers")
+		}
+
+		license := ship.LicenseFromState(stateJSON)
+		if err := w.Store.SetWatchLicense(context.TODO(), updateSession.WatchID, license); err != nil {
+			return errors.Wrap(err, "set watch license")
 		}
 
 		if err := w.Store.SetUpdateStatus(context.TODO(), id, "completed"); err != nil {

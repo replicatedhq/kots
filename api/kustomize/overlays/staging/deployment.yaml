@@ -50,3 +50,5 @@ spec:
               value: check-ssm
             - name: PINO_LOG_PRETTY
               value: "1"
+            - name: GRAPHQL_PREM_ENDPOINT
+              value: https://pg.staging.replicated.com/graphql

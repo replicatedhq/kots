@@ -1,0 +1,24 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: watch-license
+spec:
+  database: ship-cluster-postgres
+  name: watch_license
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - watch_id
+      columns:
+      - name: watch_id
+        type: text
+        constraints:
+          notNull: true
+      - name: license
+        type: text
+      - name: license_updated_at
+        type: timestamp without time zone
+

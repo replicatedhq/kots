@@ -12,6 +12,7 @@ import Edit from "../edit/graphql/edit_types";
 import Pending from "../pending/graphql/pending_types";
 import HelmChart from "../helmchart/graphql/helmchart_types";
 import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
+import License from "../license/graphql/license_types";
 
 import { all as Mutation } from "./mutation";
 import { Healthz, Query } from "./query";
@@ -42,4 +43,5 @@ export const ShipClusterSchemaTypes = [
   ...Pending,
   ...HelmChart,
   ...Troubleshoot,
+  ...License,
 ];

@@ -137,3 +137,20 @@ export const deleteNotification = gql`
     deleteNotification(id: $id, isPending: $isPending)
   }
 `;
+
+export const syncWatchLicense = gql`
+  mutation syncWatchLicense ($watchId: String!, $licenseId: String!, $entitlementSpec: String) {
+    syncWatchLicense(watchId: $watchId, licenseId: $licenseId, entitlementSpec: $entitlementSpec) {
+      id
+      channel
+      createdAt
+      expiresAt
+      type
+      entitlements {
+        key
+        value
+        name
+      }
+    }
+  }
+`;

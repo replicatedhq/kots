@@ -796,4 +796,38 @@ export const getDownstreamHistoryRaw = `
   }
 `;
 
+export const getWatchLicense = gql`
+  query getWatchLicense($watchId: String!, $entitlementSpec: String) {
+    getWatchLicense(watchId: $watchId, entitlementSpec: $entitlementSpec) {
+      id
+      channel
+      createdAt
+      expiresAt
+      type
+      entitlements {
+        key
+        value
+        name
+      }
+    }
+  }
+`;
+
+export const getLatestWatchLicense = gql`
+  query getLatestWatchLicense($licenseId: String!, $entitlementSpec: String) {
+    getLatestWatchLicense(licenseId: $licenseId, entitlementSpec: $entitlementSpec) {
+      id
+      channel
+      createdAt
+      expiresAt
+      type
+      entitlements {
+        key
+        value
+        name
+      }
+    }
+  }
+`;
+
 export const getDownstreamHistory = gql(getDownstreamHistoryRaw);

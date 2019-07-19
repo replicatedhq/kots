@@ -356,3 +356,14 @@ func (s *SQLStore) UpdateWatchState(ctx context.Context, watchID string, stateJS
 
 	return nil
 }
+
+func (s *SQLStore) SetWatchLicense(ctx context.Context, watchID string, license []byte) error {
+	query := `insert into watch_license (watch_id, license, license_updated_at) values ($1, $2, $3)
+	on conflict (watch_id) do update set license = EXCLUDED.license, license_updated_at = EXCLUDED.license_updated_at`
+	_, err := s.db.ExecContext(ctx, query, watchID, license, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "set license")
+	}
+
+	return nil
+}

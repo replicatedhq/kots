@@ -167,7 +167,12 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 	}
 	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
 	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), unforkSession.ID, analyzers); err != nil {
-		return errors.Wrap(err, "set troubleshoot collectors")
+		return errors.Wrap(err, "set troubleshoot analyzers")
+	}
+
+	license := ship.LicenseFromState(stateJSON)
+	if err := w.Store.SetWatchLicense(context.TODO(), unforkSession.ID, license); err != nil {
+		return errors.Wrap(err, "set watch license")
 	}
 
 	if err := w.Store.SetUnforkStatus(context.TODO(), id, "completed"); err != nil {
@@ -245,7 +250,12 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	}
 	analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
 	if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), initSession.ID, analyzers); err != nil {
-		return errors.Wrap(err, "set troubleshoot collectors")
+		return errors.Wrap(err, "set troubleshoot analyzers")
+	}
+
+	license := ship.LicenseFromState(stateJSON)
+	if err := w.Store.SetWatchLicense(context.TODO(), initSession.ID, license); err != nil {
+		return errors.Wrap(err, "set watch license")
 	}
 
 	prNumber, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)
