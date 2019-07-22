@@ -23,6 +23,11 @@
       "\\.(scss|css|less)$": "<rootDir>/__mocks__/styleMock.js",
       "monaco-editor": "<rootDir>/node_modules/react-monaco-editor",
       "@src/(.*)$": "<rootDir>/src/$1"
+    },
+    "globals": {
+      "env": {
+        "GRAPHQL_ENDPOINT": "gql-test-endpoint.com"
+      }
     }
   },
   "devDependencies": {
@@ -43,6 +48,7 @@
     "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-dynamic-import": "^2.1.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-flow": "^6.23.0",
