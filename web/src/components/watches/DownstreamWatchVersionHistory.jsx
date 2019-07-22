@@ -133,7 +133,8 @@ export default compose(
     options: ({ match }) => ({
       variables: {
         slug: `${match.params.downstreamOwner}/${match.params.downstreamSlug}`
-      }
+      },
+      fetchPolicy: "no-cache"
     })
   })
 )(DownstreamWatchVersionHistory);

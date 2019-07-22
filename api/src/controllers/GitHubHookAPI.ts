@@ -124,7 +124,7 @@ export class GitHubHookAPI {
               // We should not update the current ssequence to something lower than what it already is.
               // This will create a bug where we show a PR as not merged but GH will show it as merged
               // because they automatically do it. This will be fixed when we verify commit sha's on our end.
-              if (pendingVersion.sequence! < watch.currentVersion.sequence!) {
+              if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
                 return;
               }
               await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);

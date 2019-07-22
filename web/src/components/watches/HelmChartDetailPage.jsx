@@ -119,19 +119,19 @@ export default compose(
   graphql(listWatches, {
     name: "listWatchesQuery",
     options: {
-      fetchPolicy: "cache-and-network"
+      fetchPolicy: "no-cache"
     }
   }),
   graphql(listPendingInit, {
     name: "listPendingInitQuery",
     options: {
-      fetchPolicy: "cache-and-network"
+      fetchPolicy: "no-cache"
     }
   }),
   graphql(listHelmCharts, {
     name: "listHelmChartsQuery",
     options: {
-      fetchPolicy: "cache-and-network"
+      fetchPolicy: "no-cache"
     }
   })
 )(HelmChartDetailPage);
