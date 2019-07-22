@@ -44,6 +44,8 @@ entitlements:
     - key: entitlements.replicated.com/type
       value: number
   utilizations: []
+entitlementSpec: ""
+configSpec: ""
 collectSpec: ""
 analyzeSpec: ""
 type: replicated.app

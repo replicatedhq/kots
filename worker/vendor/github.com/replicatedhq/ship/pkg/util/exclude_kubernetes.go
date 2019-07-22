@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/kustomize/pkg/patch"
 	"sigs.k8s.io/kustomize/pkg/resid"
 	"sigs.k8s.io/kustomize/pkg/types"
@@ -238,7 +238,7 @@ func getKustomization(fs afero.Afero, basePath string) (*types.Kustomization, er
 }
 
 func writeKustomization(fs afero.Afero, basePath string, kustomization *types.Kustomization) error {
-	kustomizeYaml, err := yaml.Marshal(kustomization)
+	kustomizeYaml, err := MarshalIndent(2, kustomization)
 	if err != nil {
 		return errors.Wrapf(err, "marshal kustomization yaml from %s", basePath)
 	}

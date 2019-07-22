@@ -11,13 +11,15 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship/pkg/api"
-	"github.com/replicatedhq/ship/pkg/util"
 	"github.com/spf13/afero"
+	yamlv3 "gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizepatch "sigs.k8s.io/kustomize/pkg/patch"
 	k8stypes "sigs.k8s.io/kustomize/pkg/types"
+
+	"github.com/replicatedhq/ship/pkg/api"
+	"github.com/replicatedhq/ship/pkg/util"
 )
 
 const PATCH_TOKEN = "TO_BE_MODIFIED"
@@ -184,7 +186,7 @@ func (p *ShipPatcher) ApplyPatch(patch []byte, step api.Kustomize, resource stri
 		PatchesStrategicMerge: []kustomizepatch.StrategicMerge{TempYamlPath},
 	}
 
-	kustomizationYamlBytes, err := yaml.Marshal(kustomizationYaml)
+	kustomizationYamlBytes, err := yamlv3.Marshal(kustomizationYaml)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal kustomization yaml")
 	}

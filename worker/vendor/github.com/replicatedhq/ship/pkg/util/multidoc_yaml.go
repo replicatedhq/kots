@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/kustomize/pkg/types"
 )
 
@@ -112,7 +112,7 @@ func generateOutputYaml(idx int, fileString string) ([]outputYaml, []string, err
 		_ = yaml.Unmarshal([]byte(fileString), &thisList)
 
 		for itemIdx, item := range thisList.Items {
-			itemYaml, err := yaml.Marshal(item)
+			itemYaml, err := MarshalIndent(2, item)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "marshal item %d from file %d", itemIdx, idx)
 			}
@@ -264,7 +264,7 @@ func splitKustomizeDir(fs afero.Afero, path string) error {
 		// TODO actually split this yaml and edit kustomization
 	}
 
-	kustYamlBytes, err := yaml.Marshal(kustomization)
+	kustYamlBytes, err := MarshalIndent(2, kustomization)
 	if err != nil {
 		return errors.Wrapf(err, "marshal edited kustomization yaml from %s", filepath.Join(path, "kustomization.yaml"))
 	}
@@ -321,7 +321,7 @@ func generateKustomizationYaml(fs afero.Afero, path string) error {
 		}
 	}
 
-	kustomizationBytes, err := yaml.Marshal(kustomization)
+	kustomizationBytes, err := MarshalIndent(2, kustomization)
 	if err != nil {
 		return errors.Wrapf(err, "marshal kustomization yaml for %s", path)
 	}

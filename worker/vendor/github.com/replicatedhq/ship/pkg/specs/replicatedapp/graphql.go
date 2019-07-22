@@ -26,6 +26,7 @@ const ShipRelease = `
     semver
     releaseNotes
     spec
+    configSpec
     images {
       url
       source
@@ -44,6 +45,7 @@ const ShipRelease = `
         data
       }
     }
+    entitlementSpec
     entitlements {
       values {
         key
