@@ -31,7 +31,7 @@ class SideBar extends Component {
     }
 
     return (
-      <div className={classNames("sidebar flex-column flex1 u-overflow--auto", className)}>
+      <div className={classNames("sidebar flex-column flex-auto u-overflow--auto", className)}>
         <div className="flex-column u-width--full">
           {items?.map((jsx, idx) => {
             return (

@@ -29,7 +29,7 @@ export function PendingHelmChartDetailPage(props) {
   ];
 
   return (
-    <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingTop--20 u-paddingBottom--20">
+    <div className="DetailPageApplication--wrapper flex-column flex1 container alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
       <div className="DetailPageApplication flex flex-auto flex-column">
         <div className="flex1 flex-column u-paddingRight--30">
           <div className="flex">

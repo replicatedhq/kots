@@ -218,7 +218,7 @@ class DetailPageApplication extends Component {
     const appMeta = getWatchMetadata(watch.metadata);
 
     return (
-      <div className="DetailPageApplication--wrapper flex-column flex1 centered-container alignItems--center u-overflow--auto">
+      <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <Helmet>
           <title>{`${watch.watchName} Config Overview`}</title>
         </Helmet>

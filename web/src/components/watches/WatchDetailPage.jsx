@@ -267,11 +267,10 @@ class WatchDetailPage extends Component {
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
-          className="flex u-minHeight--full u-overflow--hidden"
+          className="flex flex1 u-minHeight--full u-overflow--hidden"
           condition={listWatches?.length > 1}
           sidebar={(
             <SideBar
-              className="flex flex1"
               items={listWatches?.map( (item, idx) => {
                 let sidebarItemNode;
                 if (item.slug) {
@@ -297,7 +296,7 @@ class WatchDetailPage extends Component {
               })}
             />
           )}>
-          <div className="flex-column flex3 u-width--full u-height--full">
+          <div className="flex-column flex1 u-width--full u-height--full">
             {loading
               ? centeredLoader
               : (
