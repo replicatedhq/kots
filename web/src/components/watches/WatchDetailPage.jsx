@@ -446,6 +446,7 @@ class WatchDetailPage extends Component {
   }
 }
 
+export { WatchDetailPage };
 export default compose(
   withApollo,
   withRouter,

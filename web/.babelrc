@@ -14,6 +14,7 @@
     "@babel/plugin-proposal-optional-chaining",
     "react-hot-loader/babel",
     "syntax-dynamic-import",
+    "transform-dynamic-import",
     "@babel/plugin-syntax-dynamic-import"
   ]
 }
