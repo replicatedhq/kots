@@ -69,7 +69,7 @@ export class ShipInitCompleted extends React.Component {
     this.setState({ isLoading: false });
   }
 
-  handleGotoWatches = () => {
+  handleGotoDownstreams = () => {
     const { history, onActiveInitSessionCompleted } = this.props;
     const { watchSlug } = this.state;
     onActiveInitSessionCompleted();
@@ -132,7 +132,7 @@ export class ShipInitCompleted extends React.Component {
                   </div>
                   <div className="button-wrapper flex">
                     <div className="flex1 flex card-action-wrapper u-cursor--pointer u-textAlign--center">
-                      <span className="flex1 card-action u-color--astral u-fontSize--small u-fontWeight--medium" onClick={this.handleGotoWatches}>Add to a deployment cluster</span>
+                      <span className="flex1 card-action u-color--astral u-fontSize--small u-fontWeight--medium" onClick={this.handleGotoDownstreams}>Add to a deployment cluster</span>
                     </div>
                   </div>
                 </div>
@@ -140,7 +140,7 @@ export class ShipInitCompleted extends React.Component {
             </div>
 
             <div className="u-textAlign--center">
-              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">Not sure what you want to do? You can <Link to="/watches" className="replicated-link">head back to your watches dashboard</Link> and decide later.</p>
+              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">Not sure what you want to do? You can <Link to={`/watch/${this.state.watchSlug}`} className="replicated-link">head back to your watches dashboard</Link> and decide later.</p>
             </div>
           </div>
         </div>

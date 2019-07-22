@@ -1,5 +1,5 @@
 import { Context } from "../../context";
-import * as _ from "lodash";
+import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { SupportBundle, SupportBundleUpload } from "../";
 

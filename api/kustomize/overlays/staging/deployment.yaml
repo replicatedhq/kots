@@ -52,3 +52,5 @@ spec:
               value: "1"
             - name: GRAPHQL_PREM_ENDPOINT
               value: https://pg.staging.replicated.com/graphql
+            - name: SEGMENTIO_ANALYTICS_WRITE_KEY
+              value: check-ssm

@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { Context } from "../../context";
 
 export function FeatureQueries(stores: any) {

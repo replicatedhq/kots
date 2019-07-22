@@ -1,8 +1,8 @@
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { Cluster } from "./";
 import { ReplicatedError } from "../server/errors";
-import * as randomstring from "randomstring";
+import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
 

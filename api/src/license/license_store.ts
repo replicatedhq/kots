@@ -1,6 +1,6 @@
-import * as pg from "pg";
-import * as _ from "lodash";
-import * as yaml from "js-yaml";
+import pg from "pg";
+import _ from "lodash";
+import yaml from "js-yaml";
 import request from "request-promise";
 import { Params } from "../server/params";
 import { ReplicatedError } from "../server/errors";

@@ -15,8 +15,7 @@
         "allowJs": true,
         "outDir": "build",
         "pretty": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true
+	    "esModuleInterop": true
     },
     "include": [
         "src/**/*.js",

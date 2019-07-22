@@ -1,10 +1,10 @@
 import GitHubApi from "@octokit/rest";
 import { addWeeks } from "date-fns";
-import * as jwt from "jsonwebtoken";
-import * as randomstring from "randomstring";
+import jwt from "jsonwebtoken";
+import randomstring from "randomstring";
 
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { Session } from "./session";
 
 const invalidSession = {

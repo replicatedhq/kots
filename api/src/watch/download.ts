@@ -1,6 +1,6 @@
 import { S3 } from "aws-sdk";
 import Bluebird from "bluebird";
-import * as Gunzip from "gunzip-maybe";
+import Gunzip from "gunzip-maybe";
 import { Writable } from "stream";
 import { extract, Extract } from "tar-stream";
 import { logger } from "../server/logger";

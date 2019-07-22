@@ -1,9 +1,9 @@
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
-import * as bugsnag from "bugsnag";
+import bugsnag from "bugsnag";
 import cors from "cors";
 import { NextFunction, Request, Response } from "express";
-import * as path from "path";
-import * as Sigsci from "sigsci-module-nodejs";
+import path from "path";
+import Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "ts-express-decorators";
 import { $log } from "ts-log-debug";
 import { InitProxy } from "../init/proxy";

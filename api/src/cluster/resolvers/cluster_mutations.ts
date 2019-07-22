@@ -1,15 +1,23 @@
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
+import { Params } from "../../server/params";
+import { trackUserClusterCreated } from "../../util/analytics";
 
-export function ClusterMutations(stores: Stores) {
+export function ClusterMutations(stores: Stores, params: Params) {
   return {
     async createGitOpsCluster(root: any, { title, installationId, gitOpsRef }: any, context: Context) {
       const result = await stores.clusterStore.createNewCluster(context.session.userId, false, title, "gitops", gitOpsRef.owner, gitOpsRef.repo, gitOpsRef.branch, installationId)
+      if (params.segmentioAnalyticsKey) {
+        trackUserClusterCreated(params, context.session.userId, "New Ship Cloud GitOps Cluster Created", gitOpsRef.owner);
+      }
       return result;
     },
 
     async createShipOpsCluster(root: any, { title }: any, context: Context) {
       const result = await stores.clusterStore.createNewCluster(context.session.userId, false, title, "ship");
+      if (params.segmentioAnalyticsKey) {
+        trackUserClusterCreated(params, context.session.userId, "New Ship Cloud ShipOps Cluster Created");
+      }
       return result;
     },
 

@@ -1,10 +1,10 @@
-import * as randomstring from "randomstring";
+import randomstring from "randomstring";
 import {
   Notification,
   PullRequestHistoryItem,
 } from "../generated/types";
 import { ReplicatedError } from "../server/errors";
-import * as pg from "pg";
+import pg from "pg";
 
 export class NotificationStore {
   constructor(private readonly pool: pg.Pool) {}

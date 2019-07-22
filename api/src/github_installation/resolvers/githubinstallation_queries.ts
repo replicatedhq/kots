@@ -1,7 +1,7 @@
 
 import GitHubApi from "@octokit/rest";
-import * as fs from "fs";
-import * as jwt from "jsonwebtoken";
+import fs from "fs";
+import jwt from "jsonwebtoken";
 import request from "request-promise";
 import { StatusCodeError } from "request-promise/errors";
 import {

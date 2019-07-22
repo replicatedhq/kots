@@ -1,4 +1,4 @@
-import * as pg from "pg";
+import pg from "pg";
 
 interface DatabaseInfo {
   connected: boolean;

@@ -1,5 +1,5 @@
-import * as bugsnag from "bugsnag";
-import * as _ from "lodash";
+import bugsnag from "bugsnag";
+import _ from "lodash";
 
 /**
  * ClientErrorDetails is a payload that

@@ -1,13 +1,13 @@
 import { S3 } from "aws-sdk";
 import { stripIndent } from "common-tags";
-import * as _ from "lodash";
-import * as path from "path";
-import * as randomstring from "randomstring";
+import _ from "lodash";
+import path from "path";
+import randomstring from "randomstring";
 import slugify from "slugify";
 import { Watch, Version, StateMetadata, Contributor, parseWatchName } from "./"
 import { ReplicatedError } from "../server/errors";
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { checkExists, putObject } from "../util/s3";
 
 export interface FindWatchOpts {

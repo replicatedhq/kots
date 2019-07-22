@@ -1,9 +1,9 @@
-import * as randomstring from "randomstring";
+import randomstring from "randomstring";
 import rp from "request-promise";
 import { InitSession } from "./";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { ReplicatedError } from "../server/errors";
 
 export class InitStore {

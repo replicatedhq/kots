@@ -1,5 +1,5 @@
 import pino from "pino";
-import * as pinoPretty from "pino-pretty";
+import pinoPretty from "pino-pretty";
 
 export const TSEDVerboseLogging = process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "staging" && !process.env.TSED_SUPPRESS_ACCESSLOG;
 

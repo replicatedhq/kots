@@ -4,8 +4,8 @@ import { Stores } from "../schema/stores";
 import { NotificationQueries } from "../notification";
 import { Context } from "../context";
 import { Entitlement } from '../license';
-import * as _ from "lodash";
-import * as yaml from "js-yaml";
+import _ from "lodash";
+import yaml from "js-yaml";
 
 export class Watch {
   public id: string;

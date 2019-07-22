@@ -1,7 +1,7 @@
-import * as Express from "express";
+import Express from "express";
 import { Controller, Get, Res, Req, HeaderParams } from "ts-express-decorators";
-import * as BasicAuth from "basic-auth";
-import * as _ from "lodash";
+import BasicAuth from "basic-auth";
+import _ from "lodash";
 
 interface ErrorResponse {
   error: {};

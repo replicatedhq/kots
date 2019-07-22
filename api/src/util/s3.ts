@@ -1,4 +1,4 @@
-import * as AWS from "aws-sdk";
+import AWS from "aws-sdk";
 import { Params } from "../server/params";
 
 export function getS3(params: Params): AWS.S3 {
