@@ -113,9 +113,7 @@ export class GitHubHookAPI {
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
     for (const cluster of clusters) {
-      logger.info({msg: "cluster of clusters", cluster});
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
-      logger.info({msg: "watches", watches});
       for (const watch of watches) {
         const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
         for (const pendingVersion of pendingVersions) {
