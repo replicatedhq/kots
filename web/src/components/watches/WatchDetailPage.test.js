@@ -10,7 +10,7 @@ describe("<WatchDetailPage> tests", () => {
       <WatchDetailPage
         match={{
           params: {
-            owner: "Bobby",
+            owner: "bobby",
             slug: "datadog"
           }
         }}
@@ -35,13 +35,13 @@ describe("<WatchDetailPage> tests", () => {
       <WatchDetailPage
         match={{
           params: {
-            owner: "Bobby",
+            owner: "bobby",
             slug: "datadog"
           }
         }}
         history={{
           location: {
-            pathname: "watch/Bobby/datadog"
+            pathname: "watch/bobby/datadog"
           }
         }}
         rootDidInitialWatchFetch={false}
