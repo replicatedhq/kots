@@ -1,4 +1,4 @@
-import * as Express from "express";
+import Express from "express";
 import { Controller, Get, Res, Req, QueryParams, PathParams } from "ts-express-decorators";
 
 interface ErrorResponse {

@@ -1,4 +1,4 @@
-import * as Express from "express";
+import Express from "express";
 import { BodyParams, Controller, HeaderParams, Post, Req, Res } from "ts-express-decorators";
 import { logger } from "../server/logger";
 

@@ -1,5 +1,5 @@
 import { Controller, Get, Req } from "ts-express-decorators";
-import * as Express from "express";
+import Express from "express";
 
 @Controller("/healthz")
 export class HealthzAPI {

@@ -1,5 +1,5 @@
-import * as _ from "lodash";
-import * as zlib from "zlib";
+import _ from "lodash";
+import zlib from "zlib";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "./util";
 import { getS3 } from "../util/s3";
 import { Params } from "../server/params";

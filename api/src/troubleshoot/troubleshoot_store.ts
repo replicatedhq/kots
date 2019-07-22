@@ -1,6 +1,6 @@
-import * as pg from "pg";
-import * as randomstring from "randomstring";
-import * as _ from "lodash";
+import pg from "pg";
+import randomstring from "randomstring";
+import _ from "lodash";
 import { Params } from "../server/params";
 import { signPutRequest, signGetRequest } from "../util/s3";
 import { ReplicatedError } from "../server/errors";

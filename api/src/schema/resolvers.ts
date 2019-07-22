@@ -39,7 +39,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
 
   Mutation: {
     ...UserMutations(stores, params),
-    ...ClusterMutations(stores),
+    ...ClusterMutations(stores, params),
     ...WatchMutations(stores),
     ...UpdateMutations(stores),
     ...UnforkMutations(stores),

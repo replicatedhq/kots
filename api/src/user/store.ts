@@ -1,7 +1,7 @@
 // @ts-ignore
 import { addMinutes } from "date-fns";
-import * as randomstring from "randomstring";
-import * as pg from "pg";
+import randomstring from "randomstring";
+import pg from "pg";
 import { GithubNonce } from "./";
 
 export class GithubNonceStore {

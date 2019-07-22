@@ -1,9 +1,9 @@
-import * as util from "util";
-import * as Api from "kubernetes-client";
-import * as tmp from "tmp";
-import * as fs from "fs";
+import util from "util";
+import Api from "kubernetes-client";
+import tmp from "tmp";
+import fs from "fs";
 import { exec } from "child_process";
-import * as which from "which";
+import which from "which";
 
 import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "../server/params";

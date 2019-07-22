@@ -1,6 +1,6 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import { Params } from "../server/params";
-import * as pg from "pg";
+import pg from "pg";
 import { Feature } from "./";
 
 export class FeatureStore {

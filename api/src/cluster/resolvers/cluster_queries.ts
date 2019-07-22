@@ -1,6 +1,6 @@
 import { Context } from "../../context";
 import { Cluster } from "../";
-import * as _ from "lodash";
+import _ from "lodash";
 import { Stores } from "../../schema/stores";
 
 export function ClusterQueries(stores: Stores) {

@@ -1,6 +1,6 @@
 import { HelmChart } from "./";
 import { ReplicatedError } from "../server/errors";
-import * as pg from "pg";
+import pg from "pg";
 
 export class HelmChartStore {
   constructor(

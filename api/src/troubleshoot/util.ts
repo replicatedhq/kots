@@ -1,4 +1,4 @@
-import * as tar from "tar-stream";
+import tar from "tar-stream";
 
 export interface FilesAsString {
   fakeIndex: string[];

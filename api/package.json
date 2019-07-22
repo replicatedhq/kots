@@ -9,6 +9,7 @@
     "@octokit/rest": "^15.10.0",
     "@types/github": "^7.1.0",
     "@types/pg": "^7.4.10",
+    "analytics-node": "^3.4.0-beta.1",
     "apollo-server-express": "^1.2.0",
     "aws-sdk": "^2.449.0",
     "base32": "^0.0.6",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@pact-foundation/pact": "^8.2.2",
+    "@types/analytics-node": "^3.1.1",
     "@types/bluebird": "^3.5.24",
     "@types/chai": "^4.1.6",
     "@types/common-tags": "^1.8.0",

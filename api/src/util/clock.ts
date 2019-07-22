@@ -1,4 +1,4 @@
-import * as moment from "moment";
+import moment from "moment";
 
 // helps with testability
 export interface Clock {

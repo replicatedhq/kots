@@ -1,12 +1,15 @@
-import * as GitHubApi from "@octokit/rest";
+import GitHubApi from "@octokit/rest";
 import { isAfter } from "date-fns";
-import * as simpleOauth from "simple-oauth2";
+import simpleOauth from "simple-oauth2";
 import { ReplicatedError } from "../../server/errors";
 import { logger } from "../../server/logger";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
-import { GitHubUser, AccessToken } from "../";
+import { AccessToken } from "../";
+import uuid from "uuid";
+
+import { identifyUser, trackUserSCMLeads } from "../../util/analytics";
 
 export type authCode = { code: string };
 
@@ -66,6 +69,10 @@ export function UserMutations(stores: Stores, params: Params) {
           //   await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
           // }
         }
+        if (params.segmentioAnalyticsKey) {
+          identifyUser(params, user.id, user.githubUser ? user.githubUser.login : "");
+        }
+
         await stores.userStore.updateLastLogin(user.id);
         const session = await stores.sessionStore.createGithubSession(user.id, github, accessToken.access_token);
 
@@ -84,6 +91,9 @@ export function UserMutations(stores: Stores, params: Params) {
     },
 
     async trackScmLead(root: any, args: any, context: Context): Promise<string> {
+      if (params.segmentioAnalyticsKey) {
+        trackUserSCMLeads(params, uuid.v4(), "New Ship Cloud SCM Lead", args.emailAddress, args.deploymentPreference, args.scmProvider);
+      }
       return await stores.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 

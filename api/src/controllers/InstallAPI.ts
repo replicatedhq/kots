@@ -1,4 +1,4 @@
-import * as Express from "express";
+import Express from "express";
 import { Controller, Get, PathParams, Res, Req } from "ts-express-decorators";
 
 @Controller("/api/install")

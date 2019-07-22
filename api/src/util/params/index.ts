@@ -1,4 +1,4 @@
-import * as AWS from "aws-sdk";
+import AWS from "aws-sdk";
 
 let ssmClient: AWS.SSM;
 const cache: { [key: string]: string } = {};
