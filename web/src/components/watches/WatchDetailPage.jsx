@@ -471,7 +471,7 @@ export default compose(
     options: props => {
       const { owner, slug } = props.match.params;
       return {
-        fetchPolicy: "network-only",
+        fetchPolicy: "no-cache",
         variables: {
           slug: `${owner}/${slug}`
         }

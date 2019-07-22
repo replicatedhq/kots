@@ -78,7 +78,7 @@ class DetailPageIntegrations extends React.Component {
       this.props.client.query({
         query: listNotificationsQuery,
         variables: { watchId: this.props.watch.id },
-        fetchPolicy: "network-only"
+        fetchPolicy: "no-cache"
       })
         .then((res) => {
           this.setState({ notifications: res.data.listNotifications });
@@ -167,7 +167,7 @@ class DetailPageIntegrations extends React.Component {
                 this.props.client.query({
                   query: listNotificationsQuery,
                   variables: { watchId: watch.id },
-                  fetchPolicy: "network-only"
+                  fetchPolicy: "no-cache"
                 }).then((res) => {
                   this.setState({ notifications: res.data.listNotifications });
                 });
@@ -187,7 +187,7 @@ class DetailPageIntegrations extends React.Component {
                 this.props.client.query({
                   query: listNotificationsQuery,
                   variables: { watchId: watch.id },
-                  fetchPolicy: "network-only"
+                  fetchPolicy: "no-cache"
                 }).then((res) => {
                   this.setState({ notifications: res.data.listNotifications });
                 });

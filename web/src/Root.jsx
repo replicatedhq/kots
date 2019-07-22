@@ -158,7 +158,7 @@ class Root extends Component {
     // Fetch list of your watches
     const watchList = await GraphQLClient.query({
       query: listWatches,
-      fetchPolicy: "network-only"
+      fetchPolicy: "no-cache"
     }).catch( error => {
       throw error;
     });
@@ -166,7 +166,7 @@ class Root extends Component {
     // Fetch list of pending inits
     const pendingInits = await GraphQLClient.query({
       query: listPendingInit,
-      fetchPolicy: "network-only"
+      fetchPolicy: "no-cache"
     }).catch( error => {
       throw error;
     });
@@ -174,7 +174,7 @@ class Root extends Component {
     // Fetch list of pending unforks
     const pendingUnforks = await GraphQLClient.query({
       query: listHelmCharts,
-      fetchPolicy: "network-only"
+      fetchPolicy: "no-cache"
     }).catch( error => {
       throw error;
     });
