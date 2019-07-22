@@ -2,7 +2,7 @@ import Analytics from "analytics-node";
 import { Params } from "../server/params";
 
 export function getAnalytics(params: Params){
-  return new Analytics(params.segmentioAnalyticsKey, { flushAt: 1 });
+  return new Analytics(params.segmentioAnalyticsKey);
 };
 
 
