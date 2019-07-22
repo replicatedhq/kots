@@ -134,6 +134,7 @@ func GetPodSpec(ctx context.Context, logLevel string, shipImage string, shipTag 
 							"--log-level",
 							logLevel,
 							"--prefer-git",
+							"--files-in-state",
 							"--state-from",
 							"url",
 							"--state-put-url",
