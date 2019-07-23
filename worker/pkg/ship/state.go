@@ -8,6 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
+
+	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 )
 
 type ReplicatedAppWatch struct {
@@ -160,7 +162,7 @@ func TroubleshootAnalyzersFromState(stateJSON []byte) []byte {
 	return []byte(shipState.V1.UpstreamContents.AppRelease.AnalyzeSpec)
 }
 
-func LicenseFromState(stateJSON []byte) []byte {
+func LicenseJsonFromStateJson(stateJSON []byte) []byte {
 	shipState, err := stateFromData(stateJSON)
 	if err != nil {
 		return nil
@@ -170,7 +172,7 @@ func LicenseFromState(stateJSON []byte) []byte {
 		return nil
 	}
 
-	license := shipstate.License{
+	license := types.License{
 		ID:  shipState.V1.Metadata.License.ID,
 		Assignee: shipState.V1.Metadata.License.Assignee,
 		Channel: shipState.V1.UpstreamContents.AppRelease.ChannelName,
