@@ -1060,7 +1060,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:71b2f3a174a8f5195d38db6843d6579821a6aa02c92a0a468e004ebaad252814"
+  digest = "1:98cd59eede5bbaf197fc6e769b1d38d0e8fd43bd64c8b19afe3dc66722a2625d"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "v0.48.1"
+  revision = "v0.49.0"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
@@ -1370,12 +1370,28 @@
   version = "v0.9.1"
 
 [[projects]]
+  digest = "1:a7f3b30dd6bc89993545373c459a4ade870a852352a8542a93eb52dce37161ab"
+  name = "gopkg.in/laverya/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d84814ce0fc6f7d33859b064799070f0afc74d11"
+  version = "v3.0.0-beta2"
+
+[[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "UT"
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
   version = "v2.2.1"
+
+[[projects]]
+  branch = "v3"
+  digest = "1:46754188622566b86271d7526cb643b88c2b9589ee224c2d55e282f0f35a0df8"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "674ba3eaed223079f9377fbb0c98c0951bf6ec10"
 
 [[projects]]
   digest = "1:6163e6e8fcdb2c545db15aa5fe492fb5c2d59ad54f58fa1cba07f12ceac6d77b"

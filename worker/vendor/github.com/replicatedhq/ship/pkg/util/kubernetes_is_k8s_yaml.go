@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func ShouldAddFileToBase(fs *afero.Afero, excludedBases []string, targetPath string) bool {

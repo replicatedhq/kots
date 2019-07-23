@@ -170,7 +170,7 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 		return errors.Wrap(err, "set troubleshoot analyzers")
 	}
 
-	license := ship.LicenseFromState(stateJSON)
+	license := ship.LicenseJsonFromStateJson(stateJSON)
 	if err := w.Store.SetWatchLicense(context.TODO(), unforkSession.ID, license); err != nil {
 		return errors.Wrap(err, "set watch license")
 	}
@@ -253,7 +253,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 		return errors.Wrap(err, "set troubleshoot analyzers")
 	}
 
-	license := ship.LicenseFromState(stateJSON)
+	license := ship.LicenseJsonFromStateJson(stateJSON)
 	if err := w.Store.SetWatchLicense(context.TODO(), initSession.ID, license); err != nil {
 		return errors.Wrap(err, "set watch license")
 	}

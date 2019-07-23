@@ -101,6 +101,7 @@ type ReleaseMetadata struct {
 	ShipAppMetadata ShipAppMetadata `json:"shipAppMetadata" yaml:"shipAppMetadata" hcl:"shipAppMetadata" meta:"shipAppMetadata"`
 	Entitlements    Entitlements    `json:"entitlements" yaml:"entitlements" hcl:"entitlements" meta:"entitlements"`
 	EntitlementSpec string          `json:"entitlementSpec" yaml:"entitlementSpec" hcl:"entitlementSpec" meta:"entitlementSpec"`
+	ConfigSpec      string          `json:"configSpec" yaml:"configSpec" hcl:"configSpec" meta:"configSpec"`
 	CollectSpec     string          `json:"collectSpec" yaml:"collectSpec" hcl:"collectSpec" meta:"collectSpec"`
 	AnalyzeSpec     string          `json:"analyzeSpec" yaml:"analyzeSpec" hcl:"analyzeSpec" meta:"analyzeSpec"`
 	Type            string          `json:"type" yaml:"type" hcl:"type" meta:"type"`

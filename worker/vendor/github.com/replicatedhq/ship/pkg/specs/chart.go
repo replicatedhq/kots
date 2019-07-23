@@ -17,7 +17,7 @@ import (
 	"github.com/replicatedhq/ship/pkg/constants"
 	"github.com/replicatedhq/ship/pkg/util"
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func (r *Resolver) DefaultHelmUnforkRelease(upstreamAsset api.Asset, forkedAsset api.Asset) api.Spec {
@@ -356,7 +356,7 @@ func (r *Resolver) maybeGetShipYAML(ctx context.Context, localPath string) (*api
 			return nil, errors.Wrapf(err, "read file from %s", shipYAMLPath)
 		}
 		var spec api.Spec
-		if err := yaml.UnmarshalStrict(upstreamRelease, &spec); err != nil {
+		if err := yaml.Unmarshal(upstreamRelease, &spec); err != nil {
 			level.Debug(r.Logger).Log("event", "release.unmarshal.fail", "error", err)
 			return nil, errors.Wrapf(err, "unmarshal ship.yaml")
 		}

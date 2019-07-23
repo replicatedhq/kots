@@ -7,7 +7,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type PostKustomizeFile struct {
@@ -42,7 +41,7 @@ func WritePostKustomizeFiles(debug log.Logger, FS afero.Afero, dest string, post
 	var joinedFinal string
 	for _, file := range postKustomizeFiles {
 		debug.Log("event", "marshal post kustomize file")
-		fileB, err := yaml.Marshal(file.Full)
+		fileB, err := MarshalIndent(2, file.Full)
 		if err != nil {
 			return errors.Wrapf(err, "marshal file %s", file.Minimal.Metadata.Name)
 		}

@@ -7,8 +7,9 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/replicatedhq/ship/pkg/api"
 	"github.com/replicatedhq/ship/pkg/constants"
+	"github.com/replicatedhq/ship/pkg/util"
+
 	"github.com/spf13/viper"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type InstallationContext struct {
@@ -34,7 +35,7 @@ func (ctx *InstallationContext) entitlementValue(name string) string {
 }
 
 func (ctx *InstallationContext) shipCustomerRelease() string {
-	data, err := yaml.Marshal(ctx.Meta)
+	data, err := util.MarshalIndent(2, ctx.Meta)
 	if err != nil {
 		level.Error(ctx.Logger).Log("msg", "unable to marshal release meta", "err", err)
 		return ""

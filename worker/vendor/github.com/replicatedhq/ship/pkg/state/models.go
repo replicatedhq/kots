@@ -47,14 +47,11 @@ type V1 struct {
 }
 
 type License struct {
-	ID              string                 `json:"id" yaml:"id" hcl:"id"`
-	Assignee        string                 `json:"assignee" yaml:"assignee" hcl:"assignee"`
-	CreatedAt       time.Time              `json:"createdAt" yaml:"createdAt" hcl:"createdAt"`
-	ExpiresAt       time.Time              `json:"expiresAt" yaml:"expiresAt" hcl:"expiresAt"`
-	Type            string                 `json:"type" yaml:"type" hcl:"type"`
-	Channel         string                 `json:"channel,omitempty" yaml:"channel,omitempty" hcl:"channel,omitempty"`
-	Entitlements    []api.EntitlementValue `json:"entitlements,omitempty" yaml:"entitlements,omitempty" hcl:"entitlements,omitempty"`
-	EntitlementSpec string                 `json:"entitlementSpec,omitempty" yaml:"entitlementSpec,omitempty" hcl:"entitlementSpec,omitempty"`
+	ID        string    `json:"id" yaml:"id" hcl:"id"`
+	Assignee  string    `json:"assignee" yaml:"assignee" hcl:"assignee"`
+	CreatedAt time.Time `json:"createdAt" yaml:"createdAt" hcl:"createdAt"`
+	ExpiresAt time.Time `json:"expiresAt" yaml:"expiresAt" hcl:"expiresAt"`
+	Type      string    `json:"type" yaml:"type" hcl:"type"`
 }
 
 type Metadata struct {
@@ -110,10 +107,9 @@ func (l *Lifeycle) WithCompletedStep(step api.Step) *Lifeycle {
 }
 
 type Overlay struct {
-	ExcludedBases     []string          `json:"excludedBases,omitempty" yaml:"excludedBases,omitempty" hcl:"excludedBases,omitempty"`
-	Patches           map[string]string `json:"patches,omitempty" yaml:"patches,omitempty" hcl:"patches,omitempty"`
-	Resources         map[string]string `json:"resources,omitempty" yaml:"resources,omitempty" hcl:"resources,omitempty"`
-	KustomizationYAML string            `json:"kustomization_yaml,omitempty" yaml:"kustomization_yaml,omitempty" hcl:"kustomization_yaml,omitempty"`
+	ExcludedBases []string          `json:"excludedBases,omitempty" yaml:"excludedBases,omitempty" hcl:"excludedBases,omitempty"`
+	Patches       map[string]string `json:"patches,omitempty" yaml:"patches,omitempty" hcl:"patches,omitempty"`
+	Resources     map[string]string `json:"resources,omitempty" yaml:"resources,omitempty" hcl:"resources,omitempty"`
 }
 
 func NewOverlay() Overlay {
@@ -318,8 +314,9 @@ type ShipRelease struct {
 	GithubContents  []GithubContent  `json:"githubContents"`
 	Created         string           `json:"created"` // TODO: this time is not in RFC 3339 format
 	RegistrySecret  string           `json:"registrySecret,omitempty"`
-	Entitlements    api.Entitlements `json:"entitlements,omitempty"`
 	EntitlementSpec string           `json:"entitlementSpec,omitempty"`
+	Entitlements    api.Entitlements `json:"entitlements,omitempty"`
+	ConfigSpec      string           `json:"configSpec,omitempty"`
 	CollectSpec     string           `json:"collectSpec,omitempty"`
 	AnalyzeSpec     string           `json:"analyzeSpec,omitempty"`
 }
@@ -338,8 +335,9 @@ func (r *ShipRelease) ToReleaseMeta() api.ReleaseMetadata {
 		RegistrySecret:  r.RegistrySecret,
 		Images:          r.apiImages(),
 		GithubContents:  r.githubContents(),
-		Entitlements:    r.Entitlements,
 		EntitlementSpec: r.EntitlementSpec,
+		Entitlements:    r.Entitlements,
+		ConfigSpec:      r.ConfigSpec,
 		CollectSpec:     r.CollectSpec,
 		AnalyzeSpec:     r.AnalyzeSpec,
 	}

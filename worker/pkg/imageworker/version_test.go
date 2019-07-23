@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/testing/logger"
 	"github.com/stretchr/testify/require"
 
 	semver "github.com/hashicorp/go-version"
@@ -326,13 +325,12 @@ func TestResolveTagDates(t *testing.T) {
 	hostname := "index.docker.io"
 	imageName := "library/postgres"
 	versions := []string{"10.0", "10.1", "10.2"}
-	testLogger := logger.TestLogger{T: t}
 	allVersions := makeVersions(versions)
 
 	reg, err := initRegistryClient(hostname)
 	require.NoError(t, err)
 
-	versionTags, err := resolveTagDates(testLogger, reg, imageName, allVersions)
+	versionTags, err := resolveTagDates(nil, reg, imageName, allVersions)
 	require.NoError(t, err)
 
 	for _, versionTag := range versionTags {

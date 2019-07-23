@@ -139,7 +139,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "set troubleshoot analyzers")
 		}
 
-		license := ship.LicenseFromState(stateJSON)
+		license := ship.LicenseJsonFromStateJson(stateJSON)
 		if err := w.Store.SetWatchLicense(context.TODO(), updateSession.WatchID, license); err != nil {
 			return errors.Wrap(err, "set watch license")
 		}
