@@ -44,7 +44,7 @@ export class ConfigureGitHub extends React.Component {
         orgs: [ NEW_INSTALLATION_ORG, ...this.props.getGithubUserOrgs.installationOrganizations.installations ],
       });
     }
-    if (this.props.integrationToManage.gitOpsRef) {
+    if (this.props.integrationToManage?.gitOpsRef) {
       if (this.props.getGithubUserOrgs !== lastProps.getGithubUserOrgs && this.props.getGithubUserOrgs) {
         const { owner: orgName } = this.props.integrationToManage.gitOpsRef;
         const installations = get(this.props, ["getGithubUserOrgs", "installationOrganizations", "installations"]);
