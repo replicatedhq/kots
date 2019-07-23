@@ -2,12 +2,12 @@ import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { githubUserOrgs, githubOrgRepos, githubRepoBranches, getGitHubInstallationId } from "../../queries/GitHubQueries";
-import { createNotification, updateNotification } from "../../mutations/NotificationMutations";
-import { createGitOpsCluster } from "../../mutations/ClusterMutations";
+import { createGitOpsCluster, updateCluster } from "../../mutations/ClusterMutations";
 import Loader from "@src/components/shared/Loader";
 import find from "lodash/find";
 import get from "lodash/get";
 import Select from "react-select";
+import "../../scss/components/clusters/CreateCluster.scss";
 
 const NEW_ORG_LOGIN = "Install on another GitHub account";
 let externalWindow = window;
@@ -44,9 +44,9 @@ export class ConfigureGitHub extends React.Component {
         orgs: [ NEW_INSTALLATION_ORG, ...this.props.getGithubUserOrgs.installationOrganizations.installations ],
       });
     }
-    if (this.props.integrationToManage) {
+    if (this.props.integrationToManage.gitOpsRef) {
       if (this.props.getGithubUserOrgs !== lastProps.getGithubUserOrgs && this.props.getGithubUserOrgs) {
-        const { owner: orgName } = this.props.integrationToManage;
+        const { owner: orgName } = this.props.integrationToManage.gitOpsRef;
         const installations = get(this.props, ["getGithubUserOrgs", "installationOrganizations", "installations"]);
         const org = find(installations, ["login", orgName]);
         this.setState({
@@ -54,7 +54,7 @@ export class ConfigureGitHub extends React.Component {
           orgReposPage: 1,
           repoBranchesPage: 1,
         });
-        this.populateReposAndBranches(this.props.integrationToManage);
+        this.populateReposAndBranches(this.props.integrationToManage.gitOpsRef);
       }
     }
   }
@@ -100,6 +100,19 @@ export class ConfigureGitHub extends React.Component {
         this.setState({ createSuccess: true });
       })
       .catch(() => this.setState({ createClusterLoading: false }) );
+  }
+
+  handleUpdateClick = async () => {
+    const { org = {}, repo = {}, branch = {} } = this.state;
+    const gitOpsRef = { owner: org.login, repo: repo.name, branch: branch.name }
+    this.setState({ updateClusterLoading: true });
+    await this.props.updateCluster(this.props.integrationToManage.id, this.props.clusterName, gitOpsRef)
+    .then(() => {
+      this.props.refetchClusters();
+      this.setState({ updateClusterLoading: false });
+      this.props.onRequestClose();
+    })
+    .catch()
   }
 
   handleInstallGitHubApp = () => {
@@ -190,9 +203,6 @@ export class ConfigureGitHub extends React.Component {
       installationId,
       orgsLoading: false
     });
-    if (this.props.gatherGitHubData) {
-      this.props.gatherGitHubData("owner", orgName);
-    }
   }
 
   onRepoChange = async(repo) => {
@@ -209,16 +219,10 @@ export class ConfigureGitHub extends React.Component {
       branch,
       reposLoading: false
     });
-    if (this.props.gatherGitHubData) {
-      this.props.gatherGitHubData("repo", repo.name);
-    }
   }
 
   onBranchChange = (branch) => {
     this.setState({ branch });
-    if (this.props.gatherGitHubData) {
-      this.props.gatherGitHubData("branch", branch.name);
-    }
   }
 
   onRootPathChange = (e) => {
@@ -295,7 +299,9 @@ export class ConfigureGitHub extends React.Component {
     const {
       hideRootPath,
       integrationToManage,
-      handleCreationSuccessClick
+      handleCreationSuccessClick,
+      clusterName,
+      onRequestClose,
     } = this.props;
     const {
       orgs,
@@ -309,7 +315,8 @@ export class ConfigureGitHub extends React.Component {
       rootPath,
       orgsLoading,
       reposLoading,
-      branchesLoading
+      branchesLoading,
+      updateClusterLoading,
     } = this.state;
 
     const excludeShipBranches = repoBranches.filter(repo => !repo.name.includes("ship-") )
@@ -332,7 +339,7 @@ export class ConfigureGitHub extends React.Component {
       );
     } else {
       content = (
-        <div className="Form">
+        <div className="Form GitHub-Configure">
           {integrationToManage ?
             <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10 u-marginTop--10">Edit your GitOps reference point</p>
           :
@@ -423,9 +430,14 @@ export class ConfigureGitHub extends React.Component {
               </div>
             }
           </div>
-          {!integrationToManage &&
+          {integrationToManage ?
+            <div className="u-marginTop--20 u-paddingTop--5 flex">
+              <button onClick={onRequestClose} className="btn secondary u-marginRight--10">Cancel</button>
+              <button disabled={!clusterName.length || updateClusterLoading} onClick={this.handleUpdateClick} className="btn green primary">{updateClusterLoading ? "Updating" : "Update cluster"}</button>
+            </div>
+          :
             <div className="flex flex1 justifyContent--flexEnd u-marginTop--20">
-              <button onClick={this.handleCreateClick} className="btn primary" disabled={createClusterLoading || createPRDisabled}>{createClusterLoading ? "Creating cluster" : "Create deployment cluster"}</button>
+              <button onClick={this.handleCreateClick} className="btn primary green" disabled={createClusterLoading || createPRDisabled}>{createClusterLoading ? "Creating cluster" : "Create deployment cluster"}</button>
             </div>
           }
         </div>
@@ -444,14 +456,9 @@ export default compose(
       createGitOpsCluster: (title, installationId, gitOpsRef) => mutate({ variables: { title, installationId, gitOpsRef }})
     })
   }),
-  graphql(createNotification, {
+  graphql(updateCluster, {
     props: ({ mutate }) => ({
-      createNotification: (watchId, webhook, email, pullRequest) => mutate({ variables: { watchId, webhook, email, pullRequest }})
-    })
-  }),
-  graphql(updateNotification, {
-    props: ({ mutate }) => ({
-      updateNotification: (watchId, notificationId, webhook, email, pullRequest) => mutate({ variables: { watchId, notificationId, webhook, email, pullRequest }})
+      updateCluster: (clusterId, clusterName, gitOpsRef) => mutate({ variables: { clusterId, clusterName, gitOpsRef }})
     })
   }),
   graphql(githubUserOrgs, {
