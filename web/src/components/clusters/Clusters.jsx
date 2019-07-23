@@ -6,16 +6,15 @@ import { withRouter } from "react-router-dom";
 
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
+import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import Clipboard from "clipboard";
 import { listClusters } from "../../queries/ClusterQueries";
-import { updateCluster, deleteCluster } from "../../mutations/ClusterMutations";
+import { deleteCluster } from "../../mutations/ClusterMutations";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
-import "../../scss/components/clusters/CreateCluster.scss";
-import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 
 export class Clusters extends React.Component {
   static propTypes = {
@@ -33,16 +32,6 @@ export class Clusters extends React.Component {
     displayDeleteClusterlModal: false,
     deletingCluster: false,
     deleteErr: ""
-  }
-
-  gatherGitHubData = (key, value) => {
-    this.setState({
-      ...this.state,
-      gitOpsRef: {
-        ...this.state.gitOpsRef,
-        [`${key}`]: value
-      }
-    })
   }
 
   manageClusterClick = (cluster) => {
@@ -102,23 +91,6 @@ export class Clusters extends React.Component {
     clipboard.on("error", () => {
       this.showCopyToast("Unable to copy, select the text and use 'Command/Ctl + C'");
     });
-  }
-
-  onUpdateCluster = async () => {
-    const { clusterToManage, clusterName, gitOpsRef } = this.state;
-    this.setState({ updatingCluster: true });
-    await this.props.updateCluster(clusterToManage.id, clusterName, gitOpsRef)
-    .then(() => {
-      this.props.listClustersQuery.refetch();
-      this.setState({
-        updatingCluster: false,
-        displayManageModal: false,
-        clusterToManage: {},
-        clusterName: "",
-        gitOpsRef: {}
-      })
-    })
-    .catch()
   }
 
   onDeleteCluster = async () => {
@@ -216,20 +188,18 @@ export class Clusters extends React.Component {
                 <div className="flex-column flex1">
                   <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginBottom--10 u-marginTop--10">Cluster name</p>
                   <input type="text" className="Input" placeholder="/my-path" value={this.state.clusterName} onChange={(e) => { this.setState({ clusterName: e.target.value }); }}/>
-                  {clusterToManage.gitOpsRef ?
+                  {clusterToManage.gitOpsRef &&
                     <div className="u-marginTop--10">
                       <ConfigureGitHubCluster
                         clusterTitle={this.state.clusterName}
                         hideRootPath={true}
-                        integrationToManage={clusterToManage.gitOpsRef}
-                        gatherGitHubData={this.gatherGitHubData}
+                        integrationToManage={clusterToManage}
+                        onRequestClose={() => this.setState({ clusterToManage: {}, clusterName: "", displayManageModal: false })}
+                        clusterName={this.state.clusterName}
+                        refetchClusters={this.props.listClustersQuery.refetch}
                       />
                     </div>
-                    : null}
-                  <div className={`u-marginTop--${clusterToManage.gitOpsRef ? "20" : "10"} u-paddingTop--5 flex`}>
-                    <button onClick={() => this.setState({ clusterToManage: {}, displayManageModal: false })} className="btn secondary u-marginRight--10">Cancel</button>
-                    <button disabled={!this.state.clusterName.length || this.state.updatingCluster} onClick={this.onUpdateCluster} className="btn green primary">Update cluster</button>
-                  </div>
+                  }
                 </div>
               </div>
             </div>
@@ -306,11 +276,6 @@ export default compose(
     options: {
       fetchPolicy: "network-only"
     }
-  }),
-  graphql(updateCluster, {
-    props: ({ mutate }) => ({
-      updateCluster: (clusterId, clusterName, gitOpsRef) => mutate({ variables: { clusterId, clusterName, gitOpsRef }})
-    })
   }),
   graphql(deleteCluster, {
     props: ({ mutate }) => ({

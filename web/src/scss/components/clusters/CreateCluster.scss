@@ -8,12 +8,6 @@
     color: white;
     margin: 12px 0;
   }
-
-  .select-loader {
-    position: absolute;
-    top: 7px;
-    right: 44px;
-  }
 }
 .InstallClusterModal--wrapper {
   code {
@@ -39,5 +33,13 @@
       border-color: #44BB66;
       background-color: #F8FCF9;
     }
+  }
+}
+
+.GitHub-Configure {
+  .select-loader {
+    position: absolute;
+    top: 7px;
+    right: 44px;
   }
 }
