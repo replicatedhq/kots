@@ -39,3 +39,16 @@ export function trackUserSCMLeads(params: Params, anonymousId: string, event: st
     },
   });
 };
+
+export function trackNewGithubInstall(params: Params, anonymousId: string, event: string, sender: string, login: string, url: string) {
+  const analytics = getAnalytics(params);
+  analytics.track({
+    anonymousId: anonymousId,
+    event: event,
+    properties: {
+      sender: sender,
+      login: login,
+      url: url
+    },
+  })
+};

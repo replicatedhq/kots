@@ -1,6 +1,10 @@
 import Express from "express";
 import { BodyParams, Controller, HeaderParams, Post, Req, Res } from "ts-express-decorators";
 import { logger } from "../server/logger";
+import { Params } from "../server/params";
+import { trackNewGithubInstall } from "../util/analytics";
+import uuid from "uuid";
+
 
 interface GitHubInstallationRequest {
   action: string;
@@ -12,6 +16,7 @@ interface GitHubInstallationRequest {
       id: number;
       // tslint:disable-next-line no-reserved-keywords
       type: string;
+      html_url: string;
     };
   };
   sender: {
@@ -67,7 +72,8 @@ export class GitHubHookAPI {
       }
 
       case "installation": {
-        await this.handleInstallation(body as GitHubInstallationRequest);
+        const params = await Params.getParams();
+        await this.handleInstallation(body as GitHubInstallationRequest, params);
         response.status(204);
         return {};
       }
@@ -88,9 +94,13 @@ export class GitHubHookAPI {
     }
   }
 
-  private async handleInstallation(installationEvent: GitHubInstallationRequest): Promise<void> {
+  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params): Promise<void> {
     if (installationEvent.action === "created") {
-      // Do we care?
+      if (params.segmentioAnalyticsKey) {
+        const installationData = installationEvent.installation;
+        const senderData = installationEvent.sender;
+        trackNewGithubInstall(params, uuid.v4(), "New Github Install", senderData.login, installationData.account.login, installationData.account.html_url);
+      }
     } else if (installationEvent.action === "deleted") {
       // Should we delete all pullrequest notifications?
     }
