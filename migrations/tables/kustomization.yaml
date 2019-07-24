@@ -39,3 +39,4 @@ resources:
 - ./supportbundle.yaml
 - ./supportbundle_analysis.yaml
 - ./watch_license.yaml
+- ./github_install.yaml

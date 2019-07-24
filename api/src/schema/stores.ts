@@ -16,6 +16,7 @@ import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
+import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -36,4 +37,5 @@ export interface Stores {
   helmChartStore: HelmChartStore,
   troubleshootStore: TroubleshootStore,
   licenseStore: LicenseStore,
+  githubInstall: GithubInstallationsStore
 }

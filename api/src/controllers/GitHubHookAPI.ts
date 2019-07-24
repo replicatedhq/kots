@@ -5,9 +5,9 @@ import { Params } from "../server/params";
 import { trackNewGithubInstall } from "../util/analytics";
 import uuid from "uuid";
 
-
 interface GitHubInstallationRequest {
   action: string;
+  id: string;
   installation: {
     id: number;
     access_tokens_url: string;
@@ -22,6 +22,7 @@ interface GitHubInstallationRequest {
   sender: {
     login: string;
     id: number;
+    html_url: string;
   };
 }
 
@@ -73,7 +74,7 @@ export class GitHubHookAPI {
 
       case "installation": {
         const params = await Params.getParams();
-        await this.handleInstallation(body as GitHubInstallationRequest, params);
+        await this.handleInstallation(body as GitHubInstallationRequest, params, request);
         response.status(204);
         return {};
       }
@@ -94,14 +95,17 @@ export class GitHubHookAPI {
     }
   }
 
-  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params): Promise<void> {
+  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params, request: Express.Request): Promise<void> {
+    const installationData = installationEvent.installation;
+    const senderData = installationEvent.sender;
     if (installationEvent.action === "created") {
+      await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.html_url, senderData.login, senderData.html_url);
       if (params.segmentioAnalyticsKey) {
-        const installationData = installationEvent.installation;
-        const senderData = installationEvent.sender;
         trackNewGithubInstall(params, uuid.v4(), "New Github Install", senderData.login, installationData.account.login, installationData.account.html_url);
       }
     } else if (installationEvent.action === "deleted") {
+      // deleting from db when uninstall from GitHub
+      await request.app.locals.stores.githubInstall.deleteGithubInstall(installationData.id);
       // Should we delete all pullrequest notifications?
     }
   }
