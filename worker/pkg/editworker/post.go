@@ -66,41 +66,41 @@ func (w *Worker) triggerIntegrations(watch *types.Watch, sequence int, archive *
 		return errors.Wrap(err, "get cluster for watch")
 	}
 
-	prNumber, versionStatus, branchName, err := w.maybeCreatePullRequest(watch, cluster, archive)
+	prNumber, commitSHA, versionStatus, branchName, err := w.maybeCreatePullRequest(watch, cluster, archive)
 	if err != nil {
 		return errors.Wrap(err, "maybe create pull request")
 	}
 
 	isCurrent := cluster == nil
 
-	if err := w.createVersion(watch, sequence, archive, versionStatus, branchName, prNumber, isCurrent, parentSequence); err != nil {
+	if err := w.createVersion(watch, sequence, archive, versionStatus, branchName, prNumber, commitSHA, isCurrent, parentSequence); err != nil {
 		return errors.Wrap(err, "create version")
 	}
 
 	return nil
 }
 
-func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Cluster, file multipart.File) (int, string, string, error) {
+func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Cluster, file multipart.File) (int, string, string, string, error) {
 	file.Seek(0, io.SeekStart)
 
 	// midstreams won't have a cluster
 	if cluster == nil {
-		return 0, "deployed", "", nil
+		return 0, "", "deployed", "", nil
 	}
 
 	// ship clusters don't need PRs
 	if cluster.Type != "gitops" {
-		return 0, "pending", "", nil
+		return 0, "", "pending", "", nil
 	}
 
 	watchState := state.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
-		return 0, "", "", errors.Wrap(err, "unmarshal watch state")
+		return 0, "", "", "", errors.Wrap(err, "unmarshal watch state")
 	}
 
 	previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
 	if err != nil {
-		return 0, "", "", errors.Wrap(err, "getMostRecentPullRequestCreated")
+		return 0, "", "", "", errors.Wrap(err, "getMostRecentPullRequestCreated")
 	}
 
 	sourceBranch := ""
@@ -108,27 +108,27 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 		sourceBranch = previousWatchVersion.SourceBranch
 	}
 
-	updatePRTitle := fmt.Sprintf("Update %s with edits made in Replicated Ship Cloud", watch.Title)
+	updatePRTitle := fmt.Sprintf("Update %s with edits made in Replicated Ship", watch.Title)
 
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), cluster.ID, watch.ID)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 
 	prRequest, err := pullrequest.NewPullRequestRequest(watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, updatePRTitle, sourceBranch)
 	if err != nil {
-		return 0, "", "", errors.Wrap(err, "new pull request request")
+		return 0, "", "", "", errors.Wrap(err, "new pull request request")
 	}
 
-	prNumber, branchName, err := pullrequest.CreatePullRequest(w.Logger, w.Config.GithubPrivateKey, w.Config.GithubIntegrationID, prRequest)
+	prNumber, commitSHA, branchName, err := pullrequest.CreatePullRequest(w.Logger, w.Config.GithubPrivateKey, w.Config.GithubIntegrationID, prRequest)
 	if err != nil {
-		return 0, "", "", errors.Wrap(err, "create pull request")
+		return 0, "", "", "", errors.Wrap(err, "create pull request")
 	}
 
-	return prNumber, "pending", branchName, nil
+	return prNumber, commitSHA, "pending", branchName, nil
 }
 
-func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, isCurrent bool, parentSequence *int) error {
+func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.File, versionStatus string, branchName string, prNumber int, commitSHA string, isCurrent bool, parentSequence *int) error {
 	versionLabel := "Unknown"
 
 	if parentSequence != nil {
@@ -167,7 +167,7 @@ func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.
 		}
 	}
 
-	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, isCurrent, parentSequence)
+	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, commitSHA, isCurrent, parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "create watch version")
 	}

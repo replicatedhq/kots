@@ -1,8 +1,7 @@
 apiVersion: databases.schemahero.io/v1alpha2
 kind: Database
 metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
+
   name: ship-cluster-postgres
 schemahero:
   nodeSelector:

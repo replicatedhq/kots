@@ -173,13 +173,13 @@ func LicenseJsonFromStateJson(stateJSON []byte) []byte {
 	}
 
 	license := types.License{
-		ID:  shipState.V1.Metadata.License.ID,
-		Assignee: shipState.V1.Metadata.License.Assignee,
-		Channel: shipState.V1.UpstreamContents.AppRelease.ChannelName,
-		CreatedAt: shipState.V1.Metadata.License.CreatedAt,
-		ExpiresAt: shipState.V1.Metadata.License.ExpiresAt,
-		Type: shipState.V1.Metadata.License.Type,
-		Entitlements: shipState.V1.UpstreamContents.AppRelease.Entitlements.Values,
+		ID:              shipState.V1.Metadata.License.ID,
+		Assignee:        shipState.V1.Metadata.License.Assignee,
+		Channel:         shipState.V1.UpstreamContents.AppRelease.ChannelName,
+		CreatedAt:       shipState.V1.Metadata.License.CreatedAt,
+		ExpiresAt:       shipState.V1.Metadata.License.ExpiresAt,
+		Type:            shipState.V1.Metadata.License.Type,
+		Entitlements:    shipState.V1.UpstreamContents.AppRelease.Entitlements.Values,
 		EntitlementSpec: shipState.V1.UpstreamContents.AppRelease.EntitlementSpec,
 	}
 

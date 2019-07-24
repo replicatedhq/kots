@@ -129,10 +129,10 @@ func ShouldCreatePullRequest(logger *zap.SugaredLogger, privateKey string, integ
 	return false, nil
 }
 
-func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integrationID int, prRequest *PullRequestRequest) (int, string, error) {
+func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integrationID int, prRequest *PullRequestRequest) (int, string, string, error) {
 	client, err := initGithubClient(integrationID, privateKey, prRequest.installationID)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "init github client")
+		return 0, "", "", errors.Wrap(err, "init github client")
 	}
 
 	destBranch := prRequest.branch
@@ -152,7 +152,7 @@ func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integration
 		logger.Warnw("failed to get source branch from sha", zap.Error(err))
 		headRef, _, err = client.Git.GetRef(context.TODO(), prRequest.owner, prRequest.repo, fmt.Sprintf("refs/heads/%s", destBranch))
 		if err != nil {
-			return 0, "", errors.Wrap(err, "get head ref")
+			return 0, "", "", errors.Wrap(err, "get head ref")
 		}
 	}
 
@@ -164,23 +164,23 @@ func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integration
 	}
 	_, _, err = client.Git.CreateRef(context.TODO(), prRequest.owner, prRequest.repo, &ref)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "create branch")
+		return 0, "", "", errors.Wrap(err, "create branch")
 	}
 
 	// Create tree
 	treeEntries, err := createTreeEntriesForPullRequest(logger, prRequest)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "create tree entries")
+		return 0, "", "", errors.Wrap(err, "create tree entries")
 	}
 	tree, _, err := client.Git.CreateTree(context.TODO(), prRequest.owner, prRequest.repo, fmt.Sprintf("refs/heads/%s", branchName), treeEntries)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "create tree")
+		return 0, "", "", errors.Wrap(err, "create tree")
 	}
 
 	// Commit
 	parent, _, err := client.Repositories.GetCommit(context.TODO(), prRequest.owner, prRequest.repo, headRef.GetRef())
 	if err != nil {
-		return 0, "", errors.Wrap(err, "get parent commit")
+		return 0, "", "", errors.Wrap(err, "get parent commit")
 	}
 	parentCommit := parent.GetCommit()
 	parentCommit.SHA = parent.SHA // This is a weird bug in the github api...
@@ -200,13 +200,13 @@ func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integration
 	}
 	newCommit, _, err := client.Git.CreateCommit(context.TODO(), prRequest.owner, prRequest.repo, &commit)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "create commit")
+		return 0, "", "", errors.Wrap(err, "create commit")
 	}
 
 	ref.Object.SHA = newCommit.SHA
 	_, _, err = client.Git.UpdateRef(context.TODO(), prRequest.owner, prRequest.repo, &ref, false)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "attach commit to branch")
+		return 0, "", "", errors.Wrap(err, "attach commit to branch")
 	}
 
 	pr := github.NewPullRequest{
@@ -218,10 +218,10 @@ func CreatePullRequest(logger *zap.SugaredLogger, privateKey string, integration
 
 	pullRequest, _, err := client.PullRequests.Create(context.TODO(), prRequest.owner, prRequest.repo, &pr)
 	if err != nil {
-		return 0, "", errors.Wrap(err, "create github pull request")
+		return 0, "", "", errors.Wrap(err, "create github pull request")
 	}
 
-	return pullRequest.GetNumber(), branchName, nil
+	return pullRequest.GetNumber(), newCommit.GetSHA(), branchName, nil
 }
 
 func GenerateBranchBame() string {
