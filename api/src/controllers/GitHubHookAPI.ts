@@ -159,6 +159,9 @@ export class GitHubHookAPI {
         const getCommitsResponse = await github.pullRequests.getCommits(params);
         for (const commit of getCommitsResponse.data) {
           const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
+          if (!pendingVersion) {
+            continue;
+          }
           await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
           if (pullRequestEvent.pull_request.merged) {
             if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
@@ -220,7 +223,7 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
         if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
           await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
           if (pullRequestEvent.pull_request.merged) {
-            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!, pullRequestEvent.merged_at);
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion.sequence!, pullRequestEvent.merged_at);
           }
           return;
         }

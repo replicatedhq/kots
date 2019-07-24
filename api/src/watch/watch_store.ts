@@ -150,7 +150,7 @@ export class WatchStore {
     return versionItems;
   }
 
-  async getVersionForCommit(watchId: string, commitSha: string): Promise<Version> {
+  async getVersionForCommit(watchId: string, commitSha: string): Promise<Version|undefined> {
     const q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and commit_sha = $2`;
     const v = [
       watchId,
@@ -158,6 +158,11 @@ export class WatchStore {
     ];
 
     const result = await this.pool.query(q, v);
+
+    if (result.rowCount === 0) {
+      return;
+    }
+
     return this.mapWatchVersion(result.rows[0]);
   }
 
