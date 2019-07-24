@@ -36,7 +36,7 @@ type Store interface {
 	GetWatchIDFromSlug(ctx context.Context, slug string, userID string) (string, error)
 	GetWatch(ctx context.Context, watchID string) (*types.Watch, error)
 	GetWatches(ctx context.Context, userID string) ([]*types.Watch, error)
-	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, setCurrent bool, parentSequence *int) error
+	CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumner int, commitSHA string, setCurrent bool, parentSequence *int) error
 	GetMostRecentWatchVersion(ctx context.Context, watchID string) (*types.WatchVersion, error)
 	GetOneWatchVersion(ctx context.Context, watchID string, sequence int) (*types.WatchVersion, error)
 	CreateWatchUpdate(ctx context.Context, watchID string, parentSequence *int) error
@@ -62,7 +62,7 @@ type Store interface {
 
 	SetWatchTroubleshootCollectors(ctx context.Context, watchID string, collectors []byte) error
 	SetWatchTroubleshootAnalyzers(ctx context.Context, watchID string, analyzers []byte) error
-	
+
 	SetWatchLicense(ctx context.Context, watchID string, license []byte) error
 
 	ListReadyAnalysisIDs(ctx context.Context) ([]string, error)

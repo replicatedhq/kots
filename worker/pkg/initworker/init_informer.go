@@ -258,7 +258,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 		return errors.Wrap(err, "set watch license")
 	}
 
-	prNumber, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)
+	prNumber, commitSHA, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "maybe create pull request")
 	}
@@ -289,7 +289,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 
 		parentSeq = &seq
 	}
-	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, setActive, parentSeq); err != nil {
+	if err := w.Store.CreateWatchVersion(context.TODO(), initSession.ID, versionLabel, versionStatus, branchName, 0, prNumber, commitSHA, setActive, parentSeq); err != nil {
 		return errors.Wrap(err, "create watch version")
 	}
 
@@ -304,68 +304,68 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	return nil
 }
 
-func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, string, string, error) {
+func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, string, string, string, error) {
 	// If there isn't a cluster, just mark it as deplyed. This is commonly seen
 	// in "midstream" watches
 	if clusterID == "" {
-		return 0, "deployed", "", nil
+		return 0, "", "deployed", "", nil
 	}
 
 	cluster, err := w.Store.GetCluster(context.TODO(), clusterID)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 
 	// For watches that have a ship cluster, mark it as "pending", the user will
 	// take an action to make it deployed
 	if cluster.Type != "gitops" {
-		return 0, "pending", "", nil
+		return 0, "", "pending", "", nil
 	}
 
 	watch, err := w.Store.GetWatch(context.TODO(), watchID)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 	watchState := shipstate.State{}
 	if err := json.Unmarshal([]byte(watch.StateJSON), &watchState); err != nil {
-		return 0, "", "", errors.Wrap(err, "unmarshal watch state")
+		return 0, "", "", "", errors.Wrap(err, "unmarshal watch state")
 	}
 
 	// Get the file from s3
 	s3Filepath := fmt.Sprintf("%s/%d.tar.gz", watchID, 0)
 	filename, err := w.Store.DownloadFromS3(context.TODO(), s3Filepath)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 	file, err := os.Open(filename)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 
 	// And now the real part of this function, for gitops clusters, make a PR and return that status
 	// this is a init, so there's no previous PR
-	firstPRTitle := fmt.Sprintf("Add %s from Replicated Ship Cloud", watch.Title)
+	firstPRTitle := fmt.Sprintf("Add %s from Replicated Ship", watch.Title)
 	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
 		newVersionString := watchState.V1.Metadata.Version
-		firstPRTitle = fmt.Sprintf("Add %s version %s from Replicated Ship Cloud", watch.Title, newVersionString)
+		firstPRTitle = fmt.Sprintf("Add %s version %s from Replicated Ship", watch.Title, newVersionString)
 	}
 
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), clusterID, watchID)
 	if err != nil {
-		return 0, "", "", err
+		return 0, "", "", "", err
 	}
 
 	prRequest, err := pullrequest.NewPullRequestRequest(watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, firstPRTitle, "")
 	if err != nil {
-		return 0, "", "", errors.Wrap(err, "create pull request request")
+		return 0, "", "", "", errors.Wrap(err, "create pull request request")
 	}
 
-	prNumber, branchName, err := pullrequest.CreatePullRequest(w.Logger, w.Config.GithubPrivateKey, w.Config.GithubIntegrationID, prRequest)
+	prNumber, commitSHA, branchName, err := pullrequest.CreatePullRequest(w.Logger, w.Config.GithubPrivateKey, w.Config.GithubIntegrationID, prRequest)
 	if err != nil {
-		return 0, "", "", errors.Wrap(err, "create pull request")
+		return 0, "", "", "", errors.Wrap(err, "create pull request")
 	}
 
-	return prNumber, "pending", branchName, nil
+	return prNumber, commitSHA, "pending", branchName, nil
 }
 
 func stringInSlice(a string, list []string) bool {

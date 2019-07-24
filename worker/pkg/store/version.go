@@ -9,12 +9,12 @@ import (
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 )
 
-func (s *SQLStore) CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumber int, setCurrent bool, parentSequence *int) error {
+func (s *SQLStore) CreateWatchVersion(ctx context.Context, watchID string, versionLabel string, status string, sourceBranch string, sequence int, pullRequestNumber int, commitSHA string, setCurrent bool, parentSequence *int) error {
 	if sourceBranch != "" && pullRequestNumber > 0 {
-		query := `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, parent_sequence)
-		values ($1, $2, $3, $4, $5, $6, $7, $8)`
+		query := `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, commit_sha, parent_sequence)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-		_, err := s.db.ExecContext(ctx, query, watchID, time.Now(), versionLabel, status, sourceBranch, sequence, pullRequestNumber, parentSequence)
+		_, err := s.db.ExecContext(ctx, query, watchID, time.Now(), versionLabel, status, sourceBranch, sequence, pullRequestNumber, commitSHA, parentSequence)
 		if err != nil {
 			return errors.Wrap(err, "create gitops watch version")
 		}

@@ -124,7 +124,7 @@ export class ClusterStore {
   }
 
   async getGitOpsCluster(clusterId: string, watchId?: string): Promise<Cluster> {
-    const fields = ["id", "title", "slug", "created_at", "updated_at", "cluster_type", "owner", "repo", "branch"]
+    const fields = ["id", "title", "slug", "created_at", "updated_at", "cluster_type", "owner", "repo", "branch", "installation_id"]
     if (watchId) {
       fields.push("wc.github_path");
     }
@@ -580,7 +580,7 @@ items:
     const clusters = await this.listClusters(userId);
     const existingSlugs = clusters.map(cluster => cluster.slug);
     let finalSlug = slugProposal;
-    
+
     if (_.includes(existingSlugs, slugProposal)) {
       const maxNumber =
         _(existingSlugs)
@@ -671,6 +671,7 @@ items:
         repo: row.repo,
         branch: row.branch,
         path: row.github_path || "",
+        installationId: row.installation_id,
       }
     }
     return {
