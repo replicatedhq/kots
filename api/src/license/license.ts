@@ -8,5 +8,6 @@ export class License {
   public createdAt: string;
   public expiresAt: string;
   public type: string;
+  public entitlementSpec?: string;
   public entitlements?: Array<Entitlement>;
 }

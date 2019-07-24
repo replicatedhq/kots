@@ -21,11 +21,13 @@ spec:
         type: integer
       - name: account_login
         type: text
+      - name: account_type
+        type: text
       - name: account_html_url
         type: text
       - name: sender_login
         type: text
-      - name: sender_html_url
-        type: text
+      - name: organization_members_total
+        type: integer
       - name: created_at
         type: timestamp without time zone

@@ -1,8 +1,6 @@
 apiVersion: schemas.schemahero.io/v1alpha2
 kind: Table
 metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: watch-version
 spec:
   database: ship-cluster-postgres
@@ -38,4 +36,5 @@ spec:
         type: integer
       - name: deployed_at
         type: timestamp without time zone
-
+      - name: commit_sha
+        type: text

@@ -1,15 +1,19 @@
-import Express from "express";
+import Express, { response } from "express";
 import { BodyParams, Controller, HeaderParams, Post, Req, Res } from "ts-express-decorators";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
+import fs from "fs";
 import { trackNewGithubInstall } from "../util/analytics";
 import uuid from "uuid";
+import GitHubApi from "@octokit/rest";
+import jwt from "jsonwebtoken";
+import { Cluster } from "../cluster";
 
 interface GitHubInstallationRequest {
   action: string;
   id: string;
   installation: {
-    id: number;
+    id: string;
     access_tokens_url: string;
     account: {
       login: string;
@@ -22,7 +26,6 @@ interface GitHubInstallationRequest {
   sender: {
     login: string;
     id: number;
-    html_url: string;
   };
 }
 
@@ -32,6 +35,7 @@ interface GitHubPullRequestEvent {
   number: number;
   pull_request: {
     state: string;
+    commits_url: string;
     merged: boolean;
     base: {
       repo: {
@@ -62,8 +66,6 @@ export class GitHubHookAPI {
     @BodyParams("") body?: { action?: string }, // we're just gonna cast this later
   ): Promise<{} | ErrorResponse> {
     logger.info({msg: `received github hook for eventType ${eventType}`});
-
-    const action = body && body.action;
 
     switch (eventType) {
       case "pull_request": {
@@ -98,8 +100,27 @@ export class GitHubHookAPI {
   private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params, request: Express.Request): Promise<void> {
     const installationData = installationEvent.installation;
     const senderData = installationEvent.sender;
+    let numberOfOrgMembers;
     if (installationEvent.action === "created") {
-      await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.html_url, senderData.login, senderData.html_url);
+      if (installationData.account.type === "Organization") {
+        const github = new GitHubApi();
+        github.authenticate({
+          type: "app",
+          token: await getGitHubBearerToken()
+        });
+
+        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id});
+        github.authenticate({
+          type: "token",
+          token,
+        });
+
+        const org = installationData.account.login;
+        const { data: membersData } = await github.orgs.getMembers({org});
+        numberOfOrgMembers = membersData.length;
+      };
+
+      await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.type, numberOfOrgMembers, installationData.account.html_url, senderData.login);
       if (params.segmentioAnalyticsKey) {
         trackNewGithubInstall(params, uuid.v4(), "New Github Install", senderData.login, installationData.account.login, installationData.account.html_url);
       }
@@ -126,41 +147,111 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
+    /////////
+    // before adding commit_sha, some pending versions don't have them
+    /////////
+    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent);
+    ////////
+    // end of pre-commit-sha compatibility code
+    ////////
+
+    const github = new GitHubApi();
+    github.authenticate({
+      type: "app",
+      token: await getGitHubBearerToken()
+    });
+
     for (const cluster of clusters) {
+      if (!cluster.gitOpsRef) {
+        continue;
+      }
+
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
       for (const watch of watches) {
-        const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
-        for (const pendingVersion of pendingVersions) {
-          if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
-            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
-            if (pullRequestEvent.pull_request.merged) {
-              // When a pull request closes multiple commits, the order in which hooks come in is random. 
-              // We should not update the current ssequence to something lower than what it already is.
-              // This will create a bug where we show a PR as not merged but GH will show it as merged
-              // because they automatically do it. This will be fixed when we verify commit sha's on our end.
-              if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
-                return;
-              }
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+        const { data: { token } } = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
+        github.authenticate({
+          type: "token",
+          token,
+        });
+
+        const params: GitHubApi.PullRequestsGetCommitsParams = {
+          owner,
+          repo,
+          number: pullRequestEvent.number,
+        };
+        const getCommitsResponse = await github.pullRequests.getCommits(params);
+        for (const commit of getCommitsResponse.data) {
+          const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
+          if (!pendingVersion) {
+            continue;
+          }
+          await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
+          if (pullRequestEvent.pull_request.merged) {
+            if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
+              return;
             }
-            return;
+
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
           }
         }
-
-        const pastVersions = await request.app.locals.stores.watchStore.listPastVersions(watch.id!);
-        for (const pastVersion of pastVersions) {
-          if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
-            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
-            if (pullRequestEvent.pull_request.merged) {
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion .sequence!, pullRequestEvent.merged_at);
-            }
-            return;
-          }
-        }
-
       }
     }
 
     logger.warn({msg: `received unhandled github pull request event`});
+  }
+}
+
+async function getGitHubBearerToken(): Promise<string> {
+  const shipParams = await Params.getParams();
+
+  let privateKey = await shipParams.githubPrivateKeyContents;
+  if (!privateKey) {
+    privateKey = fs.readFileSync(shipParams.githubPrivateKeyFile).toString();
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const payload = {
+    iat: now,
+    exp: now + 60,
+    iss: shipParams.githubIntegrationID,
+  }
+  const bearer = jwt.sign(payload, privateKey, {algorithm: "RS256"});
+  return bearer;
+}
+
+async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Cluster[], request: Express.Request, pullRequestEvent: GitHubPullRequestEvent) {
+  for (const cluster of clusters) {
+    const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
+    for (const watch of watches) {
+      const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
+      for (const pendingVersion of pendingVersions) {
+        if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
+          await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
+          if (pullRequestEvent.pull_request.merged) {
+            // When a pull request closes multiple commits, the order in which hooks come in is random.
+            // We should not update the current ssequence to something lower than what it already is.
+            // This will create a bug where we show a PR as not merged but GH will show it as merged
+            // because they automatically do it. This will be fixed when we verify commit sha's on our end.
+            if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
+              return;
+            }
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+          }
+          return;
+        }
+      }
+
+      const pastVersions = await request.app.locals.stores.watchStore.listPastVersions(watch.id!);
+      for (const pastVersion of pastVersions) {
+        if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
+          await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
+          if (pullRequestEvent.pull_request.merged) {
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion.sequence!, pullRequestEvent.merged_at);
+          }
+          return;
+        }
+      }
+
+    }
   }
 }

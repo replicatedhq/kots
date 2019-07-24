@@ -116,8 +116,8 @@ spec:
     release: minio
   type: NodePort
 ---
-apiVersion: apps/v1beta2
-kind: Deployment
+apiVersion: apps/v1
+kind: StatefulSet
 metadata:
   labels:
     app: minio
