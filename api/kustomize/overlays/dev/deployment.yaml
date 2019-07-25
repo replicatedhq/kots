@@ -49,6 +49,8 @@ spec:
                 secretKeyRef:
                   name: github-app
                   key: integration-id
+            - name: GITHUB_PRIVATE_KEY_FILE
+              value: /keys/github/private-key.pem
             - name: SHIP_API_ENDPOINT
               value: http://ship-cluster-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
