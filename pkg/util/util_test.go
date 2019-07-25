@@ -1,4 +1,4 @@
-package upstream
+package util
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_commonSlicePrefix(t *testing.T) {
+func Test_CommonSlicePrefix(t *testing.T) {
 	tests := []struct {
 		name     string
 		first    []string
@@ -35,7 +35,7 @@ func Test_commonSlicePrefix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			common := commonSlicePrefix(test.first, test.second)
+			common := CommonSlicePrefix(test.first, test.second)
 			assert.Equal(t, test.expected, common)
 		})
 	}

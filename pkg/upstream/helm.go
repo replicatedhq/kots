@@ -15,6 +15,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/helm/cmd/helm/search"
 	"k8s.io/helm/pkg/downloader"
 	"k8s.io/helm/pkg/getter"
@@ -160,6 +161,7 @@ repositories: []`
 		upstream := &Upstream{
 			URI:   u.RequestURI(),
 			Name:  chartName,
+			Type:  "helm",
 			Files: files,
 		}
 
@@ -245,7 +247,7 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 			d, _ := path.Split(file.Path)
 			dirs := strings.Split(d, string(os.PathSeparator))
 
-			commonPrefix = commonSlicePrefix(commonPrefix, dirs)
+			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
 
 		}
 

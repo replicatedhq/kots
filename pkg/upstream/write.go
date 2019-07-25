@@ -10,9 +10,9 @@ import (
 )
 
 type WriteOptions struct {
-	RootDir         string
-	CreateAppDir    bool
-	DeleteIfPresent bool
+	RootDir      string
+	CreateAppDir bool
+	Overwrite    bool
 }
 
 func (u *Upstream) WriteUpstream(options WriteOptions) error {
@@ -21,13 +21,15 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 		renderDir = path.Join(renderDir, u.Name)
 	}
 
+	renderDir = path.Join(renderDir, "upstream")
+
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		if options.DeleteIfPresent {
+		if options.Overwrite {
 			if err := os.RemoveAll(renderDir); err != nil {
 				return errors.Wrap(err, "failed to remove previous content in upstream")
 			}
-
+		} else {
 			return fmt.Errorf("directory %s already exists", renderDir)
 		}
 	}
@@ -46,4 +48,13 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	}
 
 	return nil
+}
+
+func (u *Upstream) GetBaseDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "base")
 }

@@ -1,8 +1,8 @@
-package upstream
+package util
 
 import "net/url"
 
-func isURL(str string) bool {
+func IsURL(str string) bool {
 	_, err := url.ParseRequestURI(str)
 	if err != nil {
 		return false
@@ -11,7 +11,7 @@ func isURL(str string) bool {
 	return true
 }
 
-func commonSlicePrefix(first []string, second []string) []string {
+func CommonSlicePrefix(first []string, second []string) []string {
 	common := []string{}
 
 	for i, a := range first {

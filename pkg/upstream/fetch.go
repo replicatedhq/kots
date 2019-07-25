@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type FetchOptions struct {
@@ -21,7 +22,7 @@ func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, e
 }
 
 func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
-	if !isURL(upstreamURI) {
+	if !util.IsURL(upstreamURI) {
 		return readFilesFromPath(upstreamURI)
 	}
 
