@@ -127,7 +127,7 @@ export class GitHubHookAPI {
     /////////
     // before adding commit_sha, some pending versions don't have them
     /////////
-    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent);
+    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
     ////////
     // end of pre-commit-sha compatibility code
     ////////
@@ -196,7 +196,7 @@ async function getGitHubBearerToken(): Promise<string> {
   return bearer;
 }
 
-async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Cluster[], request: Express.Request, pullRequestEvent: GitHubPullRequestEvent) {
+async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Cluster[], request: Express.Request, pullRequestEvent: GitHubPullRequestEvent, status: string) {
   for (const cluster of clusters) {
     const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
     for (const watch of watches) {
