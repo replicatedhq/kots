@@ -183,7 +183,11 @@ async function getGitHubBearerToken(): Promise<string> {
 
   let privateKey = await shipParams.githubPrivateKeyContents;
   if (!privateKey) {
-    privateKey = fs.readFileSync(shipParams.githubPrivateKeyFile).toString();
+    const filename = shipParams.githubPrivateKeyFile;
+    logger.debug({msg: "using github private key from file"}, filename);
+    privateKey = fs.readFileSync(filename).toString();
+  } else {
+    logger.debug({msg: "using github private key from contents", size: privateKey.length})
   }
 
   const now = Math.floor(Date.now() / 1000)
