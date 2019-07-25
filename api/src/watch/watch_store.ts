@@ -698,6 +698,17 @@ export class WatchStore {
     ];
 
     await this.pool.query(q, v);
+
+    const downstreamWatchesQuery = `select id from watch where parent_watch_id = $1`;
+    const downstreamWatchesQueryValues = [watchId];
+
+    const result = await this.pool.query(downstreamWatchesQuery, downstreamWatchesQueryValues);
+
+    if (result.rows.length > 0) {
+      for (const downstreamWatch of result.rows) {
+        await this.pool.query(q, [userId, downstreamWatch.id]);
+      }
+    }
   }
 
   async addUserToWatch(watchId: string, userId: string): Promise<void> {
@@ -708,6 +719,17 @@ export class WatchStore {
     ];
 
     await this.pool.query(q, v);
+
+    const downstreamWatchesQuery = `select id from watch where parent_watch_id = $1`;
+    const downstreamWatchesQueryValues = [watchId];
+
+    const result = await this.pool.query(downstreamWatchesQuery, downstreamWatchesQueryValues);
+
+    if (result.rows.length > 0) {
+      for (const downstreamWatch of result.rows) {
+        await this.pool.query(q, [ userId, downstreamWatch.id]);
+      }
+    }
   }
 
   async listWatchContributors(id: string): Promise<Contributor[]> {
