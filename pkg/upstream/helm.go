@@ -23,7 +23,7 @@ import (
 	"k8s.io/helm/pkg/repo"
 )
 
-func downloadHelm(u *url.URL, repoAddName string, repoAddURI string) ([]UpstreamFile, error) {
+func downloadHelm(u *url.URL, repoAddName string, repoAddURI string) (*Upstream, error) {
 	repoName, chartName, chartVersion, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
@@ -157,7 +157,13 @@ repositories: []`
 			return nil, errors.Wrap(err, "failed to read chart archive")
 		}
 
-		return files, nil
+		upstream := &Upstream{
+			URI:   u.RequestURI(),
+			Name:  chartName,
+			Files: files,
+		}
+
+		return upstream, nil
 	}
 
 	return nil, errors.New("chart version not found")
@@ -213,8 +219,6 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 		name := header.Name
 
 		switch header.Typeflag {
-		case tar.TypeDir:
-			continue
 		case tar.TypeReg:
 			buf := new(bytes.Buffer)
 			_, err = buf.ReadFrom(tarReader)
@@ -227,7 +231,37 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 			}
 
 			upstreamFiles = append(upstreamFiles, upstreamFile)
+		default:
+			continue
 		}
+	}
+
+	// remove any common prefix from all files
+	if len(upstreamFiles) > 0 {
+		firstFileDir, _ := path.Split(upstreamFiles[0].Path)
+		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
+
+		for _, file := range upstreamFiles {
+			d, _ := path.Split(file.Path)
+			dirs := strings.Split(d, string(os.PathSeparator))
+
+			commonPrefix = commonSlicePrefix(commonPrefix, dirs)
+
+		}
+
+		cleanedUpstreamFiles := []UpstreamFile{}
+		for _, file := range upstreamFiles {
+			d, f := path.Split(file.Path)
+			d2 := strings.Split(d, string(os.PathSeparator))
+
+			cleanedUpstreamFile := file
+			d2 = d2[len(commonPrefix):]
+			cleanedUpstreamFile.Path = path.Join(path.Join(d2...), f)
+
+			cleanedUpstreamFiles = append(cleanedUpstreamFiles, cleanedUpstreamFile)
+		}
+
+		upstreamFiles = cleanedUpstreamFiles
 	}
 
 	return upstreamFiles, nil

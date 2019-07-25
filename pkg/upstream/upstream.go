@@ -7,6 +7,7 @@ type UpstreamFile struct {
 
 type Upstream struct {
 	URI   string
+	Name  string
 	Type  string
 	Files []UpstreamFile
 }

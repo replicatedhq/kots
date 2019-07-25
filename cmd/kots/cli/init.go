@@ -34,16 +34,18 @@ func InitCmd() *cobra.Command {
 				fetchOptions.HelmRepoURI = repoSplit[1]
 			}
 
-			upstream, err := upstream.FetchUpstream(args[0], &fetchOptions)
+			u, err := upstream.FetchUpstream(args[0], &fetchOptions)
 			if err != nil {
 				return err
 			}
 
-			// validating
-			for _, f := range upstream.Files {
-				if strings.Contains(f.Path, "Chart.yaml") {
-					fmt.Printf("%s\n", f.Content)
-				}
+			writeOptions := upstream.WriteOptions{
+				RootDir:         v.GetString("rootdir"),
+				CreateAppDir:    true,
+				DeleteIfPresent: true,
+			}
+			if err := u.WriteUpstream(writeOptions); err != nil {
+				return err
 			}
 
 			return nil
@@ -52,6 +54,14 @@ func InitCmd() *cobra.Command {
 
 	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")
 	cmd.Flags().String("repo", "", "repo name=uri to use when downloading a helm chart")
+	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
 
 	return cmd
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
 }

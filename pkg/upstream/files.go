@@ -4,10 +4,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func readFilesFromPath(filepath string) ([]UpstreamFile, error) {
+func readFilesFromPath(filepath string) (*Upstream, error) {
 	return nil, errors.New("not implemented")
 }
 
-func readFilesFromURI(upstreamURI string) ([]UpstreamFile, error) {
+func readFilesFromURI(upstreamURI string) (*Upstream, error) {
 	return nil, errors.New("not implemented")
 }

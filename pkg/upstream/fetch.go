@@ -12,22 +12,15 @@ type FetchOptions struct {
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
-	upstream := Upstream{
-		URI:   upstreamURI,
-		Files: []UpstreamFile{},
-	}
-
-	upstreamFiles, err := downloadUpstream(upstreamURI, fetchOptions)
+	upstream, err := downloadUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
 	}
 
-	upstream.Files = upstreamFiles
-
-	return &upstream, nil
+	return upstream, nil
 }
 
-func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]UpstreamFile, error) {
+func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
 	if !isURL(upstreamURI) {
 		return readFilesFromPath(upstreamURI)
 	}
