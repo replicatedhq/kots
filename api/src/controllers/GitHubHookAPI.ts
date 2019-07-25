@@ -187,6 +187,9 @@ async function getGitHubBearerToken(): Promise<string> {
     logger.debug({msg: "using github private key from file"}, filename);
     privateKey = fs.readFileSync(filename).toString();
   } else {
+    if (!privateKey.endsWith("\n")) {
+      privateKey = `${privateKey}\n`;
+    }
     logger.debug({msg: "using github private key from contents", size: privateKey.length})
   }
 
@@ -196,6 +199,8 @@ async function getGitHubBearerToken(): Promise<string> {
     exp: now + 60,
     iss: shipParams.githubIntegrationID,
   }
+
+  logger.debug({msg: "signing github jwt with payload", payload, "endOfPrivateKey": privateKey.substr(privateKey.length - 10)});
   const bearer = jwt.sign(payload, privateKey, {algorithm: "RS256"});
   return bearer;
 }
