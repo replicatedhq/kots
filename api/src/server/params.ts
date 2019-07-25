@@ -92,7 +92,7 @@ export class Params {
       githubClientId: await param("GITHUB_CLIENT_ID", "/shipcloud/github/app_client_id", false),
       githubClientSecret: await param("GITHUB_CLIENT_SECRET", "/shipcloud/github/app_client_secret", true),
       githubIntegrationID: await param("GITHUB_INTEGRATION_ID", "/shipcloud/github/app_integration_id", false),
-      githubPrivateKeyFile: (await param("GITHUB_PRIVATE_KEY_FILE", "/shipcloud/github/app_private_key_file", false)) || "/keys/github/private-key.pem",
+      githubPrivateKeyFile: (await param("GITHUB_PRIVATE_KEY_FILE", "/shipcloud/github/app_private_key_file", false)),
       githubPrivateKeyContents: await param("GITHUB_PRIVATE_KEY_CONTENTS", "/shipcloud/github/app_private_key", true),
       shipInitBaseURL: (await param("INIT_SERVER_URI", "/shipcloud/initserver/baseURL", false)) || "http://init-server:3000",
       shipWatchBaseURL: (await param("WATCH_SERVER_URI", "/shipcloud/watchserver/baseURL", false)) || "http://watch-server:3000",
