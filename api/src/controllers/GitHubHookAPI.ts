@@ -118,6 +118,8 @@ export class GitHubHookAPI {
         const org = installationData.account.login;
         const { data: membersData } = await github.orgs.getMembers({org});
         numberOfOrgMembers = membersData.length;
+      } else {
+        numberOfOrgMembers = 0;
       };
 
       await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.type, numberOfOrgMembers, installationData.account.html_url, senderData.login);
