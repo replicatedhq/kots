@@ -247,7 +247,7 @@ class DetailPageApplication extends Component {
                       <div className="flex u-color--dustyGray u-fontWeight--medium u-fontSize--normal">
                         <span className="u-marginRight--30">Expires: <span className="u-fontWeight--bold u-color--tundora">{getLicenseExpiryDate(watchLicense)}</span></span>
                         <span>Type: <span className="u-fontWeight--bold u-color--tundora">{getReadableLicenseType(watchLicense.type)}</span></span>
-                      </div> 
+                      </div>
                       :
                       <Loader size="12" />
                     }
@@ -378,6 +378,7 @@ class DetailPageApplication extends Component {
             <WatchContributors
               title="contributors"
               className="u-marginTop--30"
+              refetchWatch={this.props.refetchWatch}
               contributors={watch.contributors || []}
               watchName={watch.watchName}
               watchId={watch.id}

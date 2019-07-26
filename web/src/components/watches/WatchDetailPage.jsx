@@ -324,6 +324,7 @@ class WatchDetailPage extends Component {
                         <DetailPageApplication
                           watch={watch}
                           refetchListWatches={refetchListWatches}
+                          refetchWatch={this.props.getWatchQuery?.refetch}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
                         />}

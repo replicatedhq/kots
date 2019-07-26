@@ -28,6 +28,10 @@ class WatchContributors extends React.Component {
     this.setState({
       displayContributorsModal: !this.state.displayContributorsModal,
       editContributorsFor: this.state.displayContributorsModal ? { id: "", name: "" } : watch
+    }, () => {
+      if (!this.state.displayContributorsModal) {
+        this.props?.refetchWatch();
+      }
     });
   }
 
@@ -42,11 +46,11 @@ class WatchContributors extends React.Component {
     } = this.props;
     const max = maxVisible || 3;
     let _contributors = [];
-    
+
     if (contributors) {
       _contributors = contributors.length > max ? contributors.slice(0,max) : contributors;
     }
-    
+
     const remainingContributors = contributors && contributors.length > max ? (contributors.length - max) : 0
     return (
       <div className={classNames("WatchContributors--wrapper flex-column", className)}>
@@ -54,12 +58,12 @@ class WatchContributors extends React.Component {
           <div className="flex">
             <p className="uppercase-title">{title}</p>
             <span
-              className="u-fontSize--small replicated-link u-marginLeft--5" 
+              className="u-fontSize--small replicated-link u-marginLeft--5"
               onClick={() => this.toggleContributorsModal({ id: watchId, name: watchName })}>
               Manage
             </span>
           </div>
-          
+
         ) }
         <div className="flex-column">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginTop--15">Individuals</p>
@@ -84,6 +88,7 @@ class WatchContributors extends React.Component {
             displayContributorsModal={this.state.displayContributorsModal}
             toggleContributorsModal={() => { this.toggleContributorsModal() }}
             watchBeingEdited={this.state.editContributorsFor}
+            refetchWatch={this.props.refetchWatch}
             submitCallback={() => {
               if (typeof this.props.watchCallback === "function") {
                 this.props.watchCallback();
