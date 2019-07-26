@@ -33,7 +33,6 @@ export default class FileTree extends React.Component {
 
   render() {
     const { files, selectedFile, handleFileSelect } = this.props;
-
     return (
       <ul className={`${this.props.isRoot ? "FileTree-wrapper" : "u-marginLeft--10"}`}>
         {files && files.map((file, i) => (
@@ -53,7 +52,7 @@ export default class FileTree extends React.Component {
               />
             </li>
             :
-            <li key={file.path} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>{file.name}</li>
+            <li key={`${file.path}-${i}`} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>{file.name}</li>
         ))
         }
       </ul>

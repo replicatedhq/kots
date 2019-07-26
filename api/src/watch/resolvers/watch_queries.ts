@@ -42,11 +42,15 @@ export function WatchQueries(stores: Stores) {
     },
 
     async getParentWatch(root: any, args: any, context: Context): Promise<Watch> {
-      const { id } = args;
-      if (!id) {
-        throw new ReplicatedError("ID is required to find a parent watch");
+      const { id, slug } = args;
+      if (!id && !slug) {
+        throw new ReplicatedError("One of ID or Slug is required to find a parent watch");
       }
-      const parentId = await stores.watchStore.getParentWatchId(id);
+      let _id = id;
+      if (slug) {
+        _id = await stores.watchStore.getIdFromSlug(slug);
+      }
+      const parentId = await stores.watchStore.getParentWatchId(_id);
       const parentWatch = await stores.watchStore.getWatch(parentId);
       return parentWatch.toSchema(root, stores, context);
     },
@@ -79,6 +83,24 @@ export function WatchQueries(stores: Stores) {
 
       const versions = pending.concat(past)
       return versions;
+    },
+
+    async getApplicationTree(root: any, args: any, context: Context): Promise<string> {
+      const watchId = await stores.watchStore.getIdFromSlug(args.slug);
+      const watch = await context.getWatch(watchId);
+      const tree = await watch.generateFileTreeIndex(args.sequence);
+      return JSON.stringify(tree);
+    },
+
+    async getFiles(root: any, args: any, context: Context): Promise<string> {
+      const watchId = await stores.watchStore.getIdFromSlug(args.slug);
+      const watch = await context.getWatch(watchId);
+      const files = await watch.getFiles(args.sequence, args.fileNames);
+      const jsonFiles = JSON.stringify(files.files);
+      if (jsonFiles.length >= 5000000) {
+        throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
+      }
+      return jsonFiles;
     }
   }
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import classNames from "classnames";
+import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import truncateMiddle from "truncate-middle";
 import { Link } from "react-router-dom";
@@ -7,7 +8,7 @@ import { Utilities } from "@src/utilities/utilities";
 import "../../scss/components/clusters/ClusterCard.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
-export default class DeploymentClusters extends React.Component {
+class DeploymentClusters extends React.Component {
 
   state = {
     pendingUri: "",
@@ -127,7 +128,7 @@ export default class DeploymentClusters extends React.Component {
                     <div className="flex flex1 alignItems--flexEnd">
                       <div className="flex u-marginTop--20 u-borderTop--gray u-width--full">
                         <div className="flex1 flex card-action-wrapper u-cursor--pointer">
-                          <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={() => { this.downloadAssetsForCluster(childWatch.id) }}>Download assets</span>
+                          <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={() => { this.props.history.push(`/watch/${childWatch.slug}/tree/${childWatch.currentVersion?.sequence || 0}`) }}>View file contents</span>
                         </div>
                         <div className="flex1 flex card-action-wrapper u-cursor--pointer">
                           <span onClick={this.props.preparingUpdate === childWatch.cluster.id ? () => { return } : () => this.props.onEditApplication(childWatch)} className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center">{this.props.preparingUpdate === childWatch.cluster.id ? "Preparing" : "Edit downstream"}</span>
@@ -164,3 +165,5 @@ export default class DeploymentClusters extends React.Component {
     );
   }
 }
+
+export default withRouter(DeploymentClusters);
