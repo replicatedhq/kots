@@ -126,13 +126,22 @@ class ApplicationTree extends React.Component {
     let breadcrumbs = <span>&nbsp;</span>;
     if (parentWatch) {
       const selectedDownstream = find(parentWatch.watches, ["slug", `${match.params.owner}/${match.params.slug}`]);
-      const versions = selectedDownstream?.pendingVersions.concat(selectedDownstream?.pastVersions, selectedDownstream?.currentVersion);
-      let versionTitle = "---";
-      if (!versions.length && selectedDownstream.currentVersion?.sequence === 0) {
-        versionTitle = selectedDownstream.currentVersion.title;
-      } else {
+      const versions = selectedDownstream?.pendingVersions.concat(selectedDownstream?.pastVersions);
+      // TODO: This logic is bleh and i'm still not 100% convinced it's correct
+      let versionTitle = "";
+      if (versions.length) {
         const selectedVersion = find(versions, ["sequence", parseInt(match.params.sequence)]);
-        versionTitle = selectedVersion?.title;
+        if (!selectedVersion) {
+          if (selectedDownstream.currentVersion?.sequence === 0) {
+            versionTitle = selectedDownstream.currentVersion.title;
+          } else {
+            versionTitle = "";
+          }
+        } else {
+          versionTitle = selectedVersion?.title;
+        };
+      } else if (selectedDownstream.currentVersion?.sequence === 0) {
+        versionTitle = selectedDownstream.currentVersion.title;
       }
       breadcrumbs = `${parentWatch.watchName} > ${selectedDownstream?.cluster.title} > ${versionTitle} (${match.params.sequence}) > files`;
     }
