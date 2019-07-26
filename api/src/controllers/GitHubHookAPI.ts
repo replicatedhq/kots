@@ -11,8 +11,9 @@ import { Cluster } from "../cluster";
 
 interface GitHubInstallationRequest {
   action: string;
+  id: string;
   installation: {
-    id: number;
+    id: string;
     access_tokens_url: string;
     account: {
       login: string;
@@ -75,7 +76,7 @@ export class GitHubHookAPI {
 
       case "installation": {
         const params = await Params.getParams();
-        await this.handleInstallation(body as GitHubInstallationRequest, params);
+        await this.handleInstallation(body as GitHubInstallationRequest, params, request);
         response.status(204);
         return {};
       }
@@ -96,14 +97,38 @@ export class GitHubHookAPI {
     }
   }
 
-  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params): Promise<void> {
+  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params, request: Express.Request): Promise<void> {
+    const installationData = installationEvent.installation;
+    const senderData = installationEvent.sender;
+    let numberOfOrgMembers;
     if (installationEvent.action === "created") {
+      if (installationData.account.type === "Organization") {
+        const github = new GitHubApi();
+        github.authenticate({
+          type: "app",
+          token: await getGitHubBearerToken()
+        });
+
+        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id});
+        github.authenticate({
+          type: "token",
+          token,
+        });
+
+        const org = installationData.account.login;
+        const { data: membersData } = await github.orgs.getMembers({org});
+        numberOfOrgMembers = membersData.length;
+      } else {
+        numberOfOrgMembers = 0;
+      };
+
+      await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.type, numberOfOrgMembers, installationData.account.html_url, senderData.login);
       if (params.segmentioAnalyticsKey) {
-        const installationData = installationEvent.installation;
-        const senderData = installationEvent.sender;
         trackNewGithubInstall(params, uuid.v4(), "New Github Install", senderData.login, installationData.account.login, installationData.account.html_url);
       }
     } else if (installationEvent.action === "deleted") {
+      // deleting from db when uninstall from GitHub
+      await request.app.locals.stores.githubInstall.deleteGithubInstall(installationData.id);
       // Should we delete all pullrequest notifications?
     }
   }
