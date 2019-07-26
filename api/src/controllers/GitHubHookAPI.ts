@@ -170,6 +170,7 @@ export class GitHubHookAPI {
 
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
       for (const watch of watches) {
+        logger.debug({msg: "creating installation token for github install", "installationId": cluster.gitOpsRef.installationId})
         const { data: { token } } = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
         github.authenticate({
           type: "token",
