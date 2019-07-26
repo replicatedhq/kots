@@ -200,7 +200,7 @@ async function getGitHubBearerToken(): Promise<string> {
     iss: shipParams.githubIntegrationID,
   }
 
-  logger.debug({msg: "signing github jwt with payload", payload, "endOfPrivateKey": privateKey.substr(privateKey.length - 10)});
+  logger.debug({msg: "signing github jwt with payload", payload, "endOfPrivateKey": privateKey.substr(privateKey.length - 100)});
   const bearer = jwt.sign(payload, privateKey, {algorithm: "RS256"});
   return bearer;
 }
