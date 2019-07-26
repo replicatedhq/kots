@@ -127,12 +127,12 @@ class ApplicationTree extends React.Component {
     let breadcrumbs = <span>&nbsp;</span>;
     if (parentWatch) {
       const selectedDownstream = find(parentWatch.watches, ["slug", `${match.params.owner}/${match.params.slug}`]);
-      const versions = selectedDownstream?.pendingVersions.concat(selectedDownstream?.pastVersions);
+      const versions = selectedDownstream?.pendingVersions.concat(selectedDownstream?.pastVersions, selectedDownstream?.currentVersion);
       let versionTitle = "---";
-      if (!versions.length && parentWatch.currentVersion?.sequence === 0) {
-        versionTitle = parentWatch.currentVersion.title;
+      if (!versions.length && selectedDownstream.currentVersion?.sequence === 0) {
+        versionTitle = selectedDownstream.currentVersion.title;
       } else {
-        const selectedVersion = find(versions, ["sequence", match.params.sequence]);
+        const selectedVersion = find(versions, ["sequence", parseInt(match.params.sequence)]);
         versionTitle = selectedVersion?.title;
       }
       breadcrumbs = `${parentWatch.watchName} > ${selectedDownstream?.cluster.title} > ${versionTitle} (${match.params.sequence}) > files`;
