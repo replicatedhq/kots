@@ -121,6 +121,11 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
 			contributorIDs = append(contributorIDs, contributorID)
 		}
 
+		err = contributors.Err()
+		if (err != nil) {
+			return errors.Wrap(err, "scan contributor row loop")
+		}
+
 		for _, id := range contributorIDs {
 			query = `INSERT into user_watch (user_id, watch_id) VALUES ($1, $2)`
 
