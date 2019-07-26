@@ -2,11 +2,8 @@ import * as React from "react";
 import { rootPath } from "../../utilities/utilities";
 
 export default class FileTree extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      selected: {}
-    }
+  state = {
+    selected: {},
   }
 
   handleFileSelect = (path) => {
@@ -31,10 +28,23 @@ export default class FileTree extends React.Component {
     return newPath1.split(/\//).slice(1, 2+this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2+this.getLevel()).join("/")
   }
 
+  componentDidUpdate(lastProps) {
+    const { isRoot, topLevelPaths } = this.props;
+    if (isRoot && topLevelPaths && topLevelPaths !== lastProps.topLevelPaths) {
+      const defaultSelected = topLevelPaths.reduce((current, path) => {
+        current[path] = true;
+        return current;
+      }, {});
+      this.setState({
+        selected: defaultSelected
+      });
+    }
+  }
+
   render() {
-    const { files, selectedFile, handleFileSelect } = this.props;
+    const { files, selectedFile, handleFileSelect, isRoot } = this.props;
     return (
-      <ul className={`${this.props.isRoot ? "FileTree-wrapper" : "u-marginLeft--10"}`}>
+      <ul className={`${isRoot ? "FileTree-wrapper" : "u-marginLeft--10"}`}>
         {files && files.map((file, i) => (
           file.children && file.children.length ?
             <li key={`${file.path}-Directory-${i}`} className="u-position--relative">
@@ -52,7 +62,9 @@ export default class FileTree extends React.Component {
               />
             </li>
             :
-            <li key={`${file.path}-${i}`} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>{file.name}</li>
+            <li key={`${file.path}-${i}`} title={file.name} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>
+              <div>{file.name}</div>
+            </li>
         ))
         }
       </ul>

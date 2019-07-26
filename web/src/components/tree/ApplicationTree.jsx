@@ -86,7 +86,6 @@ class ApplicationTree extends React.Component {
     let sortedTree = sortBy(parsedTree, (dir) => {
       dir.children ? dir.children.length : []
     });
-    sortedTree.reverse(); // If something has a directory, render those first, all top level files should be at that bottom
     this.setState({ files: sortedTree });
   }
 
@@ -154,6 +153,7 @@ class ApplicationTree extends React.Component {
                 <FileTree
                   files={files}
                   isRoot={true}
+                  topLevelPaths={files?.map(f => f.path)}
                   handleFileSelect={(path) => this.setSelectedFile(path)}
                   selectedFile={this.state.selectedFile}
                 />

@@ -4,6 +4,7 @@ import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { watch } from "fs";
+import { logger } from "../../server/logger";
 
 export function WatchQueries(stores: Stores) {
   return {
@@ -89,7 +90,8 @@ export function WatchQueries(stores: Stores) {
       const watchId = await stores.watchStore.getIdFromSlug(args.slug);
       const watch = await context.getWatch(watchId);
       const tree = await watch.generateFileTreeIndex(args.sequence);
-      return JSON.stringify(tree);
+      // return one level deep so you don't start with the "out" dir in the UI
+      return JSON.stringify(tree[0].children);
     },
 
     async getFiles(root: any, args: any, context: Context): Promise<string> {

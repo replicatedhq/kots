@@ -64,9 +64,15 @@
     transition: color .2s;
     font-size: 14px;
     position: relative;
-    line-height: 14px;
+    line-height: 18px;
     z-index: 2;
     padding: 6px 0 4px;
+
+    & > div {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     &:hover {
       color: #ffffff;
