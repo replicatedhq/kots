@@ -691,13 +691,13 @@ export class WatchStore {
   }
 
   async removeUserFromWatch(watchId: string, userId: string): Promise<void> {
-    const q = `delete from user_watch where user_id = $1 and watch_id = $2`;
+    const deleteUserFromWatchQuery = `delete from user_watch where user_id = $1 and watch_id = $2`;
     const v = [
       userId,
       watchId,
     ];
 
-    await this.pool.query(q, v);
+    await this.pool.query(deleteUserFromWatchQuery, v);
 
     const downstreamWatchesQuery = `select id from watch where parent_watch_id = $1`;
     const downstreamWatchesQueryValues = [watchId];
@@ -706,19 +706,19 @@ export class WatchStore {
 
     if (result.rows.length > 0) {
       for (const downstreamWatch of result.rows) {
-        await this.pool.query(q, [userId, downstreamWatch.id]);
+        await this.pool.query(deleteUserFromWatchQuery, [userId, downstreamWatch.id]);
       }
     }
   }
 
   async addUserToWatch(watchId: string, userId: string): Promise<void> {
-    const q = `insert into user_watch (user_id, watch_id) values ($1, $2)`;
+    const insertUserWatchQuery = `insert into user_watch (user_id, watch_id) values ($1, $2)`;
     const v = [
       userId,
       watchId,
     ];
 
-    await this.pool.query(q, v);
+    await this.pool.query(insertUserWatchQuery, v);
 
     const downstreamWatchesQuery = `select id from watch where parent_watch_id = $1`;
     const downstreamWatchesQueryValues = [watchId];
@@ -727,7 +727,7 @@ export class WatchStore {
 
     if (result.rows.length > 0) {
       for (const downstreamWatch of result.rows) {
-        await this.pool.query(q, [ userId, downstreamWatch.id]);
+        await this.pool.query(insertUserWatchQuery, [ userId, downstreamWatch.id]);
       }
     }
   }

@@ -102,8 +102,7 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
       SELECT ship_user.id as contributor_id
       FROM user_watch
         JOIN ship_user ON ship_user.id = user_watch.user_id
-        LEFT OUTER JOIN github_user ON github_user.user_id = ship_user.id
-      WHERE watch_id = $1 AND ship_user.id != $2
+      WHERE user_watch.watch_id = $1 AND ship_user.id != $2
 		`
 		contributors, err := tx.QueryContext(ctx, query, parentWatchID, userID)
 		if err != nil {
@@ -114,7 +113,11 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
 
     for contributors.Next() {
 			var contributorID string
-			contributors.Scan(&contributorID)
+			err := contributors.Scan(&contributorID)
+			if (err != nil) {
+				return errors.Wrap(err, "scan contributor row")
+			}
+
 			contributorIDs = append(contributorIDs, contributorID)
 		}
 
