@@ -224,9 +224,10 @@ export function getFileFormat(selectedFile) {
   if (selectedFile === "") {
     return "text";
   }
+  const isYaml = selectedFile.includes(".human") || selectedFile.includes(".yaml") || selectedFile.includes(".yml");
   if (selectedFile.includes(".json")) {
     return "json";
-  } else if (selectedFile.includes(".human")) {
+  } else if (isYaml) {
     return "yaml";
   }
   return "text";
