@@ -157,11 +157,6 @@ export class GitHubHookAPI {
     // end of pre-commit-sha compatibility code
     ////////
 
-    const github = new GitHubApi();
-    github.authenticate({
-      type: "app",
-      token: await getGitHubBearerToken()
-    });
 
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
@@ -170,12 +165,21 @@ export class GitHubHookAPI {
 
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
       for (const watch of watches) {
-        logger.debug({msg: "creating installation token for github install", "installationId": cluster.gitOpsRef.installationId})
-        const { data: { token } } = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
+        const github = new GitHubApi();
+        logger.debug({msg: "authenticating with bearer token"})
+        github.authenticate({
+          type: "app",
+          token: await getGitHubBearerToken()
+        });
+
+        logger.debug({msg: "creating installation token for installationId", "installationId": cluster.gitOpsRef.installationId})
+        const installationTokenResponse = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
         github.authenticate({
           type: "token",
-          token,
+          token: installationTokenResponse.data.token,
         });
+
+        logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
 
         const params: GitHubApi.PullRequestsGetCommitsParams = {
           owner,
