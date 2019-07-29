@@ -97,6 +97,43 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
 		if err != nil {
 			return errors.Wrap(err, "create watch")
 		}
+
+		query = `
+      SELECT ship_user.id as contributor_id
+      FROM user_watch
+        JOIN ship_user ON ship_user.id = user_watch.user_id
+      WHERE user_watch.watch_id = $1 AND ship_user.id != $2
+		`
+		contributors, err := tx.QueryContext(ctx, query, parentWatchID, userID)
+		if err != nil {
+			return errors.Wrap(err, "create watch get contributors")
+		}
+
+		var contributorIDs []string
+
+    for contributors.Next() {
+			var contributorID string
+			err := contributors.Scan(&contributorID)
+			if (err != nil) {
+				return errors.Wrap(err, "scan contributor row")
+			}
+
+			contributorIDs = append(contributorIDs, contributorID)
+		}
+
+		err = contributors.Err()
+		if (err != nil) {
+			return errors.Wrap(err, "scan contributor row loop")
+		}
+
+		for _, id := range contributorIDs {
+			query = `INSERT into user_watch (user_id, watch_id) VALUES ($1, $2)`
+
+			_, err = tx.ExecContext(ctx, query, id, initID)
+			if err != nil {
+				return errors.Wrap(err, "create watch insert_contributors")
+			}
+		}
 	}
 
 	query = `insert into user_watch (user_id, watch_id) values ($1, $2)`
