@@ -21,11 +21,11 @@ import ShipUnfork from "./components/ShipUnfork";
 import ShipInitCompleted from "./components/ShipInitCompleted";
 import WatchDetailPage from "./components/watches/WatchDetailPage";
 import ClusterScope from "./components/clusterscope/ClusterScope";
+import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
-
 
 import { listWatches, listPendingInit, listHelmCharts } from "@src/queries/WatchQueries";
 import Footer from "./components/shared/Footer";
@@ -267,6 +267,7 @@ class Root extends Component {
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
+                    <ProtectedRoute path="/watch/:owner/:slug/tree/:sequence" render={props => <DownstreamTree {...props} />} />
                     <ProtectedRoute path="/watch/create/init" render={(props) => <ShipInitPre {...props} onActiveInitSession={this.handleActiveInitSession} />} />
                     <ProtectedRoute path="/watch/create/unfork" render={(props) => <ShipUnfork {...props} onActiveInitSession={this.handleActiveInitSession} />} />
                     <ProtectedRoute path="/watch/create/state" component={() =>

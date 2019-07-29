@@ -28,7 +28,7 @@ export const Query = `
     listWatches: [Watch]
     searchWatches(watchName: String!): [Watch]
     getWatch(slug: String, id: String): Watch
-    getParentWatch(id: String): Watch
+    getParentWatch(id: String, slug: String): Watch
 
     getWatchLicense(watchId: String!): License
     getLatestWatchLicense(licenseId: String!): License
@@ -36,6 +36,9 @@ export const Query = `
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
     getDownstreamHistory(slug: String!): [VersionDetail]
+
+    getApplicationTree(slug: String!, sequence: Int!): String
+    getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
 
     listPendingWatchVersions(watchId: String!): [Version]
     listPastWatchVersions(watchId: String!): [Version]

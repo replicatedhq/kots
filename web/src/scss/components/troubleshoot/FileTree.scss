@@ -1,7 +1,8 @@
-.AnalyzerFileTree--wrapper {
+.AnalyzerFileTree--wrapper,
+.ApplicationTree--wrapper {
 
   .dirtree-wrapper {
-    max-width: 160px;
+    max-width: 260px;
     border-radius: 4px;
 
     &.fs-mode {
@@ -61,11 +62,17 @@
     color: rgba(255,255,255,0.8);
     font-weight: 500;
     transition: color .2s;
-    font-size: 12px;
+    font-size: 14px;
     position: relative;
-    line-height: 12px;
+    line-height: 18px;
     z-index: 2;
     padding: 6px 0 4px;
+
+    & > div {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     &:hover {
       color: #ffffff;
@@ -83,7 +90,7 @@
       content: "";
       display: block;
       right: -10px;
-      width: 160px;
+      width: 260px;
       height: 100%;
       top: 1px;
       z-index: -1;
@@ -131,7 +138,7 @@
   }
 
   .AceEditor .active-highlight {
-      background: #fffbdd;
-      position: absolute;
+    background: #fffbdd;
+    position: absolute;
   }
 }

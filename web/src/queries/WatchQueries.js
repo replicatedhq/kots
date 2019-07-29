@@ -515,8 +515,8 @@ export const getWatchById = gql`
 `;
 
 export const getParentWatchRaw = `
-  query getParentWatch($id: String) {
-    getParentWatch(id: $id) {
+  query getParentWatch($id: String, $slug: String) {
+    getParentWatch(id: $id, slug: $slug) {
       watchName
       slug
       metadata
@@ -831,3 +831,19 @@ export const getLatestWatchLicense = gql`
 `;
 
 export const getDownstreamHistory = gql(getDownstreamHistoryRaw);
+
+export const getApplicationTreeRaw = `
+  query getApplicationTree($slug: String!, $sequence: Int!) {
+    getApplicationTree(slug: $slug, sequence: $sequence)
+  }
+`;
+
+export const getApplicationTree = gql(getApplicationTreeRaw);
+
+export const getFilesRaw = `
+  query getFiles($slug: String!, $sequence: Int!, $fileNames: [String!]) {
+    getFiles(slug: $slug, sequence: $sequence, fileNames: $fileNames)
+  }
+`;
+
+export const getFiles = gql(getFilesRaw)

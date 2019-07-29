@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
@@ -96,6 +96,7 @@ class DownstreamWatchVersionHistory extends Component {
                       <span className="gh-version-detail-text"><a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View this PR on GitHub</a> to review and merged it in for deployment.</span>
                     </p>
                   }
+                  <Link to={`/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-marginTop--10 u-fontSize--small replicated-link">View file contents</Link>
                 </div>
                 <div className="flex flex1 justifyContent--flexEnd alignItems--center">
                   <div className="watch-cell">

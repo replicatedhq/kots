@@ -8,10 +8,10 @@ import find from "lodash/find";
 import has from "lodash/has";
 
 import Loader from "../shared/Loader";
-import FileTree from "./FileTree";
+import FileTree from "../shared/FileTree";
 import { supportBundleFiles } from "../../queries/TroubleshootQueries";
 
-import "../../scss/components/troubleshoot/SupportBundleFileTree.scss";
+import "../../scss/components/troubleshoot/FileTree.scss";
 
 import "brace/mode/json";
 import "brace/mode/text";
