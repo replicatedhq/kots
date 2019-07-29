@@ -10,6 +10,7 @@ import { Context } from "../context";
 import { Entitlement } from '../license';
 import _ from "lodash";
 import yaml from "js-yaml";
+import { logger } from "../server/logger";
 
 export class Watch {
   public id: string;
@@ -142,6 +143,7 @@ export class Watch {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? replicatedParams.shipOutputBucket + "/" : ""}/${watchId}/${sequence}.tar.gz`,
       };
+      logger.info({ msg: "S3 Params", params });
 
       const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
 
