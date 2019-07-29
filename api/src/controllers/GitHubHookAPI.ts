@@ -165,41 +165,45 @@ export class GitHubHookAPI {
 
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
       for (const watch of watches) {
-        const github = new GitHubApi();
-        logger.debug({msg: "authenticating with bearer token"})
-        github.authenticate({
-          type: "app",
-          token: await getGitHubBearerToken()
-        });
+        try {
+          const github = new GitHubApi();
+          logger.debug({msg: "authenticating with bearer token"})
+          github.authenticate({
+            type: "app",
+            token: await getGitHubBearerToken()
+          });
 
-        logger.debug({msg: "creating installation token for installationId", "installationId": cluster.gitOpsRef.installationId})
-        const installationTokenResponse = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
-        github.authenticate({
-          type: "token",
-          token: installationTokenResponse.data.token,
-        });
+          logger.debug({msg: "creating installation token for installationId", "installationId": cluster.gitOpsRef.installationId})
+          const installationTokenResponse = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
+          github.authenticate({
+            type: "token",
+            token: installationTokenResponse.data.token,
+          });
 
-        logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
+          logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
 
-        const params: GitHubApi.PullRequestsGetCommitsParams = {
-          owner,
-          repo,
-          number: pullRequestEvent.number,
-        };
-        const getCommitsResponse = await github.pullRequests.getCommits(params);
-        for (const commit of getCommitsResponse.data) {
-          const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
-          if (!pendingVersion) {
-            continue;
-          }
-          await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
-          if (pullRequestEvent.pull_request.merged) {
-            if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
-              return;
+          const params: GitHubApi.PullRequestsGetCommitsParams = {
+            owner,
+            repo,
+            number: pullRequestEvent.number,
+          };
+          const getCommitsResponse = await github.pullRequests.getCommits(params);
+          for (const commit of getCommitsResponse.data) {
+            const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
+            if (!pendingVersion) {
+              continue;
             }
+            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
+            if (pullRequestEvent.pull_request.merged) {
+              if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
+                return;
+              }
 
-            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+            }
           }
+        } catch(err) {
+          logger.info({msg: "could not update cluster because github said an error", err});
         }
       }
     }
