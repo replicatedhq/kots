@@ -3,8 +3,6 @@ import { Watch, Contributor, Version, VersionDetail } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
-import { watch } from "fs";
-import { logger } from "../../server/logger";
 
 export function WatchQueries(stores: Stores) {
   return {
@@ -52,7 +50,7 @@ export function WatchQueries(stores: Stores) {
         _id = await stores.watchStore.getIdFromSlug(slug);
       }
       const parentId = await stores.watchStore.getParentWatchId(_id);
-      const parentWatch = await stores.watchStore.getWatch(parentId);
+      const parentWatch = await context.getWatch(parentId);
       return parentWatch.toSchema(root, stores, context);
     },
 
@@ -90,7 +88,10 @@ export function WatchQueries(stores: Stores) {
       const watchId = await stores.watchStore.getIdFromSlug(args.slug);
       const watch = await context.getWatch(watchId);
       const tree = await watch.generateFileTreeIndex(args.sequence);
-      // return one level deep so you don't start with the "out" dir in the UI
+      if (_.isEmpty(tree) || !tree[0].children) {
+        throw new ReplicatedError(`Unable to get files for watch with ID of ${watch.id}`);
+      }
+      // return children so you don't start with the "out" dir as top level in UI
       return JSON.stringify(tree[0].children);
     },
 

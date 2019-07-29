@@ -94,7 +94,7 @@ class ApplicationTree extends React.Component {
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
-    if (getApplicationTree && getApplicationTree.getApplicationTree !== lastProps.getApplicationTree.getApplicationTree) {
+    if (getApplicationTree?.getApplicationTree !== lastProps.getApplicationTree?.getApplicationTree) {
       this.setState({
         fileTree: getApplicationTree.getApplicationTree
       });
