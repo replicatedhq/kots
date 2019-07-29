@@ -143,7 +143,7 @@ export class Watch {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${watchId}/${sequence}.tar.gz`,
       };
-      logger.info({ msg: "S3 Params", params, outputBucket: replicatedParams.s3BucketEndpoint });
+      logger.info({ msg: "S3 Params", params });
 
       const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
 
