@@ -66,10 +66,6 @@
   version = "0.1.2"
 
 [[constraint]]
-  name = "github.com/mholt/archiver"
-  version = "2.1.0"
-
-[[constraint]]
   name = "github.com/genuinetools/reg"
   version = "0.15.8"
 

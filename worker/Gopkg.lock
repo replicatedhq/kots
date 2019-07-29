@@ -1629,6 +1629,7 @@
     "github.com/hashicorp/go-version",
     "github.com/lib/pq",
     "github.com/pkg/errors",
+    "github.com/replicatedhq/ship/pkg/api",
     "github.com/replicatedhq/ship/pkg/specs",
     "github.com/replicatedhq/ship/pkg/state",
     "github.com/spf13/afero",
