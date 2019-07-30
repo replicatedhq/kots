@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "v0.49.0"
+  revision = "v0.49.1"
 
 [[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
@@ -1629,6 +1629,7 @@
     "github.com/hashicorp/go-version",
     "github.com/lib/pq",
     "github.com/pkg/errors",
+    "github.com/replicatedhq/ship/pkg/api",
     "github.com/replicatedhq/ship/pkg/specs",
     "github.com/replicatedhq/ship/pkg/state",
     "github.com/spf13/afero",

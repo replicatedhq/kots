@@ -55,7 +55,7 @@
 
 [[constraint]]
   name = "github.com/replicatedhq/ship"
-  revision = "v0.49.0"
+  revision = "v0.49.1"
 
 [[constraint]]
   name = "github.com/google/go-github"
@@ -64,10 +64,6 @@
 [[constraint]]
   name = "github.com/bradleyfalzon/ghinstallation"
   version = "0.1.2"
-
-[[constraint]]
-  name = "github.com/mholt/archiver"
-  version = "2.1.0"
 
 [[constraint]]
   name = "github.com/genuinetools/reg"
