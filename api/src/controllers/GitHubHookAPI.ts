@@ -8,6 +8,7 @@ import uuid from "uuid";
 import GitHubApi from "@octokit/rest";
 import jwt from "jsonwebtoken";
 import { Cluster } from "../cluster";
+import * as _ from "lodash";
 
 interface GitHubInstallationRequest {
   action: string;
@@ -149,15 +150,7 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
-    /////////
-    // before adding commit_sha, some pending versions don't have them
-    /////////
-    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
-    ////////
-    // end of pre-commit-sha compatibility code
-    ////////
-
-
+    let commitShaFound = false;
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
         continue;
@@ -188,7 +181,17 @@ export class GitHubHookAPI {
             number: pullRequestEvent.number,
           };
           const getCommitsResponse = await github.pullRequests.getCommits(params);
-          for (const commit of getCommitsResponse.data) {
+
+          const sortedCommits = _.sortBy(getCommitsResponse.data, (commit) => {
+            if (!commit.committed_at) {
+              return undefined;
+            }
+            return new Date(commit.committed_at);
+          });
+
+          commitShaFound = sortedCommits.length > 0;
+
+          for (const commit of sortedCommits) {
             const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
             if (!pendingVersion) {
               continue;
@@ -197,6 +200,13 @@ export class GitHubHookAPI {
             if (pullRequestEvent.pull_request.merged) {
               if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
                 return;
+              }
+
+              const currentVersion = await request.app.locals.stores.watchStore.getCurrentVersion(watch.id!);
+              if (currentVersion) {
+                if (currentVersion.sequence > pendingVersion.sequence!) {
+                  continue;
+                }
               }
 
               await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
@@ -208,7 +218,16 @@ export class GitHubHookAPI {
       }
     }
 
-    logger.warn({msg: `received unhandled github pull request event`});
+
+    /////////
+    // before adding commit_sha, some pending versions don't have them
+    /////////
+    if (!commitShaFound) {
+      await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
+    }
+    ////////
+    // end of pre-commit-sha compatibility code
+    ////////
   }
 }
 
