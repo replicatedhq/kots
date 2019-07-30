@@ -71,4 +71,5 @@ type Store interface {
 	SetAnalysisSucceeded(ctx context.Context, supportBundleID string, insights string) error
 	GetSupportBundle(ctx context.Context, supportBundleID string) (*types.SupportBundle, error)
 	GetAnalyzeSpec(ctx context.Context, watchID string) (string, error)
+	GetTroubleshootSpec(ctx context.Context, watchID string) (string, error)
 }

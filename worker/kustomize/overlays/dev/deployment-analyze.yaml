@@ -18,10 +18,6 @@ spec:
                 secretKeyRef:
                   name: ship-postgres   # This secret is created in the ship-cluster-db project
                   key: uri
-            - name: ANALYZE_IMAGE
-              value: "replicated/analyze"
-            - name: ANALYZE_TAG
-              value: "alpha"
             - name: ANALYZE_PULL_POLICY
               value: Always
             - name: S3_ENDPOINT
@@ -32,3 +28,9 @@ spec:
               value: not-a-key
             - name: S3_SECRET_ACCESS_KEY
               value: not-a-secret
+            - name: TROUBLESHOOT_IMAGE
+              value: "localhost:32000/troubleshoot"
+            - name: TROUBLESHOOT_TAG
+              value: "alpha"
+            - name: TROUBLESHOOT_PULL_POLICY
+              value: "Always"

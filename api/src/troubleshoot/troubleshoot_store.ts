@@ -96,7 +96,14 @@ export class TroubleshootStore {
 
     if (row.analysis_insights) {
       const insights: SupportBundleInsight[] = [];
-      const marsheledInsights = JSON.parse(row.analysis_insights);
+
+      var marsheledInsights;
+      try {
+        marsheledInsights = JSON.parse(row.analysis_insights);
+      } catch(err) {
+        marsheledInsights = [];
+      }
+
       for (const marshaledInsight of marsheledInsights) {
         const insight = new SupportBundleInsight();
         insight.key = marshaledInsight.name;
