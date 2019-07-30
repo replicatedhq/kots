@@ -77,10 +77,17 @@ export function WatchQueries(stores: Stores) {
     async getDownstreamHistory(root: any, args: any, context: Context): Promise<Version[]> {
       const idFromSlug = await stores.watchStore.getIdFromSlug(args.slug);
       const watch = await context.getWatch(idFromSlug);
+      const current = await watch.getCurrentVersion(stores);
       const past = await watch.getPastVersions(stores);
       const pending = await watch.getPendingVersions(stores);
 
-      const versions = pending.concat(past)
+      let versions;
+      if (current === undefined) {
+        versions = pending.concat(past);
+      } else {
+        versions = pending.concat(past, Array.of(current));
+      }
+    
       return versions;
     },
 
