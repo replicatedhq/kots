@@ -24,8 +24,8 @@ class PreflightChecksPage extends Component {
     });
   }
 
-  onTabChange = name => {
-    console.log(name);
+  onTabChange = (/* name */ ) => {
+
   }
 
   render() {
@@ -77,7 +77,7 @@ class PreflightChecksPage extends Component {
                     language="bash"
                     canCopy={true}
                   >
-                    krew install preflight
+                    kubectl krew install preflight
                   </CodeSnippet>
                   <TabView
                     className="u-marginTop--10"
@@ -104,8 +104,8 @@ class PreflightChecksPage extends Component {
             </div>
           </div>
         </div>
-        <div className="flex-auto flex justifyContent--flexEnd layout-footer-actions">
-          <button type="button" className="btn primary">Click</button>
+        <div className="flex-auto flex justifyContent--flexEnd">
+          <button type="button" className="btn primary red u-marginRight--30 u-marginBottom--15">Skip this step</button>
         </div>
       </div>
     );
