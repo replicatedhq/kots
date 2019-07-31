@@ -3,6 +3,8 @@ import classNames from "classnames";
 import PropTypes from "prop-types";
 import Prism from "@maji/react-prism";
 
+import "@src/scss/components/shared/CodeSnippet.scss";
+
 class CodeSnippet extends Component {
   state = {
     didCopy: false

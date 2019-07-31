@@ -1,7 +1,10 @@
 import React, { Component, Fragment } from "react";
-
+import { withRouter } from "react-router-dom";
+import { compose } from "react-apollo";
 import CodeSnippet from "./shared/CodeSnippet";
 import TabView, { Tab } from "./shared/TabView";
+
+import "@src/scss/components/PreflightChecksPage.scss";
 
 class PreflightChecksPage extends Component {
   constructor(props) {
@@ -43,7 +46,7 @@ class PreflightChecksPage extends Component {
                 You will be able to see the results in your terminal window as well as in this UI.
             </p>
               <CodeSnippet className="u-marginTop--10" language="bash" canCopy={true}>
-                kubectl preflight https://git.io/preflight-k8s.version.yaml
+                {`kubectl prefight ${location.href}`}
             </CodeSnippet>
               <div className="section-border flex justifyContent--center u-position--relative u-marginTop--20">
                 <p
@@ -107,4 +110,6 @@ class PreflightChecksPage extends Component {
   }
 }
 
-export default PreflightChecksPage;
+export default compose(
+  withRouter
+  )(PreflightChecksPage);

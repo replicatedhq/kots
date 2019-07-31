@@ -122,7 +122,7 @@ class WatchDetailPage extends Component {
       });
     });
   }
-
+  // NOTE FOR PREFLIGHTS - DO THISSSSSS
   addClusterToWatch = (clusterId, githubPath) => {
     const { clusterParentSlug } = this.state;
     const upstreamUrl = `ship://ship-cloud/${clusterParentSlug}`;
@@ -424,6 +424,7 @@ class WatchDetailPage extends Component {
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
               <AddClusterModal
                 onAddCluster={this.addClusterToWatch}
+                watch={watch}
                 onRequestClose={this.closeAddClusterModal}
                 createDownstreamForCluster={this.createDownstreamForCluster}
                 existingDeploymentClusters={this.state.existingDeploymentClusters}

@@ -1,0 +1,16 @@
+.CodeSnippet-content {
+  padding: 15px;
+  border: 1px solid #DFDFDF;
+  border-radius: 4px;
+  background-color: #F5F8FC;
+}
+
+.CodeSnippet-copy {
+  color: #337AB7;
+  font-size: 12px;
+
+  &:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
