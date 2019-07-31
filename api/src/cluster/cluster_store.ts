@@ -568,7 +568,7 @@ items:
         controller-tools.k8s.io: "1.0"
       name: ${slugify(cluster.title!, { lower: true })}
     spec:
-      shipApiServer: ${this.params.apiAdvertiseEndpoint}
+      shipApiServer: ${this.params.shipApiEndpoint}
       token: ${cluster.shipOpsRef!.token}
 `;
 

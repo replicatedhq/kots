@@ -1,4 +1,4 @@
-package troubleshoot
+package analyze
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 func name(id string) string {
-	return fmt.Sprintf("troubleshoot-%s", id)
+	return fmt.Sprintf("analyze-%s", id)
 }
 
 func GetNamespace(ctx context.Context, supportBundle *types.SupportBundle) *corev1.Namespace {
@@ -63,7 +63,7 @@ func GetServiceAccountSpec(ctx context.Context, supportBundle *types.SupportBund
 	return &serviceAccount
 }
 
-func GetConfigMapSpec(ctx context.Context, supportBundle *types.SupportBundle, troubleshootSpec string) *corev1.ConfigMap {
+func GetConfigMapSpec(ctx context.Context, supportBundle *types.SupportBundle, analyzeSpec string) *corev1.ConfigMap {
 	labels := make(map[string]string)
 	labels["supportbundle-id"] = supportBundle.ID
 	labels["shipcloud-role"] = "analyze"
@@ -79,26 +79,26 @@ func GetConfigMapSpec(ctx context.Context, supportBundle *types.SupportBundle, t
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"troubleshoot.yaml": troubleshootSpec,
+			"analyze.yaml": analyzeSpec,
 		},
 	}
 
 	return &configMap
 }
 
-func GetPodSpec(ctx context.Context, logLevel string, troubleshootImage string, troubleshootTag string, troubleshootPullPolicy string, serviceAccountName string, supportBundle *types.SupportBundle, bundleGetURI string, desiredNodeSelector string) *corev1.Pod {
+func GetPodSpec(ctx context.Context, logLevel string, analyzeImage string, analyzeTag string, shipPullPolicy string, serviceAccountName string, supportBundle *types.SupportBundle, bundleGetURI string, desiredNodeSelector string) *corev1.Pod {
 	labels := make(map[string]string)
 	labels["supportbundle-id"] = supportBundle.ID
 	labels["shipcloud-role"] = "analyze"
 
-	if troubleshootImage == "" {
-		troubleshootImage = "replicated/troubleshoot"
+	if analyzeImage == "" {
+		analyzeImage = "replicated/analyze"
 	}
-	if troubleshootTag == "" {
-		troubleshootTag = "latest"
+	if analyzeTag == "" {
+		analyzeTag = "latest"
 	}
-	if troubleshootPullPolicy == "" {
-		troubleshootPullPolicy = string(corev1.PullAlways)
+	if shipPullPolicy == "" {
+		shipPullPolicy = string(corev1.PullAlways)
 	}
 
 	nodeSelector := make(map[string]string)
@@ -131,20 +131,21 @@ func GetPodSpec(ctx context.Context, logLevel string, troubleshootImage string, 
 			ActiveDeadlineSeconds: &activeDeadlineSecondsRef,
 			Containers: []corev1.Container{
 				{
-					Image:           fmt.Sprintf("%s:%s", troubleshootImage, troubleshootTag),
-					ImagePullPolicy: corev1.PullPolicy(troubleshootPullPolicy),
+					Image:           fmt.Sprintf("%s:%s", analyzeImage, analyzeTag),
+					ImagePullPolicy: corev1.PullPolicy(shipPullPolicy),
 					Name:            name(supportBundle.ID),
 					Resources: corev1.ResourceRequirements{
 						Limits:   limits,
 						Requests: requests,
 					},
-					Command: []string{"/troubleshoot/troubleshoot"},
 					Args: []string{
-						"analyze",
-						fmt.Sprintf("--url=%s", bundleGetURI),
-						"--output=json",
-						"--compatibility=support-bundle",
-						"--quiet",
+						"run",
+						bundleGetURI,
+						"--output",
+						"json",
+						"--skip-default",
+						"-f",
+						"/specs/analyze.yaml",
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
