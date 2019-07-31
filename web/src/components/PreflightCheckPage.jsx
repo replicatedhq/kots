@@ -1,6 +1,8 @@
 import React, { Component, Fragment } from "react";
 import { withRouter } from "react-router-dom";
-import { compose } from "react-apollo";
+import { graphql, withApollo, compose } from "react-apollo";
+
+import {listPreflightResults } from "@src/queries/WatchQueries";
 import CodeSnippet from "./shared/CodeSnippet";
 import TabView, { Tab } from "./shared/TabView";
 
@@ -22,8 +24,8 @@ class PreflightChecksPage extends Component {
     });
   }
 
-  onTabChange = name => {
-    console.log(name);
+  onTabChange = (/* name */ ) => {
+
   }
 
   render() {
@@ -75,7 +77,7 @@ class PreflightChecksPage extends Component {
                     language="bash"
                     canCopy={true}
                   >
-                    krew install preflight
+                    kubectl krew install preflight
                   </CodeSnippet>
                   <TabView
                     className="u-marginTop--10"
@@ -102,8 +104,8 @@ class PreflightChecksPage extends Component {
             </div>
           </div>
         </div>
-        <div className="flex-auto flex justifyContent--flexEnd layout-footer-actions">
-          <button type="button" className="btn primary">Click</button>
+        <div className="flex-auto flex justifyContent--flexEnd">
+          <button type="button" className="btn primary red u-marginRight--30 u-marginBottom--15">Skip this step</button>
         </div>
       </div>
     );
@@ -111,5 +113,25 @@ class PreflightChecksPage extends Component {
 }
 
 export default compose(
-  withRouter
+  withRouter,
+  withApollo,
+  graphql(listPreflightResults, {
+    name: "listPreflightResultsQuery",
+    props: (props, lastProps) => {
+      console.log(props, lastProps);
+      return {
+        ...props,
+      }
+    },
+    options: props => {
+      const { match } = props;
+      return {
+        pollInterval: 10000,
+        variables: {
+          watchId: match.params.watchId
+        }
+      };
+
+    }
+   })
   )(PreflightChecksPage);
