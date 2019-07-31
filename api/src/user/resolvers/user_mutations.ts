@@ -9,7 +9,7 @@ import { Params } from "../../server/params";
 import { AccessToken } from "../";
 import uuid from "uuid";
 
-import { identifyUser, trackUserSCMLeads } from "../../util/analytics";
+import { trackNewUser, trackUserSCMLeads } from "../../util/analytics";
 
 export type authCode = { code: string };
 
@@ -68,9 +68,9 @@ export function UserMutations(stores: Stores, params: Params) {
           // for (const allUserCluster of allUsersClusters) {
           //   await this.clusterStore.addUserToCluster(span.context(), allUserCluster.id!, shipUser[0].id);
           // }
-        }
-        if (params.segmentioAnalyticsKey) {
-          identifyUser(params, user.id, user.githubUser ? user.githubUser.login : "");
+          if (params.segmentioAnalyticsKey) {
+            trackNewUser(params, user.id, "New Ship Cloud User", user.githubUser ? user.githubUser.login : "");
+          }
         }
 
         await stores.userStore.updateLastLogin(user.id);
