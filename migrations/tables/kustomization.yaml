@@ -40,3 +40,5 @@ resources:
 - ./supportbundle_analysis.yaml
 - ./watch_license.yaml
 - ./github_install.yaml
+- ./preflight_result.yaml
+- ./preflight_spec.yaml

@@ -29,6 +29,7 @@
     "graphql-tools": "^2.7.2",
     "gunzip-maybe": "^1.4.1",
     "http-proxy-middleware": "^0.19.1",
+    "js-yaml": "^3.13.1",
     "jsonschema": "^1.2.4",
     "jsonwebtoken": "^8.5.1",
     "kubernetes-client": "^7.0.0",

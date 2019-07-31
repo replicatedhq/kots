@@ -348,7 +348,19 @@ export class WatchStore {
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata, last_watch_check_at from watch where id = $1";
+    const q = `
+      SELECT
+        watch.id,
+        watch.current_state,
+        watch.title,
+        watch.icon_uri,
+        watch.slug,
+        watch.created_at,
+        watch.updated_at,
+        watch.metadata,
+        watch.last_watch_check_at,
+        CASE WHEN preflight_spec.spec IS NULL THEN false ELSE true END AS has_preflight
+          FROM watch LEFT OUTER JOIN preflight_spec ON watch.id = preflight_spec.watch_id WHERE id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -764,7 +776,7 @@ export class WatchStore {
     watch.createdOn = row.created_at;
     watch.metadata = row.metadata;
     watch.lastUpdateCheck = row.last_watch_check_at;
-
+    watch.hasPreflight = row.has_preflight;
     return watch;
   }
 

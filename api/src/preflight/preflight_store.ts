@@ -1,0 +1,66 @@
+import pg from "pg";
+import randomstring from "randomstring";
+
+import { PreflightSpec, PreflightResult } from "./";
+import { ReplicatedError } from "../server/errors";
+export class PreflightStore {
+  constructor(
+    private readonly pool: pg.Pool
+  ) {}
+
+  private mapPreflightResult(row: any): PreflightResult {
+    const preflightResult = new PreflightResult();
+    preflightResult.watchId = row.watch_id;
+    preflightResult.result = row.result;
+    preflightResult.createdAt = row.created_at;
+
+    return preflightResult;
+  }
+
+  private mapPreflightSpec(row: any): PreflightSpec {
+    const preflightSpec = new PreflightSpec();
+    preflightSpec.spec = row.spec;
+
+    return preflightSpec;
+  }
+
+  async getPreflightsResultsByWatchId(watchId: string): Promise<PreflightResult[]> {
+    const q =
+      `SELECT result, created_at, watch_id FROM preflight_result WHERE watch_id = $1 ORDER BY created_at DESC`;
+    const v = [ watchId ];
+
+    const result = await this.pool.query(q, v);
+    const preflightResults = result.rows.map(this.mapPreflightResult);
+
+    return preflightResults;
+  }
+
+  async getPreflightSpec(watchId: string): Promise<PreflightSpec> {
+    const q =
+      `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY watch_sequence DESC LIMIT 1`;
+    const v = [ watchId ];
+
+    const result = await this.pool.query(q, v);
+
+    if (!result.rows[0]) {
+      throw new ReplicatedError(`Couldn't find PreflightSpec for watchId: ${watchId}`);
+    }
+
+    const spec = this.mapPreflightSpec(result.rows[0]);
+
+    return spec;
+  }
+
+  async addPreflightResult(watchId: string, result: string): Promise<void> {
+    const q =
+      `INSERT INTO preflight_results (id, watch_id, result) VALUES ($1, $2, $3)`;
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const v = [
+      id,
+      watchId,
+      result,
+    ];
+
+    await this.pool.query(q,v);
+  }
+}

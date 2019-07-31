@@ -35,6 +35,7 @@ import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
+import { PreflightStore } from "../preflight/preflight_store";
 
 const tsedConfig = {
   rootDir: path.resolve(__dirname),
@@ -102,6 +103,7 @@ export class Server extends ServerLoader {
       troubleshootStore: new TroubleshootStore(pool, params),
       licenseStore: new LicenseStore(pool, params),
       githubInstall: new GithubInstallationsStore(pool),
+      preflightStore: new PreflightStore(pool)
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {

@@ -217,6 +217,7 @@ export const getWatch = gql`
       createdOn
       lastUpdated
       metadata
+      hasPreflight
       entitlements {
         key
         value

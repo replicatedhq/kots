@@ -1,8 +1,7 @@
 import React, { Component, Fragment } from "react";
-import PropTypes from "prop-types";
 
-import CodeSnippet from "./CodeSnippet";
-import TabView, { Tab } from "./TabView";
+import CodeSnippet from "./shared/CodeSnippet";
+import TabView, { Tab } from "./shared/TabView";
 
 class PreflightChecksPage extends Component {
   constructor(props) {
