@@ -1,28 +1,16 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
 // import { archiveSupportBundle } from "../../mutations/SupportBundleMutations";
 
-import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 import SupportBundleRow from "./SupportBundleRow";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 
 class SupportBundleList extends React.Component {
-
-  state = {
-    displayUploadModal: false
-  };
-
-  toggleModal = () => {
-    this.setState({
-      displayUploadModal: !this.state.displayUploadModal
-    })
-  }
 
   render() {
     const { watch } = this.props;
@@ -54,6 +42,7 @@ class SupportBundleList extends React.Component {
       );
     }
 
+    
     return (
       <div className="container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
         <Helmet>
@@ -71,7 +60,7 @@ class SupportBundleList extends React.Component {
                       </div>
                     </div>
                     <div className="RightNode flex-auto flex-column flex-verticalCenter u-position--relative">
-                      <button className="btn secondary" onClick={this.toggleModal}>Generate a support bundle</button>
+                      <Link to={`${this.props.match.url}/generate`} className="btn secondary">Generate a support bundle</Link>
                     </div>
                   </div>
                 </div>
@@ -88,24 +77,6 @@ class SupportBundleList extends React.Component {
             </div>
           </div>
         </div>
-        <Modal
-          isOpen={this.state.displayUploadModal}
-          onRequestClose={this.toggleModal}
-          shouldReturnFocusAfterClose={false}
-          ariaHideApp={false}
-          contentLabel="GenerateBundle-Modal"
-          className="Modal MediumSize"
-        >
-          <div className="Modal-body">
-            <GenerateSupportBundleModal
-              watch={this.props.watch}
-              submitCallback={(bundle) => {
-                this.props.history.push(`${this.props.match.url}/analyze/${bundle.slug}`);
-                this.props.listSupportBundles.refetch();
-              }}
-            />
-          </div>
-        </Modal>
       </div>
     );
   }

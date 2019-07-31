@@ -235,6 +235,7 @@ export const getWatch = gql`
         }
       }
       lastUpdateCheck
+      bundleCommand
       contributors {
         id
         createdAt
@@ -304,6 +305,7 @@ export const getWatch = gql`
         createdOn
         lastUpdated
         lastUpdateCheck
+        bundleCommand
         contributors {
           id
           createdAt

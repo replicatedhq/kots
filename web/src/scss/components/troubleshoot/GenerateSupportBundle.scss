@@ -1,0 +1,29 @@
+.GenerateSupportBundle--wrapper {
+  .full-width-container {
+    max-width: 90%;
+    width: 100%;
+  }
+}
+
+.GenerateSupportBundle {
+  max-width: 800px;
+  width: 100%;
+}
+
+.SelectCluster--wrapper {
+  .SelectCluster-menu {
+    max-width: 340px;
+  }
+}
+
+.GenerateBundleCommand--wrapper {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  code {
+    white-space: pre-wrap;
+    background: #272822;
+    color: white;
+    margin: 15px 0;
+  }
+}

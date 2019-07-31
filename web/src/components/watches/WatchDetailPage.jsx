@@ -26,6 +26,7 @@ import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 import SupportBundleList from "../troubleshoot/SupportBundleList";
 import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
+import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -58,10 +59,10 @@ class WatchDetailPage extends Component {
     const { getThemeState, setThemeState, match, listWatches, history, getWatchQuery } = this.props;
     const { search } = this.props.location;
     const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listWatches.find( w => w.slug === slug);
+    const currentWatch = listWatches.find(w => w.slug === slug);
 
     // Handle updating the app theme state when a watch changes.
-    if (currentWatch?.watchIcon) {
+    if (currentWatch ?.watchIcon) {
       const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
 
@@ -118,7 +119,7 @@ class WatchDetailPage extends Component {
       this.setState({
         checkingForUpdates: false,
         checkingUpdateText: "Checking for updates"
-       });
+      });
     });
   }
 
@@ -248,16 +249,16 @@ class WatchDetailPage extends Component {
 
     let watch;
     if (!isHelmChartUrl) {
-      watch = getWatchQuery?.getWatch;
+      watch = getWatchQuery ?.getWatch;
     } else {
-      watch = getHelmChartQuery?.getHelmChart;
+      watch = getHelmChartQuery ?.getHelmChart;
     }
 
     let loading;
     if (isHelmChartUrl) {
-      loading = getHelmChartQuery?.loading || !rootDidInitialWatchFetch;
+      loading = getHelmChartQuery ?.loading || !rootDidInitialWatchFetch;
     } else {
-      loading = getWatchQuery?.loading || !rootDidInitialWatchFetch;
+      loading = getWatchQuery ?.loading || !rootDidInitialWatchFetch;
     }
 
     if (!rootDidInitialWatchFetch) {
@@ -268,27 +269,29 @@ class WatchDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
-          condition={listWatches?.length > 1}
+          condition={listWatches ?.length > 1}
           sidebar={(
             <SideBar
-              items={listWatches?.map( (item, idx) => {
+              items={listWatches ?.map((item, idx) => {
                 let sidebarItemNode;
                 if (item.slug) {
                   const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
                   sidebarItemNode = (
                     <WatchSidebarItem
                       key={idx}
-                      className={classNames({ selected: (
-                        item.slug === slugFromRoute &&
-                        match.params.owner !== "helm"
-                      )})}
+                      className={classNames({
+                        selected: (
+                          item.slug === slugFromRoute &&
+                          match.params.owner !== "helm"
+                        )
+                      })}
                       watch={item} />
                   );
                 } else if (item.helmName) {
                   sidebarItemNode = (
                     <HelmChartSidebarItem
                       key={idx}
-                      className={classNames({ selected: item.id === match.params.slug})}
+                      className={classNames({ selected: item.id === match.params.slug })}
                       helmChart={item} />
                   );
                 }
@@ -324,7 +327,7 @@ class WatchDetailPage extends Component {
                         <DetailPageApplication
                           watch={watch}
                           refetchListWatches={refetchListWatches}
-                          refetchWatch={this.props.getWatchQuery?.refetch}
+                          refetchWatch={this.props.getWatchQuery ?.refetch}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
                         />}
@@ -385,6 +388,11 @@ class WatchDetailPage extends Component {
                         watch={watch}
                       />
                     } />
+                    <Route exact path="/watch/:owner/:slug/troubleshoot/generate" render={() =>
+                      <GenerateSupportBundle
+                        watch={watch}
+                      />
+                    } />
                     <Route path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
                       <SupportBundleAnalysis
                         watch={watch}
@@ -426,7 +434,7 @@ class WatchDetailPage extends Component {
         {displayRemoveClusterModal &&
           <Modal
             isOpen={displayRemoveClusterModal}
-            onRequestClose={() => this.toggleDeleteDeploymentModal({},"")}
+            onRequestClose={() => this.toggleDeleteDeploymentModal({}, "")}
             shouldReturnFocusAfterClose={false}
             contentLabel="Add cluster modal"
             ariaHideApp={false}
@@ -436,7 +444,7 @@ class WatchDetailPage extends Component {
               <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.cluster.title}</h2>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.cluster.title}.</p>
               <div className="u-marginTop--10 flex">
-                <button onClick={() => this.toggleDeleteDeploymentModal({},"")} className="btn secondary u-marginRight--10">Cancel</button>
+                <button onClick={() => this.toggleDeleteDeploymentModal({}, "")} className="btn secondary u-marginRight--10">Cancel</button>
                 <button onClick={this.onDeleteDeployment} className="btn green primary">Delete deployment</button>
               </div>
             </div>
@@ -497,12 +505,12 @@ export default compose(
   }),
   graphql(createUpdateSession, {
     props: ({ mutate }) => ({
-      createUpdateSession: (watchId) => mutate({ variables: { watchId }})
+      createUpdateSession: (watchId) => mutate({ variables: { watchId } })
     })
   }),
   graphql(deleteWatch, {
     props: ({ mutate }) => ({
-      deleteWatch: (watchId) => mutate({ variables: { watchId }})
+      deleteWatch: (watchId) => mutate({ variables: { watchId } })
     })
   }),
   graphql(deployWatchVersion, {

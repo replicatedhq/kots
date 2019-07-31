@@ -58,5 +58,6 @@ export const Query = `
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
     supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
+    getSupportBundleCommand(watchSlug: String!): String
   }
 `;

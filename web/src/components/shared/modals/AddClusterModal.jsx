@@ -45,6 +45,25 @@ class AddNewClusterModal extends React.Component {
     }
   }
 
+  renderIcons = (type) => {
+    if (type === "ship") {
+      return <span className="icon clusterType ship"></span>
+    } else if (type === "git") {
+      return <span className="icon clusterType git"></span>
+    } else {
+      return;
+    }
+  }
+
+  getLabel = ({ type, label }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span style={{ fontSize: 18, marginRight: "0.5em" }}>{this.renderIcons(type)}</span>
+        <span style={{ fontSize: 14 }}>{label}</span>
+      </div>
+    );
+  }
+
   render() {
     const { 
       existingDeploymentClusters,
@@ -79,7 +98,8 @@ class AddNewClusterModal extends React.Component {
               className="replicated-select-container"
               classNamePrefix="replicated-select"
               options={options}
-              getOptionLabel={(selectedCluster) => selectedCluster.label}
+              getOptionLabel={this.getLabel}
+              getOptionValue={(option) => option.label}
               value={this.state.selectedCluster}
               onChange={this.onClusterChange}
               isOptionSelected={(option) => {option.value === this.state.selectedCluster.value}}

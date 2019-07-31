@@ -2,6 +2,7 @@ import { Cluster } from "../cluster/cluster";
 import { Feature } from "../feature/feature";
 import { Stores } from "../schema/stores";
 import { NotificationQueries } from "../notification";
+import { TroubleshootQueries } from "../troubleshoot";
 import zlib from "zlib";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "../troubleshoot/util";
 import { getS3 } from "../util/s3";
@@ -33,6 +34,7 @@ export class Watch {
   public config?: Array<ConfigGroup>;
   public entitlements?: Array<Entitlement>;
   public lastUpdateCheck: string;
+  public bundleCommand?: string;
 
   // Watch Cluster Methods
   public async getCluster(stores: Stores): Promise<Cluster | void> {
@@ -216,7 +218,8 @@ export class Watch {
       parentWatch: async () => this.getParentWatch(stores),
       config: async () => this.generateConfigGroups(this.stateJSON),
       entitlements: async () => this.getEntitlementsWithNames(stores),
-    };
+      bundleCommand: async () => TroubleshootQueries(stores).getSupportBundleCommand(root, { watchSlug: this.slug }, context)
+    }; 
   }
 }
 
