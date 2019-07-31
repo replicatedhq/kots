@@ -70,7 +70,7 @@ export default [
       if (isHelmChart(watch)) {
         return false;
       }
-      return Boolean(watch.cluster) || getApplicationType(watch) !== "replicated.app";
+      return Boolean(!watch.cluster);
     }
   }
   // {
