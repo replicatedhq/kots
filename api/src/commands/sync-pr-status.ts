@@ -68,7 +68,7 @@ async function main(argv): Promise<any> {
         repo: version.repo,
         number: version.pullrequest_number
       });
-      console.log(statusText(`successfully fetched pr ${version.pullrequest_number}`));
+      console.log(statusText(`successfully fetched pr ${version.owner}/${version.repo} #${version.pullrequest_number}`));
       if (pr.data.merged && pr.data.state === "closed") {
         // PR is merged according to GitHub
         if (version.status !== "merged") {
@@ -101,7 +101,7 @@ async function main(argv): Promise<any> {
         }
       }
     } catch (error) {
-      console.log(error.code);
+      console.log(statusText(`failed to fetch pr ${version.owner}/${version.repo} #${version.pullrequest_number}: ${error.code}`));
       await sleep(3000);
       continue;
     }
