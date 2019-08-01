@@ -1,25 +1,22 @@
 apiVersion: schemas.schemahero.io/v1alpha2
 kind: Table
 metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
   name: preflight-spec
 spec:
   database: ship-cluster-postgres
   name: preflight_spec
-  requires: []
   schema:
     postgres:
       primaryKey:
       - watch_id
-      - watch_sequence
+      - sequence
       columns:
       - name: watch_id
         type: text
         constraints:
           notNull: true
-      - name: watch_sequence
-        type: text
+      - name: sequence
+        type: int
         constraints:
           notNull: true
       - name: spec

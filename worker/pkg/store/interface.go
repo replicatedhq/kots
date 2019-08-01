@@ -20,6 +20,8 @@ type Store interface {
 	UploadToS3(ctx context.Context, outputSession types.Output, file multipart.File) error
 	DownloadFromS3(ctx context.Context, path string) (string, error)
 
+	SetWatchVersionPreflightSpec(ctx context.Context, watchID string, sequence int, preflightSpec string) error
+
 	GetNextUploadSequence(ctx context.Context, watchID string) (int, error)
 	UpdateWatchState(ctx context.Context, watchID string, stateJSON []byte, metadata []byte) error
 
