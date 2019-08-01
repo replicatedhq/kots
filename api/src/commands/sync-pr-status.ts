@@ -68,7 +68,7 @@ async function main(argv): Promise<any> {
         repo: version.repo,
         number: version.pullrequest_number
       });
-  
+      console.log(statusText(`successfully fetched pr ${version.pullrequest_number}`));
       if (pr.data.merged && pr.data.state === "closed") {
         // PR is merged according to GitHub
         if (version.status !== "merged") {
@@ -101,7 +101,8 @@ async function main(argv): Promise<any> {
         }
       }
     } catch (error) {
-      console.log(error);
+      console.log(error.code);
+      await sleep(3000);
       continue;
     }
     i++
@@ -126,4 +127,10 @@ async function checkVersion(watchStore, version, pr) {
 
   await watchStore.setCurrentVersion(watch.id!, version.sequence!, pr.merged_at || null);
   console.log(statusText(`Updated current version sequence for ${version.watch_id} (PR: #${pr.number}) from ${watch.currentVersion ? watch.currentVersion.sequence : "NULL"} to ${version.sequence}`));
+}
+
+async function sleep(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
 }
