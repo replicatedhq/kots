@@ -15,6 +15,12 @@ export class TroubleshootStore {
   ) {
   }
 
+  static defaultSpec = `apiVersion: troubleshoot.replicated.com/v1beta1
+  kind: Collector
+  metadata:
+    name: defalt-collector
+  spec: []`
+
   public async getPreferedWatchCollector(watchId: string): Promise<Collector> {
     const q = `select release_collector, updated_collector, release_collector_updated_at, updated_collector_updated_at, use_updated_collector
     from watch_troubleshoot_collector where watch_id = $1`;
@@ -41,6 +47,25 @@ export class TroubleshootStore {
       collector.spec = row.updated_collector;
     } else {
       collector.spec = row.release_collector;
+    }
+
+    return collector;
+  }
+
+  public async getCollectorForWatchSlug(slug: string): Promise<Collector> {
+    const q = `select c.release_collector
+    from watch w inner join watch_troubleshoot_collector c ON w.id = c.watch_id
+    where w.slug = $1`;
+
+    const v = [slug];
+
+    const result = await this.pool.query(q, v);
+
+    let collector: Collector = new Collector();
+    if (result.rowCount === 0) {
+      collector.spec = TroubleshootStore.defaultSpec;
+    } else {
+      collector.spec = result.rows[0].release_collector;
     }
 
     return collector;
