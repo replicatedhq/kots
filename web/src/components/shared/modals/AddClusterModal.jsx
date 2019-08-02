@@ -23,7 +23,7 @@ class AddNewClusterModal extends React.Component {
     console.log(selectedCluster);
 
     if (watch.hasPreflight) {
-      history.push(`/preflight/${watch.slug}/${selectedCluster.value}`)
+      history.push(`/preflight/${watch.slug}/${selectedCluster.slug}`)
     } else {
       this.props.onAddCluster(selectedCluster.value, githubPath);
     }
@@ -86,6 +86,7 @@ class AddNewClusterModal extends React.Component {
         return ({
           value: cluster.id,
           label: cluster.title,
+          slug: cluster.slug,
           type: cluster.gitOpsRef ? "git" : "ship"
         })
       });

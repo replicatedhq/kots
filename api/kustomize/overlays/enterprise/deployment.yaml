@@ -63,7 +63,7 @@ spec:
             - name: SHIP_API_ENDPOINT
               value: http://ship-cluster-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
-              value: http://docker.for.mac.localhost:30065
+              value: http://localhost:30065
             - name: GRAPHQL_PREM_ENDPOINT
               value: https://pg.replicated.com/graphql
           volumeMounts:

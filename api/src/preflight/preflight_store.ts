@@ -75,13 +75,22 @@ export class PreflightStore {
     return spec;
   }
 
-  async addPreflightResult(watchId: string, result: string): Promise<void> {
+  async addPreflightResult(watchId: string, result: string, slug: string): Promise<void> {
+    let watchIdFromSlug;
+    if (!watchId && slug) {
+      const watchIdFromSlugQuery = `SELECT id FROM watch WHERE slug = $1`;
+      const watchIdFromSlugResults = await this.pool.query(watchIdFromSlugQuery, [ slug ]);
+
+      if (watchIdFromSlugResults.rows[0]) {
+        watchIdFromSlug = watchIdFromSlugResults.rows[0].id;
+      }
+    }
     const q =
-      `INSERT INTO preflight_results (id, watch_id, result) VALUES ($1, $2, $3)`;
+      `INSERT INTO preflight_results (id, watch_id, result, created_at) VALUES ($1, $2, $3, NOW())`;
     const id = randomstring.generate({ capitalization: "lowercase" });
     const v = [
       id,
-      watchId,
+      watchId || watchIdFromSlug,
       result,
     ];
 
