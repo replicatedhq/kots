@@ -20,8 +20,8 @@ export const handler = async (argv) => {
   });
 };
 
-const statusText = clc.xterm(78).bold;
-const blueText = clc.xterm(75);
+const statusText = clc.xterm(78);
+const blueText = clc.xterm(75).bold;
 
 async function main(argv): Promise<any> {
   process.on('SIGTERM', () => {
@@ -72,9 +72,10 @@ async function main(argv): Promise<any> {
       if (pr.data.merged && pr.data.state === "closed") {
         // PR is merged according to GitHub
         if (version.status !== "merged") {
+          console.log("Github said PR " + blueText(`${pr.data.number}`) + " was " + blueText("merged") + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
-            console.log("Github said PR" + blueText(`${pr.data.number}`) + "was merged but we had it marked as" + blueText(`${version.status}`) + "check the status on github:" + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "merged");
+            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
@@ -82,9 +83,10 @@ async function main(argv): Promise<any> {
       } else if (pr.data.state === "closed") {
         // PR was closed without merging according to GitHub
         if (version.status !== "closed") {
+          console.log("Github said PR " + blueText(`${pr.data.number}`) + " is " + blueText(`${pr.data.state}`) + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
-            console.log("Github said PR" + blueText(`${pr.data.number}`) + "is" + blueText(`${pr.data.state}`) + "but we had it marked as" + blueText(`${version.status}`) + "check the status on github:" + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "closed");
+            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
@@ -92,16 +94,17 @@ async function main(argv): Promise<any> {
       } else {
         // PR is open according to GitHub
         if (version.status !== "opened") {
+          console.log("Github said PR " + blueText(`${pr.data.number}`) + " is " + blueText(`${pr.data.state}`) + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
-            console.log("Github said PR" + blueText(`${pr.data.number}`) + "is" + blueText(`${pr.data.state}`) + "but we had it marked as" + blueText(`${version.status}`) + "check the status on github:" + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "opened");
+            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
         }
       }
     } catch (error) {
-      console.log(statusText(`failed to fetch pr ${version.owner}/${version.repo} #${version.pullrequest_number}: ${error.code}`));
+      console.log(statusText(`failed to update ${version.owner}/${version.repo} #${version.pullrequest_number}: ${error}`));
       await sleep(3000);
       continue;
     }
@@ -112,7 +115,7 @@ async function main(argv): Promise<any> {
 }
 
 async function checkVersion(watchStore, version, pr) {
-  console.log("Checking current version for" + clc.bold(`${version.watch_id}`) + "(PR: " + clc.bold(`#${pr.number}`) + ")");
+  console.log("Checking current version for " + blueText(`${version.watch_id}`) + " (PR: " + blueText(`#${pr.number}`) + ")");
   const watch = await watchStore.getWatch(version.watch_id);
   if (watch.currentVersion && version.sequence! < watch.currentVersion.sequence!) {
     return;
