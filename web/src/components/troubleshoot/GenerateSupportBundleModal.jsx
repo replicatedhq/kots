@@ -46,7 +46,7 @@ class GenerateSupportBundleModal extends React.Component {
         .then(async (response) => {
           this.setState({ fileUploading: false });
           if (this.props.submitCallback && typeof this.props.submitCallback === "function") {
-            this.props.submitCallback(response.data.markSupportBundleUploaded);
+            this.props.submitCallback(response.data.markSupportBundleUploaded.id);
           }
         })
         .catch((err) => {
@@ -117,23 +117,14 @@ class GenerateSupportBundleModal extends React.Component {
   }
 
   render() {
-    const { currentView } = this.state;
-    const hasFile = this.state.supportBundle && !isEmpty(this.state.supportBundle);
-    const bundleGenerateCommand = `docker pull replicated/support-bundle:alpha && \
-    docker run -it --rm \
-      --name support-bundle \
-      --volume $PWD:/out \
-      --volume /var/run/docker.sock:/var/run/docker.sock \
-      --net host --pid host --workdir /out  \
-      -e HTTP_PROXY -e HTTPS_PROXY -e NO_PROXY \
-      replicated/support-bundle:alpha \
-      generate \
-      --endpoint http://172.17.0.1:30065/graphql \
-      --watch-id ${this.props.watch.id}`;
+    const { currentView, successState, newBundleId, supportBundle, showToast, copyMessage, copySuccess, fileUploading } = this.state;
+    const { bundleCommand } = this.props;
+    const hasFile = supportBundle && !isEmpty(supportBundle);
+
     return (
       <div className="console">
         <div id="UploadSupportBundleModal">
-          {this.state.successState ?
+          {successState ?
             <div className="UploadSuccess-wrapper u-textAlign--center">
               <div className="analysis-illustration-wrapper u-marginBottom--20">
                 <div className="icon u-analyzingBundleIcon u-position--relative">
@@ -143,7 +134,7 @@ class GenerateSupportBundleModal extends React.Component {
               <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--normal">Your bundle has been uploaded!</p>
               <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-color--dustyGray">We've begun and analysis of your support bundle. Check out the analysis page for a breakdown of this support bundle</p>
               <div className="button-wrapper">
-                <Link to={`/troubleshoot/analyze/${this.state.newBundleId}`} className="btn primary">View bundle analysis</Link>
+                <Link to={`/troubleshoot/analyze/${newBundleId}`} className="btn primary">View bundle analysis</Link>
               </div>
             </div>
             :
@@ -167,13 +158,13 @@ class GenerateSupportBundleModal extends React.Component {
                       <pre className="language-bash docker-command">
                         <code className="console-code">
                           {/* // TODO: add correct endpoint based on env */}
-                          {bundleGenerateCommand}
+                          {bundleCommand}
                         </code>
                       </pre>
-                      <textarea value={trim(bundleGenerateCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
+                      <textarea value={trim(bundleCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
                       <div className="u-marginTop--small u-marginBottom--normal">
-                        {this.state.showToast ?
-                          <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${this.state.copySuccess ? "u-color--vidaLoca" : "u-color--chestnut"}`}>{this.state.copyMessage}</span>
+                        {showToast ?
+                          <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${copySuccess ? "u-color--chateauGreen" : "u-color--chestnut"}`}>{copyMessage}</span>
                           :
                           <span className="flex-auto u-color--astral u-fontSize--small u-fontWeight--medium u-textDecoration--underlineOnHover copy-command" data-clipboard-target="#docker-command">
                             Copy command
@@ -192,7 +183,7 @@ class GenerateSupportBundleModal extends React.Component {
                         multiple={false}
                       >
                         {hasFile ?
-                          <p className="u-fontSize--normal u-fontWeight--medium">{this.state.supportBundle.name}</p>
+                          <p className="u-fontSize--normal u-fontWeight--medium">{supportBundle.name}</p>
                           :
                           <div className="u-textAlign--center">
                             <span className="icon u-TarFileIcon u-marginBottom--20"></span>
@@ -210,9 +201,9 @@ class GenerateSupportBundleModal extends React.Component {
                           type="button"
                           className="btn secondary flex-auto"
                           onClick={this.uploadToS3}
-                          disabled={this.state.fileUploading || !hasFile}
+                          disabled={fileUploading || !hasFile}
                         >
-                          {this.state.fileUploading ? "Uploading" : "Upload support bundle"}
+                          {fileUploading ? "Uploading" : "Upload support bundle"}
                         </button>
                       </div>
                     </div>

@@ -189,7 +189,7 @@ export class TroubleshootStore {
   }
 
   async getSupportBundleCommand(watchSlug: string): Promise<string> {
-    const bundleCommand = `kubectl troubleshoot ${this.params.apiAdvertiseEndpoint}/troubleshoot/${watchSlug}`;
+    const bundleCommand = `kubectl troubleshoot ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}`;
     return bundleCommand;
   }
 

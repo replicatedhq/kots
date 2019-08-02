@@ -8,6 +8,7 @@ import Clipboard from "clipboard";
 import Modal from "react-modal";
 
 import AddClusterModal from "../shared/modals/AddClusterModal";
+import GenerateSupportBundleModal from "../troubleshoot/GenerateSupportBundleModal";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
@@ -22,6 +23,7 @@ class GenerateSupportBundle extends React.Component {
     copySuccess: false,
     copyMessage: "",
     addNewClusterModal: false,
+    displayUploadModal: false
   }
 
   componentDidMount() {
@@ -119,8 +121,14 @@ class GenerateSupportBundle extends React.Component {
     this.props.history.push("/cluster/create");
   }
 
+  toggleModal = () => {
+    this.setState({
+      displayUploadModal: !this.state.displayUploadModal
+    })
+  }
+
   render() {
-    const { clusters, selectedCluster, showToast, copySuccess, copyMessage, addNewClusterModal } = this.state;
+    const { clusters, selectedCluster, showToast, copySuccess, copyMessage, addNewClusterModal, displayUploadModal } = this.state;
     const { watch } = this.props;
     const selectedWatch = watch ?.watches.find((watch) => watch.cluster.id === selectedCluster.id);
 
@@ -176,6 +184,9 @@ class GenerateSupportBundle extends React.Component {
                     </div>
                   </div>
                 </div>
+                <div className="u-marginTop--15"> 
+                <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
+                </div>
               </div>
             </div>
             :
@@ -220,6 +231,24 @@ class GenerateSupportBundle extends React.Component {
             </div>
           </Modal>
         }
+        <Modal
+          isOpen={displayUploadModal}
+          onRequestClose={this.toggleModal}
+          shouldReturnFocusAfterClose={false}
+          ariaHideApp={false}
+          contentLabel="GenerateBundle-Modal"
+          className="Modal MediumSize"
+        >
+          <div className="Modal-body">
+            <GenerateSupportBundleModal
+              watch={this.props.watch}
+              bundleCommand={selectedWatch?.bundleCommand}
+              submitCallback={(bundleId) => {
+                this.props.history.push(`/watch/${this.props.match.params.owner}/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`);
+              }}
+            />
+          </div>
+        </Modal>
       </div >
     );
   }
