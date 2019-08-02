@@ -35,7 +35,7 @@ class DownstreamWatchVersionHistory extends Component {
     );
 
     return (
-      <div className="flex-column flex1 u-position--relative u-overflow--hidden u-padding--20">
+      <div className="flex-column flex1 u-position--relative u-padding--20 u-overflow--auto">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--20">Downstream version history: {downstreamSlug}</p>
 
         <div className="flex-column flex-auto">
@@ -74,7 +74,7 @@ class DownstreamWatchVersionHistory extends Component {
               </div>
             </div>
           </div>
-          <div className="flex-column flex1 u-overflow--auto">
+          <div className={classNames("flex-column", { "flex1": data.loading })}>
             {data.loading
             ? centeredLoader
             : versionHistory?.length > 0 && versionHistory.map( version => (
