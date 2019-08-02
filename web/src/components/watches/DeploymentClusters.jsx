@@ -35,6 +35,7 @@ class DeploymentClusters extends React.Component {
       parentWatch,
       toggleDeleteDeploymentModal
     } = this.props;
+    const { isDownloadingAssets } = this.state;
 
     return (
       <div className={classNames("installed-watch-github flex-column u-paddingTop--20 u-width--full", {
@@ -45,17 +46,10 @@ class DeploymentClusters extends React.Component {
         </Helmet>
         {childWatches?.length ?
           <div className="flex-column">
-            {appDetailPage ?
-              <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--20">
-                <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Downstream deployments</p>
-                <button type="button" className="btn secondary" onClick={handleAddNewCluster}>Deploy a new downstream</button>
-              </div>
-            :
-              <div className="flex">
-                <p className="uppercase-title">CLUSTERS</p>
-                <span className="u-marginLeft--10 replicated-link u-fontSize--small" onClick={handleAddNewCluster}>Deploy to a new cluster</span>
-              </div>
-            }
+            <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--20">
+              <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Downstream deployments</p>
+              <button type="button" className="btn secondary" onClick={handleAddNewCluster}>Deploy a new downstream</button>
+            </div>
             <div className="integrations u-overflow--auto flex flex1">
               {childWatches && childWatches.map((childWatch) => {
                 const { cluster } = childWatch;
@@ -72,11 +66,16 @@ class DeploymentClusters extends React.Component {
                           <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(childWatch, parentWatch.watchName)}></span>
                         </div>
                         <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
-                        <Link
-                          to={`/watch/${childWatch.slug}/state`}
-                          className="replicated-link u-marginTop--5 u-fontSize--small u-lineHeight--normal">
-                          View state.json
-                        </Link>
+                        <div className="cluster-actions-wrapper u-fontSize--small u-lineHeight--normal">
+                          <span>
+                            <Link
+                              to={`/watch/${childWatch.slug}/state`}
+                              className="replicated-link u-marginTop--5">
+                              View state.json
+                            </Link>
+                          </span>
+                          <span className="replicated-link" onClick={isDownloadingAssets ? () => { return; } : () => { this.downloadAssetsForCluster(childWatch.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="u-marginTop--10">
