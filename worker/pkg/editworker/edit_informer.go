@@ -113,10 +113,6 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "update watch from state")
 		}
 
-		collectors := ship.TroubleshootCollectorsFromState(stateJSON)
-		if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), editSession.WatchID, collectors); err != nil {
-			return errors.Wrap(err, "set troubleshoot collectors")
-		}
 		analyzers := ship.TroubleshootAnalyzersFromState(stateJSON)
 		if err := w.Store.SetWatchTroubleshootAnalyzers(context.TODO(), editSession.WatchID, analyzers); err != nil {
 			return errors.Wrap(err, "set troubleshoot analyzers")
