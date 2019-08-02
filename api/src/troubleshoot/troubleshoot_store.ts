@@ -175,7 +175,10 @@ export class TroubleshootStore {
 
     const q = `update supportbundle set status = $2, uploaded_at = $3 where id = $1`;
     const v = [id, status, new Date()];
-    await this.pool.query(q, v);
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      // TODO
+    }
     return await this.getSupportBundle(id);
   }
 
