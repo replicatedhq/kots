@@ -1087,6 +1087,17 @@
   revision = "v0.49.1"
 
 [[projects]]
+  digest = "1:1ae8e15c904a3d804c7775f8e8f1484ebf8e6d907ce1127e1faaa3c18c0c407c"
+  name = "github.com/replicatedhq/troubleshoot"
+  packages = [
+    "pkg/apis/troubleshoot/v1beta1",
+    "pkg/client/troubleshootclientset/scheme",
+  ]
+  pruneopts = "UT"
+  revision = "145370367f5dc9b57bf63a4bdd7ec58b4f632a74"
+  version = "v0.9.1"
+
+[[projects]]
   digest = "1:3f53e9e4dfbb664cd62940c9c4b65a2171c66acd0b7621a1a6b8e78513525a52"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -1568,6 +1579,14 @@
   revision = "9dfdf9be683f61f82cda12362c44c784e0778b56"
 
 [[projects]]
+  digest = "1:c4e8f6509ee8cec911985a812ed3f9cc024404acc45ac613fa103f735cf3222a"
+  name = "sigs.k8s.io/controller-runtime"
+  packages = ["pkg/scheme"]
+  pruneopts = "UT"
+  revision = "aaddbd9d9a89d8ff329a084aece23be0406e6467"
+  version = "v0.2.0-beta.4"
+
+[[projects]]
   digest = "1:baee1c50267701e19e15b9d80d8934ce4e4f90db0928296270f7a7818014f6d3"
   name = "sigs.k8s.io/kustomize"
   packages = [
@@ -1632,6 +1651,7 @@
     "github.com/replicatedhq/ship/pkg/api",
     "github.com/replicatedhq/ship/pkg/specs",
     "github.com/replicatedhq/ship/pkg/state",
+    "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme",
     "github.com/spf13/afero",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
@@ -1647,6 +1667,7 @@
     "k8s.io/apimachinery/pkg/fields",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth",
     "k8s.io/client-go/tools/cache",
     "k8s.io/client-go/tools/clientcmd",

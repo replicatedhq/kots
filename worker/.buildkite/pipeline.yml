@@ -7,6 +7,8 @@ steps:
           image: replicated/gitops-builder:buildkite-go12-node10
           always-pull: true
           workdir: /go/src/github.com/replicatedhq/ship-cluster
+          environment:
+            - "GO111MODULE=off"
     artifact_paths:
       - "worker/bin/**/*"
 

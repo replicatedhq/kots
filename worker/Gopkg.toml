@@ -84,3 +84,7 @@
 [[constraint]]
   name = "go.uber.org/zap"
   version = "1.10.0"
+
+[[constraint]]
+  name = "github.com/replicatedhq/troubleshoot"
+  version = "0.9.1"
