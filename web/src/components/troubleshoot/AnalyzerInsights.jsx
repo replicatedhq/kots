@@ -89,6 +89,7 @@ export class AnalyzerInsights extends React.Component {
 
     const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
 
+
     let noInsightsNode;
     if (isEmpty(insights)) {
       if (status === "uploaded" || status === "analyzing") {

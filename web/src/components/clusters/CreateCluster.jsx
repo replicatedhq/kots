@@ -92,7 +92,12 @@ export class CreateCluster extends Component {
     const redirect = localStorage.getItem("clusterRedirect");
     if (redirect) {
       localStorage.removeItem("clusterRedirect");
-      this.props.history.push(redirect);
+      if (redirect.includes("automaticDeploy")) {
+        const watchSlug = redirect.slice(16);
+        localStorage.setItem("clusterRedirect", `/watch/${watchSlug}/downstreams?add=1`);
+      } else {
+        this.props.history.push(redirect);
+      }
     } else {
       this.props.history.push("/clusters");
     }

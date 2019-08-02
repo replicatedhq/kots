@@ -21,6 +21,7 @@ const Watch = `
     config: [ConfigGroup]
     entitlements: [Entitlement]
     lastUpdateCheck: String
+    bundleCommand: String
   }
 `;
 

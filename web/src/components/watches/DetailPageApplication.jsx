@@ -344,7 +344,7 @@ class DetailPageApplication extends Component {
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Get help with your application</p>
                   <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Generate a support bundle for your application to send to the vendor.</p>
                   <div className="u-marginTop--10">
-                    <Link to={`/watch/${watch.slug}/troubleshoot`} className="btn secondary">Generate a support bundle</Link>
+                    <Link to={`/watch/${watch.slug}/troubleshoot/generate`} className="btn secondary">Generate a support bundle</Link>
                   </div>
                 </div>
                 <div className="flex1 u-paddingLeft--15">

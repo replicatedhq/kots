@@ -43,5 +43,13 @@ export function TroubleshootQueries(stores: Stores) {
       return jsonFiles;
     },
 
+    async getSupportBundleCommand(root, { watchSlug }, context: Context): Promise<string> {
+      const watchId = await stores.watchStore.getIdFromSlug(watchSlug);
+      const watch = await context.getWatch(watchId);
+      const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(watch.slug);
+
+      return bundleCommand;
+    }
+
   };
 }

@@ -222,4 +222,10 @@ export class TroubleshootStore {
 
     return await signGetRequest(this.params, this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`);
   }
+
+  async getSupportBundleCommand(watchSlug: string): Promise<string> {
+    const bundleCommand = `kubectl troubleshoot ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}`;
+    return bundleCommand;
+  }
+
 }
