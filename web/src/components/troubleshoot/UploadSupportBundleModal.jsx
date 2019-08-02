@@ -1,5 +1,4 @@
 import * as React from "react";
-import trim from "trim";
 import Clipboard from "clipboard";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link } from "react-router-dom";
@@ -10,7 +9,7 @@ import { uploadSupportBundle, markSupportBundleUploaded } from "../../mutations/
 import "../../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import Dropzone from "react-dropzone";
 
-class GenerateSupportBundleModal extends React.Component {
+class UploadSupportBundleModal extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -19,15 +18,7 @@ class GenerateSupportBundleModal extends React.Component {
       bundleS3Url: "",
       newBundleId: "",
       supportBundle: {},
-      currentView: "",
-      showToast: false,
-      copySuccess: false,
-      copyMessage: "",
     };
-  }
-
-  toggleView(view) {
-    this.setState({ currentView: view });
   }
 
   uploadToS3 = async () => {
@@ -117,8 +108,7 @@ class GenerateSupportBundleModal extends React.Component {
   }
 
   render() {
-    const { currentView, successState, newBundleId, supportBundle, showToast, copyMessage, copySuccess, fileUploading } = this.state;
-    const { bundleCommand } = this.props;
+    const { successState, newBundleId, supportBundle, fileUploading } = this.state;
     const hasFile = supportBundle && !isEmpty(supportBundle);
 
     return (
@@ -140,83 +130,46 @@ class GenerateSupportBundleModal extends React.Component {
             :
             <div>
               <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">
-                {currentView === "command" 
-                  ? "Generate a support bundle"
-                  : "Analyze a support bundle"
-                }
+                Upload a support bundle
               </p>
               <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
-                {currentView === "command" 
-                  ? "If your customer can’t generate a support bundle from the Replicated Admin Console, this command will generate and optionally upload one from the command line."
-                  : "Upload a support bundle from any customer environment to visually analyze the server and receive insights about the server, the network and your application."
-                }
+                Upload a support bundle from your environment to visually analyze the server and receive insights about the server, the network and your application.
               </p>
               <div className="u-marginTop--20">
-                {currentView === "command" ?
-                  <div>
-                    <div className="bundle-command-wrapper">
-                      <pre className="language-bash docker-command">
-                        <code className="console-code">
-                          {/* // TODO: add correct endpoint based on env */}
-                          {bundleCommand}
-                        </code>
-                      </pre>
-                      <textarea value={trim(bundleCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
-                      <div className="u-marginTop--small u-marginBottom--normal">
-                        {showToast ?
-                          <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${copySuccess ? "u-color--chateauGreen" : "u-color--chestnut"}`}>{copyMessage}</span>
-                          :
-                          <span className="flex-auto u-color--astral u-fontSize--small u-fontWeight--medium u-textDecoration--underlineOnHover copy-command" data-clipboard-target="#docker-command">
-                            Copy command
-                          </span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                  :
-                  <div>
-                    <div className={`FileUpload-wrapper ${hasFile ? "has-file" : ""}`}>
-                      <Dropzone
-                        className="Dropzone-wrapper"
-                        accept="application/gzip, .gz"
-                        onDropAccepted={this.onDrop}
-                        multiple={false}
-                      >
-                        {hasFile ?
-                          <p className="u-fontSize--normal u-fontWeight--medium">{supportBundle.name}</p>
-                          :
-                          <div className="u-textAlign--center">
-                            <span className="icon u-TarFileIcon u-marginBottom--20"></span>
-                            <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                            <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--small">This file can be any
+                <div>
+                  <div className={`FileUpload-wrapper ${hasFile ? "has-file" : ""}`}>
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept="application/gzip, .gz"
+                      onDropAccepted={this.onDrop}
+                      multiple={false}
+                    >
+                      {hasFile ?
+                        <p className="u-fontSize--normal u-fontWeight--medium">{supportBundle.name}</p>
+                        :
+                        <div className="u-textAlign--center">
+                          <span className="icon u-TarFileIcon u-marginBottom--20"></span>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--small">This file can be any
                               <span className="u-fontWeight--medium u-color--astral u-textDecoration--underlineOnHover" onClick={this.openReplicatedSupportBundleLink}> Replicated Support Bundle </span>
-                            </p>
-                          </div>
-                        }
-                      </Dropzone>
-                    </div>
-                    <div className="u-marginTop--normal">
-                      <div className="FormButton-wrapper flex justifyContent--center">
-                        <button
-                          type="button"
-                          className="btn secondary flex-auto"
-                          onClick={this.uploadToS3}
-                          disabled={fileUploading || !hasFile}
-                        >
-                          {fileUploading ? "Uploading" : "Upload support bundle"}
-                        </button>
-                      </div>
+                          </p>
+                        </div>
+                      }
+                    </Dropzone>
+                  </div>
+                  <div className="u-marginTop--normal">
+                    <div className="FormButton-wrapper flex justifyContent--center">
+                      <button
+                        type="button"
+                        className="btn secondary flex-auto"
+                        onClick={this.uploadToS3}
+                        disabled={fileUploading || !hasFile}
+                      >
+                        {fileUploading ? "Uploading" : "Upload support bundle"}
+                      </button>
                     </div>
                   </div>
-                }
-                <p
-                  className="u-textAlign--center u-marginTop--normal u-fontSize--small u-fontWeight--medium u-color--astral u-textDecoration--underlineOnHover"
-                  onClick={() => this.toggleView(currentView === "command" ? "upload" : "command")}>
-                    {currentView === "command" 
-                    ? "I already generated a support bundle"
-                    : "I need to generate a support bundle"
-                    }   
-                </p>
+                </div>
               </div>
             </div>
           }
@@ -238,4 +191,4 @@ export default compose(
       markSupportBundleUploaded: (id) => mutate({ variables: { id } })
     })
   })
-)(GenerateSupportBundleModal);
+)(UploadSupportBundleModal);
