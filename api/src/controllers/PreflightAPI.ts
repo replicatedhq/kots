@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Controller, Get, PathParams, Put, Res, Req} from "ts-express-decorators";
+import { Controller, Get, Post, Res, Req} from "ts-express-decorators";
 import jsYaml from "js-yaml";
 
 import { Params } from "../server/params";
@@ -54,30 +54,29 @@ export class PreflightAPI {
 
   }
 
-  @Put("/*")
+  @Post("/*")
   async putPreflightStatus(
     @Req() request: Request,
     @Res() response: Response
   ): Promise<void> {
-    console.log('GO PUT REQUEST!!!!');
+
     const splitPath = request.path.split('/').slice(1);
     let watchSlug;
-    let clusterSlug;
     console.log(splitPath);
     if (splitPath.length === 3) {
       watchSlug = splitPath.slice(0, 2).join('/');
-      clusterSlug = splitPath[2];
+
     } else if (splitPath.length === 2) {
       watchSlug = splitPath[0];
-      clusterSlug = splitPath[1];
+
     } else {
       response.send(400);
       return;
     }
-    // Write preflight results to the database
 
-    // const result = request.body;
-    // await request.app.locals.stores.preflightStore.addPreflightResult(watchId, result);
+    // Write preflight results to the database
+    const result = request.body;
+    await request.app.locals.stores.preflightStore.addPreflightResult(watchSlug, result);
     response.send(200);
   }
 }
