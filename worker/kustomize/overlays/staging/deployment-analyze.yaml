@@ -21,5 +21,11 @@ spec:
               value: "alpha"
             - name: ANALYZE_PULL_POLICY
               value: "Always"
+            - name: TROUBLESHOOT_IMAGE
+              value: "replicated/troubleshoot"
+            - name: TROUBLESHOOT_TAG
+              value: "alpha"
+            - name: TROUBLESHOOT_PULL_POLICY
+              value: "Always"
             - name: ANALYZE_NODE_SELECTOR
               value: untrusted

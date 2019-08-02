@@ -231,7 +231,7 @@ export class GitHubHookAPI {
   }
 }
 
-async function getGitHubBearerToken(): Promise<string> {
+export async function getGitHubBearerToken(): Promise<string> {
   const shipParams = await Params.getParams();
 
   let privateKey = await shipParams.githubPrivateKeyContents;

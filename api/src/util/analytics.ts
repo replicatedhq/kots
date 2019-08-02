@@ -16,6 +16,17 @@ export function identifyUser(params: Params, userId: string, username: string) {
   });
 };
 
+export function trackNewUser(params: Params, userId: string, event: string, username: string) {
+  const analytics = getAnalytics(params);
+  analytics.track({
+    userId: userId,
+    event: event,
+    properties: {
+      username: username
+    }
+  });
+};
+
 export function trackUserClusterCreated(params: Params, userId: string, event: string, properties?: string) {
   const analytics = getAnalytics(params);
   analytics.track({

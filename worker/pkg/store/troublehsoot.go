@@ -53,3 +53,8 @@ func (s *SQLStore) GetAnalyzeSpec(ctx context.Context, watchID string) (string, 
 
 	return updatedAnalyzer.String, nil
 }
+
+func (s *SQLStore) GetTroubleshootSpec(ctx context.Context, watchID string) (string, error) {
+	// TODO: supply troubleshoot with a spec.  It has its own default for now.
+	return "", nil
+}

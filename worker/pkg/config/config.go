@@ -39,8 +39,12 @@ type Config struct {
 	AnalyzeServerAddress  string        `mapstructure:"analyze_server_address"`
 
 	AnalyzeImage      string `mapstructure:"analyze_image"`
-	AnalyzeTag        string `mapstructure:"analyze_tab"`
+	AnalyzeTag        string `mapstructure:"analyze_tag"`
 	AnalyzePullPolicy string `mapstructure:"analyze_pull_policy"`
+
+	TroubleshootImage      string `mapstructure:"troubleshoot_image"`
+	TroubleshootTag        string `mapstructure:"troubleshoot_tag"`
+	TroubleshootPullPolicy string `mapstructure:"troubleshoot_pull_policy"`
 
 	ShipImage      string `mapstructure:"ship_image"`
 	ShipTag        string `mapstructure:"ship_tag"`

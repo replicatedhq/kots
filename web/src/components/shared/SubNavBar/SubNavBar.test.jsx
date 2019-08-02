@@ -29,7 +29,7 @@ describe("<SubNavBar> tests", () => {
   it("... for a child watch", () => {
     const wrapper = shallow(<SubNavBar watch={childWatch} />);
 
-    expect(wrapper.find("li")).toHaveLength(2);
+    expect(wrapper.find("li")).toHaveLength(1);
   });
 
 });
