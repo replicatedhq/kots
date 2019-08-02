@@ -111,10 +111,10 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
 
 		var contributorIDs []string
 
-    for contributors.Next() {
+		for contributors.Next() {
 			var contributorID string
 			err := contributors.Scan(&contributorID)
-			if (err != nil) {
+			if err != nil {
 				return errors.Wrap(err, "scan contributor row")
 			}
 
@@ -122,7 +122,7 @@ func (s *SQLStore) CreateWatchFromState(ctx context.Context, stateJSON []byte, m
 		}
 
 		err = contributors.Err()
-		if (err != nil) {
+		if err != nil {
 			return errors.Wrap(err, "scan contributor row loop")
 		}
 
