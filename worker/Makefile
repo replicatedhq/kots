@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := all
 
+export GO111MODULE=off
+
 SHELL := /bin/bash -o pipefail
 PROJECT_NAME ?= ship-cluster-worker
 
