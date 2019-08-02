@@ -37,8 +37,9 @@ async function main(argv): Promise<any> {
       FROM watch_version wv
       INNER JOIN watch_cluster wc ON wv.watch_id = wc.watch_id
       INNER JOIN cluster_github cg ON wc.cluster_id = cg.cluster_id
-      WHERE status='opened' OR status='pending'`
+      WHERE wv.status IN ('opened', 'pending') AND (wv.is_404 = FALSE OR wv.is_404 IS NULL) `
   );
+  // TODO: retry 404s
 
   if (versions.rowCount === 0) {
     console.log(blueText(`No versions with a status of "pending" or "open" were found.`));
@@ -49,6 +50,7 @@ async function main(argv): Promise<any> {
   const params = await Params.getParams();
   const watchStore = new WatchStore(pool, params);
   let changedVersions: number[] = [];
+  let four04Versions: number[] = [];
   let i = 0;
   for (const version of versions.rows) {
     github.authenticate({
@@ -63,11 +65,28 @@ async function main(argv): Promise<any> {
         token: installationTokenResponse.data.token,
       });
   
-      const pr = await github.pullRequests.get({
-        owner: version.owner,
-        repo: version.repo,
-        number: version.pullrequest_number
-      });
+      let pr: GitHubApi.Response<GitHubApi.GetResponse>;
+      try {
+        pr = await github.pullRequests.get({
+          owner: version.owner,
+          repo: version.repo,
+          number: version.pullrequest_number
+        });
+      } catch (error) {
+        if (error.code === 404) {
+          console.log("Github PR " + blueText(`${version.pullrequest_number}`) + " got 404: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${version.pullrequest_number}`));
+          if (!argv.dryRun) {
+            await pool.query(
+              `UPDATE watch_version SET is_404 = TRUE WHERE watch_id = $1 AND sequence = $2`,
+              [version.watch_id, version.sequence],
+            );
+          }
+          four04Versions.push(i)
+        } else {
+          throw error;
+        }
+        continue;
+      }
       console.log(statusText(`successfully fetched pr ${version.owner}/${version.repo} #${version.pullrequest_number}`));
       if (pr.data.merged && pr.data.state === "closed") {
         // PR is merged according to GitHub
@@ -110,7 +129,7 @@ async function main(argv): Promise<any> {
     }
     i++
   }
-  console.log(blueText(`Checked ${versions.rowCount} ${versions.rowCount === 1 ? "row" : "rows"} and ${argv.dryRun ? "will make" : "made"} changes to ${changedVersions.length} ${changedVersions.length === 1 ? "row" : "rows"}`));
+  console.log(blueText(`Checked ${versions.rowCount} ${versions.rowCount === 1 ? "row" : "rows"} and ${argv.dryRun ? "will make" : "made"} changes to ${changedVersions.length} ${changedVersions.length === 1 ? "row" : "rows"} and set ${four04Versions.length} ${four04Versions.length === 1 ? "row" : "rows"} to 404 status`));
   process.exit(0);
 }
 
