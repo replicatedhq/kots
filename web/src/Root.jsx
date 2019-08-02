@@ -249,7 +249,7 @@ class Root extends Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
-                    <Route path="/preflight/:watchId/:downstream_cluster_id" component={PreflightCheckPage}/>
+                    <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute

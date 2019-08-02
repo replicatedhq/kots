@@ -852,8 +852,8 @@ export const getFilesRaw = `
 export const getFiles = gql(getFilesRaw)
 
 export const listPreflightResultsRaw = `
-  query listPreflightResults($watchId: String!) {
-    listPreflightResults(watchId: $watchId) {
+  query listPreflightResults($watchId: String, $slug: String) {
+    listPreflightResults(watchId: $watchId, slug: $slug) {
       result
       createdAt
     }

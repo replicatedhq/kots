@@ -35,6 +35,18 @@ export class PreflightStore {
     return preflightResults;
   }
 
+  async getPreflightsResultsBySlug(slug: string): Promise<PreflightResult[]> {
+    const findWatchBySlugQuery =
+      `SELECT id FROM watch WHERE slug = $1`;
+
+    const watchIdBySlugResult = await this.pool.query(findWatchBySlugQuery, [ slug ]);
+
+    const id = watchIdBySlugResult.rows[0].id;
+
+    return await this.getPreflightsResultsByWatchId(id);
+
+  }
+
   async getPreflightSpec(watchId: string): Promise<PreflightSpec> {
     const q =
       `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY watch_sequence DESC LIMIT 1`;
@@ -48,6 +60,18 @@ export class PreflightStore {
 
     const spec = this.mapPreflightSpec(result.rows[0]);
 
+    return spec;
+  }
+
+  async getPreflightSpecBySlug(slug: string): Promise<PreflightSpec> {
+    const q = `SELECT spec FROM preflight_spec LEFT OUTER JOIN watch ON preflight_spec.watch_id = watch.id WHERE watch.slug = $1`;
+    const v = [ slug ];
+    const results = await this.pool.query(q, v);
+
+    if (!results.rows[0]) {
+      throw new ReplicatedError(`Couldn't find PreflightSpec for slug: ${slug}`);
+    }
+    const spec = this.mapPreflightSpec(results.rows[0]);
     return spec;
   }
 

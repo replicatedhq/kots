@@ -20,9 +20,10 @@ class AddNewClusterModal extends React.Component {
   onSubmit = () => {
     const { watch, history } = this.props;
     const { selectedCluster, githubPath } = this.state;
+    console.log(selectedCluster);
 
     if (watch.hasPreflight) {
-      history.push(`/preflight/${watch.id}/${selectedCluster.value}`)
+      history.push(`/preflight/${watch.slug}/${selectedCluster.value}`)
     } else {
       this.props.onAddCluster(selectedCluster.value, githubPath);
     }

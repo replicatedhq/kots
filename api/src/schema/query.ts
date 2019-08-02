@@ -60,6 +60,6 @@ export const Query = `
     supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
     getSupportBundleCommand(watchSlug: String!): String
 
-    listPreflightResults(watchId: String!): [PreflightResult]
+    listPreflightResults(watchId: String, slug: String): [PreflightResult]
   }
 `;

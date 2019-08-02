@@ -56,11 +56,9 @@ class PreflightChecksPage extends Component {
 
   render() {
     const { showPreflightInstructions, showPreflightResults } = this.state;
-    const { listPreflightResultsQuery } = this.props;
-    if (!listPreflightResultsQuery.loading) {
-      console.log(listPreflightResultsQuery?.listPreflightResults[0]);
-    }
-
+    // const { listPreflightResultsQuery } = this.props;
+    console.log(this.props.match.params.slug);
+    console.log(window.env);
     return (
       <div className="flex-column flex1">
         {showPreflightResults
@@ -90,7 +88,7 @@ class PreflightChecksPage extends Component {
                       You will be able to see the results in your terminal window as well as in this UI.
                     </p>
                     <CodeSnippet className="u-marginTop--10" language="bash" canCopy={true}>
-                      {`kubectl prefight ${location.href}`}
+                      {`kubectl preflight ${window.env.REST_ENDPOINT}/v1/${location.pathname}`}
                     </CodeSnippet>
                     <div className="section-border flex justifyContent--center u-position--relative u-marginTop--20">
                     <p
@@ -166,7 +164,7 @@ export default compose(
       return {
         pollInterval: 10000,
         variables: {
-          watchId: match.params.watchId
+          slug: `${match.params.owner}/${match.params.name}`
         }
       };
 
