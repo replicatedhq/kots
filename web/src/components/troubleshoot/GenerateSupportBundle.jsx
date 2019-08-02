@@ -1,4 +1,5 @@
 import * as React from "react";
+import trim from "trim";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { compose, withApollo } from "react-apollo";
@@ -8,7 +9,7 @@ import Clipboard from "clipboard";
 import Modal from "react-modal";
 
 import AddClusterModal from "../shared/modals/AddClusterModal";
-import GenerateSupportBundleModal from "../troubleshoot/GenerateSupportBundleModal";
+import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
@@ -172,7 +173,7 @@ class GenerateSupportBundle extends React.Component {
                         {selectedWatch ?.bundleCommand}
                       </code>
                     </pre>
-                    <textarea value={selectedWatch ?.bundleCommand} className="hidden-input" id="docker-command" readOnly={true}></textarea>
+                    <textarea value={trim(selectedWatch ?.bundleCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
                     <div className="u-marginTop--15 u-marginBottom--normal">
                       {showToast ?
                         <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${copySuccess ? "u-color--chateauGreen" : "u-color--chestnut"}`}>{copyMessage}</span>
@@ -240,7 +241,7 @@ class GenerateSupportBundle extends React.Component {
           className="Modal MediumSize"
         >
           <div className="Modal-body">
-            <GenerateSupportBundleModal
+            <UploadSupportBundleModal
               watch={this.props.watch}
               bundleCommand={selectedWatch?.bundleCommand}
               submitCallback={(bundleId) => {
