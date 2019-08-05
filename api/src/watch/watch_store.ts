@@ -366,7 +366,8 @@ export class WatchStore {
       throw new ReplicatedError(`Couldn't find watch with watch_id of ${id}`);
     }
     // Get preflight spec for this watch
-    const preflightQuery = `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY sequence DESC LIMIT 1`
+    const preflightQuery =
+      `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
 
     const preflightResults = await this.pool.query(preflightQuery, [ id ]);
 

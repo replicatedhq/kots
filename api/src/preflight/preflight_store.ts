@@ -64,7 +64,12 @@ export class PreflightStore {
   }
 
   async getPreflightSpecBySlug(slug: string): Promise<PreflightSpec> {
-    const q = `SELECT spec FROM preflight_spec LEFT OUTER JOIN watch ON preflight_spec.watch_id = watch.id INNER JOIN watch_version ON watch_version.watch_id = watch.id WHERE watch.slug = $1 ORDER BY watch_version.sequence DESC LIMIT 1`;
+    const q =
+      `SELECT spec FROM preflight_spec
+          LEFT OUTER JOIN watch ON preflight_spec.watch_id = watch.id
+          INNER JOIN watch_version ON watch_version.watch_id = watch.id
+       WHERE watch.slug = $1
+       ORDER BY watch_version.sequence DESC LIMIT 1`;
     const v = [ slug ];
     const results = await this.pool.query(q, v);
 
