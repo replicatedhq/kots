@@ -39,5 +39,5 @@ export interface Stores {
   troubleshootStore: TroubleshootStore,
   licenseStore: LicenseStore,
   githubInstall: GithubInstallationsStore,
-  preflightStore: PreflightStore
+  preflightStore: PreflightStore,
 }

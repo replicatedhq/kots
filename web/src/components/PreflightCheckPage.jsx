@@ -10,12 +10,8 @@ import TabView, { Tab } from "./shared/TabView";
 import "@src/scss/components/PreflightChecksPage.scss";
 
 class PreflightChecksPage extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      showPreflightInstructions: false
-    };
+  state = {
+    showPreflightInstructions: false
   }
 
   togglePreflightInstructions = () => {
@@ -80,8 +76,7 @@ class PreflightChecksPage extends Component {
                       <p className="u-fontSize--jumbo u-color--tuna u-fontWeight--bold u-marginBottom--15">
                         Results from your preflight checks
                       </p>
-                      {JSON.parse(showPreflightResults.result).results.map( (row, idx) => {
-                        console.log(row);
+                      {showPreflightResults.result && JSON.parse(showPreflightResults?.result)?.results.map( (row, idx) => {
                         let icon;
 
                         if (row.isWarn) {

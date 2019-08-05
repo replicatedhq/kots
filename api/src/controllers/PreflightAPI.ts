@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Controller, Get, Post, Res, Req} from "ts-express-decorators";
+import { Controller, Get, Post, Res, Req } from "ts-express-decorators";
 import jsYaml from "js-yaml";
 
 import { Params } from "../server/params";
@@ -9,13 +9,13 @@ export class PreflightAPI {
   @Get("/*")
   async getPreflightStatus(
     @Req() request: Request,
-    @Res() response: Response
+    @Res() response: Response,
 
   ): Promise<void> {
     const splitPath = request.path.split('/').slice(1);
     let watchSlug;
     let clusterSlug;
-    console.log(splitPath);
+
     if (splitPath.length === 3) {
       watchSlug = splitPath.slice(0, 2).join('/');
       clusterSlug = splitPath[2];
@@ -27,21 +27,18 @@ export class PreflightAPI {
       return;
     }
 
-    console.log('watchSlug', watchSlug);
-    console.log('clusterSlug', clusterSlug);
-
     try {
       // Fetch YAML from the database and return to client with injected key
       const preflightSpec = await request.app.locals.stores.preflightStore.getPreflightSpecBySlug(watchSlug);
 
       if (!preflightSpec) {
-        console.log('NOT FOUND!?');
+        console.log(`Preflight spec for slug: ${watchSlug} not found`);
         response.send(404);
         return;
       }
       const specString = preflightSpec.spec;
       const params = await Params.getParams();
-      const putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${watchSlug}/${clusterSlug}`
+      const putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${watchSlug}/${clusterSlug}`;
       const parsedPreflightSpec = jsYaml.load(specString);
       parsedPreflightSpec.spec.uploadResultsTo = putUrl;
 
@@ -57,12 +54,12 @@ export class PreflightAPI {
   @Post("/*")
   async putPreflightStatus(
     @Req() request: Request,
-    @Res() response: Response
+    @Res() response: Response,
   ): Promise<void> {
 
     const splitPath = request.path.split('/').slice(1);
     let watchSlug;
-    console.log(splitPath);
+
     if (splitPath.length === 3) {
       watchSlug = splitPath.slice(0, 2).join('/');
 

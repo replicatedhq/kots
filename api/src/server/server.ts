@@ -103,7 +103,7 @@ export class Server extends ServerLoader {
       troubleshootStore: new TroubleshootStore(pool, params),
       licenseStore: new LicenseStore(pool, params),
       githubInstall: new GithubInstallationsStore(pool),
-      preflightStore: new PreflightStore(pool)
+      preflightStore: new PreflightStore(pool),
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
