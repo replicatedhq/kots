@@ -78,6 +78,7 @@ async function main(argv): Promise<any> {
         } else {
           throw error;
         }
+        await sleep(1000);
         continue;
       }
 
@@ -102,6 +103,7 @@ async function main(argv): Promise<any> {
         } else {
           throw error;
         }
+        await sleep(1000);
         continue;
       }
 
@@ -121,6 +123,7 @@ async function main(argv): Promise<any> {
         } else {
           throw error;
         }
+        await sleep(1000);
         continue;
       }
 
@@ -161,7 +164,7 @@ async function main(argv): Promise<any> {
       }
     } catch (error) {
       console.log(statusText(`failed to update ${version.owner}/${version.repo} #${version.pullrequest_number}: ${error}`));
-      await sleep(3000);
+      await sleep(1000);
       continue;
     }
     i++

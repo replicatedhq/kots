@@ -371,7 +371,7 @@ WHERE installation_id = $1 AND owner = $2 AND repo = $3 AND is_404 = TRUE`;
 
   async updateClusterGithubInstallationsAsDeleted(installationId: string): Promise<void> {
     const pg = await this.pool.connect();
-    const q = `UPDATE cluster_github SET is_deleted = true WHERE installation_id = $1 AND (is_deleted = false OR is_deleted is NULL)`;
+    const q = `UPDATE cluster_github SET is_deleted = TRUE WHERE installation_id = $1 AND (is_deleted = FALSE OR is_deleted is NULL)`;
     const v = [installationId];
     const res = await pg.query(q, v);
     if (res.rowCount > 0) {
