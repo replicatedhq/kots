@@ -6,49 +6,10 @@ import fs from "fs";
 import { trackNewGithubInstall } from "../util/analytics";
 import uuid from "uuid";
 import GitHubApi from "@octokit/rest";
+import WebhooksApi from "@octokit/webhooks";
 import jwt from "jsonwebtoken";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
-
-interface GitHubInstallationRequest {
-  action: string;
-  id: string;
-  installation: {
-    id: string;
-    access_tokens_url: string;
-    account: {
-      login: string;
-      id: number;
-      // tslint:disable-next-line no-reserved-keywords
-      type: string;
-      html_url: string;
-    };
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-interface GitHubPullRequestEvent {
-  action: string;
-  //tslint:disable-next-line no-reserved-keywords
-  number: number;
-  pull_request: {
-    state: string;
-    commits_url: string;
-    merged: boolean;
-    base: {
-      repo: {
-        name: string;
-        owner: {
-          login: string;
-        };
-      };
-    };
-  };
-  merged_at: string;
-}
 
 interface ErrorResponse {
   error: {};
@@ -70,20 +31,25 @@ export class GitHubHookAPI {
 
     switch (eventType) {
       case "pull_request": {
-        await this.handlePullRequest(request, body as GitHubPullRequestEvent);
+        await this.handlePullRequest(request, body as WebhooksApi.WebhookPayloadPullRequest);
         response.status(204);
         return {};
       }
 
       case "installation": {
         const params = await Params.getParams();
-        await this.handleInstallation(body as GitHubInstallationRequest, params, request);
+        await this.handleInstallation(body as WebhooksApi.WebhookPayloadInstallation, params, request);
         response.status(204);
         return {};
       }
 
-      // ignored
       case "installation_repositories":
+          const params = await Params.getParams();
+          await this.handleInstallationRepositories(body as WebhooksApi.WebhookPayloadInstallationRepositories, params, request);
+          response.status(204);
+          return {};
+
+      // ignored
       case "integration_installation":
       case "integration_installation_repositories":
         response.status(204);
@@ -98,7 +64,7 @@ export class GitHubHookAPI {
     }
   }
 
-  private async handleInstallation(installationEvent: GitHubInstallationRequest, params: Params, request: Express.Request): Promise<void> {
+  private async handleInstallation(installationEvent: WebhooksApi.WebhookPayloadInstallation, params: Params, request: Express.Request): Promise<void> {
     const installationData = installationEvent.installation;
     const senderData = installationEvent.sender;
     let numberOfOrgMembers;
@@ -110,7 +76,7 @@ export class GitHubHookAPI {
           token: await getGitHubBearerToken()
         });
 
-        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id});
+        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id.toString()});
         github.authenticate({
           type: "token",
           token,
@@ -119,8 +85,14 @@ export class GitHubHookAPI {
         const org = installationData.account.login;
         const { data: membersData } = await github.orgs.getMembers({org});
         numberOfOrgMembers = membersData.length;
+
+        for (const memberData of membersData) {
+          await request.app.locals.stores.clusterStore.updateClusterGithubInstallationId(memberData.id, installationData.id);
+        }
       } else {
         numberOfOrgMembers = 0;
+
+        await request.app.locals.stores.clusterStore.updateClusterGithubInstallationId(installationData.account.id, installationData.id);
       };
 
       await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.type, numberOfOrgMembers, installationData.account.html_url, senderData.login);
@@ -128,13 +100,28 @@ export class GitHubHookAPI {
         trackNewGithubInstall(params, uuid.v4(), "New Github Install", senderData.login, installationData.account.login, installationData.account.html_url);
       }
     } else if (installationEvent.action === "deleted") {
+      // marking rows as deleted. currently this is only informative
+      await request.app.locals.stores.clusterStore.updateClusterGithubInstallationsAsDeleted(installationData.id);
+
       // deleting from db when uninstall from GitHub
       await request.app.locals.stores.githubInstall.deleteGithubInstall(installationData.id);
       // Should we delete all pullrequest notifications?
     }
   }
 
-  private async handlePullRequest(request: Express.Request, pullRequestEvent: GitHubPullRequestEvent): Promise<void> {
+  private async handleInstallationRepositories(event: WebhooksApi.WebhookPayloadInstallationRepositories, params: Params, request: Express.Request): Promise<void> {
+    switch (event.action) {
+      case "added":
+        for (const repo of event.repositories_added) {
+          await request.app.locals.stores.clusterStore.updateClusterGithubInstallationRepoAdded(event.installation.id, event.installation.account.login, repo.name);
+        }
+
+      case "removed":
+        // we handle this in the sync-pr-status cron job
+    }
+  }
+
+  private async handlePullRequest(request: Express.Request, pullRequestEvent: WebhooksApi.WebhookPayloadPullRequest): Promise<void> {
     const handledActions: string[] = ["opened", "closed", "reopened"];
     if (handledActions.indexOf(pullRequestEvent.action) === -1) {
       return;
@@ -209,7 +196,7 @@ export class GitHubHookAPI {
                 }
               }
 
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.pull_request.merged_at);
             }
           }
         } catch(err) {
@@ -258,7 +245,7 @@ export async function getGitHubBearerToken(): Promise<string> {
   return bearer;
 }
 
-async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Cluster[], request: Express.Request, pullRequestEvent: GitHubPullRequestEvent, status: string) {
+async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Cluster[], request: Express.Request, pullRequestEvent: WebhooksApi.WebhookPayloadPullRequest, status: string) {
   for (const cluster of clusters) {
     const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
     for (const watch of watches) {
@@ -274,7 +261,7 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
             if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
               return;
             }
-            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.merged_at);
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.pull_request.merged_at);
           }
           return;
         }
@@ -285,7 +272,7 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
         if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
           await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
           if (pullRequestEvent.pull_request.merged) {
-            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion.sequence!, pullRequestEvent.merged_at);
+            await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pastVersion.sequence!, pullRequestEvent.pull_request.merged_at);
           }
           return;
         }

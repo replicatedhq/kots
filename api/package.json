@@ -7,6 +7,7 @@
   "dependencies": {
     "@bugsnag/js": "^5.0.2",
     "@octokit/rest": "^15.10.0",
+    "@octokit/webhooks": "^6.2.2",
     "@types/github": "^7.1.0",
     "@types/pg": "^7.4.10",
     "analytics-node": "^3.4.0-beta.1",

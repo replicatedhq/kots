@@ -24,8 +24,8 @@ export class GithubInstallationsStore {
   }
 
   async deleteGithubInstall(installationId: number): Promise<void> {
-    const q = `delete from github_install where installation_id = $1`;
-    const v = [ installationId];
+    const q = `update github_install set is_deleted = true where installation_id = $1`;
+    const v = [ installationId ];
     await this.pool.query(q, v);
   }
 }

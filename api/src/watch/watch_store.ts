@@ -6,6 +6,7 @@ import randomstring from "randomstring";
 import slugify from "slugify";
 import { Watch, Version, StateMetadata, Contributor, parseWatchName } from "./"
 import { ReplicatedError } from "../server/errors";
+import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import pg from "pg";
 import { checkExists, putObject } from "../util/s3";

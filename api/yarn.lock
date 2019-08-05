@@ -99,6 +99,13 @@
     node-fetch "^2.1.1"
     url-template "^2.0.8"
 
+"@octokit/webhooks@^6.2.2":
+  version "6.2.2"
+  resolved "https://registry.yarnpkg.com/@octokit/webhooks/-/webhooks-6.2.2.tgz#f73aa3a5f04011a469e8f7809070fbc028dd31d4"
+  integrity sha512-6bytSyiPq2gq+61OWbN31EadC4onh+oip+i1t96glQZ+XweVBSherJTLuyztJ9zqeQHSdYc7O48bc2JObpjR3A==
+  dependencies:
+    debug "^4.0.0"
+
 "@pact-foundation/pact-node@^8.2.0":
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/@pact-foundation/pact-node/-/pact-node-8.2.0.tgz#c7113802f52e362ecf03a648396c8493d80b7f8a"
@@ -1938,7 +1945,7 @@ debug@3.1.0, debug@=3.1.0, debug@^3.1.0, debug@~3.1.0:
   dependencies:
     ms "2.0.0"
 
-debug@4, debug@4.1.1, debug@^4.1.0, debug@^4.1.1:
+debug@4, debug@4.1.1, debug@^4.0.0, debug@^4.1.0, debug@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.1.1.tgz#3b72260255109c6b589cee050f1d516139664791"
   integrity sha512-pYAIzeRo8J6KPEaJ0VWOh5Pzkbw/RetuzehGM7QRRX5he4fPHx2rdKMB256ehJCkX+XRQm16eZLqLNS8RSZXZw==

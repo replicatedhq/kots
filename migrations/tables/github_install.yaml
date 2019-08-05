@@ -31,3 +31,6 @@ spec:
         type: integer
       - name: created_at
         type: timestamp without time zone
+      - name: is_deleted
+        type: boolean
+        default: "false"
