@@ -134,10 +134,14 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			if err != nil {
 				return errors.Wrap(err, "download from s3")
 			}
+			defer os.RemoveAll(filename)
+
 			file, err := os.Open(filename)
 			if err != nil {
 				return errors.Wrap(err, "open archive file")
 			}
+			defer file.Close()
+
 			_, renderedContents, err := util.FindRendered(file)
 			if err != nil {
 				return errors.Wrap(err, "find rendered")
@@ -151,6 +155,7 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 				if err != nil {
 					// ignore errors here
 					w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
+					continue
 				}
 
 				if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {

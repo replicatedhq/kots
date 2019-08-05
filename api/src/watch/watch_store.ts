@@ -348,24 +348,39 @@ export class WatchStore {
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const q = `
+    const watchQuery = `
       SELECT
-        watch.id,
-        watch.current_state,
-        watch.title,
-        watch.icon_uri,
-        watch.slug,
-        watch.created_at,
-        watch.updated_at,
-        watch.metadata,
-        watch.last_watch_check_at,
-        CASE WHEN preflight_spec.spec IS NULL THEN false ELSE true END AS has_preflight
-          FROM watch LEFT OUTER JOIN preflight_spec ON watch.id = preflight_spec.watch_id WHERE id = $1`;
-    const v = [id];
+        id,
+        current_state,
+        title,
+        icon_uri,
+        slug,
+        created_at,
+        updated_at,
+        metadata,
+        last_watch_check_at FROM watch WHERE id = $1`;
 
-    const result = await this.pool.query(q, v);
-    const watches = result.rows.map(row => this.mapWatch(row));
-    const watch = watches[0];
+    const watchQueryResults = await this.pool.query(watchQuery, [id]);
+
+    if (watchQueryResults.rowCount === 0) {
+      throw new ReplicatedError(`Couldn't find watch with watch_id of ${id}`);
+    }
+    // Get preflight spec for this watch
+    const preflightQuery = `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY sequence DESC LIMIT 1`
+
+    const preflightResults = await this.pool.query(preflightQuery, [ id ]);
+
+    const watch = new Watch();
+    watch.id = watchQueryResults.rows[0].id;
+    watch.stateJSON = watchQueryResults.rows[0].current_state;
+    watch.watchName = parseWatchName(watchQueryResults.rows[0].title)
+    watch.slug = watchQueryResults.rows[0].slug;
+    watch.watchIcon = watchQueryResults.rows[0].icon_uri;
+    watch.lastUpdated = watchQueryResults.rows[0].updated_at;
+    watch.createdOn = watchQueryResults.rows[0].created_at;
+    watch.metadata = watchQueryResults.rows[0].metadata;
+    watch.lastUpdateCheck = watchQueryResults.rows[0].last_watch_check_at;
+    watch.hasPreflight = Boolean(preflightResults.rowCount);
 
     return watch;
   }
@@ -596,8 +611,23 @@ export class WatchStore {
     const result = await this.pool.query(q, v);
     const watches: Watch[] = [];
     for (const row of result.rows) {
-      const result = this.mapWatch(row);
-      watches.push(result);
+      const hasPreflightQuery = `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY sequence DESC LIMIT 1`;
+      const hasPreflightResult = await this.pool.query(hasPreflightQuery, [ row.id ]);
+
+      const parsedWatchName = parseWatchName(row.title);
+      const watch = new Watch();
+      watch.id = row.id;
+      watch.stateJSON = row.current_state;
+      watch.watchName = parsedWatchName;
+      watch.slug = row.slug;
+      watch.watchIcon = row.icon_uri;
+      watch.lastUpdated = row.updated_at;
+      watch.createdOn = row.created_at;
+      watch.metadata = row.metadata;
+      watch.lastUpdateCheck = row.last_watch_check_at;
+      watch.hasPreflight = Boolean(hasPreflightResult.rowCount);
+
+      watches.push(watch);
     }
     return watches;
   }
@@ -762,22 +792,6 @@ export class WatchStore {
       contributors.push(result);
     }
     return contributors;
-  }
-
-  private mapWatch(row: any): Watch {
-    const parsedWatchName = parseWatchName(row.title);
-    const watch = new Watch();
-    watch.id = row.id;
-    watch.stateJSON = row.current_state;
-    watch.watchName = parsedWatchName;
-    watch.slug = row.slug;
-    watch.watchIcon = row.icon_uri;
-    watch.lastUpdated = row.updated_at;
-    watch.createdOn = row.created_at;
-    watch.metadata = row.metadata;
-    watch.lastUpdateCheck = row.last_watch_check_at;
-    watch.hasPreflight = row.has_preflight;
-    return watch;
   }
 
   private mapGeneratedFile(row: any): GeneratedFile {

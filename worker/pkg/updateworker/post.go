@@ -6,18 +6,17 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/util"
-	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/ship/pkg/state"
-	"k8s.io/client-go/kubernetes/scheme"
+	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"go.uber.org/zap"
-
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parentSequence *int, sequence int, s3Filepath string) error {

@@ -49,7 +49,7 @@ export class PreflightStore {
 
   async getPreflightSpec(watchId: string): Promise<PreflightSpec> {
     const q =
-      `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY watch_sequence DESC LIMIT 1`;
+      `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY sequence DESC LIMIT 1`;
     const v = [ watchId ];
 
     const result = await this.pool.query(q, v);
@@ -64,11 +64,11 @@ export class PreflightStore {
   }
 
   async getPreflightSpecBySlug(slug: string): Promise<PreflightSpec> {
-    const q = `SELECT spec FROM preflight_spec LEFT OUTER JOIN watch ON preflight_spec.watch_id = watch.id WHERE watch.slug = $1`;
+    const q = `SELECT spec FROM preflight_spec LEFT OUTER JOIN watch ON preflight_spec.watch_id = watch.id INNER JOIN watch_version ON watch_version.watch_id = watch.id WHERE watch.slug = $1 ORDER BY watch_version.sequence DESC LIMIT 1`;
     const v = [ slug ];
     const results = await this.pool.query(q, v);
 
-    if (!results.rows[0]) {
+    if (results.rowCount === 0) {
       throw new ReplicatedError(`Couldn't find PreflightSpec for slug: ${slug}`);
     }
     const spec = this.mapPreflightSpec(results.rows[0]);
