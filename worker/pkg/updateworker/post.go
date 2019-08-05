@@ -48,6 +48,7 @@ func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parent
 		if err != nil {
 			// ignore errors here
 			w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
+			continue
 		}
 
 		if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {
