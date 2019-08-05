@@ -85,15 +85,11 @@ export class GitHubHookAPI {
         const org = installationData.account.login;
         const { data: membersData } = await github.orgs.getMembers({org});
         numberOfOrgMembers = membersData.length;
-
-        for (const memberData of membersData) {
-          await request.app.locals.stores.clusterStore.updateClusterGithubInstallationId(memberData.id, installationData.id);
-        }
       } else {
         numberOfOrgMembers = 0;
-
-        await request.app.locals.stores.clusterStore.updateClusterGithubInstallationId(installationData.account.id, installationData.id);
       };
+
+      await request.app.locals.stores.clusterStore.updateClusterGithubInstallationId(installationData.id, installationData.account.login);
 
       await request.app.locals.stores.githubInstall.createNewGithubInstall(installationData.id, installationData.account.login, installationData.account.type, numberOfOrgMembers, installationData.account.html_url, senderData.login);
       if (params.segmentioAnalyticsKey) {

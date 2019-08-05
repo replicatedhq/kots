@@ -343,15 +343,13 @@ export class ClusterStore {
     }
   }
 
-  async updateClusterGithubInstallationId(accountId: string, installationId: string): Promise<void> {
+  async updateClusterGithubInstallationId(installationId: string, owner: string): Promise<void> {
     const pg = await this.pool.connect();
     const q = `
 UPDATE cluster_github
 SET installation_id = $1, is_deleted = FALSE, is_404 = FALSE
-FROM user_cluster c
-  INNER JOIN github_user u ON (u.user_id = c.user_id)
-WHERE c.cluster_id = cluster_github.cluster_id AND u.github_id = $2 AND cluster_github.installation_id != $1 AND cluster_github.is_deleted = TRUE`;
-    const v = [installationId, accountId];
+WHERE cluster_github.owner = $2 AND cluster_github.is_deleted = TRUE`;
+    const v = [installationId, owner];
     const res = await pg.query(q, v);
     if (res.rowCount > 0) {
       logger.info({msg: `Updated ${res.rowCount} row(s) with new installation ${installationId}`});
