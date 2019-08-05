@@ -16,10 +16,10 @@ export class TroubleshootStore {
   }
 
   static defaultSpec = `apiVersion: troubleshoot.replicated.com/v1beta1
-  kind: Collector
-  metadata:
-    name: defalt-collector
-  spec: []`
+kind: Collector
+metadata:
+  name: defalt-collector
+spec: []`
 
   public async getPreferedWatchCollector(watchId: string): Promise<Collector> {
     const q = `select release_collector, updated_collector, release_collector_updated_at, updated_collector_updated_at, use_updated_collector
