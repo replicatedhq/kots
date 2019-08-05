@@ -23,6 +23,8 @@ class GitHubAuthCallback extends React.Component {
             localStorage.removeItem("next");
             return this.props.history.push(next);
           }
+        } else {
+          return this.props.history.push("/unsupported");
         }
         this.props.history.push("/watches");
       })
@@ -42,6 +44,8 @@ class GitHubAuthCallback extends React.Component {
             this.props.refetchListWatches().then(this.getUser);
             // this.getUser();
 
+          } else {
+            this.props.history.push("/unsupported");
           }
         })
         .catch((err) => {
