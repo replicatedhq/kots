@@ -4,11 +4,9 @@ import classNames from "classnames";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import MonacoEditor from "react-monaco-editor";
-import isEmpty from "lodash/isEmpty";
 import { createNewWatch, updateStateJSON } from "../../mutations/WatchMutations";
 import { getWatchJson } from "../../queries/WatchQueries";
 import { userInfo } from "../../queries/UserQueries";
-import Loader from "../shared/Loader";
 
 import "../../scss/components/state/StateFileViewer.scss";
 
@@ -17,20 +15,12 @@ class StateFileViewer extends React.Component {
     super(props);
     this.state = {
       specValue: "",
-      savedJson: false,
       initialSpecValue: "",
-      saving: false,
       specValueError: false,
       serverError: false,
       specValueMessage: "",
       serverErrorMessage: "",
     }
-  }
-
-  onSpecChange = (value) => {
-    this.setState({
-      specValue: value
-    });
   }
 
   getWatchJson = (slug) => {
@@ -43,95 +33,6 @@ class StateFileViewer extends React.Component {
         this.setState({ specValue: json, initialSpecValue: json });
       })
       .catch();
-  }
-
-  clearSaved = () => {
-    this.timeout = setTimeout(() => {
-      this.setState({ savedJson: false });
-    }, 3000);
-  }
-
-  savedValues = () => {
-    this.setState({ savedJson: true, saving: false });
-    this.clearSaved();
-  }
-
-  validateSpecValue(specValue) {
-    let canSubmit = true;
-    if (isEmpty(specValue)) {
-      this.setState({
-        specValueError: true,
-        specValueMessage: "Can't save an empty json"
-      })
-      canSubmit = false;
-    }
-    return canSubmit;
-  }
-
-  handleSaveValues = () => {
-    const { specValue } = this.state;
-    const { owner, slug } = this.props.match.params;
-    const watchSlug = `${owner}/${slug}`;
-    this.setState({ saving: true, specValueError: false, serverEror: false });
-
-    const isValid = this.validateSpecValue(specValue);
-
-    if (this.props.isNew) {
-      if (isValid) {
-        this.props.createNewWatch(specValue)
-          .then(() => {
-            this.setState({ saving: false });
-            this.savedValues();
-            this.props.history.replace(`/watches`);
-          })
-          .catch((err) => {
-            err.graphQLErrors.map(({ message }) => {
-              if (message === "JSON is not valid") {
-                this.setState({
-                  saving: false,
-                  serverEror: true,
-                  serverErrorMessage: message
-                })
-              } else {
-                this.setState({
-                  saving: false,
-                  serverEror: true,
-                  serverErrorMessage: message
-                })
-              }
-            });
-          })
-      } else {
-        this.setState({ saving: false });
-      }
-    } else {
-      if (isValid) {
-        this.props.updateStateJSON(watchSlug, specValue)
-          .then((res) => {
-            this.setState({ specValue: res.data.updateStateJSON.stateJSON, initialSpecValue: res.data.updateStateJSON.stateJSON, saving: false });
-            this.savedValues();
-          })
-          .catch((err) => {
-            err.graphQLErrors.map(({ message }) => {
-              if (message === "JSON is not valid") {
-                this.setState({
-                  saving: false,
-                  serverEror: true,
-                  serverErrorMessage: message
-                })
-              } else {
-                this.setState({
-                  saving: false,
-                  serverEror: true,
-                  serverErrorMessage: message
-                })
-              }
-            });
-          })
-      } else {
-        this.setState({ saving: false });
-      }
-    }
   }
 
   componentDidMount() {
@@ -152,19 +53,9 @@ class StateFileViewer extends React.Component {
       specValueError,
       specValueMessage,
       serverEror,
-      serverErrorMessage,
-      savedJson,
-      saving
+      serverErrorMessage
     } = this.state;
 
-    if (saving) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center u-paddingTop--20">
-          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">We're moving as fast as we can but it may take a moment.</p>
-          <Loader size="60" />
-        </div>
-      );
-    }
 
     return (
       <div className={classNames("flex-column flex1 HelmValues--wrapper", {
@@ -187,6 +78,7 @@ class StateFileViewer extends React.Component {
                 height="100%"
                 width="100%"
                 options={{
+                  readOnly: true,
                   minimap: {
                     enabled: false
                   },
@@ -197,9 +89,6 @@ class StateFileViewer extends React.Component {
           </div>
           <div className="flex justifyContent--flexEnd u-marginBottom--30">
             <div className="flex-column flex-verticalCenter">
-              {savedJson &&
-                <p className="u-color--chateauGreen u-fontSize--small u-fontWeight--medium u-marginRight--10 u-lineHeight--normal">Values saved</p>
-              }
               {specValueError &&
                 <p className=" u-color--chestnut u-fontSize--small u-fontWeight--medium u-marginRight--10 u-lineHeight--normal">
                   {specValueMessage}</p>
@@ -208,9 +97,6 @@ class StateFileViewer extends React.Component {
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-marginRight--10 u-lineHeight--normal">
                   {serverErrorMessage}</p>
               }
-            </div>
-            <div className="flex justifyContent--flexEnd">
-              <button className="btn primary u-marginRight--normal" onClick={this.handleSaveValues} disabled={saving}>{saving ? "Saving" : "Save"}</button>
             </div>
           </div>
         </div>
