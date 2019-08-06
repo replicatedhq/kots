@@ -6,6 +6,13 @@ export const userInfoRaw = `
       username
       avatarUrl
     }
-}
+  }
 `;
 export const userInfo = gql(userInfoRaw);
+
+export const isSecuredRaw = `
+  query isSecured {
+    isSecured
+  }
+`;
+export const isSecured = gql(isSecuredRaw);

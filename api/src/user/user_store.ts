@@ -2,6 +2,7 @@ import pg from "pg";
 import bcrypt from "bcrypt";
 import randomstring from "randomstring";
 import { User } from "./";
+import { logger } from "../server/logger";
 
 export class UserStore {
   constructor(
@@ -230,4 +231,57 @@ export class UserStore {
 
     return true;
   }
+
+  public async checkSecuredStatus(): Promise<Boolean> {
+    const q = "select count(1) as count from kotsadm_params";
+
+    const result = await this.pool.query(q);
+
+    if (result.rows[0].count === "0") {
+      return false;
+    }
+
+    return true;
+  }
+
+  public async createAdminConsolePassword(password: string): Promise<string> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const pg = await this.pool.connect();
+    const encryptedPassword = await bcrypt.hash(password, 10);
+    try {
+      await pg.query("begin");
+
+      let q = `insert into kotsadm_params (password_bcrypt) values ($1)`;
+      let v = [ encryptedPassword ];
+      await pg.query(q, v);
+
+      q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
+      v = [
+        id,
+        new Date(),
+        new Date(),
+      ];
+      await pg.query(q, v);
+
+      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name, email) values ($1, $2, $3, $4, $5)`;
+      v = [
+        id,
+        encryptedPassword,
+        "Default",
+        "User",
+        "default-user@none.com",
+      ];
+      await pg.query(q, v);
+
+      await pg.query("commit");
+
+      return id;
+    } catch(err) {
+      await pg.query("rollback");
+      throw err;
+    } finally {
+      pg.release();
+    }
+  }
+
 }

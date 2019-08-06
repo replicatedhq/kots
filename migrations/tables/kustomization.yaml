@@ -42,3 +42,4 @@ resources:
 - ./github_install.yaml
 - ./preflight_result.yaml
 - ./preflight_spec.yaml
+- ./kotsadm_params.yaml

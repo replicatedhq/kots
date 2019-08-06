@@ -97,6 +97,23 @@ export function UserMutations(stores: Stores, params: Params) {
       return await stores.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 
+    async createAdminConsolePassword(root: any, args: any, context: Context): Promise<any> {
+      const userId = await stores.userStore.createAdminConsolePassword(args.password);
+      return await stores.sessionStore.createPasswordSession(userId);
+    },
+
+    async loginToAdminConsole(root: any, args: any, context: Context): Promise<any> {
+      const user = await stores.userStore.tryGetPasswordUser("default-user@none.com");
+      if (!user) {
+        throw new ReplicatedError("No user was found");
+      }
+      const validPassword = await user.validatePassword(args.password);
+      if (!validPassword) {
+        throw new ReplicatedError("Password is incorrect");
+      }
+      return await stores.sessionStore.createPasswordSession(user.id);
+    },
+
     async logout(root: any, args: any, context: Context): Promise<void> {
       await stores.sessionStore.deleteSession(context.session.sessionId);
     },

@@ -4,6 +4,8 @@ type Mutation {
   createGithubNonce: String!
   createGithubAuthToken(state: String!, code: String!): AccessToken
   trackScmLead(deploymentPreference: String!, emailAddress: String!, scmProvider: String!): String
+  createAdminConsolePassword(password: String!): String
+  loginToAdminConsole(password: String!): String
   logout: String
 
   createShipOpsCluster(title: String!): Cluster
