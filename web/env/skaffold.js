@@ -9,7 +9,7 @@ module.exports = {
   SHIPEDIT_ENDPOINT: "http://localhost:30065/api/v1/edit/",
   SHOW_SCM_LEADS: false,
   GITHUB_REDIRECT_URI: "http://localhost:30065/auth/github/callback",
-  SECURE_ADMIN_CONSOLE: true,
+  SECURE_ADMIN_CONSOLE: false,
   AVAILABLE_LOGIN_TYPES: ["github", "traditional"],
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return String(Date.now());
