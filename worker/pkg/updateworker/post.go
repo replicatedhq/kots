@@ -35,11 +35,15 @@ func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parent
 		return errors.Wrap(err, "extract collector spec")
 	}
 	// Get preflights
+	_, err = archive.Seek(0, 0)
+	if err != nil {
+		return errors.Wrap(err, "failed to seek within archive")
+	}
+
 	_, renderedContents, err := util.FindRendered(archive)
 	if err != nil {
 		return errors.Wrap(err, "find rendered")
 	}
-
 	splitRenderedContents := strings.Split(renderedContents, "\n---\n")
 	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
 	for _, splitRenderedContent := range splitRenderedContents {
