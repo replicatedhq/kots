@@ -21,7 +21,7 @@ export default function DownstreamVersionRow(props) {
   }
   let deployedAtTextNode;
   if (version.deployedAt) {
-    deployedAtTextNode = `${gitRef ? "Merged" : "Deployed"} on ${dayjs(version.deployedAt).format("MMMM D, YYYY @ h:mm a")}`;
+    deployedAtTextNode = <span className="gh-version-detail-text">{gitRef ? "Merged" : "Deployed"} on {dayjs(version.deployedAt).format("MMMM D, YYYY @ h:mma")}. <a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View the PR</a>.</span>;
   } else if (gitRef) {
     deployedAtTextNode = <span className="gh-version-detail-text">Merged on date not available. <a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View the PR</a> to see when it was merged.</span>
   } else {
@@ -29,7 +29,7 @@ export default function DownstreamVersionRow(props) {
   }
   let openedOnTextNode;
   if (version.createdOn) {
-    openedOnTextNode = <span className="gh-version-detail-text u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--10 flex alignItems--center">Opened on {dayjs(version.createdOn).format("MMMM D, YYYY @ h:mm a")}</span>;
+    openedOnTextNode = <span className="gh-version-detail-text u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--10 flex alignItems--center">Opened on {dayjs(version.createdOn).format("MMMM D, YYYY @ h:mma")}</span>;
   }
   return (
     <div className="flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
@@ -53,7 +53,9 @@ export default function DownstreamVersionRow(props) {
             <span className="gh-version-detail-text"><a className="replicated-link" href={githubLink} rel="noopener noreferrer" target="_blank">View this PR on GitHub</a> to review and merged it in for deployment.</span>
           </p>
         }
-        <Link to={`/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-marginTop--10 u-fontSize--small replicated-link">View file contents</Link>
+        <div className="u-marginTop--10">
+          <Link to={`/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-fontSize--small replicated-link">View file contents</Link>
+        </div>
       </div>
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">
         <div className="">

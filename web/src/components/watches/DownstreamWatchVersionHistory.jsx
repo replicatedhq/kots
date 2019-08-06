@@ -38,7 +38,7 @@ class DownstreamWatchVersionHistory extends Component {
       <div className="flex-column flex1 u-position--relative u-padding--20 u-overflow--auto">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--20">Downstream version history: {downstreamSlug}</p>
 
-        <div className="flex-column flex-auto">
+        <div className="flex-column flex-auto ActiveRelease-wrapper">
           <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Active release</p>
             <div className="flex flex1 justifyContent--flexEnd">
@@ -53,10 +53,17 @@ class DownstreamWatchVersionHistory extends Component {
             </div>
           </div>
           <div>
-            <DownstreamVersionRow
-              downstreamWatch={downstreamWatch}
-              version={downstreamWatch.currentVersion} 
-            />
+            {downstreamWatch.currentVersion ?
+              <DownstreamVersionRow
+                downstreamWatch={downstreamWatch}
+                version={downstreamWatch.currentVersion} 
+              />
+            :
+              <div className="no-current-version u-textAlign--center">
+                <p className="u-fontSize--large u-color--tundora u-fontWeight--bold u-lineHeight--normal">No active release found on {downstreamSlug}</p>
+                <p className="u-fontSize--normal u-color--dustygray u-fontWeight--medium u-lineHeight--normal">{isGit ? "When a PR is merged" : "When a version has been deployed"}, the current version will be shown here</p>
+              </div>
+            }
           </div>
         </div>
 

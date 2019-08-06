@@ -131,6 +131,30 @@
       word-break: break-all;
       line-height: 1;
     }
+    .cluster-actions-wrapper {
+      margin-top: 4px;
+      & > span {
+        position: relative;
+        padding-right: 6px;
+        margin-right: 6px;
+        &:after {
+          position: absolute;
+          content: "";
+          right: 0;
+          top: 1px;
+          height: 14px;
+          width: 1px;
+          background-color: #DFDFDF;
+        }
+        &:last-child {
+          padding-right: 0;
+          margin-right: 0;
+          &:after {
+            display: none;
+          }
+        }
+      }
+    }
     .card-action-wrapper {
       position: relative;
       padding: 4px;
