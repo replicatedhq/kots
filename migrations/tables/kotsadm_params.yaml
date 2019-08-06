@@ -15,7 +15,6 @@ spec:
       columns:
       - name: key
         type: text
-        default: "secure-password"
       - name: password_bcrypt
         type: text
         constraints:

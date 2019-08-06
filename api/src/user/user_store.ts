@@ -251,8 +251,8 @@ export class UserStore {
     try {
       await pg.query("begin");
 
-      let q = `insert into kotsadm_params (password_bcrypt) values ($1)`;
-      let v = [ encryptedPassword ];
+      let q = `insert into kotsadm_params (key, password_bcrypt) values ($1, $2)`;
+      let v = [ "secure-password", encryptedPassword ];
       await pg.query(q, v);
 
       q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;

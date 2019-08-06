@@ -246,7 +246,7 @@ class Root extends Component {
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListWatches} />) } />
                     <Route exact path="/signup" component={Signup} />
-                    <Route exact path="/secure-console" component={SecureAdminConsole} />
+                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListWatches} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route path="/clusterscope" component={ClusterScope} />

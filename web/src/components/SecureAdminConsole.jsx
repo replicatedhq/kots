@@ -2,6 +2,7 @@ import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { isSecured } from "../queries/UserQueries";
+import { Utilities } from "../utilities/utilities";
 import { createAdminConsolePassword, loginToAdminConsole } from "../mutations/AuthMutations";
 import "../scss/components/Login.scss";
 
@@ -14,56 +15,85 @@ class SecureAdminConsole extends React.Component {
     passwordErrMessage: "",
   }
 
-  createPassword = async () => {
+  completeLogin = (data, create) => {
+    const { onLoginSuccess } = this.props;
+    let token;
+    if (create) {
+      token = data.createAdminConsolePassword.token
+    } else {
+      token = data.loginToAdminConsole.token
+    }
+    if (Utilities.localStorageEnabled()) {
+      window.localStorage.setItem("token", token);
+      onLoginSuccess().then(() => {
+        this.props.history.push("/watches");
+      });
+    } else {
+      this.props.history.push("/unsupported");
+    }
+  }
+
+  validatePassword = (create = false) => {
     const { password, confirmPassword } = this.state;
-    if (password !== confirmPassword) {
-      return this.setState({
+    if (!password || password.length === "0") {
+      this.setState({
         passwordErr: true,
-        passwordErrMessage: "Password's did not match",
+        passwordErrMessage: `Please ${create ? "create a" : "provide your"} password`,
+      });
+      return false;
+    }
+    if (create) {
+      if (password !== confirmPassword) {
+        this.setState({
+          passwordErr: true,
+          passwordErrMessage: "Password's did not match",
+        });
+        return false;
+      }
+    }
+    return true;
+  }
+
+  createPassword = async () => {
+    const { password } = this.state;
+    if (this.validatePassword(true)) {
+      this.setState({ createLoading: true });
+      await this.props.createAdminConsolePassword(password)
+      .then(res => {
+        this.setState({ createLoading: false });
+        this.completeLogin(res.data, true);
+      })
+      .catch(err => {
+        err.graphQLErrors.map(({ message }) => {
+          this.setState({
+            createLoading: false,
+            passwordErr: true,
+            passwordErrMessage: message,
+          })
+        })
       });
     }
-    this.setState({ createLoading: true });
-    await this.props.createAdminConsolePassword(password)
-    .then(res => {
-      this.setState({ createLoading: false });
-      console.log(res.data);
-      // TODO: set token and get user?
-    })
-    .catch(err => {
-      err.graphQLErrors.map(({ message }) => {
-        this.setState({
-          createLoading: false,
-          passwordErr: true,
-          passwordErrMessage: message,
-        })
-      })
-    });
   }
 
   loginToConsole = async () => {
     const { password } = this.state;
-    if (!password || password.length === "0") {
-      return this.setState({
-        passwordErr: true,
-        passwordErrMessage: "Please provide your password",
+    if (this.validatePassword()) {
+      this.setState({ authLoading: true });
+      await this.props.loginToAdminConsole(password)
+      .then(res => {
+        this.setState({ authLoading: false });
+        this.completeLogin(res.data, false);
+      })
+      .catch(err => {
+        err.graphQLErrors.map(({ message }) => {
+          this.setState({
+            authLoading: false,
+            passwordErr: true,
+            passwordErrMessage: message,
+          })
+        })
       });
     }
-    this.setState({ authLoading: true });
-    await this.props.loginToAdminConsole(password)
-    .then(res => {
-      this.setState({ authLoading: false });
-      console.log(res.data);
-      // TODO: set token and get user?
-    })
-    .catch(err => {
-      err.graphQLErrors.map(({ message }) => {
-        this.setState({
-          authLoading: false,
-          passwordErr: true,
-          passwordErrMessage: message,
-        })
-      })
-    });
   }
 
   render() {
@@ -73,6 +103,8 @@ class SecureAdminConsole extends React.Component {
       confirmPassword,
       authLoading,
       createLoading,
+      passwordErr,
+      passwordErrMessage,
     } = this.state;
 
     const hasPassword = isSecured?.isSecured;
@@ -83,14 +115,15 @@ class SecureAdminConsole extends React.Component {
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex">
               <span className="icon ship-login-icon"></span>
-              <p className="login-text u-color--tuna u-fontWeight--bold">Secure admin console</p>
+              <p className="login-text u-color--tuna u-fontWeight--bold">{hasPassword ? "Log in" : "Secure admin console"}</p>
             </div>
             <p className="u-marginTop--20 u-fontSize--large u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               {hasPassword
               ? "Enter the password to access the admin console."
-              : "Set a shared password to secure the admin console. This can only be done once and cannot be changed."}
+              : "Set a shared password to secure the admin console."}
             </p>
             <div className="u-marginTop--20 flex-column">
+              {passwordErr && <p className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-lineHeight--normal u-marginBottom--20">{passwordErrMessage}</p>}
               {hasPassword
               ?
                 <div>
