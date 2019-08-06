@@ -10,8 +10,8 @@ publish-pact:
 	--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
 	-X PUT \
 	-H "Content-Type: application/json" \
-	-d@pacts/kotsadm-operator-ship-cluster-api.json \
-	https://replicated-pact-broker.herokuapp.com/pacts/provider/ship-cluster-api/consumer/kotsadm-operator/version/0.0.1
+	-d@pacts/operator-ship-cluster-api.json \
+	https://replicated-pact-broker.herokuapp.com/pacts/provider/ship-cluster-api/consumer/operator/version/0.0.1
 
 .PHONY: pacts
 pacts:
@@ -34,4 +34,8 @@ test: generate fmt vet manifests
 
 .PHONY: bin
 bin: fmt vet
-	go build -o bin/kotsadm-operator github.com/replicatedhq/ship-cluster/kotsadm-operator/cmd/kotsadm-operator
+	go build -o bin/kotsadm-operator github.com/replicatedhq/ship-cluster/operator/cmd/kotsadm-operator
+
+.PHONY: runs
+run: bin
+	./bin/kotsadm-operator --api-endpoint http://localhost:30065 --token local

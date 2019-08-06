@@ -3,6 +3,7 @@ package helm
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/helm"
 )
 
@@ -43,7 +44,7 @@ func listHelmApplications() ([]*HelmApplication, error) {
 
 	releases, err := helmClient.ListReleases()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list releases from helm")
 	}
 
 	helmApplications := make([]*HelmApplication, 0, 0)

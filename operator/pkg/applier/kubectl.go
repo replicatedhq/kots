@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/pkg/errors"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -63,7 +64,7 @@ func (c *Kubectl) Remove(yamlDoc []byte) error {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error running kubectl delete: %q\n", err)
-		return fmt.Errorf("%s", stderr.String())
+		return errors.Errorf("%s", stderr.String())
 	}
 
 	return nil
@@ -86,7 +87,7 @@ func (c *Kubectl) Apply(yamlDoc []byte) error {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("error running kubectl apply: %q\n", err)
-		return fmt.Errorf("%s", stderr.String())
+		return errors.Errorf("%s", stderr.String())
 	}
 
 	return nil

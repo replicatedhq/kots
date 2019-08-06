@@ -1,4 +1,4 @@
-package kotsadmserver
+package client
 
 import (
 	"bytes"
@@ -6,16 +6,34 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
-	"github.com/replicatedhq/ship-cluster/kotsadm-operator/pkg/helm"
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/ship-cluster/operator/pkg/helm"
 )
 
-type ShipDesiredState struct {
+type Client struct {
+	APIEndpoint string
+	Token       string
+}
+
+func (c *Client) Run() error {
+	for {
+		_, err := getDesiredStateFromKotsadmServer(c.APIEndpoint, c.Token)
+		if err != nil {
+			return errors.Wrap(err, "failed to get destired state from server")
+		}
+
+		time.Sleep(time.Second * 10)
+	}
+}
+
+type DesiredState struct {
 	Present []string `json:"present"`
 	Missing []string `json:"missing"`
 }
 
-func getDesiredStateFromShipServer(apiEndpoint string, token string) (*ShipDesiredState, error) {
+func getDesiredStateFromKotsadmServer(apiEndpoint string, token string) (*DesiredState, error) {
 	client := &http.Client{}
 
 	uri := fmt.Sprintf("%s/api/v1/deploy/desired", apiEndpoint)
@@ -30,7 +48,7 @@ func getDesiredStateFromShipServer(apiEndpoint string, token string) (*ShipDesir
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code from ship server: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code from kotsasdm server: %d", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -38,15 +56,15 @@ func getDesiredStateFromShipServer(apiEndpoint string, token string) (*ShipDesir
 		return nil, err
 	}
 
-	var shipDesiredState ShipDesiredState
-	if err := json.Unmarshal(body, &shipDesiredState); err != nil {
+	var desiredState DesiredState
+	if err := json.Unmarshal(body, &desiredState); err != nil {
 		return nil, err
 	}
 
-	return &shipDesiredState, nil
+	return &desiredState, nil
 }
 
-func reporCurrentStateToShipServer(apiEndpoint string, token string, helmApplications []*helm.HelmApplication) error {
+func reporCurrentStateToKotsadmServer(apiEndpoint string, token string, helmApplications []*helm.HelmApplication) error {
 	currentState := struct {
 		HelmApplications []*helm.HelmApplication `json:"helmApplications"`
 	}{
@@ -73,7 +91,7 @@ func reporCurrentStateToShipServer(apiEndpoint string, token string, helmApplica
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code from ship server: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code from kotadm server: %d", resp.StatusCode)
 	}
 
 	return nil
