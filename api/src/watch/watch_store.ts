@@ -75,11 +75,12 @@ export class WatchStore {
   }
 
   async updateVersionStatus(watchId: string, sequence: number, status: string): Promise<void> {
-    const q = `update watch_version set status = $1 where watch_id = $2 and sequence = $3`;
+    const q = `update watch_version set status = $1, last_synced_at = $4 where watch_id = $2 and sequence = $3`;
     const v = [
       status,
       watchId,
       sequence,
+      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);
@@ -167,7 +168,7 @@ export class WatchStore {
     return this.mapWatchVersion(result.rows[0]);
   }
 
-  async listPendingVersions(watchId: string): Promise<Version[]> {
+  async listPendingVersions(watchId: string, withoutCommitShas?: boolean): Promise<Version[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -181,7 +182,12 @@ export class WatchStore {
       sequence = -1;
     }
 
-    q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and sequence > $2 order by sequence desc`;
+    q = `
+select created_at, version_label, status, sequence, pullrequest_number, deployed_at
+from watch_version
+where watch_id = $1 and sequence > $2
+  ${withoutCommitShas ? "and (commit_sha = '' or commit_sha is null)" : ""}
+order by sequence desc`;
     v = [
       watchId,
       sequence,
@@ -198,7 +204,7 @@ export class WatchStore {
   }
 
   async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<Version | void> {
-    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number) values ($1, $2, $3, $4, $5, $6, $7)`;
+    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, last_synced_at) values ($1, $2, $3, $4, $5, $6, $7, $8)`;
     const v = [
       watchId,
       createdAt,
@@ -207,6 +213,7 @@ export class WatchStore {
       sourceBranch,
       sequence,
       pullRequestNumber,
+      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);
@@ -794,7 +801,7 @@ export class WatchStore {
       createdOn: row.created_at,
       sequence: row.sequence,
       pullrequestNumber: row.pullrequest_number,
-      deployedAt: row.deployed_at
+      deployedAt: row.deployed_at,
     };
   }
 }
