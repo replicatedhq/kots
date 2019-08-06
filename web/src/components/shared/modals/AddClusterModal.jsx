@@ -23,7 +23,10 @@ class AddNewClusterModal extends React.Component {
     console.log(selectedCluster);
 
     if (watch.hasPreflight) {
-      history.push(`/preflight/${watch.slug}/${selectedCluster.slug}`);
+      history.push(`/preflight/${watch.slug}/${selectedCluster.slug}${githubPath
+        ? `?path=${encodeURI(githubPath)}`
+        : ""
+      }`);
     } else {
       this.props.onAddCluster(selectedCluster.value, githubPath);
     }
