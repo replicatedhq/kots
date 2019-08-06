@@ -75,12 +75,11 @@ export class WatchStore {
   }
 
   async updateVersionStatus(watchId: string, sequence: number, status: string): Promise<void> {
-    const q = `update watch_version set status = $1, last_synced_at = $4 where watch_id = $2 and sequence = $3`;
+    const q = `update watch_version set status = $1, last_synced_at = current_timestamp where watch_id = $2 and sequence = $3`;
     const v = [
       status,
       watchId,
       sequence,
-      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);
@@ -204,7 +203,7 @@ order by sequence desc`;
   }
 
   async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<Version | void> {
-    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, last_synced_at) values ($1, $2, $3, $4, $5, $6, $7, $8)`;
+    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, last_synced_at) values ($1, $2, $3, $4, $5, $6, $7, current_timestamp)`;
     const v = [
       watchId,
       createdAt,
@@ -213,7 +212,6 @@ order by sequence desc`;
       sourceBranch,
       sequence,
       pullRequestNumber,
-      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);

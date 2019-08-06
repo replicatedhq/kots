@@ -134,7 +134,7 @@ async function main(argv): Promise<any> {
           console.log("Github said PR " + blueText(`${pr.data.number}`) + " was " + blueText("merged") + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "merged");
-            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
+            await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
@@ -145,7 +145,7 @@ async function main(argv): Promise<any> {
           console.log("Github said PR " + blueText(`${pr.data.number}`) + " is " + blueText(`${pr.data.state}`) + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "closed");
-            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
+            await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
@@ -156,7 +156,7 @@ async function main(argv): Promise<any> {
           console.log("Github said PR " + blueText(`${pr.data.number}`) + " is " + blueText(`${pr.data.state}`) + " but we had it marked as " + blueText(`${version.status}`) + " check the status on github: " + blueText(`https://github.com/${version.owner}/${version.repo}/pull/${pr.data.number}`));
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watch_id!, version.sequence!, "opened");
-            await pool.query(`UPDATE watch_version SET last_synced_at = $1 WHERE watch_id = $2 AND sequence = $3`, [new Date().toDateString(), version.watch_id, version.sequence]);
+            await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watch_id, version.sequence]);
             await checkVersion(watchStore, version, pr.data);
           }
           changedVersions.push(i)
