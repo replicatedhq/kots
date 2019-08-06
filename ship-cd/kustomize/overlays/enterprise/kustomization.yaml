@@ -1,8 +1,0 @@
-bases:
-- ../../base
-
-resources:
-- ./imagepullsecret.yaml
-
-patchesStrategicMerge:
-- manager_patch.yaml

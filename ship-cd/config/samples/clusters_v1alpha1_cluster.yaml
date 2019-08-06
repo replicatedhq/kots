@@ -1,9 +1,0 @@
-apiVersion: clusters.replicated.com/v1alpha1
-kind: Cluster
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: dev-cluster
-spec:
-  shipApiServer: http://localhost:30065
-  token: u9l6mft8dnnb5t11ht5sittv0k85z47g
