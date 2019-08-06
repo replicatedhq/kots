@@ -54,7 +54,12 @@ export class ShipInitCompleted extends React.Component {
           variables: { id: initSessionId },
           fetchPolicy: "network-only"
         });
-        return this.props.history.push(`/watch/${parentResult.data.getParentWatch.slug}/downstreams`);
+        const redirect = localStorage.getItem("clusterRedirect");
+        if (redirect) {
+          return this.props.history.push(redirect);
+        } else {
+          return this.props.history.push(`/watch/${parentResult.data.getParentWatch.slug}/downstreams`);
+        }
       }
       this.setState({ loadingWatch: false, watchSlug: data.getWatch.slug, watchId: initSessionId });
     }

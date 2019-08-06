@@ -1,7 +1,7 @@
 import * as React from "react";
 import trim from "trim";
 import Helmet from "react-helmet";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import { compose, withApollo } from "react-apollo";
 
 import Select from "react-select";
@@ -108,6 +108,7 @@ class GenerateSupportBundle extends React.Component {
 
   addClusterToWatch = (clusterId, githubPath) => {
     const { watch } = this.props;
+    localStorage.setItem("clusterRedirect", `/watch/${watch.slug}/troubleshoot/generate`);
     const upstreamUrl = `ship://ship-cloud/${watch.slug}`;
     this.props.history.push(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
   }
@@ -132,6 +133,7 @@ class GenerateSupportBundle extends React.Component {
     const { clusters, selectedCluster, showToast, copySuccess, copyMessage, addNewClusterModal, displayUploadModal } = this.state;
     const { watch } = this.props;
     const selectedWatch = watch ?.watches.find((watch) => watch.cluster.id === selectedCluster.id);
+    
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
@@ -139,7 +141,8 @@ class GenerateSupportBundle extends React.Component {
           <title>{`${watch.watchName} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
-          <div>
+          <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link>
+          <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze your application for support</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with your application, you can run analysis on your cluster to receive insights that can be shared with your vendor for support.</p>
           </div>
