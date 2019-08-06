@@ -68,6 +68,7 @@ export class PreflightStore {
       `SELECT preflight_spec.spec FROM watch
           LEFT JOIN preflight_spec ON preflight_spec.watch_id = watch.id
           INNER JOIN watch_version ON watch_version.watch_id = watch.id
+            AND watch_version.sequence = preflight_spec.sequence
        WHERE watch.slug = $1
        ORDER BY watch_version.sequence DESC LIMIT 1`;
     const v = [ slug ];
