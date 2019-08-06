@@ -74,7 +74,7 @@ class DeploymentClusters extends React.Component {
                               View state.json
                             </Link>
                           </span>
-                          <span className="replicated-link" onClick={isDownloadingAssets ? () => { return; } : () => { this.downloadAssetsForCluster(childWatch.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
+                          <span className="replicated-link" onClick={isDownloadingAssets ? null : () => { this.downloadAssetsForCluster(childWatch.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
                         </div>
                       </div>
                     </div>
