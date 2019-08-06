@@ -189,7 +189,7 @@ export default compose(
     options: props => {
       const { match } = props;
       return {
-        pollInterval: 10000,
+        pollInterval: 2000,
         variables: {
           slug: `${match.params.owner}/${match.params.name}`
         }
