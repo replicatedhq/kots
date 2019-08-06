@@ -13,9 +13,11 @@ class SecureAdminConsole extends React.Component {
     confirmPassword: "",
     passwordErr: false,
     passwordErrMessage: "",
+    authLoading: false,
+    createLoading: false,
   }
 
-  completeLogin = (data, create) => {
+  completeLogin = (data, create = false) => {
     const { onLoginSuccess } = this.props;
     let token;
     if (create) {
@@ -26,6 +28,10 @@ class SecureAdminConsole extends React.Component {
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
       onLoginSuccess().then(() => {
+        this.setState({
+          authLoading: false,
+          createLoading: false,
+        });
         this.props.history.push("/watches");
       });
     } else {
@@ -81,8 +87,7 @@ class SecureAdminConsole extends React.Component {
       this.setState({ authLoading: true });
       await this.props.loginToAdminConsole(password)
       .then(res => {
-        this.setState({ authLoading: false });
-        this.completeLogin(res.data, false);
+        this.completeLogin(res.data);
       })
       .catch(err => {
         err.graphQLErrors.map(({ message }) => {
@@ -94,6 +99,28 @@ class SecureAdminConsole extends React.Component {
         })
       });
     }
+  }
+
+  submitForm = (e) => {
+    const enterKey = e.keyCode === 13;
+    const hasPassword = this.props.isSecured?.isSecured;
+    if (enterKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (hasPassword) {
+        this.loginToConsole();
+      } else {
+        this.createPassword();
+      }
+    }
+  }
+
+  componentDidMount() {
+    window.addEventListener("keydown", this.submitForm);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("keydown", this.submitForm);
   }
 
   render() {
