@@ -122,7 +122,6 @@ class WatchDetailPage extends Component {
       });
     });
   }
-  // NOTE FOR PREFLIGHTS - DO THISSSSSS
   addClusterToWatch = (clusterId, githubPath) => {
     const { clusterParentSlug } = this.state;
     const upstreamUrl = `ship://ship-cloud/${clusterParentSlug}`;

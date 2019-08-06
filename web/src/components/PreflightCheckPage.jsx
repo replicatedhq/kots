@@ -7,7 +7,7 @@ import {listPreflightResults } from "@src/queries/WatchQueries";
 import CodeSnippet from "./shared/CodeSnippet";
 import TabView, { Tab } from "./shared/TabView";
 
-import "@src/scss/components/PreflightChecksPage.scss";
+import "@src/scss/components/PreflightCheckPage.scss";
 
 class PreflightChecksPage extends Component {
   state = {
@@ -19,10 +19,6 @@ class PreflightChecksPage extends Component {
     this.setState({
       showPreflightInstructions: !showPreflightInstructions
     });
-  }
-
-  onTabChange = (/* name */) => {
-
   }
 
   componentDidUpdate (/* lastProps */) {
@@ -50,6 +46,7 @@ class PreflightChecksPage extends Component {
   }
 
   createDownstreamCluster = () => {
+
     // const { history } = this.props;
     // const upstreamUrl = "ship://ship-cloud/${}"
     // history.replace(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
