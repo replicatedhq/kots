@@ -151,6 +151,22 @@ export class WatchStore {
     return versionItems;
   }
 
+  async getOneVersionCommit(watchId: string, sequence: number): Promise<string> {
+    const q = `select commit_sha from watch_version where watch_id = $1 and sequence = $2`;
+    const v = [
+      watchId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rowCount === 0) {
+      throw new ReplicatedError("Watch version not found");
+    }
+
+    return result.rows[0].commit_sha;
+  }
+
   async getVersionForCommit(watchId: string, commitSha: string): Promise<Version|undefined> {
     const q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and commit_sha = $2`;
     const v = [
@@ -167,7 +183,7 @@ export class WatchStore {
     return this.mapWatchVersion(result.rows[0]);
   }
 
-  async listPendingVersions(watchId: string, withoutCommitShas?: boolean): Promise<Version[]> {
+  async listPendingVersions(watchId: string): Promise<Version[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -185,7 +201,6 @@ export class WatchStore {
 select created_at, version_label, status, sequence, pullrequest_number, deployed_at
 from watch_version
 where watch_id = $1 and sequence > $2
-  ${withoutCommitShas ? "and (commit_sha = '' or commit_sha is null)" : ""}
 order by sequence desc`;
     v = [
       watchId,
