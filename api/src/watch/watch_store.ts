@@ -612,7 +612,7 @@ export class WatchStore {
     const result = await this.pool.query(q, v);
     const watches: Watch[] = [];
     for (const row of result.rows) {
-      const hasPreflightQuery = `SELECT spec FROM preflight_spec WHERE watch_id = $1 ORDER BY sequence DESC LIMIT 1`;
+      const hasPreflightQuery = `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
       const hasPreflightResult = await this.pool.query(hasPreflightQuery, [ row.id ]);
 
       const parsedWatchName = parseWatchName(row.title);
