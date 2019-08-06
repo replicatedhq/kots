@@ -133,7 +133,15 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
-    let commitShaFound = false;
+
+    /////////
+    // before adding commit_sha, some pending versions don't have them
+    /////////
+    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
+    ////////
+    // end of pre-commit-sha compatibility code
+    ////////
+
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
         continue;
@@ -172,8 +180,6 @@ export class GitHubHookAPI {
             return new Date(commit.committed_at);
           });
 
-          commitShaFound = sortedCommits.length > 0;
-
           for (const commit of sortedCommits) {
             const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
             if (!pendingVersion) {
@@ -196,21 +202,11 @@ export class GitHubHookAPI {
             }
           }
         } catch(err) {
-          logger.info({msg: "could not update cluster because github said an error", err});
+          logger.error({msg: "could not update cluster because github said an error", err});
+          throw(err);
         }
       }
     }
-
-
-    /////////
-    // before adding commit_sha, some pending versions don't have them
-    /////////
-    if (!commitShaFound) {
-      await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
-    }
-    ////////
-    // end of pre-commit-sha compatibility code
-    ////////
   }
 }
 
@@ -245,7 +241,7 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
   for (const cluster of clusters) {
     const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
     for (const watch of watches) {
-      const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
+      const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!, true);
       for (const pendingVersion of pendingVersions) {
         if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
           await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);

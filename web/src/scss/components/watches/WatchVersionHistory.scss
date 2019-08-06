@@ -36,3 +36,13 @@ $cell-width: 140px;
   position: relative;
   top: 1px;
 }
+
+.ActiveRelease-wrapper {
+  .no-current-version {
+    background-color: #F5F8FC;
+    margin-top: 16px;
+    border-radius: 4px;
+    padding: 16px 12px;
+  }
+}
+
