@@ -4,6 +4,7 @@ SHELL := /bin/bash
 cache:
 	make -C api build-cache
 	make -C web build-cache
+	make -C worker build-cache
 
 .PHONY: test
 test:

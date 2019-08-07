@@ -1,14 +1,12 @@
-FROM golang:1.12 as deps
-RUN go get -u github.com/golang/dep/cmd/dep
-RUN go get github.com/sqs/goreturns
-RUN go get -u golang.org/x/lint/golint
+FROM repldev/ship-cluster-worker:latest
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/ship-cluster/worker
-WORKDIR $PROJECTPATH
-ADD . $PROJECTPATH
+EXPOSE 6060
 
+ADD cmd cmd
+ADD pkg pkg
+ADD vendor vendor
+ADD Makefile .
 RUN make build
-
 RUN cp ./bin/ship-cluster-worker /opt/ship-cluster-worker
 
 ENTRYPOINT ["/opt/ship-cluster-worker"]

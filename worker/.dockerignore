@@ -3,6 +3,5 @@
 .vscode
 .buildkite
 deploy
-hack
 kustomize
 bin/
