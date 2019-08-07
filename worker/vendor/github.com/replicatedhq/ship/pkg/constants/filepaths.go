@@ -44,6 +44,12 @@ var (
 	HelmLocalDependencyPath = path.Join(ShipPathInternalTmp, "dependencies")
 	// Kustomize render path is the local path that kustomize steps will use to render yaml for display
 	KustomizeRenderPath string
+	// Helm values path is the path in which the helm values file and original helm values file will be stored
+	HelmValuesPath string
+	// Upstream Contents path is the path in which the upstream is stored
+	UpstreamContentsPath string
+	// Upstream App Release path is the path in which the app release yaml will be stored
+	UpstreamAppReleasePath string
 )
 
 func SetShipRootDir(dir string) {
@@ -61,4 +67,7 @@ func SetShipRootDir(dir string) {
 	UnforkForkedBasePath = path.Join(ShipPathInternalTmp, "fork", "base")
 	HelmLocalDependencyPath = path.Join(ShipPathInternalTmp, "dependencies")
 	KustomizeRenderPath = path.Join(ShipPathInternalTmp, "kustomize")
+	HelmValuesPath = path.Join(ShipPathInternal, "helm")
+	UpstreamContentsPath = path.Join(ShipPathInternal, "upstream")
+	UpstreamAppReleasePath = path.Join(UpstreamContentsPath, "appRelease.json")
 }

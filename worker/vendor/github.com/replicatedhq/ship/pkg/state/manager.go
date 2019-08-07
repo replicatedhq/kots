@@ -320,7 +320,7 @@ func (m *MManager) getStateSerializer() (stateSerializer, error) {
 	}
 }
 
-// CachedState will return currently chached state.
+// CachedState will return the currently cached state.
 func (m *MManager) CachedState() (State, error) {
 	if m.cachedState == nil {
 		return State{}, errors.New("state is not initialized")
@@ -344,6 +344,16 @@ func (m *MManager) tryLoad() error {
 	state, err := s.Load()
 	if err != nil {
 		return errors.Wrap(err, "load state")
+	}
+
+	state, err = readHelmFiles(m.FS, state)
+	if err != nil {
+		return errors.Wrap(err, "read helm files")
+	}
+
+	state, err = readUpstreamFiles(m.FS, state)
+	if err != nil {
+		return errors.Wrap(err, "read upstream files")
 	}
 
 	m.cachedState = &state
@@ -401,6 +411,25 @@ func (m *MManager) serializeAndWriteState(state State) error {
 	s, err := m.getStateSerializer()
 	if err != nil {
 		return errors.Wrap(err, "create state serializer")
+	}
+
+	err = writeHelmFiles(m.FS, state)
+	if err != nil {
+		return errors.Wrap(err, "write helm file")
+	}
+
+	err = writeUpstreamFiles(m.FS, state)
+	if err != nil {
+		return errors.Wrap(err, "write upstream file")
+	}
+
+	if !m.V.GetBool(constants.FilesInStateFlag) && state.V1 != nil {
+		state2 := *state.V1
+
+		state2.HelmValues = ""
+		state2.HelmValuesDefaults = ""
+		state2.UpstreamContents = nil
+		state.V1 = &state2
 	}
 
 	if err := s.Save(state); err != nil {
