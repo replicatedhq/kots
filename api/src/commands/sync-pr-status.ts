@@ -193,9 +193,7 @@ async function getVersions(pool: Pool): Promise<Version[]> {
       FROM watch_version wv
       INNER JOIN watch_cluster wc ON wv.watch_id = wc.watch_id
       INNER JOIN cluster_github cg ON wc.cluster_id = cg.cluster_id AND (cg.is_deleted = FALSE OR cg.is_deleted is NULL) AND (cg.is_404 = FALSE OR cg.is_404 is NULL)
-      WHERE
-        (wv.commit_sha = '' OR wv.commit_sha is NULL) OR
-        (wv.status IN ('opened', 'pending') AND (wv.is_404 = FALSE OR wv.is_404 IS NULL))`
+      WHERE wv.status IN ('opened', 'pending') AND (wv.is_404 = FALSE OR wv.is_404 IS NULL)`
   );
   const versions: Version[] = [];
   for (const row of result.rows) {
