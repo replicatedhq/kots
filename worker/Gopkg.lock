@@ -1060,7 +1060,7 @@
   revision = "f221768d47f4d471dc2bc1c4b235069f42622e0b"
 
 [[projects]]
-  digest = "1:98cd59eede5bbaf197fc6e769b1d38d0e8fd43bd64c8b19afe3dc66722a2625d"
+  digest = "1:f784fc997571a7b894ad88b819e20338237d271794d63ae60b5dcb5441fee0ae"
   name = "github.com/replicatedhq/ship"
   packages = [
     "pkg/api",
@@ -1084,7 +1084,7 @@
     "pkg/version",
   ]
   pruneopts = "UT"
-  revision = "v0.49.1"
+  revision = "v0.50.0"
 
 [[projects]]
   digest = "1:1ae8e15c904a3d804c7775f8e8f1484ebf8e6d907ce1127e1faaa3c18c0c407c"
@@ -1379,6 +1379,14 @@
   pruneopts = "UT"
   revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
   version = "v0.9.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:450d287b628efab5e45bf1d13cf4ad16a6d06bbc3f96a556bb113f08d4930000"
+  name = "gopkg.in/ksplit.v0"
+  packages = ["pkg"]
+  pruneopts = "UT"
+  revision = "e6c5c685cbb7344fc7392c5ba7ec1269de507d99"
 
 [[projects]]
   digest = "1:a7f3b30dd6bc89993545373c459a4ade870a852352a8542a93eb52dce37161ab"

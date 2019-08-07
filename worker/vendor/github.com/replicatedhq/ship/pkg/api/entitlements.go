@@ -8,8 +8,8 @@ import "time"
 
 // Meta describes metadata about an entitlements payload
 type Meta struct {
-	LastUpdated time.Time `json:"last_updated"`
-	CustomerID  string    `json:"customer_id"`
+	LastUpdated time.Time `json:"lastUpdated"`
+	CustomerID  string    `json:"customerID"`
 }
 
 // EntitlementLabel is a single entitlement label

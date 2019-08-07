@@ -55,7 +55,7 @@
 
 [[constraint]]
   name = "github.com/replicatedhq/ship"
-  revision = "v0.49.1"
+  revision = "v0.50.0"
 
 [[constraint]]
   name = "github.com/google/go-github"
