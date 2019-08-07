@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-api
+  name: kotsadm-api
 spec:
   replicas: 3
   template:
@@ -20,8 +20,8 @@ spec:
           hostPath:
             path: /var/run/sigsci
       containers:
-        - name: ship-cluster-api
-          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-api
+        - name: kotsadm-api
+          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/kotsadm-api
           volumeMounts:
             - mountPath: /var/run/sigsci/
               name: sigsci
@@ -40,7 +40,7 @@ spec:
             - name: BUGSNAG_KEY
               valueFrom:
                 secretKeyRef:
-                  name: ship-cluster-api-bugsnag-secret
+                  name: kotsadm-api-bugsnag-secret
                   key: key
             - name: GITHUB_CLIENT_ID
               value: check-ssm

@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: init-server
   labels:
-    app: ship-cluster-worker-init
+    app: kotsadm-worker-init
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: init-server
   selector:
-    app: ship-cluster-worker-init
+    app: kotsadm-worker-init

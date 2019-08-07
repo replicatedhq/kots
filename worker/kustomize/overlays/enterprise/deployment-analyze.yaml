@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-analyze
+  name: kotsadm-worker-analyze
 spec:
   replicas: 1
   template:
@@ -10,8 +10,8 @@ spec:
         - name: replicatedregistrykey
       restartPolicy: Always
       containers:
-        - name: ship-cluster-worker
-          image: registry.replicated.com/ship-enterprise/ship-cluster-worker
+        - name: kotsadm-worker
+          image: registry.replicated.com/ship-enterprise/kotsadm-worker
           env:
             - name: LOG_LEVEL
               value: warn

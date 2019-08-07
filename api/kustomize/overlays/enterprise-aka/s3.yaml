@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-api
+  name: kotsadm-api
 spec:
   template:
     spec:
-      serviceAccountName: ship-cluster-api
+      serviceAccountName: kotsadm-api
       containers:
-        - name: ship-cluster-api
+        - name: kotsadm-api
           env:
             - name: S3_ENDPOINT
               value: |
                 {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}http://minio.{{repl Namespace}}.svc.cluster.local:9000/{{repl else}}{{repl ConfigOption "s3_endpoint"}}{{repl end}}
             - name: SHIP_API_ENDPOINT
-              value: http://ship-cluster-api.{{repl Namespace}}.svc.cluster.local:3000
+              value: http://kotsadm-api.{{repl Namespace}}.svc.cluster.local:3000
 

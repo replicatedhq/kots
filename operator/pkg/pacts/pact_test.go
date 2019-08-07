@@ -40,7 +40,7 @@ func createPact() dsl.Pact {
 
 	return dsl.Pact{
 		Consumer: "ship-cd",
-		Provider: "ship-cluster-api",
+		Provider: "kotsadm-api",
 		LogDir:   logDir,
 		PactDir:  pactDir,
 		LogLevel: "debug",

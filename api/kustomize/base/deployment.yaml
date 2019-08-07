@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-api
+  name: kotsadm-api
 spec:
   selector:
     matchLabels:
-      app: ship-cluster-api
+      app: kotsadm-api
   template:
     metadata:
       labels:
-        app: ship-cluster-api
+        app: kotsadm-api
     spec:
       affinity:
         podAffinity:
@@ -32,7 +32,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-api
+                  - kotsadm-api
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
       volumes:
@@ -40,8 +40,8 @@ spec:
           secret:
             secretName: github-app-private-key
       containers:
-        - name: ship-cluster-api
-          image: ship-cluster-api
+        - name: kotsadm-api
+          image: kotsadm-api
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -51,6 +51,8 @@ spec:
           env:
             - name: AUTO_CREATE_CLUSTER
               value: "0"
+            - name: TRACER_NAME
+              value: kotsadm-api
           readinessProbe:
             httpGet:
               path: /healthz

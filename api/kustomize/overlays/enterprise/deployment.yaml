@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-api
+  name: kotsadm-api
 spec:
   replicas: 1
   template:
@@ -9,8 +9,8 @@ spec:
       imagePullSecrets:
         - name: replicatedregistrykey
       containers:
-        - name: ship-cluster-api
-          image: registry.replicated.com/ship-enterprise/ship-cluster-api
+        - name: kotsadm-api
+          image: registry.replicated.com/ship-enterprise/kotsadm-api
           env:
             - name: SESSION_KEY
               valueFrom:
@@ -61,7 +61,7 @@ spec:
                   name: github-app
                   key: integration-id
             - name: SHIP_API_ENDPOINT
-              value: http://ship-cluster-api.default.svc.cluster.local:3000
+              value: http://kotsadm-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
               value: http://localhost:30065
             - name: GRAPHQL_PREM_ENDPOINT

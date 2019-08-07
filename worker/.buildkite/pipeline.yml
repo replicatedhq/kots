@@ -15,8 +15,8 @@ steps:
   - commands:
       - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
-      - chmod +x worker/deploy/bin/ship-cluster-worker
+      - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
+      - chmod +x worker/deploy/bin/kotsadm-worker
       - make -C worker build-enterprise
     branches: "master"
     retry:
@@ -25,8 +25,8 @@ steps:
   - commands:
       - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
-      - chmod +x worker/deploy/bin/ship-cluster-worker
+      - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
+      - chmod +x worker/deploy/bin/kotsadm-worker
       - make -C worker build-staging
     branches: "master"
     retry:
@@ -41,8 +41,8 @@ steps:
   - commands:
       - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - cp worker/bin/ship-cluster-worker worker/deploy/bin/ship-cluster-worker
-      - chmod +x worker/deploy/bin/ship-cluster-worker
+      - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
+      - chmod +x worker/deploy/bin/kotsadm-worker
       - make -C worker build-production
     branches: "master"
     retry:

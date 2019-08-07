@@ -5,7 +5,7 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccountName: ship-cluster-api
+      serviceAccountName: kotsadm-api
       containers:
         - name: ship-cluster-local-cluster
           env:

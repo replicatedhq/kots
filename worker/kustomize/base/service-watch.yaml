@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: watch-server
   labels:
-    app: ship-cluster-worker-watch
+    app: kotsadm-worker-watch
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: watch-server
   selector:
-    app: ship-cluster-worker-watch
+    app: kotsadm-worker-watch

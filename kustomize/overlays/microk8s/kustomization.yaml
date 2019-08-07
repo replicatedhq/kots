@@ -2,4 +2,4 @@ bases:
   - ../github
 
 patchesStrategicMerge:
-  - ./ship-cluster-api-nodeport.yaml
+  - ./kotsadm-api-nodeport.yaml

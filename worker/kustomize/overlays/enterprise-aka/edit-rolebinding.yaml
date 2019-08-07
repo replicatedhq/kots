@@ -5,5 +5,5 @@ metadata:
   name: ship-worker-list-pods
 subjects:
 - kind: ServiceAccount
-  name: ship-cluster-worker-edit
+  name: kotsadm-worker-edit
   namespace: '{{repl Namespace}}'

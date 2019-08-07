@@ -1,9 +1,9 @@
 {
   "consumer": {
-    "name": "ship-cluster-ui"
+    "name": "kotsadm-web"
   },
   "provider": {
-    "name": "ship-cluster-api"
+    "name": "kotsadm-api"
   },
   "interactions": [
     {

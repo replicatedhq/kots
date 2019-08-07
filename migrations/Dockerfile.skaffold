@@ -7,5 +7,3 @@ RUN make deps build run
 FROM postgres:10.7
 
 COPY --from=0 /src/fixtures/fixtures.sql /docker-entrypoint-initdb.d/fixtures.sql
-
-

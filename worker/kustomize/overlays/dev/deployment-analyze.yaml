@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-analyze
+  name: kotsadm-worker-analyze
 spec:
   template:
     spec:
       restartPolicy: Always
       containers:
-        - name: ship-cluster-worker
+        - name: kotsadm-worker
           env:
             - name: LOG_LEVEL
               value: debug

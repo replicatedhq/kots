@@ -91,7 +91,7 @@ imageBatches:
     images_input: |
       postgres:10.7,docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee
       quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64:0.22.0
-      localhost:32000/ship-cluster-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e
+      localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e
     created_at: "2019-04-10 12:34:56.789"
     batch_watches:
       - id: "solo-account-image-watch-1"
@@ -122,14 +122,14 @@ imageBatches:
         started_processing_at: "2019-05-07 22:42:55.209635"
       - id: "solo-account-image-watch-3"
         batch_id: "solo-account-image-batch-watch-1"
-        image_name: "localhost:32000/ship-cluster-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
+        image_name: "localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
         checked_at: "2019-05-07 22:43:05.058779"
         is_private: true
         versions_behind: 0
         detected_version: "c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
         latest_version: ""
         compatible_version: ""
-        check_error: 'list tags: Get https://index.docker.io/v2/localhost:32000/ship-cluster-worker/tags/list: http: non-successful response (status=401 body="{"errors":[{"code":"UNAUTHORIZED","message":"authentication required","detail":[{"Type":"repository","Class":"","Name":"localhost:32000/ship-cluster-worker","Action":"pull"}]}]}\n")'
-        docker_pullable: "docker-pullable://localhost:32000/ship-cluster-worker@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
+        check_error: 'list tags: Get https://index.docker.io/v2/localhost:32000/kotsadm-worker/tags/list: http: non-successful response (status=401 body="{"errors":[{"code":"UNAUTHORIZED","message":"authentication required","detail":[{"Type":"repository","Class":"","Name":"localhost:32000/kotsadm-worker","Action":"pull"}]}]}\n")'
+        docker_pullable: "docker-pullable://localhost:32000/kotsadm-worker@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
         path: ""
         started_processing_at: "2019-05-07 22:42:55.209635"

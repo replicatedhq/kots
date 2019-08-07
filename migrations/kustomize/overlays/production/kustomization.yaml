@@ -3,4 +3,4 @@ bases:
 
 resources:
   - ./database.yaml
-  - ./ship-cluster-postgres.yaml
+  - ./kotsadm-postgres.yaml

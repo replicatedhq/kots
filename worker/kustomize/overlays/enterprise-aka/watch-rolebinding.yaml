@@ -5,5 +5,5 @@ metadata:
   name: watch-worker-get-namespaces
 subjects:
 - kind: ServiceAccount
-  name: ship-cluster-worker-watch
+  name: kotsadm-worker-watch
   namespace: '{{repl Namespace}}'

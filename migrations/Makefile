@@ -1,5 +1,5 @@
 SHELL:=/bin/bash
-PROJECT_NAME ?= ship-cluster-migrations
+PROJECT_NAME ?= kotsadm-migrations
 
 .PHONY: test
 test:

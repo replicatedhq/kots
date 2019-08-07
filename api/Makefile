@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= ship-cluster-api
+PROJECT_NAME ?= kotsadm-api
 
 .PHONY: deps
 deps:
@@ -28,7 +28,7 @@ run-debug:
 
 .PHONY: can-i-deploy
 can-i-deploy:
-	pact-broker can-i-deploy --pacticipant ship-cluster-api --broker-base-url https://replicated-pact-broker.herokuapp.com --latest
+	pact-broker can-i-deploy --pacticipant kotsadm-api --broker-base-url https://replicated-pact-broker.herokuapp.com --latest
 
 .PHONY: test-and-publish
 test-and-publish: export POSTGRES_URI = postgresql://shipcloud:password@postgres:5432/shipcloud?connect_timeout=10&application_name=ship&sslmode=disable
@@ -66,7 +66,7 @@ test:
 .PHONY: pkg
 pkg:
 	mkdir -p bin
-	npx pkg -t node8.11.3 --options no-deprecation --output bin/ship-cluster-api .
+	npx pkg -t node8.11.3 --options no-deprecation --output bin/kotsadm-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
 
 .PHONY: build-cache
@@ -101,7 +101,7 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
-publish-production: GITOPS_FILENAME = ship-cluster-api
+publish-production: GITOPS_FILENAME = kotsadm-api
 publish-production: build_and_publish
 
 .PHONY: publish-staging
@@ -110,7 +110,7 @@ publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
 publish-staging: GITOPS_BRANCH = master
-publish-staging: GITOPS_FILENAME = ship-cluster-api
+publish-staging: GITOPS_FILENAME = kotsadm-api
 publish-staging: build_and_publish
 
 .PHONY: publish-enterprise
@@ -119,7 +119,7 @@ publish-enterprise: OVERLAY = enterprise
 publish-enterprise: GITOPS_OWNER = replicatedhq
 publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: GITOPS_FILENAME = ship-cluster-api
+publish-enterprise: GITOPS_FILENAME = kotsadm-api
 publish-enterprise: build_and_publish
 
 .PHONY: publish-enterprise-aka
@@ -128,7 +128,7 @@ publish-enterprise-aka: OVERLAY = enterprise-aka
 publish-enterprise-aka: GITOPS_OWNER = replicatedhq
 publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise-aka: GITOPS_BRANCH = master
-publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-api-aka
+publish-enterprise-aka: GITOPS_FILENAME = kotsadm-api-aka
 publish-enterprise-aka: build_and_publish
 
 build_and_publish:

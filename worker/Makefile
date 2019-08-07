@@ -3,7 +3,7 @@
 export GO111MODULE=off
 
 SHELL := /bin/bash -o pipefail
-PROJECT_NAME ?= ship-cluster-worker
+PROJECT_NAME ?= kotsadm-worker
 
 SRC = $(shell find . -name "*.go")
 
@@ -31,7 +31,7 @@ clean:
 
 .PHONY: run
 run: build
-	LOG_LEVEL=$(LOG_LEVEL) ./bin/ship-cluster-worker init
+	LOG_LEVEL=$(LOG_LEVEL) ./bin/kotsadm-worker init
 
 .PHONY: build-deps
 build-deps:
@@ -60,16 +60,17 @@ vet: lint
 test:
 	time go test ./pkg/... | grep -v '?'
 
-.PHONY: bin/ship-cluster-worker
-bin/ship-cluster-worker: $(SRC)
+.PHONY: bin/kotsadm-worker
+bin/kotsadm-worker: $(SRC)
 	time go build -i \
 		${LDFLAGS} \
-		-o bin/ship-cluster-worker \
+		-o bin/kotsadm-worker \
 		./cmd/ship-cluster-worker
-	@echo built bin/ship-cluster-worker
+		# TODO: re-name repo to kotsadm-worker and change line 68
+	@echo built bin/kotsadm-worker
 
 .PHONY: build
-build: bin/ship-cluster-worker
+build: bin/kotsadm-worker
 
 .PHONY: build-staging
 build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
@@ -94,7 +95,7 @@ publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
 publish-production: GITOPS_BRANCH = release
-publish-production: GITOPS_FILENAME = ship-cluster-worker
+publish-production: GITOPS_FILENAME = kotsadm-worker
 publish-production: build_and_publish
 
 .PHONY: publish-staging
@@ -103,7 +104,7 @@ publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
 publish-staging: GITOPS_BRANCH = master
-publish-staging: GITOPS_FILENAME = ship-cluster-worker
+publish-staging: GITOPS_FILENAME = kotsadm-worker
 publish-staging: build_and_publish
 
 .PHONY: publish-enterprise
@@ -112,7 +113,7 @@ publish-enterprise: OVERLAY = enterprise
 publish-enterprise: GITOPS_OWNER = replicatedhq
 publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: GITOPS_FILENAME = ship-cluster-worker
+publish-enterprise: GITOPS_FILENAME = kotsadm-worker
 publish-enterprise: build_and_publish
 
 .PHONY: publish-enterprise-aka
@@ -121,7 +122,7 @@ publish-enterprise-aka: OVERLAY = enterprise-aka
 publish-enterprise-aka: GITOPS_OWNER = replicatedhq
 publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise-aka: GITOPS_BRANCH = master
-publish-enterprise-aka: GITOPS_FILENAME = ship-cluster-worker-aka
+publish-enterprise-aka: GITOPS_FILENAME = kotsadm-worker-aka
 publish-enterprise-aka: build_and_publish
 
 build_and_publish:

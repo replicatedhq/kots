@@ -15,8 +15,8 @@ test:
 	cd migrations && docker build -t replicated/ship-cluster-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
 
 	mkdir -p api/pacts
-	cp web/pacts/ship-cluster-ui-ship-cluster-api.json api/pacts/
-	cp ship-cd/pacts/ship-cd-ship-cluster-api.json api/pacts/
+	cp web/pacts/kotsadm-web-kotsadm-api.json api/pacts/
+	cp ship-cd/pacts/ship-cd-kotsadm-api.json api/pacts/
 	make -C api test
 
 	@echo All contract tests have passed.

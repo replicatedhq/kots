@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: analyze-server
   labels:
-    app: ship-cluster-worker-analyze
+    app: kotsadm-worker-analyze
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: analyze-server
   selector:
-    app: ship-cluster-worker-analyze
+    app: kotsadm-worker-analyze

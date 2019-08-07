@@ -43,7 +43,7 @@ export default () => {
     expect(result.data.imageWatches[1].path).to.equal("");
 
     expect(result.data.imageWatches[2].id).to.equal("solo-account-image-watch-3");
-    expect(result.data.imageWatches[2].name).to.equal("localhost:32000/ship-cluster-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e");
+    expect(result.data.imageWatches[2].name).to.equal("localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e");
     expect(result.data.imageWatches[2].isPrivate).to.be.true;
     expect(result.data.imageWatches[2].versionDetected).to.equal("c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e");
     expect(result.data.imageWatches[2].latestVersion).to.equal("");
@@ -99,7 +99,7 @@ export const listImageWatchesInteraction = new Pact.GraphQLInteraction()
           },
           {
             "id": "solo-account-image-watch-3",
-            "name": "localhost:32000/ship-cluster-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
+            "name": "localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
             "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (UTC)"),
             "isPrivate": true,
             "versionDetected": "c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",

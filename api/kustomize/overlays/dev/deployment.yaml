@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-api
+  name: kotsadm-api
 spec:
   template:
     spec:
       containers:
-        - name: ship-cluster-api
+        - name: kotsadm-api
           env:
             - name: SESSION_KEY
               valueFrom:
@@ -52,7 +52,7 @@ spec:
             - name: GITHUB_PRIVATE_KEY_FILE
               value: /keys/github/private-key.pem
             - name: SHIP_API_ENDPOINT
-              value: http://ship-cluster-api.default.svc.cluster.local:3000
+              value: http://kotsadm-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
               value: http://localhost:30065
             - name: GRAPHQL_PREM_ENDPOINT

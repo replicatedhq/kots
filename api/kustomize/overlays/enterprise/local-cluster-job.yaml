@@ -10,7 +10,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: ship-cluster-local-cluster
-          image: registry.replicated.com/ship-enterprise/ship-cluster-api
+          image: registry.replicated.com/ship-enterprise/kotsadm-api
           imagePullPolicy: IfNotPresent
           env:
             - name: SHIP_API_ADVERTISE_ENDPOINT

@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: feature
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: feature
   requires: []
   schema:

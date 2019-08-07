@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ship-cluster-ui-scripts
+  name: kotsadm-web-scripts
 data:
-  start-ship-cluster-ui.sh: |
+  start-kotsadm-web.sh: |
     #!/bin/bash
     sed -i 's/###_GRAPHQL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/graphql/g' /usr/share/nginx/html/index.html
     sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/g' /usr/share/nginx/html/index.html

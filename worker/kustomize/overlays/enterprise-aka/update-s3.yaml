@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-update
+  name: kotsadm-worker-update
 spec:
   template:
     spec:
       containers:
-        - name: ship-cluster-worker
+        - name: kotsadm-worker
           env:
             - name: S3_ENDPOINT
               value: |

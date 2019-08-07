@@ -13,7 +13,7 @@ import (
 // RootCmd represents the base command when called without any subcommands
 func RootCmd(c *config.Config, out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "ship-cluster-worker",
+		Use:          "kotsadm-worker",
 		Short:        "run a ship cloud worker",
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

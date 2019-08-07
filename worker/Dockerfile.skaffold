@@ -7,6 +7,7 @@ ADD pkg pkg
 ADD vendor vendor
 ADD Makefile .
 RUN make build
-RUN cp ./bin/ship-cluster-worker /opt/ship-cluster-worker
 
-ENTRYPOINT ["/opt/ship-cluster-worker"]
+RUN cp ./bin/kotsadm-worker /opt/kotsadm-worker
+
+ENTRYPOINT ["/opt/kotsadm-worker"]

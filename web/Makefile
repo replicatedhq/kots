@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= ship-cluster-ui
+PROJECT_NAME ?= kotsadm-web
 
 #paths within WSL start with /mnt/c/...
 #docker does not recognize this fact
@@ -21,7 +21,7 @@ clean:
 
 .PHONY: test
 test:
-	rm -rf pacts/ship-cluster-ui-ship-cluster-api.json
+	rm -rf pacts/kotsadm-web-kotsadm-api.json
 	yarn test
 	yarn test:unit
 

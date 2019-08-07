@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-ui
+  name: kotsadm-web
 spec:
   template:
     spec:
       containers:
-        - name: ship-cluster-ui
+        - name: kotsadm-web
           ports:
             - name: http
               containerPort: 8000
