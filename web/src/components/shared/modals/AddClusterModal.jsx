@@ -21,7 +21,7 @@ class AddNewClusterModal extends React.Component {
     const { watch, history } = this.props;
     const { selectedCluster, githubPath } = this.state;
 
-    if (watch.hasPreflight) {
+    if (watch?.hasPreflight) {
       history.push(`/preflight/${watch.slug}/${selectedCluster.slug}${githubPath
         ? `?path=${encodeURI(githubPath)}`
         : ""
