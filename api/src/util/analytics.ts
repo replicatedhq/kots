@@ -27,7 +27,7 @@ export function trackNewUser(params: Params, userId: string, event: string, user
   });
 };
 
-export function trackUserClusterCreated(params: Params, userId: string, event: string, properties?: string) {
+export function trackUserClusterCreated(params: Params, userId: string, event: string, properties: string) {
   const analytics = getAnalytics(params);
   analytics.track({
     userId: userId,
