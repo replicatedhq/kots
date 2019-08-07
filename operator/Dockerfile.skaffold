@@ -1,0 +1,14 @@
+FROM golang:1.12 as deps
+RUN go get -u github.com/golang/dep/cmd/dep
+RUN go get github.com/sqs/goreturns
+RUN go get -u golang.org/x/lint/golint
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/ship-cluster/operator
+WORKDIR $PROJECTPATH
+ADD . $PROJECTPATH
+
+RUN make bin
+
+RUN cp ./bin/kotsadm-operator /opt/kotsadm-operator
+
+ENTRYPOINT ["/opt/kotsadm-operator"]

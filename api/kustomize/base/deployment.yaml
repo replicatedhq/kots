@@ -49,8 +49,8 @@ spec:
             - name: debug
               containerPort: 9229
           env:
-            - name: TRACER_NAME
-              value: ship-cluster-api
+            - name: AUTO_CREATE_CLUSTER
+              value: "0"
           readinessProbe:
             httpGet:
               path: /healthz

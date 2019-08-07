@@ -1,6 +1,7 @@
 
 SHELL := /bin/bash -o pipefail
 PROJECT_NAME ?= kotsadm-opetator
+export GO111MODULE=on
 
 .PHONY: publish-pact
 publish-pact:

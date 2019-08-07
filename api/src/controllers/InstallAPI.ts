@@ -16,7 +16,7 @@ export class InstallAPI {
       return;
     }
 
-    const manifests = await request.app.locals.stores.clusterStore.getShipInstallationManifests(cluster.id!);
+    const manifests = await request.app.locals.stores.clusterStore.getOperatorInstallationManifests(cluster.id!);
 
     response.setHeader("Content-Type", "text/plain");
     response.send(`${manifests}`);

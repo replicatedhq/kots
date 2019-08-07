@@ -3,7 +3,6 @@ resources:
 - ./deployment-update.yaml
 - ./deployment-edit.yaml
 - ./deployment-watch.yaml
-- ./deployment-image.yaml
 - ./deployment-analyze.yaml
 - ./service-init.yaml
 - ./service-update.yaml
