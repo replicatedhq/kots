@@ -11,7 +11,10 @@ class CodeSnippet extends Component {
   }
 
   static propTypes = {
-    children: PropTypes.string.isRequired,
+    children: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.arrayOf(PropTypes.string)
+    ]).isRequired,
     canCopy: PropTypes.bool,
     preText: PropTypes.node,
     language: PropTypes.string,
@@ -26,9 +29,11 @@ class CodeSnippet extends Component {
 
   copySnippet = () => {
     const { children, copyDelay } = this.props;
-
+    const textToCopy = Array.isArray(children)
+      ? children.join("\n")
+      : children
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(children).then(() => {
+      navigator.clipboard.writeText(textToCopy).then(() => {
         this.setState({ didCopy: true });
 
         setTimeout(() => {
@@ -56,11 +61,14 @@ class CodeSnippet extends Component {
           {preText && React.isValidElement(preText)
             ? preText
             : (
-              <div className="u-fontSize--small u-fontWeight--bold">{preText}</div>
+              <div className="u-fontSize--small u-fontWeight--bold u-marginBottom--5">{preText}</div>
             )
           }
           <Prism language={language}>
-            {children}
+            {Array.isArray(children)
+              ? children.join("\n")
+              : children
+            }
           </Prism>
           {canCopy && (
             <span className="CodeSnippet-copy u-fontWeight--bold" onClick={this.copySnippet}>
