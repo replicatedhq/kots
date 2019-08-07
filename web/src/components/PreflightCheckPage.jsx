@@ -3,11 +3,12 @@ import { withRouter } from "react-router-dom";
 import { graphql, withApollo, compose } from "react-apollo";
 import classNames from "classnames";
 
-import {listPreflightResults } from "@src/queries/WatchQueries";
+import { listPreflightResults, getWatch } from "@src/queries/WatchQueries";
 import CodeSnippet from "./shared/CodeSnippet";
 import TabView, { Tab } from "./shared/TabView";
 
 import "@src/scss/components/PreflightCheckPage.scss";
+import { listClusters } from "../queries/ClusterQueries";
 
 class PreflightChecksPage extends Component {
   state = {
@@ -45,11 +46,30 @@ class PreflightChecksPage extends Component {
     }
   }
 
-  createDownstreamCluster = () => {
+  createDownstreamCluster = async () => {
+    const { history, getWatchQuery, match } = this.props;
+    const watch = getWatchQuery?.getWatch;
 
-    // const { history } = this.props;
-    // const upstreamUrl = "ship://ship-cloud/${}"
-    // history.replace(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
+    if (!watch) {
+      // TODO: Throw an error. User is going too fast for graphql.
+      return;
+    }
+    const searchParams = new URLSearchParams(location.search);
+    const gitPath = searchParams.get("path");
+    const upstreamUrl = `ship://ship-cloud/${match.params.owner}/${match.params.name}`;
+    const queryResult = await this.props.client.query({
+      query: listClusters
+    });
+    const cluster = queryResult.data.listClusters.find( c => c.slug === match.params.downstream );
+    if (!cluster) {
+      // TODO: Cant find cluster. Make a Graphql query to fetch an individual cluster instead of searching like this.
+      return;
+    }
+
+    history.replace(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${cluster.id}${gitPath
+      ? `&path=${gitPath}`
+      : ""
+    }`);
   }
 
   render() {
@@ -167,7 +187,7 @@ class PreflightChecksPage extends Component {
         <div className="flex-auto flex justifyContent--flexEnd">
           <button
             type="button"
-            className="btn primary red u-marginRight--30 u-marginBottom--15"
+            className="btn primary u-marginRight--30 u-marginBottom--15"
             onClick={this.createDownstreamCluster}
           >
               { showPreflightResults ? "Create Downstream Cluster" : "Skip this step" }
@@ -181,6 +201,17 @@ class PreflightChecksPage extends Component {
 export default compose(
   withRouter,
   withApollo,
+  graphql(getWatch, {
+    name: "getWatchQuery",
+    options: props => {
+      const { match } = props;
+      return {
+        variables: {
+          slug: `${match.params.owner}/${match.params.name}`
+        }
+      }
+    }
+  }),
   graphql(listPreflightResults, {
     name: "listPreflightResultsQuery",
     options: props => {
