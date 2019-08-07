@@ -2,7 +2,7 @@ import * as React from "react";
 import trim from "trim";
 import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
+import { compose, withApollo, graphql } from "react-apollo";
 
 import Select from "react-select";
 import Clipboard from "clipboard";
@@ -10,6 +10,8 @@ import Modal from "react-modal";
 
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
+
+import { listSupportBundles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
@@ -133,7 +135,6 @@ class GenerateSupportBundle extends React.Component {
     const { clusters, selectedCluster, showToast, copySuccess, copyMessage, addNewClusterModal, displayUploadModal } = this.state;
     const { watch } = this.props;
     const selectedWatch = watch ?.watches.find((watch) => watch.cluster.id === selectedCluster.id);
-    
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
@@ -141,10 +142,12 @@ class GenerateSupportBundle extends React.Component {
           <title>{`${watch.watchName} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
-          <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link>
+          {!watch?.watches.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
+            <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
+           }
           <div className="u-marginTop--15">
-            <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze your application for support</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with your application, you can run analysis on your cluster to receive insights that can be shared with your vendor for support.</p>
+            <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {watch.watchName} for support</h2>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with {watch.watchName}, you can analyze the current state to receive insights that are useful to remediate or to share with the application vendor for support.</p>
           </div>
           {watch ?.watches.length ?
             <div className="flex1 flex-column u-paddingRight--30">
@@ -188,8 +191,8 @@ class GenerateSupportBundle extends React.Component {
                     </div>
                   </div>
                 </div>
-                <div className="u-marginTop--15"> 
-                <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
+                <div className="u-marginTop--15">
+                  <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
                 </div>
               </div>
             </div>
@@ -246,7 +249,7 @@ class GenerateSupportBundle extends React.Component {
           <div className="Modal-body">
             <UploadSupportBundleModal
               watch={this.props.watch}
-              bundleCommand={selectedWatch?.bundleCommand}
+              bundleCommand={selectedWatch ?.bundleCommand}
               submitCallback={(bundleId) => {
                 this.props.history.push(`/watch/${this.props.match.params.owner}/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`);
               }}
@@ -259,5 +262,16 @@ class GenerateSupportBundle extends React.Component {
 }
 
 export default withRouter(compose(
-  withApollo
+  withApollo,
+  graphql(listSupportBundles, {
+    name: "listSupportBundles",
+    options: props => {
+      return {
+        variables: {
+          watchSlug: props.watch.slug
+        },
+        fetchPolicy: "no-cache",
+      }
+    }
+  }),
 )(GenerateSupportBundle));
