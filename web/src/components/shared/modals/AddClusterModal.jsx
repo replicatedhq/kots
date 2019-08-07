@@ -1,4 +1,5 @@
 import * as React from "react";
+import { withRouter } from "react-router-dom";
 import { compose, graphql, withApollo } from "react-apollo";
 import { listClusters } from "../../../queries/ClusterQueries";
 import Select from "react-select";
@@ -17,7 +18,18 @@ class AddNewClusterModal extends React.Component {
   };
 
   onSubmit = () => {
-    this.props.onAddCluster(this.state.selectedCluster.value, this.state.githubPath);
+    const { watch, history } = this.props;
+    const { selectedCluster, githubPath } = this.state;
+
+    if (watch.hasPreflight) {
+      history.push(`/preflight/${watch.slug}/${selectedCluster.slug}${githubPath
+        ? `?path=${encodeURI(githubPath)}`
+        : ""
+      }`);
+    } else {
+      this.props.onAddCluster(selectedCluster.value, githubPath);
+    }
+
   }
 
   handleEnterPress = (e) => {
@@ -65,16 +77,18 @@ class AddNewClusterModal extends React.Component {
   }
 
   render() {
-    const { 
+    const {
       existingDeploymentClusters,
       listClustersQuery
     } = this.props;
+
     let options = [];
     if (listClustersQuery?.listClusters) {
       options = this.props.listClustersQuery.listClusters.filter((cluster) => !existingDeploymentClusters.includes(cluster.id)).map((cluster) => {
         return ({
           value: cluster.id,
           label: cluster.title,
+          slug: cluster.slug,
           type: cluster.gitOpsRef ? "git" : "ship"
         })
       });
@@ -145,7 +159,8 @@ class AddNewClusterModal extends React.Component {
 
 export default compose(
   withApollo,
-  graphql(listClusters, { 
+  withRouter,
+  graphql(listClusters, {
     name: "listClustersQuery",
     options: {
       fetchPolicy: "network-only"

@@ -133,15 +133,7 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
-
-    /////////
-    // before adding commit_sha, some pending versions don't have them
-    /////////
-    await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
-    ////////
-    // end of pre-commit-sha compatibility code
-    ////////
-
+    let commitShaFound = false;
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
         continue;
@@ -180,6 +172,8 @@ export class GitHubHookAPI {
             return new Date(commit.committed_at);
           });
 
+          commitShaFound = sortedCommits.length > 0;
+
           for (const commit of sortedCommits) {
             const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
             if (!pendingVersion) {
@@ -207,6 +201,16 @@ export class GitHubHookAPI {
         }
       }
     }
+
+    /////////
+    // before adding commit_sha, some pending versions don't have them
+    /////////
+    if (!commitShaFound) {
+      await handlePullRequestEventForVersionsWithoutCommitSha(clusters, request, pullRequestEvent, status);
+    }
+    ////////
+    // end of pre-commit-sha compatibility code
+    ////////
   }
 }
 
@@ -241,13 +245,13 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
   for (const cluster of clusters) {
     const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
     for (const watch of watches) {
-      const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!, true);
+      const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
       for (const pendingVersion of pendingVersions) {
         if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
           await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
           if (pullRequestEvent.pull_request.merged) {
             // When a pull request closes multiple commits, the order in which hooks come in is random.
-            // We should not update the current ssequence to something lower than what it already is.
+            // We should not update the current sequence to something lower than what it already is.
             // This will create a bug where we show a PR as not merged but GH will show it as merged
             // because they automatically do it. This will be fixed when we verify commit sha's on our end.
             if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
@@ -255,6 +259,7 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
             }
             await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.pull_request.merged_at);
           }
+
           return;
         }
       }
@@ -269,7 +274,6 @@ async function handlePullRequestEventForVersionsWithoutCommitSha(clusters: Clust
           return;
         }
       }
-
     }
   }
 }

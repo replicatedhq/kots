@@ -15,6 +15,7 @@ import VersionHistory from "./components/watches/VersionHistory";
 import DiffShipReleases from "./components/watches/DiffShipReleases";
 import DiffGitHubReleases from "./components/watches/DiffGitHubReleases";
 import StateFileViewer from "./components/state/StateFileViewer";
+import PreflightCheckPage from "./components/PreflightCheckPage";
 import Ship from "./components/Ship";
 import ShipInitPre from "./components/ShipInitPre";
 import ShipUnfork from "./components/ShipUnfork";
@@ -248,6 +249,7 @@ class Root extends Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
+                    <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute

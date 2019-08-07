@@ -217,6 +217,7 @@ export const getWatch = gql`
       createdOn
       lastUpdated
       metadata
+      hasPreflight
       entitlements {
         key
         value
@@ -849,3 +850,14 @@ export const getFilesRaw = `
 `;
 
 export const getFiles = gql(getFilesRaw)
+
+export const listPreflightResultsRaw = `
+  query listPreflightResults($watchId: String, $slug: String) {
+    listPreflightResults(watchId: $watchId, slug: $slug) {
+      result
+      createdAt
+    }
+  }
+`;
+
+export const listPreflightResults = gql(listPreflightResultsRaw);

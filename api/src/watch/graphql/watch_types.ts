@@ -22,6 +22,7 @@ const Watch = `
     entitlements: [Entitlement]
     lastUpdateCheck: String
     bundleCommand: String
+    hasPreflight: Boolean
   }
 `;
 

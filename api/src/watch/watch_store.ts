@@ -75,12 +75,11 @@ export class WatchStore {
   }
 
   async updateVersionStatus(watchId: string, sequence: number, status: string): Promise<void> {
-    const q = `update watch_version set status = $1, last_synced_at = $4 where watch_id = $2 and sequence = $3`;
+    const q = `update watch_version set status = $1, last_synced_at = current_timestamp where watch_id = $2 and sequence = $3`;
     const v = [
       status,
       watchId,
       sequence,
-      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);
@@ -152,6 +151,22 @@ export class WatchStore {
     return versionItems;
   }
 
+  async getOneVersionCommit(watchId: string, sequence: number): Promise<string> {
+    const q = `select commit_sha from watch_version where watch_id = $1 and sequence = $2`;
+    const v = [
+      watchId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rowCount === 0) {
+      throw new ReplicatedError("Watch version not found");
+    }
+
+    return result.rows[0].commit_sha;
+  }
+
   async getVersionForCommit(watchId: string, commitSha: string): Promise<Version|undefined> {
     const q = `select created_at, version_label, status, sequence, pullrequest_number, deployed_at from watch_version where watch_id = $1 and commit_sha = $2`;
     const v = [
@@ -168,7 +183,7 @@ export class WatchStore {
     return this.mapWatchVersion(result.rows[0]);
   }
 
-  async listPendingVersions(watchId: string, withoutCommitShas?: boolean): Promise<Version[]> {
+  async listPendingVersions(watchId: string): Promise<Version[]> {
     let q = `select current_sequence from watch where id = $1`;
     let v = [
       watchId,
@@ -186,7 +201,6 @@ export class WatchStore {
 select created_at, version_label, status, sequence, pullrequest_number, deployed_at
 from watch_version
 where watch_id = $1 and sequence > $2
-  ${withoutCommitShas ? "and (commit_sha = '' or commit_sha is null)" : ""}
 order by sequence desc`;
     v = [
       watchId,
@@ -204,7 +218,7 @@ order by sequence desc`;
   }
 
   async createWatchVersion(watchId: string, createdAt: any, versionLabel: string, status: string, sourceBranch: string, sequence: number, pullRequestNumber: number): Promise<Version | void> {
-    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, last_synced_at) values ($1, $2, $3, $4, $5, $6, $7, $8)`;
+    const q = `insert into watch_version (watch_id, created_at, version_label, status, source_branch, sequence, pullrequest_number, last_synced_at) values ($1, $2, $3, $4, $5, $6, $7, current_timestamp)`;
     const v = [
       watchId,
       createdAt,
@@ -213,7 +227,6 @@ order by sequence desc`;
       sourceBranch,
       sequence,
       pullRequestNumber,
-      new Date().toDateString(),
     ];
 
     await this.pool.query(q, v);
@@ -355,12 +368,41 @@ order by sequence desc`;
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata, last_watch_check_at from watch where id = $1";
-    const v = [id];
+    const watchQuery = `
+      SELECT
+        id,
+        current_state,
+        title,
+        icon_uri,
+        slug,
+        created_at,
+        updated_at,
+        metadata,
+        last_watch_check_at FROM watch WHERE id = $1`;
 
-    const result = await this.pool.query(q, v);
-    const watches = result.rows.map(row => this.mapWatch(row));
-    const watch = watches[0];
+    const watchQueryResults = await this.pool.query(watchQuery, [id]);
+
+    if (watchQueryResults.rowCount === 0) {
+      throw new ReplicatedError(`Couldn't find watch with watch_id of ${id}`);
+    }
+    // Get preflight spec for this watch
+    const preflightQuery =
+      `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
+
+    const preflightResults = await this.pool.query(preflightQuery, [ id ]);
+
+    const watch = new Watch();
+    watch.id = watchQueryResults.rows[0].id;
+    watch.stateJSON = watchQueryResults.rows[0].current_state;
+    watch.watchName = parseWatchName(watchQueryResults.rows[0].title)
+    watch.slug = watchQueryResults.rows[0].slug;
+    watch.watchIcon = watchQueryResults.rows[0].icon_uri;
+    watch.lastUpdated = watchQueryResults.rows[0].updated_at;
+    watch.createdOn = watchQueryResults.rows[0].created_at;
+    watch.metadata = watchQueryResults.rows[0].metadata;
+    watch.lastUpdateCheck = watchQueryResults.rows[0].last_watch_check_at;
+    // pgQueryResult.count returns a string by design
+    watch.hasPreflight = preflightResults.rows[0].count !== "0";
 
     return watch;
   }
@@ -591,8 +633,24 @@ order by sequence desc`;
     const result = await this.pool.query(q, v);
     const watches: Watch[] = [];
     for (const row of result.rows) {
-      const result = this.mapWatch(row);
-      watches.push(result);
+      const hasPreflightQuery = `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
+      const hasPreflightResult = await this.pool.query(hasPreflightQuery, [ row.id ]);
+
+      const parsedWatchName = parseWatchName(row.title);
+      const watch = new Watch();
+      watch.id = row.id;
+      watch.stateJSON = row.current_state;
+      watch.watchName = parsedWatchName;
+      watch.slug = row.slug;
+      watch.watchIcon = row.icon_uri;
+      watch.lastUpdated = row.updated_at;
+      watch.createdOn = row.created_at;
+      watch.metadata = row.metadata;
+      watch.lastUpdateCheck = row.last_watch_check_at;
+      // pgQueryResult.count returns a string by design
+      watch.hasPreflight = hasPreflightResult.rows[0].count !== "0";
+
+      watches.push(watch);
     }
     return watches;
   }
@@ -757,22 +815,6 @@ order by sequence desc`;
       contributors.push(result);
     }
     return contributors;
-  }
-
-  private mapWatch(row: any): Watch {
-    const parsedWatchName = parseWatchName(row.title);
-    const watch = new Watch();
-    watch.id = row.id;
-    watch.stateJSON = row.current_state;
-    watch.watchName = parsedWatchName;
-    watch.slug = row.slug;
-    watch.watchIcon = row.icon_uri;
-    watch.lastUpdated = row.updated_at;
-    watch.createdOn = row.created_at;
-    watch.metadata = row.metadata;
-    watch.lastUpdateCheck = row.last_watch_check_at;
-
-    return watch;
   }
 
   private mapGeneratedFile(row: any): GeneratedFile {

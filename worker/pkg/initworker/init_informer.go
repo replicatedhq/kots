@@ -124,7 +124,47 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 		}
 
 		if shipCloudRole == "init" {
-			return w.initSessionToWatch(id, newPod, stateJSON)
+			if err := w.initSessionToWatch(id, newPod, stateJSON); err != nil {
+				return errors.Wrap(err, "init session to watch")
+			}
+
+			// Get the file from s3
+			s3Filepath := fmt.Sprintf("%s/%d.tar.gz", id, 0)
+			filename, err := w.Store.DownloadFromS3(context.TODO(), s3Filepath)
+			if err != nil {
+				return errors.Wrap(err, "download from s3")
+			}
+			defer os.RemoveAll(filename)
+
+			file, err := os.Open(filename)
+			if err != nil {
+				return errors.Wrap(err, "open archive file")
+			}
+			defer file.Close()
+
+			_, renderedContents, err := util.FindRendered(file)
+			if err != nil {
+				return errors.Wrap(err, "find rendered")
+			}
+
+			splitRenderedContents := strings.Split(renderedContents, "\n---\n")
+			troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+			for _, splitRenderedContent := range splitRenderedContents {
+				decode := scheme.Codecs.UniversalDeserializer().Decode
+				_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
+				if err != nil {
+					// ignore errors here
+					w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
+					continue
+				}
+
+				if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {
+					if err := w.Store.SetWatchVersionPreflightSpec(context.TODO(), id, 0, splitRenderedContent); err != nil {
+						return errors.Wrap(err, "set preflight spec in db")
+					}
+				}
+			}
+
 		} else if shipCloudRole == "unfork" {
 			return w.unforkSessionToWatch(id, newPod, stateJSON)
 		}
