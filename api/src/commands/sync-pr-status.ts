@@ -160,7 +160,7 @@ async function main(argv): Promise<any> {
         }
       }
     } catch (error) {
-      console.log(errorText(`Failed to update PR: https://github.com/${version.clusterOwner}/${version.clusterRepo}/pull/${version.pullrequestNumber}`));
+      console.log(errorText(`Failed to update PR https://github.com/${version.clusterOwner}/${version.clusterRepo}/pull/${version.pullrequestNumber}: ${error}`));
       continue;
     }
     i++;
