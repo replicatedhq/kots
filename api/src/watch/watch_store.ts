@@ -401,7 +401,7 @@ order by sequence desc`;
     watch.createdOn = watchQueryResults.rows[0].created_at;
     watch.metadata = watchQueryResults.rows[0].metadata;
     watch.lastUpdateCheck = watchQueryResults.rows[0].last_watch_check_at;
-    watch.hasPreflight = Boolean(preflightResults.rows[0].count);
+    watch.hasPreflight = Boolean(+preflightResults.rows[0].count);
 
     return watch;
   }
@@ -646,7 +646,7 @@ order by sequence desc`;
       watch.createdOn = row.created_at;
       watch.metadata = row.metadata;
       watch.lastUpdateCheck = row.last_watch_check_at;
-      watch.hasPreflight = Boolean(hasPreflightResult.rows[0].count);
+      watch.hasPreflight = Boolean(+hasPreflightResult.rows[0].count);
 
       watches.push(watch);
     }
