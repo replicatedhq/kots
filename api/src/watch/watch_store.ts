@@ -368,12 +368,40 @@ order by sequence desc`;
   }
 
   async getWatch(id: string): Promise<Watch> {
-    const q = "select id, current_state, title, icon_uri, slug, created_at, updated_at, metadata, last_watch_check_at from watch where id = $1";
-    const v = [id];
+    const watchQuery = `
+      SELECT
+        id,
+        current_state,
+        title,
+        icon_uri,
+        slug,
+        created_at,
+        updated_at,
+        metadata,
+        last_watch_check_at FROM watch WHERE id = $1`;
 
-    const result = await this.pool.query(q, v);
-    const watches = result.rows.map(row => this.mapWatch(row));
-    const watch = watches[0];
+    const watchQueryResults = await this.pool.query(watchQuery, [id]);
+
+    if (watchQueryResults.rowCount === 0) {
+      throw new ReplicatedError(`Couldn't find watch with watch_id of ${id}`);
+    }
+    // Get preflight spec for this watch
+    const preflightQuery =
+      `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
+
+    const preflightResults = await this.pool.query(preflightQuery, [ id ]);
+
+    const watch = new Watch();
+    watch.id = watchQueryResults.rows[0].id;
+    watch.stateJSON = watchQueryResults.rows[0].current_state;
+    watch.watchName = parseWatchName(watchQueryResults.rows[0].title)
+    watch.slug = watchQueryResults.rows[0].slug;
+    watch.watchIcon = watchQueryResults.rows[0].icon_uri;
+    watch.lastUpdated = watchQueryResults.rows[0].updated_at;
+    watch.createdOn = watchQueryResults.rows[0].created_at;
+    watch.metadata = watchQueryResults.rows[0].metadata;
+    watch.lastUpdateCheck = watchQueryResults.rows[0].last_watch_check_at;
+    watch.hasPreflight = Boolean(preflightResults.rows[0].count);
 
     return watch;
   }
@@ -604,8 +632,23 @@ order by sequence desc`;
     const result = await this.pool.query(q, v);
     const watches: Watch[] = [];
     for (const row of result.rows) {
-      const result = this.mapWatch(row);
-      watches.push(result);
+      const hasPreflightQuery = `SELECT COUNT(1) FROM preflight_spec WHERE watch_id = $1`;
+      const hasPreflightResult = await this.pool.query(hasPreflightQuery, [ row.id ]);
+
+      const parsedWatchName = parseWatchName(row.title);
+      const watch = new Watch();
+      watch.id = row.id;
+      watch.stateJSON = row.current_state;
+      watch.watchName = parsedWatchName;
+      watch.slug = row.slug;
+      watch.watchIcon = row.icon_uri;
+      watch.lastUpdated = row.updated_at;
+      watch.createdOn = row.created_at;
+      watch.metadata = row.metadata;
+      watch.lastUpdateCheck = row.last_watch_check_at;
+      watch.hasPreflight = Boolean(hasPreflightResult.rows[0].count);
+
+      watches.push(watch);
     }
     return watches;
   }
@@ -770,22 +813,6 @@ order by sequence desc`;
       contributors.push(result);
     }
     return contributors;
-  }
-
-  private mapWatch(row: any): Watch {
-    const parsedWatchName = parseWatchName(row.title);
-    const watch = new Watch();
-    watch.id = row.id;
-    watch.stateJSON = row.current_state;
-    watch.watchName = parsedWatchName;
-    watch.slug = row.slug;
-    watch.watchIcon = row.icon_uri;
-    watch.lastUpdated = row.updated_at;
-    watch.createdOn = row.created_at;
-    watch.metadata = row.metadata;
-    watch.lastUpdateCheck = row.last_watch_check_at;
-
-    return watch;
   }
 
   private mapGeneratedFile(row: any): GeneratedFile {

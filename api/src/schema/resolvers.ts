@@ -16,6 +16,7 @@ import { GithubInstallationQueries, GithubInstallationMutations } from "../githu
 import { HelmChartQueries, HelmChartMutations } from "../helmchart";
 import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
 import { LicenseQueries, LicenseMutations } from "../license";
+import { PrefightQueries } from "../preflight";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
@@ -35,6 +36,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...ImageWatchQueries(stores),
     ...TroubleshootQueries(stores),
     ...LicenseQueries(stores),
+    ...PrefightQueries(stores),
   },
 
   Mutation: {

@@ -35,6 +35,7 @@ export class Watch {
   public entitlements?: Array<Entitlement>;
   public lastUpdateCheck: string;
   public bundleCommand?: string;
+  public hasPreflight: boolean;
 
   // Watch Cluster Methods
   public async getCluster(stores: Stores): Promise<Cluster | void> {
@@ -219,7 +220,7 @@ export class Watch {
       config: async () => this.generateConfigGroups(this.stateJSON),
       entitlements: async () => this.getEntitlementsWithNames(stores),
       bundleCommand: async () => TroubleshootQueries(stores).getSupportBundleCommand(root, { watchSlug: this.slug }, context)
-    }; 
+    };
   }
 }
 

@@ -17,6 +17,7 @@ import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
+import { PreflightStore } from "../preflight/preflight_store";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -37,5 +38,6 @@ export interface Stores {
   helmChartStore: HelmChartStore,
   troubleshootStore: TroubleshootStore,
   licenseStore: LicenseStore,
-  githubInstall: GithubInstallationsStore
+  githubInstall: GithubInstallationsStore,
+  preflightStore: PreflightStore,
 }

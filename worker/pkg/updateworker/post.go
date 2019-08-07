@@ -34,6 +34,33 @@ func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parent
 	if err := w.extractCollectorSpec(watchID, archive); err != nil {
 		return errors.Wrap(err, "extract collector spec")
 	}
+	// Get preflights
+	_, err = archive.Seek(0, 0)
+	if err != nil {
+		return errors.Wrap(err, "failed to seek within archive")
+	}
+
+	_, renderedContents, err := util.FindRendered(archive)
+	if err != nil {
+		return errors.Wrap(err, "find rendered")
+	}
+	splitRenderedContents := strings.Split(renderedContents, "\n---\n")
+	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
+	for _, splitRenderedContent := range splitRenderedContents {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
+		if err != nil {
+			// ignore errors here
+			w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
+			continue
+		}
+
+		if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {
+			if err := w.Store.SetWatchVersionPreflightSpec(context.TODO(), watchID, sequence, splitRenderedContent); err != nil {
+				return errors.Wrap(err, "set preflight spec in db")
+			}
+		}
+	}
 
 	if err := w.triggerIntegrations(watch, sequence, archive, parentSequence); err != nil {
 		return errors.Wrap(err, "trigger integraitons")

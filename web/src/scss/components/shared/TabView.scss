@@ -1,0 +1,16 @@
+.tabview-tabname {
+  padding: 0 8px;
+
+  &:first-child {
+    padding-left: 0;
+  }
+
+  &:last-child {
+    padding-right: 0;
+  }
+
+  &.selected {
+    color: #323232;
+    font-weight: bold;
+  }
+}
