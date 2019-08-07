@@ -5,23 +5,14 @@ import classNames from "classnames";
 
 import { listPreflightResults, getWatch } from "@src/queries/WatchQueries";
 import CodeSnippet from "./shared/CodeSnippet";
-import TabView, { Tab } from "./shared/TabView";
 
 import "@src/scss/components/PreflightCheckPage.scss";
 import { listClusters } from "../queries/ClusterQueries";
 
 class PreflightChecksPage extends Component {
   state = {
-    showPreflightInstructions: false
+    showPreflightResults: false
   }
-
-  togglePreflightInstructions = () => {
-    const { showPreflightInstructions } = this.state;
-    this.setState({
-      showPreflightInstructions: !showPreflightInstructions
-    });
-  }
-
   componentDidUpdate (/* lastProps */) {
     const { listPreflightResultsQuery } = this.props;
     const { initialResultCount, hasInitialResults, showPreflightResults } = this.state;
@@ -73,7 +64,7 @@ class PreflightChecksPage extends Component {
   }
 
   render() {
-    const { showPreflightInstructions, showPreflightResults } = this.state;
+    const { showPreflightResults } = this.state;
 
     return (
       <div className="flex-column flex1">
@@ -123,64 +114,19 @@ class PreflightChecksPage extends Component {
                       <p className="u-marginTop--10 u-marginBottom-10">
                         You will be able to see the results in your terminal window as well as in this UI.
                       </p>
-                      <CodeSnippet className="u-marginTop--10" language="bash" canCopy={true}>
+                      <CodeSnippet
+                        className="u-marginTop--10"
+                        language="bash"
+                        canCopy={true}
+                        preText="If you already have the plugin installed, you can skip the first line"
+                      >
+                        kubectl krew install preflight
                         {`kubectl preflight ${window.env.REST_ENDPOINT}/v1${location.pathname}`}
                       </CodeSnippet>
-                      <div className="section-border flex justifyContent--center u-position--relative u-marginTop--20">
-                        <p
-                          className="preflight-button flex-auto u-fontSize--small u-color--astral u-fontWeight--medium u-cursor--pointer"
-                          onClick={this.togglePreflightInstructions}
-                        >
-                          {showPreflightInstructions
-                            ? "I already have the preflight tool"
-                            : "I need to install the preflight tool"
-                          }
-                        </p>
-                      </div>
-                      {showPreflightInstructions && (
-                        <Fragment>
-                          <p className="u-fontSize--jumbo u-color--tuna u-fontWeight--bold u-marginTop--20">
-                            Install the preflight tool
-                          </p>
-                          <CodeSnippet
-                            className="u-marginTop--10"
-                            preText={(
-                              <span className="u-fontSize--small u-fontWeight--bold">
-                                The best way to install the preflight tool is using Kubernetes package manager
-                                <a target="_blank" rel="noopener noreferrer" href="https://github.com/kubernetes-sigs/krew/"> krew</a>.
-                              </span>
-                            )}
-                            language="bash"
-                            canCopy={true}
-                          >
-                            kubectl krew install preflight
-                          </CodeSnippet>
-                          <TabView
-                            className="u-marginTop--10 hidden"
-                            onTabChange={this.onTabChange}
-                          >
-                            <Tab name="mac" displayText="MacOS">
-                              <CodeSnippet className="u-marginTop--10" language="bash" canCopy={false}>
-                                {"brew tap replicatedhq/troubleshoot\nbrew install replicatedhq/preflight"}
-                              </CodeSnippet>
-                            </Tab>
-                            <Tab name="win" displayText="Windows">
-                              <CodeSnippet className="u-marginTop--10" language="bash" canCopy={false}>
-                                choco install replicatedhq/preflight
-                              </CodeSnippet>
-                            </Tab>
-                            <Tab name="linux" displayText="Linux">
-                              <CodeSnippet className="u-marginTop--10" language="bash" canCopy={false}>
-                                sudo apt-get install replicatedhq/troubleshoot
-                              </CodeSnippet>
-                            </Tab>
-                          </TabView>
-                        </Fragment>
-                      )}
                     </Fragment>
                   )
               }
-        </div>
+            </div>
           </div>
         </div>
         )
