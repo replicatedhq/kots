@@ -17,8 +17,6 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    this.checkBundleStatus();
-
     let isError, isWarn;
     if (this.props.insights !== lastProps.insights && this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -31,11 +29,11 @@ export class AnalyzerInsights extends React.Component {
         this.setState({ filterTiles: "1", insights: insights })
       }
     }
+
+    this.checkBundleStatus();
   }
 
   componentDidMount() {
-    this.checkBundleStatus();
-
     let isError, isWarn;
     if (this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -48,6 +46,8 @@ export class AnalyzerInsights extends React.Component {
         this.setState({ filterTiles: "1", insights: insights })
       }
     }
+
+    this.checkBundleStatus();
   }
 
   checkBundleStatus = () => {
@@ -55,7 +55,9 @@ export class AnalyzerInsights extends React.Component {
 
     // Check if the bundle is ready
     if (!insights) {
-      setTimeout(refetchSupportBundle, 2000);
+      refetchSupportBundle().then( resolved => {
+        setTimeout(this.checkBundleStatus, 2000);
+      });
       return;
     }
   }
