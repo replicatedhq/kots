@@ -30,7 +30,9 @@ export class AnalyzerInsights extends React.Component {
       }
     }
 
-    this.checkBundleStatus();
+    if (this.props.insights) {
+      clearInterval(this.interval);
+    }
   }
 
   componentDidMount() {
@@ -53,13 +55,16 @@ export class AnalyzerInsights extends React.Component {
   checkBundleStatus = () => {
     const { refetchSupportBundle, insights } = this.props;
 
-    // Check if the bundle is ready
+    // Check if the bundle is ready only if the user is on the page
     if (!insights) {
-      refetchSupportBundle().then( resolved => {
-        setTimeout(this.checkBundleStatus, 2000);
-      });
-      return;
+      this.interval = setInterval(refetchSupportBundle, 2000);
+    } else {
+      clearInterval(this.interval);
     }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   handleFilterTiles = (field, e) => {
