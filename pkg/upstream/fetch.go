@@ -31,10 +31,10 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
 	if u.Scheme == "helm" {
-		return downloadHelm(u, fetchOptions.HelmRepoName, fetchOptions.HelmRepoURI)
+		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(upstreamURI)
+		return downloadReplicated(u)
 	}
 	if u.Scheme == "file" {
 		return readFilesFromURI(upstreamURI)

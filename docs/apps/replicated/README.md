@@ -1,0 +1,33 @@
+# Replicated
+
+Kots was built to provide a great experience installing, configuring and updating Replicated apps.
+
+To prepare the latest version of a Replicated app:
+
+```shell
+kubectl kots download replicated://app-slug
+```
+
+Optionally, you can specify the version on the URL. This will download the version requested.
+
+```shell
+kubectl kots download replicated://app-slug@v1.2.0
+```
+
+For disambiguation when there are multiple releases with the same name, use the sequence number:
+
+```shell
+kubectl kots download replicated://app-slug#12
+```
+
+To specify the channel to use (the license must be assigned to the requested channel):
+
+```shell
+kubectl kots download replicated://app-slug/channel
+```
+
+To use a different upstream provider than the default (replicated.app):
+
+```shell
+kubectl kots download replicated://app-slug?host=my.com
+```
