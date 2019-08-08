@@ -1,4 +1,5 @@
 import * as React from "react";
+import { withRouter } from "react-router-dom";
 import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
@@ -51,11 +52,17 @@ export class AnalyzerInsights extends React.Component {
   }
 
   checkBundleStatus = () => {
-    const { refetchSupportBundle, insights } = this.props;
+    const { refetchSupportBundle, insights, match } = this.props;
 
-    // Check if the bundle is ready
-    if (!insights) {
-      refetchSupportBundle().then( resolved => {
+    const { owner, slug, bundleSlug } = match.params;
+
+    // TODO: Refactor this component to use graphql higher order component.
+    const isOnAnalyzerPage =
+      window.location.pathname.includes(`/watch/${owner}/${slug}/troubleshoot/analyze/${bundleSlug}`);
+
+    // Check if the bundle is ready only if the user is on the page
+    if (!insights && isOnAnalyzerPage) {
+      refetchSupportBundle().then( () => {
         setTimeout(this.checkBundleStatus, 2000);
       });
       return;
@@ -193,4 +200,4 @@ export class AnalyzerInsights extends React.Component {
   }
 }
 
-export default AnalyzerInsights;
+export default withRouter(AnalyzerInsights);
