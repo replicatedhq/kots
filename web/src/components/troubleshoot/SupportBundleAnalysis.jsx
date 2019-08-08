@@ -165,9 +165,10 @@ export class SupportBundleAnalysis extends React.Component {
                   </div>
                   <div className="flex-column flex1 action-content">
                     <Switch>
-                      <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() => 
+                      <Route exact path="/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
                         <AnalyzerInsights
                           status={bundle.status}
+                          refetchSupportBundle={this.props.getSupportBundle.refetch}
                           insights={bundle.analysis?.insights}
                           reAnalyzeBundle={this.reAnalyzeBundle}
                         />

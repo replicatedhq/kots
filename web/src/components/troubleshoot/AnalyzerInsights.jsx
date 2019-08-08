@@ -17,6 +17,8 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
+    this.checkBundleStatus();
+
     let isError, isWarn;
     if (this.props.insights !== lastProps.insights && this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -32,6 +34,8 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidMount() {
+    this.checkBundleStatus();
+
     let isError, isWarn;
     if (this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -43,6 +47,19 @@ export class AnalyzerInsights extends React.Component {
         const insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
         this.setState({ filterTiles: "1", insights: insights })
       }
+    }
+  }
+
+  checkBundleStatus = () => {
+    const { refetchSupportBundle, status } = this.props;
+
+    /** @var {Boolean} bundleIsAnalyzed - Holds the statuses of a completed analysis */
+    const bundleIsAnalyzed = (status === "analyzed" || status === "analysis_error");
+
+    // Check if the bundle is ready
+    if (!bundleIsAnalyzed) {
+      setTimeout(refetchSupportBundle, 2000);
+      return;
     }
   }
 
@@ -89,7 +106,6 @@ export class AnalyzerInsights extends React.Component {
 
     const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
 
-
     let noInsightsNode;
     if (isEmpty(insights)) {
       if (status === "uploaded" || status === "analyzing") {
@@ -98,9 +114,6 @@ export class AnalyzerInsights extends React.Component {
             <Loader size="40" color="#44bb66" />
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
-            <div className="u-marginTop--20">
-              <button className="btn secondary" onClick={() => window.location.reload()}>Check again</button>
-            </div>
             {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
           </div>
         )
