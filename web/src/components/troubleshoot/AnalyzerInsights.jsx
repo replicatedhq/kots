@@ -51,13 +51,10 @@ export class AnalyzerInsights extends React.Component {
   }
 
   checkBundleStatus = () => {
-    const { refetchSupportBundle, status } = this.props;
-
-    /** @var {Boolean} bundleIsAnalyzed - Holds the statuses of a completed analysis */
-    const bundleIsAnalyzed = (status === "analyzed" || status === "analysis_error");
+    const { refetchSupportBundle, insights } = this.props;
 
     // Check if the bundle is ready
-    if (!bundleIsAnalyzed) {
+    if (!insights) {
       setTimeout(refetchSupportBundle, 2000);
       return;
     }
