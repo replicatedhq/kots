@@ -1,8 +1,0 @@
-version: '3.6'
-
-services:
-  pact:
-    build: ./
-    command: bash
-    volumes:
-      - .:/go/src/github.com/pact-foundation/pact-go

@@ -60,7 +60,13 @@ export class Context {
   }
 
   public async listClusters(): Promise<Cluster[]> {
-    return this.stores.clusterStore.listClusters(this.session.userId);
+    const userClusters = await this.stores.clusterStore.listClusters(this.session.userId);
+    const allUserClusters = await this.stores.clusterStore.listAllUsersClusters();
+
+    return [
+      ...userClusters,
+      ...allUserClusters,
+    ];
   }
 
   public async getCluster(id: string): Promise<Cluster> {

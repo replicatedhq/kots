@@ -54,10 +54,6 @@ type Store interface {
 	GetSequenceNumberForWatchID(ctx context.Context, watchID string) (int, error)
 	GetSequenceNumberForNotificationID(ctx context.Context, notificationID string) (int, error)
 
-	ListReadyImageChecks(ctx context.Context) ([]string, error)
-	GetImageCheck(ctx context.Context, imageCheckID string) (*types.ImageCheck, error)
-	UpdateImageCheck(ctx context.Context, imageCheck *types.ImageCheck) error
-
 	GetCluster(ctx context.Context, clusterID string) (*types.Cluster, error)
 	GetClusterForWatch(ctx context.Context, watchID string) (*types.Cluster, error)
 	GetGitHubPathForClusterWatch(ctx context.Context, clusterID string, watchID string) (string, error)

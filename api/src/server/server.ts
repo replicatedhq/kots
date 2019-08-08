@@ -106,6 +106,16 @@ export class Server extends ServerLoader {
       preflightStore: new PreflightStore(pool),
     }
 
+    if (process.env["AUTO_CREATE_CLUSTER"] === "1") {
+      logger.info({msg: "ensuring a local cluster exists"});
+      const cluster = await stores.clusterStore.maybeGetClusterWithTypeNameAndToken("ship", process.env["AUTO_CREATE_CLUSTER_NAME"]!, process.env["AUTO_CREATE_CLUSTER_TOKEN"]!);
+      if (!cluster) {
+        await stores.clusterStore.createNewShipCluster(undefined, true, process.env["AUTO_CREATE_CLUSTER_NAME"]!, process.env["AUTO_CREATE_CLUSTER_TOKEN"]);
+      }
+    } else {
+      logger.debug({msg: "not creating local cluster"});
+    }
+
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
       const token = req.get("Authorization") || "";
 

@@ -145,11 +145,12 @@ export class ClusterStore {
     return this.mapCluster(result.rows[0]);
   }
 
-  async getLocalShipOpsCluster(): Promise<Cluster|void> {
-    const q = `select id from cluster where cluster_type = $1 and title = $2`;
+  async maybeGetClusterWithTypeNameAndToken(clusterType: string, title: string, token: string): Promise<Cluster|void> {
+    const q = `select id from cluster where cluster_type = $1 and title = $2 and token = $3`;
     const v = [
-      "ship",
-      "This Cluster",
+      clusterType,
+      title,
+      token,
     ];
 
     const result = await this.pool.query(q, v);
@@ -262,6 +263,68 @@ export class ClusterStore {
       await pg.query("rollback");
       throw err;
     } finally {
+      pg.release();
+    }
+  }
+
+  async createNewShipCluster(userId: string|undefined, isAllUsers: boolean, title: string, token?: string): Promise<Cluster> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+
+    let slugProposal = `${slugify(title, { lower: true })}`;
+
+    let i = 0;
+    let foundUniqueSlug = false;
+    while (!foundUniqueSlug) {
+      if (i > 0) {
+        slugProposal = `${slugify(title, { lower: true })}-${i}`;
+      }
+      const qq = `select count(1) as count from cluster where slug = $1`;
+      const vv = [
+        slugProposal,
+      ];
+
+      const rr = await this.pool.query(qq, vv);
+      if (parseInt(rr.rows[0].count) === 0) {
+        foundUniqueSlug = true;
+      }
+      i++;
+    }
+
+    if (!token) {
+      token = randomstring.generate({ capitalization: "lowercase" });
+    }
+
+    const pg = await this.pool.connect();
+    await pg.query("begin");
+
+    try {
+      let q = `insert into cluster (id, title, slug, created_at, updated_at, cluster_type, is_all_users, token) values ($1, $2, $3, $4, $5, $6, $7, $8)`
+      let v: any[] = [
+        id,
+        title,
+        slugProposal,
+        new Date(),
+        null,
+        "ship",
+        isAllUsers,
+        token,
+      ];
+      await pg.query(q, v);
+
+      if (userId) {
+        q = `insert into user_cluster (user_id, cluster_id) values ($1, $2)`;
+        v = [
+          userId,
+          id,
+        ];
+        await pg.query(q, v);
+      }
+
+      await pg.query("commit");
+
+      return this.getCluster(id);
+    } finally {
+      await pg.query("rollback");
       pg.release();
     }
   }
@@ -379,234 +442,40 @@ WHERE installation_id = $1 AND owner = $2 AND repo = $3 AND is_404 = TRUE`;
     }
   }
 
-  async getShipInstallationManifests(clusterId: string): Promise<string> {
+  async getOperatorInstallationManifests(clusterId: string): Promise<string> {
     const cluster = await this.getShipOpsCluster(clusterId);
 
-    const manifests = `
-apiVersion: v1
-kind: List
-items:
-  - apiVersion: v1
-    kind: Namespace
+    const manifests = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm-operator
+spec:
+  selector:
+    matchLabels:
+      app: kotsadm-operator
+  template:
     metadata:
       labels:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-      name: ship-cd-system
-  - apiVersion: apiextensions.k8s.io/v1beta1
-    kind: CustomResourceDefinition
-    metadata:
-      creationTimestamp: null
-      labels:
-        controller-tools.k8s.io: "1.0"
-      name: clusters.clusters.replicated.com
+        app: kotsadm-operator
     spec:
-      group: clusters.replicated.com
-      names:
-        kind: Cluster
-        plural: clusters
-      scope: Namespaced
-      validation:
-        openAPIV3Schema:
-          properties:
-            apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
-              type: string
-            kind:
-              description: 'Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
-              type: string
-            metadata:
-              type: object
-            spec:
-              properties:
-                shipApiServer:
-                  type: string
-                token:
-                  type: string
-              required:
-              - shipApiServer
-              - token
-              type: object
-            status:
-              type: object
-      version: v1alpha1
-    status:
-      acceptedNames:
-        kind: ""
-        plural: ""
-      conditions: []
-      storedVersions: []
-  - apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRole
-    metadata:
-      creationTimestamp: null
-      name: ship-cd-manager-role
-    rules:
-    - apiGroups: ['*']
-      resources: ['*']
-      verbs: ['*']
-    - nonResourceURLs: ['*']
-      verbs: ['*']
-  - apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRole
-    metadata:
-      name: ship-cd-proxy-role
-    rules:
-    - apiGroups:
-      - authentication.k8s.io
-      resources:
-      - tokenreviews
-      verbs:
-      - create
-    - apiGroups:
-      - authorization.k8s.io
-      resources:
-      - subjectaccessreviews
-      verbs:
-      - create
-  - apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      creationTimestamp: null
-      name: ship-cd-manager-rolebinding
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: ship-cd-manager-role
-    subjects:
-    - kind: ServiceAccount
-      name: default
-      namespace: ship-cd-system
-  - apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: ship-cd-proxy-rolebinding
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: ship-cd-proxy-role
-    subjects:
-    - kind: ServiceAccount
-      name: default
-      namespace: ship-cd-system
-  - apiVersion: v1
-    kind: Secret
-    metadata:
-      name: ship-cd-webhook-server-secret
-      namespace: ship-cd-system
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      annotations:
-        prometheus.io/port: "8443"
-        prometheus.io/scheme: https
-        prometheus.io/scrape: "true"
-      labels:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-      name: ship-cd-controller-manager-metrics-service
-      namespace: ship-cd-system
-    spec:
-      ports:
-      - name: https
-        port: 8443
-        targetPort: https
-      selector:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-      name: ship-cd-controller-manager-service
-      namespace: ship-cd-system
-    spec:
-      ports:
-      - port: 443
-      selector:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-  - apiVersion: apps/v1
-    kind: StatefulSet
-    metadata:
-      labels:
-        control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
-      name: ship-cd-controller-manager
-      namespace: ship-cd-system
-    spec:
-      selector:
-        matchLabels:
-          control-plane: controller-manager
-          controller-tools.k8s.io: "1.0"
-      serviceName: ship-cd-controller-manager-service
-      template:
-        metadata:
-          labels:
-            control-plane: controller-manager
-            controller-tools.k8s.io: "1.0"
-        spec:
-          containers:
-          - args:
-            - --secure-listen-address=0.0.0.0:8443
-            - --upstream=http://127.0.0.1:8080/
-            - --logtostderr=true
-            - --v=10
-            image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
-            name: kube-rbac-proxy
-            ports:
-            - containerPort: 8443
-              name: https
-          - args:
-            - --metrics-addr=127.0.0.1:8080
-            command:
-            - /manager
-            env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: SECRET_NAME
-              value: ship-cd-webhook-server-secret
-            image: replicated/ship-cd:latest
-            imagePullPolicy: Always
-            name: manager
-            ports:
-            - containerPort: 9876
-              name: webhook-server
-              protocol: TCP
-            resources:
-              limits:
-                cpu: 100m
-                memory: 500Mi
-              requests:
-                cpu: 100m
-                memory: 500Mi
-            volumeMounts:
-            - mountPath: /tmp/cert
-              name: cert
-              readOnly: true
-          terminationGracePeriodSeconds: 10
-          volumes:
-          - name: cert
-            secret:
-              defaultMode: 420
-              secretName: ship-cd-webhook-server-secret
-  - apiVersion: clusters.replicated.com/v1alpha1
-    kind: Cluster
-    metadata:
-      labels:
-        controller-tools.k8s.io: "1.0"
-      name: ${slugify(cluster.title!, { lower: true })}
-    spec:
-      shipApiServer: ${this.params.shipApiEndpoint}
-      token: ${cluster.shipOpsRef!.token}
+      containers:
+      - env:
+        - name: KOTSADM_API_ENDPOINT
+          value: ${this.params.shipApiEndpoint}
+        - name: KOTSADM_TOKEN
+          value: ${cluster.shipOpsRef!.token}
+        image: kotsadm-operator
+        imagePullPolicy: Always
+        name: kotsadm-operator
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1000Mi
+          requests:
+            cpu: 100m
+            memory: 500Mi
+      restartPolicy: Always
+
 `;
 
     return manifests;
