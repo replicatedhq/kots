@@ -7,7 +7,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/goutils v1.1.0
 	github.com/Masterminds/semver v1.4.2
-	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
+	github.com/Masterminds/sprig v2.20.0+incompatible
 	github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30
 	github.com/beorn7/perks v1.0.0
 	github.com/cyphar/filepath-securejoin v0.2.2
@@ -39,7 +39,7 @@ require (
 	github.com/markbates/inflect v1.0.4
 	github.com/matttproud/golang_protobuf_extensions v1.0.1
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
-	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
+	github.com/modern-go/reflect2 v1.0.1
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
@@ -52,6 +52,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 	github.com/prometheus/common v0.4.0
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
+	github.com/replicatedhq/troubleshoot v0.9.2
 	github.com/rogpeppe/go-internal v1.2.2
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.3
@@ -64,10 +65,10 @@ require (
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
-	golang.org/x/sys v0.0.0-20190402142545-baf5eb976a8c
-	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
+	golang.org/x/sys v0.0.0-20190429190828-d89cdac9e872
+	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190402200628-202502a5a924
+	golang.org/x/tools v0.0.0-20190501045030-23463209683d
 	google.golang.org/appengine v1.5.0
 	google.golang.org/genproto v0.0.0-20190522204451-c2c4e71fbf69
 	google.golang.org/grpc v1.21.0
@@ -75,17 +76,17 @@ require (
 	gopkg.in/inf.v0 v0.9.1
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 	gopkg.in/yaml.v2 v2.2.2
-	k8s.io/api v0.0.0-20181213150558-05914d821849
-	k8s.io/apiextensions-apiserver v0.0.0-20181213153335-0fe22c71c476
-	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
-	k8s.io/client-go v0.0.0-20181213151034-8d9ed539ba31
+	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
+	k8s.io/apiextensions-apiserver v0.0.0-20190409022649-727a075fdec8
+	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/code-generator v0.0.0-20190311155051-e4c2b1329cf7
 	k8s.io/gengo v0.0.0-20190327210449-e17681d19d3a
 	k8s.io/helm v2.14.0+incompatible
-	k8s.io/klog v0.2.0
+	k8s.io/klog v0.3.0
 	k8s.io/kube-openapi v0.0.0-20190401085232-94e1e7b7574c
-	sigs.k8s.io/controller-runtime v0.1.10
-	sigs.k8s.io/controller-tools v0.1.9
+	sigs.k8s.io/controller-runtime v0.2.0-beta.2
+	sigs.k8s.io/controller-tools v0.2.0-beta.2
 	sigs.k8s.io/testing_frameworks v0.1.1
 	sigs.k8s.io/yaml v1.1.0
 )

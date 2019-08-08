@@ -70,24 +70,53 @@ func (c *Kubectl) Remove(yamlDoc []byte) error {
 	return nil
 }
 
-func (c *Kubectl) Apply(yamlDoc []byte) error {
+func (c *Kubectl) Apply(yamlDoc []byte, dryRun bool) error {
 	args := []string{
 		"apply",
-		"-n",
-		"default",
-		"-f",
-		"-",
 	}
+
+	if dryRun {
+		args = append(args, "--dry-run")
+	}
+
+	args = append(args,
+		[]string{
+			"-n",
+			"default",
+			"-f",
+			"-",
+		}...)
+
 	cmd := c.kubectlCommand(args...)
 	cmd.Stdin = bytes.NewReader(yamlDoc)
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-	stdout := &bytes.Buffer{}
-	cmd.Stdout = stdout
 
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("error running kubectl apply: %q\n", err)
-		return errors.Errorf("%s", stderr.String())
+	stdoutCh := make(chan []byte)
+	stderrCh := make(chan []byte)
+	stopCh := make(chan bool)
+
+	stdout := [][]byte{}
+	stderr := [][]byte{}
+
+	defer func() {
+		stopCh <- true
+	}()
+
+	go func() {
+		for {
+			select {
+			case o := <-stdoutCh:
+				stdout = append(stdout, o)
+			case e := <-stderrCh:
+				stderr = append(stderr, e)
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+
+	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
+		fmt.Printf("error running kubectl apply: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+		return errors.Wrap(err, "failed to run kubectl apply")
 	}
 
 	return nil
