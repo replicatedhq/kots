@@ -1,5 +1,4 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
 import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
@@ -31,7 +30,9 @@ export class AnalyzerInsights extends React.Component {
       }
     }
 
-    this.checkBundleStatus();
+    if (this.props.insights) {
+      clearInterval(this.interval);
+    }
   }
 
   componentDidMount() {
@@ -52,21 +53,18 @@ export class AnalyzerInsights extends React.Component {
   }
 
   checkBundleStatus = () => {
-    const { refetchSupportBundle, insights, match } = this.props;
-
-    const { owner, slug, bundleSlug } = match.params;
-
-    // TODO: Refactor this component to use graphql higher order component.
-    const isOnAnalyzerPage =
-      window.location.pathname.includes(`/watch/${owner}/${slug}/troubleshoot/analyze/${bundleSlug}`);
+    const { refetchSupportBundle, insights } = this.props;
 
     // Check if the bundle is ready only if the user is on the page
-    if (!insights && isOnAnalyzerPage) {
-      refetchSupportBundle().then( () => {
-        setTimeout(this.checkBundleStatus, 2000);
-      });
-      return;
+    if (!insights) {
+      this.interval = setInterval(refetchSupportBundle, 2000);
+    } else {
+      clearInterval(this.interval);
     }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   handleFilterTiles = (field, e) => {
@@ -200,4 +198,4 @@ export class AnalyzerInsights extends React.Component {
   }
 }
 
-export default withRouter(AnalyzerInsights);
+export default AnalyzerInsights;
