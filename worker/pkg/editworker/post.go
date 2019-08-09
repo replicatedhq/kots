@@ -165,7 +165,7 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 
 	updatePRTitle := ""
 	if versionLabel == "" {
-		updatePRTitle = fmt.Sprintf("Update %s", watch.Title)
+		updatePRTitle = fmt.Sprintf("Update to %s", watch.Title)
 	} else {
 		updatePRTitle = fmt.Sprintf("Update %s to version %s", watch.Title, versionLabel)
 	}
