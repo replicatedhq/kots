@@ -5,7 +5,6 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 
-import { getClusterType } from "@src/utilities/utilities";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
