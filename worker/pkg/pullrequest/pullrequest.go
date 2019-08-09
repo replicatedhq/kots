@@ -13,6 +13,7 @@ import (
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
 	"github.com/replicatedhq/ship-cluster/worker/pkg/util"
 	"github.com/replicatedhq/ship/pkg/state"
@@ -41,17 +42,27 @@ type PullRequestRequest struct {
 
 // NewPullRequestRequest will create a PullRequestRequest object that can be used to create a PR later
 // this is separated into a function like this because it's also used in ShouldCreatePullRequest
-func NewPullRequestRequest(watch *types.Watch, file multipart.File, owner string, repo string, branch string, path string, installationID int, watchState state.State, title string, sourceBranch string) (*PullRequestRequest, error) {
+func NewPullRequestRequest(store store.Store, watch *types.Watch, file multipart.File, owner string, repo string, branch string, path string, installationID int, watchState state.State, title string, sourceBranch string) (*PullRequestRequest, error) {
+
 	newVersionString := ""
 	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
 		newVersionString = watchState.V1.Metadata.Version
+	} else {
+		newVersion, err := store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "get most recent watch version")
+		}
+		if newVersion != nil {
+			newVersionString = newVersion.VersionLabel
+		}
+
 	}
 
 	if len(title) == 0 {
 		if newVersionString == "" {
-			title = fmt.Sprintf("Update %s to a new version from Replicated Ship Cloud", watch.Title)
+			title = fmt.Sprintf("Update to %s", watch.Title)
 		} else {
-			title = fmt.Sprintf("Update %s to version %s from Replicated Ship Cloud", watch.Title, newVersionString)
+			title = fmt.Sprintf("Update %s to version %s", watch.Title, newVersionString)
 		}
 	}
 

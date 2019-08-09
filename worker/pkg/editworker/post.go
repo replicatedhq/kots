@@ -151,31 +151,12 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 		sourceBranch = previousWatchVersion.SourceBranch
 	}
 
-	versionLabel := ""
-	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
-		versionLabel = watchState.V1.Metadata.Version
-	} else {
-		// Hmmm...
-		previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
-		if err != nil {
-			return 0, "", "", "", errors.Wrap(err, "get most recent watch version")
-		}
-		versionLabel = previousWatchVersion.VersionLabel
-	}
-
-	updatePRTitle := ""
-	if versionLabel == "" {
-		updatePRTitle = fmt.Sprintf("Update to %s", watch.Title)
-	} else {
-		updatePRTitle = fmt.Sprintf("Update %s to version %s", watch.Title, versionLabel)
-	}
-
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), cluster.ID, watch.ID)
 	if err != nil {
 		return 0, "", "", "", err
 	}
 
-	prRequest, err := pullrequest.NewPullRequestRequest(watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, updatePRTitle, sourceBranch)
+	prRequest, err := pullrequest.NewPullRequestRequest(w.Store, watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, "", sourceBranch)
 	if err != nil {
 		return 0, "", "", "", errors.Wrap(err, "new pull request request")
 	}
