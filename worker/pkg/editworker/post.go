@@ -151,7 +151,24 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 		sourceBranch = previousWatchVersion.SourceBranch
 	}
 
-	updatePRTitle := fmt.Sprintf("Update %s with edits made in Replicated Ship", watch.Title)
+	versionLabel := ""
+	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
+		versionLabel = watchState.V1.Metadata.Version
+	} else {
+		// Hmmm...
+		previousWatchVersion, err := w.Store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
+		if err != nil {
+			return 0, "", "", "", errors.Wrap(err, "get most recent watch version")
+		}
+		versionLabel = previousWatchVersion.VersionLabel
+	}
+
+	updatePRTitle := ""
+	if versionLabel == "" {
+		updatePRTitle = fmt.Sprintf("Update %s", watch.Title)
+	} else {
+		updatePRTitle = fmt.Sprintf("Update %s to version %s", watch.Title, versionLabel)
+	}
 
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), cluster.ID, watch.ID)
 	if err != nil {
