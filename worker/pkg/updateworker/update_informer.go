@@ -84,14 +84,12 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			return errors.Wrap(err, "set update status to failed")
 		}
 
-		// Leaving these sitting around for now...  we should
-		// be grabbing the logs from these and writing them to
+		// TODO: we should be grabbing the logs from these and writing them to
 		// somewhere for analysis of failures
 
-		// if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
-		// 	return errors.Wrap(err, "delete namespace")
-		// }
-
+		if err := w.K8sClient.CoreV1().Namespaces().Delete(newPod.Namespace, &metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "delete namespace")
+		}
 	} else if newPod.Status.Phase == corev1.PodSucceeded {
 		defer deleteState()
 
