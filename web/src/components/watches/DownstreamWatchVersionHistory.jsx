@@ -5,7 +5,6 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 
-import { getClusterType } from "@src/utilities/utilities";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
@@ -17,7 +16,7 @@ class DownstreamWatchVersionHistory extends Component {
       this.props.makeCurrentVersion(id, sequence);
     }
   }
-  
+
   render() {
     const { watch, match, data } = this.props;
     const { watches} = watch;
@@ -26,7 +25,6 @@ class DownstreamWatchVersionHistory extends Component {
     const versionHistory = data?.getDownstreamHistory?.length ? data.getDownstreamHistory : [];
     const downstreamSlug = downstreamWatch ? downstreamWatch.cluster?.slug : "";
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
-    const clusterIcon = getClusterType(isGit) === "git" ? "icon github-small-size" : "icon ship-small-size";
 
     const centeredLoader = (
       <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -41,22 +39,12 @@ class DownstreamWatchVersionHistory extends Component {
         <div className="flex-column flex-auto ActiveRelease-wrapper">
           <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Active release</p>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <div className="flex">
-                <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-                  <span className={classNames(clusterIcon, "flex-auto u-marginRight--5")} />
-                  <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
-                    {downstreamSlug}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
           <div>
             {downstreamWatch.currentVersion ?
               <DownstreamVersionRow
                 downstreamWatch={downstreamWatch}
-                version={downstreamWatch.currentVersion} 
+                version={downstreamWatch.currentVersion}
               />
             :
               <div className="no-current-version u-textAlign--center">
@@ -70,16 +58,6 @@ class DownstreamWatchVersionHistory extends Component {
         <div className="flex1 flex-column u-paddingTop--20 u-marginTop--20">
           <div className="flex alignItems--center u-borderBottom--gray u-paddingBottom--5">
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">All releases</p>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <div className="flex">
-                <div className="flex flex1 cluster-cell-title justifyContent--center alignItems--center u-fontWeight--bold u-color--tuna">
-                  <span className={classNames(clusterIcon, "flex-auto u-marginRight--5")} />
-                  <p className="u-fontSize--small u-fontWeight--medium u-color--tuna">
-                    {downstreamSlug}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
           <div className={classNames("flex-column", { "flex1": data.loading })}>
             {data.loading
@@ -88,7 +66,7 @@ class DownstreamWatchVersionHistory extends Component {
               <DownstreamVersionRow
                 key={`${version.title}-${version.sequence}`}
                 downstreamWatch={downstreamWatch}
-                version={version} 
+                version={version}
               />
             ))}
           </div>

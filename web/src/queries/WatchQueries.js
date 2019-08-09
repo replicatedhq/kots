@@ -793,6 +793,7 @@ export const getDownstreamHistoryRaw = `
       title
       status
       createdOn
+      deployedAt
       sequence
       pullrequestNumber
     }
