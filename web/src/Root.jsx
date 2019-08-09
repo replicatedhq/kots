@@ -249,7 +249,7 @@ class Root extends Component {
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListWatches} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
-                    <Route path="/clusterscope" component={ClusterScope} />
+                    <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import sortBy from "lodash/sortBy";
 
-import "../../scss/components/image_check/ImageWatchBatch.scss";
+import "../../../scss/components/image_check/ImageWatchBatch.scss";
 
 dayjs.extend(relativeTime);
 

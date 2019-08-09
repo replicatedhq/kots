@@ -1,9 +1,41 @@
-.ClusterScope-create--wrapper {
-  max-width: 960px;
+.ClusterScopePage--wrapper {
   .kub-logo {
     background-position: 0 -525px;
     width: 83px;
     height: 80px;
+  }
+  .left-block-wrapper {
+    margin-bottom: 40px;
+  }
+  .left-block-wrapper,
+  .right-block-wrapper {
+    max-width: none;
+  }
+  
+  .iframe-placeholder {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    background-color: #121314;
+    border-radius: 5px;
+    overflow: hidden;
+    
+    .ascii-loader {
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      top: 50%;
+      margin-left: -30px;
+      margin-top: -30px
+    }
+    #asciicast-container-ExaFOk6ap0GL17GJsJWpExGnM {
+      margin: 0 !important; /* overide margin of the iframe wrapper that gets embedded */
+    }
+    iframe {
+      position: relative;
+      z-index: 2;
+      height: 480px !important; /* overide height of the iframe that gets embedded */
+    }
   }
 }
 .ClusterScoperBatch--wrapper {
@@ -356,6 +388,12 @@
     position: absolute;
     bottom: -150px;
   }
+  .ClusterScopePage--wrapper {
+    .left-block-wrapper,
+    .right-block-wrapper {
+      max-width: 540px;
+    }
+  }
 }
 
 /* ≥ 768px */
@@ -366,6 +404,19 @@
   }
   .clusterscope-section .sidedevices {
     bottom: -100px;
+  }
+  .ClusterScopePage--wrapper {
+    .left-block-wrapper {
+      padding-right: 40px;
+      margin-bottom: 0;
+    }
+    .right-block-wrapper {
+      padding-left: 40px;
+    }
+    .left-block-wrapper,
+    .right-block-wrapper {
+      max-width: 640px;
+    }
   }
 }
 
