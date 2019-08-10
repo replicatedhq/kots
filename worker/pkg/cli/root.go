@@ -14,7 +14,7 @@ import (
 func RootCmd(c *config.Config, out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "kotsadm-worker",
-		Short:        "run a ship cloud worker",
+		Short:        "run a kotsadm worker",
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			version.Init()
