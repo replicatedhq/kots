@@ -37,14 +37,6 @@ steps:
   - wait
 
   - commands:
-      - make -C api build-enterprise publish-enterprise
-    branches: "master"
-
-  - commands:
-      - make -C api build-enterprise publish-enterprise-aka
-    branches: "master"
-
-  - commands:
       - make -C api build-staging publish-staging
     branches: "master"
     env:

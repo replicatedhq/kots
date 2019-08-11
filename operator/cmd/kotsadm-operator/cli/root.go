@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/replicatedhq/ship-cluster/operator/pkg/client"
+	"github.com/replicatedhq/kotsadm/operator/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

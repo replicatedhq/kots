@@ -114,15 +114,6 @@ publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: GITOPS_FILENAME = kotsadm-api
 publish-enterprise: build_and_publish
 
-.PHONY: publish-enterprise-aka
-publish-enterprise-aka: REGISTRY = registry.replicated.com/ship-enterprise
-publish-enterprise-aka: OVERLAY = enterprise-aka
-publish-enterprise-aka: GITOPS_OWNER = replicatedhq
-publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise-aka: GITOPS_BRANCH = master
-publish-enterprise-aka: GITOPS_FILENAME = kotsadm-api-aka
-publish-enterprise-aka: build_and_publish
-
 build_and_publish:
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
 
