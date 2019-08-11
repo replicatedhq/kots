@@ -1,9 +1,0 @@
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: ship-worker-list-pods
-subjects:
-- kind: ServiceAccount
-  name: kotsadm-worker-edit
-  namespace: '{{repl Namespace}}'
