@@ -1,4 +1,4 @@
-module github.com/replicatedhq/ship-cluster/operator
+module github.com/replicatedhq/kotsadm/operator
 
 go 1.12
 

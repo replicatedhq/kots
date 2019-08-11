@@ -6,7 +6,7 @@ steps:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite-go12-node10
           always-pull: true
-          workdir: /go/src/github.com/replicatedhq/ship-cluster
+          workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
       - "worker/bin/**/*"
 
@@ -17,42 +17,10 @@ steps:
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
       - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
       - chmod +x worker/deploy/bin/kotsadm-worker
-      - make -C worker build-enterprise
+      - make -C worker build_and_push
     branches: "master"
     retry:
       automatic: true
-
-  - commands:
-      - mkdir -p worker/bin worker/deploy/bin
-      - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
-      - chmod +x worker/deploy/bin/kotsadm-worker
-      - make -C worker build-staging
-    branches: "master"
-    retry:
-      automatic: true
-    env:
-      AWS_PROFILE: replicated-staging
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "923411875752"
-
-  - commands:
-      - mkdir -p worker/bin worker/deploy/bin
-      - buildkite-agent artifact download worker/bin/* . --step test-and-build
-      - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
-      - chmod +x worker/deploy/bin/kotsadm-worker
-      - make -C worker build-production
-    branches: "master"
-    retry:
-      automatic: true
-    env:
-      AWS_PROFILE: replicated-production
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "799720048698"
 
   - wait
 
@@ -63,17 +31,10 @@ steps:
       automatic: true
 
   - commands:
-      - make -C worker publish-enterprise-aka
-    branches: "master"
-    retry:
-      automatic: true
-
-  - commands:
       - make -C worker publish-staging
     branches: "master"
     retry:
       automatic: true
-
 
   - block: "Release to production"
     branches: "master"

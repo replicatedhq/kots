@@ -1,12 +1,4 @@
 steps:
-  - commands:
-      - make -C api build-cache publish-cache
-    branches: master
-
-  - commands:
-      - make -C web build-cache publish-cache
-    branches: master
-
   - label: "schema-fixtures"
     artifact_paths:
       - "migrations/fixtures/schema/fixtures.sql"

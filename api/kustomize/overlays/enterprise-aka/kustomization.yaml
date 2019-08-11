@@ -6,4 +6,3 @@ resources:
 
 patches:
   - ./s3.yaml
-  - ./ensure-local-cluster.yaml

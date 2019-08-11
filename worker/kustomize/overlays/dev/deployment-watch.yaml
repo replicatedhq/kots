@@ -16,7 +16,7 @@ spec:
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:
-                  name: ship-postgres   # This secret is created in the ship-cluster-db project
+                  name: ship-postgres   # This secret is created in the kotsadm-db project
                   key: uri
             - name: GITHUB_PRIVATE_KEY
               valueFrom:

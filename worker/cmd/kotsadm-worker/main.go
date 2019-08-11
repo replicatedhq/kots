@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/cli"
+	"github.com/replicatedhq/kotsadm/worker/pkg/cli"
 )
 
 func main() {

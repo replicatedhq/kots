@@ -7,7 +7,7 @@ PROJECT_NAME ?= kotsadm-worker
 
 SRC = $(shell find . -name "*.go")
 
-VERSION_PACKAGE = github.com/replicatedhq/ship-cluster/worker/pkg/version
+VERSION_PACKAGE = github.com/replicatedhq/kotsadm/worker/pkg/version
 VERSION=`git describe --tags &>/dev/null || echo "v0.0.1"`
 GIT_SHA=`git rev-parse HEAD`
 DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
@@ -65,32 +65,20 @@ bin/kotsadm-worker: $(SRC)
 	time go build -i \
 		${LDFLAGS} \
 		-o bin/kotsadm-worker \
-		./cmd/ship-cluster-worker
-		# TODO: re-name repo to kotsadm-worker and change line 68
+		./cmd/kotsadm-worker
 	@echo built bin/kotsadm-worker
 
 .PHONY: build
 build: bin/kotsadm-worker
 
-.PHONY: build-staging
-build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-build-staging: build_and_push
-
-.PHONY: build-production
-build-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-build-production: build_and_push
-
-.PHONY: build-enterprise
-build-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
-build-enterprise: build_and_push
-
+.PHONY: build_and_push
 build_and_push:
 	docker build -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} ./deploy
-	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
-	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} kotsadm/${PROJECT_NAME}:latest
+	docker push kotsadm/${PROJECT_NAME}:latest
 
 .PHONY: publish-production
-publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
+publish-production: REGISTRY = kotsadm
 publish-production: OVERLAY = production
 publish-production: GITOPS_OWNER = replicatedcom
 publish-production: GITOPS_REPO = gitops-deploy
@@ -99,7 +87,7 @@ publish-production: GITOPS_FILENAME = kotsadm-worker
 publish-production: build_and_publish
 
 .PHONY: publish-staging
-publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
+publish-staging: REGISTRY = kotsadm
 publish-staging: OVERLAY = staging
 publish-staging: GITOPS_OWNER = replicatedcom
 publish-staging: GITOPS_REPO = gitops-deploy
@@ -116,17 +104,8 @@ publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: GITOPS_FILENAME = kotsadm-worker
 publish-enterprise: build_and_publish
 
-.PHONY: publish-enterprise-aka
-publish-enterprise-aka: REGISTRY = registry.replicated.com/ship-enterprise
-publish-enterprise-aka: OVERLAY = enterprise-aka
-publish-enterprise-aka: GITOPS_OWNER = replicatedhq
-publish-enterprise-aka: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise-aka: GITOPS_BRANCH = master
-publish-enterprise-aka: GITOPS_FILENAME = kotsadm-worker-aka
-publish-enterprise-aka: build_and_publish
-
 build_and_publish:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:latest
 
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
@@ -138,7 +117,3 @@ build_and_publish:
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
 	      git push origin $(GITOPS_BRANCH)
-
-.PHONY: build-cache
-build-cache:
-	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .

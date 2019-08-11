@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/replicatedhq/kotsadm/worker/pkg/version"
 )
 
 func Serve(ctx context.Context, addr string) error {

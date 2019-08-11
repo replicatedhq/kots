@@ -55,27 +55,19 @@ test: export S3_SECRET_ACCESS_KEY = S3RVER
 test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
 test:
-	@-docker stop ship-cluster-fixtures > /dev/null 2>&1 || :
-	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 || :
-	docker run --rm -d --name ship-cluster-fixtures -p 15432:5432 replicated/ship-cluster-fixtures:local
+	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
+	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
+	docker run --rm -d --name kotsadm-fixtures -p 15432:5432 replicated/kotsadm-fixtures:local
 	yarn run test:local
 	@-sleep 1
-	docker stop ship-cluster-fixtures
-	@-docker rm -f ship-cluster-fixtures > /dev/null 2>&1 || :
+	docker stop kotsadm-fixtures
+	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
 
 .PHONY: pkg
 pkg:
 	mkdir -p bin
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/kotsadm-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
-
-.PHONY: build-cache
-build-cache:
-	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
-
-.PHONY: publish-cache
-publish-cache:
-	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging
 build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com

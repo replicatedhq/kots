@@ -6,9 +6,9 @@ import (
 	"os/signal"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/store"
+	"github.com/replicatedhq/kotsadm/worker/pkg/version"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"

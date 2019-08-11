@@ -1,5 +1,5 @@
 FROM golang:1.12
-ENV PROJECT_PATH=/go/src/github.com/replicatedhq/ship-cluster/worker
+ENV PROJECT_PATH=/go/src/github.com/replicatedhq/kotsadm/worker
 WORKDIR $PROJECT_PATH
 
 ADD Makefile .

@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/pullrequest"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/util"
+	"github.com/replicatedhq/kotsadm/worker/pkg/pullrequest"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/util"
 	"github.com/replicatedhq/ship/pkg/state"
 	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"go.uber.org/zap"

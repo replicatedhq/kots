@@ -40,7 +40,7 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
       headers: {
         ...headers,
         authorization: await tokenFunction(),
-        "X-Replicated-Client": "ship-cluster",
+        "X-Replicated-Client": "kotsadm",
       },
     };
   });

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 type ReplicatedAppWatch struct {

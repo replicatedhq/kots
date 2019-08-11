@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= ship-cluster-fixtures
+PROJECT_NAME ?= kotsadm-fixtures
 
 .PHONY: deps
 deps:

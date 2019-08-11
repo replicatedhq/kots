@@ -4,9 +4,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
-	pkgdebug "github.com/replicatedhq/ship-cluster/worker/pkg/debug"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
+	pkgdebug "github.com/replicatedhq/kotsadm/worker/pkg/debug"
+	"github.com/replicatedhq/kotsadm/worker/pkg/version"
 	"github.com/spf13/cobra"
 )
 

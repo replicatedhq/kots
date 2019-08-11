@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
 	"github.com/spf13/viper"
 )
 

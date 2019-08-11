@@ -4,11 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/kubernetes"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/updateworker"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/kubernetes"
+	"github.com/replicatedhq/kotsadm/worker/pkg/logger"
+	"github.com/replicatedhq/kotsadm/worker/pkg/store"
+	"github.com/replicatedhq/kotsadm/worker/pkg/updateworker"
 	"github.com/spf13/cobra"
 )
 

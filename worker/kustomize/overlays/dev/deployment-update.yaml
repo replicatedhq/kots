@@ -20,7 +20,7 @@ spec:
             - name: SHIP_PULL_POLICY
               value: "Always"
             - name: S3_ENDPOINT
-              value: http://ship-cluster-s3.default.svc.cluster.local:4569/
+              value: http://kotsadm-s3.default.svc.cluster.local:4569/
             - name: S3_BUCKET_ENDPOINT
               value: "true"
             - name: S3_ACCESS_KEY_ID
@@ -30,7 +30,7 @@ spec:
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:
-                  name: ship-postgres   # This secret is created in the ship-cluster-db project
+                  name: ship-postgres   # This secret is created in the kotsadm-db project
                   key: uri
             - name: GITHUB_PRIVATE_KEY
               valueFrom:

@@ -39,14 +39,6 @@ serve: deps
 		--progress -w --debug --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
 
-.PHONY: build-cache
-build-cache:
-	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
-
-.PHONY: publish-cache
-publish-cache:
-	docker push repldev/${PROJECT_NAME}:latest
-
 .PHONY: build-staging
 build-staging: SHIP_CLOUD_ENV = staging
 build-staging: webpack_build
