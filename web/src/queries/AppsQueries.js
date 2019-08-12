@@ -141,7 +141,9 @@ export const listAppsRaw = `
         chartVersion
         appVersion
       }
-      kotsApps
+      kotsApps {
+        id
+      }
     }
   }
 `;

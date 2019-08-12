@@ -18,6 +18,7 @@ import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
 import { LicenseQueries, LicenseMutations } from "../license";
 import { PrefightQueries } from "../preflight";
 import { AppsQueries } from "../apps";
+import { KotsQueries, KotsMutations } from "../kots_app";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
@@ -25,6 +26,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
     ...UserQueries(stores),
     ...ClusterQueries(stores),
     ...WatchQueries(stores),
+    ...KotsQueries(stores),
     ...UpdateQueries(stores),
     ...UnforkQueries(stores),
     ...NotificationQueries(stores),
@@ -44,6 +46,7 @@ export const Resolvers = (stores: Stores, params: Params) => ({
   Mutation: {
     ...UserMutations(stores, params),
     ...ClusterMutations(stores, params),
+    ...KotsMutations(stores),
     ...WatchMutations(stores),
     ...UpdateMutations(stores),
     ...UnforkMutations(stores),

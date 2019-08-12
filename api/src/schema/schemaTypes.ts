@@ -15,6 +15,7 @@ import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
 import License from "../license/graphql/license_types";
 import Preflight from "../preflight/graphql/preflight_types";
 import Apps from "../apps/graphql/apps_types";
+import KotsApp from "../kots_app/graphql/kots_app_types";
 
 import { all as Mutation } from "./mutation";
 import { Healthz, Query } from "./query";
@@ -35,6 +36,7 @@ export const ShipClusterSchemaTypes = [
   ...User,
   ...GitHubInstallation,
   ...Watch,
+  ...KotsApp,
   ...Cluster,
   ...Feature,
   ...Notification,

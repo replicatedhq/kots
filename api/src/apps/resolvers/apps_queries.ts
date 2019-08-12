@@ -9,7 +9,10 @@ export function AppsQueries(stores: Stores) {
       return {
         watches: async () => (await stores.watchStore.listWatches(context.session.userId)).map(watch => watch.toSchema(root, stores, context)),
         kotsApps: async () => {
-          return "kots-app"
+          // TODO: Get kots apps from database
+          return [{
+            id: "kots-app"
+          }]
         },
         pendingUnforks: async () => {
           const clusters = await stores.clusterStore.listClusters(context.session.userId);

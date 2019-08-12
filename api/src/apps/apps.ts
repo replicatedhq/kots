@@ -1,9 +1,9 @@
 import { Watch } from "../watch";
-// import { KotsApps } from "../kots";
+import { KotsApp } from "../kots_app";
 import { HelmChart } from "../helmchart";
 
 export interface Apps {
   watches?: Array<Watch>;
-  kotsApps?: string;
-  pendingUnforks?: Array<HelmChart>,
+  kotsApps?: Array<KotsApp>;
+  pendingUnforks?: Array<HelmChart>;
 }

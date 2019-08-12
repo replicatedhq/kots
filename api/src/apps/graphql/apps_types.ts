@@ -1,7 +1,7 @@
 const Apps = `
   type Apps {
     watches: [Watch]
-    kotsApps: String
+    kotsApps: [KotsApp]
     pendingUnforks: [HelmChart]
   }
 `;
