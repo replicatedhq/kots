@@ -151,14 +151,12 @@ func (w *Worker) maybeCreatePullRequest(watch *types.Watch, cluster *types.Clust
 		sourceBranch = previousWatchVersion.SourceBranch
 	}
 
-	updatePRTitle := fmt.Sprintf("Update %s with edits made in Replicated Ship", watch.Title)
-
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), cluster.ID, watch.ID)
 	if err != nil {
 		return 0, "", "", "", err
 	}
 
-	prRequest, err := pullrequest.NewPullRequestRequest(watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, updatePRTitle, sourceBranch)
+	prRequest, err := pullrequest.NewPullRequestRequest(w.Store, watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, "", sourceBranch)
 	if err != nil {
 		return 0, "", "", "", errors.Wrap(err, "new pull request request")
 	}

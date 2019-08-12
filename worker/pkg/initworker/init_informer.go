@@ -379,10 +379,10 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 
 	// And now the real part of this function, for gitops clusters, make a PR and return that status
 	// this is a init, so there's no previous PR
-	firstPRTitle := fmt.Sprintf("Add %s from Replicated Ship", watch.Title)
+	firstPRTitle := fmt.Sprintf("Add %s", watch.Title)
 	if watchState.V1 != nil && watchState.V1.Metadata != nil && watchState.V1.Metadata.Version != "" {
 		newVersionString := watchState.V1.Metadata.Version
-		firstPRTitle = fmt.Sprintf("Add %s version %s from Replicated Ship", watch.Title, newVersionString)
+		firstPRTitle = fmt.Sprintf("Add %s version %s", watch.Title, newVersionString)
 	}
 
 	githubPath, err := w.Store.GetGitHubPathForClusterWatch(context.TODO(), clusterID, watchID)
@@ -390,7 +390,7 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 		return 0, "", "", "", err
 	}
 
-	prRequest, err := pullrequest.NewPullRequestRequest(watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, firstPRTitle, "")
+	prRequest, err := pullrequest.NewPullRequestRequest(w.Store, watch, file, cluster.GitHubOwner, cluster.GitHubRepo, cluster.GitHubBranch, githubPath, cluster.GitHubInstallationID, watchState, firstPRTitle, "")
 	if err != nil {
 		return 0, "", "", "", errors.Wrap(err, "create pull request request")
 	}

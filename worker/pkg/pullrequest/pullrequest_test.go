@@ -98,7 +98,7 @@ AAAAAAAAAL56AF2nh0wAKAAA
 		t.Run(test.describe, func(t *testing.T) {
 			mockFile.Seek(0, 0) // we are reusing this file...
 
-			prRequest, err := NewPullRequestRequest(test.watch, mockFile, test.owner, test.repo, test.branch, test.path, test.installationID, test.watchState, test.title, "")
+			prRequest, err := NewPullRequestRequest(nil, test.watch, mockFile, test.owner, test.repo, test.branch, test.path, test.installationID, test.watchState, test.title, "")
 			req.NoError(err)
 
 			req.Equal(prRequest.title, test.expectTitle)
