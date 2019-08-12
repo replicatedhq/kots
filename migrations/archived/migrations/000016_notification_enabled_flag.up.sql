@@ -1,1 +1,0 @@
-ALTER TABLE ship_notification ADD COLUMN enabled SMALLINT

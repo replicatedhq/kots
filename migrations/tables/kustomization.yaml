@@ -43,3 +43,5 @@ resources:
 - ./preflight_result.yaml
 - ./preflight_spec.yaml
 - ./kotsadm_params.yaml
+- ./app.yaml
+- ./app_version.yaml
