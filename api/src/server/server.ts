@@ -44,9 +44,14 @@ import { PreflightStore } from "../preflight/preflight_store";
       // tslint:disable-next-line
       "/": "${rootDir}/../controllers/**/*.*s",
     },
+    componentsScan: [
+      "${rootDir}/../middlewares/**/*.ts"
+    ],
     acceptMimes: ["application/json"],
     debug: true,
-    multer: {},
+    multer: {
+      dest: "${rootDir}/uploads"
+    },
 })
 export class Server extends ServerLoader {
   async $onMountingMiddlewares(): Promise<void> {
