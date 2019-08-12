@@ -84,7 +84,7 @@ const ThemeContext = React.createContext({
 
 class Root extends Component {
   state = {
-    listWatches: [],
+    listApps: [],
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
@@ -152,7 +152,7 @@ class Root extends Component {
     this.handleActiveInitSessionCompleted();
   }
 
-  refetchListWatches = async () => {
+  refetchListApps = async () => {
     // @TODO: Lean out the query to only fetch the data that
     const apps = await GraphQLClient.query({
       query: listApps,
@@ -167,7 +167,7 @@ class Root extends Component {
     );
 
     this.setState({
-      listWatches: allWatches,
+      listApps: allWatches,
       rootDidInitialWatchFetch: true
     });
 
@@ -176,9 +176,9 @@ class Root extends Component {
 
   onRootMounted = () => {
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then(listWatches => {
-        if (listWatches.length > 0 && window.location.pathname === "/watches") {
-          const { slug } = listWatches[0];
+      this.refetchListApps().then(listApps => {
+        if (listApps.length > 0 && window.location.pathname === "/watches") {
+          const { slug } = listApps[0];
           history.replace(`/watch/${slug}`);
         }
       });
@@ -193,7 +193,7 @@ class Root extends Component {
     const {
       initSessionId,
       themeState,
-      listWatches,
+      listApps,
       rootDidInitialWatchFetch
     } = this.state;
 
@@ -224,10 +224,10 @@ class Root extends Component {
                       return <Crashz />;
 
                     }}/>
-                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListWatches} />) } />
+                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListWatches} />} />
-                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
+                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListApps} />} />
+                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
@@ -241,8 +241,8 @@ class Root extends Component {
                           <WatchDetailPage
                             {...props}
                             rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listWatches={listWatches}
-                            refetchListWatches={this.refetchListWatches}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                           />
                         )
@@ -266,7 +266,7 @@ class Root extends Component {
                       render={
                         (props) => <ShipInitCompleted
                           {...props}
-                          refetchListWatches={this.refetchListWatches}
+                          refetchListApps={this.refetchListApps}
                           initSessionId={initSessionId}
                           onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
                         />
@@ -279,8 +279,8 @@ class Root extends Component {
                           <WatchDetailPage
                             {...props}
                             rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listWatches={listWatches}
-                            refetchListWatches={this.refetchListWatches}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                           />
                         )

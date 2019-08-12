@@ -66,7 +66,7 @@ class DetailPageApplication extends Component {
   updateWatchInfo = async e => {
     e.preventDefault();
     const { appName, iconUri } = this.state;
-    const { watch, updateCallback, updateWatch, refetchListWatches } = this.props;
+    const { watch, updateCallback, updateWatch, refetchListApps } = this.props;
     this.setState({ editWatchLoading: true });
 
     await updateWatch(watch.id, appName, iconUri).catch( error => {
@@ -76,7 +76,7 @@ class DetailPageApplication extends Component {
       });
     });
 
-    await refetchListWatches();
+    await refetchListApps();
 
     this.setState({
       editWatchLoading: false,
@@ -136,7 +136,7 @@ class DetailPageApplication extends Component {
       this.setState({ deleteAppLoading: true });
       await this.props.deleteWatch(watch.id, childWatchIds)
         .then(() => {
-          this.props.refetchListWatches().then(() => {
+          this.props.refetchListApps().then(() => {
             this.props.history.push("/watches");
           });
         })

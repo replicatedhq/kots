@@ -4,7 +4,7 @@ import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import withTheme from "@src/components/context/withTheme";
-import { listWatches, listPendingInit, listHelmCharts } from "@src/queries/WatchQueries";
+import { listWatches } from "@src/queries/AppsQueries";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import HelmChartSidebarItem from "@src/components/watches/WatchSidebarItem/HelmChartSidebarItem";
 import SubNavBar from "@src/components/shared/SubNavBar";
@@ -33,7 +33,7 @@ class HelmChartDetailPage extends Component {
     const { getThemeState, setThemeState, match, listWatchesQuery } = this.props;
     const slug = `${match.params.owner}/${match.params.slug}`;
 
-    const currentWatch = listWatchesQuery?.listWatches?.find( w => w.slug === slug);
+    const currentWatch = listWatchesQuery?.watches?.find( w => w.slug === slug);
 
     // Handle updating the navbar logo when a watch changes.
     if (currentWatch?.watchIcon) {
@@ -118,18 +118,6 @@ export default compose(
   withTheme,
   graphql(listWatches, {
     name: "listWatchesQuery",
-    options: {
-      fetchPolicy: "no-cache"
-    }
-  }),
-  graphql(listPendingInit, {
-    name: "listPendingInitQuery",
-    options: {
-      fetchPolicy: "no-cache"
-    }
-  }),
-  graphql(listHelmCharts, {
-    name: "listHelmChartsQuery",
     options: {
       fetchPolicy: "no-cache"
     }

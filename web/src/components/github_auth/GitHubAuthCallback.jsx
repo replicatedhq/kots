@@ -41,7 +41,7 @@ class GitHubAuthCallback extends React.Component {
         .then((res) => {
           if (Utilities.localStorageEnabled()) {
             window.localStorage.setItem("token", res.data.createGithubAuthToken.access_token);
-            this.props.refetchListWatches().then(this.getUser);
+            this.props.refetchListApps().then(this.getUser);
             // this.getUser();
 
           } else {

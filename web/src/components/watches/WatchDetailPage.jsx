@@ -56,10 +56,10 @@ class WatchDetailPage extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getThemeState, setThemeState, match, listWatches, history, getWatchQuery } = this.props;
+    const { getThemeState, setThemeState, match, listApps, history, getWatchQuery } = this.props;
     const { search } = this.props.location;
     const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listWatches.find(w => w.slug === slug);
+    const currentWatch = listApps.find(w => w.slug === slug);
 
     // Handle updating the app theme state when a watch changes.
     if (currentWatch ?.watchIcon) {
@@ -200,13 +200,13 @@ class WatchDetailPage extends Component {
    *  if no watches are found, or the first watch is found.
    */
   checkForFirstWatch = () => {
-    const { history, rootDidInitialWatchFetch, listWatches } = this.props;
+    const { history, rootDidInitialWatchFetch, listApps } = this.props;
     if (!rootDidInitialWatchFetch) {
       return;
     }
 
-    if (listWatches.length > 0) {
-      history.replace(`/watch/${listWatches[0].slug}`);
+    if (listApps.length > 0) {
+      history.replace(`/watch/${listApps[0].slug}`);
     } else {
       history.replace("/watch/create/init");
     }
@@ -226,8 +226,8 @@ class WatchDetailPage extends Component {
       match,
       getWatchQuery,
       getHelmChartQuery,
-      listWatches,
-      refetchListWatches,
+      listApps,
+      refetchListApps,
       rootDidInitialWatchFetch
     } = this.props;
 
@@ -268,10 +268,10 @@ class WatchDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
-          condition={listWatches ?.length > 1}
+          condition={listApps ?.length > 1}
           sidebar={(
             <SideBar
-              items={listWatches ?.map((item, idx) => {
+              items={listApps ?.map((item, idx) => {
                 let sidebarItemNode;
                 if (item.slug) {
                   const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
@@ -316,7 +316,7 @@ class WatchDetailPage extends Component {
                         <PendingHelmChartDetailPage
                           loading={loading}
                           chart={watch}
-                          refreshListWatches={this.props.refreshListWatches}
+                          refetchListApps={this.props.refetchListApps}
                           onActiveInitSession={this.props.onActiveInitSession}
                         />
                       }
@@ -325,7 +325,7 @@ class WatchDetailPage extends Component {
                       <Route exact path="/watch/:owner/:slug" render={() =>
                         <DetailPageApplication
                           watch={watch}
-                          refetchListWatches={refetchListWatches}
+                          refetchListApps={refetchListApps}
                           refetchWatch={this.props.getWatchQuery ?.refetch}
                           updateCallback={this.refetchGraphQLData}
                           onActiveInitSession={this.props.onActiveInitSession}
@@ -351,7 +351,7 @@ class WatchDetailPage extends Component {
                     }
                     { /*
                       <Route exact path="/watch/helm/:id" render={() =>
-                        <DetailPageHelmChart chart={watch} refetchListWatches={refetchListWatches} updateCallback={this.refetchGraphQLData} />
+                        <DetailPageHelmChart chart={watch} refetchListApps={refetchListApps} updateCallback={this.refetchGraphQLData} />
                       } />
                     */ }
                     { /* ROUTE UNUSED */}

@@ -20,8 +20,8 @@ describe("<WatchDetailPage> tests", () => {
           }
         }}
         rootDidInitialWatchFetch={true}
-        listWatches={[]}
-        refetchListWatches={() => {}}
+        listApps={[]}
+        refetchListApps={() => {}}
         getWatchQuery={{ loading: false }}
         getHelmChartQuery={{ loading: false }}
       />
@@ -30,7 +30,7 @@ describe("<WatchDetailPage> tests", () => {
     expect(wrapper).toBeTruthy();
   });
 
-  it("Renders a Loader if the root listWatches haven't been fetched", () => {
+  it("Renders a Loader if the root listApps haven't been fetched", () => {
     const wrapper = shallow(
       <WatchDetailPage
         match={{
@@ -45,8 +45,8 @@ describe("<WatchDetailPage> tests", () => {
           }
         }}
         rootDidInitialWatchFetch={false}
-        listWatches={[]}
-        refetchListWatches={() => { }}
+        listApps={[]}
+        refetchListApps={() => { }}
         getWatchQuery={{ loading: false }}
         getHelmChartQuery={{ loading: false }}
       />
@@ -69,8 +69,8 @@ describe("<WatchDetailPage> tests", () => {
           }
         }}
         rootDidInitialWatchFetch={false}
-        listWatches={[]}
-        refetchListWatches={() => { }}
+        listApps={[]}
+        refetchListApps={() => { }}
         getWatchQuery={{ loading: false }}
         getHelmChartQuery={{ loading: true }}
       />
@@ -94,8 +94,8 @@ describe("<WatchDetailPage> tests", () => {
           }
         }}
         rootDidInitialWatchFetch={true}
-        listWatches={[]}
-        refetchListWatches={() => { }}
+        listApps={[]}
+        refetchListApps={() => { }}
         getWatchQuery={{ loading: true }}
         getHelmChartQuery={{ loading: false }}
       />
@@ -119,8 +119,8 @@ describe("<WatchDetailPage> tests", () => {
             }
           }}
           rootDidInitialWatchFetch={true}
-          listWatches={[]}
-          refetchListWatches={() => { }}
+          listApps={[]}
+          refetchListApps={() => { }}
           getWatchQuery={{ loading: false }}
           getHelmChartQuery={{ loading: false }}
         />
