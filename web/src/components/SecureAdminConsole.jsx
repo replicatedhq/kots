@@ -64,20 +64,19 @@ class SecureAdminConsole extends React.Component {
     const { password } = this.state;
     if (this.validatePassword(true)) {
       this.setState({ createLoading: true });
-      await this.props.createAdminConsolePassword(password)
-      .then(res => {
+      try {
+        const res = await this.props.createAdminConsolePassword(password);
         this.setState({ createLoading: false });
         this.completeLogin(res.data, true);
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ message }) => {
+      } catch (error) {
+        error.graphQLErrors.map(({ message }) => {
           this.setState({
             createLoading: false,
             passwordErr: true,
             passwordErrMessage: message,
           })
-        })
-      });
+        });
+      }
     }
   }
 
@@ -85,19 +84,18 @@ class SecureAdminConsole extends React.Component {
     const { password } = this.state;
     if (this.validatePassword()) {
       this.setState({ authLoading: true });
-      await this.props.loginToAdminConsole(password)
-      .then(res => {
+      try {
+        const res = await this.props.loginToAdminConsole(password);
         this.completeLogin(res.data);
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ message }) => {
+      } catch (error) {
+        error.graphQLErrors.map(({ message }) => {
           this.setState({
             authLoading: false,
             passwordErr: true,
             passwordErrMessage: message,
           })
-        })
-      });
+        }); 
+      }
     }
   }
 

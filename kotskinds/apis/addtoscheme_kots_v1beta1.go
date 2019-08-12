@@ -17,7 +17,7 @@ limitations under the License.
 package apis
 
 import (
-	kotsv1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/apis/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotsadm/kotskinds/apis/kots/v1beta1"
 )
 
 func init() {

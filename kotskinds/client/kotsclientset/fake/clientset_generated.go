@@ -18,9 +18,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset"
-	kotsv1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset/typed/kots/v1beta1"
-	fakekotsv1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset/typed/kots/v1beta1/fake"
+	clientset "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset"
+	kotsv1beta1 "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset/typed/kots/v1beta1"
+	fakekotsv1beta1 "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset/typed/kots/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

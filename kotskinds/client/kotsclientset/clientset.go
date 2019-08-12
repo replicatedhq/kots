@@ -18,7 +18,7 @@ limitations under the License.
 package kotsclientset
 
 import (
-	kotsv1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset/typed/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset/typed/kots/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
