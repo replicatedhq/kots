@@ -12,35 +12,17 @@ steps:
 
   - wait
 
-  - commands:
+  # - commands:
+  #     - make -C worker publish-enterprise
+  #   branches: "master"
+  #   retry:
+  #     automatic: true
+
+  - label: release
+    commands:
       - mkdir -p worker/bin worker/deploy/bin
       - buildkite-agent artifact download worker/bin/* . --step test-and-build
       - cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker
       - chmod +x worker/deploy/bin/kotsadm-worker
-      - make -C worker build_and_push
+      - if [ -z "$GIT_TAG" ]; then make -C worker build-alpha publish-alpha; else git tag -f "$GIT_TAG" && make -C worker build-release publish-release; fi
     branches: "master"
-    retry:
-      automatic: true
-
-  - wait
-
-  - commands:
-      - make -C worker publish-enterprise
-    branches: "master"
-    retry:
-      automatic: true
-
-  - commands:
-      - make -C worker publish-staging
-    branches: "master"
-    retry:
-      automatic: true
-
-  - block: "Release to production"
-    branches: "master"
-
-  - commands:
-      - make -C worker publish-production
-    branches: "master"
-    retry:
-      automatic: true

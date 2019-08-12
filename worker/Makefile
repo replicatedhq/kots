@@ -71,41 +71,48 @@ bin/kotsadm-worker: $(SRC)
 .PHONY: build
 build: bin/kotsadm-worker
 
+.PHONY: build-alpha
+build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
+build-alpha: build_and_push
+
+.PHONY: build-release
+build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
+build-release: build_and_push
+
 .PHONY: build_and_push
 build_and_push:
-	docker build -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} ./deploy
-	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} kotsadm/${PROJECT_NAME}:latest
-	docker push kotsadm/${PROJECT_NAME}:latest
+	docker build -f deploy/Dockerfile -t ${IMAGE} ./deploy
+	docker push ${IMAGE}
 
-.PHONY: publish-production
-publish-production: REGISTRY = kotsadm
-publish-production: OVERLAY = production
-publish-production: GITOPS_OWNER = replicatedcom
-publish-production: GITOPS_REPO = gitops-deploy
-publish-production: GITOPS_BRANCH = release
-publish-production: GITOPS_FILENAME = kotsadm-worker
-publish-production: build_and_publish
+.PHONY: publish-release
+publish-release: IMAGE_TAG = ${GIT_TAG}
+publish-release: OVERLAY = production
+publish-release: GITOPS_OWNER = replicatedcom
+publish-release: GITOPS_REPO = gitops-deploy
+publish-release: GITOPS_BRANCH = release
+publish-release: GITOPS_FILENAME = kotsadm-worker
+publish-release: build_and_publish
 
-.PHONY: publish-staging
-publish-staging: REGISTRY = kotsadm
-publish-staging: OVERLAY = staging
-publish-staging: GITOPS_OWNER = replicatedcom
-publish-staging: GITOPS_REPO = gitops-deploy
-publish-staging: GITOPS_BRANCH = master
-publish-staging: GITOPS_FILENAME = kotsadm-worker
-publish-staging: build_and_publish
+.PHONY: publish-alpha
+publish-alpha: IMAGE_TAG = alpha
+publish-alpha: OVERLAY = staging
+publish-alpha: GITOPS_OWNER = replicatedcom
+publish-alpha: GITOPS_REPO = gitops-deploy
+publish-alpha: GITOPS_BRANCH = master
+publish-alpha: GITOPS_FILENAME = kotsadm-worker
+publish-alpha: build_and_publish
 
-.PHONY: publish-enterprise
-publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
-publish-enterprise: OVERLAY = enterprise
-publish-enterprise: GITOPS_OWNER = replicatedhq
-publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: GITOPS_FILENAME = kotsadm-worker
-publish-enterprise: build_and_publish
+# .PHONY: publish-enterprise
+# publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
+# publish-enterprise: OVERLAY = enterprise
+# publish-enterprise: GITOPS_OWNER = replicatedhq
+# publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
+# publish-enterprise: GITOPS_BRANCH = master
+# publish-enterprise: GITOPS_FILENAME = kotsadm-worker
+# publish-enterprise: build_and_publish
 
 build_and_publish:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:latest
+	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:${IMAGE_TAG}
 
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)

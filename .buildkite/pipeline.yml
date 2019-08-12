@@ -39,21 +39,34 @@ steps:
 
   - wait
 
-  - trigger: "kotsadm-web"
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "${BUILDKITE_COMMIT}"
-      branch: "${BUILDKITE_BRANCH}"
-
-
   - trigger: "kotsadm-worker"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
+      env:
+        GIT_TAG: "${BUILDKITE_TAG}"
 
   - trigger: "kotsadm-migrations"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
+      env:
+        GIT_TAG: "${BUILDKITE_TAG}"
+
+  - trigger: "kotsadm-web"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
+      env:
+        GIT_TAG: "${BUILDKITE_TAG}"
+
+  - trigger: "kotsadm-operator"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
+      env:
+        GIT_TAG: "${BUILDKITE_TAG}"

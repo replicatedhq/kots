@@ -57,7 +57,7 @@ test: export S3_BUCKET_NAME = ship-pacts
 test:
 	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
-	docker run --rm -d --name kotsadm-fixtures -p 15432:5432 replicated/kotsadm-fixtures:local
+	docker run --rm -d --name kotsadm-fixtures -p 15432:5432 kotsadm/kotsadm-fixtures:local
 	yarn run test:local
 	@-sleep 1
 	docker stop kotsadm-fixtures
@@ -69,53 +69,48 @@ pkg:
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/kotsadm-api .
 	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
 
-.PHONY: build-staging
-build-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-build-staging: build_and_push
+.PHONY: build-alpha
+build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
+build-alpha: build_and_push
 
-.PHONY: build-production
-build-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-build-production: build_and_push
+.PHONY: build-release
+build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
+build-release: build_and_push
 
-.PHONY: build-enterprise
-build-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
-build-enterprise: build_and_push
-
+.PHONY: build_and_push
 build_and_push:
-	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
-	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
-	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker push ${IMAGE}
 
+.PHONY: publish-release
+publish-release: IMAGE_TAG = ${GIT_TAG}
+publish-release: OVERLAY = production
+publish-release: GITOPS_OWNER = replicatedcom
+publish-release: GITOPS_REPO = gitops-deploy
+publish-release: GITOPS_BRANCH = release
+publish-release: GITOPS_FILENAME = kotsadm-api
+publish-release: build_and_publish
 
-.PHONY: publish-production
-publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-publish-production: OVERLAY = production
-publish-production: GITOPS_OWNER = replicatedcom
-publish-production: GITOPS_REPO = gitops-deploy
-publish-production: GITOPS_BRANCH = release
-publish-production: GITOPS_FILENAME = kotsadm-api
-publish-production: build_and_publish
+.PHONY: publish-alpha
+publish-alpha: IMAGE_TAG = alpha
+publish-alpha: OVERLAY = staging
+publish-alpha: GITOPS_OWNER = replicatedcom
+publish-alpha: GITOPS_REPO = gitops-deploy
+publish-alpha: GITOPS_BRANCH = master
+publish-alpha: GITOPS_FILENAME = kotsadm-api
+publish-alpha: build_and_publish
 
-.PHONY: publish-staging
-publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-publish-staging: OVERLAY = staging
-publish-staging: GITOPS_OWNER = replicatedcom
-publish-staging: GITOPS_REPO = gitops-deploy
-publish-staging: GITOPS_BRANCH = master
-publish-staging: GITOPS_FILENAME = kotsadm-api
-publish-staging: build_and_publish
-
-.PHONY: publish-enterprise
-publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
-publish-enterprise: OVERLAY = enterprise
-publish-enterprise: GITOPS_OWNER = replicatedhq
-publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: GITOPS_FILENAME = kotsadm-api
-publish-enterprise: build_and_publish
+# .PHONY: publish-enterprise
+# publish-enterprise: IMAGE_TAG = ${GIT_TAG}
+# publish-enterprise: OVERLAY = enterprise
+# publish-enterprise: GITOPS_OWNER = replicatedhq
+# publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
+# publish-enterprise: GITOPS_BRANCH = master
+# publish-enterprise: GITOPS_FILENAME = kotsadm-api
+# publish-enterprise: build_and_publish
 
 build_and_publish:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:${IMAGE_TAG}
 
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)

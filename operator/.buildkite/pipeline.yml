@@ -1,5 +1,5 @@
 steps:
-  - command: make ci
+  - command: make -C operator test build
     label: test-and-build
     plugins:
       - docker#v3.0.1:
@@ -7,35 +7,41 @@ steps:
           image: replicated/gitops-builder:buildkite
           workdir: /go/src/github.com/replicatedhq/kotsadm/operator
     artifact_paths:
-      - "bin/**/*"
-      - "pacts/**/*"
+      - "operator/bin/**/*"
+      - "operator/pacts/**/*"
     branches: master
 
   - wait
 
-  - command: "make publish-pact"
+  - command: "make -C operator publish-pact"
     branches: master
     retry:
       automatic: true
 
   - wait
 
-  - command: "make publish"
-    branches: master
-    retry:
-      automatic: true
+  - label: release
+    commands:
+      - mkdir -p operator/bin operator/deploy/bin
+      - buildkite-agent artifact download operator/bin/* . --step test-and-build
+      - cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator
+      - chmod +x operator/deploy/bin/kotsadm-operator
+      - if [ -z "$GIT_TAG" ]; then make -C operator build-alpha publish-alpha; else git tag -f "$GIT_TAG" && make -C worker build-release publish-release; fi
+    branches: "master"
 
-  - wait
+  # - wait
 
-  - command: "make build-enterprise"
-    branches: master
-    retry:
-      automatic: true
+  # TODO: fixit
+  # - command: "make build-enterprise"
+  #   branches: master
+  #   retry:
+  #     automatic: true
 
-  - wait
+  # - wait
 
-  - command: "make publish-enterprise"
-    branches: master
-    retry:
-      automatic: true
+  # TODO: fixit
+  # - command: "make publish-enterprise"
+  #   branches: master
+  #   retry:
+  #     automatic: true
 

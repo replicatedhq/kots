@@ -9,7 +9,7 @@ spec:
         replicated/node-pool: privileged
       containers:
         - name: kotsadm-worker
-          image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/kotsadm-worker
+          image: kotsadm/kotsadm-worker
           env:
             - name: INIT_NODE_SELECTOR
               value: untrusted
