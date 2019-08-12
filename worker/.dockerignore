@@ -4,4 +4,3 @@
 .buildkite
 deploy
 kustomize
-bin/

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-update
+  name: kotsadm-worker-update
 spec:
   template:
     spec:
@@ -9,8 +9,8 @@ spec:
       imagePullSecrets:
         - name: replicatedregistrykey
       containers:
-        - name: ship-cluster-worker
-          image: registry.replicated.com/ship-enterprise/ship-cluster-worker
+        - name: kotsadm-worker
+          image: registry.replicated.com/ship-enterprise/kotsadm-worker
           env:
             - name: SHIP_IMAGE
               value: "replicated/ship"

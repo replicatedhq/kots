@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 func (s *SQLStore) GetSupportBundleURL(supportBundle *types.SupportBundle) (string, error) {

@@ -103,7 +103,7 @@ metadata:
   labels:
     app: minio
     release: minio
-  name: ship-cluster-s3
+  name: kotsadm-s3
 spec:
   ports:
   - name: service
@@ -225,7 +225,7 @@ spec:
         - /config/initialize
         env:
         - name: MINIO_ENDPOINT
-          value: ship-cluster-s3
+          value: kotsadm-s3
         - name: MINIO_PORT
           value: "4569"
         image: minio/mc:RELEASE.2019-05-01T23-27-44Z

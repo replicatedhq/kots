@@ -1,52 +1,69 @@
-import React, { Suspense, lazy } from "react";
-import { withRouter, Switch, Route } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
-import { uploadImageWatchBatch } from "../../mutations/ImageWatchMutations";
-
+import React from "react";
+import Prism from "@maji/react-prism";
 import Loader from "../shared/Loader";
-const ClusterScopeBatchCreate = lazy(() => import("./ClusterScopeBatchCreate"));
-const ClusterScopeBatch = lazy(() => import("./ClusterScopeBatch"));
+import { Link } from "react-router-dom";
+import "../../scss/components/image_check/ImageWatchBatch.scss";
 
-import "../../scss/components/state/StateFileViewer.scss";
-
-class ClusterScope extends React.Component {
-  constructor() {
-    super();
-  }
+export default class ClusterScope extends React.Component {
 
   componentDidMount() {
-    document.title = "ClusterScope - Discover outdated containers in your Kubernetes cluster"
+    document.title = "kubectl outdated - A plugin to show out-of-date images running in a cluster"
+
+    const script = document.createElement("script");
+  
+    script.id = "asciicast-ExaFOk6ap0GL17GJsJWpExGnM";
+    script.src = "https://asciinema.org/a/ExaFOk6ap0GL17GJsJWpExGnM.js";
+    script.async = true;
+    script.setAttribute("data-autoplay", true);
+    script.setAttribute("data-loop", "1");
+
+    document.getElementById("asciinema-player").appendChild(script);
+
   }
 
   render() {
+    const command = `kubectl krew install outdated\nkubectl outdated`;
     return (
-      <div className="flex-column flex1 u-overflow--auto">
-        <div className="flex-column flex1 HelmValues--wrapper">
-          <Suspense fallback={<div className="flex-column flex1 alignItems--center justifyContent--center"><Loader size="60" /></div>}>
-            <Switch>
-              <Route exact path="/clusterscope" render={() =>
-                <ClusterScopeBatchCreate
-                  history={this.props.history}
-                  uploadImageWatchBatch={this.props.uploadImageWatchBatch} />
-              }/>
-              <Route exact path="/clusterscope/:batchId" render={() =>
-                <ClusterScopeBatch
-                  getImageWatch={this.props.getImageWatch} />
-              }/>
-            </Switch>
-          </Suspense>
+      <div className="Login-wrapper  flex-column flex1 u-overflow--hidden justifyContent--center">
+        <div className="ClusterScopePage--wrapper u-overflow--auto">
+          <div className="flex1 flex-column container">
+            <div className="u-flexTabletReflow flex1 justifyContent--center u-paddingTop--30 u-paddingBottom--30">
+              <div className="flex-column flex1 left-block-wrapper">
+                <div className="flex-column">
+                  <div className="icon kub-logo u-marginBottom--20"></div>
+                  <div className="flex">
+                    <p className="u-fontSize--header2 u-fontWeight--bold u-fontFamily--monaco u-color--tuna u-lineHeight--more">kubectl outdated</p>
+                    <span className="u-marginLeft--10 flex-column justifyContent--center">
+                      <a className="github-button" href="https://github.com/replicatedhq/outdated" data-size="large" data-show-count="true" aria-label="Star replicatedhq/outdated on GitHub">Star</a>
+                    </span>
+                  </div>
+                  <p className="u-fontSize--larger u-color--tundora u-fontWeight--normal u-lineHeight--more u-marginTop--10">A kubectl plugin to show out-of-date images running in a cluster. Simply run the following commands from your workstation.</p>
+                  <div className="u-marginTop--20">
+                    <Prism language="bash">
+                      {command}
+                    </Prism>
+                  </div>
+                  <p className="u-fontSize--large u-color--dustyGray u-fontWeight--normal u-lineHeight--more u-marginTop--20">
+                    The plugin will scan for all pods in all namespaces that you have at least read access to. It will then connect to the registry that hosts the image, and (if there's permission), it will analyze your tag to the list of current tags.
+                  </p>
+                  <p className="u-fontSize--large u-color--dustyGray u-fontWeight--normal u-lineHeight--more u-marginTop--20">
+                    The output is a list of all images, with the most out-of-date images in red, slightly outdated in yellow, and up-to-date in green.
+                  </p>
+                  <div className="u-marginTop--20">
+                    <Link to="/login" className="btn primary">Udpate images using kotsadm</Link>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-column flex1 justifyContent--center right-block-wrapper">
+                <div className="iframe-placeholder">
+                  <Loader className="ascii-loader" color="#ffffff" size="60" />
+                  <div id="asciinema-player" />
+                </div> 
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 }
-
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(uploadImageWatchBatch, {
-    props: ({ mutate }) => ({
-      uploadImageWatchBatch: (imageList) => mutate({ variables: { imageList } })
-    })
-  }),
-)(ClusterScope);

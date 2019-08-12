@@ -1,4 +1,4 @@
-module github.com/replicatedhq/ship-cluster/kotskinds
+module github.com/replicatedhq/kotsadm/kotskinds
 
 go 1.12
 

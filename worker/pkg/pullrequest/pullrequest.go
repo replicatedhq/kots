@@ -13,8 +13,8 @@ import (
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/github"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/util"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/util"
 	"github.com/replicatedhq/ship/pkg/state"
 	"go.uber.org/zap"
 )

@@ -41,6 +41,10 @@
   .login-form-wrapper {
     padding: 40px;
     max-width: 300px;
+
+    &.secure-console {
+      max-width: 500px;
+    }
   }
 
   .traditional-auth-wrapper,

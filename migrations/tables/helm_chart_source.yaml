@@ -3,7 +3,7 @@ kind: Table
 metadata:
   name: helm-chart-source
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: helm_chart_source
   requires: []
   schema:

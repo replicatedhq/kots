@@ -1,12 +1,14 @@
-FROM repldev/ship-cluster-worker:latest
+FROM golang:1.12
+ENV PROJECT_PATH=/go/src/github.com/replicatedhq/kotsadm/worker
+WORKDIR $PROJECT_PATH
 
-EXPOSE 6060
-
-ADD cmd cmd
-ADD pkg pkg
-ADD vendor vendor
 ADD Makefile .
-RUN make build
-RUN cp ./bin/ship-cluster-worker /opt/ship-cluster-worker
+ADD hack hack
+RUN make build-deps
 
-ENTRYPOINT ["/opt/ship-cluster-worker"]
+ADD . .
+RUN make build
+
+RUN cp ./bin/kotsadm-worker /opt/kotsadm-worker
+
+ENTRYPOINT ["/opt/kotsadm-worker"]

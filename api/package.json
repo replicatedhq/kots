@@ -1,5 +1,5 @@
 {
-  "name": "ship-cluster-api",
+  "name": "kotsadm-api",
   "version": "1.0.0",
   "description": "Ship Cluster GraphQL API",
   "license": "Apache-2.0",

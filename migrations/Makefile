@@ -1,5 +1,5 @@
 SHELL:=/bin/bash
-PROJECT_NAME ?= ship-cluster-migrations
+PROJECT_NAME ?= kotsadm-migrations
 
 .PHONY: test
 test:
@@ -7,23 +7,6 @@ test:
 	docker-compose -f docker-compose-citest.yml build migrate
 	docker-compose -f docker-compose-citest.yml run migrate # forwards exit code
 	docker-compose -f docker-compose-citest.yml down
-
-.PHONY: new-migration
-new-migration:
-	docker run -v ${PWD}/migrations/:/migrations -it --rm migrate/migrate create -seq -dir /migrations -ext=sql $(name)
-	rm migrations/*_$(name).down.sql
-
-.PHONY: check-dups
-check-dups:
-	@duplicates=`ls migrations/ | grep '[0-9]*_.*\.up' | grep -o '[0-9][0-9]*' | uniq -d`; \
-	\
-	if [ -z "$$duplicates" ]; then \
-	  echo "No duplicates found"; \
-	else \
-	  echo "Duplicates were found!"; \
-	  echo "duplicates - $$duplicates"; \
-	  exit 1; \
-	fi
 
 .PHONY: publish-production
 publish-production: OVERLAY = production

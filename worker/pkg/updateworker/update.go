@@ -3,8 +3,8 @@ package updateworker
 import (
 	"context"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/ship"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 	"go.uber.org/zap"
 )
 

@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: github-nonce
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: github_nonce
   requires: []
   schema:

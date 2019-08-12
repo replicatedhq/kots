@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/operator/pkg/applier"
-	"github.com/replicatedhq/ship-cluster/operator/pkg/helm"
+	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
+	"github.com/replicatedhq/kotsadm/operator/pkg/helm"
 	"k8s.io/client-go/rest"
 )
 

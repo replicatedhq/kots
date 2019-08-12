@@ -4,7 +4,7 @@ export GO111MODULE=on
 .PHONY: generate
 generate: controller-gen client-gen
 	controller-gen object:headerFile=./hack/boilerplate.go.txt paths=./apis/...
-	client-gen --output-package=github.com/replicatedhq/ship-cluster/kotskinds/client --clientset-name kotsclientset --input-base github.com/replicatedhq/ship-cluster/kotskinds/apis --input kots/v1beta1 -h ./hack/boilerplate.go.txt
+	client-gen --output-package=github.com/replicatedhq/kotsadm/kotskinds/client --clientset-name kotsclientset --input-base github.com/replicatedhq/kotsadm/kotskinds/apis --input kots/v1beta1 -h ./hack/boilerplate.go.txt
 
 # find or download controller-gen
 # download controller-gen if necessary

@@ -1,3 +1,3 @@
-# ship-cluster-ui
+# kotsadm-web
 UI for the ship cloud service
 

@@ -3,7 +3,7 @@ import { withRouter } from "react-router-dom";
 import { compose } from "react-apollo";
 
 import Loader from "@src/components/shared/Loader";
-import ClusterScopeBatchPath from "@src/components/clusterscope/ClusterScopeBatchPath";
+import VersionsBehindGraph from "./VersionsBehindGraph";
 import PaperIcon from "@src/components/shared/PaperIcon";
 
 export function PendingHelmChartDetailPage(props) {
@@ -17,7 +17,7 @@ export function PendingHelmChartDetailPage(props) {
     );
   }
 
-  // NOTE: This is just dummy data for <ClusterScopeBatchPath>. It's probably going
+  // NOTE: This is just dummy data for <VersionsBehindGraph>. It's probably going
   // to get changed once we get ourselves some real data on here.
   const dummy_data = [
     { version: "1.2.3" },
@@ -99,7 +99,7 @@ export function PendingHelmChartDetailPage(props) {
           <div className="flex-column flex1 u-marginBottom--10">
             <p className="u-color--tuna u-fontWeight--bold u-fontSize--large">Current version x.x.x</p>
           </div>
-          <ClusterScopeBatchPath
+          <VersionsBehindGraph
             path={dummy_data}
             loading={false}
           />

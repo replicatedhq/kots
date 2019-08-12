@@ -3,7 +3,7 @@ kind: Database
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: ship-cluster-postgres
+  name: kotsadm-postgres
 schemahero:
   nodeSelector:
     replicated/node-pool: privileged
@@ -12,5 +12,5 @@ connection:
     uri:
       valueFrom:
         secretKeyRef:
-          name: ship-cluster-postgres
+          name: kotsadm-postgres
           key: uri

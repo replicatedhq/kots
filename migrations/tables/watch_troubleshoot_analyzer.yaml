@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: watch-toubleshoot-analyzer
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: watch_troubleshoot_analyzer
   requires: []
   schema:

@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-watch
+  name: kotsadm-worker-watch
 spec:
   template:
     spec:
       restartPolicy: Always
       containers:
-        - name: ship-cluster-worker
+        - name: kotsadm-worker
           env:
             - name: LOG_LEVEL
               value: debug
@@ -16,7 +16,7 @@ spec:
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:
-                  name: ship-postgres   # This secret is created in the ship-cluster-db project
+                  name: ship-postgres   # This secret is created in the kotsadm-db project
                   key: uri
             - name: GITHUB_PRIVATE_KEY
               valueFrom:

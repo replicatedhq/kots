@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/ship"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: update-server
   labels:
-    app: ship-cluster-worker-update
+    app: kotsadm-worker-update
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: update-server
   selector:
-    app: ship-cluster-worker-update
+    app: kotsadm-worker-update

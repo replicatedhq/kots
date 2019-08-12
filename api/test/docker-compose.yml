@@ -2,7 +2,7 @@ version: "3.2"
 services:
   postgres:
     image: replicated/ship-cluster-fixtures:latest
-  ship-cluster-api:
+  kotsadm-api:
     build:
       context: ../
       dockerfile: ./test/Dockerfile

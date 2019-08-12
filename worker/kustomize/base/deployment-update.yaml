@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-update
+  name: kotsadm-worker-update
 spec:
   selector:
     matchLabels:
-      app: ship-cluster-worker-update
+      app: kotsadm-worker-update
   template:
     metadata:
       labels:
-        app: ship-cluster-worker-update
+        app: kotsadm-worker-update
     spec:
       affinity:
         podAffinity:
@@ -21,7 +21,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-worker-update
+                  - kotsadm-worker-update
               topologyKey: "kubernetes.io/hostname"
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -32,13 +32,13 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-worker-update
+                  - kotsadm-worker-update
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
-      serviceAccountName: ship-cluster-worker-update
+      serviceAccountName: kotsadm-worker-update
       containers:
-        - name: ship-cluster-worker
-          image: ship-cluster-worker
+        - name: kotsadm-worker
+          image: kotsadm-worker
           imagePullPolicy: IfNotPresent
           args: ["update"]
           env:

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 func (s *SQLStore) GetCluster(ctx context.Context, clusterID string) (*types.Cluster, error) {

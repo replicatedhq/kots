@@ -5,7 +5,7 @@ import (
 
 	_ "github.com/lib/pq" // driver
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
 )
 
 type SQLStore struct {

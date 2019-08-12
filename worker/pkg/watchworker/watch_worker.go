@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/store"
+	"github.com/replicatedhq/kotsadm/worker/pkg/version"
 	shipspecs "github.com/replicatedhq/ship/pkg/specs"
 	"github.com/replicatedhq/ship/pkg/state"
 	"github.com/spf13/viper"

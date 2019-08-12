@@ -3,7 +3,7 @@ package logger
 import (
 	"io"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
 	"go.uber.org/zap"
 )
 

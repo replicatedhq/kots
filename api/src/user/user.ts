@@ -35,3 +35,8 @@ export interface ShipUser {
 export interface AccessToken {
   access_token: string;
 }
+
+export interface AdminSignupInfo {
+  token: string;
+  userId: string;
+}

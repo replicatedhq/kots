@@ -2,7 +2,7 @@ apiVersion: databases.schemahero.io/v1alpha2
 kind: Database
 metadata:
 
-  name: ship-cluster-postgres
+  name: kotsadm-postgres
 schemahero:
   nodeSelector:
     replicated/node-pool: privileged
@@ -11,5 +11,5 @@ connection:
     uri:
       valueFrom:
         secretKeyRef:
-          name: ship-cluster-postgres
+          name: kotsadm-postgres
           key: uri

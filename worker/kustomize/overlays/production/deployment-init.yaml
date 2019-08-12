@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-init
+  name: kotsadm-worker-init
 spec:
   template:
     spec:
       nodeSelector:
         replicated/node-pool: privileged
       containers:
-        - name: ship-cluster-worker
-          image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-worker
+        - name: kotsadm-worker
+          image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/kotsadm-worker
           env:
             - name: INIT_NODE_SELECTOR
               value: untrusted

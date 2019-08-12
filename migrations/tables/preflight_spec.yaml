@@ -3,7 +3,7 @@ kind: Table
 metadata:
   name: preflight-spec
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: preflight_spec
   schema:
     postgres:

@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: cluster-github
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: cluster_github
   requires: []
   schema:

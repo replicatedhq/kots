@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/ship"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/version"
+	"github.com/replicatedhq/kotsadm/worker/pkg/ship"
+	"github.com/replicatedhq/kotsadm/worker/pkg/store"
+	"github.com/replicatedhq/kotsadm/worker/pkg/version"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )

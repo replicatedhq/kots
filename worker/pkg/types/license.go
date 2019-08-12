@@ -6,7 +6,7 @@ import (
 	"github.com/replicatedhq/ship/pkg/api"
 )
 
-// should match https://github.com/replicatedhq/ship-cluster/blob/master/api/src/license/license.ts
+// should match https://github.com/replicatedhq/kotsadm/blob/master/api/src/license/license.ts
 type License struct {
 	ID              string                 `json:"id" yaml:"id" hcl:"id"`
 	Assignee        string                 `json:"assignee" yaml:"assignee" hcl:"assignee"`

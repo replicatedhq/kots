@@ -4,10 +4,10 @@ import (
 	"context"
 	"io"
 
-	"github.com/replicatedhq/ship-cluster/worker/pkg/config"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/logger"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/store"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/watchworker"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
+	"github.com/replicatedhq/kotsadm/worker/pkg/logger"
+	"github.com/replicatedhq/kotsadm/worker/pkg/store"
+	"github.com/replicatedhq/kotsadm/worker/pkg/watchworker"
 	"github.com/spf13/cobra"
 )
 
