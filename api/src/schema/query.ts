@@ -23,6 +23,8 @@ export const Query = `
     searchPendingInitSessions(title: String!): [PendingInitSession]
     getPendingIniSession(id: String!): PendingInitSession
 
+    listApps: Apps
+    
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
 

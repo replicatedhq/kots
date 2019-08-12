@@ -17,9 +17,11 @@ import { HelmChartQueries, HelmChartMutations } from "../helmchart";
 import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
 import { LicenseQueries, LicenseMutations } from "../license";
 import { PrefightQueries } from "../preflight";
+import { AppsQueries } from "../apps";
 
 export const Resolvers = (stores: Stores, params: Params) => ({
   Query: {
+    ...AppsQueries(stores),
     ...UserQueries(stores),
     ...ClusterQueries(stores),
     ...WatchQueries(stores),

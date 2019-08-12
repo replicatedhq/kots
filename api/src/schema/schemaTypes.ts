@@ -14,6 +14,7 @@ import HelmChart from "../helmchart/graphql/helmchart_types";
 import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
 import License from "../license/graphql/license_types";
 import Preflight from "../preflight/graphql/preflight_types";
+import Apps from "../apps/graphql/apps_types";
 
 import { all as Mutation } from "./mutation";
 import { Healthz, Query } from "./query";
@@ -30,6 +31,7 @@ export const ShipClusterSchemaTypes = [
   Query,
   ...Mutation,
   Healthz,
+  ...Apps,
   ...User,
   ...GitHubInstallation,
   ...Watch,

@@ -29,7 +29,7 @@ import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 
-import { listWatches, listPendingInit, listHelmCharts } from "@src/queries/WatchQueries";
+import { listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -153,37 +153,17 @@ class Root extends Component {
   }
 
   refetchListWatches = async () => {
-    // @TODO: Turn all of these queries into just 1 call
     // @TODO: Lean out the query to only fetch the data that
-    //        We need
-
-    // Fetch list of your watches
-    const watchList = await GraphQLClient.query({
-      query: listWatches,
+    const apps = await GraphQLClient.query({
+      query: listApps,
       fetchPolicy: "no-cache"
     }).catch( error => {
       throw error;
     });
 
-    // Fetch list of pending inits
-    const pendingInits = await GraphQLClient.query({
-      query: listPendingInit,
-      fetchPolicy: "no-cache"
-    }).catch( error => {
-      throw error;
-    });
-
-    // Fetch list of pending unforks
-    const pendingUnforks = await GraphQLClient.query({
-      query: listHelmCharts,
-      fetchPolicy: "no-cache"
-    }).catch( error => {
-      throw error;
-    });
-
-    const allWatches = watchList.data.listWatches.concat(
-      pendingInits.data.listPendingInitSessions,
-      pendingUnforks.data.listHelmCharts
+    const allWatches = apps.data.listApps.watches.concat(
+      apps.data.listApps.kotsApps,
+      apps.data.listApps.pendingUnforks,
     );
 
     this.setState({
