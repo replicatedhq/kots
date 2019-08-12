@@ -1,5 +1,5 @@
 import Express from "express";
-import { Controller, Get, Res } from "ts-express-decorators";
+import { Controller, Get, Res } from "@tsed/common";
 
 interface ErrorResponse {
   error: {};

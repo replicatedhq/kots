@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Controller, Get, Post, Res, Req } from "ts-express-decorators";
+import { Controller, Get, Post, Res, Req } from "@tsed/common";
 import jsYaml from "js-yaml";
 
 import { Params } from "../server/params";

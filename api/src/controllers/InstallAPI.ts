@@ -1,5 +1,5 @@
 import Express from "express";
-import { Controller, Get, PathParams, Res, Req } from "ts-express-decorators";
+import { Controller, Get, PathParams, Res, Req } from "@tsed/common";
 
 @Controller("/api/install")
 export class InstallAPI {

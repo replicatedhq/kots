@@ -1,5 +1,5 @@
 import Express from "express";
-import { Controller, Get, Res, Req, QueryParams, PathParams } from "ts-express-decorators";
+import { Controller, Get, Res, Req, QueryParams, PathParams } from "@tsed/common";
 
 interface ErrorResponse {
   error: {};
