@@ -16,7 +16,7 @@ RUN make deps build pkg
 FROM debian:stretch-slim
 EXPOSE 3000 9229
 WORKDIR /src
-COPY --from=builder /src/bin/ship-cluster-api /src/ship-cluster-api
+COPY --from=builder /src/bin/kotsadm-api /src/kotsadm-api
 COPY --from=builder /src/bin/shipcloudctl /src/shipcloudctl
 COPY --from=builder /src/node_modules/bcrypt/lib/binding/bcrypt_lib.node /src/node_modules/bcrypt/lib/binding/bcrypt_lib.node
 
@@ -37,4 +37,4 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 EXPOSE 3000
 ARG version=unknown
 ENV VERSION=${version}
-CMD ["/src/ship-cluster-api"]
+CMD ["/src/kotsadm-api"]

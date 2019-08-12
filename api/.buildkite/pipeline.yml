@@ -3,7 +3,7 @@ steps:
       - docker-compose -f api/test/docker-compose.yml down
       - docker-compose -f api/test/docker-compose.yml pull
       - docker-compose -f api/test/docker-compose.yml build
-      - docker-compose -f api/test/docker-compose.yml up --exit-code-from ship-cluster-api
+      - docker-compose -f api/test/docker-compose.yml up --exit-code-from kotsadm-api
       - docker-compose -f api/test/docker-compose.yml down
 
   - commands:
@@ -30,19 +30,11 @@ steps:
       - buildkite-agent artifact download api/build/* . --step build
       - mkdir -p api/bin
       - buildkite-agent artifact download api/bin/* . --step build
-      - chmod +x api/bin/ship-cluster-api
+      - chmod +x api/bin/kotsadm-api
       - chmod +x api/bin/shipcloudctl
     branches: "master"
 
   - wait
-
-  - commands:
-      - make -C api build-enterprise publish-enterprise
-    branches: "master"
-
-  - commands:
-      - make -C api build-enterprise publish-enterprise-aka
-    branches: "master"
 
   - commands:
       - make -C api build-staging publish-staging

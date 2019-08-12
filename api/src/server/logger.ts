@@ -6,7 +6,7 @@ export const TSEDVerboseLogging = process.env.NODE_ENV !== "production" && proce
 export const pinoLevel = process.env.LOG_LEVEL || "info";
 
 function initLoggerFromEnv(): pino.Logger {
-  const component = `ship-cluster-api`;
+  const component = `kotsadm-api`;
   let options = {
     name: component,
     version: process.env.VERSION,

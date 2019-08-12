@@ -16,9 +16,9 @@ const s3rver = new S3rver({
 
 let opts = {
   providerBaseUrl: "http://localhost:3000",
-  provider: "ship-cluster-api",
+  provider: "kotsadm-api",
   pactUrls: [
-    path.resolve(process.cwd(), "pacts", "ship-cluster-ui-ship-cluster-api.json"),
+    path.resolve(process.cwd(), "pacts", "kotsadm-web-kotsadm-api.json"),
   ],
   publishVerificationResult: process.env["PUBLISH_PACT_VERIFICATION"] === "true",
   providerVersion: packageJson.version,

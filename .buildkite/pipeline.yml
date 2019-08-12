@@ -1,12 +1,4 @@
 steps:
-  - commands:
-      - make -C api build-cache publish-cache
-    branches: master
-
-  - commands:
-      - make -C web build-cache publish-cache
-    branches: master
-
   - label: "schema-fixtures"
     artifact_paths:
       - "migrations/fixtures/schema/fixtures.sql"
@@ -47,20 +39,20 @@ steps:
 
   - wait
 
-  - trigger: "ship-cluster-web"
+  - trigger: "kotsadm-web"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
 
 
-  - trigger: "ship-cluster-worker"
+  - trigger: "kotsadm-worker"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
 
-  - trigger: "ship-cluster-migrations"
+  - trigger: "kotsadm-migrations"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"

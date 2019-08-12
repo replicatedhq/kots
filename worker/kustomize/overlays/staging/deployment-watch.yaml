@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-watch
+  name: kotsadm-worker-watch
 spec:
   template:
     spec:
       nodeSelector:
         replicated/node-pool: privileged
       containers:
-        - name: ship-cluster-worker
-          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/ship-cluster-worker
+        - name: kotsadm-worker
+          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/kotsadm-worker
           env:
             - name: USE_EC2_PARAMETERS
               value: "1"

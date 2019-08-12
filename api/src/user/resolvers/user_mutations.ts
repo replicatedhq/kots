@@ -6,7 +6,7 @@ import { logger } from "../../server/logger";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
-import { AccessToken } from "../";
+import { AccessToken, AdminSignupInfo } from "../";
 import uuid from "uuid";
 
 import { trackNewUser, trackUserSCMLeads } from "../../util/analytics";
@@ -95,6 +95,31 @@ export function UserMutations(stores: Stores, params: Params) {
         trackUserSCMLeads(params, uuid.v4(), "New Ship Cloud SCM Lead", args.emailAddress, args.deploymentPreference, args.scmProvider);
       }
       return await stores.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
+    },
+
+    async createAdminConsolePassword(root: any, args: any, context: Context): Promise<AdminSignupInfo> {
+      const userId = await stores.userStore.createAdminConsolePassword(args.password);
+      const sessionToken = await stores.sessionStore.createPasswordSession(userId);
+      return {
+        token: sessionToken,
+        userId: userId,
+      };
+    },
+
+    async loginToAdminConsole(root: any, args: any, context: Context): Promise<AdminSignupInfo> {
+      const user = await stores.userStore.tryGetPasswordUser("default-user@none.com");
+      if (!user) {
+        throw new ReplicatedError("No user was found");
+      }
+      const validPassword = await user.validatePassword(args.password);
+      if (!validPassword) {
+        throw new ReplicatedError("Password is incorrect");
+      }
+      const sessionToken = await stores.sessionStore.createPasswordSession(user.id);
+      return {
+        token: sessionToken,
+        userId: user.id,
+      };
     },
 
     async logout(root: any, args: any, context: Context): Promise<void> {

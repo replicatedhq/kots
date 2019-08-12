@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ship-cluster-worker-edit
+  name: kotsadm-worker-edit
   namespace: default
 ---
 kind: ClusterRoleBinding
@@ -11,7 +11,7 @@ metadata:
   name: ship-worker-list-pods
 subjects:
 - kind: ServiceAccount
-  name: ship-cluster-worker-edit
+  name: kotsadm-worker-edit
   namespace: default
 roleRef:
   kind: ClusterRole

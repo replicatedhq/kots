@@ -12,7 +12,7 @@ global.provider = new Pact({
   dir: path.resolve(process.cwd(), "pacts"),
   spec: 2,
   pactfileWriteMode: "merge",
-  consumer: "ship-cluster-ui",
-  provider: "ship-cluster-api",
+  consumer: "kotsadm-web",
+  provider: "kotsadm-api",
   host: "127.0.0.1"
 });

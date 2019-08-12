@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: ship-edit
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: ship_edit
   requires: []
   schema:

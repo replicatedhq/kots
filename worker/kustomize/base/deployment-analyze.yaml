@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-analyze
+  name: kotsadm-worker-analyze
 spec:
   selector:
     matchLabels:
-      app: ship-cluster-worker-analyze
+      app: kotsadm-worker-analyze
   template:
     metadata:
       labels:
-        app: ship-cluster-worker-analyze
+        app: kotsadm-worker-analyze
     spec:
       affinity:
         podAntiAffinity:
@@ -21,13 +21,13 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-worker-analyze
+                  - kotsadm-worker-analyze
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
-      serviceAccountName: ship-cluster-worker-analyze
+      serviceAccountName: kotsadm-worker-analyze
       containers:
-        - name: ship-cluster-worker
-          image: ship-cluster-worker
+        - name: kotsadm-worker
+          image: kotsadm-worker
           imagePullPolicy: IfNotPresent
           args: ["analyze"]
           env:

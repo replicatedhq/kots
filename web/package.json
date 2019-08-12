@@ -1,9 +1,9 @@
 {
-  "name": "ship-cluster-ui",
+  "name": "kotsadm-web",
   "version": "1.0.0",
   "description": "UI for ship cloud service",
   "main": "index.js",
-  "repository": "git@github.com:replicatedcom/ship-cluster-ui.git",
+  "repository": "git@github.com:replicatedcom/kotsadm-web.git",
   "author": "Grayson Null <graysonnull@me.com>",
   "license": "Apache-2.0",
   "private": true,

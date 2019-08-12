@@ -3,7 +3,7 @@ kind: Table
 metadata:
   name: watch-version
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: watch_version
   requires: []
   schema:

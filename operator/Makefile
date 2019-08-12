@@ -1,6 +1,6 @@
 
 SHELL := /bin/bash -o pipefail
-PROJECT_NAME ?= kotsadm-opetator
+PROJECT_NAME ?= kotsadm-operator
 export GO111MODULE=on
 
 .PHONY: publish-pact
@@ -11,8 +11,8 @@ publish-pact:
 	--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
 	-X PUT \
 	-H "Content-Type: application/json" \
-	-d@pacts/operator-ship-cluster-api.json \
-	https://replicated-pact-broker.herokuapp.com/pacts/provider/ship-cluster-api/consumer/operator/version/0.0.1
+	-d@pacts/operator-kotsadm-api.json \
+	https://replicated-pact-broker.herokuapp.com/pacts/provider/kotsadm-api/consumer/operator/version/0.0.1
 
 .PHONY: pacts
 pacts:
@@ -35,7 +35,7 @@ test: generate fmt vet manifests
 
 .PHONY: bin
 bin: fmt vet
-	go build -o bin/kotsadm-operator github.com/replicatedhq/ship-cluster/operator/cmd/kotsadm-operator
+	go build -o bin/kotsadm-operator github.com/replicatedhq/kotsadm/operator/cmd/kotsadm-operator
 
 .PHONY: runs
 run: bin

@@ -11,6 +11,7 @@ module.exports = {
   GITHUB_REDIRECT_URI: "###_GITHUB_REDIRECT_URI_###",
   GITHUB_INSTALL_URL: "###_GITHUB_INSTALL_URL_###",
   SHOW_SCM_LEADS: false,
+  SECURE_ADMIN_CONSOLE: true,
   PROD_PERFECT_WRITE_KEY: "",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional", "bitbucket", "gitlab"],
   SHIP_CLUSTER_BUILD_VERSION: (function () {

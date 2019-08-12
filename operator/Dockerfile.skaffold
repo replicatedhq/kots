@@ -13,7 +13,7 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_VERSION}" /usr/local/bin/kubectl
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/ship-cluster/operator
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 

@@ -9,7 +9,14 @@ type AccessToken {
   access_token: String!
 }`;
 
+const AdminSignupInfo = `
+type AdminSignupInfo {
+  token: String!
+  userId: String!
+}`;
+
 export default [
   UserInfo,
-  GQLAccessToken
+  GQLAccessToken,
+  AdminSignupInfo,
 ];

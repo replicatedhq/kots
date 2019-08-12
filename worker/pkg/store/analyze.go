@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 func (s *SQLStore) ListReadyAnalysisIDs(ctx context.Context) ([]string, error) {

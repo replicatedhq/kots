@@ -15,6 +15,7 @@ export const Query = `
     userInfo: UserInfo
     userFeatures: [Feature]
     orgMembers(org: String!, page: Int): [GetMembersResponse]
+    isSecured: Boolean!
 
     listClusters: [Cluster]
 

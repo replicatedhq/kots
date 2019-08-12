@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: image-watch-batch
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: image_watch_batch
   requires: []
   schema:

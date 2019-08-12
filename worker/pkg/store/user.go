@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/ship-cluster/worker/pkg/types"
+	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 func (s *SQLStore) GetUser(ctx context.Context, userID string) (types.User, error) {

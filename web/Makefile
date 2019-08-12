@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= ship-cluster-ui
+PROJECT_NAME ?= kotsadm-web
 
 #paths within WSL start with /mnt/c/...
 #docker does not recognize this fact
@@ -21,7 +21,7 @@ clean:
 
 .PHONY: test
 test:
-	rm -rf pacts/ship-cluster-ui-ship-cluster-api.json
+	rm -rf pacts/kotsadm-web-kotsadm-api.json
 	yarn test
 	yarn test:unit
 
@@ -38,14 +38,6 @@ serve: deps
 		--config webpack.config.js \
 		--progress -w --debug --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
-
-.PHONY: build-cache
-build-cache:
-	docker build -f Dockerfile.skaffoldcache -t repldev/${PROJECT_NAME}:latest .
-
-.PHONY: publish-cache
-publish-cache:
-	docker push repldev/${PROJECT_NAME}:latest
 
 .PHONY: build-staging
 build-staging: SHIP_CLOUD_ENV = staging

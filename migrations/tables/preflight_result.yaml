@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: preflight-result
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: preflight_result
   requires: []
   schema:

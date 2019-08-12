@@ -14,7 +14,7 @@ Required Software:
 
 ### Environment
 
-Currently, Ship Cluster requires a GitHub app for authentication. This requirement is being removed, but while it exists, a fully configured GitHub app is required to run Ship Cluster locally. Create a GitHub App following the instructions [here](https://github.com/replicatedhq/ship-cluster/blob/master/docs/developer/github-app.md). After creating the app, you'll have to copy some of the settings locally:
+Currently, Ship Cluster requires a GitHub app for authentication. This requirement is being removed, but while it exists, a fully configured GitHub app is required to run Ship Cluster locally. Create a GitHub App following the instructions [here](https://github.com/replicatedhq/kotsadm/blob/master/docs/developer/github-app.md). After creating the app, you'll have to copy some of the settings locally:
 
 Configure your local environment with your GitHub app credentials by adding them to these lines and exporting them locally.
 

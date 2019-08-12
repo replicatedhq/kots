@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ship-cluster-worker-edit
+  name: kotsadm-worker-edit
 spec:
   selector:
     matchLabels:
-      app: ship-cluster-worker-edit
+      app: kotsadm-worker-edit
   template:
     metadata:
       labels:
-        app: ship-cluster-worker-edit
+        app: kotsadm-worker-edit
     spec:
       affinity:
         podAffinity:
@@ -21,7 +21,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-worker-edit
+                  - kotsadm-worker-edit
               topologyKey: "kubernetes.io/hostname"
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -32,13 +32,13 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - ship-cluster-worker-edit
+                  - kotsadm-worker-edit
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
-      serviceAccountName: ship-cluster-worker-edit
+      serviceAccountName: kotsadm-worker-edit
       containers:
-        - name: ship-cluster-worker
-          image: ship-cluster-worker
+        - name: kotsadm-worker
+          image: kotsadm-worker
           imagePullPolicy: IfNotPresent
           args: ["edit"]
           env:

@@ -19,6 +19,10 @@ class Login extends React.Component {
       this.props.history.push("/unsupported")
     }
 
+    if (window.env.SECURE_ADMIN_CONSOLE) {
+      return this.props.history.replace("/secure-console");
+    }
+
     const { search } = this.props.location;
     const URLParams = new URLSearchParams(search);
     if (URLParams.get("next") && Utilities.localStorageEnabled()) {

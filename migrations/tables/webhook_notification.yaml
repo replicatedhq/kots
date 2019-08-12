@@ -5,7 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: webhook-notification
 spec:
-  database: ship-cluster-postgres
+  database: kotsadm-postgres
   name: webhook_notification
   requires: []
   schema:

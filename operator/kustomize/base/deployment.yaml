@@ -25,6 +25,6 @@ spec:
               memory: 500Mi
           env:
             - name: KOTSADM_API_ENDPOINT
-              value: http://ship-cluster-api:3000
+              value: http://kotsadm-api:3000
             - name: KOTSADM_TOKEN
               value: this-is-definitely-not-a-secret

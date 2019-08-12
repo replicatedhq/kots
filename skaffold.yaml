@@ -22,12 +22,12 @@ build:
     useBuildkit: true
 
   artifacts:
-    - image: ship-cluster-api
+    - image: kotsadm-api
       context: "./api"
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: ship-cluster-ui
+    - image: kotsadm-web
       context: "./web"
       sync:
         manual:
@@ -44,7 +44,7 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: ship-cluster-worker
+    - image: kotsadm-worker
       context: "./worker"
       docker:
         dockerfile: ./Dockerfile.skaffold

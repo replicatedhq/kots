@@ -1,7 +1,7 @@
 {
-  "name": "ship-cluster-fixtures",
+  "name": "kotsadm-fixtures",
   "version": "1.0.0",
-  "description": "Ship Cluster Fixtures",
+  "description": "kotsadm Fixtures",
   "license": "Apache-2.0",
   "main": "./build/fixtures.js",
   "dependencies": {
