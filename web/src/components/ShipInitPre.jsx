@@ -83,10 +83,10 @@ export class ShipInitPre extends React.Component {
   onShipInitUrlSubmitted = async (url) => {
     const { onActiveInitSession } = this.props;
     const isReplicatedApp = url.includes("replicated.app");
-    const searchParamString = `?${url.split('?')[1] || ""}`;
+    const searchParamString = `?${url.split("?")[1] || ""}`;
     const params = new URLSearchParams(searchParamString);
 
-    const hasLicense = params.get('license_id');
+    const hasLicense = params.get("license_id");
     if (isReplicatedApp && !hasLicense) {
       return this.setState({ displayLicenseIdModal: true });
     }
