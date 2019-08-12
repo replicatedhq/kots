@@ -1,5 +1,5 @@
 import Express, { response } from "express";
-import { BodyParams, Controller, HeaderParams, Post, Req, Res } from "ts-express-decorators";
+import { BodyParams, Controller, HeaderParams, Post, Req, Res, Header } from "ts-express-decorators";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import fs from "fs";
@@ -32,6 +32,7 @@ export class GitHubHookAPI {
     switch (eventType) {
       case "pull_request": {
         await this.handlePullRequest(request, body as WebhooksApi.WebhookPayloadPullRequest);
+        await this.createGithubCheck(request, body as WebhooksApi.WebhookPayloadPullRequest);
         response.status(204);
         return {};
       }
@@ -43,17 +44,19 @@ export class GitHubHookAPI {
         return {};
       }
 
-      case "installation_repositories":
-          const params = await Params.getParams();
-          await this.handleInstallationRepositories(body as WebhooksApi.WebhookPayloadInstallationRepositories, params, request);
-          response.status(204);
-          return {};
+      case "installation_repositories": {
+        const params = await Params.getParams();
+        await this.handleInstallationRepositories(body as WebhooksApi.WebhookPayloadInstallationRepositories, params, request);
+        response.status(204);
+        return {};
+      }
 
       // ignored
       case "integration_installation":
-      case "integration_installation_repositories":
+      case "integration_installation_repositories": {
         response.status(204);
         return {};
+      }
 
       // default is an error
       default: {
@@ -114,6 +117,57 @@ export class GitHubHookAPI {
 
       case "removed":
         // we handle this in the sync-pr-status cron job
+    }
+  }
+
+  private async createGithubCheck(request: Express.Request, pullRequestEvent: WebhooksApi.WebhookPayloadPullRequest): Promise<void> {
+    const handledActions: string[] = ["opened", "closed", "reopened"];
+    if (handledActions.indexOf(pullRequestEvent.action) === -1) {
+      return;
+    }
+    
+    const owner = pullRequestEvent.pull_request.base.repo.owner.login;
+    const repo = pullRequestEvent.pull_request.base.repo.name;
+
+    const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
+
+    for (const cluster of clusters) {
+      if (!cluster.gitOpsRef) {
+        continue;
+      }
+
+      const github = new GitHubApi({
+        headers: {
+          "Accept": "application/vnd.github.antiope-preview+json",
+        },
+      });
+      logger.debug({msg: "authenticating with bearer token to create GitHub check"});
+      github.authenticate({
+        type: "app",
+        token: await getGitHubBearerToken()
+      });
+
+      logger.debug({msg: "creating installation token for installationId", "installationId": cluster.gitOpsRef.installationId})
+      const installationTokenResponse = await github.apps.createInstallationToken({installation_id: cluster.gitOpsRef.installationId});
+      github.authenticate({
+        type: "token",
+        token: installationTokenResponse.data.token,
+      });
+
+      logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
+      
+      const params: GitHubApi.ChecksCreateParams = {
+        owner,
+        repo,
+        name: "preflight-checks",
+        head_sha: pullRequestEvent.pull_request.head.sha
+      };
+      try {
+        await github.checks.create(params);
+      } catch (err) {
+        logger.error({msg: "unable to create GitHub check", err});
+        throw(err);
+      }
     }
   }
 
