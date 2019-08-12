@@ -18,7 +18,7 @@ limitations under the License.
 package scheme
 
 import (
-	kotsv1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/apis/kots/v1beta1"
+	kotsv1beta1 "github.com/replicatedhq/kotsadm/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

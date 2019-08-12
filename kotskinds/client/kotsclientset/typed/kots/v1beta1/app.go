@@ -20,8 +20,8 @@ package v1beta1
 import (
 	"time"
 
-	v1beta1 "github.com/replicatedhq/ship-cluster/kotskinds/apis/kots/v1beta1"
-	scheme "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset/scheme"
+	v1beta1 "github.com/replicatedhq/kotsadm/kotskinds/apis/kots/v1beta1"
+	scheme "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
