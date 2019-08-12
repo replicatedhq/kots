@@ -4,7 +4,7 @@ import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
 import Sigsci from "sigsci-module-nodejs";
-import { ServerLoader, ServerSettings } from "ts-express-decorators";
+import { ServerLoader, ServerSettings } from "@tsed/common";
 import { $log } from "ts-log-debug";
 import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
@@ -12,7 +12,6 @@ import { UpdateProxy } from "../update/proxy";
 import { EditProxy } from "../edit/proxy";
 import { logger } from "./logger";
 import { Context } from "../context";
-
 import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "./params";
 import { UserStore } from "../user/user_store";
@@ -37,20 +36,18 @@ import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 
-const tsedConfig = {
-  rootDir: path.resolve(__dirname),
-  mount: {
-    // tslint:disable-next-line
-    "/": "${rootDir}/../controllers/**/*.*s",
-  },
-  acceptMimes: ["application/json"],
-  componentsScan: [],
-  port: 3000,
-  httpsPort: 0,
-  debug: false,
-};
-
-@ServerSettings(tsedConfig)
+@ServerSettings({
+    rootDir: path.resolve(__dirname),
+    httpPort: 3000,
+    httpsPort: false,
+    mount: {
+      // tslint:disable-next-line
+      "/": "${rootDir}/../controllers/**/*.*s",
+    },
+    acceptMimes: ["application/json"],
+    debug: true,
+    multer: {},
+})
 export class Server extends ServerLoader {
   async $onMountingMiddlewares(): Promise<void> {
     this.expressApp.enable("trust proxy"); // so we get the real ip from the ELB in amazon

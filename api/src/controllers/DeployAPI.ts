@@ -1,5 +1,5 @@
 import Express from "express";
-import { Controller, Get, Res, Req, HeaderParams } from "ts-express-decorators";
+import { Controller, Get, Res, Req, HeaderParams } from "@tsed/common";
 import BasicAuth from "basic-auth";
 import _ from "lodash";
 

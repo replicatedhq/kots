@@ -1,4 +1,4 @@
-import { Controller, Get, Req } from "ts-express-decorators";
+import { Controller, Get, Req } from "@tsed/common";
 import Express from "express";
 
 @Controller("/healthz")

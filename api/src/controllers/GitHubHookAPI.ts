@@ -1,5 +1,5 @@
 import Express, { response } from "express";
-import { BodyParams, Controller, HeaderParams, Post, Req, Res, Header } from "ts-express-decorators";
+import { BodyParams, Controller, HeaderParams, Post, Req, Res, Header } from "@tsed/common";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import fs from "fs";
@@ -125,7 +125,7 @@ export class GitHubHookAPI {
     if (handledActions.indexOf(pullRequestEvent.action) === -1) {
       return;
     }
-    
+
     const owner = pullRequestEvent.pull_request.base.repo.owner.login;
     const repo = pullRequestEvent.pull_request.base.repo.name;
 
@@ -155,7 +155,7 @@ export class GitHubHookAPI {
       });
 
       logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
-      
+
       const params: GitHubApi.ChecksCreateParams = {
         owner,
         repo,

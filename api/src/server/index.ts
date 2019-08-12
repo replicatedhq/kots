@@ -1,15 +1,13 @@
-import { OverrideMiddleware, Req, Res } from "ts-express-decorators";
-
-import { LogIncomingRequestMiddleware } from "ts-express-decorators/lib/mvc/components/LogIncomingRequestMiddleware";
+import { Server } from "./server";
+import {ServerLoader, ServerSettings, OverrideMiddleware, LogIncomingRequestMiddleware, Res, Req} from "@tsed/common";
 import uuid from "uuid";
 
 import Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
-import * as vendor from "./server";
 
 @OverrideMiddleware(LogIncomingRequestMiddleware)
 export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddleware {
-  use(@Req() request: Express.Request, @Res() response: Express.Response) {
+  use(@Req() request: Express.Request) {
     request.id = uuid.v4();
 
     if (request.path === "/healthz") {
@@ -18,37 +16,18 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
       return;
     }
 
-    super.use(request, response);
+    super.use(request);
   }
 
   // mostly copy pasted, added suppress flag for quieter healthz logging
   protected configureRequest(request: Express.Request, suppress?: boolean) {
-    request.tsedReqStart = new Date();
-
     const verbose = (req: Express.Request) => this.requestToObject(req);
     const info = (req: Express.Request) => this.minimalRequestPicker(req);
-
-    // tslint:disable no-void-expression
-    request.log = {
-      info: (obj: any) => logger.debug(this.stringify(request, info)(obj)),
-      debug: (obj: any) => logger.debug(this.stringify(request, verbose)(obj)),
-      warn: (obj: any) => logger.warn(this.stringify(request, verbose)(obj)),
-      error: (obj: any) => logger.error(this.stringify(request, verbose)(obj)),
-      trace: (obj: any) => logger.debug(this.stringify(request, verbose)(obj)),
-    };
 
     if (!suppress) {
       return;
     }
 
-    request.log = {
-      info: (obj: any) => logger.debug(this.stringify(request, info)(obj)),
-      debug: (obj: any) => logger.debug(this.stringify(request, verbose)(obj)),
-      warn: (obj: any) => logger.debug(this.stringify(request, verbose)(obj)),
-      error: (obj: any) => logger.error(this.stringify(request, verbose)(obj)),
-      trace: (obj: any) => logger.debug(this.stringify(request, verbose)(obj)),
-    };
-    // tslint:enable no-void-expression
   }
 
   // pretty much copy-pasted, but hooked into TSEDVerboseLogging from above to control multiline logging
@@ -90,7 +69,6 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
         reqId: request.id,
         method: request.method,
         url: request.originalUrl || request.url,
-        duration: new Date().getTime() - request.tsedReqStart.getTime(),
         headers: request.headers,
         body: request.body,
         query: request.query,
@@ -101,7 +79,6 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
         reqId: request.id,
         method: request.method,
         url: request.originalUrl || request.url,
-        duration: new Date().getTime() - request.tsedReqStart.getTime(),
       };
     }
   }
@@ -109,7 +86,7 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
 // tslint:disable no-console
 function main() {
-  new vendor.Server()
+  new Server()
     .start()
     .then(() => {
       process.on("SIGINT", () => {

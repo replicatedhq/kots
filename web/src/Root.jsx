@@ -29,7 +29,7 @@ import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 
-import { listWatches, listPendingInit, listHelmCharts } from "@src/queries/WatchQueries";
+import { listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -84,7 +84,7 @@ const ThemeContext = React.createContext({
 
 class Root extends Component {
   state = {
-    listWatches: [],
+    listApps: [],
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
@@ -152,42 +152,22 @@ class Root extends Component {
     this.handleActiveInitSessionCompleted();
   }
 
-  refetchListWatches = async () => {
-    // @TODO: Turn all of these queries into just 1 call
+  refetchListApps = async () => {
     // @TODO: Lean out the query to only fetch the data that
-    //        We need
-
-    // Fetch list of your watches
-    const watchList = await GraphQLClient.query({
-      query: listWatches,
+    const apps = await GraphQLClient.query({
+      query: listApps,
       fetchPolicy: "no-cache"
     }).catch( error => {
       throw error;
     });
 
-    // Fetch list of pending inits
-    const pendingInits = await GraphQLClient.query({
-      query: listPendingInit,
-      fetchPolicy: "no-cache"
-    }).catch( error => {
-      throw error;
-    });
-
-    // Fetch list of pending unforks
-    const pendingUnforks = await GraphQLClient.query({
-      query: listHelmCharts,
-      fetchPolicy: "no-cache"
-    }).catch( error => {
-      throw error;
-    });
-
-    const allWatches = watchList.data.listWatches.concat(
-      pendingInits.data.listPendingInitSessions,
-      pendingUnforks.data.listHelmCharts
+    const allWatches = apps.data.listApps.watches.concat(
+      apps.data.listApps.kotsApps,
+      apps.data.listApps.pendingUnforks,
     );
 
     this.setState({
-      listWatches: allWatches,
+      listApps: allWatches,
       rootDidInitialWatchFetch: true
     });
 
@@ -196,9 +176,9 @@ class Root extends Component {
 
   onRootMounted = () => {
     if (Utilities.isLoggedIn()) {
-      this.refetchListWatches().then(listWatches => {
-        if (listWatches.length > 0 && window.location.pathname === "/watches") {
-          const { slug } = listWatches[0];
+      this.refetchListApps().then(listApps => {
+        if (listApps.length > 0 && window.location.pathname === "/watches") {
+          const { slug } = listApps[0];
           history.replace(`/watch/${slug}`);
         }
       });
@@ -213,7 +193,7 @@ class Root extends Component {
     const {
       initSessionId,
       themeState,
-      listWatches,
+      listApps,
       rootDidInitialWatchFetch
     } = this.state;
 
@@ -244,10 +224,10 @@ class Root extends Component {
                       return <Crashz />;
 
                     }}/>
-                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListWatches} />) } />
+                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListWatches} />} />
-                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListWatches={this.refetchListWatches}/>)} />
+                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListApps} />} />
+                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
@@ -261,8 +241,8 @@ class Root extends Component {
                           <WatchDetailPage
                             {...props}
                             rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listWatches={listWatches}
-                            refetchListWatches={this.refetchListWatches}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                           />
                         )
@@ -286,7 +266,7 @@ class Root extends Component {
                       render={
                         (props) => <ShipInitCompleted
                           {...props}
-                          refetchListWatches={this.refetchListWatches}
+                          refetchListApps={this.refetchListApps}
                           initSessionId={initSessionId}
                           onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
                         />
@@ -299,8 +279,8 @@ class Root extends Component {
                           <WatchDetailPage
                             {...props}
                             rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listWatches={listWatches}
-                            refetchListWatches={this.refetchListWatches}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                           />
                         )

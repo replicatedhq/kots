@@ -5,7 +5,7 @@ import {
   Post,
   Req,
   Res,
-} from "ts-express-decorators";
+} from "@tsed/common";
 
 interface SignupRequest {
   email: string;

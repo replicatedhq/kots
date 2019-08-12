@@ -1,5 +1,5 @@
 import Express from "express";
-import { Controller, Get, Res, Req, PathParams } from "ts-express-decorators";
+import { Controller, Get, Res, Req, PathParams } from "@tsed/common";
 import { TroubleshootStore } from "../troubleshoot";
 
 interface ErrorResponse {

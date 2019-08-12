@@ -5,7 +5,7 @@ import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
 import { userFeatures } from "@src/queries/WatchQueries";
-import { listWatches } from "@src/queries/WatchQueries";
+import { listClusters } from "@src/queries/ClusterQueries";
 import { userInfo } from "@src/queries/UserQueries";
 import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
@@ -48,7 +48,7 @@ export class NavBar extends PureComponent {
   handleGoToClusters = () => {
     if (this.props.location.pathname === "/clusters") {
       this.props.client.query({
-        query: listWatches,
+        query: listClusters,
         fetchPolicy: "network-only",
       });
     } else {
@@ -58,14 +58,6 @@ export class NavBar extends PureComponent {
 
   handleGoToTeams = () => {
     console.log("to be implemented")
-    // if (this.props.location.pathname === "/teams") {
-    //   this.props.client.query({
-    //     query: listWatches,
-    //     fetchPolicy: "network-only",
-    //   });
-    // } else {
-    //   this.props.history.push("/teams");
-    // }
   }
 
   handleAddNewApplication = () => {
