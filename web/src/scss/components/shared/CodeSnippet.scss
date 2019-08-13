@@ -1,8 +1,15 @@
-.CodeSnippet-content {
-  padding: 15px;
-  border: 1px solid #DFDFDF;
-  border-radius: 4px;
-  background-color: #F5F8FC;
+.CodeSnippet {
+  &.variant-blue {
+    .CodeSnippet-content {
+      padding: 15px;
+      border: 1px solid #DFDFDF;
+      border-radius: 4px;
+      background-color: #F5F8FC;
+    }
+  }
+
+  // Any new styling for the plain variant can go here
+  // &.variant-plain {}
 }
 
 .CodeSnippet-copy {
@@ -12,5 +19,9 @@
   &:hover {
     cursor: pointer;
     text-decoration: underline;
+
+    &.is-copied {
+      text-decoration: none;
+    }
   }
 }

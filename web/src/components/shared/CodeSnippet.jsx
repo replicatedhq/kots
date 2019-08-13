@@ -16,14 +16,19 @@ class CodeSnippet extends Component {
       PropTypes.arrayOf(PropTypes.string)
     ]).isRequired,
     canCopy: PropTypes.bool,
+    copyText: PropTypes.string,
+    onCopyText: PropTypes.node,
     preText: PropTypes.node,
     language: PropTypes.string,
-    copyDelay: PropTypes.number
+    copyDelay: PropTypes.number,
+    variant: PropTypes.string
   }
 
   static defaultProps = {
+    variant: "plain",
     language: "bash",
     copyText: "Copy command",
+    onCopyText: "Copied!",
     copyDelay: 3000
   }
 
@@ -43,6 +48,19 @@ class CodeSnippet extends Component {
     }
   }
 
+  /**
+   * Strips out any newlines, empty strings, and leading/trailing whitespace
+   *
+   * @param {Array<string>} childStrings - an Array of strings
+   * @return {String} a Neatly and well trimmed string
+   */
+  stripExtraneousSpaces = childStrings => {
+    return childStrings
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+
   render() {
     const {
       className,
@@ -50,13 +68,15 @@ class CodeSnippet extends Component {
       language,
       preText,
       canCopy,
-      copyText
+      copyText,
+      onCopyText,
+      variant
     } = this.props;
 
     const { didCopy } = this.state;
 
     return (
-      <div className={classNames("CodeSnippet", className)}>
+      <div className={classNames("CodeSnippet", `variant-${variant}`, className)}>
         <div className="CodeSnippet-content">
           {preText && React.isValidElement(preText)
             ? preText
@@ -66,14 +86,19 @@ class CodeSnippet extends Component {
           }
           <Prism language={language}>
             {Array.isArray(children)
-              ? children.join("\n")
-              : children
+              ? this.stripExtraneousSpaces(children)
+              : children.trim()
             }
           </Prism>
           {canCopy && (
-            <span className="CodeSnippet-copy u-fontWeight--bold" onClick={this.copySnippet}>
+            <span
+              className={classNames("CodeSnippet-copy u-fontWeight--bold", {
+                "is-copied": didCopy
+              })}
+              onClick={this.copySnippet}
+            >
               {didCopy
-                ? "Copied!"
+                ? onCopyText
                 : copyText
               }
             </span>
