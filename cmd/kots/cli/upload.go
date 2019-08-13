@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,7 +36,7 @@ func UploadCmd() *cobra.Command {
 			}
 
 			if err := upload.Upload(args[0], uploadOptions); err != nil {
-				return err
+				return errors.Cause(err)
 			}
 
 			return nil
