@@ -40,3 +40,4 @@ build_and_publish:
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
           git push origin $(GITOPS_BRANCH)
+

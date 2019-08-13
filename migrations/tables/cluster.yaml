@@ -37,7 +37,7 @@ spec:
         type: text
         constraints:
           notNull: true
-        default: '''gitops''::text'
+        default: 'gitops'
       - name: is_all_users
         type: boolean
         constraints:

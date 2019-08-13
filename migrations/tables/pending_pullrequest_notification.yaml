@@ -40,6 +40,6 @@ spec:
           notNull: true
       - name: pullrequest_number
         type: integer
-        default: '''-1''::integer'
+        default: '-1'
       - name: watch_id
         type: text
