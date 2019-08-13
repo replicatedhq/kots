@@ -25,7 +25,7 @@ export class KotsAPI {
     const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(JSON.parse(body.metadata).name);
 
     const params = await Params.getParams();
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0");
+    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     const buffer = fs.readFileSync(file.path);
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
