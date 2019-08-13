@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -79,12 +81,24 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		return errors.Wrap(err, "failed to execute request")
 	}
 
-	fmt.Printf("res = %#v\n", resp)
 	if resp.StatusCode != 200 {
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	fmt.Printf("uploaded")
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
+	type UploadResponse struct {
+		URI string `json:"uri"`
+	}
+	var uploadResponse UploadResponse
+	if err := json.Unmarshal(b, &uploadResponse); err != nil {
+		return errors.Wrap(err, "failed to unmarshal response")
+	}
+
+	fmt.Println(uploadResponse.URI)
 	return nil
 }
 
@@ -105,7 +119,9 @@ func findKotsadm(uploadOptions UploadOptions) (string, error) {
 	}
 
 	for _, pod := range pods.Items {
-		return pod.Name, nil
+		if pod.Status.Phase == corev1.PodRunning {
+			return pod.Name, nil
+		}
 	}
 
 	return "", errors.New("unable to find kotsadm pod")
@@ -187,7 +203,7 @@ func relentlesslyPromptForAppName(defaultAppName string) (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Application name",
+		Label:     "Application name:",
 		Templates: templates,
 		Default:   defaultAppName,
 		Validate: func(input string) error {
