@@ -105,6 +105,11 @@ export class Server extends ServerLoader {
 
     if (process.env["AUTO_CREATE_CLUSTER"] === "1") {
       logger.info({msg: "ensuring a local cluster exists"});
+      if (process.env["AUTO_CREATE_CLUSTER_NAME"] === "" || process.env["AUTO_CREATE_CLUSTER_TOKEN"] === "") {
+        logger.error({msg: "you must set AUTO_CREATE_CLUSTER_NAME and AUTO_CREATE_CLUSTER_TOKEN when AUTO_CREATE_CLUSTER is enabled"});
+        process.exit(1);
+        return;
+      }
       const cluster = await stores.clusterStore.maybeGetClusterWithTypeNameAndToken("ship", process.env["AUTO_CREATE_CLUSTER_NAME"]!, process.env["AUTO_CREATE_CLUSTER_TOKEN"]!);
       if (!cluster) {
         await stores.clusterStore.createNewShipCluster(undefined, true, process.env["AUTO_CREATE_CLUSTER_NAME"]!, process.env["AUTO_CREATE_CLUSTER_TOKEN"]);

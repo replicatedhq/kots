@@ -44,10 +44,10 @@ spec:
         type: text
         constraints:
           notNull: true
-        default: '''unknown''::text'
+        default: 'unknown'
       - name: sequence
         type: integer
         default: "0"
       - name: source_branch
         type: text
-        default: '''''::text'
+        default: ''

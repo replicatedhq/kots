@@ -24,7 +24,7 @@ spec:
         type: text
         constraints:
           notNull: true
-        default: '''unknown''::text'
+        default: 'unknown'
       - name: source_branch
         type: text
       - name: sequence
