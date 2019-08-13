@@ -30,6 +30,25 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
+  async listKotsApps(userId?: string): Promise<KotsApp[]> {
+    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1`;
+    const v = [userId];
+
+    const result = await this.pool.query(q, v);
+    const apps: KotsApp[] = [];
+    for (const row of result.rows) {
+      apps.push(await this.getApp(row.id));
+    }
+
+    const qq = `select id from app where is_all_users = true`;
+    const resultTwo = await this.pool.query(qq);
+    for (const row of resultTwo.rows) {
+      apps.push(await this.getApp(row.id));
+    }
+
+    return apps;
+  }
+
   async getApp(id: string): Promise<KotsApp> {
     const q = `select id, name, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at from app where id = $1`;
     const v = [id];
@@ -49,10 +68,18 @@ export class KotsAppStore {
     kotsApp.createdAt = new Date(row.created_at);
     kotsApp.updatedAt = row.updated_at ? new Date(row.updated_at) : undefined;
     kotsApp.slug = row.slug;
-    kotsApp.currentSequence = row.currentSequence;
+    kotsApp.currentSequence = row.current_sequence;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
 
     return kotsApp;
+  }
+
+  async getIdFromSlug(slug: string): Promise<string> {
+    const q = "select id from app where slug = $1";
+    const v = [slug];
+
+    const result = await this.pool.query(q, v);
+    return result.rows[0].id;
   }
 
   async createKotsApp(name: string, userId?: string): Promise<KotsApp> {
@@ -87,14 +114,15 @@ export class KotsAppStore {
 
     try {
       await pg.query("begin");
-      const q = `insert into app (id, name, icon_uri, created_at, slug)
-      values ($1, $2, $3, $4, $5)`;
+      const q = `insert into app (id, name, icon_uri, created_at, slug, is_all_users)
+      values ($1, $2, $3, $4, $5, $6)`;
       const v = [
         id,
         name,
         "",
         new Date(),
         slugProposal,
+        !userId
       ];
 
       await pg.query(q, v);

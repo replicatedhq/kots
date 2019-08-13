@@ -21,6 +21,7 @@ import ShipInitPre from "./components/ShipInitPre";
 import ShipUnfork from "./components/ShipUnfork";
 import ShipInitCompleted from "./components/ShipInitCompleted";
 import WatchDetailPage from "./components/watches/WatchDetailPage";
+import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterScope from "./components/clusterscope/ClusterScope";
 import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
@@ -248,6 +249,20 @@ class Root extends Component {
                         )
                       }
                     />
+                    <ProtectedRoute
+                      path="/apps"
+                      render={
+                        props => (
+                          <AppDetailPage
+                            {...props}
+                            rootDidInitialWatchFetch={rootDidInitialWatchFetch}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
                     <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
@@ -279,6 +294,20 @@ class Root extends Component {
                           <WatchDetailPage
                             {...props}
                             rootDidInitialWatchFetch={rootDidInitialWatchFetch}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
+                            onActiveInitSession={this.handleActiveInitSession}
+                          />
+                        )
+                      }
+                    />
+                    <ProtectedRoute
+                      path="/app/:slug/:tab?"
+                      render={
+                        props => (
+                          <AppDetailPage
+                            {...props}
+                            rootDidInitialAppFetch={rootDidInitialWatchFetch}
                             listApps={listApps}
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}

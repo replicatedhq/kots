@@ -8,6 +8,7 @@ import withTheme from "@src/components/context/withTheme";
 import { getWatch, getHelmChart } from "@src/queries/WatchQueries";
 import { createUpdateSession, deleteWatch, checkForUpdates, deployWatchVersion } from "../../mutations/WatchMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
+import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import PendingHelmChartDetailPage from "./PendingHelmChartDetailPage";
@@ -206,7 +207,7 @@ class WatchDetailPage extends Component {
     }
 
     if (listApps.length > 0) {
-      history.replace(`/watch/${listApps[0].slug}`);
+      history.replace(`/${listApps[0].name ? "app" : "watch"}/${listApps[0].slug}`);
     } else {
       history.replace("/watch/create/init");
     }
@@ -248,16 +249,16 @@ class WatchDetailPage extends Component {
 
     let watch;
     if (!isHelmChartUrl) {
-      watch = getWatchQuery ?.getWatch;
+      watch = getWatchQuery?.getWatch;
     } else {
-      watch = getHelmChartQuery ?.getHelmChart;
+      watch = getHelmChartQuery?.getHelmChart;
     }
 
     let loading;
     if (isHelmChartUrl) {
-      loading = getHelmChartQuery ?.loading || !rootDidInitialWatchFetch;
+      loading = getHelmChartQuery?.loading || !rootDidInitialWatchFetch;
     } else {
-      loading = getWatchQuery ?.loading || !rootDidInitialWatchFetch;
+      loading = getWatchQuery?.loading || !rootDidInitialWatchFetch;
     }
 
     if (!rootDidInitialWatchFetch) {
@@ -273,7 +274,20 @@ class WatchDetailPage extends Component {
             <SideBar
               items={listApps ?.map((item, idx) => {
                 let sidebarItemNode;
-                if (item.slug) {
+                if (item.name) {
+                  const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
+                  sidebarItemNode = (
+                    <KotsSidebarItem
+                      key={idx}
+                      className={classNames({
+                        selected: (
+                          item.slug === slugFromRoute &&
+                          match.params.owner !== "helm"
+                        )
+                      })}
+                      app={item} />
+                  );
+                } else if (item.slug) {
                   const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
                   sidebarItemNode = (
                     <WatchSidebarItem
