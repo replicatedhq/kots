@@ -1,7 +1,0 @@
--- ALTER ROLE shipcloud_rw WITH
---   LOGIN
---   INHERIT
---   NOCREATEROLE
---   NOCREATEDB;
-
--- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO shipcloud_rw;

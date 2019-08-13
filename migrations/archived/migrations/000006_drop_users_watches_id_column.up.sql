@@ -1,5 +1,0 @@
--- ALTER TABLE users_watches ALTER COLUMN watch_id SET NOT NULL;
--- ALTER TABLE users_watches ALTER COLUMN user_id SET NOT NULL;
--- ALTER TABLE users_watches DROP CONSTRAINT users_watches_pkey;
--- ALTER TABLE users_watches ADD PRIMARY KEY (watch_id, user_id);
--- ALTER TABLE users_watches DROP COLUMN id;

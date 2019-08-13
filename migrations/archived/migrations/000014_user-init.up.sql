@@ -1,1 +1,0 @@
-alter table ship_init add column user_id text not null;

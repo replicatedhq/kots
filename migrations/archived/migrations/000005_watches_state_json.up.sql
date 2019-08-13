@@ -1,7 +1,0 @@
--- ALTER TABLE watches
--- ADD COLUMN state_json TEXT,
--- ADD COLUMN watch_name VARCHAR(255),
--- ADD COLUMN watch_icon VARCHAR(255),
--- ADD COLUMN created_at timestamp DEFAULT NOW(),
--- ADD COLUMN updated_at timestamp DEFAULT NOW(),
--- ADD COLUMN deployed_at timestamp NULL;

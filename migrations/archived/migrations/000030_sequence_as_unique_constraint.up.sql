@@ -1,2 +1,0 @@
-ALTER TABLE pullrequest_history DROP CONSTRAINT pullrequest_history_pkey;
-ALTER TABLE pullrequest_history ADD CONSTRAINT pullrequest_history_pkey UNIQUE (notification_id, org, repo, pullrequest_number, sequence);

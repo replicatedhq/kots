@@ -40,6 +40,7 @@
     "kubernetes-client": "^7.0.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
+    "multer": "^1.4.2",
     "pg": "^7.10.0",
     "pino": "^5.12.3",
     "pino-pretty": "^3.2.0",
