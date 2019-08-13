@@ -6,7 +6,7 @@ These are the docs for the kots open source application. If you are looking for 
 
 ```shell
 krew install kots
-kubectl kots init helm://stable/mysql@1.3.0
+kubectl kots download helm://stable/mysql@1.3.0
 ```
 
 This will create a directory named `mysql` that contains 3 subdirectories:

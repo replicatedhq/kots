@@ -24,19 +24,14 @@ import (
 	"k8s.io/helm/pkg/repo"
 )
 
-func downloadHelm(u *url.URL, repoAddName string, repoAddURI string) (*Upstream, error) {
+func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
 	repoName, chartName, chartVersion, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
 	}
 
-	repoURI := getKnownHelmRepoURI(repoName)
-	if repoURI == "" && repoAddURI != "" {
-		if repoName != repoAddName {
-			return nil, errors.New("parsed repo name does not match repo add param")
-		}
-
-		repoURI = repoAddURI
+	if repoURI == "" {
+		repoURI = getKnownHelmRepoURI(repoName)
 	}
 
 	if repoURI == "" {

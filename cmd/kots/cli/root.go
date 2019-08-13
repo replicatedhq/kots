@@ -21,7 +21,9 @@ func RootCmd() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
-	cmd.AddCommand(InitCmd())
+	cmd.AddCommand(PullCmd())
+	cmd.AddCommand(InstallCmd())
+	cmd.AddCommand(UploadCmd())
 
 	viper.BindPFlags(cmd.Flags())
 

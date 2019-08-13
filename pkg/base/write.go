@@ -43,3 +43,9 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	return nil
 }
+
+func (b *Base) GetOverlaysDir(options WriteOptions) string {
+	renderDir := options.BaseDir
+
+	return path.Join(renderDir, "..", "overlays")
+}
