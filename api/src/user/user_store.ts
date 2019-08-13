@@ -232,18 +232,6 @@ export class UserStore {
     return true;
   }
 
-  public async checkSecuredStatus(): Promise<Boolean> {
-    const q = "select count(1) as count from kotsadm_params";
-
-    const result = await this.pool.query(q);
-
-    if (result.rows[0].count === "0") {
-      return false;
-    }
-
-    return true;
-  }
-
   public async createAdminConsolePassword(password: string): Promise<string> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const pg = await this.pool.connect();

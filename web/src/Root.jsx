@@ -24,7 +24,6 @@ import WatchDetailPage from "./components/watches/WatchDetailPage";
 import ClusterScope from "./components/clusterscope/ClusterScope";
 import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
-import SecureAdminConsole from "./components/SecureAdminConsole";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
@@ -226,7 +225,6 @@ class Root extends Component {
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListApps} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
