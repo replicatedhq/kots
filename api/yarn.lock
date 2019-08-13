@@ -187,7 +187,7 @@
   resolved "https://registry.yarnpkg.com/@snyk/gemfile/-/gemfile-1.2.0.tgz#919857944973cce74c650e5428aaf11bcd5c0457"
   integrity sha512-nI7ELxukf7pT4/VraL4iabtNNMz8mUo7EXlqCFld8O5z6mIMLX9llps24iPpaIZOwArkY3FWA+4t+ixyvtTSIA==
 
-"@tsed/common@^5.25.1":
+"@tsed/common@5.25.1":
   version "5.25.1"
   resolved "https://registry.yarnpkg.com/@tsed/common/-/common-5.25.1.tgz#a1d6a90531dd5777db844199caf45976c82d5648"
   integrity sha512-xfNTjGwDonpDmgpY9lW6hFAD0QtW+M8X1k6DcfT7PjVakiW+15S0pZNxYmVB0poDvvUnxpmDx9Q/Ol1aco6sfQ==
@@ -200,7 +200,7 @@
     ts-log-debug "^5.1.0"
     tslib "^1.10.0"
 
-"@tsed/core@^5.25.1":
+"@tsed/core@5.25.1":
   version "5.25.1"
   resolved "https://registry.yarnpkg.com/@tsed/core/-/core-5.25.1.tgz#3ff70cfa74d2f9b8f5bf8be4f84fb20390a4254c"
   integrity sha512-BL/QS2vguIlmvIA+rjlrUf2QjK1olXNz05RG7ZTzQz7b1/8QxlxB1jYVYMtyn8ZE2eEuJTPJFXsfMNBKo0bkUw==
@@ -209,14 +209,14 @@
     source-map-support "^0.5.12"
     tslib "^1.10.0"
 
-"@tsed/di@^5.25.1":
+"@tsed/di@5.25.1":
   version "5.25.1"
   resolved "https://registry.yarnpkg.com/@tsed/di/-/di-5.25.1.tgz#3df76a0c46f234b17d9f597e6198a6f449827308"
   integrity sha512-giE4qqStsQ2SFeJfrVH0JvF0CRG7ugPtBkLkA7Zw84fNCSMGR10YCIlqYv+I1YOZTC6wNc8ojaIoFf3eIeUz6g==
   dependencies:
     tslib "^1.8.0"
 
-"@tsed/multipartfiles@^5.25.1":
+"@tsed/multipartfiles@5.25.1":
   version "5.25.1"
   resolved "https://registry.yarnpkg.com/@tsed/multipartfiles/-/multipartfiles-5.25.1.tgz#2616397aa3eb18a4c00555c6f150863488b3f145"
   integrity sha512-DHSE8GOe+eEcjgVY0/b180Uo5x1mNwe/KFhQcwW2fIjroSe2ZGEqSiDtLEmYvO3MoH8nS+spILQwMPkAjMHrgw==
