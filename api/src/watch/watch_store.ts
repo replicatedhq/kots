@@ -432,6 +432,12 @@ order by sequence desc`;
         q = "delete from watch_downstream_token where watch_id = $1";
         await pg.query(q, v);
 
+        q = "DELETE FROM preflight_spec WHERE watch_id = $1";
+        await pg.query(q, v);
+
+        q = "DELETE FROM preflight_result WHERE watch_id = $1";
+        await pg.query(q, v);
+
         await pg.query("commit");
       } catch {
         await pg.query("rollback");
