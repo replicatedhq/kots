@@ -13,7 +13,10 @@ steps:
 
   - wait
 
-  - command: "make -C operator publish-pact"
+  - commands:
+      - mkdir -p pacts
+      - buildkite-agent artifact download operator/pacts/* pacts --step test-and-build
+      - make -C operator publish-pact
     branches: master
     retry:
       automatic: true
