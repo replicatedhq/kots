@@ -48,6 +48,19 @@ class CodeSnippet extends Component {
     }
   }
 
+  /**
+   * Strips out any newlines, empty strings, and leading/trailing whitespace
+   *
+   * @param {Array<string>} childStrings - an Array of strings
+   * @return {String} a Neatly and well trimmed string
+   */
+  stripExtraneousSpaces = childStrings => {
+    return childStrings
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+
   render() {
     const {
       className,
@@ -61,10 +74,7 @@ class CodeSnippet extends Component {
     } = this.props;
 
     const { didCopy } = this.state;
-    const trimChild = text => {
-      console.log(text);
-      return text.trim();
-    }
+
     return (
       <div className={classNames("CodeSnippet", `variant-${variant}`, className)}>
         <div className="CodeSnippet-content">
@@ -76,7 +86,7 @@ class CodeSnippet extends Component {
           }
           <Prism language={language}>
             {Array.isArray(children)
-              ? children.map(trimChild).filter(Boolean).join("\n")
+              ? this.stripExtraneousSpaces(children)
               : children.trim()
             }
           </Prism>
