@@ -17,9 +17,6 @@ publish-pact:
 pacts:
 	go test ./pkg/pacts
 
-.PHONY: test
-test: pacts
-
 .PHONY: fmt
 fmt:
 	go fmt ./pkg/... ./cmd/...
@@ -29,7 +26,7 @@ vet:
 	go vet ./pkg/... ./cmd/...
 
 .PHONY: test
-test: fmt vet
+test: fmt vet pacts
 	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 .PHONY: build
