@@ -1,13 +1,12 @@
 import * as React from "react";
-import trim from "trim";
 import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 
 import Select from "react-select";
-import Clipboard from "clipboard";
 import Modal from "react-modal";
 
+import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 
@@ -22,9 +21,6 @@ class GenerateSupportBundle extends React.Component {
   state = {
     clusters: [],
     selectedCluster: this.props.watch.watches.length ? this.props.watch.watches[0].cluster : "",
-    showToast: false,
-    copySuccess: false,
-    copyMessage: "",
     addNewClusterModal: false,
     displayUploadModal: false
   }
@@ -36,7 +32,6 @@ class GenerateSupportBundle extends React.Component {
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
     }
-    this.instantiateCopyAction();
   }
 
   componentDidUpdate(lastProps) {
@@ -73,16 +68,6 @@ class GenerateSupportBundle extends React.Component {
         copyMessage: ""
       });
     }, 3000);
-  }
-
-  instantiateCopyAction() {
-    let clipboard = new Clipboard(".copy-command");
-    clipboard.on("success", () => {
-      this.showCopyToast("Command has been copied to your clipboard", true);
-    });
-    clipboard.on("error", () => {
-      this.showCopyToast("Unable to copy, select the text and use 'Command/Ctl + C'", false);
-    });
   }
 
   renderIcons = (shipOpsRef, gitOpsRef) => {
@@ -132,7 +117,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { clusters, selectedCluster, showToast, copySuccess, copyMessage, addNewClusterModal, displayUploadModal } = this.state;
+    const { clusters, selectedCluster, addNewClusterModal, displayUploadModal } = this.state;
     const { watch } = this.props;
     const selectedWatch = watch ?.watches.find((watch) => watch.cluster.id === selectedCluster.id);
 
@@ -173,23 +158,13 @@ class GenerateSupportBundle extends React.Component {
                 </div>
                 <div className="u-marginTop--40">
                   <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
-                  <div className="GenerateBundleCommand--wrapper u-marginTop--15">
-                    <pre className="language-bash docker-command">
-                      <code className="u-lineHeight--normal u-fontSize--small u-overflow--auto u-marginTop--15">
-                        {selectedWatch ?.bundleCommand}
-                      </code>
-                    </pre>
-                    <textarea value={trim(selectedWatch ?.bundleCommand)} className="hidden-input" id="docker-command" readOnly={true}></textarea>
-                    <div className="u-marginTop--15 u-marginBottom--normal">
-                      {showToast ?
-                        <span className={`u-color--tuna u-fontSize--small u-fontWeight--medium ${copySuccess ? "u-color--chateauGreen" : "u-color--chestnut"}`}>{copyMessage}</span>
-                        :
-                        <span className="flex-auto u-color--astral u-fontSize--small u-fontWeight--medium u-textDecoration--underlineOnHover copy-command" data-clipboard-target="#docker-command">
-                          Copy command
-                          </span>
-                      }
-                    </div>
-                  </div>
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                  >
+                    {selectedWatch?.bundleCommand.split("\n")}
+                  </CodeSnippet>
                 </div>
                 <div className="u-marginTop--15">
                   <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>

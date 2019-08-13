@@ -115,6 +115,7 @@ class PreflightChecksPage extends Component {
                         You will be able to see the results in your terminal window as well as in this UI.
                       </p>
                       <CodeSnippet
+                        variant="blue"
                         className="u-marginTop--10"
                         language="bash"
                         canCopy={true}
