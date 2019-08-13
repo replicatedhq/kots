@@ -1,4 +1,4 @@
-import Express, { response } from "express";
+import Express from "express";
 import { BodyParams, Controller, HeaderParams, Post, Req, Res, Header } from "@tsed/common";
 import { logger } from "../server/logger";
 import { Params } from "../server/params";

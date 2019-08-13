@@ -35,6 +35,7 @@ import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
+import { KotsAppStore } from "../kots_app/kots_app_store";
 
 @ServerSettings({
     rootDir: path.resolve(__dirname),
@@ -106,6 +107,7 @@ export class Server extends ServerLoader {
       licenseStore: new LicenseStore(pool, params),
       githubInstall: new GithubInstallationsStore(pool),
       preflightStore: new PreflightStore(pool),
+      kotsAppStore: new KotsAppStore(pool, params),
     }
 
     if (process.env["AUTO_CREATE_CLUSTER"] === "1") {

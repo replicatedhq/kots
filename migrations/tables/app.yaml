@@ -15,7 +15,7 @@ spec:
         type: text
         constraints:
           notNull: true
-      - name: title
+      - name: name
         type: text
         constraints:
           notNull: true
@@ -33,7 +33,5 @@ spec:
           notNull: true
       - name: current_sequence
         type: integer
-      - name: metadata
-        type: text
       - name: last_update_check_at
         type: timestamp without time zone

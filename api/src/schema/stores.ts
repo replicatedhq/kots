@@ -18,6 +18,7 @@ import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
+import { KotsAppStore } from "../kots_app/kots_app_store";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -40,4 +41,5 @@ export interface Stores {
   licenseStore: LicenseStore,
   githubInstall: GithubInstallationsStore,
   preflightStore: PreflightStore,
+  kotsAppStore: KotsAppStore,
 }
