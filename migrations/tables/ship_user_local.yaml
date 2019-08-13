@@ -10,6 +10,9 @@ spec:
   requires: []
   schema:
     postgres:
+      indexes:
+        - columns: [email]
+          isUnique: true
       primaryKey:
       - user_id
       columns:

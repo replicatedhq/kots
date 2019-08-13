@@ -9,4 +9,3 @@ export const userInfoRaw = `
   }
 `;
 export const userInfo = gql(userInfoRaw);
-

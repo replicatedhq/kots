@@ -6,16 +6,6 @@ export const trackScmLead = gql`
   }
 `;
 
-export const createAdminConsolePasswordRaw = `
-  mutation createAdminConsolePassword($password: String!) {
-    createAdminConsolePassword(password: $password) {
-      token
-      userId
-    }
-  }
-`;
-export const createAdminConsolePassword = gql(createAdminConsolePasswordRaw);
-
 export const loginToAdminConsoleRaw = `
   mutation loginToAdminConsole($password: String!) {
     loginToAdminConsole(password: $password) {

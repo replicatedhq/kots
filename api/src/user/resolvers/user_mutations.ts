@@ -97,15 +97,6 @@ export function UserMutations(stores: Stores, params: Params) {
       return await stores.userStore.trackScmLead(args.deploymentPreference, args.emailAddress, args.scmProvider);
     },
 
-    async createAdminConsolePassword(root: any, args: any, context: Context): Promise<AdminSignupInfo> {
-      const userId = await stores.userStore.createAdminConsolePassword(args.password);
-      const sessionToken = await stores.sessionStore.createPasswordSession(userId);
-      return {
-        token: sessionToken,
-        userId: userId,
-      };
-    },
-
     async loginToAdminConsole(root: any, args: any, context: Context): Promise<AdminSignupInfo> {
       const user = await stores.userStore.tryGetPasswordUser("default-user@none.com");
       if (!user) {

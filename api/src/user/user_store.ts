@@ -232,29 +232,32 @@ export class UserStore {
     return true;
   }
 
-  public async createAdminConsolePassword(password: string): Promise<string> {
+  public async createAdminConsolePassword(passwordBcrypt: string): Promise<string> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const pg = await this.pool.connect();
-    const encryptedPassword = await bcrypt.hash(password, 10);
     try {
       await pg.query("begin");
 
-      let q = `insert into kotsadm_params (key, password_bcrypt) values ($1, $2)`;
-      let v = [ "secure-password", encryptedPassword ];
-      await pg.query(q, v);
+      let q = `select user_id from ship_user_local where email = $1`;
+      let v = ["default-user@none.com"];
 
-      q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
+      const result = await pg.query(q, v);
+
+      if (result.rowCount === 0) {
+        let qq = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
+        let vv = [
+          id,
+          new Date(),
+          new Date(),
+        ];
+        await pg.query(qq, vv);
+      }
+
+      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name, email)
+        values ($1, $2, $3, $4, $5) ON CONFLICT (email) do update set password_bcrypt = EXCLUDED.password_bcrypt`;
       v = [
         id,
-        new Date(),
-        new Date(),
-      ];
-      await pg.query(q, v);
-
-      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name, email) values ($1, $2, $3, $4, $5)`;
-      v = [
-        id,
-        encryptedPassword,
+        passwordBcrypt,
         "Default",
         "User",
         "default-user@none.com",
