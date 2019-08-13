@@ -70,6 +70,7 @@ class SecureAdminConsole extends React.Component {
         this.completeLogin(res.data, true);
       } catch (error) {
         error.graphQLErrors.map(({ message }) => {
+
           this.setState({
             createLoading: false,
             passwordErr: true,
@@ -89,12 +90,23 @@ class SecureAdminConsole extends React.Component {
         this.completeLogin(res.data);
       } catch (error) {
         error.graphQLErrors.map(({ message }) => {
-          this.setState({
-            authLoading: false,
-            passwordErr: true,
-            passwordErrMessage: message,
-          })
-        }); 
+          let json;
+
+          try {
+            json = JSON.parse(message);
+            this.setState({
+              authLoading: false,
+              passwordErr: true,
+              passwordErrMessage: json.replicatedMessage || "There was an error logging in. Please try again",
+            });
+          } catch (error) {
+            this.setState({
+              authLoading: false,
+              passwordErr: true,
+              passwordErrMessage: message,
+            });
+          }
+        });
       }
     }
   }
@@ -124,7 +136,7 @@ class SecureAdminConsole extends React.Component {
   render() {
     const { isSecured } = this.props;
     const {
-      password, 
+      password,
       confirmPassword,
       authLoading,
       createLoading,
