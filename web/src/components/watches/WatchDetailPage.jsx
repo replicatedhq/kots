@@ -59,7 +59,7 @@ class WatchDetailPage extends Component {
     const { getThemeState, setThemeState, match, listApps, history, getWatchQuery } = this.props;
     const { search } = this.props.location;
     const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listApps.find(w => w.slug === slug);
+    const currentWatch = listApps?.find(w => w.slug === slug);
 
     // Handle updating the app theme state when a watch changes.
     if (currentWatch ?.watchIcon) {
