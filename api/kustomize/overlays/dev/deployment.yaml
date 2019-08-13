@@ -63,8 +63,6 @@ spec:
               value: "microk8s"
             - name: AUTO_CREATE_CLUSTER_TOKEN
               value: this-is-definitely-not-a-secret
-            - name: SHARED_PASSWORD_BCRYPT
-              value: this-is-not-a-secure-password
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github
