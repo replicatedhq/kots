@@ -5,7 +5,7 @@ export GO111MODULE=on
 
 .PHONY: publish-pact
 publish-pact:
-	mkdir -p pacts; buildkite-agent artifact download pacts/* pacts --step test-and-build
+	mkdir -p pacts; buildkite-agent artifact download operator/pacts/* pacts --step test-and-build
 	curl \
 	--silent --output /dev/null --show-error --fail \
 	--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
