@@ -125,7 +125,7 @@ export class Server extends ServerLoader {
       logger.debug({msg: "not creating local cluster"});
     }
 
-    if(process.env["SHARED_PASSWORD_BCRYPT"] !== "") {
+    if(process.env["SHARED_PASSWORD_BCRYPT"]) {
       logger.info({msg: "ensuring that shared admin console password is provisioned"});
       await stores.userStore.createAdminConsolePassword(process.env["SHARED_PASSWORD_BCRYPT"]!);
     }
