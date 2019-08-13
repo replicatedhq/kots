@@ -93,6 +93,10 @@ publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
 publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: docker gitops
 
+docker-kotsadm:
+	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:alpha .
+	docker push kotsadm/kotsadm-web:alpha
+
 docker:
 	docker build -f deploy/Dockerfile -t ${IMAGE} .
 	docker push ${IMAGE}
