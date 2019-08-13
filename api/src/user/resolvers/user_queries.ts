@@ -27,10 +27,6 @@ export function UserQueries(stores: Stores) {
         throw new ReplicatedError(`Unknown session type: ${context.sessionType()}`);
       }
     },
-
-    async isSecured(root: any, args: any, context: Context) {
-      return stores.userStore.checkSecuredStatus();
-    }
   }
 }
 

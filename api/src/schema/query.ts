@@ -15,7 +15,6 @@ export const Query = `
     userInfo: UserInfo
     userFeatures: [Feature]
     orgMembers(org: String!, page: Int): [GetMembersResponse]
-    isSecured: Boolean!
 
     listClusters: [Cluster]
 
@@ -24,7 +23,7 @@ export const Query = `
     getPendingIniSession(id: String!): PendingInitSession
 
     listApps: Apps
-    
+
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
 

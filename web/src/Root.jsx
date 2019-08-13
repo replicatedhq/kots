@@ -24,10 +24,10 @@ import WatchDetailPage from "./components/watches/WatchDetailPage";
 import ClusterScope from "./components/clusterscope/ClusterScope";
 import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
-import SecureAdminConsole from "./components/SecureAdminConsole";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
+import SecureAdminConsole from "./components/SecureAdminConsole";
 
 import { listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
