@@ -51,6 +51,9 @@ func InstallCmd() *cobra.Command {
 				IncludeShip:    v.GetBool("include-ship"),
 				IncludeGitHub:  v.GetBool("include-github"),
 				SharedPassword: v.GetString("shared-password"),
+				ServiceType:    v.GetString("service-type"),
+				NodePort:       v.GetInt32("node-port"),
+				Hostname:       v.GetString("hostname"),
 			}
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				return err
@@ -69,6 +72,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
 	cmd.Flags().String("shared-password", "", "shared password to apply")
+	cmd.Flags().String("service-type", "", "the service type to create")
+	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
+	cmd.Flags().String("hostname", "", "the hostname to that the admin console will be exposed on")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")

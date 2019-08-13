@@ -4,21 +4,20 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
-func ensureAPI(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureAPIDeployment(namespace, clientset); err != nil {
+func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureAPIDeployment(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api deployment")
 	}
 
-	if err := ensureAPIService(namespace, clientset); err != nil {
+	if err := ensureAPIService(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api service")
 	}
 
@@ -141,7 +140,15 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 }
 
 func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-web", metav1.GetOptions{})
+	port := corev1.ServicePort{
+		Name:       "http",
+		Port:       3000,
+		TargetPort: intstr.FromString("http"),
+	}
+
+	serviceType := corev1.ServiceTypeClusterIP
+
+	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
@@ -160,13 +167,9 @@ func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
 				Selector: map[string]string{
 					"app": "kotsadm-api",
 				},
-				Type: corev1.ServiceTypeClusterIP,
+				Type: serviceType,
 				Ports: []corev1.ServicePort{
-					{
-						Name:       "http",
-						Port:       3000,
-						TargetPort: intstr.FromString("http"),
-					},
+					port,
 				},
 			},
 		}
