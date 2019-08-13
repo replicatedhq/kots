@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
         - name: kotsadm-web
-          image: 923411875752.dkr.ecr.us-east-1.amazonaws.com/kotsadm-web
+          image: kotsadm/kotsadm-web
           env:
             - name: USE_EC2_PARAMETERS
               value: "1"

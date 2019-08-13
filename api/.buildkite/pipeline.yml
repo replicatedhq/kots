@@ -25,36 +25,7 @@ steps:
 
   - wait
 
-  - commands:
-      - mkdir -p api/build
-      - buildkite-agent artifact download api/build/* . --step build
-      - mkdir -p api/bin
-      - buildkite-agent artifact download api/bin/* . --step build
-      - chmod +x api/bin/kotsadm-api
-      - chmod +x api/bin/shipcloudctl
+  - label: release
+    commands:
+      - if [ -z "$GIT_TAG" ]; then make -C api build-alpha publish-alpha; else git tag -f "$GIT_TAG" && make -C api build-release publish-release; fi
     branches: "master"
-
-  - wait
-
-  - commands:
-      - make -C api build-staging publish-staging
-    branches: "master"
-    env:
-      AWS_PROFILE: replicated-staging
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "923411875752"
-
-  - block: "Release to production"
-    branches: "master"
-
-  - commands:
-      - make -C api build-production publish-production
-    branches: "master"
-    env:
-      AWS_PROFILE: replicated-production
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "799720048698"

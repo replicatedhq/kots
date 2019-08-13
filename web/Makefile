@@ -39,13 +39,13 @@ serve: deps
 		--progress -w --debug --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
 
-.PHONY: build-staging
-build-staging: SHIP_CLOUD_ENV = staging
-build-staging: webpack_build
+.PHONY: build-alpha
+build-alpha: SHIP_CLOUD_ENV = staging
+build-alpha: webpack_build
 
-.PHONY: build-production
-build-production: SHIP_CLOUD_ENV = production
-build-production: webpack_build
+.PHONY: build-release
+build-release: SHIP_CLOUD_ENV = production
+build-release: webpack_build
 
 .PHONY: build-enterprise
 build-enterprise: SHIP_CLOUD_ENV = enterprise
@@ -69,21 +69,21 @@ webpack_build:
 	--env ${SHIP_CLOUD_ENV} \
 	--mode production
 
-.PHONY: publish-production
-publish-production: REGISTRY = 799720048698.dkr.ecr.us-east-1.amazonaws.com
-publish-production: OVERLAY = production
-publish-production: GITOPS_OWNER = replicatedcom
-publish-production: GITOPS_REPO = gitops-deploy
-publish-production: GITOPS_BRANCH = release
-publish-production: docker gitops
+.PHONY: publish-release
+publish-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
+publish-release: OVERLAY = production
+publish-release: GITOPS_OWNER = replicatedcom
+publish-release: GITOPS_REPO = gitops-deploy
+publish-release: GITOPS_BRANCH = release
+publish-release: docker gitops
 
-.PHONY: publish-staging
-publish-staging: REGISTRY = 923411875752.dkr.ecr.us-east-1.amazonaws.com
-publish-staging: OVERLAY = staging
-publish-staging: GITOPS_OWNER = replicatedcom
-publish-staging: GITOPS_REPO = gitops-deploy
-publish-staging: GITOPS_BRANCH = master
-publish-staging: docker gitops
+.PHONY: publish-alpha
+publish-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
+publish-alpha: OVERLAY = staging
+publish-alpha: GITOPS_OWNER = replicatedcom
+publish-alpha: GITOPS_REPO = gitops-deploy
+publish-alpha: GITOPS_BRANCH = master
+publish-alpha: docker gitops
 
 .PHONY: publish-enterprise
 publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
@@ -94,12 +94,11 @@ publish-enterprise: GITOPS_BRANCH = master
 publish-enterprise: docker gitops
 
 docker:
-	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} .
-	docker tag ${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7} $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
-	docker push $(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker push ${IMAGE}
 
 gitops:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image $(REGISTRY)/${PROJECT_NAME}=$(REGISTRY)/${PROJECT_NAME}:$${BUILDKITE_COMMIT:0:7}
+	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=${IMAGE}
 
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
@@ -111,6 +110,3 @@ gitops:
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
           git push origin $(GITOPS_BRANCH)
-
-
-

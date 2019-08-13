@@ -28,8 +28,7 @@ schema-fixtures:
 	docker run -e uid=$$UID -v `pwd`:/out -v `pwd`/../tables:/in schemahero/schemahero:alpha fixtures --input-dir /in --output-dir /out/schema --dbname -ship-cloud --driver postgres
 
 .PHONY: publish
-publish: REGISTRY = replicated
+publish: IMAGE = kotsadm/${PROJECT_NAME}:latest
 publish:
-	docker build -f deploy/Dockerfile -t ${PROJECT_NAME}:latest .
-	docker tag ${PROJECT_NAME}:latest $(REGISTRY)/${PROJECT_NAME}:latest
-	docker push $(REGISTRY)/${PROJECT_NAME}:latest
+	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker push ${IMAGE}

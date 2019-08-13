@@ -16,10 +16,28 @@ steps:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
       branch: "${BUILDKITE_BRANCH}"
+      env:
+        GIT_TAG: "${GIT_TAG}"
+
+  - wait
+
+  # TODO: fixit
+  # - commands:
+  #     - make -C web deps build-enterprise
+  #   label: "build-enterprise"
+  #   branches: "master"
+  #   plugins:
+  #     - docker#v3.0.1:
+  #         image: replicated/gitops-builder:buildkite
+  #         workdir: /repo/web
+  #         environment:
+  #           - BUILDKITE_COMMIT
+  #   artifact_paths:
+  #     - "web/dist/**/*"
 
   - commands:
-      - make -C web deps build-enterprise
-    label: "build-enterprise"
+      - make -C web deps build-alpha
+    label: "build-alpha"
     branches: "master"
     plugins:
       - docker#v3.0.1:
@@ -31,21 +49,8 @@ steps:
       - "web/dist/**/*"
 
   - commands:
-      - make -C web deps build-staging
-    label: "build-staging"
-    branches: "master"
-    plugins:
-      - docker#v3.0.1:
-          image: replicated/gitops-builder:buildkite
-          workdir: /repo/web
-          environment:
-            - BUILDKITE_COMMIT
-    artifact_paths:
-      - "web/dist/**/*"
-
-  - commands:
-      - make -C web deps build-production
-    label: "build-production"
+      - make -C web deps build-release
+    label: "build-release"
     branches: "master"
     plugins:
       - docker#v3.0.1:
@@ -58,38 +63,22 @@ steps:
 
   - wait
 
-  - label: publish-enterprise
-    commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-enterprise
-      - make -C web publish-enterprise
-    branches: "master"
+  # - label: publish-enterprise
+  #   commands:
+  #     - mkdir -p web/dist
+  #     - buildkite-agent artifact download web/dist/* . --step build-enterprise
+  #     - make -C web publish-enterprise
+  #   branches: "master"
 
-  - label: publish-staging
-    commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-staging
-      - make -C web publish-staging
+  - label: publish
     branches: "master"
-    env:
-      AWS_PROFILE: replicated-staging
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "923411875752"
-
-  - block: "Release to production"
-    branches: "master"
-
-  - label: publish-production
-    commands:
-      - mkdir -p web/dist
-      - buildkite-agent artifact download web/dist/* . --step build-production
-      - make -C web publish-production
-    branches: "master"
-    env:
-      AWS_PROFILE: replicated-production
-    plugins:
-      - ecr#v2.0.0:
-          login: true
-          account_ids: "799720048698"
+    command: |
+      mkdir -p web/dist;
+      if [ -z "$GIT_TAG" ]; then \
+        buildkite-agent artifact download web/dist/* . --step build-alpha && \
+        make -C web publish-alpha;
+      else \
+        git tag -f "$GIT_TAG" && \
+        buildkite-agent artifact download web/dist/* . --step build-release && \
+        make -C web publish-release;
+      fi

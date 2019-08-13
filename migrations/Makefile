@@ -8,19 +8,32 @@ test:
 	docker-compose -f docker-compose-citest.yml run migrate # forwards exit code
 	docker-compose -f docker-compose-citest.yml down
 
-.PHONY: publish-production
-publish-production: OVERLAY = production
-publish-production: GITOPS_OWNER = replicatedcom
-publish-production: GITOPS_REPO = gitops-deploy
-publish-production: GITOPS_BRANCH = release
-publish-production: build_and_publish
+.PHONY: schema-alpha
+schema-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
+schema-alpha: build_schema
 
-.PHONY: publish-staging
-publish-staging: OVERLAY = staging
-publish-staging: GITOPS_OWNER = replicatedcom
-publish-staging: GITOPS_REPO = gitops-deploy
-publish-staging: GITOPS_BRANCH = master
-publish-staging: build_and_publish
+.PHONY: schema-release
+schema-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
+schema-release: build_schema
+
+build_schema:
+	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker push ${IMAGE}
+
+
+.PHONY: publish-release
+publish-release: OVERLAY = production
+publish-release: GITOPS_OWNER = replicatedcom
+publish-release: GITOPS_REPO = gitops-deploy
+publish-release: GITOPS_BRANCH = release
+publish-release: build_and_publish
+
+.PHONY: publish-alpha
+publish-alpha: OVERLAY = staging
+publish-alpha: GITOPS_OWNER = replicatedcom
+publish-alpha: GITOPS_REPO = gitops-deploy
+publish-alpha: GITOPS_BRANCH = master
+publish-alpha: build_and_publish
 
 .PHONY: publish-enterprise
 publish-enterprise: OVERLAY = enterprise

@@ -21,7 +21,7 @@ spec:
             path: /var/run/sigsci
       containers:
         - name: kotsadm-api
-          image: 799720048698.dkr.ecr.us-east-1.amazonaws.com/kotsadm-api
+          image: kotsadm/kotsadm-api
           volumeMounts:
             - mountPath: /var/run/sigsci/
               name: sigsci
