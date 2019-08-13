@@ -15,11 +15,12 @@ const (
 )
 
 var (
-	webServiceType   = "ClusterIP"
-	apiServiceType   = "ClusterIP"
-	postgresPassword = uuid.New().String()
-	minioAccessKey   = uuid.New().String()
-	minioSecret      = uuid.New().String()
+	webServiceType         = "ClusterIP"
+	apiServiceType         = "ClusterIP"
+	postgresPassword       = uuid.New().String()
+	minioAccessKey         = uuid.New().String()
+	minioSecret            = uuid.New().String()
+	autoCreateClusterToken = uuid.New().String()
 )
 
 type DeployOptions struct {
@@ -67,6 +68,10 @@ func Deploy(deployOptions DeployOptions) error {
 
 	if err := ensurePostgres(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
+	}
+
+	if err := runSchemaHeroMigrations(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to run database migrations")
 	}
 
 	if err := ensureWeb(deployOptions.Namespace, clientset); err != nil {

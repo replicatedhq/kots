@@ -86,6 +86,14 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 										Value: "1",
 									},
 									{
+										Name:  "AUTO_CREATE_CLUSTER_NAME",
+										Value: "local",
+									},
+									{
+										Name:  "AUTO_CREATE_CLUSTER_TOKEN",
+										Value: autoCreateClusterToken,
+									},
+									{
 										Name:  "SHIP_API_ENDPOINT",
 										Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", namespace),
 									},
