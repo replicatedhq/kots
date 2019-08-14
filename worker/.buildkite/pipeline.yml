@@ -28,7 +28,7 @@ steps:
     branches: "master"
 
   - label: release
-    command: |
+    commands:
       - if [ ! -z "$GIT_TAG" ]; then mkdir -p worker/bin worker/deploy/bin; fi
       - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download worker/bin/* . --step test-and-build; fi
       - if [ ! -z "$GIT_TAG" ]; then cp worker/bin/kotsadm-worker worker/deploy/bin/kotsadm-worker; fi
