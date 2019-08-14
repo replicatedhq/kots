@@ -1,9 +1,14 @@
 steps:
   - commands:
-      - if [ -z "$GIT_TAG" ]; then make -C migrations schema-alpha; else git tag -f "$GIT_TAG" && make -C migrations schema-release; fi
+      - make -C migrations schema-alpha
     branches: "master"
 
   - commands:
-      - if [ -z "$GIT_TAG" ]; then make -C migrations publish-alpha; else git tag -f "$GIT_TAG" && make -C migrations publish-release; fi
+      - if [ ! -z "$GIT_TAG" ]; then make -C migrations schema-release; fi
+
+  - commands:
+      - make -C migrations publish-alpha
     branches: "master"
 
+  - commands:
+      - if [ ! -z "$GIT_TAG" ]; then make -C migrations publish-release; fi

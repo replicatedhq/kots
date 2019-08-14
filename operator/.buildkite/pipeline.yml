@@ -24,14 +24,22 @@ steps:
 
   # - wait
 
-  - label: release
+  - label: alpha
     commands:
       - mkdir -p operator/bin operator/deploy/bin
       - buildkite-agent artifact download operator/bin/* . --step test-and-build
       - cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator
       - chmod +x operator/deploy/bin/kotsadm-operator
-      - if [ -z "$GIT_TAG" ]; then make -C operator build-alpha; else git tag -f "$GIT_TAG" && make -C worker build-release; fi
+      - make -C operator build-alpha
     branches: "master"
+
+  - label: release
+    commands:
+      - if [ ! -z "$GIT_TAG" ]; mkdir -p operator/bin operator/deploy/bin; fi
+      - if [ ! -z "$GIT_TAG" ]; buildkite-agent artifact download operator/bin/* . --step test-and-build; fi
+      - if [ ! -z "$GIT_TAG" ]; cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; chmod +x operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then make -C worker build-release; fi
 
   # - wait
 

@@ -63,16 +63,20 @@ steps:
 
   - wait
 
-  - label: publish-kotsadm
+  - label: publish-kotsadm-alpha
     branches: "master"
     command: |
       # publish always, image tag is based on git tag
       mkdir -p web/dist;
       buildkite-agent artifact download web/dist/* . --step build-kotsadm
+      make -C web publish-kotsadm-alpha;
 
-      if [ -z "$GIT_TAG" ]; then \
-        make -C web publish-kotsadm-alpha;
-      else \
+  - label: publish-kotsadm-release
+    command: |
+      # publish always, image tag is based on git tag
+      if [ ! -z "$GIT_TAG" ]; then \
+        mkdir -p web/dist;
+        buildkite-agent artifact download web/dist/* . --step build-kotsadm
         make -C web publish-kotsadm-tag;
       fi
 
@@ -80,19 +84,13 @@ steps:
     branches: "master"
     command: |
       mkdir -p web/dist;
-      if [ -z "$GIT_TAG" ]; then \
-        buildkite-agent artifact download web/dist/* . --step build-replicated-staging && \
-        make -C web publish-replicated-staging release-replicated-staging;
-      fi
+      buildkite-agent artifact download web/dist/* . --step build-replicated-staging && \
+      make -C web publish-replicated-staging release-replicated-staging;
 
   - label: publish-replicated-production
-    branches: "master"
     command: |
-      mkdir -p web/dist;
-      if [ -z "$GIT_TAG" ]; then \
-        echo "no-op";
-      else \
-        git tag -f "$GIT_TAG" && \
+      if [ ! -z "$GIT_TAG" ]; then \
+        mkdir -p web/dist;
         buildkite-agent artifact download web/dist/* . --step build-replicated-production && \
         make -C web publish-replicated-production release-replicated-production;
       fi
