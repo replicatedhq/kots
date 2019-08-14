@@ -9,7 +9,6 @@ steps:
     artifact_paths:
       - "operator/bin/**/*"
       - "operator/pacts/**/*"
-    branches: master
 
   - wait
 

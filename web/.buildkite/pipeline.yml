@@ -25,7 +25,6 @@ steps:
   - commands:
       - make -C web deps build-kotsadm
     label: "build-kotsadm"
-    branches: "master"
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
@@ -38,7 +37,6 @@ steps:
   - commands:
       - make -C web deps build-replicated-staging
     label: "build-replicated-staging"
-    branches: "master"
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
@@ -51,7 +49,6 @@ steps:
   - commands:
       - make -C web deps build-replicated-production
     label: "build-replicated-production"
-    branches: "master"
     plugins:
       - docker#v3.0.1:
           image: replicated/gitops-builder:buildkite
