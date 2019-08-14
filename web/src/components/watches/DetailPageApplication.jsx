@@ -183,9 +183,9 @@ class DetailPageApplication extends Component {
     if (watch !== lastProps.watch && watch) {
       this.setWatchState(watch)
     }
-
+    const isKotsApp = !!watch.name;
     // current license info
-    if (this.props.getWatchLicense?.error && !this.state.watchLicense) {
+    if (!isKotsApp && this.props.getWatchLicense?.error && !this.state.watchLicense) {
       // no current license found in db, construct from stateJSON
       const watchLicense = getWatchLicenseFromState(this.props.watch);
       this.setState({ watchLicense });
@@ -216,18 +216,19 @@ class DetailPageApplication extends Component {
     const { preparingAppUpdate, watchLicense } = this.state;
     const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
+    const isKotsApp = !!watch.name;
 
     return (
       <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <Helmet>
-          <title>{`${watch.watchName} Config Overview`}</title>
+          <title>{`${isKotsApp ? watch.name : watch.watchName} Config Overview`}</title>
         </Helmet>
         <div className="DetailPageApplication flex flex1">
           <div className="flex1 flex-column u-paddingRight--30">
             <div className="flex">
               <div className="flex flex-auto">
                 <div
-                  style={{ backgroundImage: `url(${watch.watchIcon})`}}
+                  style={{ backgroundImage: `url(${isKotsApp ? watch.iconUri : watch.watchIcon})`}}
                   className="DetailPageApplication--appIcon u-position--relative">
                   <PaperIcon
                     className="u-position--absolute"
@@ -239,7 +240,7 @@ class DetailPageApplication extends Component {
                 </div>
               </div>
               <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
-                <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{watch.watchName}</p>
+                <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{isKotsApp ? watch.name : watch.watchName}</p>
                 {(!isEmpty(appMeta) && appMeta.applicationType === "replicated.app") &&
                   <div className="u-marginTop--10 flex-column">
                     {watchLicense
@@ -251,7 +252,7 @@ class DetailPageApplication extends Component {
                       :
                       <Loader size="12" />
                     }
-                    <Link to={`/watch/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
+                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
                   </div>
                 }
               </div>
@@ -267,7 +268,7 @@ class DetailPageApplication extends Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your applicaiton. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
               <div className="u-marginTop--10 u-paddingTop--5">
-                <button disabled={preparingAppUpdate} onClick={() => this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {watch.watchName}</button>
+                <button disabled={preparingAppUpdate} onClick={() => this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {isKotsApp ? watch.name : watch.watchName}</button>
               </div>
             </div>
 
@@ -276,7 +277,7 @@ class DetailPageApplication extends Component {
               <div>
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Downstreams</p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">You have not deployed your application to any downstream clusters. Get started by selecting a downstream cluster from the Downstreams tab.</p>
-                <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">Select a downstream cluster</Link>
+                <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/downstreams`} className="btn secondary">Select a downstream cluster</Link>
               </div>
             :
               <div>
@@ -332,7 +333,7 @@ class DetailPageApplication extends Component {
                   })}
                 </div>
                 <div className="u-marginTop--10 u-paddingTop--5">
-                  <Link to={`/watch/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
+                  <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
                 </div>
               </div>
             }
@@ -344,14 +345,14 @@ class DetailPageApplication extends Component {
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Get help with your application</p>
                   <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Generate a support bundle for your application to send to the vendor.</p>
                   <div className="u-marginTop--10">
-                    <Link to={`/watch/${watch.slug}/troubleshoot/generate`} className="btn secondary">Generate a support bundle</Link>
+                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/troubleshoot/generate`} className="btn secondary">Generate a support bundle</Link>
                   </div>
                 </div>
                 <div className="flex1 u-paddingLeft--15">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application config</p>
                   <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Quickly see a ready-only preview of your application config for reference.</p>
                   <div className="u-marginTop--10">
-                    <Link to={`/watch/${watch.slug}/config`} className="btn secondary">See application config</Link>
+                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/config`} className="btn secondary">See application config</Link>
                   </div>
                 </div>
               </div>
@@ -380,7 +381,7 @@ class DetailPageApplication extends Component {
               className="u-marginTop--30"
               refetchWatch={this.props.refetchWatch}
               contributors={watch.contributors || []}
-              watchName={watch.watchName}
+              watchName={isKotsApp ? watch.name : watch.watchName}
               watchId={watch.id}
               watchCallback={updateCallback}
               slug={watch.slug}
@@ -487,6 +488,14 @@ export default compose(
   }),
   graphql(getWatchLicense, {
     name: "getWatchLicense",
+    skip: props => {
+      const { owner } = props.match.params;
+      // Skip if it's a KOTS app
+      if (!owner) {
+        return true;
+      }
+      return false;
+    },
     options: props => {
       return {
         variables: {

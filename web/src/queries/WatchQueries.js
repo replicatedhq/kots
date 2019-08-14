@@ -718,7 +718,7 @@ export const getFilesRaw = `
   }
 `;
 
-export const getFiles = gql(getFilesRaw)
+export const getFiles = gql(getFilesRaw);
 
 export const listPreflightResultsRaw = `
   query listPreflightResults($watchId: String, $slug: String) {
