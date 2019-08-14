@@ -82,7 +82,7 @@ steps:
       mkdir -p web/dist;
       if [ -z "$GIT_TAG" ]; then \
         buildkite-agent artifact download web/dist/* . --step build-replicated-staging && \
-        make -C web publish-replicated-staging;
+        make -C web publish-replicated-staging release-replicated-staging;
       fi
 
   - label: publish-replicated-production
@@ -94,5 +94,5 @@ steps:
       else \
         git tag -f "$GIT_TAG" && \
         buildkite-agent artifact download web/dist/* . --step build-replicated-production && \
-        make -C web publish-replicated-production;
+        make -C web publish-replicated-production release-replicated-production;
       fi
