@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kotsadm-api-bugsnag-secret
-data:
-  key: "YTc1MDRlNGExNjMyYWQ4NDRiNzg5NzIxZTg5ODJiMTk="
