@@ -16,7 +16,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
-	kotsscheme "github.com/replicatedhq/ship-cluster/kotskinds/client/kotsclientset/scheme"
+	kotsscheme "github.com/replicatedhq/kotsadm/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

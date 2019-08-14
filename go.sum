@@ -323,6 +323,8 @@ github.com/prometheus/procfs v0.0.3 h1:CTwfnzjQ+8dS6MhHHu4YswVAD99sL2wjPqP+VkURm
 github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
+github.com/replicatedhq/kotsadm/kotskinds v0.0.0-20190814153854-ed5a6fb920f2 h1:sA5I7lPoaUJBj4S6yqv+MmHKaU9A66dlRwlFAK9/2Es=
+github.com/replicatedhq/kotsadm/kotskinds v0.0.0-20190814153854-ed5a6fb920f2/go.mod h1:aDakO3xA8iQkiKt/MqTNI6k9iD3p/wpLZfRCMoh8d2s=
 github.com/replicatedhq/ship v0.50.0 h1:+/MYCVNSk72YPQB6iTYWFkSTrIKIvW2gFrzl7zjHYFs=
 github.com/replicatedhq/ship-cluster/kotskinds v0.0.0-20190808222200-34c6e12fd318 h1:rLKUfiCu523kWsQRpv80ckO0B+gUCYdE9aFQN8Eb1pk=
 github.com/replicatedhq/ship-cluster/kotskinds v0.0.0-20190808222200-34c6e12fd318/go.mod h1:7uVarE5V0dzvIQHUHVtNNKWyyt8pxxpqZjCEUmVDvAI=

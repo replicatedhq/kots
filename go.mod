@@ -24,6 +24,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/replicatedhq/kotsadm/kotskinds v0.0.0-20190814153854-ed5a6fb920f2
 	github.com/replicatedhq/ship-cluster/kotskinds v0.0.0-20190808222200-34c6e12fd318
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
