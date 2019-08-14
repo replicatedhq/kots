@@ -316,9 +316,9 @@ func promptForHostname() (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Hostname:",
+		Label:     "Hostname for the Admin Console:",
 		Templates: templates,
-		Default:   "",
+		Default:   "localhost:8800",
 		Validate: func(input string) error {
 			if !strings.Contains(input, ":") {
 				errs := validation.IsDNS1123Subdomain(input)

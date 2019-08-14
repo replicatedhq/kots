@@ -30,10 +30,18 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	split := strings.Split(config.Host, ":")
 	if split[0] == "http" {
 		scheme = "http"
-		hostIP = strings.TrimLeft("/", split[1])
+		u, err := url.Parse(config.Host)
+		if err != nil {
+			return nil, err
+		}
+		hostIP = u.Hostname()
 	} else if split[0] == "https" {
 		scheme = "https"
-		hostIP = strings.TrimLeft("/", split[1])
+		u, err := url.Parse(config.Host)
+		if err != nil {
+			return nil, err
+		}
+		hostIP = u.Hostname()
 	}
 
 	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
