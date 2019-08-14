@@ -9,12 +9,6 @@ test:
 kots: fmt vet
 	go build -o bin/kots github.com/replicatedhq/kots/cmd/kots
 
-.PHONY: tables
-tables:
-	rm -rf pkg/kotsadm/tables
-	mkdir -p pkg/kotsadm/tables
-	cp -r ../kotsadm/migrations/tables/* pkg/kotsadm/tables
-
 .PHONY: fmt
 fmt:
 	go fmt ./pkg/... ./cmd/...

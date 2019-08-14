@@ -1,7 +1,7 @@
 steps:
   - label: build
     commands:
-      - make
+      - make kots test
     plugins:
       - docker#v3.2.0:
           image: replicated/gitops-builder:buildkite-go12-node10
