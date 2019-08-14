@@ -1,0 +1,45 @@
+project_name: kots
+release:
+  github:
+    owner: replicatedhq
+    name: kots
+builds:
+  - id: kots
+  - goos:
+    - linux
+    - windows
+    - darwin
+    goarch:
+    - amd64
+    - "386"
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    main: cmd/kots/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
+      -extldflags "-static"
+    flags: -tags netgo -installsuffix netgo
+    binary: kots
+    hooks: {}
+
+archives:
+  - id: kots
+    builds:
+      - kots
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{.Arm }}{{ end }}-{{ .Major }}.{{ .Minor }}.{{ .Patch }}'
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
