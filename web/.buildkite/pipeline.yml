@@ -21,23 +21,9 @@ steps:
 
   - wait
 
-  # TODO: fixit
-  # - commands:
-  #     - make -C web deps build-enterprise
-  #   label: "build-enterprise"
-  #   branches: "master"
-  #   plugins:
-  #     - docker#v3.0.1:
-  #         image: replicated/gitops-builder:buildkite
-  #         workdir: /repo/web
-  #         environment:
-  #           - BUILDKITE_COMMIT
-  #   artifact_paths:
-  #     - "web/dist/**/*"
-
   - commands:
-      - make -C web deps build-alpha
-    label: "build-alpha"
+      - make -C web deps build-kotsadm
+    label: "build-kotsadm"
     branches: "master"
     plugins:
       - docker#v3.0.1:
@@ -49,8 +35,21 @@ steps:
       - "web/dist/**/*"
 
   - commands:
-      - make -C web deps build-release
-    label: "build-release"
+      - make -C web deps build-replicated-staging
+    label: "build-replicated-staging"
+    branches: "master"
+    plugins:
+      - docker#v3.0.1:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo/web
+          environment:
+            - BUILDKITE_COMMIT
+    artifact_paths:
+      - "web/dist/**/*"
+
+  - commands:
+      - make -C web deps build-replicated-production
+    label: "build-replicated-production"
     branches: "master"
     plugins:
       - docker#v3.0.1:
@@ -63,22 +62,35 @@ steps:
 
   - wait
 
-  # - label: publish-enterprise
-  #   commands:
-  #     - mkdir -p web/dist
-  #     - buildkite-agent artifact download web/dist/* . --step build-enterprise
-  #     - make -C web publish-enterprise
-  #   branches: "master"
+  - label: publish-kotsadm
+    branches: "master"
+    command: |
+      # publish always, image tag is based on git tag
+      mkdir -p web/dist;
+      buildkite-agent artifact download web/dist/* . --step build-kotsadm
 
-  - label: publish
+      if [ -z "$GIT_TAG" ]; then \
+        make -C web publish-kotsadm-alpha;
+      else \
+        make -C web publish-kotsadm-tag;
+      fi
+
+  - label: publish-replicated-staging
     branches: "master"
     command: |
       mkdir -p web/dist;
       if [ -z "$GIT_TAG" ]; then \
-        buildkite-agent artifact download web/dist/* . --step build-alpha && \
-        make -C web publish-alpha;
+        buildkite-agent artifact download web/dist/* . --step build-replicated-staging && \
+        make -C web publish-replicated-staging;
+      fi
+
+  - label: publish-replicated-production
+    branches: "master"
+    command: |
+      mkdir -p web/dist;
+      if [ -z "$GIT_TAG" ]; then \
       else \
         git tag -f "$GIT_TAG" && \
-        buildkite-agent artifact download web/dist/* . --step build-release && \
-        make -C web publish-release;
+        buildkite-agent artifact download web/dist/* . --step build-replicated-production && \
+        make -C web publish-replicated-production;
       fi
