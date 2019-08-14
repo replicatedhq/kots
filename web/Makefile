@@ -105,15 +105,15 @@ release-replicated-production: GITOPS_BRANCH = release
 release-replicated-production: gitops
 
 gitops:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=${IMAGE}
+	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/kotsadm-web=${IMAGE}
 
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
-	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
+	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web
 
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${PROJECT_NAME}.yaml
+	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web/kotsadm-web.yaml
 
-	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
+	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web; \
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
           git push origin $(GITOPS_BRANCH)
