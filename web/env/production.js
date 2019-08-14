@@ -21,6 +21,7 @@ module.exports = {
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js",
+    "https://buttons.github.io/buttons.js",
     {
       src: "/prodPerfect.js",
       type: "text/javascript",
