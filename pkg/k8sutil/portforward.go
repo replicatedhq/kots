@@ -24,14 +24,18 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		return nil, err
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
-	scheme := "https"
+	scheme := ""
+	hostIP := config.Host
 
 	split := strings.Split(config.Host, ":")
 	if split[0] == "http" {
 		scheme = "http"
+		hostIP = strings.TrimLeft("/", split[1])
+	} else if split[0] == "https" {
+		scheme = "https"
+		hostIP = strings.TrimLeft("/", split[1])
 	}
 
-	hostIP := strings.TrimLeft(config.Host, "/")
 	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
 
