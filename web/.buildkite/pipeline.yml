@@ -90,6 +90,7 @@ steps:
     command: |
       mkdir -p web/dist;
       if [ -z "$GIT_TAG" ]; then \
+        echo "no-op";
       else \
         git tag -f "$GIT_TAG" && \
         buildkite-agent artifact download web/dist/* . --step build-replicated-production && \
