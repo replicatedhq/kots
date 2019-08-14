@@ -5,6 +5,7 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: kotsadm-postgres
 schemahero:
+  image: schemahero/schemahero:0.3.0
   nodeSelector:
     replicated/node-pool: privileged
 connection:
