@@ -80,13 +80,13 @@ publish-kotsadm-alpha:
 
 .PHONY: publish-replicated-staging
 publish-replicated-staging:
-	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:${GIT_TAG} .
-	docker push replicated/kotsadm-web:${GIT_TAG}
+	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:alpha .
+	docker push replicated/kotsadm-web:alpha
 
 .PHONY: publish-replicated-production
 publish-replicated-production:
-	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:alpha .
-	docker push replicated/kotsadm-web:alpha
+	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:${GIT_TAG} .
+	docker push replicated/kotsadm-web:${GIT_TAG}
 
 # gitops:
 # 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=${IMAGE}
