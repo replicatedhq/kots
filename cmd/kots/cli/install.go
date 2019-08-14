@@ -42,6 +42,9 @@ func InstallCmd() *cobra.Command {
 				RootDir:     rootDir,
 				Overwrite:   false,
 				Namespace:   v.GetString("namespace"),
+				Downstreams: []string{
+					"local", // this is the auto-generated operator downstream
+				},
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
