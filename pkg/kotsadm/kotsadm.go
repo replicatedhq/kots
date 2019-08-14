@@ -95,5 +95,9 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to wait for API")
 	}
 
+	if err := ensureOperator(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator")
+	}
+
 	return nil
 }
