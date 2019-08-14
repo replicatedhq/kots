@@ -17,7 +17,7 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 
-RUN make bin
+RUN make build
 
 RUN cp ./bin/kotsadm-operator /opt/kotsadm-operator
 

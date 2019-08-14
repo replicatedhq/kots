@@ -13,15 +13,16 @@ steps:
 
   - wait
 
-  - commands:
-      - mkdir -p pacts
-      - buildkite-agent artifact download operator/pacts/* pacts --step test-and-build
-      - make -C operator publish-pact
-    branches: master
-    retry:
-      automatic: true
+  # TODO: doesn't look like these pacts exist
+  # - commands:
+  #     - mkdir -p operator/pacts
+  #     - buildkite-agent artifact download operator/pacts/* operator/pacts --step test-and-build
+  #     - make -C operator publish-pact
+  #   branches: master
+  #   retry:
+  #     automatic: true
 
-  - wait
+  # - wait
 
   - label: release
     commands:
