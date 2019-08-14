@@ -35,10 +35,10 @@ steps:
 
   - label: release
     commands:
-      - if [ ! -z "$GIT_TAG" ]; mkdir -p operator/bin operator/deploy/bin; fi
-      - if [ ! -z "$GIT_TAG" ]; buildkite-agent artifact download operator/bin/* . --step test-and-build; fi
-      - if [ ! -z "$GIT_TAG" ]; cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
-      - if [ ! -z "$GIT_TAG" ]; chmod +x operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then mkdir -p operator/bin operator/deploy/bin; fi
+      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download operator/bin/* . --step test-and-build; fi
+      - if [ ! -z "$GIT_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
       - if [ ! -z "$GIT_TAG" ]; then make -C worker build-release; fi
 
   # - wait

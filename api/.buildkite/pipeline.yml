@@ -27,7 +27,7 @@ steps:
 
   - label: alpha
     commands:
-      - then make -C api build-alpha publish-alpha
+      - make -C api build-alpha publish-alpha
     branches: "master"
 
   - label: release
