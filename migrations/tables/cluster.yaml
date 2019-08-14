@@ -12,6 +12,15 @@ spec:
     postgres:
       primaryKey:
       - id
+      indexes:
+      - columns:
+        - slug
+        name: cluster_slug_key
+        isUnique: true
+      - columns:
+        - token
+        name: cluster_token_key
+        isUnique: true
       columns:
       - name: id
         type: text
