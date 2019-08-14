@@ -23,7 +23,8 @@ export const Query = `
     getPendingIniSession(id: String!): PendingInitSession
 
     listApps: Apps
-
+    getKotsApp(slug: String!): KotsApp
+    
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
 
@@ -41,6 +42,9 @@ export const Query = `
 
     getApplicationTree(slug: String!, sequence: Int!): String
     getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
+
+    getKotsApplicationTree(slug: String!, sequence: Int!): String
+    getKotsFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
 
     listPendingWatchVersions(watchId: String!): [Version]
     listPastWatchVersions(watchId: String!): [Version]

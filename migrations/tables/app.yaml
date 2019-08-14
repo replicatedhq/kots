@@ -35,3 +35,5 @@ spec:
         type: integer
       - name: last_update_check_at
         type: timestamp without time zone
+      - name: is_all_users
+        type: boolean

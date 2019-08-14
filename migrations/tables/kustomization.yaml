@@ -45,3 +45,4 @@ resources:
 - ./kotsadm_params.yaml
 - ./app.yaml
 - ./app_version.yaml
+- ./user_app.yaml

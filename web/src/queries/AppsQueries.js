@@ -143,6 +143,13 @@ export const listAppsRaw = `
       }
       kotsApps {
         id
+        name
+        iconUri
+        createdAt
+        updatedAt
+        slug
+        currentSequence
+        lastUpdateCheckAt
       }
     }
   }
@@ -280,3 +287,35 @@ export const listWatchesRaw = `
   }
 `;
 export const listWatches = gql(listWatchesRaw);
+
+export const getKotsAppRaw = `
+  query getKotsApp($slug: String!) {
+    getKotsApp(slug: $slug) {
+      id
+      name
+      iconUri
+      createdAt
+      updatedAt
+      slug
+      currentSequence
+      lastUpdateCheckAt
+    }
+  }
+`;
+export const getKotsApp = gql(getKotsAppRaw);
+
+export const getKotsApplicationTreeRaw = `
+  query getKotsApplicationTree($slug: String!, $sequence: Int!) {
+    getKotsApplicationTree(slug: $slug, sequence: $sequence)
+  }
+`;
+
+export const getKotsApplicationTree = gql(getKotsApplicationTreeRaw);
+
+export const getKotsFilesRaw = `
+  query getKotsFiles($slug: String!, $sequence: Int!, $fileNames: [String!]) {
+    getKotsFiles(slug: $slug, sequence: $sequence, fileNames: $fileNames)
+  }
+`;
+
+export const getKotsFiles = gql(getKotsFilesRaw)

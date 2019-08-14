@@ -7,7 +7,7 @@ export default [
   {
     tabName: "app",
     displayName: "Application",
-    to: slug => `/watch/${slug}`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}`,
     displayRule: watch => {
       return isHelmChart(watch) || !watch.cluster;
     }
@@ -15,7 +15,7 @@ export default [
   {
     tabName: "version-history",
     displayName: "Version history",
-    to: slug => `/watch/${slug}/version-history`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/version-history`,
     hasBadge: watch => {
       let downstreamPendingLengths = [];
       watch.watches?.map((w) => {
@@ -30,7 +30,7 @@ export default [
   {
     tabName: "downstreams",
     displayName: "Downstreams",
-    to: slug => `/watch/${slug}/downstreams`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/downstreams`,
     displayRule: watch => {
       if (isHelmChart(watch)) {
         return false;
@@ -41,7 +41,7 @@ export default [
   {
     tabName: "config",
     displayName: "Config",
-    to: slug => `/watch/${slug}/config`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/config`,
     displayRule: watch => {
       return getApplicationType(watch) === "replicated.app";
     }
@@ -49,7 +49,7 @@ export default [
   {
     tabName: "troubleshoot",
     displayName: "Troubleshoot",
-    to: slug => `/watch/${slug}/troubleshoot`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/troubleshoot`,
     displayRule: watch => {
       return getApplicationType(watch) === "replicated.app";
     }
@@ -57,7 +57,7 @@ export default [
   {
     tabName: "license",
     displayName: "License",
-    to: slug => `/watch/${slug}/license`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/license`,
     displayRule: watch => {
       return getApplicationType(watch) === "replicated.app";
     }
@@ -65,17 +65,25 @@ export default [
   {
     tabName: "state",
     displayName: "State JSON",
-    to: slug => `/watch/${slug}/state`,
+    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/state`,
     displayRule: watch => {
-      if (isHelmChart(watch)) {
+      if (isHelmChart(watch) || watch.name) {
         return false;
       }
       return Boolean(!watch.cluster);
     }
-  }
+  },
+  {
+    tabName: "files",
+    displayName: "View files",
+    to: (slug, isKots, sequence) => `/app/${slug}/tree/${isKots ? sequence : ""}`,
+    displayRule: watch => {
+      return Boolean(watch.name);
+    }
+  },
   // {
   //   tabName: "integrations",
   //   displayName: "Integrations",
-  //   to: slug => `/watch/${slug}/integrations`
+  //   to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/integrations`
   // }
 ];

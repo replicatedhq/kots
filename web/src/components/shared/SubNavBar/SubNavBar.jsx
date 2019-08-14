@@ -13,7 +13,8 @@ export default function SubNavBar(props) {
   if(isHelmChart(watch)) {
     slug = `helm/${watch.id}`;
   }
-
+  const isKots = !!watch.name;
+  const kotsSequence = isKots ? watch.currentSequence : null;
   return (
     <div className={classNames("details-subnav", className)}>
       <ul>
@@ -28,7 +29,7 @@ export default function SubNavBar(props) {
               className={classNames({
                 "is-active": activeTab === link.tabName
               })}>
-              <Link to={link.to(slug)}>
+              <Link to={link.to(slug, isKots, kotsSequence)}>
                 {link.displayName} {hasBadge && <span className="subnav-badge" />}
               </Link>
             </li>
