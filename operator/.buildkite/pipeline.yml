@@ -30,7 +30,7 @@ steps:
       - buildkite-agent artifact download operator/bin/* . --step test-and-build
       - cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator
       - chmod +x operator/deploy/bin/kotsadm-operator
-      - if [ -z "$GIT_TAG" ]; then make -C operator build-alpha publish-alpha; else git tag -f "$GIT_TAG" && make -C worker build-release publish-release; fi
+      - if [ -z "$GIT_TAG" ]; then make -C operator build-alpha; else git tag -f "$GIT_TAG" && make -C worker build-release; fi
     branches: "master"
 
   # - wait
