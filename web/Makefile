@@ -1,5 +1,4 @@
 SHELL := /bin/bash
-PROJECT_NAME ?= kotsadm-web
 
 #paths within WSL start with /mnt/c/...
 #docker does not recognize this fact
@@ -39,17 +38,17 @@ serve: deps
 		--progress -w --debug --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
 
-.PHONY: build-alpha
-build-alpha: SHIP_CLOUD_ENV = staging
-build-alpha: webpack_build
+.PHONY: build-kotsadm
+build-kotsadm: SHIP_CLOUD_ENV = enterprise
+build-kotsadm: webpack_build
 
-.PHONY: build-release
-build-release: SHIP_CLOUD_ENV = production
-build-release: webpack_build
+.PHONY: build-replicated-staging
+build-replicated-staging: SHIP_CLOUD_ENV = staging
+build-replicated-staging: webpack_build
 
-.PHONY: build-enterprise
-build-enterprise: SHIP_CLOUD_ENV = enterprise
-build-enterprise: webpack_build
+.PHONY: build-replicated-production
+build-replicated-production: SHIP_CLOUD_ENV = production
+build-replicated-production: webpack_build
 
 .PHONY: build-local
 build-local: SHIP_CLOUD_ENV = skaffold
@@ -69,48 +68,36 @@ webpack_build:
 	--env ${SHIP_CLOUD_ENV} \
 	--mode production
 
-.PHONY: publish-release
-publish-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
-publish-release: OVERLAY = production
-publish-release: GITOPS_OWNER = replicatedcom
-publish-release: GITOPS_REPO = gitops-deploy
-publish-release: GITOPS_BRANCH = release
-publish-release: docker gitops
+.PHONY: publish-kotsadm-tag
+publish-kotsadm-tag:
+	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:${GIT_TAG} .
+	docker push kotsadm/kotsadm-web:${GIT_TAG}
 
-.PHONY: publish-alpha
-publish-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
-publish-alpha: OVERLAY = staging
-publish-alpha: GITOPS_OWNER = replicatedcom
-publish-alpha: GITOPS_REPO = gitops-deploy
-publish-alpha: GITOPS_BRANCH = master
-publish-alpha: docker gitops
-
-.PHONY: publish-enterprise
-publish-enterprise: REGISTRY = registry.replicated.com/ship-enterprise
-publish-enterprise: OVERLAY = enterprise
-publish-enterprise: GITOPS_OWNER = replicatedhq
-publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: docker gitops
-
-docker-kotsadm:
+.PHONY: publish-kotsadm-alpha
+publish-kotsadm-alpha:
 	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:alpha .
 	docker push kotsadm/kotsadm-web:alpha
 
-docker:
-	docker build -f deploy/Dockerfile -t ${IMAGE} .
-	docker push ${IMAGE}
+.PHONY: publish-replicated-staging
+publish-replicated-staging:
+	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:${GIT_TAG} .
+	docker push replicated/kotsadm-web:${GIT_TAG}
 
-gitops:
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=${IMAGE}
+.PHONY: publish-replicated-production
+publish-replicated-production:
+	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:alpha .
+	docker push replicated/kotsadm-web:alpha
 
-	rm -rf deploy/$(OVERLAY)/work
-	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
-	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
+# gitops:
+# 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=${IMAGE}
 
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${PROJECT_NAME}.yaml
+# 	rm -rf deploy/$(OVERLAY)/work
+# 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
+# 	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
 
-	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
-	  git add . ;\
-	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITOPS_BRANCH)
+# 	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${PROJECT_NAME}.yaml
+
+# 	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
+# 	  git add . ;\
+# 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
+#           git push origin $(GITOPS_BRANCH)
