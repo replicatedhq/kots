@@ -1,4 +1,4 @@
-package midstream
+package downstream
 
 import (
 	"fmt"
@@ -11,24 +11,24 @@ import (
 )
 
 type WriteOptions struct {
-	MidstreamDir string
-	BaseDir      string
-	Overwrite    bool
+	DownstreamDir string
+	MidstreamDir  string
+	Overwrite     bool
 }
 
-func (m *Midstream) WriteMidstream(options WriteOptions) error {
-	relativeBaseDir, err := filepath.Rel(options.MidstreamDir, options.BaseDir)
+func (d *Downstream) WriteDownstream(options WriteOptions) error {
+	relativeMidstreamDir, err := filepath.Rel(options.DownstreamDir, options.MidstreamDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine relative path for base from midstream")
 	}
 
-	renderDir := options.MidstreamDir
+	renderDir := options.DownstreamDir
 
 	_, err = os.Stat(renderDir)
 	if err == nil {
 		if options.Overwrite {
 			if err := os.RemoveAll(renderDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in midstream")
+				return errors.Wrap(err, "failed to remove previous content in downstream")
 			}
 		} else {
 			return fmt.Errorf("directory %s already exists", renderDir)
@@ -43,11 +43,11 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		}
 	}
 
-	m.Kustomization.Bases = []string{
-		relativeBaseDir,
+	d.Kustomization.Bases = []string{
+		relativeMidstreamDir,
 	}
 
-	if err := k8sutil.WriteKustomizationToFile(m.Kustomization, fileRenderPath); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(d.Kustomization, fileRenderPath); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 

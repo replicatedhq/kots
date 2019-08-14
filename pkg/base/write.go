@@ -7,6 +7,8 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
 )
 
 type WriteOptions struct {
@@ -28,7 +30,18 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
+	kustomizeResources := []string{}
 	for _, file := range b.Files {
+		ok, err := file.ShouldBeIncludedInBase()
+		if err != nil {
+			return errors.Wrap(err, "failed to check if file should be in base")
+		}
+		if !ok {
+			continue
+		}
+
+		kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
+
 		fileRenderPath := path.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
@@ -39,6 +52,18 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write base file")
 		}
+	}
+
+	kustomization := kustomizetypes.Kustomization{
+		TypeMeta: kustomizetypes.TypeMeta{
+			APIVersion: "kustomize.config.k8s.io/v1beta1",
+			Kind:       "Kustomization",
+		},
+		Resources: kustomizeResources,
+	}
+
+	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
+		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
 	return nil

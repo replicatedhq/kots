@@ -1,28 +1,27 @@
-package midstream
+package downstream
 
 import (
-	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/midstream"
 	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
 )
 
-type Midstream struct {
+type Downstream struct {
 	Kustomization *kustomizetypes.Kustomization
-	Base          *base.Base
+	Midstream     *midstream.Midstream
 }
 
-func CreateMidstream(b *base.Base) (*Midstream, error) {
+func CreateDownstream(m *midstream.Midstream, name string) (*Downstream, error) {
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
 		},
-		Bases: []string{},
 	}
 
-	m := Midstream{
+	d := Downstream{
 		Kustomization: &kustomization,
-		Base:          b,
+		Midstream:     m,
 	}
 
-	return &m, nil
+	return &d, nil
 }
