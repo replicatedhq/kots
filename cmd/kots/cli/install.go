@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -59,9 +61,15 @@ func InstallCmd() *cobra.Command {
 				return err
 			}
 
-			// deploy kotsadm to the namespace
-
 			// upload the kots app to kotsadm
+			uploadOptions := upload.UploadOptions{
+				Namespace:  v.GetString("namespace"),
+				Kubeconfig: v.GetString("kubeconfig"),
+			}
+
+			if err := upload.Upload(rootDir, uploadOptions); err != nil {
+				return errors.Cause(err)
+			}
 
 			return nil
 		},

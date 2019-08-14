@@ -281,7 +281,7 @@ func promptForWebNodePort() (int, error) {
 	prompt := promptui.Prompt{
 		Label:     "Node Port:",
 		Templates: templates,
-		Default:   "8000",
+		Default:   "30000",
 		Validate: func(input string) error {
 			_, err := strconv.Atoi(input)
 			return err
