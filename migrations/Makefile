@@ -17,9 +17,9 @@ schema-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
 schema-release: build_schema
 
 build_schema:
+	docker pull schemahero/schemahero:alpha
 	docker build -f deploy/Dockerfile -t ${IMAGE} .
 	docker push ${IMAGE}
-
 
 .PHONY: publish-release
 publish-release: OVERLAY = production
