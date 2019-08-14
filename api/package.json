@@ -101,12 +101,6 @@
     "typescript": "^3.4.5"
   },
   "bin": "build/server/index.js",
-  "pkg": {
-    "scripts": [
-      "./build/controllers/**/*.js",
-      "./build/middlewares/**/*.js"
-    ]
-  },
   "scripts": {
     "snyk-protect": "snyk protect",
     "start": "make build && node --no-deprecation ./build/server/index.js",

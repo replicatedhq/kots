@@ -63,12 +63,6 @@ test:
 	docker stop kotsadm-fixtures
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
 
-.PHONY: pkg
-pkg:
-	mkdir -p bin
-	npx pkg -t node8.11.3 --options no-deprecation --output bin/kotsadm-api .
-	npx pkg -t node8.11.3 --options no-deprecation --output bin/shipcloudctl -c ./package.json ./build/api.js
-
 .PHONY: build-alpha
 build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 build-alpha: build_and_push
