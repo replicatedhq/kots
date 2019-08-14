@@ -10,9 +10,9 @@ export default class ClusterScope extends React.Component {
     document.title = "kubectl outdated - A plugin to show out-of-date images running in a cluster"
 
     const script = document.createElement("script");
-  
-    script.id = "asciicast-ExaFOk6ap0GL17GJsJWpExGnM";
-    script.src = "https://asciinema.org/a/ExaFOk6ap0GL17GJsJWpExGnM.js";
+
+    script.id = "asciicast-262264";
+    script.src = "https://asciinema.org/a/262264.js";
     script.async = true;
     script.setAttribute("data-autoplay", true);
     script.setAttribute("data-loop", "1");
@@ -58,7 +58,7 @@ export default class ClusterScope extends React.Component {
                 <div className="iframe-placeholder">
                   <Loader className="ascii-loader" color="#ffffff" size="60" />
                   <div id="asciinema-player" />
-                </div> 
+                </div>
               </div>
             </div>
           </div>
