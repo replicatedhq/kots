@@ -103,7 +103,8 @@
   "bin": "build/server/index.js",
   "pkg": {
     "scripts": [
-      "./build/controllers/**/*.js"
+      "./build/controllers/**/*.js",
+      "./build/middlewares/**/*.js"
     ]
   },
   "scripts": {
