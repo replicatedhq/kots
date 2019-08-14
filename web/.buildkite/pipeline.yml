@@ -12,6 +12,7 @@ steps:
   - wait
 
   - trigger: "kotsadm-api"
+    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"

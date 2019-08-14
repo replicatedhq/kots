@@ -40,6 +40,7 @@ steps:
   - wait
 
   - trigger: "kotsadm-migrations"
+    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
@@ -48,6 +49,7 @@ steps:
         GIT_TAG: "${BUILDKITE_TAG}"
 
   - trigger: "kotsadm-worker"
+    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
@@ -56,6 +58,7 @@ steps:
         GIT_TAG: "${BUILDKITE_TAG}"
 
   - trigger: "kotsadm-web"
+    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
@@ -64,6 +67,7 @@ steps:
         GIT_TAG: "${BUILDKITE_TAG}"
 
   - trigger: "kotsadm-operator"
+    async: true
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
