@@ -22,6 +22,7 @@ spec:
       containers:
         - name: kotsadm-api
           image: kotsadm/kotsadm-api
+          imagePullPolicy: Always
           volumeMounts:
             - mountPath: /var/run/sigsci/
               name: sigsci
