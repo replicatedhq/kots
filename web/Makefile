@@ -84,7 +84,7 @@ publish-replicated-staging:
 	docker push replicated/kotsadm-web:alpha
 
 .PHONY: release-replicated-staging
-release-replicated-staging: IMAGE = replicated/kotsadm-web:${GIT_TAG}
+release-replicated-staging: IMAGE = replicated/kotsadm-web:alpha
 release-replicated-staging: OVERLAY = staging
 release-replicated-staging: GITOPS_OWNER = replicatedcom
 release-replicated-staging: GITOPS_REPO = gitops-deploy
