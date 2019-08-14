@@ -100,15 +100,6 @@ publish-alpha: GITOPS_BRANCH = master
 publish-alpha: GITOPS_FILENAME = kotsadm-api
 publish-alpha: build_and_publish
 
-# .PHONY: publish-enterprise
-# publish-enterprise: IMAGE_TAG = ${GIT_TAG}
-# publish-enterprise: OVERLAY = enterprise
-# publish-enterprise: GITOPS_OWNER = replicatedhq
-# publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
-# publish-enterprise: GITOPS_BRANCH = master
-# publish-enterprise: GITOPS_FILENAME = kotsadm-api
-# publish-enterprise: build_and_publish
-
 build_and_publish:
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:${IMAGE_TAG}
 
