@@ -45,7 +45,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > time.Duration(time.Second*30) {
+		if time.Now().Sub(start) > time.Duration(time.Minute) {
 			return "", errors.New("timeout waiting for postgres pod")
 		}
 	}
@@ -66,7 +66,7 @@ func createSchemaHeroPod(deployOptions DeployOptions, clientset *kubernetes.Clie
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Image:           "kotsadm/kotsadm-migrations",
+					Image:           "kotsadm/kotsadm-migrations:alpha",
 					ImagePullPolicy: corev1.PullAlways,
 					Name:            name,
 					Env: []corev1.EnvVar{

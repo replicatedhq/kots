@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -124,7 +125,7 @@ createBucket() {
 scheme=http
 connectToMinio $scheme
 # Create the bucket
-createBucket shipbucket none false`,
+createBucket kotsadm none false`,
 			},
 		}
 
@@ -188,7 +189,7 @@ func ensureMinioStatefulset(namespace string, clientset *kubernetes.Clientset) e
 					Spec: corev1.PodSpec{
 						Volumes: []corev1.Volume{
 							{
-								Name: "export",
+								Name: "kotsadm-minio",
 								VolumeSource: corev1.VolumeSource{
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 										ClaimName: "kotsadm-minio",
@@ -220,7 +221,7 @@ func ensureMinioStatefulset(namespace string, clientset *kubernetes.Clientset) e
 								},
 								VolumeMounts: []corev1.VolumeMount{
 									{
-										Name:      "export",
+										Name:      "kotsadm-minio",
 										MountPath: "/export",
 									},
 									{
@@ -319,7 +320,7 @@ func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error
 
 		_, err := clientset.CoreV1().Services(namespace).Create(service)
 		if err != nil {
-			return errors.Wrap(err, "Failed to create service")
+			return errors.Wrap(err, "failed to create service")
 		}
 	}
 
@@ -327,5 +328,92 @@ func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error
 }
 
 func ensureMinioJob(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.BatchV1().Jobs(namespace).Get("kotsadm-minio", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing job")
+		}
+
+		job := &batchv1.Job{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Job",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kotsadm-minio",
+				Namespace: namespace,
+			},
+			Spec: batchv1.JobSpec{
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app": "kotsadm-minio",
+						},
+					},
+					Spec: corev1.PodSpec{
+						RestartPolicy: corev1.RestartPolicyOnFailure,
+						Volumes: []corev1.Volume{
+							{
+								Name: "minio-configuration",
+								VolumeSource: corev1.VolumeSource{
+									Projected: &corev1.ProjectedVolumeSource{
+										Sources: []corev1.VolumeProjection{
+											{
+												ConfigMap: &corev1.ConfigMapProjection{
+													LocalObjectReference: corev1.LocalObjectReference{
+														Name: "kotsadm-minio",
+													},
+												},
+											},
+											{
+												Secret: &corev1.SecretProjection{
+													LocalObjectReference: corev1.LocalObjectReference{
+														Name: "kotsadm-minio",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Command: []string{
+									"/bin/sh",
+									"/config/initialize",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name:  "MINIO_ENDPOINT",
+										Value: "kotsadm-minio",
+									},
+									{
+										Name:  "MINIO_PORT",
+										Value: "4569",
+									},
+								},
+								Image:           "minio/mc:RELEASE.2019-07-17T22-13-42Z",
+								ImagePullPolicy: corev1.PullIfNotPresent,
+								Name:            "kotsadm-minio-mc",
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      "minio-configuration",
+										MountPath: "/config",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := clientset.BatchV1().Jobs(namespace).Create(job)
+		if err != nil {
+			return errors.Wrap(err, "failed to create job")
+		}
+	}
+
 	return nil
 }

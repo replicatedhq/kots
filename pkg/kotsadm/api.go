@@ -2,31 +2,54 @@ package kotsadm
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
-func ensureAPI(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureAPIDeployment(namespace, clientset); err != nil {
+func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	start := time.Now()
+
+	for {
+		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				return nil
+			}
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > time.Duration(time.Minute) {
+			return errors.New("timeout waiting for api pod")
+		}
+	}
+}
+
+func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureAPIDeployment(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api deployment")
 	}
 
-	if err := ensureAPIService(namespace, clientset); err != nil {
+	if err := ensureAPIService(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api service")
 	}
 
 	return nil
 }
 
-func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().Deployments(namespace).Get("kotsadm-api", metav1.GetOptions{})
+func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
@@ -39,7 +62,7 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-api",
-				Namespace: namespace,
+				Namespace: deployOptions.Namespace,
 			},
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{
@@ -82,6 +105,17 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 								},
 								Env: []corev1.EnvVar{
 									{
+										Name: "SHARED_PASSWORD_BCRYPT",
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: "kotsadm-password",
+												},
+												Key: "passwordBcrypt",
+											},
+										},
+									},
+									{
 										Name:  "AUTO_CREATE_CLUSTER",
 										Value: "1",
 									},
@@ -95,11 +129,31 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 									},
 									{
 										Name:  "SHIP_API_ENDPOINT",
-										Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", namespace),
+										Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", deployOptions.Namespace),
 									},
 									{
 										Name:  "SHIP_API_ADVERTISE_ENDPOINT",
-										Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", namespace),
+										Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", deployOptions.Namespace),
+									},
+									{
+										Name:  "S3_ENDPOINT",
+										Value: "http://kotsadm-minio:4569",
+									},
+									{
+										Name:  "S3_BUCKET_NAME",
+										Value: "kotsadm",
+									},
+									{
+										Name:  "S3_ACCESS_KEY_ID",
+										Value: minioAccessKey,
+									},
+									{
+										Name:  "S3_SECRET_ACCESS_KEY",
+										Value: minioSecret,
+									},
+									{
+										Name:  "S3_BUCKET_ENDPOINT",
+										Value: "true",
 									},
 									{
 										Name: "SESSION_KEY",
@@ -131,7 +185,7 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 			},
 		}
 
-		_, err := clientset.AppsV1().Deployments(namespace).Create(deployment)
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(deployment)
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
@@ -141,7 +195,15 @@ func ensureAPIDeployment(namespace string, clientset *kubernetes.Clientset) erro
 }
 
 func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-web", metav1.GetOptions{})
+	port := corev1.ServicePort{
+		Name:       "http",
+		Port:       3000,
+		TargetPort: intstr.FromString("http"),
+	}
+
+	serviceType := corev1.ServiceTypeClusterIP
+
+	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
@@ -160,13 +222,9 @@ func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
 				Selector: map[string]string{
 					"app": "kotsadm-api",
 				},
-				Type: corev1.ServiceTypeClusterIP,
+				Type: serviceType,
 				Ports: []corev1.ServicePort{
-					{
-						Name:       "http",
-						Port:       3000,
-						TargetPort: intstr.FromString("http"),
-					},
+					port,
 				},
 			},
 		}

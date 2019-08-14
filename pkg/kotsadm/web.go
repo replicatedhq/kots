@@ -1,13 +1,19 @@
 package kotsadm
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
+	"github.com/manifoldco/promptui"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -15,24 +21,42 @@ var (
 	executableMode = int32(484)
 )
 
-func ensureWeb(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureWebConfig(namespace, clientset); err != nil {
+func ensureWeb(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	if deployOptions.Hostname == "" {
+		hostname, err := promptForHostname()
+		if err != nil {
+			return errors.Wrap(err, "failed to prompt for hostname")
+		}
+
+		deployOptions.Hostname = hostname
+	}
+
+	if deployOptions.ServiceType == "" {
+		serviceType, err := promptForWebServiceType(deployOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to prompt for service type")
+		}
+
+		deployOptions.ServiceType = serviceType
+	}
+
+	if err := ensureWebConfig(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web configmap")
 	}
 
-	if err := ensureWebDeployment(namespace, clientset); err != nil {
+	if err := ensureWebDeployment(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web deployment")
 	}
 
-	if err := ensureWebService(namespace, clientset); err != nil {
+	if err := ensureWebService(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web service")
 	}
 
 	return nil
 }
 
-func ensureWebConfig(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ConfigMaps(namespace).Get("kotsadm-web-scripts", metav1.GetOptions{})
+func ensureWebConfig(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-web-scripts", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing config map")
@@ -45,26 +69,28 @@ func ensureWebConfig(namespace string, clientset *kubernetes.Clientset) error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-web-scripts",
-				Namespace: namespace,
+				Namespace: deployOptions.Namespace,
 			},
 			Data: map[string]string{
-				"start-kotsadm-web.sh": `#!/bin/bash
-sed -i 's/###_GRAPHQL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/graphql/g' /usr/share/nginx/html/index.html
-sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_CLIENT_ID_###/{{repl ConfigOption "github-clientid"}}/g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPDOWNLOAD_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/download/g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPINIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/init\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPUPDATE_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/update\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPEDIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/edit\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_REDIRECT_URI_###/https:\/\/{{repl ConfigOption "hostname"}}\/auth\/github\/callback/g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_INSTALL_URL_###/{{repl ConfigOption "github-installurl" | replace "/" "\\/"}}/g' /usr/share/nginx/html/index.html
-sed -i 's/###_INSTALL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/install/g' /usr/share/nginx/html/index.html
+				"start-kotsadm-web.sh": fmt.Sprintf(`#!/bin/bash
+sed -i 's/###_GRAPHQL_ENDPOINT_###/http:\/\/%s\/graphql/g' /usr/share/nginx/html/index.html
+sed -i 's/###_REST_ENDPOINT_###/http:\/\/%s\/api/g' /usr/share/nginx/html/index.html
+sed -i 's/###_GITHUB_CLIENT_ID_###/not-supported/g' /usr/share/nginx/html/index.html
+sed -i 's/###_SHIPDOWNLOAD_ENDPOINT_###/http:\/\/%s\/api\/v1\/download/g' /usr/share/nginx/html/index.html
+sed -i 's/###_SHIPINIT_ENDPOINT_###/http:\/\/%s\/api\/v1\/init\//g' /usr/share/nginx/html/index.html
+sed -i 's/###_SHIPUPDATE_ENDPOINT_###/http:\/\/%s\/api\/v1\/update\//g' /usr/share/nginx/html/index.html
+sed -i 's/###_SHIPEDIT_ENDPOINT_###/http:\/\/%s\/api\/v1\/edit\//g' /usr/share/nginx/html/index.html
+sed -i 's/###_GITHUB_REDIRECT_URI_###/http:\/\/%s\/auth\/github\/callback/g' /usr/share/nginx/html/index.html
+sed -i 's/###_GITHUB_INSTALL_URL_###/not-supportetd/g' /usr/share/nginx/html/index.html
+sed -i 's/###_INSTALL_ENDPOINT_###/http:\/\/%s\/api\/install/g' /usr/share/nginx/html/index.html
 
-nginx -g "daemon off;"`,
+nginx -g "daemon off;"`, deployOptions.Hostname, deployOptions.Hostname,
+					deployOptions.Hostname, deployOptions.Hostname, deployOptions.Hostname,
+					deployOptions.Hostname, deployOptions.Hostname, deployOptions.Hostname),
 			},
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(configMap)
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(configMap)
 		if err != nil {
 			return errors.Wrap(err, "failed to create configmap")
 		}
@@ -166,8 +192,22 @@ func ensureWebDeployment(namespace string, clientset *kubernetes.Clientset) erro
 	return nil
 }
 
-func ensureWebService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-web", metav1.GetOptions{})
+func ensureWebService(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	port := corev1.ServicePort{
+		Name:       "http",
+		Port:       3000,
+		TargetPort: intstr.FromString("http"),
+	}
+
+	serviceType := corev1.ServiceTypeClusterIP
+	if deployOptions.ServiceType == "NodePort" {
+		serviceType = corev1.ServiceTypeNodePort
+		port.NodePort = int32(deployOptions.NodePort)
+	} else if deployOptions.ServiceType == "LoadBalancer" {
+		serviceType = corev1.ServiceTypeLoadBalancer
+	}
+
+	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
@@ -180,28 +220,144 @@ func ensureWebService(namespace string, clientset *kubernetes.Clientset) error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-web",
-				Namespace: namespace,
+				Namespace: deployOptions.Namespace,
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: map[string]string{
 					"app": "kotsadm-web",
 				},
-				Type: corev1.ServiceTypeClusterIP,
+				Type: serviceType,
 				Ports: []corev1.ServicePort{
-					{
-						Name:       "http",
-						Port:       3000,
-						TargetPort: intstr.FromString("http"),
-					},
+					port,
 				},
 			},
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(service)
+		_, err := clientset.CoreV1().Services(deployOptions.Namespace).Create(service)
 		if err != nil {
 			return errors.Wrap(err, "Failed to create service")
 		}
 	}
 
 	return nil
+}
+
+func promptForWebServiceType(deployOptions *DeployOptions) (string, error) {
+	prompt := promptui.Select{
+		Label: "Web/UI Service Type:",
+		Items: []string{"ClusterIP", "NodePort", "LoadBalancer"},
+	}
+
+	for {
+		_, result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		if result == "NodePort" {
+			nodePort, err := promptForWebNodePort()
+			if err != nil {
+				return "", errors.Wrap(err, "failed to prompt for node port")
+			}
+
+			deployOptions.NodePort = int32(nodePort)
+		}
+		return result, nil
+	}
+
+}
+
+func promptForWebNodePort() (int, error) {
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Node Port:",
+		Templates: templates,
+		Default:   "30000",
+		Validate: func(input string) error {
+			_, err := strconv.Atoi(input)
+			return err
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		nodePort, err := strconv.Atoi(result)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to convert nodeport")
+		}
+
+		return nodePort, nil
+	}
+
+}
+
+func promptForHostname() (string, error) {
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Hostname:",
+		Templates: templates,
+		Default:   "",
+		Validate: func(input string) error {
+			if !strings.Contains(input, ":") {
+				errs := validation.IsDNS1123Subdomain(input)
+				if len(errs) > 0 {
+					return errors.New(errs[0])
+				}
+
+				return nil
+			}
+
+			split := strings.Split(input, ":")
+			if len(split) != 2 {
+				return errors.New("only hostname or hostname:port are allowed formats")
+			}
+
+			errs := validation.IsDNS1123Subdomain(split[0])
+			if len(errs) > 0 {
+				return errors.New(errs[0])
+			}
+
+			_, err := strconv.Atoi(split[1])
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
+
 }

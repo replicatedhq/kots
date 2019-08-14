@@ -15,8 +15,6 @@ const (
 )
 
 var (
-	webServiceType         = "ClusterIP"
-	apiServiceType         = "ClusterIP"
 	postgresPassword       = uuid.New().String()
 	minioAccessKey         = uuid.New().String()
 	minioSecret            = uuid.New().String()
@@ -29,6 +27,9 @@ type DeployOptions struct {
 	IncludeShip    bool
 	IncludeGitHub  bool
 	SharedPassword string
+	ServiceType    string
+	NodePort       int32
+	Hostname       string
 }
 
 func Deploy(deployOptions DeployOptions) error {
@@ -66,6 +67,10 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to ensure rbac exists")
 	}
 
+	if err := ensureMinio(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure minio")
+	}
+
 	if err := ensurePostgres(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
 	}
@@ -74,16 +79,20 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to run database migrations")
 	}
 
-	if err := ensureWeb(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureWeb(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web exists")
 	}
 
-	if err := ensureSecrets(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureSecrets(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure secrets exist")
 	}
 
-	if err := ensureAPI(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureAPI(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api exists")
+	}
+
+	if err := waitForAPI(&deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to wait for API")
 	}
 
 	return nil
