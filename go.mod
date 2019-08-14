@@ -10,6 +10,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
+	github.com/fatih/color v1.7.0
 	github.com/gizak/termui/v3 v3.0.0
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
