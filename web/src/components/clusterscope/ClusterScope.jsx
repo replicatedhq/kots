@@ -1,14 +1,15 @@
 import React from "react";
-import Prism from "@maji/react-prism";
+import Helmet from "react-helmet";
+
 import Loader from "../shared/Loader";
 import { Link } from "react-router-dom";
+
+import CodeSnippet from "@src/components/shared/CodeSnippet";
 import "../../scss/components/image_check/ImageWatchBatch.scss";
 
 export default class ClusterScope extends React.Component {
 
   componentDidMount() {
-    document.title = "kubectl outdated - A plugin to show out-of-date images running in a cluster"
-
     const script = document.createElement("script");
 
     script.id = "asciicast-262264";
@@ -22,9 +23,11 @@ export default class ClusterScope extends React.Component {
   }
 
   render() {
-    const command = `kubectl krew install outdated\nkubectl outdated`;
     return (
       <div className="Login-wrapper  flex-column flex1 u-overflow--hidden justifyContent--center">
+        <Helmet>
+          <title>kubectl outdated - A plugin to show out-of-date images running in a cluster</title>
+        </Helmet>
         <div className="ClusterScopePage--wrapper u-overflow--auto">
           <div className="flex1 flex-column container">
             <div className="u-flexTabletReflow flex1 justifyContent--center u-paddingTop--30 u-paddingBottom--30">
@@ -39,9 +42,10 @@ export default class ClusterScope extends React.Component {
                   </div>
                   <p className="u-fontSize--larger u-color--tundora u-fontWeight--normal u-lineHeight--more u-marginTop--10">A kubectl plugin to show out-of-date images running in a cluster. Simply run the following commands from your workstation.</p>
                   <div className="u-marginTop--20">
-                    <Prism language="bash">
-                      {command}
-                    </Prism>
+                    <CodeSnippet language="bash" canCopy={false}>
+                      {`kubectl krew install outdated`}
+                      {`kubectl outdated`}
+                    </CodeSnippet>
                   </div>
                   <p className="u-fontSize--large u-color--dustyGray u-fontWeight--normal u-lineHeight--more u-marginTop--20">
                     The plugin will scan for all pods in all namespaces that you have at least read access to. It will then connect to the registry that hosts the image, and (if there's permission), it will analyze your tag to the list of current tags.
