@@ -1,13 +1,6 @@
 SHELL:=/bin/bash
 PROJECT_NAME ?= kotsadm-migrations
 
-.PHONY: test
-test:
-	docker-compose -f docker-compose-citest.yml up -d postgres
-	docker-compose -f docker-compose-citest.yml build migrate
-	docker-compose -f docker-compose-citest.yml run migrate # forwards exit code
-	docker-compose -f docker-compose-citest.yml down
-
 .PHONY: schema-alpha
 schema-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 schema-alpha: build_schema
@@ -26,23 +19,16 @@ publish-release: OVERLAY = production
 publish-release: GITOPS_OWNER = replicatedcom
 publish-release: GITOPS_REPO = gitops-deploy
 publish-release: GITOPS_BRANCH = release
-publish-release: build_and_publish
+publish-release: gitops
 
 .PHONY: publish-alpha
 publish-alpha: OVERLAY = staging
 publish-alpha: GITOPS_OWNER = replicatedcom
 publish-alpha: GITOPS_REPO = gitops-deploy
 publish-alpha: GITOPS_BRANCH = master
-publish-alpha: build_and_publish
+publish-alpha: gitops
 
-.PHONY: publish-enterprise
-publish-enterprise: OVERLAY = enterprise
-publish-enterprise: GITOPS_OWNER = replicatedhq
-publish-enterprise: GITOPS_REPO = ship-enterprise-deploy
-publish-enterprise: GITOPS_BRANCH = master
-publish-enterprise: build_and_publish
-
-build_and_publish:
+gitops:
 	rm -rf deploy/$(OVERLAY)/work
 	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
 	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}

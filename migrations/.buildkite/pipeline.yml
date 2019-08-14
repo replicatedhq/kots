@@ -1,11 +1,4 @@
 steps:
-  ## TODO: fixit
-  # - commands:
-  #     - make -C migrations publish-enterprise
-  #   branches: master
-  #   retry:
-  #     automatic: true
-
   - commands:
       - if [ -z "$GIT_TAG" ]; then make -C migrations schema-alpha; else git tag -f "$GIT_TAG" && make -C migrations schema-release; fi
     branches: "master"
@@ -13,3 +6,4 @@ steps:
   - commands:
       - if [ -z "$GIT_TAG" ]; then make -C migrations publish-alpha; else git tag -f "$GIT_TAG" && make -C migrations publish-release; fi
     branches: "master"
+
