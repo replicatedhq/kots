@@ -14,6 +14,7 @@ type PullOptions struct {
 	RootDir     string
 	Overwrite   bool
 	Namespace   string
+	Downstreams []string
 }
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
@@ -57,12 +58,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	}
 
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions)),
+		MidstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		Overwrite:    pullOptions.Overwrite,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")
 	}
 
+	// for _, downstream := range pullOptions.Downstreams {
+
+	// }
 	return nil
 }

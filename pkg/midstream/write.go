@@ -2,22 +2,29 @@ package midstream
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 )
 
 type WriteOptions struct {
 	MidstreamDir string
+	BaseDir      string
 	Overwrite    bool
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
+	relativeBaseDir, err := filepath.Rel(options.MidstreamDir, options.BaseDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to determine relative path for base from midstream")
+	}
+
 	renderDir := options.MidstreamDir
 
-	_, err := os.Stat(renderDir)
+	_, err = os.Stat(renderDir)
 	if err == nil {
 		if options.Overwrite {
 			if err := os.RemoveAll(renderDir); err != nil {
@@ -35,8 +42,13 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 			return errors.Wrap(err, "failed to mkdir")
 		}
 	}
-	if err := ioutil.WriteFile(fileRenderPath, []byte(m.Kustomization), 0644); err != nil {
-		return errors.Wrap(err, "failed to write midstream file")
+
+	m.Kustomization.Bases = []string{
+		relativeBaseDir,
+	}
+
+	if err := k8sutil.WriteKustomizationToFile(m.Kustomization, fileRenderPath); err != nil {
+		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
 	return nil

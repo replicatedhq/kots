@@ -1,27 +1,27 @@
 package midstream
 
 import (
-	"encoding/json"
-
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
 	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
 )
 
 type Midstream struct {
-	Kustomization string
+	Kustomization *kustomizetypes.Kustomization
+	Base          *base.Base
 }
 
 func CreateMidstream(b *base.Base) (*Midstream, error) {
-	kustomization := kustomizetypes.Kustomization{}
-
-	marshalled, err := json.Marshal(kustomization)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal midstream")
+	kustomization := kustomizetypes.Kustomization{
+		TypeMeta: kustomizetypes.TypeMeta{
+			APIVersion: "kustomize.config.k8s.io/v1beta1",
+			Kind:       "Kustomization",
+		},
+		Bases: []string{},
 	}
 
 	m := Midstream{
-		Kustomization: string(marshalled),
+		Kustomization: &kustomization,
+		Base:          b,
 	}
 
 	return &m, nil

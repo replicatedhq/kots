@@ -631,6 +631,7 @@ sigs.k8s.io/controller-runtime v0.2.0-beta.2/go.mod h1:TSH2R0nSz4WAlUUlNnOFcOR/V
 sigs.k8s.io/controller-tools v0.1.11/go.mod h1:6g08p9m9G/So3sBc1AOQifHfhxH/mb6Sc4z0LMI8XMw=
 sigs.k8s.io/controller-tools v0.2.0-beta.2/go.mod h1:gC5UAnK1jbxWnDaqTi0yxKIsRsRwshzeRtTUGbM9vos=
 sigs.k8s.io/kustomize v2.0.3+incompatible h1:JUufWFNlI44MdtnjUqVnvh29rR37PQFzPbLXqhyOyX0=
+sigs.k8s.io/kustomize v2.0.3+incompatible/go.mod h1:MkjgH3RdOWrievjo6c9T245dYlB5QeXV4WCbnt/PEpU=
 sigs.k8s.io/kustomize/v3 v3.1.0 h1:FnNC1UtUjZlepvWUGwaAcFHw2rjNIaZvBUPCvaXz0Fo=
 sigs.k8s.io/kustomize/v3 v3.1.0/go.mod h1:ztX4zYc/QIww3gSripwF7TBOarBTm5BvyAMem0kCzOE=
 sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e/go.mod h1:wWxsB5ozmmv/SG7nM11ayaAW51xMvak/t1r0CSlcokI=

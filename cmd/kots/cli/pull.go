@@ -31,6 +31,7 @@ func PullCmd() *cobra.Command {
 				RootDir:     v.GetString("rootdir"),
 				Overwrite:   v.GetBool("overwrite"),
 				Namespace:   v.GetString("namespace"),
+				Downstreams: v.GetStringSlice("downstream"),
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
@@ -45,6 +46,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
 	cmd.Flags().Bool("overwrite", false, "if the upstream already exists, overwrite it")
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")
+	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 
 	return cmd
 }
