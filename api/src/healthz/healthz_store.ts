@@ -2,7 +2,7 @@ import pg from "pg";
 import { Params } from "../server/params";
 import { bucketExists } from "../util/s3";
 
-interface DatabaseInfo {
+export interface DatabaseInfo {
   database: {
     connected: boolean,
   },

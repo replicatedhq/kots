@@ -19,7 +19,7 @@ ADD . /src
 RUN make deps build
 
 EXPOSE 3000
-ARG version=unknown
-ENV VERSION=${version}
+ARG commit=unknown
+ENV COMMIT=${commit}
 
 CMD ["node", "/src/build/server/index.js"]

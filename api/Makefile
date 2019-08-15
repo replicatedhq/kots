@@ -73,7 +73,7 @@ build-release: build_and_push
 
 .PHONY: build_and_push
 build_and_push:
-	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" .
 	docker push ${IMAGE}
 
 .PHONY: publish-release
