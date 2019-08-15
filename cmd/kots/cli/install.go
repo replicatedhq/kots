@@ -114,7 +114,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("namespace", "default", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
-	cmd.Flags().String("shared-password", "password", "shared password to apply")
+	cmd.Flags().String("shared-password", "", "shared password to apply")
 	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
 	cmd.Flags().String("hostname", "localhost:8800", "the hostname to that the admin console will be exposed on")
