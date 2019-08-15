@@ -56,7 +56,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		BaseDir:   u.GetBaseDir(writeUpstreamOptions),
 		Overwrite: pullOptions.Overwrite,
 	}
-	log.Info("Writing base")
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return errors.Wrap(err, "failed to write base")
 	}
@@ -72,7 +71,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		Overwrite:    pullOptions.Overwrite,
 	}
-	log.Info("Writing midstream")
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")
 	}
@@ -90,7 +88,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 			Overwrite:     pullOptions.Overwrite,
 		}
 
-		log.Info("writing downstream %q to %s", downstreamName, writeDownstreamOptions.DownstreamDir)
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrap(err, "failed to write downstream")
 		}

@@ -64,6 +64,7 @@ func createSchemaHeroPod(deployOptions DeployOptions, clientset *kubernetes.Clie
 			Namespace: deployOptions.Namespace,
 		},
 		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyOnFailure,
 			Containers: []corev1.Container{
 				{
 					Image:           "kotsadm/kotsadm-migrations:alpha",

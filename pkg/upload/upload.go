@@ -3,7 +3,6 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -11,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -74,6 +74,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	// upload using http to the pod directly
 	req, err := createUploadRequest(archiveFilename, uploadOptions.ExistingAppSlug, uploadOptions.NewAppName, "http://localhost:3000/api/v1/kots")
 	if err != nil {
+		time.Sleep(time.Minute * 5)
 		return errors.Wrap(err, "failed to upload")
 	}
 	resp, err := http.DefaultClient.Do(req)
@@ -98,7 +99,6 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		return errors.Wrap(err, "failed to unmarshal response")
 	}
 
-	fmt.Println(uploadResponse.URI)
 	return nil
 }
 

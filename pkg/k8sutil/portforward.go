@@ -24,8 +24,27 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		return nil, err
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
-	hostIP := strings.TrimLeft(config.Host, "htps:/")
-	serverURL := url.URL{Scheme: "http", Path: path, Host: hostIP}
+	scheme := ""
+	hostIP := config.Host
+
+	split := strings.Split(config.Host, ":")
+	if split[0] == "http" {
+		scheme = "http"
+		u, err := url.Parse(config.Host)
+		if err != nil {
+			return nil, err
+		}
+		hostIP = u.Hostname()
+	} else if split[0] == "https" {
+		scheme = "https"
+		u, err := url.Parse(config.Host)
+		if err != nil {
+			return nil, err
+		}
+		hostIP = u.Hostname()
+	}
+
+	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
 
 	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
@@ -37,8 +56,9 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	}
 
 	go func() {
-		for range readyChan { // Kubernetes will close this channel when it has something to tell us.
+		for range readyChan {
 		}
+
 		if len(errOut.String()) != 0 {
 			panic(errOut.String())
 		} else if len(out.String()) != 0 {
@@ -65,7 +85,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		if err == nil && response.StatusCode == http.StatusOK {
 			break
 		}
-		if time.Now().Sub(start) > time.Duration(time.Second*5) {
+		if time.Now().Sub(start) > time.Duration(time.Second*10) {
 			return nil, err
 		}
 

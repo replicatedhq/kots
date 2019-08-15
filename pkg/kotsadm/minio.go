@@ -174,7 +174,7 @@ func ensureMinioStatefulset(namespace string, clientset *kubernetes.Clientset) e
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
-									corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("1Gi"),
+									corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("4Gi"),
 								},
 							},
 						},
@@ -311,7 +311,7 @@ func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "service",
-						Port:       4569,
+						Port:       9000,
 						TargetPort: intstr.FromInt(9000),
 					},
 				},
@@ -390,7 +390,7 @@ func ensureMinioJob(namespace string, clientset *kubernetes.Clientset) error {
 									},
 									{
 										Name:  "MINIO_PORT",
-										Value: "4569",
+										Value: "9000",
 									},
 								},
 								Image:           "minio/mc:RELEASE.2019-07-17T22-13-42Z",

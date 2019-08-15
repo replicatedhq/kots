@@ -24,7 +24,9 @@ func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) e
 
 		for _, pod := range pods.Items {
 			if pod.Status.Phase == corev1.PodRunning {
-				return nil
+				if pod.Status.ContainerStatuses[0].Ready == true {
+					return nil
+				}
 			}
 		}
 
@@ -137,7 +139,7 @@ func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clie
 									},
 									{
 										Name:  "S3_ENDPOINT",
-										Value: "http://kotsadm-minio:4569",
+										Value: "http://kotsadm-minio:9000",
 									},
 									{
 										Name:  "S3_BUCKET_NAME",
