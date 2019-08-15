@@ -28,7 +28,7 @@ func Serve(ctx context.Context, addr string) error {
 
 func Healthz(c *gin.Context) {
 	c.JSON(200, map[string]interface{}{
-		"server":    "init",
+		"server":    "watch",
 		"version":   version.Version(),
 		"sha":       version.GitSHA(),
 		"buildTime": version.BuildTime(),
