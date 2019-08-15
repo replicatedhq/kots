@@ -338,7 +338,7 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 }
 
 func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, string, string, string, error) {
-	// If there isn't a cluster, just mark it as deplyed. This is commonly seen
+	// If there isn't a cluster, just mark it as deployed. This is commonly seen
 	// in "midstream" watches
 	if clusterID == "" {
 		return 0, "", "deployed", "", nil

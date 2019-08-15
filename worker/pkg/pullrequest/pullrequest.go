@@ -50,12 +50,14 @@ func NewPullRequestRequest(store store.Store, watch *types.Watch, file multipart
 	} else {
 		newVersion, err := store.GetMostRecentWatchVersion(context.TODO(), watch.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "get most recent watch version")
+			// TODO: log this
+			newVersion = &types.WatchVersion{
+				VersionLabel: "",
+			}
 		}
 		if newVersion != nil {
 			newVersionString = newVersion.VersionLabel
 		}
-
 	}
 
 	if len(title) == 0 {
