@@ -54,7 +54,7 @@ export default class ClusterScope extends React.Component {
                     The output is a list of all images, with the most out-of-date images in red, slightly outdated in yellow, and up-to-date in green.
                   </p>
                   <div className="u-marginTop--20">
-                    <Link to="/login" className="btn primary">Udpate images using kotsadm</Link>
+                    <Link to="/login" className="btn primary">Update images using kotsadm</Link>
                   </div>
                 </div>
               </div>
