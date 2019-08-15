@@ -8,9 +8,12 @@ spec:
       containers:
         - name: kotsadm-web
           image: kotsadm/kotsadm-web
+          imagePullPolicy: Always
           env:
             - name: USE_EC2_PARAMETERS
               value: "1"
+            - name: GIT_SHA
+              value: "GIT_SHA_PLACEHOLDER"
             - name: AWS_REGION
               value: us-east-1
           readinessProbe:

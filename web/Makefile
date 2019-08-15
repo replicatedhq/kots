@@ -105,6 +105,7 @@ release-replicated-production: GITOPS_BRANCH = release
 release-replicated-production: gitops
 
 gitops:
+	cd kustomize/overlays/$(OVERLAY); sed -i -- 's/GIT_SHA_PLACEHOLDER/'$${BUILDKITE_COMMIT:0:7}'/g' *.yaml
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/kotsadm-web=${IMAGE}
 
 	rm -rf deploy/$(OVERLAY)/work
