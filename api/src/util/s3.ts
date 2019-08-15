@@ -105,3 +105,18 @@ export async function checkExists(params: Params, requestParams: AWS.S3.Types.He
     });
   });
 }
+
+export async function bucketExists(params: Params, bucketName: string): Promise<boolean> {
+  return new Promise<boolean>(resolve => {
+    const s3 = getS3(params);
+
+    s3.headBucket({Bucket: bucketName}, err => {
+      if (err) {
+        resolve(false);
+        return;
+      }
+
+      resolve(true);
+    });
+  });
+}
