@@ -95,6 +95,7 @@ publish-alpha: GITOPS_FILENAME = kotsadm-api
 publish-alpha: build_and_publish
 
 build_and_publish:
+	cd kustomize/overlays/$(OVERLAY); sed -i -- 's/GIT_SHA_PLACEHOLDER/'$${BUILDKITE_COMMIT:0:7}'/g' *.yaml
 	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:${IMAGE_TAG}
 
 	rm -rf deploy/$(OVERLAY)/work
@@ -107,4 +108,3 @@ build_and_publish:
 	  git add . ;\
 	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
           git push origin $(GITOPS_BRANCH)
-

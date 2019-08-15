@@ -10,9 +10,12 @@ spec:
       containers:
         - name: kotsadm-worker
           image: kotsadm/kotsadm-worker
+          imagePullPolicy: Always
           env:
             - name: USE_EC2_PARAMETERS
               value: "1"
+            - name: GIT_SHA
+              value: "GIT_SHA_PLACEHOLDER"
             - name: AWS_REGION
               value: us-east-1
             - name: ANALYZE_IMAGE
