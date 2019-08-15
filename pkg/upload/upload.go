@@ -3,7 +3,6 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -100,7 +99,6 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		return errors.Wrap(err, "failed to unmarshal response")
 	}
 
-	fmt.Println(uploadResponse.URI)
 	return nil
 }
 
