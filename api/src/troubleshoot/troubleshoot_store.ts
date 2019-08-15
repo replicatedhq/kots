@@ -225,8 +225,8 @@ spec: []`
 
   async getSupportBundleCommand(watchSlug: string): Promise<string> {
     const bundleCommand = `
-    kubectl krew install troubleshoot
-    kubectl troubleshoot ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
+    kubectl krew install support-bundle
+    kubectl support-bundle ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
     `;
     return bundleCommand;
   }
