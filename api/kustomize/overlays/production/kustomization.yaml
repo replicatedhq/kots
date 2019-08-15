@@ -4,6 +4,7 @@ bases:
 resources:
 - ./session-secret.json
 - ./bugsnag-secret.yaml
+- ./ship-cluster-service.yaml
 
 patchesStrategicMerge:
 - ./deployment.yaml
