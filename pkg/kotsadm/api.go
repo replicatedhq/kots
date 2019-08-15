@@ -32,7 +32,7 @@ func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) e
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > time.Duration(time.Minute) {
+		if time.Now().Sub(start) > time.Duration(time.Minute*2) {
 			return errors.New("timeout waiting for api pod")
 		}
 	}
