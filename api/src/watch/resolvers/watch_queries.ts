@@ -85,9 +85,9 @@ export function WatchQueries(stores: Stores) {
       if (current === undefined) {
         versions = pending.concat(past);
       } else {
-        versions = pending.concat(past, Array.of(current));
+        versions = Array.of(current).concat(pending, past);
       }
-    
+
       return versions;
     },
 
