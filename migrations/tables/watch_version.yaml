@@ -8,7 +8,9 @@ spec:
   requires: []
   schema:
     postgres:
-      primaryKey: []
+      primaryKey:
+        - watch_id
+        - sequence
       columns:
       - name: watch_id
         type: text
