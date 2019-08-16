@@ -32,7 +32,7 @@ func AdminConsoleCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			podName, err := findKotsweb(args[0])
+			podName, err := waitForWeb(args[0])
 			if err != nil {
 				return err
 			}

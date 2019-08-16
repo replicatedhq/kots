@@ -79,10 +79,6 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to run database migrations")
 	}
 
-	if err := ensureWeb(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure web exists")
-	}
-
 	if err := ensureSecrets(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure secrets exist")
 	}
@@ -93,6 +89,10 @@ func Deploy(deployOptions DeployOptions) error {
 
 	if err := waitForAPI(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for API")
+	}
+
+	if err := ensureWeb(&deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure web exists")
 	}
 
 	if err := ensureOperator(deployOptions, clientset); err != nil {

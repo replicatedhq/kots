@@ -74,6 +74,7 @@ func InstallCmd() *cobra.Command {
 			uploadOptions := upload.UploadOptions{
 				Namespace:  v.GetString("namespace"),
 				Kubeconfig: v.GetString("kubeconfig"),
+				NewAppName: v.GetString("name"),
 			}
 
 			if err := upload.Upload(rootDir, uploadOptions); err != nil {
@@ -82,7 +83,7 @@ func InstallCmd() *cobra.Command {
 
 			// port forward
 
-			podName, err := findKotsweb(v.GetString("namespace"))
+			podName, err := waitForWeb(v.GetString("namespace"))
 			if err != nil {
 				return err
 			}
@@ -118,6 +119,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
 	cmd.Flags().String("hostname", "localhost:8800", "the hostname to that the admin console will be exposed on")
+	cmd.Flags().StringP("name", "n", "", "name of the application to use in the Admin Console")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")

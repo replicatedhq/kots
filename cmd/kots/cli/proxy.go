@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,7 +10,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func findKotsweb(namespace string) (string, error) {
+var timeoutWaitingForWeb = time.Duration(time.Minute * 2)
+
+func waitForWeb(namespace string) (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -19,17 +23,27 @@ func findKotsweb(namespace string) (string, error) {
 		return "", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	// todo, find service, not pod
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-web"})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list pods")
-	}
+	start := time.Now()
 
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			return pod.Name, nil
+	for {
+		// todo, find service, not pod
+		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-web"})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				if pod.Status.ContainerStatuses[0].Ready == true {
+					return pod.Name, nil
+				}
+			}
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > timeoutWaitingForWeb {
+			return "", errors.New("timeout waiting for web pod")
 		}
 	}
-
-	return "", errors.New("unable to find findKotsweb pod")
 }
