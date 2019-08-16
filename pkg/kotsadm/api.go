@@ -13,6 +13,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
+
 func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
 	start := time.Now()
 
@@ -32,7 +34,7 @@ func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) e
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > time.Duration(time.Minute*2) {
+		if time.Now().Sub(start) > timeoutWaitingForAPI {
 			return errors.New("timeout waiting for api pod")
 		}
 	}

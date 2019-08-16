@@ -181,13 +181,12 @@ func parseHelmURL(u *url.URL) (string, string, string, error) {
 }
 
 func getKnownHelmRepoURI(repoName string) string {
-	if repoName == "stable" {
-		return "https://kubernetes-charts.storage.googleapis.com"
-	} else if repoName == "elastic" {
-		return "https://helm.elastic.co"
+	val, ok := KnownRepos[repoName]
+	if !ok {
+		return ""
 	}
 
-	return ""
+	return val
 }
 
 func readTarGz(source string) ([]UpstreamFile, error) {
