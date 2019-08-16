@@ -9,6 +9,7 @@ import GitHubApi from "@octokit/rest";
 import WebhooksApi from "@octokit/webhooks";
 import jwt from "jsonwebtoken";
 import { Cluster } from "../cluster";
+import { Watch } from "../watch"
 import * as _ from "lodash";
 
 interface ErrorResponse {
@@ -211,35 +212,10 @@ export class GitHubHookAPI {
 
           logger.debug({msg: "authenticated as app for installationId", "installationId": cluster.gitOpsRef.installationId});
 
-          const params: GitHubApi.PullRequestsGetCommitsParams = {
-            owner,
-            repo,
-            number: pullRequestEvent.number,
-          };
-          const getCommitsResponse = await github.pullRequests.getCommits(params);
-
-          const sortedCommits = getCommitsResponse.data;
-
-          for (const commit of sortedCommits) {
-            const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
-            if (!pendingVersion) {
-              continue;
-            }
-            await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
-            if (pullRequestEvent.pull_request.merged) {
-              if (watch.currentVersion && pendingVersion.sequence! < watch.currentVersion.sequence!) {
-                return;
-              }
-
-              const currentVersion = await request.app.locals.stores.watchStore.getCurrentVersion(watch.id!);
-              if (currentVersion) {
-                if (currentVersion.sequence > pendingVersion.sequence!) {
-                  continue;
-                }
-              }
-
-              await request.app.locals.stores.watchStore.setCurrentVersion(watch.id!, pendingVersion.sequence!, pullRequestEvent.pull_request.merged_at);
-            }
+          if (status === "merged") {
+            await handlePullRequestEventForMerge(github, cluster, watch, request, pullRequestEvent, status);
+          } else {
+            await handlePullRequestEventForNonMerge(cluster, watch, request, pullRequestEvent, status);
           }
         } catch(err) {
           logger.error({msg: "could not update cluster because github said an error", err});
@@ -247,6 +223,48 @@ export class GitHubHookAPI {
         }
       }
     }
+  }
+}
+
+async function handlePullRequestEventForNonMerge(cluster: Cluster, watch: Watch, request: Express.Request, pullRequestEvent: WebhooksApi.WebhookPayloadPullRequest, status: string) {
+  const pendingVersions = await request.app.locals.stores.watchStore.listPendingVersions(watch.id!);
+  for (const pendingVersion of pendingVersions) {
+    if (pendingVersion.pullrequestNumber === pullRequestEvent.number) {
+      await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
+      return;
+    }
+  }
+
+  const pastVersions = await request.app.locals.stores.watchStore.listPastVersions(watch.id!);
+  for (const pastVersion of pastVersions) {
+    if (pastVersion.pullrequestNumber === pullRequestEvent.number) {
+      await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pastVersion.sequence!, status);
+    }
+  }
+}
+
+// ONLY for merged prs we want to cycle through all commits and update the status as merged for all
+// other prs that match one of the commits included in the merge.
+async function handlePullRequestEventForMerge(github: GitHubApi, cluster: Cluster, watch: Watch, request: Express.Request, pullRequestEvent: WebhooksApi.WebhookPayloadPullRequest, status: string) {
+  const owner = pullRequestEvent.pull_request.base.repo.owner.login;
+  const repo = pullRequestEvent.pull_request.base.repo.name;
+
+  const params: GitHubApi.PullRequestsGetCommitsParams = {
+    owner,
+    repo,
+    number: pullRequestEvent.number,
+  };
+  const getCommitsResponse = await github.pullRequests.getCommits(params);
+
+  const sortedCommits = getCommitsResponse.data.reverse(); // newest first
+
+  for (const commit of sortedCommits) {
+    const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
+    if (!pendingVersion) {
+      continue;
+    }
+    await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
+    await request.app.locals.stores.watchStore.setCurrentVersionIfCurrent(watch.id!, pendingVersion.sequence!, pullRequestEvent.pull_request.merged_at);
   }
 }
 

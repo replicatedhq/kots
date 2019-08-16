@@ -3,6 +3,7 @@ import { Watch, Contributor, Version, VersionDetail } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
+import { version } from "bluebird";
 
 export function WatchQueries(stores: Stores) {
   return {
@@ -81,11 +82,11 @@ export function WatchQueries(stores: Stores) {
       const past = await watch.getPastVersions(stores);
       const pending = await watch.getPendingVersions(stores);
 
-      let versions;
+      let versions: Version[];
       if (current === undefined) {
         versions = pending.concat(past);
       } else {
-        versions = Array.of(current).concat(pending, past);
+        versions = pending.concat(Array.of(current), past);
       }
 
       return versions;

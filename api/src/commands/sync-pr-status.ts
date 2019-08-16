@@ -132,7 +132,7 @@ async function main(argv): Promise<any> {
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watchId!, version.sequence!, "merged");
             await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watchId, version.sequence]);
-            await checkVersion(watchStore, version, pr);
+            await setCurrentVersionIfCurrent(watchStore, version, pr);
           }
           changedVersions.push(i);
         }
@@ -143,7 +143,6 @@ async function main(argv): Promise<any> {
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watchId!, version.sequence!, "closed");
             await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watchId, version.sequence]);
-            await checkVersion(watchStore, version, pr);
           }
           changedVersions.push(i);
         }
@@ -154,7 +153,6 @@ async function main(argv): Promise<any> {
           if (!argv.dryRun) {
             await watchStore.updateVersionStatus(version.watchId!, version.sequence!, "opened");
             await pool.query(`UPDATE watch_version SET last_synced_at = current_timestamp WHERE watch_id = $1 AND sequence = $2`, [version.watchId, version.sequence]);
-            await checkVersion(watchStore, version, pr);
           }
           changedVersions.push(i);
         }
@@ -262,22 +260,11 @@ async function getPullRequest(github: GitHubApi, pool: Pool, version: Version, d
   }
 }
 
-async function checkVersion(watchStore: WatchStore, version: Version, pr: GitHubApi.GetResponse): Promise<void> {
-  console.log("Checking current version for " + blueText(`${version.watchId}`) + " (PR: " + blueText(`#${pr.number}`) + ")");
-  const watch = await watchStore.getWatch(version.watchId);
-  if (watch.currentVersion && version.sequence! < watch.currentVersion.sequence!) {
-    return;
+async function setCurrentVersionIfCurrent(watchStore: WatchStore, version: Version, pr: GitHubApi.GetResponse): Promise<void> {
+  const didUpdate = await watchStore.setCurrentVersionIfCurrent(version.watchId!, version.sequence!, pr.merged_at || undefined);
+  if (didUpdate) {
+    console.log(statusText(`Updated current version sequence for ${version.watchId} (PR: #${pr.number}) to ${version.sequence}`));
   }
-
-  const currentVersion = await watchStore.getCurrentVersion(watch.id!);
-  if (currentVersion) {
-    if (currentVersion.sequence > version.sequence!) {
-      return;
-    }
-  }
-
-  await watchStore.setCurrentVersion(watch.id!, version.sequence!, pr.merged_at || undefined);
-  console.log(statusText(`Updated current version sequence for ${version.watchId} (PR: #${pr.number}) from ${watch.currentVersion ? watch.currentVersion.sequence : "NULL"} to ${version.sequence}`));
 }
 
 async function getPRCommits(github: GitHubApi, version: Version): Promise<GitHubApi.GetCommitsResponseItem[]> {

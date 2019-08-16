@@ -38,6 +38,7 @@ export class WatchStore {
 
     await this.pool.query(q, v);
   }
+
   async setCurrentVersion(watchId: string, sequence: number, deployedAt?: string, status?: string): Promise<void> {
     const pg = await this.pool.connect();
 
@@ -64,6 +65,43 @@ export class WatchStore {
         await pg.query(q, v);
 
         await pg.query("commit");
+      } catch (err) {
+        await pg.query("rollback");
+        throw err;
+      }
+    } finally {
+      pg.release();
+    }
+  }
+
+  async setCurrentVersionIfCurrent(watchId: string, sequence: number, deployedAt?: string): Promise<boolean> {
+    const pg = await this.pool.connect();
+
+    try {
+      await pg.query("begin");
+
+      try {
+        let q = `update watch_version set deployed_at = $1 where watch_id = $2 and sequence = $3`;
+        let v = [
+          deployedAt || new Date(),
+          watchId,
+          sequence,
+        ];
+        await pg.query(q, v);
+
+        q = `update watch set current_sequence = $1 where id = $2 and (current_sequence is null or current_sequence < $1)`;
+        v = [
+          sequence,
+          watchId,
+        ];
+        const res = await pg.query(q, v);
+
+        await pg.query("commit");
+
+        if (!res.rowCount) {
+          return false;
+        }
+        return true;
       } catch (err) {
         await pg.query("rollback");
         throw err;
