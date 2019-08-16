@@ -3,7 +3,7 @@ kind: Database
 metadata:
   name: kotsadm-postgres
 schemahero:
-  image: schemahero/schemahero:0.3.0
+  image: schemahero/schemahero:0.4.0
   nodeSelector:
     replicated/node-pool: privileged
 connection:
