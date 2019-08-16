@@ -95,10 +95,8 @@ func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clie
 								},
 								ReadinessProbe: &corev1.Probe{
 									FailureThreshold:    3,
-									InitialDelaySeconds: 2,
-									PeriodSeconds:       2,
-									SuccessThreshold:    1,
-									TimeoutSeconds:      1,
+									InitialDelaySeconds: 10,
+									PeriodSeconds:       10,
 									Handler: corev1.Handler{
 										HTTPGet: &corev1.HTTPGetAction{
 											Path:   "/healthz",

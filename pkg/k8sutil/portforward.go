@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,21 +26,14 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	scheme := ""
 	hostIP := config.Host
 
-	split := strings.Split(config.Host, ":")
-	if split[0] == "http" {
-		scheme = "http"
-		u, err := url.Parse(config.Host)
-		if err != nil {
-			return nil, err
-		}
-		hostIP = u.Hostname()
-	} else if split[0] == "https" {
-		scheme = "https"
-		u, err := url.Parse(config.Host)
-		if err != nil {
-			return nil, err
-		}
-		hostIP = u.Hostname()
+	u, err := url.Parse(config.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	if u.Scheme == "http" || u.Scheme == "https" {
+		scheme = u.Scheme
+		hostIP = u.Host
 	}
 
 	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
