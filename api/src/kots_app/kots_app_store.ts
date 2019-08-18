@@ -10,6 +10,17 @@ import _ from "lodash";
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
+  async createDownstream(appId: string, downstreamName: string, clusterId: string): Promise<void> {
+    const q = `insert into app_downstream (app_id, downstream_name, cluster_id) values ($1, $2, $3)`;
+    const v = [
+      appId,
+      downstreamName,
+      clusterId,
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   async createKotsAppVersion(id: string, sequence: number, versionLabel: string): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label) values ($1, $2, $3, $4)`;
     const v = [
