@@ -18,6 +18,9 @@ type OverlySimpleGVK struct {
 	Kind       string `yaml:"kind"`
 }
 
+// ShouldBeIncludedInBase attempts to determine if this is a valid Kubernetes manifest.
+// It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
+// It currently cannot return an error
 func (f BaseFile) ShouldBeIncludedInBase() (bool, error) {
 	o := OverlySimpleGVK{}
 
