@@ -7,7 +7,7 @@
   "dependencies": {
     "@bugsnag/js": "^5.0.2",
     "@bugsnag/plugin-express": "^6.4.0",
-    "@octokit/rest": "^15.10.0",
+    "@octokit/rest": "^15.18.2",
     "@octokit/webhooks": "^6.2.2",
     "@tsed/common": "5.25.1",
     "@tsed/core": "5.25.1",

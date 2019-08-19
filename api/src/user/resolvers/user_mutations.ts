@@ -58,7 +58,7 @@ export function UserMutations(stores: Stores, params: Params) {
         type: "token",
         token: accessToken.access_token,
       });
-      const response = await github.users.get({});
+      const response = await github.users.getAuthenticated({});
 
       try {
         let user = await stores.userStore.tryGetGitHubUser(response.data.id);
