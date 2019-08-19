@@ -15,12 +15,8 @@ export class ErrorHandler extends GlobalErrorHandlerMiddleware {
       bugsnagClient.notify(error, {
         request,
         severity: "error",
-
       });
     }
-    // console.log("In context of crashz");
-    // console.log(bugsnagClient);
-    // console.error(error);
     super.use(error, request, response);
   }
 }
