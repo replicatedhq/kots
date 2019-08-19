@@ -1,5 +1,6 @@
-// import bugsnag from "@bugsnag/js";
 import _ from "lodash";
+
+import { getBugsnagClient } from "./bugsnagClient";
 
 /**
  * ClientErrorDetails is a payload that
@@ -64,8 +65,13 @@ export class ReplicatedError extends Error {
       };
     }
 
-    // only log it if its an unknown error
-    // bugsnag.notify(error);
+    const bugsnagClient = getBugsnagClient();
+    if (bugsnagClient) {
+      // only log it if its an unknown error
+      bugsnagClient.notify(error, {
+        severity: "error"
+      });
+    }
 
     return {
       msg: ReplicatedError.INTERNAL_ERROR_MESSAGE,

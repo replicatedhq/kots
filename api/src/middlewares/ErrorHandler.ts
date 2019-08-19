@@ -17,6 +17,7 @@ export class ErrorHandler extends GlobalErrorHandlerMiddleware {
         severity: "error",
       });
     }
+    console.error(error);
     super.use(error, request, response);
   }
 }
