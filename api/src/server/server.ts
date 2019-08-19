@@ -1,11 +1,12 @@
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
-import bugsnag from "bugsnag";
+import bugsnagExpress from "@bugsnag/plugin-express";
 import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
 import Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import { $log } from "ts-log-debug";
+import { createBugsnagClient } from "./bugsnagClient";
 import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
 import { UpdateProxy } from "../update/proxy";
@@ -59,10 +60,18 @@ export class Server extends ServerLoader {
     this.expressApp.enable("trust proxy"); // so we get the real ip from the ELB in amazon
     const params = await Params.getParams();
 
-    if (params.bugsnagKey) {
-      bugsnag.register(params.bugsnagKey);
-      this.use(bugsnag.errorHandler);
+    let bugsnagClient = createBugsnagClient({
+      apiKey: params.bugsnagKey,
+      appType: "web_server",
+      releaseStage: process.env.NODE_ENV
+    });
+
+    if (bugsnagClient) {
+      bugsnagClient.use(bugsnagExpress);
+      const bugsnagMiddleware = bugsnagClient.getPlugin('express');
+      this.use(bugsnagMiddleware.requestHandler);
     }
+
 
     const corsHeaders = { exposedHeaders: ["Content-Disposition"] };
     this.use(cors(corsHeaders));
@@ -176,6 +185,12 @@ export class Server extends ServerLoader {
 
     if (process.env.NODE_ENV === "production") {
       $log.level = "OFF";
+    }
+
+    // The bugsnag error handler has to go in last
+    if (bugsnagClient) {
+      const bugsnagMiddleware = bugsnagClient.getPlugin('express');
+      this.use(bugsnagMiddleware.errorHandler);
     }
   }
 
