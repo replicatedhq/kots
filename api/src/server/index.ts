@@ -19,7 +19,8 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
   use(@Req() request: Express.Request) {
     request.id = uuid.v4();
 
-    if (request.path === "/healthz") {
+    // Suppress logging from /healthz and the noisy /api/v1/deploy/desired endpoint
+    if (request.path === "/healthz" || request.path ==="/api/v1/deploy/desired") {
       this.configureRequest(request, true);
 
       return;

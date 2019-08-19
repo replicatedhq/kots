@@ -9,8 +9,7 @@ function initLoggerFromEnv(): pino.Logger {
   return pino({
     name: "kotsadm-api",
     timestamp: () => {
-      console.log(arguments);
-      return (new Date()).toISOString();
+      return `,"time":${(new Date()).toISOString()}`;
     },
     level: pinoLevel,
     prettyPrint: {
