@@ -5,6 +5,15 @@ import uuid from "uuid";
 import Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
 
+const suppressLog = function(...args: any[]): void | any {};
+const suppressLogger: IDILogger = {
+  info: suppressLog,
+  warn: suppressLog,
+  debug: suppressLog,
+  error: suppressLog,
+  trace: suppressLog,
+};
+
 @OverrideMiddleware(LogIncomingRequestMiddleware)
 export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddleware {
   use(@Req() request: Express.Request) {
@@ -26,16 +35,9 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
     const minimalInfo = (req: Express.Request) => this.minimalRequestPicker(req);
     const requestObj = (req: Express.Request) => this.requestToObject(req);
 
-    let logger: IDILogger = this.injector.logger;
+    let logger = this.injector.logger;
     if (suppress) {
-      const noop = function(...args: any[]): void | any {};
-      logger = {
-        info: noop,
-        warn: noop,
-        debug: noop,
-        error: noop,
-        trace: noop,
-      }
+      logger = suppressLogger;
     }
 
     request.log = new RequestLogger(logger, {
