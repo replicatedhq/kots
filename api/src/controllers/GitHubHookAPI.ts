@@ -184,7 +184,7 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
-    logger.debug({msg: "handle pull request", owner, repo, "number": "pullRequestEvent.number });
+    logger.debug({msg: "handle pull request", owner, repo, "number": pullRequestEvent.number });
 
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
