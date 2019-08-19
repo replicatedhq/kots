@@ -80,14 +80,14 @@ export class GitHubHookAPI {
           token: await getGitHubBearerToken()
         });
 
-        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id.toString()});
+        const { data: { token } } = await github.apps.createInstallationToken({installation_id: installationData.id});
         github.authenticate({
           type: "token",
           token,
         });
 
         const org = installationData.account.login;
-        const { data: membersData } = await github.orgs.getMembers({org});
+        const { data: membersData } = await github.orgs.listMembers({org});
         numberOfOrgMembers = membersData.length;
       } else {
         numberOfOrgMembers = 0;
@@ -184,7 +184,7 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
-    logger.debug({msg: "handle pull request", owner, repo, "number": pullRequestEvent.number });
+    logger.debug({msg: "handle pull request", "owner": owner, "repo": repo, "number": pullRequestEvent.number})
 
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
@@ -248,12 +248,12 @@ async function handlePullRequestEventForMerge(github: GitHubApi, cluster: Cluste
   const owner = pullRequestEvent.pull_request.base.repo.owner.login;
   const repo = pullRequestEvent.pull_request.base.repo.name;
 
-  const params: GitHubApi.PullRequestsGetCommitsParams = {
+  const params: GitHubApi.PullRequestsListCommitsParams = {
     owner,
     repo,
     number: pullRequestEvent.number,
   };
-  const getCommitsResponse = await github.pullRequests.getCommits(params);
+  const getCommitsResponse = await github.pullRequests.listCommits(params);
 
   const sortedCommits = getCommitsResponse.data.reverse(); // newest first
 

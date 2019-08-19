@@ -22,7 +22,7 @@ export type InstallationMap = {
 export class SessionStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
-  createInstallationMap(installations: GitHubApi.GetInstallationsResponseInstallationsItem[]): InstallationMap {
+  createInstallationMap(installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[]): InstallationMap {
     return installations.reduce((installationAcctMap: InstallationMap, { id, account }) => {
       const lowerLogin = account.login.toLowerCase();
       installationAcctMap[lowerLogin] = id;
@@ -55,11 +55,11 @@ export class SessionStore {
     );
   }
 
-  async createGithubSession(userId: string, github: any, token: string): Promise<string> {
-    const { data: installationData } = await github.users.getInstallations({});
+  async createGithubSession(userId: string, github: GitHubApi, token: string): Promise<string> {
+    const { data: installationData } = await github.apps.listInstallationsForAuthenticatedUser({});
     const { installations } = installationData as {
       total_count: number;
-      installations: GitHubApi.GetInstallationsResponseInstallationsItem[];
+      installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[];
     };
 
     const installationMap = this.createInstallationMap(installations);
@@ -94,10 +94,10 @@ export class SessionStore {
       type: "token",
       token,
     });
-    const { data: installationData } = await github.users.getInstallations({});
+    const { data: installationData } = await github.apps.listInstallationsForAuthenticatedUser({});
     const { installations } = installationData as {
       total_count: number;
-      installations: GitHubApi.GetInstallationsResponseInstallationsItem[];
+      installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[];
     };
 
     const updatedInstallationMap = this.createInstallationMap(installations);

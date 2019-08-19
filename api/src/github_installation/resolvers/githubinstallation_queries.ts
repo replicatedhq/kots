@@ -45,14 +45,14 @@ export function GithubInstallationQueries(stores: any) {
       const {
         data: installationData,
       }: {
-        data: GitHubApi.GetInstallationsResponse;
-      } = await github.users.getInstallations({
+        data: GitHubApi.AppsListInstallationsForAuthenticatedUserResponse;
+      } = await github.apps.listInstallationsForAuthenticatedUser({
         page: githubPage,
       });
 
       const { total_count: totalCount, installations } = installationData as {
         total_count: number;
-        installations: GitHubApi.GetInstallationsResponseInstallationsItem[];
+        installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[];
       };
 
       return {
@@ -83,7 +83,7 @@ export function GithubInstallationQueries(stores: any) {
         githubPage = page;
       }
 
-      const { data: installationData } = await github.users.getInstallationRepos({
+      const { data: installationData } = await github.apps.listInstallationReposForAuthenticatedUser({
         page: githubPage,
         installation_id: installationId,
       });
@@ -106,7 +106,7 @@ export function GithubInstallationQueries(stores: any) {
         githubPage = page;
       }
 
-      const { data: repoBranches } = await github.repos.getBranches({
+      const { data: repoBranches } = await github.repos.listBranches({
         owner,
         repo,
         page: githubPage,
@@ -127,7 +127,7 @@ export function GithubInstallationQueries(stores: any) {
         githubPage = page;
       }
 
-      const { data: membersData } = await github.orgs.getMembers({
+      const { data: membersData } = await github.orgs.listMembers({
         org,
         page: githubPage
       });

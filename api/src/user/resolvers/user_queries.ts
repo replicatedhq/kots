@@ -13,7 +13,7 @@ export function UserQueries(stores: Stores) {
           token: context.getGitHubToken(),
         });
 
-        const githubUser = await github.users.get({});
+        const githubUser = await github.users.getAuthenticated({});
         return {
           avatarUrl: githubUser.data.avatar_url,
           username: githubUser.data.login

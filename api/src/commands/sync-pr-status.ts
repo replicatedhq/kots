@@ -95,7 +95,7 @@ async function main(argv): Promise<any> {
         continue;
       }
 
-      let pr: GitHubApi.GetResponse;
+      let pr: GitHubApi.PullRequestsGetResponse;
 
       try {
         pr = await getPullRequest(github, pool, version, argv.dryRun);
@@ -178,7 +178,7 @@ export interface Version {
   clusterId: string;
   clusterOwner: string;
   clusterRepo: string;
-  clusterInstallationId: string;
+  clusterInstallationId: number;
   pullrequestNumber: number;
   pullrequestStatus: string;
   commitSha: string;
@@ -225,7 +225,7 @@ async function getInstallationToken(github: GitHubApi, pool: Pool, version: Vers
   }
 }
 
-async function getRepo(github: GitHubApi, pool: Pool, version: Version, dryRun: boolean): Promise<GitHubApi.GetResponse> {
+async function getRepo(github: GitHubApi, pool: Pool, version: Version, dryRun: boolean): Promise<GitHubApi.ReposGetResponse> {
   try {
     const response = await github.repos.get({
       owner: version.clusterOwner,
@@ -242,7 +242,7 @@ async function getRepo(github: GitHubApi, pool: Pool, version: Version, dryRun: 
   }
 }
 
-async function getPullRequest(github: GitHubApi, pool: Pool, version: Version, dryRun: boolean): Promise<GitHubApi.GetResponse> {
+async function getPullRequest(github: GitHubApi, pool: Pool, version: Version, dryRun: boolean): Promise<GitHubApi.PullRequestsGetResponse> {
   try {
     const response = await github.pullRequests.get({
       owner: version.clusterOwner,
@@ -260,31 +260,31 @@ async function getPullRequest(github: GitHubApi, pool: Pool, version: Version, d
   }
 }
 
-async function setCurrentVersionIfCurrent(watchStore: WatchStore, version: Version, pr: GitHubApi.GetResponse): Promise<void> {
+async function setCurrentVersionIfCurrent(watchStore: WatchStore, version: Version, pr: GitHubApi.PullRequestsGetResponse): Promise<void> {
   const didUpdate = await watchStore.setCurrentVersionIfCurrent(version.watchId!, version.sequence!, pr.merged_at || undefined);
   if (didUpdate) {
     console.log(statusText(`Updated current version sequence for ${version.watchId} (PR: #${pr.number}) to ${version.sequence}`));
   }
 }
 
-async function getPRCommits(github: GitHubApi, version: Version): Promise<GitHubApi.GetCommitsResponseItem[]> {
-  const params: GitHubApi.PullRequestsGetCommitsParams = {
+async function getPRCommits(github: GitHubApi, version: Version): Promise<GitHubApi.PullRequestsListCommitsResponseItem[]> {
+  const params: GitHubApi.PullRequestsListCommitsParams = {
     owner: version.clusterOwner,
     repo: version.clusterRepo,
     number: version.pullrequestNumber,
   };
-  const getCommitsResponse = await github.pullRequests.getCommits(params);
+  const getCommitsResponse = await github.pullRequests.listCommits(params);
   return getCommitsResponse.data;
 }
 
-async function updateClusterAsIsDeleted(pool: Pool, installationId: string) {
+async function updateClusterAsIsDeleted(pool: Pool, installationId: number) {
   await pool.query(
     `UPDATE cluster_github SET is_deleted = TRUE WHERE installation_id = $1`,
     [installationId],
   );
 }
 
-async function updateClusterAs404(pool: Pool, installationId: string) {
+async function updateClusterAs404(pool: Pool, installationId: number) {
   await pool.query(
     `UPDATE cluster_github SET is_404 = TRUE WHERE installation_id = $1`,
     [installationId],

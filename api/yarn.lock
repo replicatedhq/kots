@@ -90,7 +90,7 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
-"@octokit/rest@^15.18.1":
+"@octokit/rest@^15.18.2":
   version "15.18.2"
   resolved "https://registry.yarnpkg.com/@octokit/rest/-/rest-15.18.2.tgz#3e4d448ce4630c8ac926e14819874175bc271669"
   integrity sha512-cXP/hzh21PoZe0HJ74Co33HS3ITayWujXXeb1P8oR9kXt3hEmGsm2FQ4A8PrqV18C26uYkIb4KjjlVBzX1aHjw==
