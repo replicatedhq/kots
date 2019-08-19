@@ -6,6 +6,7 @@
   "main": "./build/server/index.js",
   "dependencies": {
     "@bugsnag/js": "^5.0.2",
+    "@bugsnag/plugin-express": "^6.4.0",
     "@octokit/rest": "^15.10.0",
     "@octokit/webhooks": "^6.2.2",
     "@tsed/common": "5.25.1",
@@ -23,7 +24,6 @@
     "bcrypt": "^3.0.6",
     "bluebird": "^3.5.2",
     "body-parser": "^1.19.0",
-    "bugsnag": "^2.4.3",
     "cli-color": "^1.4.0",
     "common-tags": "^1.8.0",
     "cors": "^2.8.5",

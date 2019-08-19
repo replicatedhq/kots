@@ -1,4 +1,5 @@
 import { Err, GlobalErrorHandlerMiddleware, OverrideProvider, Req, Res } from "@tsed/common";
+import { getBugsnagClient } from "../server/bugsnagClient";
 
 @OverrideProvider(GlobalErrorHandlerMiddleware)
 export class ErrorHandler extends GlobalErrorHandlerMiddleware {
@@ -8,7 +9,18 @@ export class ErrorHandler extends GlobalErrorHandlerMiddleware {
     @Req() request: Req,
     @Res() response: Res
   ): any {
-    console.error(error);
+
+    const bugsnagClient = getBugsnagClient();
+    if (bugsnagClient) {
+      bugsnagClient.notify(error, {
+        request,
+        severity: "error",
+
+      });
+    }
+    // console.log("In context of crashz");
+    // console.log(bugsnagClient);
+    // console.error(error);
     super.use(error, request, response);
   }
 }

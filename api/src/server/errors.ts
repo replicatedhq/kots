@@ -1,4 +1,4 @@
-import bugsnag from "bugsnag";
+// import bugsnag from "@bugsnag/js";
 import _ from "lodash";
 
 /**
@@ -65,7 +65,7 @@ export class ReplicatedError extends Error {
     }
 
     // only log it if its an unknown error
-    bugsnag.notify(error);
+    // bugsnag.notify(error);
 
     return {
       msg: ReplicatedError.INTERNAL_ERROR_MESSAGE,
