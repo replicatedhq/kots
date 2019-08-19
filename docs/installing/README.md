@@ -7,7 +7,7 @@ The recommended installation path is to use [krew](https://krew.dev) on Windows,
 To install:
 
 ```shell
-krew install kots
+kubectl krew install kots
 ```
 
 After installing, verify it's working with

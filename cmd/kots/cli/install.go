@@ -65,10 +65,11 @@ func InstallCmd() *cobra.Command {
 			}
 
 			log := logger.NewLogger()
-			log.Info("Deploying Admin Console")
+			log.ActionWithSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				return err
 			}
+			log.FinishSpinner()
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
@@ -77,13 +78,14 @@ func InstallCmd() *cobra.Command {
 				NewAppName: v.GetString("name"),
 			}
 
+			log.ActionWithSpinner("Uploading local application to Admin Console")
 			if err := upload.Upload(rootDir, uploadOptions); err != nil {
 				return errors.Cause(err)
 			}
+			log.FinishSpinner()
 
 			// port forward
-
-			podName, err := waitForWeb(v.GetString("namespace"))
+			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"))
 			if err != nil {
 				return err
 			}
@@ -94,18 +96,18 @@ func InstallCmd() *cobra.Command {
 			}
 			defer close(stopCh)
 
-			log.Info("Press Ctrl+C to exit")
-			log.Info("Go to http://localhost:8800 to access the Admin Console")
+			log.ActionWithoutSpinner("Press Ctrl+C to exit")
+			log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
 
 			signalChan := make(chan os.Signal, 1)
 			signal.Notify(signalChan, os.Interrupt)
 
 			<-signalChan
 
-			log.Info("Cleaning up")
-			log.Info("")
-			log.Info("To access the Admin Console again, run kubectl kots admin-console %s", v.GetString("namespace"))
-			log.Info("")
+			log.ActionWithoutSpinner("Cleaning up")
+			log.ActionWithoutSpinner("")
+			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console %s", v.GetString("namespace"))
+			log.ActionWithoutSpinner("")
 
 			return nil
 		},

@@ -5,24 +5,7 @@ These are the docs for the kots open source application. If you are looking for 
 ## Quick Start
 
 ```shell
-krew install kots
-kubectl kots download helm://stable/mysql@1.3.0
+kubectl krew install kots
+kubectl kots install helm://elastic/elasticsearch --namespace elasticsearch
 ```
 
-This will create a directory named `mysql` that contains 3 subdirectories:
-
-```
-|- mysql
-   |- upstream
-   |- base
-   |- overlays
-      |- midstream
-```
-
-### upstream
-
-### base
-
-### overlays
-
-### overlays/midstream

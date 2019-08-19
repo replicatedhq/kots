@@ -1,4 +1,4 @@
-package cli
+package k8sutil
 
 import (
 	"time"
@@ -12,7 +12,7 @@ import (
 
 var timeoutWaitingForWeb = time.Duration(time.Minute * 2)
 
-func waitForWeb(namespace string) (string, error) {
+func WaitForWeb(namespace string) (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
