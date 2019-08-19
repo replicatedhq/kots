@@ -1,5 +1,5 @@
 import { Server } from "./server";
-import {RequestLogger, OverrideMiddleware, LogIncomingRequestMiddleware, Req} from "@tsed/common";
+import {RequestLogger, OverrideMiddleware, LogIncomingRequestMiddleware, Req, IDILogger} from "@tsed/common";
 import uuid from "uuid";
 
 import Express from "express";
@@ -26,7 +26,19 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
     const minimalInfo = (req: Express.Request) => this.minimalRequestPicker(req);
     const requestObj = (req: Express.Request) => this.requestToObject(req);
 
-    request.log = new RequestLogger(this.injector.logger, {
+    let logger: IDILogger = this.injector.logger;
+    if (suppress) {
+      const noop = function(...args: any[]): void | any {};
+      logger = {
+        info: noop,
+        warn: noop,
+        debug: noop,
+        error: noop,
+        trace: noop,
+      }
+    }
+
+    request.log = new RequestLogger(logger, {
       id: request.ctx.id,
       startDate: request.ctx.dateStart,
       url: request.originalUrl || request.url,
@@ -34,10 +46,6 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
       minimalRequestPicker: (obj: any) => ({...minimalInfo, ...obj}),
       completeRequestPicker: (obj: any) => ({...requestObj, ...obj})
     });
-
-    if (!suppress) {
-      return;
-    }
   }
 
   // pretty much copy-pasted, but hooked into TSEDVerboseLogging from above to control multiline logging
