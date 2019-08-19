@@ -137,11 +137,7 @@ export class GitHubHookAPI {
         continue;
       }
 
-      const github = new GitHubApi({
-        headers: {
-          "Accept": "application/vnd.github.antiope-preview+json",
-        },
-      });
+      const github = new GitHubApi();
       logger.debug({msg: "authenticating with bearer token to create GitHub check"});
       github.authenticate({
         type: "app",
@@ -188,12 +184,15 @@ export class GitHubHookAPI {
 
     const clusters = await request.app.locals.stores.clusterStore.listClustersForGitHubRepo(owner, repo);
 
+    logger.debug({msg: "handle pull request", "owner": owner, "repo": repo, "number": pullRequestEvent.number})
+
     for (const cluster of clusters) {
       if (!cluster.gitOpsRef) {
         continue;
       }
 
       const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
+      logger.debug({msg: "list watched for cluster", "clusterId": cluster.id, "watches": watches.length});
       for (const watch of watches) {
         try {
           const github = new GitHubApi();
@@ -259,8 +258,10 @@ async function handlePullRequestEventForMerge(github: GitHubApi, cluster: Cluste
   const sortedCommits = getCommitsResponse.data.reverse(); // newest first
 
   for (const commit of sortedCommits) {
+    logger.debug({msg: "getting watch version for commit", "commitSha": commit.sha})
     const pendingVersion = await request.app.locals.stores.watchStore.getVersionForCommit(watch.id!, commit.sha);
     if (!pendingVersion) {
+      logger.debug({msg: "watch version for commit not found", "commitSha": commit.sha})
       continue;
     }
     await request.app.locals.stores.watchStore.updateVersionStatus(watch.id!, pendingVersion.sequence!, status);
