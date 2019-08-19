@@ -1,16 +1,26 @@
 import { Server } from "./server";
-import {ServerLoader, ServerSettings, OverrideMiddleware, LogIncomingRequestMiddleware, Res, Req} from "@tsed/common";
+import {RequestLogger, OverrideMiddleware, LogIncomingRequestMiddleware, Req, IDILogger} from "@tsed/common";
 import uuid from "uuid";
 
 import Express from "express";
 import { logger, TSEDVerboseLogging } from "./logger";
+
+const suppressLog = function(...args: any[]): void | any {};
+const suppressLogger: IDILogger = {
+  info: suppressLog,
+  warn: suppressLog,
+  debug: suppressLog,
+  error: suppressLog,
+  trace: suppressLog,
+};
 
 @OverrideMiddleware(LogIncomingRequestMiddleware)
 export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddleware {
   use(@Req() request: Express.Request) {
     request.id = uuid.v4();
 
-    if (request.path === "/healthz") {
+    // Suppress logging from /healthz and the noisy /api/v1/deploy/desired endpoint
+    if (request.path === "/healthz" || request.path ==="/api/v1/deploy/desired") {
       this.configureRequest(request, true);
 
       return;
@@ -21,13 +31,24 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
   // mostly copy pasted, added suppress flag for quieter healthz logging
   protected configureRequest(request: Express.Request, suppress?: boolean) {
-    const verbose = (req: Express.Request) => this.requestToObject(req);
-    const info = (req: Express.Request) => this.minimalRequestPicker(req);
+    const {ignoreUrlPatterns = []} = this.injector.settings.logger;
 
-    if (!suppress) {
-      return;
+    const minimalInfo = (req: Express.Request) => this.minimalRequestPicker(req);
+    const requestObj = (req: Express.Request) => this.requestToObject(req);
+
+    let logger = this.injector.logger;
+    if (suppress) {
+      logger = suppressLogger;
     }
 
+    request.log = new RequestLogger(logger, {
+      id: request.ctx.id,
+      startDate: request.ctx.dateStart,
+      url: request.originalUrl || request.url,
+      ignoreUrlPatterns,
+      minimalRequestPicker: (obj: any) => ({...minimalInfo, ...obj}),
+      completeRequestPicker: (obj: any) => ({...requestObj, ...obj})
+    });
   }
 
   // pretty much copy-pasted, but hooked into TSEDVerboseLogging from above to control multiline logging

@@ -6,20 +6,17 @@ export const TSEDVerboseLogging = process.env.NODE_ENV !== "production" && proce
 export const pinoLevel = process.env.LOG_LEVEL || "info";
 
 function initLoggerFromEnv(): pino.Logger {
-  const component = `kotsadm-api`;
-  let options = {
-    name: component,
-    version: process.env.VERSION,
+  return pino({
+    name: "kotsadm-api",
+    timestamp: () => {
+      return `,"time":${(new Date()).toISOString()}`;
+    },
     level: pinoLevel,
     prettyPrint: {
       levelFirst: true,
-      colorize: TSEDVerboseLogging,
-
+      forceColor: TSEDVerboseLogging,
     },
-    prettifier: pinoPretty,
-  };
-
-  return pino(options);
+  });
 }
 
 export const logger = initLoggerFromEnv();
