@@ -2,7 +2,7 @@ import pg from "pg";
 import randomstring from "randomstring";
 import _ from "lodash";
 import { Params } from "../server/params";
-import { signPutRequest, signGetRequest } from "../util/s3";
+import { signPutRequest, signGetRequest, getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
@@ -157,6 +157,14 @@ spec: []`
     return supportBundle;
   }
 
+  public async supportBundleExists(id: string): Promise<boolean> {
+    const q = `SELECT count(1) AS count FROM supportbundle WHERE id = $1`;
+    const v = [id];
+    const result = await this.pool.query(q, v);
+
+    return result.rows[0].count === 1;
+  }
+
   public async assignTreeIndex(id: string, index: string): Promise<boolean> {
     const q = `update supportbundle set tree_index = $1 where id = $2`;
 
@@ -177,8 +185,24 @@ spec: []`
     return supportBundles;
   }
 
-  public async createSupportBundle(watchId: string, size: number): Promise<SupportBundle> {
+  // creates a SupportBundle object which is not stored in DB, but can be used to
+  // create signed upload URL
+  public async getBlankSupportBundle(watchId: string): Promise<SupportBundle> {
     const id = randomstring.generate({ capitalization: "lowercase" });
+    const status: SupportBundleStatus = "pending";
+
+    const supportBundle = new SupportBundle();
+    supportBundle.id = id;
+    supportBundle.watchId = watchId;
+    supportBundle.status = status;
+
+    return supportBundle;
+  }
+
+  public async createSupportBundle(watchId: string, size: number, id?: string): Promise<SupportBundle> {
+    if (!id) {
+      id = randomstring.generate({ capitalization: "lowercase" });
+    }
     const createdAt = new Date();
     const status: SupportBundleStatus = "pending";
 
@@ -231,4 +255,13 @@ spec: []`
     return bundleCommand;
   }
 
+  public async getSupportBundleFileInfo(supportBundleId: string): Promise<any> {
+    const params = {
+      Bucket: this.params.shipOutputBucket,
+      Key: `supportbundles/${supportBundleId}/supportbundle.tar.gz`,
+    };
+
+    const info = await getFileInfo(this.params, params);
+    return info
+  }
 }
