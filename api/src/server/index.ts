@@ -1,5 +1,5 @@
 import { Server } from "./server";
-import {ServerLoader, ServerSettings, OverrideMiddleware, LogIncomingRequestMiddleware, Res, Req} from "@tsed/common";
+import {RequestLogger, OverrideMiddleware, LogIncomingRequestMiddleware, Req} from "@tsed/common";
 import uuid from "uuid";
 
 import Express from "express";
@@ -21,13 +21,23 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 
   // mostly copy pasted, added suppress flag for quieter healthz logging
   protected configureRequest(request: Express.Request, suppress?: boolean) {
-    const verbose = (req: Express.Request) => this.requestToObject(req);
-    const info = (req: Express.Request) => this.minimalRequestPicker(req);
+    const {ignoreUrlPatterns = []} = this.injector.settings.logger;
+
+    const minimalInfo = (req: Express.Request) => this.minimalRequestPicker(req);
+    const requestObj = (req: Express.Request) => this.requestToObject(req);
+
+    request.log = new RequestLogger(this.injector.logger, {
+      id: request.ctx.id,
+      startDate: request.ctx.dateStart,
+      url: request.originalUrl || request.url,
+      ignoreUrlPatterns,
+      minimalRequestPicker: (obj: any) => ({...minimalInfo, ...obj}),
+      completeRequestPicker: (obj: any) => ({...requestObj, ...obj})
+    });
 
     if (!suppress) {
       return;
     }
-
   }
 
   // pretty much copy-pasted, but hooked into TSEDVerboseLogging from above to control multiline logging
