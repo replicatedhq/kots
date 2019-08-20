@@ -46,3 +46,4 @@ resources:
 - ./app.yaml
 - ./app_version.yaml
 - ./user_app.yaml
+- ./app_downstream.yaml
