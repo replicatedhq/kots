@@ -25,14 +25,13 @@ func AdminConsoleCmd() *cobra.Command {
 			v := viper.GetViper()
 
 			log := logger.NewLogger()
-			log.Info("")
 
 			if len(args) == 0 {
 				cmd.Help()
 				os.Exit(1)
 			}
 
-			podName, err := waitForWeb(args[0])
+			podName, err := k8sutil.WaitForWeb(args[0])
 			if err != nil {
 				return err
 			}
@@ -43,15 +42,15 @@ func AdminConsoleCmd() *cobra.Command {
 			}
 			defer close(stopCh)
 
-			log.Info("Press Ctrl+C to exit")
-			log.Info("Go to http://localhost:8800 to access the Admin Console")
+			log.ActionWithoutSpinner("Press Ctrl+C to exit")
+			log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
 
 			signalChan := make(chan os.Signal, 1)
 			signal.Notify(signalChan, os.Interrupt)
 
 			<-signalChan
 
-			log.Info("Cleaning up")
+			log.ActionWithoutSpinner("Cleaning up")
 
 			return nil
 		},

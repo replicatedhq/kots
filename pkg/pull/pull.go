@@ -21,12 +21,12 @@ type PullOptions struct {
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
 	log := logger.NewLogger()
-	log.Info("")
+	log.Initialize()
 
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 
-	log.Info("Pulling upstream")
+	log.ActionWithSpinner("Pulling upstream")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch upstream")
@@ -37,20 +37,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		CreateAppDir: true,
 		Overwrite:    pullOptions.Overwrite,
 	}
-	log.Info("Writing upstream")
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write upstream")
 	}
+	log.FinishSpinner()
 
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML: true,
 		Namespace:         pullOptions.Namespace,
 	}
-	log.Info("Creating base")
+	log.ActionWithSpinner("Creating base")
 	b, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
+	log.FinishSpinner()
 
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:   u.GetBaseDir(writeUpstreamOptions),
@@ -60,11 +61,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		return errors.Wrap(err, "failed to write base")
 	}
 
-	log.Info("Creating midstream")
+	log.ActionWithSpinner("Creating midstream")
 	m, err := midstream.CreateMidstream(b)
 	if err != nil {
 		return errors.Wrap(err, "failed to create midstream")
 	}
+	log.FinishSpinner()
 
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
@@ -76,7 +78,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	}
 
 	for _, downstreamName := range pullOptions.Downstreams {
-		log.Info("Creating downstream %q", downstreamName)
+		log.ActionWithSpinner("Creating downstream %q", downstreamName)
 		d, err := downstream.CreateDownstream(m, downstreamName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create downstream")
@@ -91,6 +93,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrap(err, "failed to write downstream")
 		}
+		log.FinishSpinner()
 	}
 	return nil
 }
