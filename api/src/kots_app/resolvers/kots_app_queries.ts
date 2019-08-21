@@ -3,6 +3,7 @@ import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
 import { KotsApp } from "../";
+import { Cluster } from "../../cluster";
 
 export function KotsQueries(stores: Stores) {
   return {
@@ -20,6 +21,13 @@ export function KotsQueries(stores: Stores) {
       }
       const result = await stores.kotsAppStore.getApp(_id);
       return result.toSchema();
+    },
+
+    async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
+      const { slug } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      const results = await stores.clusterStore.listClustersForKotsApp(appId);
+      return results;
     },
 
     // TODO: This code is currently duplicated between kots apps and wathes. 
