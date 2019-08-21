@@ -2,16 +2,19 @@ import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
+import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { getKotsApp } from "@src/queries/AppsQueries";
+import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { checkForUpdates } from "../../mutations/WatchMutations";
+import { createKotsDownstream } from "../../mutations/AppsMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import DetailPageApplication from "../watches/DetailPageApplication";
 import DetailPageIntegrations from "../watches/DetailPageIntegrations";
+import AddClusterModal from "../shared/modals/AddClusterModal";
 import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import WatchVersionHistory from "../watches/WatchVersionHistory";
@@ -118,10 +121,16 @@ class AppDetailPage extends Component {
       });
     });
   }
-  addClusterToWatch = (clusterId, githubPath) => {
-    const { clusterParentSlug } = this.state;
-    const upstreamUrl = `ship://ship-cloud/${clusterParentSlug}`;
-    this.props.history.push(`/watch/create/init?upstream=${upstreamUrl}&cluster_id=${clusterId}&path=${githubPath}`);
+
+  addClusterToApp = async (clusterId) => {
+    const app = this.props.getKotsAppQuery.getKotsApp;
+    try {
+      await this.props.createKotsDownstream(app.id, clusterId);
+      await this.props.listDownstreamsForAppQuery.refetch();
+      this.closeAddClusterModal();
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   createDownstreamForCluster = () => {
@@ -130,18 +139,30 @@ class AppDetailPage extends Component {
     this.props.history.push("/cluster/create");
   }
 
-  onEditApplicationClicked = (watch) => {
-    const { onActiveInitSession } = this.props;
+  handleViewFiles = () => {
+    const { slug } = this.props.match.params;
+    const currentSequence = this.props.getKotsAppQuery?.getKotsApp?.currentSequence;
+    this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
+  }
 
-    this.setState({ watchToEdit: watch, preparingUpdate: watch.cluster.id });
-    this.props.createUpdateSession(watch.id)
-      .then(({ data }) => {
-        const { createUpdateSession } = data;
-        const { id: initSessionId } = createUpdateSession;
-        onActiveInitSession(initSessionId);
-        this.props.history.push("/ship/update")
-      })
-      .catch(() => this.setState({ watchToEdit: null, preparingUpdate: "" }));
+  handleAddNewClusterClick = (app) => {
+    const downstreams = this.props.listDownstreamsForAppQuery.listDownstreamsForApp;
+    const existingIds = downstreams ? downstreams.map(d => d.id) : [];
+    this.setState({
+      addNewClusterModal: true,
+      clusterParentSlug: app.slug,
+      selectedAppName: app.name,
+      existingDeploymentClusters: existingIds
+    });
+  }
+
+  closeAddClusterModal = () => {
+    this.setState({
+      addNewClusterModal: false,
+      clusterParentSlug: "",
+      selectedAppName: "",
+      existingDeploymentClusters: []
+    })
   }
 
   /**
@@ -186,10 +207,14 @@ class AppDetailPage extends Component {
       getKotsAppQuery,
       listApps,
       refetchListApps,
-      rootDidInitialAppFetch
+      rootDidInitialAppFetch,
+      listDownstreamsForAppQuery,
     } = this.props;
 
     const {
+      displayRemoveClusterModal,
+      addNewClusterModal,
+      clusterToRemove,
       checkingUpdateText,
       updateError
     } = this.state;
@@ -269,7 +294,7 @@ class AppDetailPage extends Component {
                       <DetailPageApplication
                         watch={app}
                         refetchListApps={refetchListApps}
-                        refetchWatch={this.props.getKotsAppQuery ?.refetch}
+                        refetchWatch={this.props.getKotsAppQuery?.refetch}
                         updateCallback={this.refetchGraphQLData}
                         onActiveInitSession={this.props.onActiveInitSession}
                       />}
@@ -279,11 +304,13 @@ class AppDetailPage extends Component {
                         <DeploymentClusters
                           appDetailPage={true}
                           parentWatch={app}
+                          title={app.name}
+                          kotsApp={true}
                           parentClusterName={app.name}
                           preparingUpdate={this.state.preparingUpdate}
-                          childWatches={app.watches || []}
+                          childWatches={listDownstreamsForAppQuery?.listDownstreamsForApp || []}
                           handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
-                          onEditApplication={this.onEditApplicationClicked}
+                          handleViewFiles={this.handleViewFiles}
                           installLatestVersion={this.makeCurrentRelease}
                           toggleDeleteDeploymentModal={undefined}
                         />
@@ -343,6 +370,47 @@ class AppDetailPage extends Component {
             }
           </div>
         </SidebarLayout>
+        {addNewClusterModal &&
+          <Modal
+            isOpen={addNewClusterModal}
+            onRequestClose={this.closeAddClusterModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Add cluster modal"
+            ariaHideApp={false}
+            className="AddNewClusterModal--wrapper Modal"
+          >
+            <div className="Modal-body">
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.state.selectedWatchName} to a new downstream</h2>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
+              <AddClusterModal
+                onAddCluster={this.addClusterToApp}
+                watch={app}
+                onRequestClose={this.closeAddClusterModal}
+                createDownstreamForCluster={this.createDownstreamForCluster}
+                existingDeploymentClusters={this.state.existingDeploymentClusters}
+              />
+            </div>
+          </Modal>
+        }
+        {displayRemoveClusterModal &&
+          <Modal
+            isOpen={displayRemoveClusterModal}
+            onRequestClose={() => this.toggleDeleteDeploymentModal({}, "")}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Add cluster modal"
+            ariaHideApp={false}
+            className="RemoveClusterFromWatchModal--wrapper Modal"
+          >
+            <div className="Modal-body">
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.cluster.title}</h2>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.cluster.title}.</p>
+              <div className="u-marginTop--10 flex">
+                <button onClick={() => this.toggleDeleteDeploymentModal({}, "")} className="btn secondary u-marginRight--10">Cancel</button>
+                <button onClick={this.onDeleteDeployment} className="btn green primary">Delete deployment</button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
@@ -376,4 +444,32 @@ export default compose(
       }
     }
   }),
+  graphql(listDownstreamsForApp, {
+    name: "listDownstreamsForAppQuery",
+    skip: props => {
+      const { slug } = props.match.params;
+
+      // Skip if no variables (user at "/watches" URL)
+      if (!slug) {
+        return true;
+      }
+
+      return false;
+
+    },
+    options: props => {
+      const { slug } = props.match.params;
+      return {
+        fetchPolicy: "no-cache",
+        variables: {
+          slug: slug
+        }
+      }
+    }
+  }),
+  graphql(createKotsDownstream, {
+    props: ({ mutate }) => ({
+      createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
+    })
+  })
 )(AppDetailPage);

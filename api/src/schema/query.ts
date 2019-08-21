@@ -24,6 +24,7 @@ export const Query = `
 
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
+    listDownstreamsForApp(slug: String!): [Cluster]
     
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart

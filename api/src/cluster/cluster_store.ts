@@ -204,6 +204,26 @@ export class ClusterStore {
     return clusters;
   }
 
+  async listClustersForKotsApp(appId: string): Promise<Cluster[]> {
+    const q = `select cluster_id, c.id, c.cluster_type from app_downstream 
+      inner join cluster c on c.id = cluster_id 
+      where app_id = $1
+      order by created_at, title`;
+    const v = [appId];
+
+    const result = await this.pool.query(q, v);
+    const clusters: Cluster[] = [];
+    for (const row of result.rows) {
+      if (row.cluster_type === "gitops") {
+        clusters.push(await this.getGitOpsCluster(row.id));
+      } else {
+        clusters.push(await this.getShipOpsCluster(row.id));
+      }
+    }
+
+    return clusters;
+  }
+
   async getForWatch(watchId: string): Promise<Cluster | void> {
     const q = `select cluster_id, cluster_type from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
     const v = [watchId];

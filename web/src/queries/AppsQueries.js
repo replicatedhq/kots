@@ -318,4 +318,27 @@ export const getKotsFilesRaw = `
   }
 `;
 
-export const getKotsFiles = gql(getKotsFilesRaw)
+export const getKotsFiles = gql(getKotsFilesRaw);
+
+export const listDownstreamsForAppRaw = `
+  query listDownstreamsForApp($slug: String!) {
+    listDownstreamsForApp(slug: $slug) {
+      id
+      title
+      slug
+      createdOn
+      lastUpdated
+      gitOpsRef {
+        owner
+        repo
+        branch
+      }
+      shipOpsRef {
+        token
+      }
+      totalApplicationCount
+    }
+  }
+`;
+
+export const listDownstreamsForApp = gql(listDownstreamsForAppRaw);

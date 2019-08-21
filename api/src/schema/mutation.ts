@@ -12,6 +12,8 @@ type Mutation {
   updateCluster(clusterId: String!, clusterName: String!, gitOpsRef: GitOpsRefInput): Cluster
   deleteCluster(clusterId: String!): Boolean
 
+  createKotsDownstream(appId: String!, clusterId: String!): Boolean
+
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch
   deleteWatch(watchId: String!, childWatchIds: [String]): Boolean
