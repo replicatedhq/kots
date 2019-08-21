@@ -20,6 +20,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ResultRequest struct {
+	URI    string `json:"uri" yaml:"uri"`
+	Method string `json:"method" yaml:"method"`
+}
+
+type AfterCollection struct {
+	UploadResultsTo *ResultRequest `json:"uploadResultsTo,omitempty" yaml:"uploadResultsTo,omitempty"`
+	Callback        *ResultRequest `json:"callback,omitempty" yaml:"callback,omitempty"`
+}
+
+// CollectorSpec defines the desired state of Collector
+type CollectorSpec struct {
+	Collectors      []*Collect         `json:"collectors,omitempty" yaml:"collectors,omitempty"`
+	AfterCollection []*AfterCollection `json:"afterCollection,omitempty" yaml:"afterCollection,omitempty"`
+}
+
 // CollectorStatus defines the observed state of Collector
 type CollectorStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -35,7 +51,7 @@ type Collector struct {
 	metav1.TypeMeta   `json:",inline" yaml:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 
-	Spec   []*Collect      `json:"spec,omitempty" yaml:"spec,omitempty"`
+	Spec   CollectorSpec   `json:"spec,omitempty" yaml:"spec,omitempty"`
 	Status CollectorStatus `json:"status,omitempty"`
 }
 
