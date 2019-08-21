@@ -2,7 +2,9 @@ package cli
 
 import (
 	"os"
+	"path"
 
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,6 +37,17 @@ func PullCmd() *cobra.Command {
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
+			}
+
+			log := logger.NewLogger()
+			log.Initialize()
+			log.Info("Kubernetes application files created in %q", v.GetString("rootdir"))
+			if len(v.GetStringSlice("downstream")) == 0 {
+				log.Info("To deploy, run kubectl -k %s", path.Join(v.GetString("rootdir"), "overlays", "midstream"))
+			} else if len(v.GetStringSlice("downstream")) == 1 {
+				log.Info("To deploy, run kubectl -k %s", path.Join(v.GetString("rootdir"), "overlays", "downstreams", v.GetStringSlice("downstream")[0]))
+			} else {
+				log.Info("To deploy, run kubectl -k from the downstream directory you would like to deploy")
 			}
 
 			return nil

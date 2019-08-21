@@ -26,6 +26,13 @@ func (l *Logger) Finish() {
 	fmt.Println("")
 }
 
+func (l *Logger) Info(msg string, args ...interface{}) {
+	yellow := color.New(color.FgHiYellow)
+	yellow.Printf("    ")
+	yellow.Println(fmt.Sprintf(msg, args...))
+	yellow.Println("")
+}
+
 func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
 	white := color.New(color.FgHiWhite)
 	white.Printf("  • ")
