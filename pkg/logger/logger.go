@@ -34,6 +34,11 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
+	if msg == "" {
+		fmt.Println("")
+		return
+	}
+
 	white := color.New(color.FgHiWhite)
 	white.Printf("  • ")
 	white.Println(fmt.Sprintf(msg, args...))

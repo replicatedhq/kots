@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.4.2
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
+	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/apex/log v1.1.1
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect

@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 
+	"github.com/ahmetalpbalkan/go-cursor"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -34,6 +36,9 @@ func InstallCmd() *cobra.Command {
 				cmd.Help()
 				os.Exit(1)
 			}
+
+			fmt.Print(cursor.Hide())
+			defer fmt.Print(cursor.Show())
 
 			rootDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -117,8 +122,10 @@ func InstallCmd() *cobra.Command {
 			}
 			defer close(stopCh)
 
+			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("Press Ctrl+C to exit")
 			log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
+			log.ActionWithoutSpinner("")
 
 			signalChan := make(chan os.Signal, 1)
 			signal.Notify(signalChan, os.Interrupt)
