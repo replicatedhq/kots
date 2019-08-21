@@ -15,6 +15,7 @@ import NotFound from "../static/NotFound";
 import DetailPageApplication from "../watches/DetailPageApplication";
 import DetailPageIntegrations from "../watches/DetailPageIntegrations";
 import AddClusterModal from "../shared/modals/AddClusterModal";
+import CodeSnippet from "../shared/CodeSnippet";
 import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import WatchVersionHistory from "../watches/WatchVersionHistory";
@@ -45,6 +46,7 @@ class AppDetailPage extends Component {
       checkingForUpdates: false,
       checkingUpdateText: "Checking for updates",
       updateError: false,
+      displayDownloadCommandModal: false
     }
   }
 
@@ -133,6 +135,10 @@ class AppDetailPage extends Component {
     }
   }
 
+  toggleDisplayDownloadModal = () => {
+    this.setState({ displayDownloadCommandModal: !this.state.displayDownloadCommandModal });
+  }
+
   createDownstreamForCluster = () => {
     const { clusterParentSlug } = this.state;
     localStorage.setItem("clusterRedirect", `/watch/${clusterParentSlug}/downstreams?add=1`);
@@ -216,7 +222,8 @@ class AppDetailPage extends Component {
       addNewClusterModal,
       clusterToRemove,
       checkingUpdateText,
-      updateError
+      updateError,
+      displayDownloadCommandModal
     } = this.state;
 
     const centeredLoader = (
@@ -307,6 +314,7 @@ class AppDetailPage extends Component {
                           title={app.name}
                           kotsApp={true}
                           parentClusterName={app.name}
+                          displayDownloadCommand={this.toggleDisplayDownloadModal}
                           preparingUpdate={this.state.preparingUpdate}
                           childWatches={listDownstreamsForAppQuery?.listDownstreamsForApp || []}
                           handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
@@ -407,6 +415,32 @@ class AppDetailPage extends Component {
               <div className="u-marginTop--10 flex">
                 <button onClick={() => this.toggleDeleteDeploymentModal({}, "")} className="btn secondary u-marginRight--10">Cancel</button>
                 <button onClick={this.onDeleteDeployment} className="btn green primary">Delete deployment</button>
+              </div>
+            </div>
+          </Modal>
+        }
+        {displayDownloadCommandModal &&
+          <Modal
+            isOpen={displayDownloadCommandModal}
+            onRequestClose={this.toggleDeleteDeploymentModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Download cluster command modal"
+            ariaHideApp={false}
+            className="DisplayDownloadCommandModal--wrapper Modal"
+          >
+            <div className="Modal-body">
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets</h2>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Run this command in your cluster to download the assets.</p>
+              <CodeSnippet
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              >
+                kubectl krew install kots
+                {`kubectl kots download <namespace>`}
+              </CodeSnippet>
+              <div className="u-marginTop--10 flex">
+                <button onClick={this.toggleDisplayDownloadModal} className="btn green primary">Ok, got it!</button>
               </div>
             </div>
           </Modal>

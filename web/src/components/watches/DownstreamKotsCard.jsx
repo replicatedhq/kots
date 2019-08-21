@@ -10,7 +10,7 @@ export default class DownstreamKotsCard extends React.Component {
     const {
       cluster,
       toggleDeleteDeploymentModal,
-      downloadAssetsForCluster,
+      displayDownloadCommand,
       viewFiles,
       isDownloadingAssets
      } = this.props;
@@ -79,7 +79,7 @@ export default class DownstreamKotsCard extends React.Component {
         <div className="flex flex1 alignItems--flexEnd">
           <div className="flex u-marginTop--20 u-borderTop--gray u-width--full">
             <div className="flex1 flex card-action-wrapper u-cursor--pointer">
-              <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={isDownloadingAssets ? null : () => { downloadAssetsForCluster(cluster.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
+              <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={isDownloadingAssets ? null : displayDownloadCommand }>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
             </div>
             <div className="flex1 flex card-action-wrapper u-cursor--pointer">
               <span onClick={viewFiles} className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center">View files</span>

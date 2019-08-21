@@ -36,7 +36,8 @@ class DeploymentClusters extends React.Component {
       toggleDeleteDeploymentModal,
       title,
       kotsApp,
-      handleViewFiles
+      handleViewFiles,
+      displayDownloadCommand
     } = this.props;
     const { isDownloadingAssets } = this.state;
     const pageTitle = title || parentWatch.watchName;
@@ -62,6 +63,7 @@ class DeploymentClusters extends React.Component {
                       cluster={childWatch}
                       viewFiles={handleViewFiles}
                       downloadAssetsForCluster={this.downloadAssetsForCluster}
+                      displayDownloadCommand={displayDownloadCommand}
                     />
                   )
                 } else {
