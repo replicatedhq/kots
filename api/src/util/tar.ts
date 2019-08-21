@@ -2,6 +2,7 @@ import { Parse as TarParser } from "tar";
 import { PassThrough as PassThroughStream } from "stream";
 import path from "path";
 import * as _ from "lodash";
+import { logger } from "../server/logger";
 
 function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
   const stream = new PassThroughStream();
@@ -21,9 +22,9 @@ export function extractDownstreamNamesFromTarball(tarball: Buffer): Promise<stri
         });
 
         // the first part is always the name of the directory it was uploaded from
-        if (parts.length === 4) {
-          if (parts[0] === "overlays" && parts[1] === "downstreams" && parts[3] === "kustomization.yaml") {
-            downstreamNames.push(parts[2]);
+        if (parts.length === 5) {
+          if (parts[1] === "overlays" && parts[2] === "downstreams" && parts[4] === "kustomization.yaml") {
+            downstreamNames.push(parts[3]);
           }
         }
         return false;

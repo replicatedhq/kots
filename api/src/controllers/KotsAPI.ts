@@ -8,6 +8,7 @@ import fs from "fs";
 import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
+import { logger } from "../server/logger";
 
 interface CreateAppBody {
   metadata: string;
