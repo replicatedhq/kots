@@ -106,6 +106,25 @@ export async function checkExists(params: Params, requestParams: AWS.S3.Types.He
   });
 }
 
+export async function getFileInfo(params: Params, requestParams: AWS.S3.Types.HeadObjectRequest): Promise<any> {
+  if (params.s3BucketEndpoint && params.s3BucketEndpoint.trim() !== "") {
+    requestParams.Key = `${params.shipOutputBucket.trim()}/${requestParams.Key}`;
+  }
+
+  return new Promise<any>((resolve, reject) => {
+    const s3 = getS3(params);
+
+    s3.headObject(requestParams, (err, info) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve(info);
+    });
+  });
+}
+
 export async function bucketExists(params: Params, bucketName: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     const s3 = getS3(params);
