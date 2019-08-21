@@ -5,7 +5,7 @@ release:
     name: kots
 builds:
   - id: kots
-  - goos:
+    goos:
     - linux
     - windows
     - darwin
