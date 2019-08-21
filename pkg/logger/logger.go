@@ -39,6 +39,12 @@ func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
 	white.Println(fmt.Sprintf(msg, args...))
 }
 
+func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
+	white := color.New(color.FgHiWhite)
+	white.Printf("    • ")
+	white.Println(fmt.Sprintf(msg, args...))
+}
+
 func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 	s := spin.New()
 
@@ -64,6 +70,47 @@ func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 			}
 		}
 	}()
+}
+
+func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
+	s := spin.New()
+
+	c := color.New(color.FgHiCyan)
+	c.Printf("    • ")
+	c.Printf(msg, args...)
+	c.Printf(" %s", s.Next())
+
+	l.spinnerStopCh = make(chan bool)
+	l.spinnerMsg = msg
+	l.spinnerArgs = args
+
+	go func() {
+		for {
+			select {
+			case <-l.spinnerStopCh:
+				return
+			case <-time.After(time.Millisecond * 100):
+				c.Printf("\r")
+				c.Printf("    • ")
+				c.Printf(msg, args...)
+				c.Printf(" %s", s.Next())
+			}
+		}
+	}()
+}
+
+func (l *Logger) FinishChildSpinner() {
+	white := color.New(color.FgHiWhite)
+	green := color.New(color.FgHiGreen)
+
+	white.Printf("\r")
+	white.Printf("    • ")
+	white.Printf(l.spinnerMsg, l.spinnerArgs...)
+	green.Printf(" ✓")
+	white.Printf("  \n")
+
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
 }
 
 func (l *Logger) FinishSpinner() {

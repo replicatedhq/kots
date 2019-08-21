@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			defer os.RemoveAll(rootDir)
+			// defer os.RemoveAll(rootDir)
 
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
@@ -65,11 +66,10 @@ func InstallCmd() *cobra.Command {
 			}
 
 			log := logger.NewLogger()
-			log.ActionWithSpinner("Deploying Admin Console")
+			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				return err
 			}
-			log.FinishSpinner()
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
@@ -78,11 +78,32 @@ func InstallCmd() *cobra.Command {
 				NewAppName: v.GetString("name"),
 			}
 
-			log.ActionWithSpinner("Uploading local application to Admin Console")
-			if err := upload.Upload(rootDir, uploadOptions); err != nil {
+			// get the first dir in rootDir and use that as the upload dir
+			subdirs, err := ioutil.ReadDir(rootDir)
+			if err != nil {
+				return err
+			}
+			uploadRootDir := ""
+			for _, subdir := range subdirs {
+				if subdir.IsDir() {
+					if subdir.Name() == "." {
+						continue
+					}
+					if subdir.Name() == ".." {
+						continue
+					}
+
+					uploadRootDir = path.Join(rootDir, subdir.Name())
+					break
+				}
+			}
+			if uploadRootDir == "" {
+				return errors.New("unable to find directory in rootDir")
+			}
+
+			if err := upload.Upload(uploadRootDir, uploadOptions); err != nil {
 				return errors.Cause(err)
 			}
-			log.FinishSpinner()
 
 			// port forward
 			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"))

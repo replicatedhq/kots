@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,8 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
+	log := logger.NewLogger()
+
 	namespace, err := clientset.CoreV1().Namespaces().Get(deployOptions.Namespace, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		namespace = &corev1.Namespace{
@@ -55,10 +58,13 @@ func Deploy(deployOptions DeployOptions) error {
 			},
 		}
 
+		log.ChildActionWithSpinner("Creating namespace")
 		_, err := clientset.CoreV1().Namespaces().Create(namespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to create namespace")
 		}
+		log.FinishChildSpinner()
+
 	} else if err != nil {
 		return errors.Wrap(err, "failed to get namespace")
 	}
@@ -87,9 +93,11 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to ensure api exists")
 	}
 
+	log.ChildActionWithSpinner("Waiting for kotsadm API to be ready")
 	if err := waitForAPI(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for API")
 	}
+	log.FinishSpinner()
 
 	if err := ensureWeb(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web exists")

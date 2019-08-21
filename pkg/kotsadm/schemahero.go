@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -15,10 +16,13 @@ func runSchemaHeroMigrations(deployOptions DeployOptions, clientset *kubernetes.
 	// a priv. so we just deploy database migrations here, at deployment time
 
 	// find a ready postgres container
+	log := logger.NewLogger()
+	log.ChildActionWithSpinner("Waiting for postgres to be ready")
 	_, err := waitForHealthyPostgres(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to find health postgres pod")
 	}
+	log.FinishChildSpinner()
 
 	// Deploy the migration pod with an informer attached to clean it up
 	if err := createSchemaHeroPod(deployOptions, clientset); err != nil {

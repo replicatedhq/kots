@@ -15,6 +15,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -59,6 +60,9 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	}
 
 	// Find the kotadm-api pod
+	log := logger.NewLogger()
+	log.ActionWithSpinner("Uploading local application to Admin Console")
+
 	podName, err := findKotsadm(uploadOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -98,6 +102,8 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	if err := json.Unmarshal(b, &uploadResponse); err != nil {
 		return errors.Wrap(err, "failed to unmarshal response")
 	}
+
+	log.FinishSpinner()
 
 	return nil
 }
