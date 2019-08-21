@@ -87,4 +87,4 @@
 
 [[constraint]]
   name = "github.com/replicatedhq/troubleshoot"
-  version = "0.9.1"
+  version = "v0.9.5"

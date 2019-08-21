@@ -991,15 +991,15 @@
   revision = "v0.50.0"
 
 [[projects]]
-  digest = "1:1ae8e15c904a3d804c7775f8e8f1484ebf8e6d907ce1127e1faaa3c18c0c407c"
+  digest = "1:b5e9e44eed9fe1168356f823c7aa0a90caf8fae5b15b4a6ca8cd80fad4d5d762"
   name = "github.com/replicatedhq/troubleshoot"
   packages = [
     "pkg/apis/troubleshoot/v1beta1",
     "pkg/client/troubleshootclientset/scheme",
   ]
   pruneopts = "UT"
-  revision = "145370367f5dc9b57bf63a4bdd7ec58b4f632a74"
-  version = "v0.9.1"
+  revision = "ed9264ed04636151495e98ffd4a80860e1a03c5b"
+  version = "v0.9.5"
 
 [[projects]]
   digest = "1:6a4a11ba764a56d2758899ec6f3848d24698d48442ebce85ee7a3f63284526cd"
