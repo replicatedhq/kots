@@ -35,7 +35,8 @@ class DeploymentClusters extends React.Component {
       parentWatch,
       toggleDeleteDeploymentModal,
       title,
-      kotsApp
+      kotsApp,
+      handleViewFiles
     } = this.props;
     const { isDownloadingAssets } = this.state;
     const pageTitle = title || parentWatch.watchName;
@@ -59,6 +60,8 @@ class DeploymentClusters extends React.Component {
                     <DownstreamKotsCard
                       key={childWatch.id}
                       cluster={childWatch}
+                      viewFiles={handleViewFiles}
+                      downloadAssetsForCluster={this.downloadAssetsForCluster}
                     />
                   )
                 } else {

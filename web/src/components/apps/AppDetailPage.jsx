@@ -123,12 +123,10 @@ class AppDetailPage extends Component {
   }
 
   addClusterToApp = async (clusterId) => {
-    console.log(clusterId);
-    // TODO: GitHub path?
     const app = this.props.getKotsAppQuery.getKotsApp;
     try {
       await this.props.createKotsDownstream(app.id, clusterId);
-      // TODO: refetch app to show the added downstreams
+      await this.props.listDownstreamsForAppQuery.refetch();
       this.closeAddClusterModal();
     } catch (error) {
       console.log(error);
@@ -141,26 +139,20 @@ class AppDetailPage extends Component {
     this.props.history.push("/cluster/create");
   }
 
-  onEditApplicationClicked = (watch) => {
-    const { onActiveInitSession } = this.props;
-
-    this.setState({ watchToEdit: watch, preparingUpdate: watch.cluster.id });
-    this.props.createUpdateSession(watch.id)
-      .then(({ data }) => {
-        const { createUpdateSession } = data;
-        const { id: initSessionId } = createUpdateSession;
-        onActiveInitSession(initSessionId);
-        this.props.history.push("/ship/update")
-      })
-      .catch(() => this.setState({ watchToEdit: null, preparingUpdate: "" }));
+  handleViewFiles = () => {
+    const { slug } = this.props.match.params;
+    const currentSequence = this.props.getKotsAppQuery?.getKotsApp?.currentSequence;
+    this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
   }
 
   handleAddNewClusterClick = (app) => {
+    const downstreams = this.props.listDownstreamsForAppQuery.listDownstreamsForApp;
+    const existingIds = downstreams ? downstreams.map(d => d.id) : [];
     this.setState({
       addNewClusterModal: true,
       clusterParentSlug: app.slug,
       selectedAppName: app.name,
-      existingDeploymentClusters: []
+      existingDeploymentClusters: existingIds
     });
   }
 
@@ -318,7 +310,7 @@ class AppDetailPage extends Component {
                           preparingUpdate={this.state.preparingUpdate}
                           childWatches={listDownstreamsForAppQuery?.listDownstreamsForApp || []}
                           handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
-                          onEditApplication={this.onEditApplicationClicked}
+                          handleViewFiles={this.handleViewFiles}
                           installLatestVersion={this.makeCurrentRelease}
                           toggleDeleteDeploymentModal={undefined}
                         />

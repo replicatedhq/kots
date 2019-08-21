@@ -28,16 +28,6 @@ export default class DownstreamKotsCard extends React.Component {
               <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal()}></span>
             </div>
             <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
-            <div className="cluster-actions-wrapper u-fontSize--small u-lineHeight--normal">
-              <span>
-                <Link
-                  to={`/watch/${cluster.slug}/state`}
-                  className="replicated-link u-marginTop--5">
-                  View state.json
-                </Link>
-              </span>
-              <span className="replicated-link" onClick={isDownloadingAssets ? null : () => { downloadAssetsForCluster(cluster.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
-            </div>
           </div>
         </div>
         <div className="u-marginTop--10">
@@ -89,7 +79,7 @@ export default class DownstreamKotsCard extends React.Component {
         <div className="flex flex1 alignItems--flexEnd">
           <div className="flex u-marginTop--20 u-borderTop--gray u-width--full">
             <div className="flex1 flex card-action-wrapper u-cursor--pointer">
-              <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={undefined}>Do something</span>
+              <span className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center" onClick={isDownloadingAssets ? null : () => { downloadAssetsForCluster(cluster.id) }}>{isDownloadingAssets ? "Downloading" : "Download assets"}</span>
             </div>
             <div className="flex1 flex card-action-wrapper u-cursor--pointer">
               <span onClick={viewFiles} className="flex1 u-marginRight--5 u-color--astral card-action u-fontSize--small u-fontWeight--medium u-textAlign--center">View files</span>
