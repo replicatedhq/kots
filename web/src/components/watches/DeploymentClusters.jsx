@@ -64,6 +64,7 @@ class DeploymentClusters extends React.Component {
                       viewFiles={handleViewFiles}
                       downloadAssetsForCluster={this.downloadAssetsForCluster}
                       displayDownloadCommand={displayDownloadCommand}
+                      toggleDeleteDeploymentModal={toggleDeleteDeploymentModal}
                     />
                   )
                 } else {

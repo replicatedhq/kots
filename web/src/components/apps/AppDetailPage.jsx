@@ -7,7 +7,7 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { checkForUpdates } from "../../mutations/WatchMutations";
-import { createKotsDownstream } from "../../mutations/AppsMutations";
+import { createKotsDownstream, deleteKotsDownstream } from "../../mutations/AppsMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -160,6 +160,31 @@ class AppDetailPage extends Component {
       selectedAppName: app.name,
       existingDeploymentClusters: existingIds
     });
+  }
+
+  toggleDeleteDeploymentModal = (cluster) => {
+    const name = this.props.getKotsAppQuery?.getKotsApp?.name;
+    this.setState({
+      clusterToRemove: cluster,
+      selectedWatchName: name,
+      displayRemoveClusterModal: !this.state.displayRemoveClusterModal
+    });
+  }
+
+  onDeleteDeployment = async () => {
+    const { clusterToRemove } = this.state;
+    const { slug } = this.props.match.params;
+    try {
+      await this.props.deleteKotsDownstream(slug, clusterToRemove.id);
+      await this.props.listDownstreamsForAppQuery.refetch();
+      this.setState({
+        clusterToRemove: {},
+        selectedWatchName: "",
+        displayRemoveClusterModal: false
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   closeAddClusterModal = () => {
@@ -320,7 +345,7 @@ class AppDetailPage extends Component {
                           handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
                           handleViewFiles={this.handleViewFiles}
                           installLatestVersion={this.makeCurrentRelease}
-                          toggleDeleteDeploymentModal={undefined}
+                          toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
                         />
                       </div>
                     } />
@@ -410,8 +435,8 @@ class AppDetailPage extends Component {
             className="RemoveClusterFromWatchModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.cluster.title}</h2>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.cluster.title}.</p>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.title}</h2>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.title}.</p>
               <div className="u-marginTop--10 flex">
                 <button onClick={() => this.toggleDeleteDeploymentModal({}, "")} className="btn secondary u-marginRight--10">Cancel</button>
                 <button onClick={this.onDeleteDeployment} className="btn green primary">Delete deployment</button>
@@ -422,7 +447,7 @@ class AppDetailPage extends Component {
         {displayDownloadCommandModal &&
           <Modal
             isOpen={displayDownloadCommandModal}
-            onRequestClose={this.toggleDeleteDeploymentModal}
+            onRequestClose={this.toggleDisplayDownloadModal}
             shouldReturnFocusAfterClose={false}
             contentLabel="Download cluster command modal"
             ariaHideApp={false}
@@ -504,6 +529,11 @@ export default compose(
   graphql(createKotsDownstream, {
     props: ({ mutate }) => ({
       createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
+    })
+  }),
+  graphql(deleteKotsDownstream, {
+    props: ({ mutate }) => ({
+      deleteKotsDownstream: (slug, clusterId) => mutate({ variables: { slug, clusterId } })
     })
   })
 )(AppDetailPage);

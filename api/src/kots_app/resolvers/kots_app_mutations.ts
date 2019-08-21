@@ -17,6 +17,13 @@ export function KotsMutations(stores: Stores) {
       }
       await stores.kotsAppStore.createDownstream(appId, cluster.title, clusterId);
       return true;
+    },
+
+    async deleteKotsDownstream(root: any, args: any, context: Context) {
+      const { slug, clusterId } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      await stores.kotsAppStore.deleteDownstream(appId, clusterId);
+      return true;
     }
   }
 }

@@ -7,3 +7,11 @@ export const createKotsDownstreamRaw = `
 `;
 
 export const createKotsDownstream = gql(createKotsDownstreamRaw);
+
+export const deleteKotsDownstreamRaw = `
+  mutation deleteKotsDownstream($slug: String!, $clusterId: String!) {
+    deleteKotsDownstream(slug: $slug, clusterId: $clusterId)
+  }
+`;
+
+export const deleteKotsDownstream = gql(deleteKotsDownstreamRaw);

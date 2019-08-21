@@ -25,7 +25,7 @@ export default class DownstreamKotsCard extends React.Component {
           <div className="flex1 justifyContent--center">
             <div className="flex justifyContent--spaceBetween">
               <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster && cluster.title || "Downstream deployment"}</p>
-              <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal()}></span>
+              <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(cluster)}></span>
             </div>
             <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
           </div>
