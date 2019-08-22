@@ -73,7 +73,7 @@ class DeploymentClusters extends React.Component {
                     downloadAssetsForCluster={this.downloadAssetsForCluster}
                     toggleDeleteDeploymentModal={toggleDeleteDeploymentModal}
                     isDownloadingAssets={isDownloadingAssets}
-                    parentWatchWatch={parentWatch}
+                    parentWatch={parentWatch}
                   />
                   )
                 }
