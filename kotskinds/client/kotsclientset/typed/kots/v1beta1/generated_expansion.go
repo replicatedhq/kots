@@ -19,4 +19,8 @@ package v1beta1
 
 type AppExpansion interface{}
 
+type ConfigExpansion interface{}
+
+type ConfigValuesExpansion interface{}
+
 type LicenseExpansion interface{}

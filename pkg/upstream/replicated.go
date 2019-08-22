@@ -198,6 +198,9 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 
 	defer getResp.Body.Close()
 
+	b, _ := ioutil.ReadAll(getResp.Body)
+	ioutil.WriteFile("/home/marc.e.campbell/go/src/github.com/replicatedhq/kots/out.something", b, 0644)
+
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new gzip reader")
