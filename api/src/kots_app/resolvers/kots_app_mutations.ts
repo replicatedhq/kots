@@ -24,6 +24,14 @@ export function KotsMutations(stores: Stores) {
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       await stores.kotsAppStore.deleteDownstream(appId, clusterId);
       return true;
+    },
+
+    async deleteKotsApp(root: any, args: any, context: Context) {
+      const { slug } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      await stores.kotsAppStore.deleteApp(appId);
+      return true;
     }
+    
   }
 }

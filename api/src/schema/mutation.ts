@@ -14,6 +14,7 @@ type Mutation {
 
   createKotsDownstream(appId: String!, clusterId: String!): Boolean
   deleteKotsDownstream(slug: String!, clusterId: String!): Boolean
+  deleteKotsApp(slug: String!): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch

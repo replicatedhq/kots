@@ -24,6 +24,7 @@ import {
   createEditSession,
  } from "@src/mutations/WatchMutations";
 
+ import { deleteKotsApp } from "@src/mutations/AppsMutations";
  import isEmpty from "lodash/isEmpty";
  import { getWatchLicense } from "@src/queries/WatchQueries";
 
@@ -58,9 +59,10 @@ class DetailPageApplication extends Component {
   }
 
   setWatchState = (watch) => {
+    const isKotsApp = !!watch.name;
     this.setState({
-      appName: watch.watchName,
-      iconUri: watch.watchIcon
+      appName: isKotsApp ? watch.name : watch.watchName,
+      iconUri: isKotsApp ? watch.iconUri : watch.watchIcon
     });
   }
 
@@ -121,7 +123,8 @@ class DetailPageApplication extends Component {
 
   toggleConfirmDelete = () => {
     const { watch } = this.props;
-    const childWatchIds = this.state.showConfirmDelete ? [] : watch.watches.map((w) => w.id);
+    const isKotsApp = !!watch.name;
+    const childWatchIds = this.state.showConfirmDelete || isKotsApp ? [] : watch.watches.map((w) => w.id);
     this.setState({
       showConfirmDelete: !this.state.showConfirmDelete,
       childWatchIds
@@ -131,17 +134,29 @@ class DetailPageApplication extends Component {
   handleDeleteApp = async () => {
     const { watch } = this.props;
     const { confirmAppName, childWatchIds } = this.state;
-    const canDelete = confirmAppName === watch.watchName;
+    const isKotsApp = !!watch.name;
+    const watchName = isKotsApp ? watch.name : watch.watchName;
+    const canDelete = confirmAppName === watchName;
     this.setState({ confirmDeleteErr: false });
     if (canDelete) {
       this.setState({ deleteAppLoading: true });
-      await this.props.deleteWatch(watch.id, childWatchIds)
-        .then(() => {
-          this.props.refetchListApps().then(() => {
-            this.props.history.push("/watches");
-          });
-        })
-        .catch(() => this.setState({ deleteAppLoading: false }));
+      if (isKotsApp) {
+        try {
+          await this.props.deleteKotsApp(watch.slug);
+          await this.props.refetchListApps();
+          this.props.history.push("/watches");
+        } catch (error) {
+          this.setState({ deleteAppLoading: false })
+        }
+      } else {
+        try {
+          await this.props.deleteWatch(watch.id, childWatchIds)
+          await this.props.refetchListApps();
+          this.props.history.push("/watches");
+        } catch (error) {
+          this.setState({ deleteAppLoading: false })
+        }
+      }
     } else {
       this.setState({ confirmDeleteErr: true });
     }
@@ -487,6 +502,11 @@ export default compose(
   graphql(deleteWatch, {
     props: ({ mutate }) => ({
       deleteWatch: (watchId, childWatchIds) => mutate({ variables: { watchId, childWatchIds } })
+    })
+  }),
+  graphql(deleteKotsApp, {
+    props: ({ mutate }) => ({
+      deleteKotsApp: (slug) => mutate({ variables: { slug } })
     })
   }),
   graphql(getWatchLicense, {

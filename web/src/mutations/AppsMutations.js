@@ -15,3 +15,11 @@ export const deleteKotsDownstreamRaw = `
 `;
 
 export const deleteKotsDownstream = gql(deleteKotsDownstreamRaw);
+
+export const deleteKotsAppRaw = `
+  mutation deleteKotsApp($slug: String!) {
+    deleteKotsApp(slug: $slug)
+  }
+`;
+
+export const deleteKotsApp = gql(deleteKotsAppRaw);
