@@ -4,35 +4,29 @@ go 1.12
 
 require (
 	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
-	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.4.2
-	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/apex/log v1.1.1
+	github.com/cjbassi/drawille-go v0.0.0-20190126131713-27dc511fe6fd // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
-	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
-	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0
-	github.com/gizak/termui/v3 v3.0.0
+	github.com/gizak/termui/v3 v3.1.0
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gophercloud/gophercloud v0.0.0-20190126172459-c818fa66e4c8 // indirect
-	github.com/gregjones/httpcache v0.0.0-20170728041850-787624de3eb7 // indirect
-	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/manifoldco/promptui v0.3.2
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/replicatedhq/troubleshoot v0.9.5 // indirect
 	github.com/securego/gosec v0.0.0-20190709033609-4b59c948083c // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.3.0
 	github.com/tj/go-spin v1.1.0
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	golang.org/x/arch v0.0.0-20181203225421-5a4828bb7045 // indirect
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	google.golang.org/appengine v1.5.0 // indirect

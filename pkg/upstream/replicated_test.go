@@ -17,7 +17,6 @@ func Test_parseReplicatedURL(t *testing.T) {
 	tests := []struct {
 		name                 string
 		uri                  string
-		expectedHost         string
 		expectedAppSlug      string
 		expectedChannel      *string
 		expectedVersionLabel *string
@@ -26,7 +25,6 @@ func Test_parseReplicatedURL(t *testing.T) {
 		{
 			name:                 "replicated://app-slug",
 			uri:                  "replicated://app-slug",
-			expectedHost:         "replicated.app",
 			expectedAppSlug:      "app-slug",
 			expectedChannel:      nil,
 			expectedVersionLabel: nil,
@@ -35,7 +33,6 @@ func Test_parseReplicatedURL(t *testing.T) {
 		{
 			name:                 "replicated://app-slug@v1.2.0",
 			uri:                  "replicated://app-slug@v1.2.0",
-			expectedHost:         "replicated.app",
 			expectedAppSlug:      "app-slug",
 			expectedChannel:      nil,
 			expectedVersionLabel: &v1_2_0,
@@ -44,18 +41,8 @@ func Test_parseReplicatedURL(t *testing.T) {
 		{
 			name:                 "replicated://app-slug/channel",
 			uri:                  "replicated://app-slug/channel",
-			expectedHost:         "replicated.app",
 			expectedAppSlug:      "app-slug",
 			expectedChannel:      &channel,
-			expectedVersionLabel: nil,
-			expectedSequence:     nil,
-		},
-		{
-			name:                 "replicated://app-slug?host=my.hostname",
-			uri:                  "replicated://app-slug?host=my.hostname",
-			expectedHost:         "my.hostname",
-			expectedAppSlug:      "app-slug",
-			expectedChannel:      nil,
 			expectedVersionLabel: nil,
 			expectedSequence:     nil,
 		},
@@ -70,7 +57,6 @@ func Test_parseReplicatedURL(t *testing.T) {
 
 			replicatedUpstream, err := parseReplicatedURL(u)
 			req.NoError(err)
-			assert.Equal(t, test.expectedHost, replicatedUpstream.Host)
 			assert.Equal(t, test.expectedAppSlug, replicatedUpstream.AppSlug)
 
 			if test.expectedVersionLabel != nil || replicatedUpstream.VersionLabel != nil {

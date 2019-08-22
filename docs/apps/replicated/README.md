@@ -26,8 +26,3 @@ To specify the channel to use (the license must be assigned to the requested cha
 kubectl kots pull replicated://app-slug/channel
 ```
 
-To use a different upstream provider than the default (replicated.app):
-
-```shell
-kubectl kots pull replicated://app-slug?host=my.com
-```
