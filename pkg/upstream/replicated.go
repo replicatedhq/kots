@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -67,9 +69,11 @@ func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
 		release = parsedLocalRelease
 	}
 
-	application, err := findAppInRelease(release)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app from release")
+	application := findAppInRelease(release)
+	config := findConfigInRelease(release)
+	if config != nil {
+		configValues := createEmptyConfigValues(application.Name, config)
+		release.Manifests["config/values.yaml"] = mustMarshalConfigValues(configValues)
 	}
 
 	files, err := releaseToFiles(release)
@@ -221,6 +225,7 @@ func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
 			// remove localpath prefix
 			appPath := strings.TrimPrefix(path, localPath)
 			appPath = strings.TrimLeft(appPath, string(os.PathSeparator))
+
 			release.Manifests[appPath] = contents
 
 			return nil
@@ -288,7 +293,60 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func findAppInRelease(release *Release) (*kotsv1beta1.Application, error) {
+func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
+	kotsscheme.AddToScheme(scheme.Scheme)
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(configValues, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
+}
+
+func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config) *kotsv1beta1.ConfigValues {
+	emptyValues := kotsv1beta1.ConfigValuesSpec{}
+
+	// TODO add any VALUES or READONLY items from config
+
+	configValues := kotsv1beta1.ConfigValues{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "ConfigValues",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: applicationName,
+		},
+		Spec: emptyValues,
+	}
+
+	return &configValues
+}
+
+func findConfigInRelease(release *Release) *kotsv1beta1.Config {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	for _, content := range release.Manifests {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(content, nil, nil)
+		if err != nil {
+			continue
+		}
+
+		if gvk.Group == "kots.io" {
+			if gvk.Version == "v1beta1" {
+				if gvk.Kind == "Config" {
+					return obj.(*kotsv1beta1.Config)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -300,7 +358,7 @@ func findAppInRelease(release *Release) (*kotsv1beta1.Application, error) {
 		if gvk.Group == "kots.io" {
 			if gvk.Version == "v1beta1" {
 				if gvk.Kind == "Application" {
-					return obj.(*kotsv1beta1.Application), nil
+					return obj.(*kotsv1beta1.Application)
 				}
 			}
 		}
@@ -320,7 +378,7 @@ func findAppInRelease(release *Release) (*kotsv1beta1.Application, error) {
 			Icon:  "",
 		},
 	}
-	return app, nil
+	return app
 }
 
 func releaseToFiles(release *Release) ([]UpstreamFile, error) {

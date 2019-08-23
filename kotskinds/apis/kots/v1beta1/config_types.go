@@ -61,7 +61,7 @@ type ConfigGroup struct {
 
 // ConfigSpec defines the desired state of ConfigSpec
 type ConfigSpec struct {
-	Groups []ConfigGroup `json:",inline"`
+	Groups []ConfigGroup `json:"groups"`
 }
 
 // ConfigStatus defines the observed state of Config

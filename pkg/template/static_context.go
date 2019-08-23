@@ -1,4 +1,4 @@
-package templates
+package template
 
 /*
   This was taken from https://github.com/replicatedhq/replicated/blob/master/templates/context.go

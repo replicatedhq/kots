@@ -26,6 +26,8 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	_, err := os.Stat(renderDir)
 	if err == nil {
 		if options.Overwrite {
+			// TODO there are some files (config/values.yaml) that we need to keep
+
 			if err := os.RemoveAll(renderDir); err != nil {
 				return errors.Wrap(err, "failed to remove previous content in upstream")
 			}
