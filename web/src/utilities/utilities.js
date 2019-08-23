@@ -5,6 +5,7 @@ import pick from "lodash/pick";
 import find from "lodash/find";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
+import jwt from "jsonwebtoken";
 import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -130,7 +131,7 @@ export function getWatchLicenseFromState(watch) {
     if (appMeta?.license?.expiresAt === "0001-01-01T00:00:00Z") {
       appMeta.license.expiresAt = null;
     }
-    
+
     const license = {
       ...appMeta.license,
       channel,
@@ -239,6 +240,18 @@ export function getFileFormat(selectedFile) {
  */
 export function isHelmChart(watch) {
   return Boolean(watch.helmName);
+}
+/**
+ * @return {boolean} - true if user is using admin console/shared password
+ */
+export function isSingleTenant() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return false;
+  }
+  const decodedToken = jwt.decode(token);
+
+  return !!decodedToken.isSingleTenant;
 }
 
 export const Utilities = {

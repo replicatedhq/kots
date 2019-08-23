@@ -106,7 +106,8 @@ export function UserMutations(stores: Stores, params: Params) {
       if (!validPassword) {
         throw new ReplicatedError("Password is incorrect");
       }
-      const sessionToken = await stores.sessionStore.createPasswordSession(user.id);
+      // Passing in "true" as second param to denote this is an admin console user
+      const sessionToken = await stores.sessionStore.createPasswordSession(user.id, true);
       return {
         token: sessionToken,
         userId: user.id,

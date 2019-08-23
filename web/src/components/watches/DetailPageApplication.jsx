@@ -7,6 +7,7 @@ import truncateMiddle from "truncate-middle";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import PaperIcon from "../shared/PaperIcon";
+import { isSingleTenant } from "@src/utilities/utilities";
 
 import {
   Utilities,
@@ -376,16 +377,18 @@ class DetailPageApplication extends Component {
               </p>
             </div>
             }
-            <WatchContributors
-              title="contributors"
-              className="u-marginTop--30"
-              refetchWatch={this.props.refetchWatch}
-              contributors={watch.contributors || []}
-              watchName={isKotsApp ? watch.name : watch.watchName}
-              watchId={watch.id}
-              watchCallback={updateCallback}
-              slug={watch.slug}
-            />
+            {!isSingleTenant() && (
+              <WatchContributors
+                title="contributors"
+                className="u-marginTop--30"
+                refetchWatch={this.props.refetchWatch}
+                contributors={watch.contributors || []}
+                watchName={isKotsApp ? watch.name : watch.watchName}
+                watchId={watch.id}
+                watchCallback={updateCallback}
+                slug={watch.slug}
+              />
+            )}
           </div>
         </div>
         <Modal
