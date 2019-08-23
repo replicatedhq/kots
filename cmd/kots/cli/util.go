@@ -2,15 +2,16 @@ package cli
 
 import (
 	"os"
+	"path"
 	"strings"
 )
 
-func ExpandDir(path string) string {
-	if !strings.HasPrefix(path, "~") {
-		return path
+func ExpandDir(input string) string {
+	if !strings.HasPrefix(input, "~") {
+		return input
 	}
 
-	return homeDir() + path[1:]
+	return path.Join(homeDir(), input[1:])
 }
 
 func homeDir() string {
