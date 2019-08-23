@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -72,7 +73,11 @@ func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
 	application := findAppInRelease(release)
 	config := findConfigInRelease(release)
 	if config != nil {
-		configValues := createEmptyConfigValues(application.Name, config)
+		configValues, err := createEmptyConfigValues(application.Name, config)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create empty config values")
+		}
+
 		release.Manifests["config/values.yaml"] = mustMarshalConfigValues(configValues)
 	}
 
@@ -199,7 +204,6 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (*kotsv1b
 
 		return license, nil
 	}
-
 }
 
 func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
@@ -306,10 +310,26 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config) *kotsv1beta1.ConfigValues {
-	emptyValues := kotsv1beta1.ConfigValuesSpec{}
+func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config) (*kotsv1beta1.ConfigValues, error) {
+	emptyValues := kotsv1beta1.ConfigValuesSpec{
+		Values: map[string]string{},
+	}
 
-	// TODO add any VALUES or READONLY items from config
+	builder := template.Builder{}
+	builder.AddCtx(template.StaticCtx{})
+
+	for _, group := range config.Spec.Groups {
+		for _, item := range group.Items {
+			if item.Value != "" {
+				rendered, err := builder.RenderTemplate(item.Name, item.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to render config item value")
+				}
+
+				emptyValues.Values[item.Name] = rendered
+			}
+		}
+	}
 
 	configValues := kotsv1beta1.ConfigValues{
 		TypeMeta: metav1.TypeMeta{
@@ -322,7 +342,7 @@ func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config)
 		Spec: emptyValues,
 	}
 
-	return &configValues
+	return &configValues, nil
 }
 
 func findConfigInRelease(release *Release) *kotsv1beta1.Config {
