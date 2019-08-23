@@ -17,7 +17,14 @@ export function TroubleshootQueries(stores: Stores) {
 
     async listSupportBundles(root: any, { watchSlug }, context: Context) {
       const watch = await context.findWatch(watchSlug);
-      const supportBundles = await stores.troubleshootStore.listSupportBundles(watch.id);
+      let supportBundles = await stores.troubleshootStore.listSupportBundles(watch.id);
+
+      const watchIds = await stores.watchStore.listChildWatchIds(watch.id);      
+      for (const watchId of watchIds) {
+        const childBundles = await stores.troubleshootStore.listSupportBundles(watchId);
+        supportBundles = supportBundles.concat(childBundles);
+      }
+
       return _.map(supportBundles, (supportBundle) => {
         return supportBundle.toSchema();
       });
