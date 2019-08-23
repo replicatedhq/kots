@@ -16,7 +16,7 @@ import {
   getReadableLicenseType,
   getLicenseExpiryDate,
   getWatchLicenseFromState,
-  isKotsApp,
+  isKotsApplication,
 } from "@src/utilities/utilities";
 
 import {
@@ -60,7 +60,7 @@ class DetailPageApplication extends Component {
   }
 
   setWatchState = (watch) => {
-    const isKotsApp = isKotsApp(watch);
+    const isKotsApp = isKotsApplication(watch);
     this.setState({
       appName: isKotsApp ? watch.name : watch.watchName,
       iconUri: isKotsApp ? watch.iconUri : watch.watchIcon
@@ -124,7 +124,7 @@ class DetailPageApplication extends Component {
 
   toggleConfirmDelete = () => {
     const { watch } = this.props;
-    const isKotsApp = isKotsApp(watch);
+    const isKotsApp = isKotsApplication(watch);
     const childWatchIds = this.state.showConfirmDelete || isKotsApp ? [] : watch.watches.map((w) => w.id);
     this.setState({
       showConfirmDelete: !this.state.showConfirmDelete,
@@ -135,7 +135,7 @@ class DetailPageApplication extends Component {
   handleDeleteApp = async () => {
     const { watch } = this.props;
     const { confirmAppName, childWatchIds } = this.state;
-    const isKotsApp = isKotsApp(watch);
+    const isKotsApp = isKotsApplication(watch);
     const watchName = isKotsApp ? watch.name : watch.watchName;
     const canDelete = confirmAppName === watchName;
     this.setState({ confirmDeleteErr: false });
@@ -200,7 +200,7 @@ class DetailPageApplication extends Component {
     if (watch !== lastProps.watch && watch) {
       this.setWatchState(watch)
     }
-    const isKotsApp = isKotsApp(watch);
+    const isKotsApp = isKotsApplication(watch);
     // current license info
     if (!isKotsApp && this.props.getWatchLicense?.error && !this.state.watchLicense) {
       // no current license found in db, construct from stateJSON
@@ -233,7 +233,7 @@ class DetailPageApplication extends Component {
     const { preparingAppUpdate, watchLicense } = this.state;
     const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
-    const isKotsApp = isKotsApp(watch);
+    const isKotsApp = isKotsApplication(watch);
 
     return (
       <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">

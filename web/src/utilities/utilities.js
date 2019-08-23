@@ -258,7 +258,7 @@ export function isSingleTenant() {
  * @param {Watch} watch - watch to determine type
  * @return {Boolean}
  */
-export function isKotsApp(watch) {
+export function isKotsApplication(watch) {
   return Boolean(watch.name);
 }
 
