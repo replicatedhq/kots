@@ -36,6 +36,7 @@ func PullCmd() *cobra.Command {
 				Downstreams: v.GetStringSlice("downstream"),
 				LocalPath:   ExpandDir(v.GetString("local-path")),
 				LicenseFile: ExpandDir(v.GetString("license-file")),
+				ExcludeKotsKinds: b.GetBool("exclude-kots-kinds"),
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
@@ -64,6 +65,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().Bool("exclude-kots-kinds", false, "set to true to exclude rendering kots custom objects to the base directory")
 
 	return cmd
 }

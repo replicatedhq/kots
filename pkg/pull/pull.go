@@ -12,13 +12,14 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI string
-	RootDir     string
-	Overwrite   bool
-	Namespace   string
-	Downstreams []string
-	LocalPath   string
-	LicenseFile string
+	HelmRepoURI      string
+	RootDir          string
+	Overwrite        bool
+	Namespace        string
+	Downstreams      []string
+	LocalPath        string
+	LicenseFile      string
+	ExcludeKotsKinds bool
 }
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
@@ -60,8 +61,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	log.FinishSpinner()
 
 	writeBaseOptions := base.WriteOptions{
-		BaseDir:   u.GetBaseDir(writeUpstreamOptions),
-		Overwrite: pullOptions.Overwrite,
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		Overwrite:        pullOptions.Overwrite,
+		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return errors.Wrap(err, "failed to write base")

@@ -12,8 +12,9 @@ import (
 )
 
 type WriteOptions struct {
-	BaseDir   string
-	Overwrite bool
+	BaseDir          string
+	Overwrite        bool
+	ExcludeKotsKinds bool
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
@@ -32,7 +33,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	kustomizeResources := []string{}
 	for _, file := range b.Files {
-		ok, err := file.ShouldBeIncludedInBase()
+		ok, err := file.ShouldBeIncludedInBase(options.ExcludeKotsKinds)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if file should be in base")
 		}

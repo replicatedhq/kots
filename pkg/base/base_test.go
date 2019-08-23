@@ -9,20 +9,81 @@ import (
 
 func TestShouldBeIncludedInBase(t *testing.T) {
 	tests := []struct {
-		name     string
-		path     string
-		content  []byte
-		expected bool
+		name             string
+		path             string
+		content          []byte
+		excludeKotsKinds bool
+		expected         bool
 	}{
 		{
-			name:     "NOTES.txt",
-			path:     "NOTES.txt",
-			content:  []byte("this is a notes.txt\nfrom helm"),
-			expected: false,
+			name:             "NOTES.txt",
+			path:             "NOTES.txt",
+			content:          []byte("this is a notes.txt\nfrom helm"),
+			excludeKotsKinds: false,
+			expected:         false,
 		},
 		{
-			name: "some-deployment.yaml",
-			path: "some-deployment.yaml",
+			name: "config.yaml excluded",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         false,
+		},
+		{
+			name: "config.yaml not excluded",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: false,
+			expected:         true,
+		},
+		{
+			name:             "some-deployment.yaml",
+			path:             "some-deployment.yaml",
+			excludeKotsKinds: false,
 			content: []byte(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,8 +106,9 @@ spec:
 			expected: true,
 		},
 		{
-			name: "a-custom-resource.yaml",
-			path: "a-custom-resource.yaml",
+			name:             "a-custom-resource.yaml",
+			path:             "a-custom-resource.yaml",
+			excludeKotsKinds: false,
 			content: []byte(`apiVersion: databases.schemahero.io/v1alpha2
 kind: Database
 metadata:
@@ -72,7 +134,7 @@ connection:
 				Content: test.content,
 			}
 
-			actual, err := b.ShouldBeIncludedInBase()
+			actual, err := b.ShouldBeIncludedInBase(test.excludeKotsKinds)
 			req.NoError(err)
 
 			assert.Equal(t, test.expected, actual)
