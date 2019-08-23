@@ -27,8 +27,20 @@ type FakeKotsV1beta1 struct {
 	*testing.Fake
 }
 
-func (c *FakeKotsV1beta1) Apps(namespace string) v1beta1.AppInterface {
-	return &FakeApps{c, namespace}
+func (c *FakeKotsV1beta1) Applications(namespace string) v1beta1.ApplicationInterface {
+	return &FakeApplications{c, namespace}
+}
+
+func (c *FakeKotsV1beta1) Configs(namespace string) v1beta1.ConfigInterface {
+	return &FakeConfigs{c, namespace}
+}
+
+func (c *FakeKotsV1beta1) ConfigValueses(namespace string) v1beta1.ConfigValuesInterface {
+	return &FakeConfigValueses{c, namespace}
+}
+
+func (c *FakeKotsV1beta1) Licenses(namespace string) v1beta1.LicenseInterface {
+	return &FakeLicenses{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

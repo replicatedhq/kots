@@ -20,14 +20,14 @@ For disambiguation when there are multiple releases with the same name, use the 
 kubectl kots pull replicated://app-slug#12
 ```
 
-To specify the channel to use (the license must be assigned to the requested channel):
+Some application channels require that they are specified on the URL:
 
 ```shell
 kubectl kots pull replicated://app-slug/channel
 ```
 
-To use a different upstream provider than the default (replicated.app):
+For local testing, you can point to a directory that contains the extracted YAML:
 
 ```shell
-kubectl kots pull replicated://app-slug?host=my.com
+kuebctl kots pull replicated://app-slug --local-path=./workdir
 ```

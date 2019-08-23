@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
@@ -11,17 +12,21 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type ReplicatedUpstream struct {
-	Host         string
 	Channel      *string
 	AppSlug      string
 	VersionLabel *string
@@ -36,34 +41,54 @@ type Release struct {
 	Manifests map[string][]byte
 }
 
-func downloadReplicated(u *url.URL) (*Upstream, error) {
-	replicatedUpstream, err := parseReplicatedURL(u)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse replicated upstream")
+func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
+	var release *Release
+
+	if localPath == "" {
+		replicatedUpstream, err := parseReplicatedURL(u)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse replicated upstream")
+		}
+
+		license, err := getSuccessfulHeadResponse(replicatedUpstream)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get successful head response")
+		}
+
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to download replicated app")
+		}
+
+		release = downloadedRelease
+	} else {
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		release = parsedLocalRelease
 	}
 
-	licenseID, err := getSuccessfulHeadResponse(replicatedUpstream)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get successful head response")
-	}
+	application := findAppInRelease(release)
+	config := findConfigInRelease(release)
+	if config != nil {
+		configValues, err := createEmptyConfigValues(application.Name, config)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create empty config values")
+		}
 
-	release, err := downloadReplicatedApp(replicatedUpstream, licenseID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to download replicated app")
-	}
-
-	app, err := findAppInRelease(release)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app from release")
+		release.Manifests["config/values.yaml"] = mustMarshalConfigValues(configValues)
 	}
 
 	files, err := releaseToFiles(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get files from release")
 	}
+
 	upstream := &Upstream{
 		URI:   u.RequestURI(),
-		Name:  app.Name,
+		Name:  application.Name,
 		Files: files,
 		Type:  "replicated",
 	}
@@ -71,15 +96,19 @@ func downloadReplicated(u *url.URL) (*Upstream, error) {
 	return upstream, nil
 }
 
-func (r *ReplicatedUpstream) getRequest(method string, licenseID string) (*http.Request, error) {
-	proto := "https"
-
-	// quick and dirty hack to ensure we always have https, except don't require it when running completely local (dev)
-	if strings.HasPrefix(r.Host, "localhost") {
-		proto = "http"
+func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.License) (*http.Request, error) {
+	u, err := url.Parse(license.Spec.Endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse endpoint from license")
 	}
 
-	url := fmt.Sprintf("%s://%s/release/%s", proto, r.Host, r.AppSlug)
+	hostname := u.Hostname()
+	if u.Port() != "" {
+		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+	}
+
+	url := fmt.Sprintf("%s://%s/release/%s", u.Scheme, hostname, license.Spec.AppSlug)
+
 	if r.Channel != nil {
 		url = fmt.Sprintf("%s/%s", url, *r.Channel)
 	}
@@ -89,21 +118,19 @@ func (r *ReplicatedUpstream) getRequest(method string, licenseID string) (*http.
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", licenseID, licenseID)))))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
 }
 
 func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
-	replicatedUpstream := ReplicatedUpstream{
-		Host: "replicated.app",
-	}
+	replicatedUpstream := ReplicatedUpstream{}
 
 	if u.User != nil {
 		if u.User.Username() != "" {
 			replicatedUpstream.AppSlug = u.User.Username()
-			host := u.Hostname()
-			replicatedUpstream.VersionLabel = &host
+			versionLabel := u.Hostname()
+			replicatedUpstream.VersionLabel = &versionLabel
 		}
 	}
 
@@ -115,14 +142,10 @@ func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 		}
 	}
 
-	if u.Query().Get("host") != "" {
-		replicatedUpstream.Host = u.Query().Get("host")
-	}
-
 	return &replicatedUpstream, nil
 }
 
-func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (string, error) {
+func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (*kotsv1beta1.License, error) {
 	templates := &promptui.PromptTemplates{
 		Prompt:  "{{ . | bold }} ",
 		Valid:   "{{ . | green }} ",
@@ -131,12 +154,19 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (string, 
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "License ID",
+		Label:     "Enter the path to your license file",
 		Templates: templates,
 		Validate: func(input string) error {
-			if len(input) < 24 {
-				return errors.New("invalid license")
+			_, err := os.Stat(input)
+			if os.IsNotExist(err) {
+				return errors.New("File does not exist")
 			}
+
+			_, err = parseLicenseFromFile(input)
+			if err != nil {
+				return errors.New("Not a valid license file")
+			}
+
 			return nil
 		},
 	}
@@ -150,29 +180,69 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (string, 
 			continue
 		}
 
-		headReq, err := replicatedUpstream.getRequest("HEAD", result)
+		license, err := parseLicenseFromFile(result)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to create http request")
+			return nil, errors.Wrap(err, "failed to parse license from file")
+		}
+
+		headReq, err := replicatedUpstream.getRequest("HEAD", license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create http request")
 		}
 		headResp, err := http.DefaultClient.Do(headReq)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to execute head request")
+			return nil, errors.Wrap(err, "failed to execute head request")
 		}
 
 		if headResp.StatusCode == 401 {
-			continue
+			return nil, errors.Wrap(err, "license was not accepted")
 		}
+
 		if headResp.StatusCode >= 400 {
-			return "", errors.Errorf("expected result from head request: %d", headResp.StatusCode)
+			return nil, errors.Errorf("expected result from head request: %d", headResp.StatusCode)
 		}
 
-		return result, nil
+		return license, nil
 	}
-
 }
 
-func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, licenseID string) (*Release, error) {
-	getReq, err := replicatedUpstream.getRequest("GET", licenseID)
+func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
+	release := Release{
+		Manifests: make(map[string][]byte),
+	}
+
+	err := filepath.Walk(localPath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			// remove localpath prefix
+			appPath := strings.TrimPrefix(path, localPath)
+			appPath = strings.TrimLeft(appPath, string(os.PathSeparator))
+
+			release.Manifests[appPath] = contents
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk local path")
+	}
+
+	return &release, nil
+}
+
+func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*Release, error) {
+	getReq, err := replicatedUpstream.getRequest("GET", license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
@@ -227,29 +297,108 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, licenseID str
 	return &release, nil
 }
 
-func findAppInRelease(release *Release) (*App, error) {
+func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
+	kotsscheme.AddToScheme(scheme.Scheme)
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(configValues, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
+}
+
+func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config) (*kotsv1beta1.ConfigValues, error) {
+	emptyValues := kotsv1beta1.ConfigValuesSpec{
+		Values: map[string]string{},
+	}
+
+	builder := template.Builder{}
+	builder.AddCtx(template.StaticCtx{})
+
+	for _, group := range config.Spec.Groups {
+		for _, item := range group.Items {
+			if item.Value != "" {
+				rendered, err := builder.RenderTemplate(item.Name, item.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to render config item value")
+				}
+
+				emptyValues.Values[item.Name] = rendered
+			}
+		}
+	}
+
+	configValues := kotsv1beta1.ConfigValues{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "ConfigValues",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: applicationName,
+		},
+		Spec: emptyValues,
+	}
+
+	return &configValues, nil
+}
+
+func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode(content, nil, nil)
+		obj, gvk, err := decode(content, nil, nil)
 		if err != nil {
 			continue
 		}
 
 		if gvk.Group == "kots.io" {
 			if gvk.Version == "v1beta1" {
-				if gvk.Kind == "App" {
-					return nil, nil
+				if gvk.Kind == "Config" {
+					return obj.(*kotsv1beta1.Config)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func findAppInRelease(release *Release) *kotsv1beta1.Application {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	for _, content := range release.Manifests {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(content, nil, nil)
+		if err != nil {
+			continue
+		}
+
+		if gvk.Group == "kots.io" {
+			if gvk.Version == "v1beta1" {
+				if gvk.Kind == "Application" {
+					return obj.(*kotsv1beta1.Application)
 				}
 			}
 		}
 	}
 
 	// Using Ship apps for now, so let's create an app manifest on the fly
-	app := &App{
-		Name: "Ship App",
+	app := &kotsv1beta1.Application{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "Application",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "replicated-kots-app",
+		},
+		Spec: kotsv1beta1.ApplicationSpec{
+			Title: "Replicated Kots App",
+			Icon:  "",
+		},
 	}
-	return app, nil
+	return app
 }
 
 func releaseToFiles(release *Release) ([]UpstreamFile, error) {
@@ -292,4 +441,24 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		upstreamFiles = cleanedUpstreamFiles
 	}
 	return upstreamFiles, nil
+}
+
+func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read license file")
+	}
+
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	license, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode license file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+		return nil, errors.New("not an application license")
+	}
+
+	return license.(*kotsv1beta1.License), nil
 }

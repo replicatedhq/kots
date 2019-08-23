@@ -26,7 +26,10 @@ import (
 
 type KotsV1beta1Interface interface {
 	RESTClient() rest.Interface
-	AppsGetter
+	ApplicationsGetter
+	ConfigsGetter
+	ConfigValuesesGetter
+	LicensesGetter
 }
 
 // KotsV1beta1Client is used to interact with features provided by the kots.io group.
@@ -34,8 +37,20 @@ type KotsV1beta1Client struct {
 	restClient rest.Interface
 }
 
-func (c *KotsV1beta1Client) Apps(namespace string) AppInterface {
-	return newApps(c, namespace)
+func (c *KotsV1beta1Client) Applications(namespace string) ApplicationInterface {
+	return newApplications(c, namespace)
+}
+
+func (c *KotsV1beta1Client) Configs(namespace string) ConfigInterface {
+	return newConfigs(c, namespace)
+}
+
+func (c *KotsV1beta1Client) ConfigValueses(namespace string) ConfigValuesInterface {
+	return newConfigValueses(c, namespace)
+}
+
+func (c *KotsV1beta1Client) Licenses(namespace string) LicenseInterface {
+	return newLicenses(c, namespace)
 }
 
 // NewForConfig creates a new KotsV1beta1Client for the given config.
