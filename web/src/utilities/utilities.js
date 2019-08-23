@@ -254,6 +254,14 @@ export function isSingleTenant() {
   return !!decodedToken.isSingleTenant;
 }
 
+/**
+ * @param {Watch} watch - watch to determine type
+ * @return {Boolean}
+ */
+export function isKotsApp(watch) {
+  return Boolean(watch.name);
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {

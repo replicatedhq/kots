@@ -16,6 +16,7 @@ import {
   getReadableLicenseType,
   getLicenseExpiryDate,
   getWatchLicenseFromState,
+  isKotsApp,
 } from "@src/utilities/utilities";
 
 import {
@@ -24,6 +25,7 @@ import {
   createEditSession,
  } from "@src/mutations/WatchMutations";
 
+ import { deleteKotsApp } from "@src/mutations/AppsMutations";
  import isEmpty from "lodash/isEmpty";
  import { getWatchLicense } from "@src/queries/WatchQueries";
 
@@ -58,9 +60,10 @@ class DetailPageApplication extends Component {
   }
 
   setWatchState = (watch) => {
+    const isKotsApp = isKotsApp(watch);
     this.setState({
-      appName: watch.watchName,
-      iconUri: watch.watchIcon
+      appName: isKotsApp ? watch.name : watch.watchName,
+      iconUri: isKotsApp ? watch.iconUri : watch.watchIcon
     });
   }
 
@@ -121,7 +124,8 @@ class DetailPageApplication extends Component {
 
   toggleConfirmDelete = () => {
     const { watch } = this.props;
-    const childWatchIds = this.state.showConfirmDelete ? [] : watch.watches.map((w) => w.id);
+    const isKotsApp = isKotsApp(watch);
+    const childWatchIds = this.state.showConfirmDelete || isKotsApp ? [] : watch.watches.map((w) => w.id);
     this.setState({
       showConfirmDelete: !this.state.showConfirmDelete,
       childWatchIds
@@ -131,17 +135,29 @@ class DetailPageApplication extends Component {
   handleDeleteApp = async () => {
     const { watch } = this.props;
     const { confirmAppName, childWatchIds } = this.state;
-    const canDelete = confirmAppName === watch.watchName;
+    const isKotsApp = isKotsApp(watch);
+    const watchName = isKotsApp ? watch.name : watch.watchName;
+    const canDelete = confirmAppName === watchName;
     this.setState({ confirmDeleteErr: false });
     if (canDelete) {
       this.setState({ deleteAppLoading: true });
-      await this.props.deleteWatch(watch.id, childWatchIds)
-        .then(() => {
-          this.props.refetchListApps().then(() => {
-            this.props.history.push("/watches");
-          });
-        })
-        .catch(() => this.setState({ deleteAppLoading: false }));
+      if (isKotsApp) {
+        try {
+          await this.props.deleteKotsApp(watch.slug);
+          await this.props.refetchListApps();
+          this.props.history.push("/watches");
+        } catch (error) {
+          this.setState({ deleteAppLoading: false })
+        }
+      } else {
+        try {
+          await this.props.deleteWatch(watch.id, childWatchIds)
+          await this.props.refetchListApps();
+          this.props.history.push("/watches");
+        } catch (error) {
+          this.setState({ deleteAppLoading: false })
+        }
+      }
     } else {
       this.setState({ confirmDeleteErr: true });
     }
@@ -184,7 +200,7 @@ class DetailPageApplication extends Component {
     if (watch !== lastProps.watch && watch) {
       this.setWatchState(watch)
     }
-    const isKotsApp = !!watch.name;
+    const isKotsApp = isKotsApp(watch);
     // current license info
     if (!isKotsApp && this.props.getWatchLicense?.error && !this.state.watchLicense) {
       // no current license found in db, construct from stateJSON
@@ -217,7 +233,7 @@ class DetailPageApplication extends Component {
     const { preparingAppUpdate, watchLicense } = this.state;
     const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
-    const isKotsApp = !!watch.name;
+    const isKotsApp = isKotsApp(watch);
 
     return (
       <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
@@ -487,6 +503,11 @@ export default compose(
   graphql(deleteWatch, {
     props: ({ mutate }) => ({
       deleteWatch: (watchId, childWatchIds) => mutate({ variables: { watchId, childWatchIds } })
+    })
+  }),
+  graphql(deleteKotsApp, {
+    props: ({ mutate }) => ({
+      deleteKotsApp: (slug) => mutate({ variables: { slug } })
     })
   }),
   graphql(getWatchLicense, {

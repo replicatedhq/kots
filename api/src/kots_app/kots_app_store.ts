@@ -60,6 +60,43 @@ export class KotsAppStore {
     return apps;
   }
 
+  async deleteDownstream(appId: string, clusterId: string): Promise<Boolean> {
+    const q = `delete from app_downstream where app_id = $1 and cluster_id = $2`;
+    const v = [appId, clusterId];
+
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`No downstreams with the id of ${clusterId} were found`);
+    }
+
+    return true;
+  }
+
+  async deleteApp(appId: string): Promise<Boolean> {
+    const pg = await this.pool.connect();
+    try {
+      await pg.query("begin");
+      const q = `delete from user_app where app_id = $1`;
+      const v = [appId];
+      await pg.query(q, v);
+
+      const qq = `delete from app_version where app_id = $1`;
+      await pg.query(qq, v);
+
+      const qqq = `delete from app_downstream where app_id = $1`;
+      await pg.query(qqq, v);
+
+      const qqqq = `delete from app where id = $1`;
+      await pg.query(qqqq, v);
+
+      await pg.query("commit");
+    } finally {
+      await pg.query("rollback");
+      pg.release(); 
+    }
+    return true;
+  }
+
   async getApp(id: string): Promise<KotsApp> {
     const q = `select id, name, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at from app where id = $1`;
     const v = [id];

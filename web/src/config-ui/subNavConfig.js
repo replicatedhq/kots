@@ -74,7 +74,7 @@ export default [
     }
   },
   {
-    tabName: "files",
+    tabName: "tree",
     displayName: "View files",
     to: (slug, isKots, sequence) => `/app/${slug}/tree/${isKots ? sequence : ""}`,
     displayRule: watch => {
