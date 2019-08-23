@@ -20,8 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ConfigValueSpec defines the desired state of ConfigValue
-type ConfigValueSpec struct {
+// ConfigValuesSpec defines the desired state of ConfigValue
+type ConfigValuesSpec struct {
 	Values map[string]string `json:"values"`
 }
 

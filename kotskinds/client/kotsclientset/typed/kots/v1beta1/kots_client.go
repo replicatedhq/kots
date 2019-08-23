@@ -26,7 +26,7 @@ import (
 
 type KotsV1beta1Interface interface {
 	RESTClient() rest.Interface
-	AppsGetter
+	ApplicationsGetter
 	ConfigsGetter
 	ConfigValuesesGetter
 	LicensesGetter
@@ -37,8 +37,8 @@ type KotsV1beta1Client struct {
 	restClient rest.Interface
 }
 
-func (c *KotsV1beta1Client) Apps(namespace string) AppInterface {
-	return newApps(c, namespace)
+func (c *KotsV1beta1Client) Applications(namespace string) ApplicationInterface {
+	return newApplications(c, namespace)
 }
 
 func (c *KotsV1beta1Client) Configs(namespace string) ConfigInterface {

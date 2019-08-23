@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -18,6 +19,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -36,23 +38,36 @@ type Release struct {
 	Manifests map[string][]byte
 }
 
-func downloadReplicated(u *url.URL) (*Upstream, error) {
-	replicatedUpstream, err := parseReplicatedURL(u)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse replicated upstream")
+func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
+	var release *Release
+
+	if localPath == "" {
+		replicatedUpstream, err := parseReplicatedURL(u)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse replicated upstream")
+		}
+
+		license, err := getSuccessfulHeadResponse(replicatedUpstream)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get successful head response")
+		}
+
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to download replicated app")
+		}
+
+		release = downloadedRelease
+	} else {
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		release = parsedLocalRelease
 	}
 
-	license, err := getSuccessfulHeadResponse(replicatedUpstream)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get successful head response")
-	}
-
-	release, err := downloadReplicatedApp(replicatedUpstream, license)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to download replicated app")
-	}
-
-	app, err := findAppInRelease(release)
+	application, err := findAppInRelease(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app from release")
 	}
@@ -61,9 +76,10 @@ func downloadReplicated(u *url.URL) (*Upstream, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get files from release")
 	}
+
 	upstream := &Upstream{
 		URI:   u.RequestURI(),
-		Name:  app.Name,
+		Name:  application.Name,
 		Files: files,
 		Type:  "replicated",
 	}
@@ -182,6 +198,40 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (*kotsv1b
 
 }
 
+func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
+	release := Release{
+		Manifests: make(map[string][]byte),
+	}
+
+	err := filepath.Walk(localPath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			// remove localpath prefix
+			appPath := strings.TrimPrefix(path, localPath)
+			appPath = strings.TrimLeft(appPath, string(os.PathSeparator))
+			release.Manifests[appPath] = contents
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk local path")
+	}
+
+	return &release, nil
+}
+
 func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*Release, error) {
 	getReq, err := replicatedUpstream.getRequest("GET", license)
 	if err != nil {
@@ -197,9 +247,6 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	}
 
 	defer getResp.Body.Close()
-
-	b, _ := ioutil.ReadAll(getResp.Body)
-	ioutil.WriteFile("/home/marc.e.campbell/go/src/github.com/replicatedhq/kots/out.something", b, 0644)
 
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
@@ -241,27 +288,37 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func findAppInRelease(release *Release) (*App, error) {
+func findAppInRelease(release *Release) (*kotsv1beta1.Application, error) {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode(content, nil, nil)
+		obj, gvk, err := decode(content, nil, nil)
 		if err != nil {
 			continue
 		}
 
 		if gvk.Group == "kots.io" {
 			if gvk.Version == "v1beta1" {
-				if gvk.Kind == "App" {
-					return nil, nil
+				if gvk.Kind == "Application" {
+					return obj.(*kotsv1beta1.Application), nil
 				}
 			}
 		}
 	}
 
 	// Using Ship apps for now, so let's create an app manifest on the fly
-	app := &App{
-		Name: "Ship App",
+	app := &kotsv1beta1.Application{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "Application",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "replicated-kots-app",
+		},
+		Spec: kotsv1beta1.ApplicationSpec{
+			Title: "Replicated Kots App",
+			Icon:  "",
+		},
 	}
 	return app, nil
 }

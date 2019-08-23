@@ -17,6 +17,7 @@ type PullOptions struct {
 	Overwrite   bool
 	Namespace   string
 	Downstreams []string
+	LocalPath   string
 }
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
@@ -25,6 +26,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
+	fetchOptions.LocalPath = pullOptions.LocalPath
 
 	log.ActionWithSpinner("Pulling upstream")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)

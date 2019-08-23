@@ -20,37 +20,38 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AppSpec defines the desired state of AppSpec
-type AppSpec struct {
-	Name string `json:"name,omitempty"`
+// ApplicationSpec defines the desired state of ApplicationSpec
+type ApplicationSpec struct {
+	Title string `json:"title"`
+	Icon  string `json:"icon,omitempty"`
 }
 
-// AppStatus defines the observed state of App
-type AppStatus struct {
+// ApplicationStatus defines the observed state of Application
+type ApplicationStatus struct {
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// App is the Schema for the app API
+// Application is the Schema for the application API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type App struct {
+type Application struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AppSpec   `json:"spec,omitempty"`
-	Status AppStatus `json:"status,omitempty"`
+	Spec   ApplicationSpec   `json:"spec,omitempty"`
+	Status ApplicationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AppList contains a list of Apps
-type AppList struct {
+// ApplicationList contains a list of Applications
+type ApplicationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []App `json:"items"`
+	Items           []Application `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&App{}, &AppList{})
+	SchemeBuilder.Register(&Application{}, &ApplicationList{})
 }

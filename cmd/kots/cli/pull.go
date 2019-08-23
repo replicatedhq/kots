@@ -34,6 +34,7 @@ func PullCmd() *cobra.Command {
 				Overwrite:   v.GetBool("overwrite"),
 				Namespace:   v.GetString("namespace"),
 				Downstreams: v.GetStringSlice("downstream"),
+				LocalPath:   ExpandDir(v.GetString("local-path")),
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
@@ -60,6 +61,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().Bool("overwrite", false, "if the upstream already exists, overwrite it")
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
+	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 
 	return cmd
 }

@@ -17,7 +17,7 @@ limitations under the License.
 
 package v1beta1
 
-type AppExpansion interface{}
+type ApplicationExpansion interface{}
 
 type ConfigExpansion interface{}
 
