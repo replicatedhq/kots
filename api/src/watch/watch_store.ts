@@ -544,6 +544,19 @@ order by sequence desc`;
     return _.sortBy(watches, ["title"]);
   }
 
+  async listChildWatchIds(watchId: string): Promise<string[]> {
+    const q = `select id from watch where parent_watch_id = $1`;
+    const v = [watchId];
+
+    const result = await this.pool.query(q, v);
+    const watchIds: string[] = [];
+    for (const row of result.rows) {
+      watchIds.push(row.id);
+    }
+
+    return watchIds;
+  }
+
   // returns the list of generated files for this watch in reverse sequence order. (highest sequence number first)
   async listGeneratedFiles(watchId: string): Promise<GeneratedFile[]> {
     const q = stripIndent`
