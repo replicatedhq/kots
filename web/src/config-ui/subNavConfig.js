@@ -50,9 +50,6 @@ export default [
     tabName: "troubleshoot",
     displayName: "Troubleshoot",
     to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/troubleshoot`,
-    displayRule: watch => {
-      return getApplicationType(watch) === "replicated.app";
-    }
   },
   {
     tabName: "license",
