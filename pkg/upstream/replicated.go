@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -41,16 +40,28 @@ type Release struct {
 	Manifests map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upstream, error) {
 	var release *Release
 
-	if localPath == "" {
+	if localPath != "" {
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		release = parsedLocalRelease
+	} else {
+		// A license file is required to be set for this to succeed
+		if licenseFile == "" {
+			return nil, errors.New("No license file was provided")
+		}
+
 		replicatedUpstream, err := parseReplicatedURL(u)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
 
-		license, err := getSuccessfulHeadResponse(replicatedUpstream)
+		license, err := getSuccessfulHeadResponse(replicatedUpstream, licenseFile)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
@@ -61,13 +72,6 @@ func downloadReplicated(u *url.URL, localPath string) (*Upstream, error) {
 		}
 
 		release = downloadedRelease
-	} else {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read replicated app from local path")
-		}
-
-		release = parsedLocalRelease
 	}
 
 	application := findAppInRelease(release)
@@ -145,65 +149,30 @@ func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream) (*kotsv1beta1.License, error) {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
+func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, licenseFile string) (*kotsv1beta1.License, error) {
+	license, err := parseLicenseFromFile(licenseFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse license from file")
 	}
 
-	prompt := promptui.Prompt{
-		Label:     "Enter the path to your license file",
-		Templates: templates,
-		Validate: func(input string) error {
-			_, err := os.Stat(input)
-			if os.IsNotExist(err) {
-				return errors.New("File does not exist")
-			}
-
-			_, err = parseLicenseFromFile(input)
-			if err != nil {
-				return errors.New("Not a valid license file")
-			}
-
-			return nil
-		},
+	headReq, err := replicatedUpstream.getRequest("HEAD", license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create http request")
+	}
+	headResp, err := http.DefaultClient.Do(headReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute head request")
 	}
 
-	for {
-		result, err := prompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
-			}
-			continue
-		}
-
-		license, err := parseLicenseFromFile(result)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse license from file")
-		}
-
-		headReq, err := replicatedUpstream.getRequest("HEAD", license)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create http request")
-		}
-		headResp, err := http.DefaultClient.Do(headReq)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to execute head request")
-		}
-
-		if headResp.StatusCode == 401 {
-			return nil, errors.Wrap(err, "license was not accepted")
-		}
-
-		if headResp.StatusCode >= 400 {
-			return nil, errors.Errorf("expected result from head request: %d", headResp.StatusCode)
-		}
-
-		return license, nil
+	if headResp.StatusCode == 401 {
+		return nil, errors.Wrap(err, "license was not accepted")
 	}
+
+	if headResp.StatusCode >= 400 {
+		return nil, errors.Errorf("expected result from head request: %d", headResp.StatusCode)
+	}
+
+	return license, nil
 }
 
 func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {

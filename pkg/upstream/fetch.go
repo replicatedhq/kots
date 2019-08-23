@@ -11,6 +11,7 @@ type FetchOptions struct {
 	HelmRepoName string
 	HelmRepoURI  string
 	LocalPath    string
+	LicenseFile  string
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
@@ -35,7 +36,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.LicenseFile)
 	}
 	if u.Scheme == "file" {
 		return readFilesFromURI(upstreamURI)

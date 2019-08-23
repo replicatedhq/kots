@@ -18,6 +18,7 @@ type PullOptions struct {
 	Namespace   string
 	Downstreams []string
 	LocalPath   string
+	LicenseFile string
 }
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
@@ -27,10 +28,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 	fetchOptions.LocalPath = pullOptions.LocalPath
+	fetchOptions.LicenseFile = pullOptions.LicenseFile
 
 	log.ActionWithSpinner("Pulling upstream")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to fetch upstream")
 	}
 
@@ -40,6 +43,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		Overwrite:    pullOptions.Overwrite,
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()

@@ -16,7 +16,7 @@ func PullCmd() *cobra.Command {
 		Short:         "",
 		Long:          ``,
 		SilenceUsage:  true,
-		SilenceErrors: false,
+		SilenceErrors: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -30,11 +30,12 @@ func PullCmd() *cobra.Command {
 
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
-				RootDir:     v.GetString("rootdir"),
+				RootDir:     ExpandDir(v.GetString("rootdir")),
 				Overwrite:   v.GetBool("overwrite"),
 				Namespace:   v.GetString("namespace"),
 				Downstreams: v.GetStringSlice("downstream"),
 				LocalPath:   ExpandDir(v.GetString("local-path")),
+				LicenseFile: ExpandDir(v.GetString("license-file")),
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
@@ -62,6 +63,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
+	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 
 	return cmd
 }

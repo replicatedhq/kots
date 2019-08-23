@@ -31,7 +31,7 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templ
 			}
 
 			if v, ok := templateContext[configItem.Name]; ok {
-				built = fmt.Sprintf("%v", v)
+				built = fmt.Sprintf("%s", v)
 			}
 
 			configCtx.ItemValues[configItem.Name] = built
@@ -103,7 +103,7 @@ func (ctx ConfigCtx) configOptionNotEquals(name string, value string) bool {
 
 func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {
 	if val, ok := ctx.ItemValues[itemName]; ok {
-		return fmt.Sprintf("%v", val), nil
+		return fmt.Sprintf("%s", val), nil
 	}
 
 	return "", errors.New("unable to find config item")

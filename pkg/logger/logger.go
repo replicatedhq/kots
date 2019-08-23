@@ -132,6 +132,20 @@ func (l *Logger) FinishSpinner() {
 	close(l.spinnerStopCh)
 }
 
+func (l *Logger) FinishSpinnerWithError() {
+	white := color.New(color.FgHiWhite)
+	red := color.New(color.FgHiRed)
+
+	white.Printf("\r")
+	white.Printf("  • ")
+	white.Printf(l.spinnerMsg, l.spinnerArgs...)
+	red.Printf(" ✗")
+	white.Printf("  \n")
+
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
+}
+
 func (l *Logger) Error(err error) {
 	c := color.New(color.FgHiRed)
 	c.Printf("  • ")
