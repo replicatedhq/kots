@@ -31,7 +31,12 @@ export class SessionStore {
     }, {});
   }
 
-  async createPasswordSession(userId: string): Promise<string> {
+  /**
+   * Creates a signed JWT for authenticaion
+   * @param userId - string of user_id from the database
+   * @param isSingleTenant - true if the user is coming from secure admin console. See user_mutations.ts#loginToAdminConsole
+   */
+  async createPasswordSession(userId: string, isSingleTenant: boolean = false): Promise<string> {
     const sessionId = randomstring.generate({ capitalization: "lowercase" });
     const currentUtcDate = new Date(Date.now()).toUTCString();
     const expirationDate = addWeeks(currentUtcDate, 2);
@@ -50,6 +55,7 @@ export class SessionStore {
       {
         type: "ship",
         sessionId,
+        isSingleTenant
       },
       this.params.sessionKey
     );
