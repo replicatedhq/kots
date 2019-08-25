@@ -12,6 +12,7 @@ import { logger } from "../server/logger";
 
 interface CreateAppBody {
   metadata: string;
+  versionLabel: string;
 }
 
 interface UpdateAppBody {
@@ -29,14 +30,16 @@ export class KotsAPI {
     // IMPORTANT: this function does not have user-auth and is only usable in
     // single tenant (on-prem mode right now)
 
-    const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(JSON.parse(body.metadata).name);
+    const createAppMetadata = JSON.parse(body.metadata);
+
+    const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(createAppMetadata.name);
 
     const params = await Params.getParams();
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     const buffer = fs.readFileSync(file.path);
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, "----");
+    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, createAppMetadata.versionLabel);
 
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);

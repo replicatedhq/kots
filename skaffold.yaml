@@ -51,6 +51,12 @@ build:
 
     - image: kotsadm-operator
       context: "./operator"
+      sync:
+        manual:
+          - src: "pkg/**/*.go"
+            dest: "./"
+          - src: "cmd/**/*.go"
+            dest: "./"
       docker:
         dockerfile: ./Dockerfile.skaffold
 

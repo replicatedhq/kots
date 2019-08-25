@@ -38,10 +38,7 @@ export class TarballUnpacker {
   /**
    * unpackFrom will read the stream
    */
-  public async unpackFrom(
-    tarStream: NodeJS.ReadableStream,
-    filesWeCareAbout: RequestedFile[],
-  ): Promise<FilesAsString> {
+  public async unpackFrom(tarStream: NodeJS.ReadableStream, filesWeCareAbout?: RequestedFile[]): Promise<FilesAsString> {
     if (!tarStream) {
       return {files: {}, fakeIndex: []};
     }
@@ -53,11 +50,13 @@ export class TarballUnpacker {
       const promises: Array<Promise<any>> = [];
 
       extract.on("entry", (header: any, stream: NodeJS.ReadableStream, requestNextTarFile: () => void) => {
+        let pathsToStoreThisTarEntry: string[];
 
-        const pathsToStoreThisTarEntry: string[] =
-          filesWeCareAbout
-            .filter((f) => f.matcher(header.name))
-            .map((f) => f.path);
+        if (filesWeCareAbout) {
+          pathsToStoreThisTarEntry = filesWeCareAbout.filter((f) => f.matcher(header.name)).map((f) => f.path);
+        } else {
+          pathsToStoreThisTarEntry = header.name;
+        }
 
         const isFile = header.type === "file";
         if (isFile) {

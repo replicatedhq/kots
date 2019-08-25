@@ -1,5 +1,4 @@
 import pg from "pg";
-import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import { KotsApp } from "./";
 import { ReplicatedError } from "../server/errors";
@@ -9,6 +8,21 @@ import _ from "lodash";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
+
+  async listAppsForCluster(clusterId: string): Promise<KotsApp[]> {
+    const q = `select app_id from app_downstream where cluster_id = $1`;
+    const v = [
+      clusterId,
+    ];
+
+    const result = await this.pool.query(q, v);
+    const apps: KotsApp[] = [];
+    for (const row of result.rows) {
+      apps.push(await this.getApp(row.app_id));
+    }
+
+    return apps;
+  }
 
   async createDownstream(appId: string, downstreamName: string, clusterId: string): Promise<void> {
     const q = `insert into app_downstream (app_id, downstream_name, cluster_id) values ($1, $2, $3)`;
@@ -92,7 +106,7 @@ export class KotsAppStore {
       await pg.query("commit");
     } finally {
       await pg.query("rollback");
-      pg.release(); 
+      pg.release();
     }
     return true;
   }

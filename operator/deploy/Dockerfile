@@ -14,6 +14,15 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_VERSION}" /usr/local/bin/kubectl
 
+# Install krew
+ADD ./deploy/install-krew.sh /install-krew.sh
+RUN /install-krew.sh
+ENV PATH="/root/.krew/bin:$PATH"
+
+# Install our plugins
+RUN kubectl krew install preflight
+RUN kubectl krew install support-bundle
+
 COPY ./bin/kotsadm-operator /kotsadm-operator
 
 EXPOSE 3000
