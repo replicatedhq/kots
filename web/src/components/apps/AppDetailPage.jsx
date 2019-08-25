@@ -6,7 +6,7 @@ import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
-import { checkForUpdates } from "../../mutations/WatchMutations";
+import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { createKotsDownstream, deleteKotsDownstream } from "../../mutations/AppsMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -18,7 +18,7 @@ import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
 import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
-import WatchVersionHistory from "../watches/WatchVersionHistory";
+import AppVersionHistory from "./AppVersionHistory";
 import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
 import WatchConfig from "../watches/WatchConfig";
 import WatchLicense from "../watches/WatchLicense";
@@ -102,15 +102,18 @@ class AppDetailPage extends Component {
 
   onCheckForUpdates = async () => {
     const { client, getKotsAppQuery } = this.props;
-    const { getKotsApp: watch } = getKotsAppQuery;
+    const { getKotsApp: app } = getKotsAppQuery;
+
     this.setState({ checkingForUpdates: true });
+
     loadingTextTimer = setTimeout(() => {
       this.setState({ checkingUpdateText: "Almost there, hold tight..." });
     }, 10000);
+
     await client.mutate({
-      mutation: checkForUpdates,
+      mutation: checkForKotsUpdates,
       variables: {
-        watchId: watch.id,
+        appId: app.id,
       }
     }).catch(() => {
       this.setState({ updateError: true });
@@ -207,7 +210,7 @@ class AppDetailPage extends Component {
 
   /**
    *  Runs on mount and on update. Also handles redirect logic
-   *  if no watches are found, or the first watch is found.
+   *  if no apps are found, or the first app is found.
    */
   checkForFirstApp = () => {
     const { history, rootDidInitialAppFetch, listApps } = this.props;
@@ -354,8 +357,8 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} />} />
 
                     <Route exact path="/app/:slug/version-history" render={() =>
-                      <WatchVersionHistory
-                        watch={app}
+                      <AppVersionHistory
+                        app={app}
                         match={this.props.match}
                         onCheckForUpdates={this.onCheckForUpdates}
                         checkingForUpdates={this.state.checkingForUpdates}

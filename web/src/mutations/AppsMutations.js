@@ -23,3 +23,10 @@ export const deleteKotsAppRaw = `
 `;
 
 export const deleteKotsApp = gql(deleteKotsAppRaw);
+
+export const checkForKotsUpdatesRaw = `
+  mutation checkForKotsUpdates($appId: ID!) {
+    checkForKotsUpdates(appId: $appId)
+  }
+`
+export const checkForKotsUpdates = gql(checkForKotsUpdatesRaw);
