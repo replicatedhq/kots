@@ -39,9 +39,6 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 	if u.Scheme == "replicated" {
 		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License)
 	}
-	if u.Scheme == "file" {
-		return readFilesFromURI(upstreamURI)
-	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
 	}

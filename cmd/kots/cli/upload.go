@@ -12,7 +12,7 @@ import (
 
 func UploadCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "upload [path]",
+		Use:           "upload [namespace]",
 		Short:         "",
 		Long:          ``,
 		SilenceUsage:  true,
@@ -33,6 +33,7 @@ func UploadCmd() *cobra.Command {
 				Kubeconfig:      v.GetString("kubeconfig"),
 				ExistingAppSlug: v.GetString("slug"),
 				NewAppName:      v.GetString("name"),
+				UpstreamURI:     v.GetString("upstream-uri"),
 			}
 
 			if err := upload.Upload(ExpandDir(args[0]), uploadOptions); err != nil {
@@ -47,6 +48,7 @@ func UploadCmd() *cobra.Command {
 	cmd.Flags().String("namespace", "default", "the namespace to upload to")
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
+	cmd.Flags().String("upstream-uri", "", "the upstream uri that can be used to check for updates")
 
 	return cmd
 }

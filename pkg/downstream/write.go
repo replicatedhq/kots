@@ -1,7 +1,6 @@
 package downstream
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 type WriteOptions struct {
 	DownstreamDir string
 	MidstreamDir  string
-	Overwrite     bool
 }
 
 func (d *Downstream) WriteDownstream(options WriteOptions) error {
@@ -26,13 +24,11 @@ func (d *Downstream) WriteDownstream(options WriteOptions) error {
 
 	_, err = os.Stat(renderDir)
 	if err == nil {
-		if options.Overwrite {
-			if err := os.RemoveAll(renderDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in downstream")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", renderDir)
-		}
+		// We intentionally don't support overwriting downstreams...  this is user-created content
+		// and the user should be intentional about removing it
+
+		// But it's also not an error
+		return nil
 	}
 
 	fileRenderPath := path.Join(renderDir, "kustomization.yaml")

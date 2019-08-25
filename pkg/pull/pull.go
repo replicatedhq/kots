@@ -107,12 +107,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		writeDownstreamOptions := downstream.WriteOptions{
 			DownstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
 			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
-			Overwrite:     pullOptions.Overwrite,
 		}
 
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrap(err, "failed to write downstream")
 		}
+
 		log.FinishSpinner()
 	}
 	return nil

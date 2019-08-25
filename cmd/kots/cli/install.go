@@ -84,6 +84,7 @@ func InstallCmd() *cobra.Command {
 				Kubeconfig:   v.GetString("kubeconfig"),
 				NewAppName:   v.GetString("name"),
 				VersionLabel: "todo",
+				UpstreamURI:  args[0],
 			}
 
 			// get the first dir in rootDir and use that as the upload dir

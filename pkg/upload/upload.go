@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -23,6 +25,7 @@ import (
 
 type UploadOptions struct {
 	Namespace       string
+	UpstreamURI     string
 	Kubeconfig      string
 	ExistingAppSlug string
 	NewAppName      string
@@ -60,18 +63,30 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		uploadOptions.NewAppName = appName
 	}
 
+	// Make sure we have an upstream URI
+	if uploadOptions.UpstreamURI == "" {
+		upstreamURI, err := promptForUpstreamURI()
+		if err != nil {
+			return errors.Wrap(err, "failed to prompt for upstream uri")
+		}
+
+		uploadOptions.UpstreamURI = upstreamURI
+	}
+
 	// Find the kotadm-api pod
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
 	podName, err := findKotsadm(uploadOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
 	}
 
 	// set up port forwarding to get to it
 	stopCh, err := k8sutil.PortForward(uploadOptions.Kubeconfig, 3000, 3000, uploadOptions.Namespace, podName)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
 	defer close(stopCh)
@@ -79,20 +94,24 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	// upload using http to the pod directly
 	req, err := createUploadRequest(archiveFilename, uploadOptions, "http://localhost:3000/api/v1/kots")
 	if err != nil {
-		return errors.Wrap(err, "failed to upload")
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to create upload request")
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to execute request")
 	}
 
 	if resp.StatusCode != 200 {
+		log.FinishSpinnerWithError()
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to read response body")
 	}
 	type UploadResponse struct {
@@ -100,6 +119,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	}
 	var uploadResponse UploadResponse
 	if err := json.Unmarshal(b, &uploadResponse); err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to unmarshal response")
 	}
 
@@ -173,6 +193,7 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		metadata := map[string]string{
 			"name":         uploadOptions.NewAppName,
 			"versionLabel": uploadOptions.VersionLabel,
+			"upstreamURI":  uploadOptions.UpstreamURI,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -232,5 +253,52 @@ func relentlesslyPromptForAppName(defaultAppName string) (string, error) {
 
 		return result, nil
 	}
+}
 
+func promptForUpstreamURI() (string, error) {
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	supportedSchemes := map[string]interface{}{
+		"helm":       nil,
+		"replicated": nil,
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Upstream URI:",
+		Templates: templates,
+		Validate: func(input string) error {
+			if !util.IsURL(input) {
+				return errors.New("Please enter a URL")
+			}
+
+			u, err := url.ParseRequestURI(input)
+			if err != nil {
+				return errors.New("Invalid URL")
+			}
+
+			_, ok := supportedSchemes[u.Scheme]
+			if !ok {
+				return errors.New("Unsupported upstream type")
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
 }
