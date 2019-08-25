@@ -40,7 +40,7 @@ type Release struct {
 	Manifests map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -52,8 +52,8 @@ func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upst
 		release = parsedLocalRelease
 	} else {
 		// A license file is required to be set for this to succeed
-		if licenseFile == "" {
-			return nil, errors.New("No license file was provided")
+		if license == nil {
+			return nil, errors.New("No license was provided")
 		}
 
 		replicatedUpstream, err := parseReplicatedURL(u)
@@ -61,7 +61,7 @@ func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upst
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
 
-		license, err := getSuccessfulHeadResponse(replicatedUpstream, licenseFile)
+		license, err := getSuccessfulHeadResponse(replicatedUpstream, license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
@@ -74,6 +74,7 @@ func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upst
 		release = downloadedRelease
 	}
 
+	// Find the config in the upstream and write out default values
 	application := findAppInRelease(release)
 	config := findConfigInRelease(release)
 	if config != nil {
@@ -82,7 +83,12 @@ func downloadReplicated(u *url.URL, localPath string, licenseFile string) (*Upst
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
 
-		release.Manifests["config/values.yaml"] = mustMarshalConfigValues(configValues)
+		release.Manifests["userdata/config.yaml"] = mustMarshalConfigValues(configValues)
+	}
+
+	// Add the license to the upstream, if one was propvided
+	if license != nil {
+		release.Manifests["userdata/license.yaml"] = mustMarshalLicense(license)
 	}
 
 	files, err := releaseToFiles(release)
@@ -149,12 +155,7 @@ func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, licenseFile string) (*kotsv1beta1.License, error) {
-	license, err := parseLicenseFromFile(licenseFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse license from file")
-	}
-
+func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
 	headReq, err := replicatedUpstream.getRequest("HEAD", license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
@@ -264,6 +265,19 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	}
 
 	return &release, nil
+}
+
+func mustMarshalLicense(license *kotsv1beta1.License) []byte {
+	kotsscheme.AddToScheme(scheme.Scheme)
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(license, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
 }
 
 func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
@@ -410,24 +424,4 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		upstreamFiles = cleanedUpstreamFiles
 	}
 	return upstreamFiles, nil
-}
-
-func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read license file")
-	}
-
-	kotsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	license, gvk, err := decode(contents, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode license file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-		return nil, errors.New("not an application license")
-	}
-
-	return license.(*kotsv1beta1.License), nil
 }

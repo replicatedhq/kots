@@ -34,9 +34,9 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	if err == nil {
 		if options.Overwrite {
 			// if there's already a values yaml, we need to save
-			_, err := os.Stat(path.Join(renderDir, "config/values.yaml"))
+			_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
 			if err == nil {
-				c, err := ioutil.ReadFile(path.Join(renderDir, "config/values.yaml"))
+				c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
 				if err != nil {
 					return errors.Wrap(err, "failed to read existing values")
 				}
@@ -67,13 +67,13 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 
 	if previousValuesContent != nil {
 		for i, f := range u.Files {
-			if f.Path == "config/values.yaml" {
+			if f.Path == "userdata/values.yaml" {
 				mergedValues, err := mergeValues(previousValuesContent, f.Content)
 				if err != nil {
 					return errors.Wrap(err, "failed to merge values")
 				}
 
-				err = ioutil.WriteFile(path.Join(renderDir, "config/values.yaml"), mergedValues, 0644)
+				err = ioutil.WriteFile(path.Join(renderDir, "userdata/values.yaml"), mergedValues, 0644)
 				if err != nil {
 					return errors.Wrap(err, "failed to replace values with previous values")
 				}

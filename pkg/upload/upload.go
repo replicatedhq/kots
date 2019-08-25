@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -27,6 +26,7 @@ type UploadOptions struct {
 	Kubeconfig      string
 	ExistingAppSlug string
 	NewAppName      string
+	VersionLabel    string
 }
 
 func Upload(path string, uploadOptions UploadOptions) error {
@@ -34,6 +34,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create uploadable archive")
 	}
+
 	defer os.Remove(archiveFilename)
 
 	// Make sure we have a name or slug
@@ -76,9 +77,8 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	defer close(stopCh)
 
 	// upload using http to the pod directly
-	req, err := createUploadRequest(archiveFilename, uploadOptions.ExistingAppSlug, uploadOptions.NewAppName, "http://localhost:3000/api/v1/kots")
+	req, err := createUploadRequest(archiveFilename, uploadOptions, "http://localhost:3000/api/v1/kots")
 	if err != nil {
-		time.Sleep(time.Minute * 5)
 		return errors.Wrap(err, "failed to upload")
 	}
 	resp, err := http.DefaultClient.Do(req)
@@ -133,7 +133,7 @@ func findKotsadm(uploadOptions UploadOptions) (string, error) {
 	return "", errors.New("unable to find kotsadm pod")
 }
 
-func createUploadRequest(path string, existingAppSlug string, newAppName string, uri string) (*http.Request, error) {
+func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open file")
@@ -152,10 +152,10 @@ func createUploadRequest(path string, existingAppSlug string, newAppName string,
 	}
 
 	method := ""
-	if existingAppSlug != "" {
+	if uploadOptions.ExistingAppSlug != "" {
 		method = "PUT"
 		metadata := map[string]string{
-			"slug": existingAppSlug,
+			"slug": uploadOptions.ExistingAppSlug,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -171,7 +171,8 @@ func createUploadRequest(path string, existingAppSlug string, newAppName string,
 	} else {
 		method = "POST"
 		metadata := map[string]string{
-			"name": newAppName,
+			"name":         uploadOptions.NewAppName,
+			"versionLabel": uploadOptions.VersionLabel,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {

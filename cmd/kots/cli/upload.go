@@ -35,7 +35,7 @@ func UploadCmd() *cobra.Command {
 				NewAppName:      v.GetString("name"),
 			}
 
-			if err := upload.Upload(args[0], uploadOptions); err != nil {
+			if err := upload.Upload(ExpandDir(args[0]), uploadOptions); err != nil {
 				return errors.Cause(err)
 			}
 

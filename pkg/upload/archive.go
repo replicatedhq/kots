@@ -2,21 +2,29 @@ package upload
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
+	"strings"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 )
 
 func createUploadableArchive(rootPath string) (string, error) {
+	if strings.HasSuffix(rootPath, string(os.PathSeparator)) {
+		rootPath = strings.TrimSuffix(rootPath, string(os.PathSeparator))
+	}
+
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
+			ImplicitTopLevelFolder: true,
 		},
 	}
 
 	paths := []string{
-		rootPath,
+		path.Join(rootPath, "upstream"),
+		path.Join(rootPath, "base"),
+		path.Join(rootPath, "overlays"),
 	}
 
 	// the caller of this function is repsonsible for deleting this file
