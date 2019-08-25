@@ -30,9 +30,28 @@ type UploadOptions struct {
 	ExistingAppSlug string
 	NewAppName      string
 	VersionLabel    string
+	UpdateCursor    string
+	License         *string
 }
 
 func Upload(path string, uploadOptions UploadOptions) error {
+	license, err := findLicense(path)
+	if err != nil {
+		return errors.Wrap(err, "failed to find license")
+	}
+	uploadOptions.License = license
+
+	updateCursor, err := findUpdateCursor(path)
+	if err != nil {
+		return errors.Wrap(err, "failed to find update cursor")
+	}
+
+	if updateCursor == "" {
+		return errors.New("no update cursor found. this is not yet supported")
+	}
+
+	uploadOptions.UpdateCursor = updateCursor
+
 	archiveFilename, err := createUploadableArchive(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to create uploadable archive")
@@ -190,13 +209,19 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		}
 	} else {
 		method = "POST"
-		metadata := map[string]string{
+
+		body := map[string]string{
 			"name":         uploadOptions.NewAppName,
 			"versionLabel": uploadOptions.VersionLabel,
 			"upstreamURI":  uploadOptions.UpstreamURI,
-			"updateCursor": "",
+			"updateCursor": uploadOptions.UpdateCursor,
 		}
-		b, err := json.Marshal(metadata)
+
+		if uploadOptions.License != nil {
+			body["license"] = *uploadOptions.License
+		}
+
+		b, err := json.Marshal(body)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal json")
 		}

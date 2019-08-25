@@ -59,7 +59,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 
 	// Add a file with the update cursor
 	cursorFile := BaseFile{
-		Path:    "kotsCursor",
+		Path:    ".kotsCursor",
 		Content: []byte(u.UpdateCursor),
 	}
 	baseFiles = append(baseFiles, cursorFile)

@@ -39,3 +39,42 @@ func createUploadableArchive(rootPath string) (string, error) {
 
 	return path.Join(tempDir, "kots-uploadable-archive.tar.gz"), nil
 }
+
+func findUpdateCursor(rootPath string) (string, error) {
+	cursorFilePath := path.Join(rootPath, "base", ".kotsCursor")
+	_, err := os.Stat(cursorFilePath)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file with update cursor")
+	}
+
+	b, err := ioutil.ReadFile(cursorFilePath)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read update cursor file")
+	}
+
+	return string(b), nil
+}
+
+func findLicense(rootPath string) (*string, error) {
+	licenseFilePath := path.Join(rootPath, "upstream", "userdata", "license.yaml")
+	_, err := os.Stat(licenseFilePath)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open file with license")
+	}
+
+	b, err := ioutil.ReadFile(licenseFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read license file")
+	}
+
+	license := string(b)
+	return &license, nil
+}
