@@ -205,8 +205,8 @@ export class ClusterStore {
   }
 
   async listClustersForKotsApp(appId: string): Promise<Cluster[]> {
-    const q = `select cluster_id, c.id, c.cluster_type from app_downstream 
-      inner join cluster c on c.id = cluster_id 
+    const q = `select cluster_id, c.id, c.cluster_type from app_downstream
+      inner join cluster c on c.id = cluster_id
       where app_id = $1
       order by created_at, title`;
     const v = [appId];

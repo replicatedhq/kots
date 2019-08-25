@@ -10,6 +10,8 @@ import path from "path";
 import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
+import { Cluster } from "../cluster";
+import * as _ from "lodash";
 
 export class KotsApp {
   id: string;
@@ -189,9 +191,17 @@ export class KotsApp {
     });
   }
 
-  public toSchema() {
+  public toSchema(downstreams: Cluster[]) {
     return {
-      ...this
-    }
+      ...this,
+      downstreams: _.map(downstreams, (downstream) => {
+        return {
+          name: downstream.title,
+          cluster: {
+            ...downstream,
+          },
+        };
+      }),
+    };
   }
 }

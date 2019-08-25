@@ -150,6 +150,9 @@ export const listAppsRaw = `
         slug
         currentSequence
         lastUpdateCheckAt
+        downstreams {
+          name
+        }
       }
     }
   }
@@ -299,6 +302,9 @@ export const getKotsAppRaw = `
       slug
       currentSequence
       lastUpdateCheckAt
+      downstreams {
+        name
+      }
     }
   }
 `;

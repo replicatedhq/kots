@@ -19,8 +19,11 @@ export function KotsQueries(stores: Stores) {
       } else {
         _id = id;
       }
-      const result = await stores.kotsAppStore.getApp(_id);
-      return result.toSchema();
+      const app = await stores.kotsAppStore.getApp(_id);
+
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
+
+      return app.toSchema(downstreams);
     },
 
     async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
@@ -30,12 +33,12 @@ export function KotsQueries(stores: Stores) {
       return results;
     },
 
-    // TODO: This code is currently duplicated between kots apps and wathes. 
+    // TODO: This code is currently duplicated between kots apps and wathes.
     // It should be refactored so that you can get a file tree/download files
     // by a id/sequence number regardless of the app type.
     async getKotsApplicationTree(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context? 
+      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
       const tree = await app.generateFileTreeIndex(args.sequence);
       if (_.isEmpty(tree) || !tree[0].children) {
         throw new ReplicatedError(`Unable to get files for watch with ID of ${app.id}`);
@@ -46,7 +49,7 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context? 
+      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
       const files = await app.getFiles(args.sequence, args.fileNames);
       const jsonFiles = JSON.stringify(files.files);
       if (jsonFiles.length >= 5000000) {
