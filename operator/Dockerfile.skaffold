@@ -26,5 +26,7 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 
+ADD ./deploy/entrypoint-dev.sh .
+
 RUN make build
-ENTRYPOINT ["CompileDaemon", "-build=\"make build\"", "-command=\"./bin/kotsadm-operator\""]
+ENTRYPOINT ["./entrypoint-dev.sh"]

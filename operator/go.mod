@@ -15,6 +15,7 @@ require (
 	github.com/emicklei/go-restful v2.9.3+incompatible
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/ghodss/yaml v1.0.0
+	github.com/githubnemo/CompileDaemon v1.0.0 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/gobuffalo/envy v1.6.15
@@ -30,6 +31,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/hashicorp/logutils v1.0.0
+	github.com/howeyc/fsnotify v0.9.0 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/huandu/xstrings v1.2.0
 	github.com/imdario/mergo v0.3.7

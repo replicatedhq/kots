@@ -35,13 +35,17 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createKotsAppVersion(id: string, sequence: number, versionLabel: string): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label) values ($1, $2, $3, $4)`;
+  async createKotsAppVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined): Promise<void> {
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec)
+      values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
       id,
       sequence,
       new Date(),
       versionLabel,
+      updateCursor,
+      supportBundleSpec,
+      preflightSpec,
     ];
 
     await this.pool.query(q, v);
@@ -144,7 +148,7 @@ export class KotsAppStore {
     return result.rows[0].id;
   }
 
-  async createKotsApp(name: string, userId?: string): Promise<KotsApp> {
+  async createKotsApp(name: string, upstreamURI: string, license: string, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
     }
@@ -176,14 +180,16 @@ export class KotsAppStore {
 
     try {
       await pg.query("begin");
-      const q = `insert into app (id, name, icon_uri, created_at, slug, is_all_users)
-      values ($1, $2, $3, $4, $5, $6)`;
+      const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users)
+      values ($1, $2, $3, $4, $5, $6, $7, $8)`;
       const v = [
         id,
         name,
         "",
         new Date(),
         slugProposal,
+        upstreamURI,
+        license,
         !userId
       ];
 

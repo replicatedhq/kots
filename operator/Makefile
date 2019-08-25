@@ -30,7 +30,7 @@ test: fmt vet pacts
 	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 .PHONY: build
-build: fmt vet
+build:
 	go build -o bin/kotsadm-operator github.com/replicatedhq/kotsadm/operator/cmd/kotsadm-operator
 
 .PHONY: runs

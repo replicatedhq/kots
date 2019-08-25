@@ -105,6 +105,18 @@ export class KotsApp {
     });
   }
 
+  async getArchive(sequence: string): Promise<any> {
+    const replicatedParams = await Params.getParams();
+    const params = {
+      Bucket: replicatedParams.shipOutputBucket,
+      Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
+    };
+    logger.info({ msg: "S3 Params", params });
+
+    const result = await getS3(replicatedParams).getObject(params).promise();
+    return result.Body;
+  }
+
   async render(sequence: string, overlayPath: string): Promise<string> {
     const replicatedParams = await Params.getParams();
     const tmpDir = tmp.dirSync();

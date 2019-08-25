@@ -16,12 +16,24 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var (
+	PollInterval = time.Second * 10
+)
+
+// DestiredState is what we receive from the kotsadm-api server
+type DesiredState struct {
+	Present map[string][]string `json:"present"`
+	Missing map[string][]string `json:"missing"`
+}
+
 type Client struct {
 	APIEndpoint string
 	Token       string
 }
 
 func (c *Client) Run() error {
+	fmt.Println("Starting kotsadm-operator loop")
+
 	for {
 		desiredState, err := getDesiredStateFromKotsadmServer(c.APIEndpoint, c.Token)
 		if err != nil {
@@ -38,19 +50,21 @@ func (c *Client) Run() error {
 				}
 
 				if err := ensureResourcesPresent(namespace, decoded); err != nil {
-					fmt.Printf("error in apply: %#v\n", err)
+					fmt.Printf("error in kubectl apply: %#v\n", err)
 					continue
 				}
 			}
 		}
 
-		time.Sleep(time.Second * 10)
-	}
-}
+		// Delete
+		for namespace, missing := range desiredState.Missing {
+			for _, manifest := range missing {
+				fmt.Printf("corwardly refusing to delete manifests from %s: \n%#v\n", namespace, manifest)
+			}
+		}
 
-type DesiredState struct {
-	Present map[string][]string `json:"present"`
-	Missing map[string][]string `json:"missing"`
+		time.Sleep(PollInterval)
+	}
 }
 
 func getDesiredStateFromKotsadmServer(apiEndpoint string, token string) (*DesiredState, error) {

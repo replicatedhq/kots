@@ -5,7 +5,6 @@ metadata:
 spec:
   database: kotsadm-postgres
   name: app
-  requires: []
   schema:
     postgres:
       primaryKey:
@@ -31,6 +30,12 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: upstream_uri
+        type: text
+        constraints:
+          notNull: true
+      - name: license
+        type: text
       - name: current_sequence
         type: integer
       - name: last_update_check_at

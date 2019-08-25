@@ -44,10 +44,10 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: kotsadm-worker
-      context: "./worker"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
+    # - image: kotsadm-worker
+    #   context: "./worker"
+    #   docker:
+    #     dockerfile: ./Dockerfile.skaffold
 
     - image: kotsadm-operator
       context: "./operator"
