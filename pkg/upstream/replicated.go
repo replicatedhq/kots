@@ -37,7 +37,8 @@ type App struct {
 }
 
 type Release struct {
-	Manifests map[string][]byte
+	UpdateCursor string
+	Manifests    map[string][]byte
 }
 
 func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License) (*Upstream, error) {
@@ -97,10 +98,11 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	}
 
 	upstream := &Upstream{
-		URI:   u.RequestURI(),
-		Name:  application.Name,
-		Files: files,
-		Type:  "replicated",
+		URI:          u.RequestURI(),
+		Name:         application.Name,
+		Files:        files,
+		Type:         "replicated",
+		UpdateCursor: release.UpdateCursor,
 	}
 
 	return upstream, nil
@@ -178,7 +180,8 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 
 func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
 	release := Release{
-		Manifests: make(map[string][]byte),
+		Manifests:    make(map[string][]byte),
+		UpdateCursor: "-1", // TODO
 	}
 
 	err := filepath.Walk(localPath,
@@ -227,13 +230,16 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 
 	defer getResp.Body.Close()
 
+	updateCursor := getResp.Header.Get("X-Replicated-Sequence")
+
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new gzip reader")
 	}
 
 	release := Release{
-		Manifests: make(map[string][]byte),
+		Manifests:    make(map[string][]byte),
+		UpdateCursor: updateCursor,
 	}
 	tarReader := tar.NewReader(gzf)
 	i := 0

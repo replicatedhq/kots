@@ -194,6 +194,7 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 			"name":         uploadOptions.NewAppName,
 			"versionLabel": uploadOptions.VersionLabel,
 			"upstreamURI":  uploadOptions.UpstreamURI,
+			"updateCursor": "",
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
