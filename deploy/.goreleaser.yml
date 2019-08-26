@@ -24,11 +24,24 @@ builds:
     flags: -tags netgo -installsuffix netgo
     binary: kots
     hooks: {}
+  - id: so
+    goos:
+    - linux
+    goarch:
+    - amd64
+    env:
+      - CGO_ENABLED=1
+      - GO111MODULE=on
+    main: ffi/main.go
+    flags: -buildmode=c-shared
+    binary: kots.so
+    hooks: {}
 
 archives:
   - id: kots
     builds:
       - kots
+      - so
     format: tar.gz
     format_overrides:
       - goos: windows
