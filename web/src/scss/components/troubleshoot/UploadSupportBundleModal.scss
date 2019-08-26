@@ -1,4 +1,5 @@
-#UploadSupportBundleModal {
+#UploadSupportBundleModal, 
+.UploadLicenseFile--wrapper {
   .FileUpload-wrapper {
     cursor: default;
     border-radius: 4px;
@@ -7,8 +8,9 @@
     margin-bottom: 10px;
 
     &.has-file {
-      border: 1px solid #65A61D;
-      color: #65A61D;
+      border: 1px solid #44bb66;
+      color: #44bb66;
+      padding: 12px;
     }
   }
 
@@ -77,4 +79,7 @@
       height: 130px;
     }
   }
+}
+.UploadLicenseFile--wrapper .FileUpload-wrapper {
+  margin-bottom: 0;
 }
