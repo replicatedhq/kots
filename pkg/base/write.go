@@ -33,25 +33,28 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	kustomizeResources := []string{}
 	for _, file := range b.Files {
-		ok, err := file.ShouldBeIncludedInBase(options.ExcludeKotsKinds)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if file should be in base")
-		}
-		if !ok {
+		writeToBase := file.ShouldBeIncludedInBaseFilesystem(options.ExcludeKotsKinds)
+		writeToKustomization := file.ShouldBeIncludedInBaseKustomization(options.ExcludeKotsKinds)
+
+		if !writeToBase && !writeToKustomization {
 			continue
 		}
 
-		kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
-
-		fileRenderPath := path.Join(renderDir, file.Path)
-		d, _ := path.Split(fileRenderPath)
-		if _, err := os.Stat(d); os.IsNotExist(err) {
-			if err := os.MkdirAll(d, 0744); err != nil {
-				return errors.Wrap(err, "failed to mkdir")
-			}
+		if writeToKustomization {
+			kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
 		}
-		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return errors.Wrap(err, "failed to write base file")
+
+		if writeToBase {
+			fileRenderPath := path.Join(renderDir, file.Path)
+			d, _ := path.Split(fileRenderPath)
+			if _, err := os.Stat(d); os.IsNotExist(err) {
+				if err := os.MkdirAll(d, 0744); err != nil {
+					return errors.Wrap(err, "failed to mkdir")
+				}
+			}
+			if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+				return errors.Wrap(err, "failed to write base file")
+			}
 		}
 	}
 

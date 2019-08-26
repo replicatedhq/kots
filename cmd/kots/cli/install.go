@@ -54,6 +54,8 @@ func InstallCmd() *cobra.Command {
 				Downstreams: []string{
 					"local", // this is the auto-generated operator downstream
 				},
+				LocalPath:   ExpandDir(v.GetString("local-path")),
+				LicenseFile: ExpandDir(v.GetString("license-file")),
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err
@@ -78,9 +80,11 @@ func InstallCmd() *cobra.Command {
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
-				Namespace:  v.GetString("namespace"),
-				Kubeconfig: v.GetString("kubeconfig"),
-				NewAppName: v.GetString("name"),
+				Namespace:    v.GetString("namespace"),
+				Kubeconfig:   v.GetString("kubeconfig"),
+				NewAppName:   v.GetString("name"),
+				VersionLabel: "todo",
+				UpstreamURI:  args[0],
 			}
 
 			// get the first dir in rootDir and use that as the upload dir
@@ -150,6 +154,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
 	cmd.Flags().String("hostname", "localhost:8800", "the hostname to that the admin console will be exposed on")
 	cmd.Flags().StringP("name", "n", "", "name of the application to use in the Admin Console")
+	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
+	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")

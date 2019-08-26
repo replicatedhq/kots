@@ -2,21 +2,29 @@ package upload
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
+	"strings"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 )
 
 func createUploadableArchive(rootPath string) (string, error) {
+	if strings.HasSuffix(rootPath, string(os.PathSeparator)) {
+		rootPath = strings.TrimSuffix(rootPath, string(os.PathSeparator))
+	}
+
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
+			ImplicitTopLevelFolder: true,
 		},
 	}
 
 	paths := []string{
-		rootPath,
+		path.Join(rootPath, "upstream"),
+		path.Join(rootPath, "base"),
+		path.Join(rootPath, "overlays"),
 	}
 
 	// the caller of this function is repsonsible for deleting this file
@@ -30,4 +38,43 @@ func createUploadableArchive(rootPath string) (string, error) {
 	}
 
 	return path.Join(tempDir, "kots-uploadable-archive.tar.gz"), nil
+}
+
+func findUpdateCursor(rootPath string) (string, error) {
+	cursorFilePath := path.Join(rootPath, "base", ".kotsCursor")
+	_, err := os.Stat(cursorFilePath)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file with update cursor")
+	}
+
+	b, err := ioutil.ReadFile(cursorFilePath)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read update cursor file")
+	}
+
+	return string(b), nil
+}
+
+func findLicense(rootPath string) (*string, error) {
+	licenseFilePath := path.Join(rootPath, "upstream", "userdata", "license.yaml")
+	_, err := os.Stat(licenseFilePath)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open file with license")
+	}
+
+	b, err := ioutil.ReadFile(licenseFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read license file")
+	}
+
+	license := string(b)
+	return &license, nil
 }

@@ -18,29 +18,58 @@ type OverlySimpleGVK struct {
 	Kind       string `yaml:"kind"`
 }
 
-// ShouldBeIncludedInBase attempts to determine if this is a valid Kubernetes manifest.
+// ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
-// It currently cannot return an error
-func (f BaseFile) ShouldBeIncludedInBase(excludeKotsKinds bool) (bool, error) {
+func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) bool {
 	o := OverlySimpleGVK{}
 
 	if err := yaml.Unmarshal(f.Content, &o); err != nil {
-		return false, nil
+		return false
 	}
 
 	if o.APIVersion == "" || o.Kind == "" {
-		return false, nil
+		return false
 	}
 
 	if excludeKotsKinds {
 		if o.APIVersion == "kots.io/v1beta1" {
-			return false, nil
+			return false
 		}
 
 		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
-			return false, nil
+			return false
 		}
 	}
 
-	return true, nil
+	return true
+}
+
+// ShouldBeIncludedInBaseFilesystem attempts to determine if this is a valid Kubernetes manifest.
+// It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
+func (f BaseFile) ShouldBeIncludedInBaseFilesystem(excludeKotsKinds bool) bool {
+	if f.Path == ".kotsCursor" {
+		return true
+	}
+
+	o := OverlySimpleGVK{}
+
+	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+		return false
+	}
+
+	if o.APIVersion == "" || o.Kind == "" {
+		return false
+	}
+
+	if excludeKotsKinds {
+		if o.APIVersion == "kots.io/v1beta1" {
+			return false
+		}
+
+		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
+			return false
+		}
+	}
+
+	return true
 }

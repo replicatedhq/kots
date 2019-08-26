@@ -1,14 +1,18 @@
 package pull
 
 import (
+	"io/ioutil"
 	"path"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type PullOptions struct {
@@ -29,7 +33,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 	fetchOptions.LocalPath = pullOptions.LocalPath
-	fetchOptions.LicenseFile = pullOptions.LicenseFile
+
+	if pullOptions.LicenseFile != "" {
+		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse license from file")
+		}
+
+		fetchOptions.License = license
+	}
 
 	log.ActionWithSpinner("Pulling upstream")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
@@ -95,13 +107,33 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		writeDownstreamOptions := downstream.WriteOptions{
 			DownstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
 			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
-			Overwrite:     pullOptions.Overwrite,
 		}
 
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrap(err, "failed to write downstream")
 		}
+
 		log.FinishSpinner()
 	}
 	return nil
+}
+
+func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read license file")
+	}
+
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	license, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode license file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+		return nil, errors.New("not an application license")
+	}
+
+	return license.(*kotsv1beta1.License), nil
 }

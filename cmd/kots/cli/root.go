@@ -24,6 +24,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(PullCmd())
 	cmd.AddCommand(InstallCmd())
 	cmd.AddCommand(UploadCmd())
+	cmd.AddCommand(DownloadCmd())
 	cmd.AddCommand(AdminConsoleCmd())
 
 	viper.BindPFlags(cmd.Flags())

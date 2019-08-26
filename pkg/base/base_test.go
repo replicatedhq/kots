@@ -4,10 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestShouldBeIncludedInBase(t *testing.T) {
+func TestShouldBeIncludedInBaseKustomization(t *testing.T) {
 	tests := []struct {
 		name             string
 		path             string
@@ -127,16 +126,12 @@ connection:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := require.New(t)
-
 			b := BaseFile{
 				Path:    test.path,
 				Content: test.content,
 			}
 
-			actual, err := b.ShouldBeIncludedInBase(test.excludeKotsKinds)
-			req.NoError(err)
-
+			actual := b.ShouldBeIncludedInBaseKustomization(test.excludeKotsKinds)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

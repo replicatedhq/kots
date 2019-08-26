@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -11,7 +12,7 @@ type FetchOptions struct {
 	HelmRepoName string
 	HelmRepoURI  string
 	LocalPath    string
-	LicenseFile  string
+	License      *kotsv1beta1.License
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
@@ -36,10 +37,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.LicenseFile)
-	}
-	if u.Scheme == "file" {
-		return readFilesFromURI(upstreamURI)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

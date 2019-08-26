@@ -154,10 +154,11 @@ repositories: []`
 		}
 
 		upstream := &Upstream{
-			URI:   u.RequestURI(),
-			Name:  chartName,
-			Type:  "helm",
-			Files: files,
+			URI:          u.RequestURI(),
+			Name:         chartName,
+			Type:         "helm",
+			Files:        files,
+			UpdateCursor: chartVersion,
 		}
 
 		return upstream, nil

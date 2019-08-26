@@ -22,7 +22,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	// Find the values from the context
 	var templateContext map[string]interface{}
 	for _, c := range u.Files {
-		if c.Path == "config/values.yaml" {
+		if c.Path == "userdata/config.yaml" {
 			ctx, err := unmarshalConfigValuesContent(c.Content)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to unmarshal config values content")
@@ -36,6 +36,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
+
 	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
@@ -56,7 +57,13 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 		baseFiles = append(baseFiles, baseFile)
 	}
 
-	// kustomization :=
+	// Add a file with the update cursor
+	cursorFile := BaseFile{
+		Path:    ".kotsCursor",
+		Content: []byte(u.UpdateCursor),
+	}
+	baseFiles = append(baseFiles, cursorFile)
+
 	base := Base{
 		Files: baseFiles,
 	}

@@ -9,6 +9,10 @@ test:
 kots: fmt vet
 	go build -o bin/kots github.com/replicatedhq/kots/cmd/kots
 
+.PHONY: ffi
+ffi: fmt vet
+	go build -o bin/kots.so -buildmode=c-shared ffi/main.go
+
 .PHONY: fmt
 fmt:
 	go fmt ./pkg/... ./cmd/...
