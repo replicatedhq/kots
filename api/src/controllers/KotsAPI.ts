@@ -1,6 +1,6 @@
-import { Controller, Put, Post, BodyParams, Req } from "@tsed/common";
+import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { putObject } from "../util/s3";
 import { Params } from "../server/params";
 import path from "path";
@@ -8,10 +8,18 @@ import fs from "fs";
 import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
-import { logger } from "../server/logger";
+import { KotsApp } from "../kots_app";
 
 interface CreateAppBody {
   metadata: string;
+}
+
+interface CreateAppMetadata {
+  name: string;
+  versionLabel: string;
+  upstreamURI: string;
+  updateCursor: string;
+  license: string;
 }
 
 interface UpdateAppBody {
@@ -20,6 +28,46 @@ interface UpdateAppBody {
 
 @Controller("/api/v1/kots")
 export class KotsAPI {
+
+  @Get("/")
+  async kotsList(
+    @Req() request: Request,
+  ): Promise<any> {
+    const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
+
+    const result = _.map(apps, (app: KotsApp) => {
+      return {
+        name: app.name,
+        slug: app.slug,
+      };
+    });
+
+    return result;
+  }
+
+  @Get("/:slug")
+  async kotsDownload(
+    @Req() request: Request,
+    @Res() response: Response,
+    @PathParams("slug") slug: string,
+  ): Promise<any> {
+    // this assumes single tenant and single app for now
+
+    const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
+    const app = _.find(apps, (a: KotsApp) => {
+      return a.slug === slug;
+    });
+
+    if (!app) {
+      response.status(404);
+      return {};
+    }
+
+    response.header("Content-Type", "application/gzip");
+    response.status(200);
+    response.send(await app.getArchive(''+app.currentSequence));
+  }
+
   @Post("/")
   async kotsUploadCreate(
     @MultipartFile("file") file: Express.Multer.File,
@@ -29,14 +77,20 @@ export class KotsAPI {
     // IMPORTANT: this function does not have user-auth and is only usable in
     // single tenant (on-prem mode right now)
 
-    const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(JSON.parse(body.metadata).name);
+    const metadata = JSON.parse(body.metadata);
+
+    const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(metadata.name, metadata.upstreamURI, metadata.license);
 
     const params = await Params.getParams();
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     const buffer = fs.readFileSync(file.path);
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, "----");
+    // TODO parse and get support bundle and prefight from the upload
+    const supportBundleSpec = undefined;
+    const preflightSpec = undefined;
+
+    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec);
 
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);

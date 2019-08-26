@@ -8,9 +8,18 @@ const KotsApp = `
     slug: String
     currentSequence: Int
     lastUpdateCheckAt: String
+    downstreams: [KotsDownstream]
+  }
+`;
+
+const KotsDownstream = `
+  type KotsDownstream {
+    name: String
+    cluster: Cluster
   }
 `;
 
 export default [
   KotsApp,
+  KotsDownstream,
 ];

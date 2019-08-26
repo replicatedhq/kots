@@ -16,12 +16,24 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var (
+	PollInterval = time.Second * 10
+)
+
+// DestiredState is what we receive from the kotsadm-api server
+type DesiredState struct {
+	Present map[string][]string `json:"present"`
+	Missing map[string][]string `json:"missing"`
+}
+
 type Client struct {
 	APIEndpoint string
 	Token       string
 }
 
 func (c *Client) Run() error {
+	fmt.Println("Starting kotsadm-operator loop")
+
 	for {
 		desiredState, err := getDesiredStateFromKotsadmServer(c.APIEndpoint, c.Token)
 		if err != nil {
@@ -29,32 +41,30 @@ func (c *Client) Run() error {
 		}
 
 		// Deploy
-		for _, present := range desiredState.Present {
-			decoded, err := base64.StdEncoding.DecodeString(present)
-			if err != nil {
-				fmt.Printf("error decoding: %#v\n", err)
-				continue
-			}
+		for namespace, present := range desiredState.Present {
+			for _, manifest := range present {
+				decoded, err := base64.StdEncoding.DecodeString(manifest)
+				if err != nil {
+					fmt.Printf("error decoding: %#v\n", err)
+					continue
+				}
 
-			deployable, err := removeInternalGVK(decoded)
-			if err != nil {
-				fmt.Printf("error removing internal gvk objects: %#v\n", err)
-				continue
-			}
-
-			if err := ensureResourcesPresent(deployable); err != nil {
-				fmt.Printf("error in apply: %#v\n", err)
-				continue
+				if err := ensureResourcesPresent(namespace, decoded); err != nil {
+					fmt.Printf("error in kubectl apply: %#v\n", err)
+					continue
+				}
 			}
 		}
 
-		time.Sleep(time.Second * 10)
-	}
-}
+		// Delete
+		for namespace, missing := range desiredState.Missing {
+			for _, manifest := range missing {
+				fmt.Printf("corwardly refusing to delete manifests from %s: \n%#v\n", namespace, manifest)
+			}
+		}
 
-type DesiredState struct {
-	Present []string `json:"present"`
-	Missing []string `json:"missing"`
+		time.Sleep(PollInterval)
+	}
 }
 
 func getDesiredStateFromKotsadmServer(apiEndpoint string, token string) (*DesiredState, error) {
@@ -121,7 +131,7 @@ func reportCurrentStateToKotsadmServer(apiEndpoint string, token string, helmApp
 	return nil
 }
 
-func ensureResourcesPresent(input []byte) error {
+func ensureResourcesPresent(namespace string, input []byte) error {
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
 
@@ -141,17 +151,17 @@ func ensureResourcesPresent(input []byte) error {
 	kubernetesApplier := applier.NewKubectl(kubectl, config)
 
 	fmt.Println("dry run applying manifests(s)")
-	if err := kubernetesApplier.Apply(input, true); err != nil {
+	if err := kubernetesApplier.Apply(namespace, input, true); err != nil {
 		return errors.Wrap(err, "dry run failed")
 	}
 
 	fmt.Println("applying manifest(s)")
-	kubernetesApplier.Apply(input, false)
+	kubernetesApplier.Apply(namespace, input, false)
 
 	return nil
 }
 
-func ensureResourcesMissing(input []byte) error {
+func ensureResourcesMissing(namespace string, input []byte) error {
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
 
@@ -169,7 +179,7 @@ func ensureResourcesMissing(input []byte) error {
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, config)
-	go kubernetesApplier.Remove(input)
+	go kubernetesApplier.Remove(namespace, input)
 
 	return nil
 }

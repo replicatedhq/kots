@@ -16,10 +16,15 @@ spec:
         type: text
       - name: sequence
         type: integer
+      - name: update_cursor
+        type: text
       - name: created_at
         type: timestamp without time zone
       - name: version_label
         type: text
         constraints:
           notNull: true
-
+      - name: supportbundle_spec
+        type: text
+      - name: preflight_spec
+        type: text

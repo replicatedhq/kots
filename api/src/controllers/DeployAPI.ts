@@ -27,22 +27,26 @@ export class DeployAPI {
       return {};
     }
 
-    const watches = await request.app.locals.stores.watchStore.listForCluster(cluster.id!);
+    const apps = await request.app.locals.stores.kotsAppStore.listAppsForCluster(cluster.id);
 
-    const desiredState: string[] = [];
+    const present = {};
+    const missing = {};
 
-    for (const watch of watches) {
-      const params = await request.app.locals.stores.watchStore.getLatestGeneratedFileS3Params(watch.id!);
+    for (const app of apps) {
+      const desiredNamespace = "test";
+      if (!(desiredNamespace in present)) {
+        present[desiredNamespace] = [];
+      }
 
-      const download = await request.app.locals.stores.watchDownload.findDeploymentFile(params);
-      desiredState.push(download.contents.toString("base64"));
+      const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+      const b = new Buffer(rendered);
+      present[desiredNamespace].push(b.toString("base64"));
     }
-
 
     response.status(200);
     return {
-      present: desiredState,
-      missing: [],
+      present,
+      missing,
     }
   }
 }

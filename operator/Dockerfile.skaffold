@@ -1,7 +1,7 @@
 FROM golang:1.12 as deps
-RUN go get -u github.com/golang/dep/cmd/dep
 RUN go get github.com/sqs/goreturns
 RUN go get -u golang.org/x/lint/golint
+RUN go get github.com/githubnemo/CompileDaemon
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.15.2
@@ -13,12 +13,20 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_VERSION}" /usr/local/bin/kubectl
 
+# Install krew
+ADD ./deploy/install-krew.sh /install-krew.sh
+RUN /install-krew.sh
+ENV PATH="/root/.krew/bin:$PATH"
+
+# Install our plugins
+RUN kubectl krew install preflight
+RUN kubectl krew install support-bundle
+
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 
+ADD ./deploy/entrypoint-dev.sh .
+
 RUN make build
-
-RUN cp ./bin/kotsadm-operator /opt/kotsadm-operator
-
-ENTRYPOINT ["/opt/kotsadm-operator"]
+ENTRYPOINT ["./entrypoint-dev.sh"]

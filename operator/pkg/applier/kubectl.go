@@ -48,11 +48,11 @@ func (c *Kubectl) connectArgs() []string {
 	return args
 }
 
-func (c *Kubectl) Remove(yamlDoc []byte) error {
+func (c *Kubectl) Remove(namespace string, yamlDoc []byte) error {
 	args := []string{
 		"delete",
 		"-n",
-		"default",
+		namespace,
 		"-f",
 		"-",
 	}
@@ -70,7 +70,7 @@ func (c *Kubectl) Remove(yamlDoc []byte) error {
 	return nil
 }
 
-func (c *Kubectl) Apply(yamlDoc []byte, dryRun bool) error {
+func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 	args := []string{
 		"apply",
 	}
@@ -82,7 +82,7 @@ func (c *Kubectl) Apply(yamlDoc []byte, dryRun bool) error {
 	args = append(args,
 		[]string{
 			"-n",
-			"default",
+			namespace,
 			"-f",
 			"-",
 		}...)
