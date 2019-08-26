@@ -8,7 +8,7 @@ import fs from "fs";
 import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
-import { KotsApp } from "../kots_app";
+import { KotsApp, kotsAppFromLicenseData } from "../kots_app";
 
 interface CreateAppBody {
   metadata: string;
@@ -22,13 +22,17 @@ interface CreateAppMetadata {
   license: string;
 }
 
+interface UploadLicenseBody {
+  name: string;
+  license: string;
+}
+
 interface UpdateAppBody {
   slug: string;
 }
 
 @Controller("/api/v1/kots")
 export class KotsAPI {
-
   @Get("/")
   async kotsList(
     @Req() request: Request,
@@ -66,6 +70,35 @@ export class KotsAPI {
     response.header("Content-Type", "application/gzip");
     response.status(200);
     response.send(await app.getArchive(''+app.currentSequence));
+  }
+
+  @Post("/license")
+  async kotsUploadLicense(
+    @BodyParams("") body: UploadLicenseBody,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<any> {
+    const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
+    let downstream;
+    for (const cluster of clusters) {
+      if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+        downstream = cluster;
+      }
+    }
+
+    const kotsApp = await kotsAppFromLicenseData(body.license, body.name, downstream.title, request.app.locals.stores);
+    if (!kotsApp) {
+      response.status(500);
+      return {
+        error: "failed to create app",
+      };
+    }
+
+    const params = await Params.getParams();
+    response.status(201);
+    return {
+      uri: `${params.shipApiEndpoint}/app/${kotsApp!.slug}`,
+    };
   }
 
   @Post("/")
