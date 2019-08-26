@@ -96,7 +96,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
-	podName, err := findKotsadm(uploadOptions)
+	podName, err := findKotsadm(uploadOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -147,7 +147,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	return nil
 }
 
-func findKotsadm(uploadOptions UploadOptions) (string, error) {
+func findKotsadm(namespace string) (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -158,7 +158,7 @@ func findKotsadm(uploadOptions UploadOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	pods, err := clientset.CoreV1().Pods(uploadOptions.Namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
+	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
 	}

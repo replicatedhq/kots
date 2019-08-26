@@ -47,10 +47,6 @@ func findUpdateCursor(rootPath string) (string, error) {
 		return "", nil
 	}
 
-	if err != nil {
-		return "", errors.Wrap(err, "failed to open file with update cursor")
-	}
-
 	b, err := ioutil.ReadFile(cursorFilePath)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read update cursor file")
