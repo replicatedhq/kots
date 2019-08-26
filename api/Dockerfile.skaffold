@@ -24,7 +24,7 @@ RUN yarn install --silent
 WORKDIR /src
 ADD . /src
 
-# RUN make build
+RUN make build
 
 # COPY ./kots.so /src/build/kots.so
 RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v0.2.0/kots_0.2.0_linux_amd64-0.2.0.tar.gz" > /tmp/kots.tar.gz && \
