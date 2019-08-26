@@ -41,10 +41,9 @@ export function KotsQueries(stores: Stores) {
       const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
       const tree = await app.generateFileTreeIndex(args.sequence);
       if (_.isEmpty(tree) || !tree[0].children) {
-        throw new ReplicatedError(`Unable to get files for watch with ID of ${app.id}`);
+        throw new ReplicatedError(`Unable to get files for app with ID of ${app.id}`);
       }
-      // return children so you don't start with the "out" dir as top level in UI
-      return JSON.stringify(tree[0].children);
+      return JSON.stringify(tree);
     },
 
     async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
