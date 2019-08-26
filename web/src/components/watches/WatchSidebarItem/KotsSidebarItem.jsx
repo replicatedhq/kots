@@ -8,7 +8,7 @@ export default function KotsSidebarItem(props) {
 
   let downstreamPendingLengths = [];
   app.downstreams?.map((w) => {
-    downstreamPendingLengths.push(w.pendingVersions.length);
+    downstreamPendingLengths.push(w.pendingVersions?.length);
   });
 
   let versionsBehind;

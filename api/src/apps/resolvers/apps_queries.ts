@@ -8,7 +8,10 @@ export function AppsQueries(stores: Stores) {
     async listApps(root: any, args: any, context: Context) {
       return {
         watches: async () => (await stores.watchStore.listWatches(context.session.userId)).map(watch => watch.toSchema(root, stores, context)),
-        kotsApps: async () => (await stores.kotsAppStore.listKotsApps(context.session.userId)).map(kotsApp => kotsApp.toSchema()),
+        kotsApps: async () => (await stores.kotsAppStore.listKotsApps(context.session.userId)).map(async (kotsApp) => {
+          const downstreams = await stores.clusterStore.listClustersForKotsApp(kotsApp.id);
+          return kotsApp.toSchema(downstreams);
+        }),
         pendingUnforks: async () => {
           const clusters = await stores.clusterStore.listClusters(context.session.userId);
           let helmCharts: HelmChart[] = [];
