@@ -2,6 +2,7 @@ import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import _ from "lodash";
 import { ReplicatedError } from "../../server/errors";
+import { KotsApp } from "../../kots_app";
 
 export function TroubleshootQueries(stores: Stores) {
   return {
@@ -15,11 +16,29 @@ export function TroubleshootQueries(stores: Stores) {
       };
     },
 
+    async listKotsSupportBundles(root: any, { kotsSlug }, context: Context) {
+      const kotsAppId = await stores.kotsAppStore.getIdFromSlug(kotsSlug);
+
+      const supportBundles = await stores.troubleshootStore.listSupportBundles(kotsAppId);
+      return supportBundles.map(bundle => bundle.toSchema());
+    },
+
     async listSupportBundles(root: any, { watchSlug }, context: Context) {
-      const watch = await context.findWatch(watchSlug);
+
+      let watch;
+      try {
+        watch = await context.findWatch(watchSlug);
+      } catch (error) {
+        if (error.message.toLowerCase().includes("watch not found")) {
+          watch = {};
+          watch.id = await stores.kotsAppStore.getIdFromSlug(watchSlug);
+        } else {
+          throw error;
+        }
+      }
       let supportBundles = await stores.troubleshootStore.listSupportBundles(watch.id);
 
-      const watchIds = await stores.watchStore.listChildWatchIds(watch.id);      
+      const watchIds = await stores.watchStore.listChildWatchIds(watch.id);
       for (const watchId of watchIds) {
         const childBundles = await stores.troubleshootStore.listSupportBundles(watchId);
         supportBundles = supportBundles.concat(childBundles);
@@ -32,8 +51,10 @@ export function TroubleshootQueries(stores: Stores) {
 
     async getSupportBundle(root: any, { watchSlug }, context: Context) {
       const supportBundle = await stores.troubleshootStore.getSupportBundle(watchSlug);
-      const watch = context.getWatch(supportBundle.watchId);
-      if (!watch) {
+      // TODO: Write some method that triest to fetch an app or watch.
+      // let watch = await context.getWatch(supportBundle.watchId);
+      // let app = await stores.kotsAppStore.getIdFromSlug(watchSlug);
+      if (!supportBundle) {
         throw new ReplicatedError("not found");
       }
 

@@ -28,9 +28,11 @@ class SupportBundleRow extends React.Component {
   }
 
   render() {
-    const { bundle, watchSlug } = this.props;
+    const { bundle, watchSlug, appType } = this.props;
 
-    if (!bundle) return null;
+    if (!bundle) {
+      return null;
+    }
 
     let noInsightsMessage;
     if (bundle && isEmpty(bundle?.analysis?.insights?.length)) {
@@ -47,7 +49,7 @@ class SupportBundleRow extends React.Component {
     }
     return (
       <div className="SupportBundle--Row u-position--relative">
-        <Link to={`/watch/${watchSlug}/troubleshoot/analyze/${bundle.slug}`}>
+        <Link to={`/${appType === "watch" ? "watch" : "app"}/${watchSlug}/troubleshoot/analyze/${bundle.slug}`}>
           <div className="bundle-row-wrapper">
             <div className="bundle-row flex-column flex1">
               <div className="flex flex1">

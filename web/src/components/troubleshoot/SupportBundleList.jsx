@@ -5,6 +5,7 @@ import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
+
 // import { archiveSupportBundle } from "../../mutations/SupportBundleMutations";
 
 import AddClusterModal from "../shared/modals/AddClusterModal";
@@ -43,17 +44,24 @@ class SupportBundleList extends React.Component {
     const { watch } = this.props;
     const { loading, error, listSupportBundles } = this.props.listSupportBundles;
 
+    const appTitle = watch.watchName || watch.name;
+    const downstreams =
+      watch.watches ||
+      watch.downstreams ||
+      [];
+
     if (error) {
-      <p>{error.message}</p>
+      return <p>{error.message}</p>;
     }
 
     let bundlesNode;
-    if (watch ?.watches.length) {
-      if (listSupportBundles ?.length) {
+    if (downstreams.length) {
+      if (listSupportBundles?.length) {
         bundlesNode = (
           listSupportBundles.map(bundle => (
             <SupportBundleRow
               key={bundle.id}
+              appType={watch.watchName ? "watch" : "kots"}
               bundle={bundle}
               watchSlug={watch.slug}
             />
@@ -92,11 +100,10 @@ class SupportBundleList extends React.Component {
       )
     }
 
-
     return (
       <div className="container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
         <Helmet>
-          <title>{`${watch.watchName} Troubleshoot`}</title>
+          <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="flex1 flex-column">
           <div className="flex flex1">
@@ -115,7 +122,7 @@ class SupportBundleList extends React.Component {
                   </div>
                 </div>
               </div>
-              <div className={`${watch?.watches.length ? "flex1 flex-column u-overflow--auto" : ""}`}>
+              <div className={`${downstreams.length ? "flex1 flex-column u-overflow--auto" : ""}`}>
                 {loading ?
                   <div className="flex1 flex-column justifyContent--center alignItems--center">
                     <Loader size="60" color="#44bb66" />
@@ -137,7 +144,7 @@ class SupportBundleList extends React.Component {
             className="AddNewClusterModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.props.watch.watchName} to a new downstream</h2>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {appTitle} to a new downstream</h2>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
               <AddClusterModal
                 onAddCluster={this.addClusterToWatch}
@@ -165,7 +172,7 @@ export default withRouter(compose(
         fetchPolicy: "no-cache",
       }
     }
-  }),
+  })
   // graphql(archiveSupportBundle, {
   //   props: ({ mutate }) => ({
   //     archiveSupportBundle: (id) => mutate({ variables: { id } })

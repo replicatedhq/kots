@@ -8,6 +8,7 @@ const KotsApp = `
     slug: String
     currentSequence: Int
     lastUpdateCheckAt: String
+    bundleCommand: String
     downstreams: [KotsDownstream]
   }
 `;

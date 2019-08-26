@@ -94,9 +94,12 @@ spec: []`
         supportbundle_analysis.insights AS analysis_insights,
         supportbundle_analysis.created_at AS analysis_created_at,
         watch.slug as watch_slug,
-        watch.title as watch_title
+        watch.title as watch_title,
+        app.name as kots_app_title
       from supportbundle
-        inner join watch on supportbundle.watch_id = watch.id
+        left join watch on supportbundle.watch_id = watch.id
+        left join app_downstream on supportbundle.watch_id = app_downstream.app_id
+        left join app on supportbundle.watch_id = app.id
         left join supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
       where supportbundle.id = $1`;
     const v = [id];
@@ -152,7 +155,7 @@ spec: []`
     }
 
     supportBundle.watchSlug = row.watch_slug;
-    supportBundle.watchName = parseWatchName(row.watch_title);
+    supportBundle.watchName = parseWatchName(row.watch_title || row.kots_app_title);
 
     return supportBundle;
   }

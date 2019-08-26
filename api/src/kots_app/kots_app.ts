@@ -21,6 +21,7 @@ export class KotsApp {
   slug: string;
   currentSequence?: number;
   lastUpdateCheckAt?: Date;
+  bundleCommand: string;
 
   // Source files
   async generateFileTreeIndex(sequence) {
@@ -190,14 +191,23 @@ export class KotsApp {
     });
   }
 
+  public async getSupportBundleCommand(watchSlug: string): Promise<string> {
+    const params = await Params.getParams();
+    const bundleCommand = `
+      kubectl krew install support-bundle
+      kubectl support-bundle ${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
+    `;
+    return bundleCommand;
+  }
+
   public toSchema(downstreams: Cluster[]) {
     return {
       ...this,
-      downstreams: _.map(downstreams, (downstream) => {
+      downstreams: _.map(downstreams, async (downstream) => {
         return {
           name: downstream.title,
           cluster: {
-            ...downstream,
+            ...downstream
           },
         };
       }),
