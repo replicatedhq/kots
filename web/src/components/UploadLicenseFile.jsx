@@ -13,6 +13,10 @@ class UploadLicenseFile extends React.Component {
     fileUploading: false
   }
 
+  clearFile = () => {
+    this.setState({ licenseFile: {} });
+  }
+
   uploadToS3 = async () => {
     const { licenseFile } = this.state;
     this.setState({ fileUploading: true });
@@ -75,6 +79,11 @@ class UploadLicenseFile extends React.Component {
                 </div>
               }
             </div>
+            {hasFile &&
+              <div className="u-marginTop--10">
+                <p className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</p>
+              </div>
+            }
           </div>
         </div>
       </div>
