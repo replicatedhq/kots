@@ -163,6 +163,10 @@ class DetailPageApplication extends Component {
     }
   }
 
+  navigateToFiles = (watch) => {
+    this.props.history.push(`/app/${watch.slug}/tree/${watch.currentSequence}`)
+  }
+
   handleEditWatchClick = (watch) => {
     const isCluster = watch.cluster;
     if (isCluster) {
@@ -231,9 +235,9 @@ class DetailPageApplication extends Component {
   render() {
     const { watch, updateCallback } = this.props;
     const { preparingAppUpdate, watchLicense } = this.state;
-    const childWatches = watch.watches;
     const appMeta = getWatchMetadata(watch.metadata);
     const isKotsApp = isKotsApplication(watch);
+    const childWatches = isKotsApp ? watch.downstreams : watch.watches;
 
     return (
       <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
@@ -285,7 +289,7 @@ class DetailPageApplication extends Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your applicaiton. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
               <div className="u-marginTop--10 u-paddingTop--5">
-                <button disabled={preparingAppUpdate} onClick={() => this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {isKotsApp ? watch.name : watch.watchName}</button>
+                <button disabled={preparingAppUpdate} onClick={() => isKotsApp ? this.navigateToFiles(watch) : this.handleEditWatchClick(watch)} className="btn secondary">{preparingAppUpdate ? "Preparing" : "Edit"} {isKotsApp ? watch.name : watch.watchName}</button>
               </div>
             </div>
 

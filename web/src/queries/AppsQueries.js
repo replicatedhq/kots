@@ -152,6 +152,22 @@ export const listAppsRaw = `
         lastUpdateCheckAt
         downstreams {
           name
+          cluster {
+            id
+            title
+            slug
+            createdOn
+            lastUpdated
+            gitOpsRef {
+              owner
+              repo
+              branch
+            }
+            shipOpsRef {
+              token
+            }
+            totalApplicationCount
+          }
         }
       }
     }
@@ -304,6 +320,22 @@ export const getKotsAppRaw = `
       lastUpdateCheckAt
       downstreams {
         name
+        cluster {
+          id
+          title
+          slug
+          createdOn
+          lastUpdated
+          gitOpsRef {
+            owner
+            repo
+            branch
+          }
+          shipOpsRef {
+            token
+          }
+          totalApplicationCount
+        }
       }
     }
   }

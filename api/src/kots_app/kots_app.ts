@@ -2,7 +2,6 @@ import { Params } from "../server/params";
 import zlib from "zlib";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "../troubleshoot/util";
 import { getS3 } from "../util/s3";
-import _ from "lodash";
 import { logger } from "../server/logger";
 import tmp from "tmp";
 import fs from "fs";
