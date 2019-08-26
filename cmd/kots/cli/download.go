@@ -12,7 +12,7 @@ import (
 
 func DownloadCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "download [path]",
+		Use:           "download [app-slug]",
 		Short:         "",
 		Long:          ``,
 		SilenceUsage:  true,
@@ -29,11 +29,11 @@ func DownloadCmd() *cobra.Command {
 			}
 
 			downloadOptions := download.DownloadOptions{
-				Namespace:  args[0],
+				Namespace:  v.GetString("namespace"),
 				Kubeconfig: v.GetString("kubeconfig"),
 			}
 
-			if err := download.Download(ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
+			if err := download.Download(args[0], ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
 				return errors.Cause(err)
 			}
 
@@ -42,6 +42,7 @@ func DownloadCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("namespace", "default", "the namespace to download from")
 	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
 
 	return cmd

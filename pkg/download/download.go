@@ -1,11 +1,13 @@
 package download
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -20,7 +22,7 @@ type DownloadOptions struct {
 	Kubeconfig string
 }
 
-func Download(path string, downloadOptions DownloadOptions) error {
+func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Connecting to cluster")
 
@@ -38,7 +40,7 @@ func Download(path string, downloadOptions DownloadOptions) error {
 	}
 	defer close(stopCh)
 
-	resp, err := http.Get("http://localhost:3000/api/v1/kots")
+	resp, err := http.Get(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get from kotsadm")
@@ -56,6 +58,15 @@ func Download(path string, downloadOptions DownloadOptions) error {
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write archive")
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(tmpFile.Name(), path); err != nil {
+		return errors.Wrap(err, "failed to extract tar gz")
 	}
 
 	log.FinishSpinner()
