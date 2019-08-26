@@ -25,5 +25,6 @@ WORKDIR /src
 ADD . /src
 
 RUN make build
+COPY ./kots.so /src/build/kots.so
 
 ENTRYPOINT ["node", "--no-deprecation", "/src/build/server/index.js"]
