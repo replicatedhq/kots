@@ -37,11 +37,13 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
-	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create config context")
+	if config != nil {
+		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create config context")
+		}
+		builder.AddCtx(configCtx)
 	}
-	builder.AddCtx(configCtx)
 
 	for _, upstreamFile := range u.Files {
 		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))

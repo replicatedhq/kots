@@ -27,7 +27,7 @@ func Download(path string, downloadOptions DownloadOptions) error {
 	podName, err := findKotsadm(downloadOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "faioled to find kotsadm pod")
+		return errors.Wrap(err, "failed to find kotsadm pod")
 	}
 
 	// set up port forwarding to get to it

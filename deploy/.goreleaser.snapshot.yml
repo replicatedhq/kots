@@ -5,7 +5,7 @@ release:
     name: kots
 builds:
   - id: kots
-  - goos:
+    goos:
     - linux
     - windows
     - darwin
@@ -23,6 +23,18 @@ builds:
       -extldflags "-static"
     flags: -tags netgo -installsuffix netgo
     binary: kots
+    hooks: {}
+  - id: so
+    goos:
+    - linux
+    goarch:
+    - amd64
+    env:
+      - CGO_ENABLED=1
+      - GO111MODULE=on
+    main: ffi/main.go
+    flags: -buildmode=c-shared
+    binary: kots.so
     hooks: {}
 
 snapshot:
