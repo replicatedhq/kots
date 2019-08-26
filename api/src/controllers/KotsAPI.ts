@@ -33,21 +33,21 @@ interface UpdateAppBody {
 
 @Controller("/api/v1/kots")
 export class KotsAPI {
-  @Get("/")
-  async kotsList(
-    @Req() request: Request,
-  ): Promise<any> {
-    const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
+  // @Get("/apps")
+  // async kotsList(
+  //   @Req() request: Request,
+  // ): Promise<any> {
+  //   const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
 
-    const result = _.map(apps, (app: KotsApp) => {
-      return {
-        name: app.name,
-        slug: app.slug,
-      };
-    });
+  //   const result = _.map(apps, (app: KotsApp) => {
+  //     return {
+  //       name: app.name,
+  //       slug: app.slug,
+  //     };
+  //   });
 
-    return result;
-  }
+  //   return result;
+  // }
 
   @Get("/:slug")
   async kotsDownload(
