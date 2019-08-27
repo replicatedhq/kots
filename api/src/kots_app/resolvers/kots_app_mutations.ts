@@ -5,7 +5,6 @@ import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData } from "../kots_ffi";
-import { logger } from "../../server/logger";
 
 export function KotsMutations(stores: Stores) {
   return {

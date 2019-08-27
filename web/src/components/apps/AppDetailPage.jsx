@@ -219,7 +219,6 @@ class AppDetailPage extends Component {
     }
 
     if (listApps.kotsApps.length > 0) {
-      console.log(listApps)
       const firstApp = listApps.find(app => app.name);
       history.replace(`/app/${firstApp.slug}`);
     } else {
