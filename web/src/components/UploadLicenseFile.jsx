@@ -20,12 +20,14 @@ class UploadLicenseFile extends React.Component {
   }
 
   uploadToS3 = async () => {
+    const { onLoginSuccess } = this.props;
     const { licenseValue } = this.state;
     this.setState({ fileUploading: true });
     try {
       await this.props.uploadKotsLicense(licenseValue);
-      this.setState({ fileUploading: false });
-      this.props.history.replace("/watches");
+      onLoginSuccess().then((res) => {
+        this.props.history.replace(`/app/${res[0].slug}`);
+      });
     } catch (err) {
       this.setState({ fileUploading: false });
       console.log(err);
