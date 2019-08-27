@@ -136,7 +136,7 @@ export class KotsAppStore {
     kotsApp.slug = row.slug;
     kotsApp.currentSequence = row.current_sequence;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
-
+    kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
     return kotsApp;
   }
 

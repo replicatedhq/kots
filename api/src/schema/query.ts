@@ -25,7 +25,7 @@ export const Query = `
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
     listDownstreamsForApp(slug: String!): [Cluster]
-    
+
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
 
@@ -62,6 +62,7 @@ export const Query = `
     getGitHubInstallationId: String!
 
     watchCollectors(watchId: String!): TroubleshootCollectSpec
+    listKotsSupportBundles(kotsSlug: String!): [SupportBundle]
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
     supportBundleFiles(bundleId: ID!, fileNames: [String!]): String

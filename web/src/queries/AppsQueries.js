@@ -318,6 +318,7 @@ export const getKotsAppRaw = `
       slug
       currentSequence
       lastUpdateCheckAt
+      bundleCommand
       downstreams {
         name
         cluster {

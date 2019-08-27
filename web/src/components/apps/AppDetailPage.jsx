@@ -244,7 +244,6 @@ class AppDetailPage extends Component {
       rootDidInitialAppFetch,
       listDownstreamsForAppQuery,
     } = this.props;
-
     const {
       displayRemoveClusterModal,
       addNewClusterModal,

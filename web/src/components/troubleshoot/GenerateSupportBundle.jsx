@@ -9,7 +9,6 @@ import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
-
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
@@ -17,18 +16,23 @@ import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 const NEW_CLUSTER = "Create a new downstream cluster";
 
 class GenerateSupportBundle extends React.Component {
+  constructor(props) {
+    super(props);
 
-  state = {
-    clusters: [],
-    selectedCluster: this.props.watch.watches.length ? this.props.watch.watches[0].cluster : "",
-    addNewClusterModal: false,
-    displayUploadModal: false
+    const clustersArray = props.watch.watches || props.watch.downstreams;
+    this.state = {
+      clusters: [],
+      selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
+      addNewClusterModal: false,
+      displayUploadModal: false
+    };
   }
 
   componentDidMount() {
     const { watch } = this.props;
+    const clusters = watch.watches || watch.downstreams;
     if (watch) {
-      const watchClusters = watch.watches.map((watch) => watch.cluster);
+      const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
     }
@@ -36,8 +40,9 @@ class GenerateSupportBundle extends React.Component {
 
   componentDidUpdate(lastProps) {
     const { watch } = this.props;
-    if (watch !== lastProps.watch && watch.watches) {
-      const watchClusters = watch.watches.map((watch) => watch.cluster);
+    const clusters = watch.watches || watch.downstream;
+    if (watch !== lastProps.watch && clusters) {
+      const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
     }
@@ -119,22 +124,23 @@ class GenerateSupportBundle extends React.Component {
   render() {
     const { clusters, selectedCluster, addNewClusterModal, displayUploadModal } = this.state;
     const { watch } = this.props;
-    const selectedWatch = watch ?.watches.find((watch) => watch.cluster.id === selectedCluster.id);
-
+    const watchClusters = watch.watches || watch.downstreams;
+    const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
+    const appTitle = watch.watchName || watch.name;
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
           <title>{`${watch.watchName} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
-          {!watch?.watches.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
+          {!watchClusters.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
            }
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {watch.watchName} for support</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with {watch.watchName}, you can analyze the current state to receive insights that are useful to remediate or to share with the application vendor for support.</p>
           </div>
-          {watch ?.watches.length ?
+          {watchClusters.length ?
             <div className="flex1 flex-column u-paddingRight--30">
               <div className="u-marginTop--40">
                 <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Which cluster do you need support with?</h2>
@@ -163,7 +169,14 @@ class GenerateSupportBundle extends React.Component {
                     canCopy={true}
                     onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                   >
-                    {selectedWatch?.bundleCommand.split("\n")}
+                    {
+                      /*
+                      kubectl krew install support-bundle
+                      kubectl support-bundle ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
+                      */
+
+                    }
+                    {selectedWatch?.bundleCommand?.split("\n") || watch.bundleCommand?.split("\n")}
                   </CodeSnippet>
                 </div>
                 <div className="u-marginTop--15">
@@ -202,7 +215,7 @@ class GenerateSupportBundle extends React.Component {
             className="AddNewClusterModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.props.watch.watchName} to a new downstream</h2>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {appTitle} to a new downstream</h2>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
               <AddClusterModal
                 onAddCluster={this.addClusterToWatch}

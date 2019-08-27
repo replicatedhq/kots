@@ -32,6 +32,39 @@ export const listSupportBundlesRaw = `
 `;
 export const listSupportBundles = gql(listSupportBundlesRaw);
 
+export const listKotsSupportBundlesRaw = `
+  query listKotsSupportBundles($kotsSlug: String!) {
+    listKotsSupportBundles(kotsSlug: $kotsSlug) {
+      id
+      slug
+      name
+      size
+      status
+      treeIndex
+      createdAt
+      uploadedAt
+      isArchived
+      analysis {
+        id
+        error
+        maxSeverity
+        createdAt
+        insights {
+          key
+          severity
+          primary
+          detail
+          icon
+          icon_key
+          desiredPosition
+        }
+      }
+    }
+  }
+`;
+
+export const listKotsSupportBundles = gql(listKotsSupportBundlesRaw);
+
 export const getAnalysisInsights = gql`
   query getAnalysisInsights($slug: String!) {
     getAnalysisInsights(slug: $slug) {
