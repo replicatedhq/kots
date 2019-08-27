@@ -1,0 +1,61 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: kots
+spec:
+  version: "v0.3.0"
+  platforms:
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/replicatedhq/kots/releases/download/v0.3.0/kots_0.3.0_linux_amd64-0.3.0.tar.gz
+    sha256: ""
+    files:
+    - from: "./kots"
+      to: "."
+    bin: "kots"
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/replicatedhq/kots/releases/download/v0.3.0/kots_0.3.0_darwin_amd64-0.3.0.tar.gz
+    sha256: ""
+    files:
+    - from: "./kots"
+      to: "."
+    bin: "kots"
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    uri: https://github.com/replicatedhq/kots/releases/download/v0.3.0/kots_0.3.0_windows_amd64-0.3.0.zip
+    sha256: ""
+    files:
+    - from: "/kots.exe"
+      to: "."
+    bin: "kots.exe"
+  shortDescription: KOTS helps prepare and configure Kubernetes Off-The-Shelf software
+  homepage: https://github.com/replicatedhq/kots
+  caveats: |
+    Usage:
+      $ kubectl kots pull <upstream>
+
+    For example, to prepare Elasticsearch:
+      $ kubectl kots pull helm://elastic/elasticsearch --downstream prod
+
+      $ ls ~/elasticsearch
+      $ upstream    base    overlays
+
+      $ kubectl apply -k overlays/downstreams/prod
+
+    For additional options:
+      $ kubectl kots --help
+      or https://github.com/replicatedhq/kots/blob/v0.3.0/docs/USAGE.md
+
+  description: |
+    KOTS is a set of tools to help install, configure and update third-party
+    software to be run in Kubernetes. Kots enables and encourages patching
+    (from Kustomize) for configuration.
+
+

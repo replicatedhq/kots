@@ -44,7 +44,7 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// defer os.RemoveAll(rootDir)
+			defer os.RemoveAll(rootDir)
 
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
@@ -57,8 +57,16 @@ func InstallCmd() *cobra.Command {
 				LocalPath:   ExpandDir(v.GetString("local-path")),
 				LicenseFile: ExpandDir(v.GetString("license-file")),
 			}
-			if err := pull.Pull(args[0], pullOptions); err != nil {
+
+			canPull, err := pull.CanPullUpstream(args[0], pullOptions)
+			if err != nil {
 				return err
+			}
+
+			if canPull {
+				if err := pull.Pull(args[0], pullOptions); err != nil {
+					return err
+				}
 			}
 
 			deployOptions := kotsadm.DeployOptions{
@@ -87,31 +95,33 @@ func InstallCmd() *cobra.Command {
 				UpstreamURI:  args[0],
 			}
 
-			// get the first dir in rootDir and use that as the upload dir
-			subdirs, err := ioutil.ReadDir(rootDir)
-			if err != nil {
-				return err
-			}
-			uploadRootDir := ""
-			for _, subdir := range subdirs {
-				if subdir.IsDir() {
-					if subdir.Name() == "." {
-						continue
-					}
-					if subdir.Name() == ".." {
-						continue
-					}
-
-					uploadRootDir = path.Join(rootDir, subdir.Name())
-					break
+			if canPull {
+				// get the first dir in rootDir and use that as the upload dir
+				subdirs, err := ioutil.ReadDir(rootDir)
+				if err != nil {
+					return err
 				}
-			}
-			if uploadRootDir == "" {
-				return errors.New("unable to find directory in rootDir")
-			}
+				uploadRootDir := ""
+				for _, subdir := range subdirs {
+					if subdir.IsDir() {
+						if subdir.Name() == "." {
+							continue
+						}
+						if subdir.Name() == ".." {
+							continue
+						}
 
-			if err := upload.Upload(uploadRootDir, uploadOptions); err != nil {
-				return errors.Cause(err)
+						uploadRootDir = path.Join(rootDir, subdir.Name())
+						break
+					}
+				}
+				if uploadRootDir == "" {
+					return errors.New("unable to find directory in rootDir")
+				}
+
+				if err := upload.Upload(uploadRootDir, uploadOptions); err != nil {
+					return errors.Cause(err)
+				}
 			}
 
 			// port forward

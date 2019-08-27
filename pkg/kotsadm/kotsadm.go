@@ -93,7 +93,7 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to ensure api exists")
 	}
 
-	log.ChildActionWithSpinner("Waiting for kotsadm API to be ready")
+	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 	if err := waitForAPI(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for API")
 	}

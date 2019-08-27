@@ -2,6 +2,7 @@ package pull
 
 import (
 	"io/ioutil"
+	"net/url"
 	"path"
 
 	"github.com/pkg/errors"
@@ -24,6 +25,19 @@ type PullOptions struct {
 	LocalPath        string
 	LicenseFile      string
 	ExcludeKotsKinds bool
+}
+
+func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) {
+	u, err := url.ParseRequestURI(upstreamURI)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check if can pull")
+	}
+
+	if u.Scheme != "replicated" {
+		return true, nil
+	}
+
+	return pullOptions.LicenseFile != "", nil
 }
 
 func Pull(upstreamURI string, pullOptions PullOptions) error {
