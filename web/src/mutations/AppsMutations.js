@@ -30,3 +30,10 @@ export const checkForKotsUpdatesRaw = `
   }
 `
 export const checkForKotsUpdates = gql(checkForKotsUpdatesRaw);
+
+export const uploadKotsLicenseRaw = `
+  mutation uploadKotsLicense($value: String!) {
+    uploadKotsLicense(value: $value)
+  }
+`
+export const uploadKotsLicense = gql(uploadKotsLicenseRaw);

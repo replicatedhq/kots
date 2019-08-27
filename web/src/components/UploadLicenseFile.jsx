@@ -1,8 +1,9 @@
 import * as React from "react";
-import { compose, withApollo } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import { uploadKotsLicense } from "../mutations/AppsMutations";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -10,27 +11,32 @@ import "../scss/components/Login.scss";
 class UploadLicenseFile extends React.Component {
   state = {
     licenseFile: {},
+    licenseValue: "",
     fileUploading: false
   }
 
   clearFile = () => {
-    this.setState({ licenseFile: {} });
+    this.setState({ licenseFile: {}, licenseValue: "" });
   }
 
   uploadToS3 = async () => {
-    const { licenseFile } = this.state;
+    const { licenseValue } = this.state;
     this.setState({ fileUploading: true });
     try {
-      await this.props.uploadLicense(licenseFile);
+      await this.props.uploadKotsLicense(licenseValue);
+      this.setState({ fileUploading: false });
+      this.props.history.replace("/watches");
     } catch (err) {
       this.setState({ fileUploading: false });
       console.log(err);
     }
   }
 
-  onDrop = (files) => {
+  onDrop = async (files) => {
+    const content = await files[0].text();
     this.setState({
-      licenseFile: files[0]
+      licenseFile: files[0],
+      licenseValue: content
     });
   }
 
@@ -42,9 +48,9 @@ class UploadLicenseFile extends React.Component {
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
-            <div className="flex">
+            <div className="flex-column alignItems--center">
               <span className="icon ship-login-icon"></span>
-              <p className="login-text u-color--tuna u-fontWeight--bold">Upload your license file</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your license file</p>
             </div>
             <div className="u-marginTop--30 flex">
               <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
@@ -81,7 +87,7 @@ class UploadLicenseFile extends React.Component {
             </div>
             {hasFile &&
               <div className="u-marginTop--10">
-                <p className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</p>
+                <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
               </div>
             }
           </div>
@@ -94,4 +100,9 @@ class UploadLicenseFile extends React.Component {
 export default compose(
   withRouter,
   withApollo,
+  graphql(uploadKotsLicense, {
+    props: ({ mutate }) => ({
+      uploadKotsLicense: (value) => mutate({ variables: { value } })
+    })
+  }),
 )(UploadLicenseFile);
