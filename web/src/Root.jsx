@@ -214,7 +214,7 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo}/>
+                <NavBar logo={themeState.navbarLogo} refetchListApps={this.refetchListApps} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
