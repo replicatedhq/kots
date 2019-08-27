@@ -17,7 +17,7 @@ const GoString = Struct({
 });
 
 function kots() {
-  return ffi.Library("./kots.so", {
+  return ffi.Library("/lib/kots.so", {
     PullFromLicense: [GoString, [GoString, GoString, GoString]],
   });
 }

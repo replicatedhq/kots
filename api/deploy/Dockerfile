@@ -18,7 +18,7 @@ RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/v2.0
 # Install kots.so
 RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v0.2.0/kots_0.2.0_linux_amd64-0.2.0.tar.gz" > /tmp/kots.tar.gz && \
   cd /tmp && tar xzvf kots.tar.gz && \
-  mv /tmp/kots.so /src/kots.so
+  mv /tmp/kots.so /lib/kots.so
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates \
