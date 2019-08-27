@@ -1,6 +1,5 @@
 
 SHELL := /bin/bash -o pipefail
-PROJECT_NAME ?= kotsadm-operator
 export GO111MODULE=on
 
 .PHONY: publish-pact
@@ -38,15 +37,11 @@ run: bin
 	./bin/kotsadm-operator --api-endpoint http://localhost:30065 --token local
 
 .PHONY: build-alpha
-build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
-build-alpha: build_and_push
+build-alpha:
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:alpha .
+	docker push kotsadm/kotsadm-operator:alpha
 
 .PHONY: build-release
-build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
-build-release: build_and_push
-
-.PHONY: build_and_push
-build_and_push:
-	docker build -f deploy/Dockerfile -t ${IMAGE} ./deploy
-	docker push ${IMAGE}
-
+build-release:
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${GIT_TAG} .
+	docker push kotsadm/kotsadm-operator:${GIT_TAG}
