@@ -37,6 +37,7 @@ import NavBar from "./components/shared/NavBar";
 // Import Ship Init component CSS first
 import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
+import UploadLicenseFile from "./components/UploadLicenseFile";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
@@ -228,6 +229,7 @@ class Root extends Component {
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListApps} />} />
+                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />

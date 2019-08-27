@@ -1,8 +1,10 @@
 import _ from "lodash";
 import { Context } from "../../context";
+import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
+import { kotsAppFromLicenseData } from "../kots_ffi";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -28,6 +30,23 @@ export function KotsMutations(stores: Stores) {
       }
 
       await stores.kotsAppStore.createDownstream(appId, cluster.title, clusterId);
+      return true;
+    },
+
+    async uploadKotsLicense(root: any, args: any, context: Context) {
+      const { value } = args;
+      const parsedLicense = yaml.safeLoad(value);
+
+      const clusters = await stores.clusterStore.listAllUsersClusters();
+      let downstream;
+      for (const cluster of clusters) {
+        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+          downstream = cluster;
+        }
+      }
+
+      const name = parsedLicense.spec.appSlug.replace("-", " ")
+      await kotsAppFromLicenseData(value, name, downstream.title, stores);
       return true;
     },
 

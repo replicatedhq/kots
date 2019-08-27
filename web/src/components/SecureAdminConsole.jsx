@@ -103,7 +103,7 @@ class SecureAdminConsole extends React.Component {
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex">
               <span className="icon ship-login-icon"></span>
-              <p className="login-text u-color--tuna u-fontWeight--bold">Log in</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Log in</p>
             </div>
             <p className="u-marginTop--20 u-fontSize--large u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Enter the password to access the admin console.
