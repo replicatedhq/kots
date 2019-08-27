@@ -148,21 +148,28 @@ export class KotsAPI {
   @Put("/")
   async kotsUploadUpdate(
     @MultipartFile("file") file: Express.Multer.File,
-    @BodyParams("") body: UpdateAppBody,
+    @BodyParams("") body: CreateAppBody,
+    @Req() request: Request,
   ): Promise<any> {
+    const metadata = JSON.parse(body.metadata);
 
-    // body.slug is the slug of the app to update
+    // Todo this could use some proper not-found error handling stuffs
+    const kotsApp = await request.app.locals.stores.kotsAppStore.getApp(await request.app.locals.stores.kotsAppStore.getIdFromSlug(metadata.slug));
 
-    // file.filename is a locally-stored (need to read it) copy of the archive
+    const newSequence = kotsApp.currentSequence + 1;
 
-    // this should create the application in pg
-    // upload the version to s3
-    // create a version in pg
+    const params = await Params.getParams();
+    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${newSequence}.tar.gz`);
+    const buffer = fs.readFileSync(file.path);
+    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    // return the url for the app
+    const supportBundleSpec = undefined;
+    const preflightSpec = undefined;
+
+    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, newSequence, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec);
 
     return {
-      uri: "https://www.google.com",
+      uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
     };
   }
 }
