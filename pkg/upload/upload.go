@@ -83,7 +83,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	}
 
 	// Make sure we have an upstream URI
-	if uploadOptions.UpstreamURI == "" {
+	if uploadOptions.ExistingAppSlug == "" && uploadOptions.UpstreamURI == "" {
 		upstreamURI, err := promptForUpstreamURI()
 		if err != nil {
 			return errors.Wrap(err, "failed to prompt for upstream uri")
@@ -194,7 +194,9 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 	if uploadOptions.ExistingAppSlug != "" {
 		method = "PUT"
 		metadata := map[string]string{
-			"slug": uploadOptions.ExistingAppSlug,
+			"slug":         uploadOptions.ExistingAppSlug,
+			"versionLabel": uploadOptions.VersionLabel,
+			"updateCursor": uploadOptions.UpdateCursor,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
