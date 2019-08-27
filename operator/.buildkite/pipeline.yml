@@ -25,10 +25,9 @@ steps:
 
   - label: alpha
     commands:
-      - mkdir -p operator/bin operator/deploy/bin
+      - mkdir -p operator/bin
       - buildkite-agent artifact download operator/bin/* . --step test-and-build
-      - cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator
-      - chmod +x operator/deploy/bin/kotsadm-operator
+      - chmod +x operator/bin/kotsadm-operator
       - make -C operator build-alpha
     branches: "master"
 
@@ -39,20 +38,4 @@ steps:
       - if [ ! -z "$GIT_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
       - if [ ! -z "$GIT_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
       - if [ ! -z "$GIT_TAG" ]; then make -C operator build-release; fi
-
-  # - wait
-
-  # TODO: fixit
-  # - command: "make build-enterprise"
-  #   branches: master
-  #   retry:
-  #     automatic: true
-
-  # - wait
-
-  # TODO: fixit
-  # - command: "make publish-enterprise"
-  #   branches: master
-  #   retry:
-  #     automatic: true
 
