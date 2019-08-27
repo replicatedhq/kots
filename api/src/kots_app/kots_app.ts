@@ -203,7 +203,7 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[]) {
     return {
       ...this,
-      downstreams: _.map(downstreams, async (downstream) => {
+      downstreams: _.map(downstreams, (downstream) => {
         return {
           name: downstream.title,
           cluster: {

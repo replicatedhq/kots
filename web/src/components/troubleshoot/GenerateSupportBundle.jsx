@@ -9,7 +9,6 @@ import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
-// import { isKotsApplication } from "@src/utilities/utilities";
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
@@ -21,7 +20,6 @@ class GenerateSupportBundle extends React.Component {
     super(props);
 
     const clustersArray = props.watch.watches || props.watch.downstreams;
-    console.log(props.watch);
     this.state = {
       clusters: [],
       selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
@@ -128,7 +126,6 @@ class GenerateSupportBundle extends React.Component {
     const { watch } = this.props;
     const watchClusters = watch.watches || watch.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
-    console.log(selectedWatch);
     const appTitle = watch.watchName || watch.name;
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
