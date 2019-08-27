@@ -209,7 +209,8 @@ class WatchDetailPage extends Component {
     if (listApps.length > 0) {
       history.replace(`/${listApps[0].name ? "app" : "watch"}/${listApps[0].slug}`);
     } else {
-      history.replace("/watch/create/init");
+      const nextUrl = window.env.SECURE_ADMIN_CONSOLE ? "upload-license" : "/watch/create/init";
+      history.replace(nextUrl);
     }
   }
 

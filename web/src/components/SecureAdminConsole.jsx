@@ -19,11 +19,13 @@ class SecureAdminConsole extends React.Component {
     let token = data.loginToAdminConsole.token
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
-      onLoginSuccess().then(() => {
-        this.setState({
-          authLoading: false,
-        });
-        this.props.history.push("/watches");
+      onLoginSuccess().then((res) => {
+        this.setState({ authLoading: false });
+        if (res.length > 0) {
+          this.props.history.replace(`/app/${res[0].slug}`);
+        } else {
+          this.props.history.replace("upload-license");
+        }
       });
     } else {
       this.props.history.push("/unsupported");
@@ -101,18 +103,17 @@ class SecureAdminConsole extends React.Component {
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
-            <div className="flex">
+            <div className="flex-column alignItems--center">
               <span className="icon ship-login-icon"></span>
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Log in</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Log in to the admin console</p>
             </div>
-            <p className="u-marginTop--20 u-fontSize--large u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+            <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Enter the password to access the admin console.
             </p>
             <div className="u-marginTop--20 flex-column">
               {passwordErr && <p className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-lineHeight--normal u-marginBottom--20">{passwordErrMessage}</p>}
               <div>
                 <div className="component-wrapper">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
                   <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
                 </div>
                 <div className="u-marginTop--20 flex">
