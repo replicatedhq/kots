@@ -1,4 +1,5 @@
 import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
@@ -16,6 +17,11 @@ export class NavBar extends PureComponent {
   constructor() {
     super();
     this.state = {}
+  }
+
+  static propTypes = {
+    refetchListApps: PropTypes.func.isRequired,
+    history: PropTypes.object.isRequired
   }
 
   handleLogOut = async (e) => {
@@ -64,6 +70,13 @@ export class NavBar extends PureComponent {
     this.props.history.push("/watch/create/init");
   }
 
+  redirectToDashboard = () => {
+    const { refetchListApps, history } = this.props;
+    refetchListApps().then(() => {
+      history.push("/");
+    });
+  }
+
   render() {
     const { className, logo } = this.props;
     const { user } = this.state;
@@ -90,7 +103,7 @@ export class NavBar extends PureComponent {
                 {Utilities.isLoggedIn() && (
                   <div className="flex flex-auto left-items">
                     <div className="NavItem u-position--relative flex">
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={() => this.props.history.push("/")}>
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.redirectToDashboard}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Dashboard</span>
                         </span>
