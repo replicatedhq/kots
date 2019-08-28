@@ -27,7 +27,7 @@ export class TroubleshootAPI {
     if (kotsCollector) {
       collector = kotsCollector;
     } else {
-      const watchCollector = await request.app.locals.stores.troubleshootStore.getCollectorForWatchSlug(slug);
+      const watchCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForWatchSlug(slug);
       if (watchCollector) {
         collector = watchCollector;
       }
