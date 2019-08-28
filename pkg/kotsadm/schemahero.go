@@ -1,15 +1,30 @@
 package kotsadm
 
 import (
-	"fmt"
+	"bytes"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func getMigrationsYAML(namespace string) (map[string][]byte, error) {
+	docs := map[string][]byte{}
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var pod bytes.Buffer
+	if err := s.Encode(migrationsPod(namespace), &pod); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal migrations pod")
+	}
+	docs["migrations.yaml"] = pod.Bytes()
+
+	return docs, nil
+}
 
 func runSchemaHeroMigrations(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
 	// we don't deploy the operator because that would require too high of
@@ -56,44 +71,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (
 }
 
 func createSchemaHeroPod(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	name := fmt.Sprintf("kotsadm-migrations-%d", time.Now().Unix())
-
-	pod := &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Pod",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: deployOptions.Namespace,
-		},
-		Spec: corev1.PodSpec{
-			RestartPolicy: corev1.RestartPolicyOnFailure,
-			Containers: []corev1.Container{
-				{
-					Image:           "kotsadm/kotsadm-migrations:alpha",
-					ImagePullPolicy: corev1.PullAlways,
-					Name:            name,
-					Env: []corev1.EnvVar{
-						{
-							Name:  "SCHEMAHERO_DRIVER",
-							Value: "postgres",
-						},
-						{
-							Name:  "SCHEMAHERO_SPEC_FILE",
-							Value: "/tables",
-						},
-						{
-							Name:  "SCHEMAHERO_URI",
-							Value: fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", postgresPassword),
-						},
-					},
-				},
-			},
-		},
-	}
-
-	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(pod)
+	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(migrationsPod(deployOptions.Namespace))
 	if err != nil {
 		return errors.Wrap(err, "failed to create pod")
 	}

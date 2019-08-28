@@ -35,7 +35,11 @@ The `upload` command will upload a directory with an upstream, base and overlays
 kubectl kots upload ~/mysql
 ```
 
-### `kots configure`
-The `configure` command will start a local browser-based configuration screen for Replicated apps.
+### `kots download`
+The `download` command will download an application YAML from a kotsadm server. This is especially useful when paired with `upload` (above) to iterate on and make changes to an application.
 
-### `kots watch`
+```
+kubectl kots download [--namespace=] [app-slug]
+```
+
+The app-slug argument is optional. If there is more than 1 application in the specified namespace, kots will prompt for which one to download.

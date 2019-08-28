@@ -33,6 +33,73 @@ type DeployOptions struct {
 	Hostname       string
 }
 
+// YAML will return a map containing the YAML needed to run the admin console
+func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
+	docs := map[string][]byte{}
+
+	minioDocs, err := getMinioYAML(deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get minio yaml")
+	}
+	for n, v := range minioDocs {
+		docs[n] = v
+	}
+
+	postgresDocs, err := getPostgresYAML(deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get postgres yaml")
+	}
+	for n, v := range postgresDocs {
+		docs[n] = v
+	}
+
+	migrationDocs, err := getMigrationsYAML(deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get migrations yaml")
+	}
+	for n, v := range migrationDocs {
+		docs[n] = v
+	}
+
+	// secrets
+	secretsDocs, err := getSecretsYAML(&deployOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get secrets yaml")
+	}
+	for n, v := range secretsDocs {
+		docs[n] = v
+	}
+
+	// api
+	apiDocs, err := getApiYAML(deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get api yaml")
+	}
+	for n, v := range apiDocs {
+		docs[n] = v
+	}
+
+	// web
+	webDocs, err := getWebYAML(deployOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get web yaml")
+	}
+	for n, v := range webDocs {
+		docs[n] = v
+	}
+
+	// operator
+	operatorDocs, err := getOperatorYAML(deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get operator yaml")
+	}
+	for n, v := range operatorDocs {
+		docs[n] = v
+	}
+
+	return docs, nil
+}
+
 func Deploy(deployOptions DeployOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -67,10 +134,6 @@ func Deploy(deployOptions DeployOptions) error {
 
 	} else if err != nil {
 		return errors.Wrap(err, "failed to get namespace")
-	}
-
-	if err := ensureRBAC(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure rbac exists")
 	}
 
 	if err := ensureMinio(deployOptions.Namespace, clientset); err != nil {

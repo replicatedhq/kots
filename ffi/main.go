@@ -42,6 +42,7 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 		LicenseFile: licenseFile.Name(),
 		ExcludeKotsKinds: true,
 		RootDir: tmpRoot,
+		ExcludeAdminConsole: true,
 	}
 
 	if err := pull.Pull("replicated://sentry-enterprise", pullOptions); err != nil {

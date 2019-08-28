@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -23,17 +22,18 @@ func DownloadCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			if len(args) == 0 {
-				cmd.Help()
-				os.Exit(1)
+			appSlug := ""
+			if len(args) > 0 {
+				appSlug = args[0]
 			}
 
 			downloadOptions := download.DownloadOptions{
 				Namespace:  v.GetString("namespace"),
 				Kubeconfig: v.GetString("kubeconfig"),
+				Overwrite:  v.GetBool("overwrite"),
 			}
 
-			if err := download.Download(args[0], ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
+			if err := download.Download(appSlug, ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
 				return errors.Cause(err)
 			}
 
@@ -44,6 +44,7 @@ func DownloadCmd() *cobra.Command {
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
 	cmd.Flags().String("namespace", "default", "the namespace to download from")
 	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
+	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
 
 	return cmd
 }
