@@ -56,6 +56,12 @@ export async function signGetRequest(params: Params, bucket: string, key: string
         reject(err);
         return;
       }
+
+      if (process.env["S3_ENDPOINT"]) {
+
+        url = url.replace(process.env["S3_ENDPOINT"]!, `${process.env["S3_ENDPOINT"]}${bucket}/`);
+      }
+
       resolve(url);
     });
   });

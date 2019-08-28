@@ -19,7 +19,8 @@ export class TroubleshootStore {
 kind: Collector
 metadata:
   name: defalt-collector
-spec: []`
+spec:
+  collectors: []`
 
   public async getPreferedWatchCollector(watchId: string): Promise<Collector> {
     const q = `select release_collector, updated_collector, release_collector_updated_at, updated_collector_updated_at, use_updated_collector
@@ -52,7 +53,23 @@ spec: []`
     return collector;
   }
 
-  public async getCollectorForWatchSlug(slug: string): Promise<Collector> {
+  public async tryGetCollectorForKotsSlug(slug: string): Promise<Collector | void> {
+    const q = `select supportbundle_spec from app_version
+      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
+      where app.slug = $1`;
+    const v = [slug];
+
+    const result = await this.pool.query(q, v);
+
+    let collector: Collector = new Collector();
+    if (result.rowCount === 0) {
+      return;
+    }
+
+    return result.rows[0].supportbundle_spec;
+  }
+
+  public async tryGetCollectorForWatchSlug(slug: string): Promise<Collector| void> {
     const q = `select c.release_collector
     from watch w inner join watch_troubleshoot_collector c ON w.id = c.watch_id
     where w.slug = $1`;
@@ -63,12 +80,23 @@ spec: []`
 
     let collector: Collector = new Collector();
     if (result.rowCount === 0) {
-      collector.spec = TroubleshootStore.defaultSpec;
-    } else {
-      collector.spec = result.rows[0].release_collector;
+      return;
     }
 
-    return collector;
+    return result.rows[0].release_collector;
+  }
+
+  public async setAnalysisResult(supportBundleId: string, insights: string): Promise<void> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const q = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`;
+    const v = [
+      id,
+      supportBundleId,
+      insights,
+      new Date(),
+    ];
+
+    await this.pool.query(q, v);
   }
 
   public getDefaultCollector(): Collector {
@@ -190,13 +218,13 @@ spec: []`
 
   // creates a SupportBundle object which is not stored in DB, but can be used to
   // create signed upload URL
-  public async getBlankSupportBundle(watchId: string): Promise<SupportBundle> {
+  public async getBlankSupportBundle(appOrWatchId: string): Promise<SupportBundle> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const status: SupportBundleStatus = "pending";
 
     const supportBundle = new SupportBundle();
     supportBundle.id = id;
-    supportBundle.watchId = watchId;
+    supportBundle.watchId = appOrWatchId;
     supportBundle.status = status;
 
     return supportBundle;

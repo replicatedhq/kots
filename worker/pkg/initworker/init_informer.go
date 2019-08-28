@@ -14,14 +14,11 @@ import (
 	"github.com/replicatedhq/kotsadm/worker/pkg/pullrequest"
 	"github.com/replicatedhq/kotsadm/worker/pkg/ship"
 	"github.com/replicatedhq/kotsadm/worker/pkg/types"
-	"github.com/replicatedhq/kotsadm/worker/pkg/util"
 	shipstate "github.com/replicatedhq/ship/pkg/state"
-	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -127,44 +124,6 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 			if err := w.initSessionToWatch(id, newPod, stateJSON); err != nil {
 				return errors.Wrap(err, "init session to watch")
 			}
-
-			// Get the file from s3
-			s3Filepath := fmt.Sprintf("%s/%d.tar.gz", id, 0)
-			filename, err := w.Store.DownloadFromS3(context.TODO(), s3Filepath)
-			if err != nil {
-				return errors.Wrap(err, "download from s3")
-			}
-			defer os.RemoveAll(filename)
-
-			file, err := os.Open(filename)
-			if err != nil {
-				return errors.Wrap(err, "open archive file")
-			}
-			defer file.Close()
-
-			_, renderedContents, err := util.FindRendered(file)
-			if err != nil {
-				return errors.Wrap(err, "find rendered")
-			}
-
-			splitRenderedContents := strings.Split(renderedContents, "\n---\n")
-			troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
-			for _, splitRenderedContent := range splitRenderedContents {
-				decode := scheme.Codecs.UniversalDeserializer().Decode
-				_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
-				if err != nil {
-					// ignore errors here
-					w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
-					continue
-				}
-
-				if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {
-					if err := w.Store.SetWatchVersionPreflightSpec(context.TODO(), id, 0, splitRenderedContent); err != nil {
-						return errors.Wrap(err, "set preflight spec in db")
-					}
-				}
-			}
-
 		} else if shipCloudRole == "unfork" {
 			return w.unforkSessionToWatch(id, newPod, stateJSON)
 		}
@@ -202,10 +161,6 @@ func (w *Worker) unforkSessionToWatch(id string, newPod *corev1.Pod, stateJSON [
 
 	if err := w.Store.CreateWatchFromState(context.TODO(), stateJSON, ship.ShipClusterMetadataFromState(stateJSON), title, icon, watchSlug, unforkSession.UserID, unforkSession.ID, "", "", ""); err != nil {
 		return errors.Wrap(err, "create watch from state")
-	}
-
-	if err := w.extractCollectorSpec(unforkSession.ID); err != nil {
-		return errors.Wrap(err, "maybe create pull request")
 	}
 
 	license := ship.LicenseJsonFromStateJson(stateJSON)
@@ -285,10 +240,6 @@ func (w *Worker) initSessionToWatch(id string, newPod *corev1.Pod, stateJSON []b
 	license := ship.LicenseJsonFromStateJson(stateJSON)
 	if err := w.Store.SetWatchLicense(context.TODO(), initSession.ID, license); err != nil {
 		return errors.Wrap(err, "set watch license")
-	}
-
-	if err := w.extractCollectorSpec(initSession.ID); err != nil {
-		return errors.Wrap(err, "maybe create pull request")
 	}
 
 	prNumber, commitSHA, versionStatus, branchName, err := w.maybeCreatePullRequest(initSession.ID, initSession.ClusterID)
@@ -401,49 +352,6 @@ func (w *Worker) maybeCreatePullRequest(watchID string, clusterID string) (int, 
 	}
 
 	return prNumber, commitSHA, "pending", branchName, nil
-}
-
-func (w *Worker) extractCollectorSpec(watchID string) error {
-	s3Filepath := fmt.Sprintf("%s/%d.tar.gz", watchID, 0)
-	filename, err := w.Store.DownloadFromS3(context.TODO(), s3Filepath)
-	if err != nil {
-		return err
-	}
-	defer os.Remove(filename)
-
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, renderedContents, err := util.FindRendered(file)
-	if err != nil {
-		return errors.Wrap(err, "find rendered")
-	}
-
-	splitRenderedContents := strings.Split(renderedContents, "\n---\n")
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
-	for _, splitRenderedContent := range splitRenderedContents {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
-		if err != nil {
-			w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
-			continue
-		}
-
-		if gvk.Group != "troubleshoot.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Collector" {
-			continue
-		}
-
-		if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), watchID, []byte(splitRenderedContent)); err != nil {
-			return errors.Wrap(err, "set troubleshoot collectors")
-		}
-
-		return nil
-	}
-
-	return nil
 }
 
 func stringInSlice(a string, list []string) bool {

@@ -14,7 +14,6 @@ type Store interface {
 	SetUnforkStatus(ctx context.Context, unforkID string, status string) error
 	CreateWatchFromState(ctx context.Context, stateJSON []byte, metadata []byte, title string, iconURI string, slug string, userID string, initID string, clusterID string, githubPath string, parentWatchID string) error
 
-	GetSupportBundleURL(supportBundle *types.SupportBundle) (string, error)
 	GetS3StoreURL(shipSession types.Session) (string, error)
 	SetOutputFilepath(ctx context.Context, session types.Output) error
 	UploadToS3(ctx context.Context, outputSession types.Output, file multipart.File) error
@@ -58,16 +57,5 @@ type Store interface {
 	GetClusterForWatch(ctx context.Context, watchID string) (*types.Cluster, error)
 	GetGitHubPathForClusterWatch(ctx context.Context, clusterID string, watchID string) (string, error)
 
-	SetWatchTroubleshootCollectors(ctx context.Context, watchID string, collectors []byte) error
-	SetWatchTroubleshootAnalyzers(ctx context.Context, watchID string, analyzers []byte) error
-
 	SetWatchLicense(ctx context.Context, watchID string, license []byte) error
-
-	ListReadyAnalysisIDs(ctx context.Context) ([]string, error)
-	SetAnalysisStarted(ctx context.Context, supportBundleID string) error
-	SetAnalysisFailed(ctx context.Context, supportBundleID string) error
-	SetAnalysisSucceeded(ctx context.Context, supportBundleID string, insights string) error
-	GetSupportBundle(ctx context.Context, supportBundleID string) (*types.SupportBundle, error)
-	GetAnalyzeSpec(ctx context.Context, watchID string) (string, error)
-	GetTroubleshootSpec(ctx context.Context, watchID string) (string, error)
 }
