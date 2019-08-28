@@ -17,16 +17,19 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI      string
-	RootDir          string
-	Overwrite        bool
-	Namespace        string
-	Downstreams      []string
-	LocalPath        string
-	LicenseFile      string
-	ExcludeKotsKinds bool
+	HelmRepoURI         string
+	RootDir             string
+	Overwrite           bool
+	Namespace           string
+	Downstreams         []string
+	LocalPath           string
+	LicenseFile         string
+	ExcludeKotsKinds    bool
+	ExcludeAdminConsole bool
 }
 
+// CanPullUpstream will return a bool indicating if the specified upstream
+// is accessible and authenticed for us.
 func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
@@ -37,9 +40,13 @@ func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) 
 		return true, nil
 	}
 
+	// For now, we shortcut http checks because all replicated:// app types
+	// require a license to pull.
 	return pullOptions.LicenseFile != "", nil
 }
 
+// Pull will download the application specified in upstreamURI using the options
+// specified in pullOptions
 func Pull(upstreamURI string, pullOptions PullOptions) error {
 	log := logger.NewLogger()
 	log.Initialize()
@@ -47,6 +54,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 	fetchOptions.LocalPath = pullOptions.LocalPath
+	fetchOptions.ExcludeAdminConsole = pullOptions.ExcludeAdminConsole
 
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)

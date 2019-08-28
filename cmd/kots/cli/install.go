@@ -54,8 +54,9 @@ func InstallCmd() *cobra.Command {
 				Downstreams: []string{
 					"local", // this is the auto-generated operator downstream
 				},
-				LocalPath:   ExpandDir(v.GetString("local-path")),
-				LicenseFile: ExpandDir(v.GetString("license-file")),
+				LocalPath:           ExpandDir(v.GetString("local-path")),
+				LicenseFile:         ExpandDir(v.GetString("license-file")),
+				ExcludeAdminConsole: true,
 			}
 
 			canPull, err := pull.CanPullUpstream(args[0], pullOptions)

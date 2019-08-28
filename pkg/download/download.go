@@ -20,6 +20,7 @@ import (
 type DownloadOptions struct {
 	Namespace  string
 	Kubeconfig string
+	Overwrite  bool
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
@@ -58,6 +59,17 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write archive")
+	}
+
+	// Delete the destination, if needed and requested
+	if _, err := os.Stat(path); err == nil {
+		if downloadOptions.Overwrite {
+			if err := os.RemoveAll(path); err != nil {
+				return errors.Wrap(err, "failed to delete existing download")
+			}
+		} else {
+			return errors.Errorf("directory already exists at %s", path)
+		}
 	}
 
 	tarGz := archiver.TarGz{

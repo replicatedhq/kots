@@ -29,14 +29,15 @@ func PullCmd() *cobra.Command {
 			}
 
 			pullOptions := pull.PullOptions{
-				HelmRepoURI:      v.GetString("repo"),
-				RootDir:          ExpandDir(v.GetString("rootdir")),
-				Overwrite:        v.GetBool("overwrite"),
-				Namespace:        v.GetString("namespace"),
-				Downstreams:      v.GetStringSlice("downstream"),
-				LocalPath:        ExpandDir(v.GetString("local-path")),
-				LicenseFile:      ExpandDir(v.GetString("license-file")),
-				ExcludeKotsKinds: v.GetBool("exclude-kots-kinds"),
+				HelmRepoURI:         v.GetString("repo"),
+				RootDir:             ExpandDir(v.GetString("rootdir")),
+				Overwrite:           v.GetBool("overwrite"),
+				Namespace:           v.GetString("namespace"),
+				Downstreams:         v.GetStringSlice("downstream"),
+				LocalPath:           ExpandDir(v.GetString("local-path")),
+				LicenseFile:         ExpandDir(v.GetString("license-file")),
+				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
+				ExcludeAdminConsole: false,
 			}
 			if err := pull.Pull(args[0], pullOptions); err != nil {
 				return err

@@ -1,25 +1,49 @@
 package kotsadm
 
 import (
-	"fmt"
+	"bytes"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
 	executableMode = int32(484)
 )
+
+func getWebYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+	docs := map[string][]byte{}
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var config bytes.Buffer
+	if err := s.Encode(webConfig(deployOptions), &config); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal web config")
+	}
+	docs["web-config.yaml"] = config.Bytes()
+
+	var deployment bytes.Buffer
+	if err := s.Encode(webDeployment(deployOptions.Namespace), &deployment); err != nil {
+		return nil, errors.Wrap(err, "failed to marsha web deployment")
+	}
+	docs["web-deployment.yaml"] = deployment.Bytes()
+
+	var service bytes.Buffer
+	if err := s.Encode(webService(deployOptions), &service); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal web service")
+	}
+	docs["web-service.yaml"] = service.Bytes()
+
+	return docs, nil
+}
 
 func ensureWeb(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
 	if deployOptions.Hostname == "" {
@@ -62,35 +86,7 @@ func ensureWebConfig(deployOptions *DeployOptions, clientset *kubernetes.Clients
 			return errors.Wrap(err, "failed to get existing config map")
 		}
 
-		configMap := &corev1.ConfigMap{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ConfigMap",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kotsadm-web-scripts",
-				Namespace: deployOptions.Namespace,
-			},
-			Data: map[string]string{
-				"start-kotsadm-web.sh": fmt.Sprintf(`#!/bin/bash
-sed -i 's/###_GRAPHQL_ENDPOINT_###/http:\/\/%s\/graphql/g' /usr/share/nginx/html/index.html
-sed -i 's/###_REST_ENDPOINT_###/http:\/\/%s\/api/g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_CLIENT_ID_###/not-supported/g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPDOWNLOAD_ENDPOINT_###/http:\/\/%s\/api\/v1\/download/g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPINIT_ENDPOINT_###/http:\/\/%s\/api\/v1\/init\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPUPDATE_ENDPOINT_###/http:\/\/%s\/api\/v1\/update\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_SHIPEDIT_ENDPOINT_###/http:\/\/%s\/api\/v1\/edit\//g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_REDIRECT_URI_###/http:\/\/%s\/auth\/github\/callback/g' /usr/share/nginx/html/index.html
-sed -i 's/###_GITHUB_INSTALL_URL_###/not-supportetd/g' /usr/share/nginx/html/index.html
-sed -i 's/###_INSTALL_ENDPOINT_###/http:\/\/%s\/api\/install/g' /usr/share/nginx/html/index.html
-
-nginx -g "daemon off;"`, deployOptions.Hostname, deployOptions.Hostname,
-					deployOptions.Hostname, deployOptions.Hostname, deployOptions.Hostname,
-					deployOptions.Hostname, deployOptions.Hostname, deployOptions.Hostname),
-			},
-		}
-
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(configMap)
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(webConfig(*deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create configmap")
 		}
@@ -106,84 +102,7 @@ func ensureWebDeployment(namespace string, clientset *kubernetes.Clientset) erro
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		deployment := &appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Deployment",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kotsadm-web",
-				Namespace: namespace,
-			},
-			Spec: appsv1.DeploymentSpec{
-				Selector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app": "kotsadm-web",
-					},
-				},
-				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{
-							"app": "kotsadm-web",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Volumes: []corev1.Volume{
-							{
-								Name: "kotsadm-web-scripts",
-								VolumeSource: corev1.VolumeSource{
-									ConfigMap: &corev1.ConfigMapVolumeSource{
-										DefaultMode: &executableMode,
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "kotsadm-web-scripts",
-										},
-									},
-								},
-							},
-						},
-						Containers: []corev1.Container{
-							{
-								Image:           "kotsadm/kotsadm-web:alpha",
-								ImagePullPolicy: corev1.PullAlways,
-								Name:            "kotsadm-web",
-								Args: []string{
-									"/scripts/start-kotsadm-web.sh",
-								},
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										ContainerPort: 3000,
-									},
-								},
-								ReadinessProbe: &corev1.Probe{
-									FailureThreshold:    3,
-									InitialDelaySeconds: 2,
-									PeriodSeconds:       2,
-									SuccessThreshold:    1,
-									TimeoutSeconds:      1,
-									Handler: corev1.Handler{
-										HTTPGet: &corev1.HTTPGetAction{
-											Path:   "/healthz",
-											Port:   intstr.FromInt(3000),
-											Scheme: corev1.URISchemeHTTP,
-										},
-									},
-								},
-								VolumeMounts: []corev1.VolumeMount{
-									{
-										Name:      "kotsadm-web-scripts",
-										MountPath: "/scripts/start-kotsadm-web.sh",
-										SubPath:   "start-kotsadm-web.sh",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-
-		_, err := clientset.AppsV1().Deployments(namespace).Create(deployment)
+		_, err := clientset.AppsV1().Deployments(namespace).Create(webDeployment(namespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
@@ -193,47 +112,13 @@ func ensureWebDeployment(namespace string, clientset *kubernetes.Clientset) erro
 }
 
 func ensureWebService(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
-	port := corev1.ServicePort{
-		Name:       "http",
-		Port:       3000,
-		TargetPort: intstr.FromString("http"),
-	}
-
-	serviceType := corev1.ServiceTypeClusterIP
-	if deployOptions.ServiceType == "NodePort" {
-		serviceType = corev1.ServiceTypeNodePort
-		port.NodePort = int32(deployOptions.NodePort)
-	} else if deployOptions.ServiceType == "LoadBalancer" {
-		serviceType = corev1.ServiceTypeLoadBalancer
-	}
-
 	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		service := &corev1.Service{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Service",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kotsadm-web",
-				Namespace: deployOptions.Namespace,
-			},
-			Spec: corev1.ServiceSpec{
-				Selector: map[string]string{
-					"app": "kotsadm-web",
-				},
-				Type: serviceType,
-				Ports: []corev1.ServicePort{
-					port,
-				},
-			},
-		}
-
-		_, err := clientset.CoreV1().Services(deployOptions.Namespace).Create(service)
+		_, err := clientset.CoreV1().Services(deployOptions.Namespace).Create(webService(*deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "Failed to create service")
 		}
