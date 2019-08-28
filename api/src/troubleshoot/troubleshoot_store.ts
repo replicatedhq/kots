@@ -19,7 +19,8 @@ export class TroubleshootStore {
 kind: Collector
 metadata:
   name: defalt-collector
-spec: []`
+spec:
+  collectors: []`
 
   public async getPreferedWatchCollector(watchId: string): Promise<Collector> {
     const q = `select release_collector, updated_collector, release_collector_updated_at, updated_collector_updated_at, use_updated_collector
