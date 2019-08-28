@@ -3,6 +3,7 @@ import { Controller, Post, Get, Res, Req, BodyParams, PathParams } from "@tsed/c
 import { Params } from "../server/params";
 import { logger } from "../server/logger";
 import jsYaml from "js-yaml";
+import { TroubleshootStore } from "../troubleshoot";
 
 interface ErrorResponse {
   error: {};
@@ -14,25 +15,40 @@ interface BundleUploadedBody {
 
 @Controller("/api/v1/troubleshoot")
 export class TroubleshootAPI {
-  @Get("/:partA/:partB")
+  @Get("/:slug")
   async getSpec(
     @Req() request: Express.Request,
     @Res() response: Express.Response,
-    @PathParams("partA") partA: string,
-    @PathParams("partB") partB: string,
+    @PathParams("slug") slug: string,
   ): Promise<any | ErrorResponse> {
+    let collector = TroubleshootStore.defaultSpec;
 
-    const slug = partA + "/" + partB;
-    const collector = await request.app.locals.stores.troubleshootStore.getCollectorForWatchSlug(slug);
-    const watchId = await request.app.locals.stores.watchStore.getIdFromSlug(slug);
-    const supportBundle = await request.app.locals.stores.troubleshootStore.getBlankSupportBundle(watchId);
+    const kotsCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForKotsSlug(slug);
+    if (kotsCollector) {
+      collector = kotsCollector;
+    } else {
+      const watchCollector = await request.app.locals.stores.troubleshootStore.getCollectorForWatchSlug(slug);
+      if (watchCollector) {
+        collector = watchCollector;
+      }
+    }
+
+    let appOrWatchId;
+
+    try {
+      appOrWatchId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
+    } catch {
+      appOrWatchId = await request.app.locals.stores.watchStore.getIdFromSlug(slug);
+    }
+
+    const supportBundle = await request.app.locals.stores.troubleshootStore.getBlankSupportBundle(appOrWatchId);
 
     const uploadUrl = await request.app.locals.stores.troubleshootStore.signSupportBundlePutRequest(supportBundle);
 
     const params = await Params.getParams();
-    const callbackUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchId}/${supportBundle.id}`;
+    const callbackUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
 
-    const parsedSpec = jsYaml.load(collector.spec);
+    const parsedSpec = jsYaml.load(collector);
     parsedSpec.spec.afterCollection =  [
       { "uploadResultsTo": {"method": "PUT", "uri": uploadUrl} },
       { "callback": {"method": "POST", "uri": callbackUrl} },
