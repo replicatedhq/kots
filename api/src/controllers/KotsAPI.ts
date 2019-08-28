@@ -123,8 +123,6 @@ export class KotsAPI {
     const supportBundleSpec = undefined;
     const preflightSpec = undefined;
 
-    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec);
-
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
@@ -136,9 +134,11 @@ export class KotsAPI {
       if (!cluster) {
         continue;
       }
-
+      
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
+      await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec, cluster.id, 0);
     }
+
 
     return {
       uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
@@ -166,7 +166,19 @@ export class KotsAPI {
     const supportBundleSpec = undefined;
     const preflightSpec = undefined;
 
-    await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, newSequence, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec);
+    const downstreams = await extractDownstreamNamesFromTarball(buffer);
+    const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
+    for (const downstream of downstreams) {
+      const cluster = _.find(clusters, (c: Cluster) => {
+        return c.title === downstream;
+      });
+
+      if (!cluster) {
+        continue;
+      }
+      
+      await request.app.locals.stores.kotsAppStore.createKotsAppVersion(kotsApp.id, newSequence, metadata.versionLabel, metadata.updateCursor, supportBundleSpec, preflightSpec, cluster.id, kotsApp.currentSequence);
+    }
 
     return {
       uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,

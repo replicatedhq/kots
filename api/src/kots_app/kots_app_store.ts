@@ -1,6 +1,7 @@
 import pg from "pg";
 import { Params } from "../server/params";
 import { KotsApp } from "./";
+import { KotsVersion } from "./";
 import { ReplicatedError } from "../server/errors";
 import randomstring from "randomstring";
 import slugify from "slugify";
@@ -35,7 +36,7 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createKotsAppVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined): Promise<void> {
+  async createKotsAppVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined, downstreamClusterId: string | undefined, parentSequence: number | undefined): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
@@ -57,6 +58,111 @@ export class KotsAppStore {
     ];
 
     await this.pool.query(qq, vv);
+
+    const qqq = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
+      values ($1, $2, $3, $4, $5, $6, $7)`;
+    const vvv = [
+      id,
+      downstreamClusterId,
+      sequence,
+      parentSequence,
+      new Date(),
+      versionLabel,
+      "pending"
+    ];
+
+    await this.pool.query(qqq, vvv);
+  }
+
+  async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
+    let q = `select current_sequence from app where id = $1`;
+    let v = [
+      appId,
+    ];
+
+    let result = await this.pool.query(q, v);
+    const sequence = result.rows[0].current_sequence;
+
+    // If there is not a current_sequence, then there can't be past versions
+    if (sequence === null) {
+      return [];
+    }
+
+    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
+    v = [
+      appId,
+      sequence,
+      clusterId
+    ];
+
+    result = await this.pool.query(q, v);
+    const versionItems: KotsVersion[] = [];
+
+    for (const row of result.rows) {
+      versionItems.push(this.mapKotsAppVersion(row));
+    }
+
+    return versionItems;
+  }
+
+  async listPendingVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
+    let q = `select current_sequence from app where id = $1`;
+    let v = [
+      appId,
+    ];
+
+    let result = await this.pool.query(q, v);
+    let sequence = result.rows[0].current_sequence;
+
+    // If there is not a current_sequence, then all versions are future versions
+    if (sequence === null) {
+      sequence = -1;
+    }
+
+    q = `
+select created_at, version_label, status, sequence, applied_at
+from app_downstream_version
+where app_id = $1 and cluster_id = $3 and sequence > $2
+order by sequence desc`;
+    v = [
+      appId,
+      sequence,
+      clusterId,
+    ];
+
+    result = await this.pool.query(q, v);
+    const versionItems: KotsVersion[] = [];
+
+    for (const row of result.rows) {
+      versionItems.push(this.mapKotsAppVersion(row));
+    }
+
+    return versionItems;
+  }
+
+  async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
+    let q = `select current_sequence from app where id = $1`;
+    let v = [
+      appId,
+    ];
+    let result = await this.pool.query(q, v);
+    const sequence = result.rows[0].current_sequence;
+
+    if (sequence === null) {
+      return;
+    }
+
+    q = `select created_at, version_label, status, sequence, deployed_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    v = [
+      appId,
+      sequence,
+      clusterId,
+    ];
+
+    result = await this.pool.query(q, v);
+    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+
+    return versionItem;
   }
 
   async listKotsApps(userId?: string): Promise<KotsApp[]> {
@@ -210,4 +316,15 @@ export class KotsAppStore {
       pg.release();
     }
   }
+
+  private mapKotsAppVersion(row: any): KotsVersion {
+    return {
+      title: row.version_label,
+      status: row.status,
+      createdOn: row.created_at,
+      sequence: row.sequence,
+      deployedAt: row.applied_at,
+    };
+  }
+
 }

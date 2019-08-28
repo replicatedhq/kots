@@ -20,7 +20,18 @@ const KotsDownstream = `
   }
 `;
 
+const KotsVersion = `
+  type Version {
+    title: String!
+    status: String!
+    createdOn: String!
+    sequence: Int
+    deployedAt: String
+  }
+`
+
 export default [
   KotsApp,
   KotsDownstream,
+  KotsVersion,
 ];

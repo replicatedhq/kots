@@ -1,4 +1,5 @@
 import { Params } from "../server/params";
+import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "../troubleshoot/util";
 import { getS3 } from "../util/s3";
@@ -10,6 +11,7 @@ import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
 import { Cluster } from "../cluster";
+import { KotsVersion } from "./"
 import * as _ from "lodash";
 
 export class KotsApp {
@@ -23,6 +25,18 @@ export class KotsApp {
   lastUpdateCheckAt?: Date;
   bundleCommand: string;
 
+
+  // Version Methods
+  public async getCurrentVersion(clusterId: string, stores: Stores): Promise<KotsVersion | undefined> {
+    return stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
+  }
+  public async getPendingVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
+    return stores.kotsAppStore.listPendingVersions(this.id, clusterId);
+  }
+  public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
+    return stores.kotsAppStore.listPastVersions(this.id,   clusterId);
+  }
+  
   // Source files
   async generateFileTreeIndex(sequence) {
     const supportBundleIndexJsonPath = "index.json";
@@ -91,7 +105,6 @@ export class KotsApp {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${appId}/${sequence}.tar.gz`,
       };
-      logger.info({ msg: "S3 Params", params });
 
       const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
 
@@ -113,7 +126,6 @@ export class KotsApp {
       Bucket: replicatedParams.shipOutputBucket,
       Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
     };
-    logger.info({ msg: "S3 Params", params });
 
     const result = await getS3(replicatedParams).getObject(params).promise();
     return result.Body;
@@ -128,7 +140,6 @@ export class KotsApp {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
       };
-      logger.info({ msg: "S3 Params", params });
 
       const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
       const extract = tar.extract();
@@ -213,4 +224,12 @@ export class KotsApp {
       }),
     };
   }
+}
+
+export interface KotsVersion {
+  title: string;
+  status: string;
+  createdOn: string;
+  sequence: number;
+  deployedAt: string;
 }

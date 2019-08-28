@@ -8,6 +8,7 @@ import DownstreamVersionRow from "./DownstreamVersionRow";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
+import { isKotsApplication } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
 
@@ -19,9 +20,10 @@ class DownstreamWatchVersionHistory extends Component {
 
   render() {
     const { watch, match, data } = this.props;
-    const { watches} = watch;
-    const _slug = `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
-    const downstreamWatch = watches.find(w => w.slug === _slug );
+    const { watches, downstreams } = watch;
+    const isKots = isKotsApplication(watch);
+    const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
+    const downstreamWatch = isKots ? downstreams.find(w => w.slug === _slug) : watches.find(w => w.slug === _slug );
     const versionHistory = data?.getDownstreamHistory?.length ? data.getDownstreamHistory : [];
     const downstreamSlug = downstreamWatch ? downstreamWatch.cluster?.slug : "";
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
@@ -41,7 +43,7 @@ class DownstreamWatchVersionHistory extends Component {
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Active release</p>
           </div>
           <div>
-            {downstreamWatch.currentVersion ?
+            {downstreamWatch?.currentVersion ?
               <DownstreamVersionRow
                 downstreamWatch={downstreamWatch}
                 version={downstreamWatch.currentVersion}

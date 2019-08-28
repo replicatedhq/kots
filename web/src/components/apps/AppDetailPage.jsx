@@ -366,7 +366,7 @@ class AppDetailPage extends Component {
                         errorCheckingUpdate={updateError}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history" render={() =>
                       <DownstreamWatchVersionHistory
                         watch={app}
                         makeCurrentVersion={this.makeCurrentRelease}

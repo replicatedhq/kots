@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp } from "../";
+import { KotsApp, KotsVersion } from "../";
 import { Cluster } from "../../cluster";
 
 export function KotsQueries(stores: Stores) {
@@ -31,6 +31,39 @@ export function KotsQueries(stores: Stores) {
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const results = await stores.clusterStore.listClustersForKotsApp(appId);
       return results;
+    },
+
+    async listPendingWatchVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
+      const { slug, clusterId } = args;
+      const id = await stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await stores.kotsAppStore.getApp(id);
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
+      const cluster = _.find(downstreams, (d: Cluster) => {
+        return d.id === clusterId
+      })
+      return app.getPendingVersions(cluster!.id, stores);
+    },
+
+    async listPastWatchVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
+      const { slug, clusterId } = args;
+      const id = await stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await stores.kotsAppStore.getApp(id);
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
+      const cluster = _.find(downstreams, (d: Cluster) => {
+        return d.id === clusterId
+      })
+      return app.getPastVersions(cluster!.id, stores);
+    },
+
+    async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<KotsVersion|undefined> {
+      const { slug, clusterId } = args;
+      const id = await stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await stores.kotsAppStore.getApp(id);
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
+      const cluster = _.find(downstreams, (d: Cluster) => {
+        return d.id === clusterId
+      })
+      return app.getCurrentVersion(cluster!.id, stores);
     },
 
     // TODO: This code is currently duplicated between kots apps and wathes.

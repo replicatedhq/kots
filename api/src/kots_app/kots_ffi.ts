@@ -45,7 +45,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     }
 
     const kotsApp = await stores.kotsAppStore.createKotsApp(name, "replicated://sentry-enterprise", licenseData);
-    await stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, "??", "0", undefined, undefined);
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
@@ -64,6 +63,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       }
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
+      await stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, "??", "0", undefined, undefined, cluster.id, kotsApp.currentSequence);
     }
 
     return kotsApp;
