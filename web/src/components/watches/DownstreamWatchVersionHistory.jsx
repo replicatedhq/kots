@@ -6,15 +6,16 @@ import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 
 import { getDownstreamHistory } from "../../queries/WatchQueries";
+import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 import { isKotsApplication } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
 
-  handleMakeCurrent = (id, sequence) => {
+  handleMakeCurrent = (upstreamSlug, sequence, clusterId) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
-      this.props.makeCurrentVersion(id, sequence);
+      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterId);
     }
   }
 
@@ -23,8 +24,13 @@ class DownstreamWatchVersionHistory extends Component {
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
-    const downstreamWatch = isKots ? downstreams.find(w => w.slug === _slug) : watches.find(w => w.slug === _slug );
-    const versionHistory = data?.getDownstreamHistory?.length ? data.getDownstreamHistory : [];
+    const downstreamWatch = isKots ? downstreams.find(w => w.cluster.slug === _slug) : watches.find(w => w.slug === _slug );
+    let versionHistory = [];
+    if (isKots && data?.getKotsDownstreamHistory?.length) {
+      versionHistory = data.getKotsDownstreamHistory;
+    } else if (data?.getDownstreamHistory?.length) {
+      versionHistory = data.getDownstreamHistory;
+    }
     const downstreamSlug = downstreamWatch ? downstreamWatch.cluster?.slug : "";
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
 
@@ -47,6 +53,9 @@ class DownstreamWatchVersionHistory extends Component {
               <DownstreamVersionRow
                 downstreamWatch={downstreamWatch}
                 version={downstreamWatch.currentVersion}
+                isKots={isKots}
+                urlParams={match.params}
+                handleMakeCurrent={this.handleMakeCurrent}
               />
             :
               <div className="no-current-version u-textAlign--center">
@@ -69,6 +78,9 @@ class DownstreamWatchVersionHistory extends Component {
                 key={`${version.title}-${version.sequence}`}
                 downstreamWatch={downstreamWatch}
                 version={version}
+                isKots={isKots}
+                urlParams={match.params}
+                handleMakeCurrent={this.handleMakeCurrent}
               />
             ))}
           </div>
@@ -81,12 +93,27 @@ class DownstreamWatchVersionHistory extends Component {
 export default compose(
   withApollo,
   withRouter,
+  graphql(getKotsDownstreamHistory, {
+    skip: props => {
+      return props.match.params.downstreamOwner;
+    },
+    options: ({ match }) => ({
+      variables: {
+        upstreamSlug: match.params.slug,
+        clusterSlug: match.params.downstreamSlug,
+      },
+      fetchPolicy: "no-cache"
+    })
+  }),
   graphql(getDownstreamHistory, {
+    skip: props => {
+      return !props.match.params.downstreamOwner;
+    },
     options: ({ match }) => ({
       variables: {
         slug: `${match.params.downstreamOwner}/${match.params.downstreamSlug}`
       },
       fetchPolicy: "no-cache"
     })
-  })
+  }),
 )(DownstreamWatchVersionHistory);

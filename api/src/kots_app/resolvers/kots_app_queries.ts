@@ -23,7 +23,7 @@ export function KotsQueries(stores: Stores) {
 
       const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
 
-      return app.toSchema(downstreams);
+      return app.toSchema(downstreams, stores);
     },
 
     async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
@@ -33,37 +33,43 @@ export function KotsQueries(stores: Stores) {
       return results;
     },
 
-    async listPendingWatchVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
+    async listPendingKotsVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await stores.kotsAppStore.getApp(id);
-      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
-      const cluster = _.find(downstreams, (d: Cluster) => {
-        return d.id === clusterId
-      })
-      return app.getPendingVersions(cluster!.id, stores);
+      return app.getPendingVersions(clusterId, stores);
     },
 
-    async listPastWatchVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
+    async listPastKotsVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await stores.kotsAppStore.getApp(id);
-      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
-      const cluster = _.find(downstreams, (d: Cluster) => {
-        return d.id === clusterId
-      })
-      return app.getPastVersions(cluster!.id, stores);
+      return app.getPastVersions(clusterId, stores);
     },
 
-    async getCurrentWatchVersion(root: any, args: any, context: Context): Promise<KotsVersion|undefined> {
+    async getCurrentKotsVersion(root: any, args: any, context: Context): Promise<KotsVersion|undefined> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await stores.kotsAppStore.getApp(id);
-      const downstreams = await stores.clusterStore.listClustersForKotsApp(id);
-      const cluster = _.find(downstreams, (d: Cluster) => {
-        return d.id === clusterId
-      })
-      return app.getCurrentVersion(cluster!.id, stores);
+      return app.getCurrentVersion(clusterId, stores);
+    },
+
+    async getKotsDownstreamHistory(root: any, args: any, context: Context): Promise<KotsVersion[]> {
+      const idFromSlug = await stores.kotsAppStore.getIdFromSlug(args.upstreamSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
+      const app = await stores.kotsAppStore.getApp(idFromSlug);
+      const current = await app.getCurrentVersion(clusterId, stores);
+      const past = await app.getPastVersions(clusterId, stores);
+      const pending = await app.getPendingVersions(clusterId, stores);
+
+      let versions: KotsVersion[];
+      if (current === undefined) {
+        versions = pending.concat(past);
+      } else {
+        versions = pending.concat(Array.of(current), past);
+      }
+
+      return versions;
     },
 
     // TODO: This code is currently duplicated between kots apps and wathes.

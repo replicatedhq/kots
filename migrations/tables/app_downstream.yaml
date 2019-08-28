@@ -24,3 +24,5 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: current_sequence
+        type: integer

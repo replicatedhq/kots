@@ -50,6 +50,13 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
+    async deployKotsVersion(root: any, args: any, context: Context) {
+      const { upstreamSlug, sequence, clusterId } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
+      await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
+      return true;
+    },
+
     async deleteKotsDownstream(root: any, args: any, context: Context) {
       const { slug, clusterId } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);

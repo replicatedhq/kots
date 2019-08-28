@@ -152,7 +152,7 @@ order by sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, deployed_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -163,6 +163,16 @@ order by sequence desc`;
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
+  }
+
+  async deployVersion(appId: string, sequence: number, clusterId: string): Promise<void> {
+    const q = `update app_downstream set current_sequence = $1 where app_id = $2 and cluster_id = $3`;
+      const v = [
+        sequence,
+        appId,
+        clusterId,
+      ];
+      await this.pool.query(q, v);
   }
 
   async listKotsApps(userId?: string): Promise<KotsApp[]> {

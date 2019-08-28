@@ -16,12 +16,15 @@ const KotsApp = `
 const KotsDownstream = `
   type KotsDownstream {
     name: String
+    currentVersion: KotsVersion
+    pendingVersions: [KotsVersion]
+    pastVersions: [KotsVersion]
     cluster: Cluster
   }
 `;
 
 const KotsVersion = `
-  type Version {
+  type KotsVersion {
     title: String!
     status: String!
     createdOn: String!

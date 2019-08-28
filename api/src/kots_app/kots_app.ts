@@ -211,12 +211,15 @@ export class KotsApp {
     return bundleCommand;
   }
 
-  public toSchema(downstreams: Cluster[]) {
+  public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
       downstreams: _.map(downstreams, (downstream) => {
         return {
           name: downstream.title,
+          currentVersion: async () => this.getCurrentVersion(downstream.id, stores),
+          pastVersions: async () => this.getPastVersions(downstream.id, stores),
+          pendingVersions: async () => this.getPendingVersions(downstream.id, stores),
           cluster: {
             ...downstream
           },
