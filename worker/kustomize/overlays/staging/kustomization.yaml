@@ -6,4 +6,3 @@ patchesStrategicMerge:
 - ./deployment-update.yaml
 - ./deployment-watch.yaml
 - ./deployment-edit.yaml
-- ./deployment-analyze.yaml

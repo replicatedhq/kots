@@ -4,6 +4,7 @@ import { Params } from "../server/params";
 import { logger } from "../server/logger";
 import jsYaml from "js-yaml";
 import { TroubleshootStore } from "../troubleshoot";
+import { analyzeSupportBundle } from "../troubleshoot/troubleshoot_ffi";
 
 interface ErrorResponse {
   error: {};
@@ -78,6 +79,13 @@ export class TroubleshootAPI {
 
     await request.app.locals.stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
     await request.app.locals.stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
+
+    const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(supportBundleId);
+    const dirTree = await supportBundle.generateFileTreeIndex();
+    await request.app.locals.stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
+
+    // Analyze it
+    await analyzeSupportBundle(supportBundleId, request.app.locals.stores);
 
     response.send(204, "");
   }

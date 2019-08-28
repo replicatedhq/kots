@@ -7,16 +7,12 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/worker/pkg/pullrequest"
 	"github.com/replicatedhq/kotsadm/worker/pkg/types"
-	"github.com/replicatedhq/kotsadm/worker/pkg/util"
 	"github.com/replicatedhq/ship/pkg/state"
-	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parentSequence *int, sequence int, s3Filepath string) error {
@@ -30,37 +26,6 @@ func (w *Worker) postUpdateActions(watchID string, parentWatchID *string, parent
 		return errors.Wrap(err, "fetch archive")
 	}
 	defer os.Remove(archive.Name())
-
-	if err := w.extractCollectorSpec(watchID, archive); err != nil {
-		return errors.Wrap(err, "extract collector spec")
-	}
-	// Get preflights
-	_, err = archive.Seek(0, 0)
-	if err != nil {
-		return errors.Wrap(err, "failed to seek within archive")
-	}
-
-	_, renderedContents, err := util.FindRendered(archive)
-	if err != nil {
-		return errors.Wrap(err, "find rendered")
-	}
-	splitRenderedContents := strings.Split(renderedContents, "\n---\n")
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
-	for _, splitRenderedContent := range splitRenderedContents {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
-		if err != nil {
-			// ignore errors here
-			w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
-			continue
-		}
-
-		if gvk.Group == "troubleshoot.replicated.com" && gvk.Version == "v1beta1" && gvk.Kind == "Preflight" {
-			if err := w.Store.SetWatchVersionPreflightSpec(context.TODO(), watchID, sequence, splitRenderedContent); err != nil {
-				return errors.Wrap(err, "set preflight spec in db")
-			}
-		}
-	}
 
 	if err := w.triggerIntegrations(watch, sequence, archive, parentSequence); err != nil {
 		return errors.Wrap(err, "trigger integraitons")
@@ -203,36 +168,6 @@ func (w *Worker) createVersion(watch *types.Watch, sequence int, file multipart.
 	err := w.Store.CreateWatchVersion(context.TODO(), watch.ID, versionLabel, versionStatus, branchName, sequence, prNumber, commitSHA, isCurrent, parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "create watch version")
-	}
-
-	return nil
-}
-
-func (w *Worker) extractCollectorSpec(watchID string, archive *os.File) error {
-	_, renderedContents, err := util.FindRendered(archive)
-	if err != nil {
-		return errors.Wrap(err, "find rendered")
-	}
-
-	splitRenderedContents := strings.Split(renderedContents, "\n---\n")
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
-	for _, splitRenderedContent := range splitRenderedContents {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		_, gvk, err := decode([]byte(splitRenderedContent), nil, nil)
-		if err != nil {
-			w.Logger.Debugf("unable to parse k8s yaml: %#v", err)
-			continue
-		}
-
-		if gvk.Group != "troubleshoot.replicated.com" || gvk.Version != "v1beta1" || gvk.Kind != "Collector" {
-			continue
-		}
-
-		if err := w.Store.SetWatchTroubleshootCollectors(context.TODO(), watchID, []byte(splitRenderedContent)); err != nil {
-			return errors.Wrap(err, "set troubleshoot collectors")
-		}
-
-		return nil
 	}
 
 	return nil

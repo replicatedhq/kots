@@ -20,26 +20,6 @@ import (
 	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
-func (s *SQLStore) GetSupportBundleURL(supportBundle *types.SupportBundle) (string, error) {
-	sess, err := session.NewSession(s.getS3Config())
-	if err != nil {
-		return "", errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	resp, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(strings.TrimSpace(s.c.S3BucketName)),
-		Key:    aws.String(fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", supportBundle.ID)),
-	})
-
-	presignedURL, err := resp.Presign(30 * time.Minute)
-	if err != nil {
-		return "", errors.Wrap(err, "presign response")
-	}
-
-	return presignedURL, nil
-}
-
 func (s *SQLStore) GetS3StoreURL(shipSession types.Session) (string, error) {
 	sess, err := session.NewSession(s.getS3Config())
 	if err != nil {

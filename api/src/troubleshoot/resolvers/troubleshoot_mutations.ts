@@ -2,6 +2,7 @@ import { Context } from "../../context";
 import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { SupportBundle, SupportBundleUpload } from "../";
+import { analyzeSupportBundle } from "../troubleshoot_ffi";
 
 export function TroubleshootMutations(stores: Stores) {
   return {
@@ -18,13 +19,17 @@ export function TroubleshootMutations(stores: Stores) {
     async markSupportBundleUploaded(root: any, { id }, context: Context): Promise<SupportBundle> {
       const bundle = await stores.troubleshootStore.getSupportBundle(id);
       // TODO: size?
-      
+
       // Set file tree index
       const dirTree = await bundle.generateFileTreeIndex();
       await stores.troubleshootStore.assignTreeIndex(bundle.id, JSON.stringify(dirTree));
 
-      // TODO: async analysis
-      return await stores.troubleshootStore.markSupportBundleUploaded(id);
+      const uploadedBundle = await stores.troubleshootStore.markSupportBundleUploaded(id);
+
+          // Analyze it
+      await analyzeSupportBundle(id, stores);
+
+      return uploadedBundle;
     },
   }
 }

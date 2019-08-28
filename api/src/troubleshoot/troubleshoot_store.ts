@@ -86,6 +86,19 @@ spec:
     return result.rows[0].release_collector;
   }
 
+  public async setAnalysisResult(supportBundleId: string, insights: string): Promise<void> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+    const q = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`;
+    const v = [
+      id,
+      supportBundleId,
+      insights,
+      new Date(),
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   public getDefaultCollector(): Collector {
     const collector: Collector = new Collector();
     collector.spec = `TODO`;

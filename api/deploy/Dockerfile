@@ -20,6 +20,11 @@ RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v0.2.0/kots_
   cd /tmp && tar xzvf kots.tar.gz && \
   mv /tmp/kots.so /lib/kots.so
 
+# Install troubleshoot.so
+RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.7/troubleshoot.so_0.9.7_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
+  cd /tmp && tar xzvf troubleshoot.tar.gz && \
+  mv /tmp/troubleshoot.so /lib/troubleshoot.so
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
