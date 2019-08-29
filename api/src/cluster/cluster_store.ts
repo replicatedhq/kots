@@ -263,6 +263,9 @@ export class ClusterStore {
     const v = [slug];
 
     const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No cluster with slug ${slug}`);
+    }
     return result.rows[0].id;
   }
 

@@ -81,6 +81,9 @@ export class KotsAppStore {
     ];
 
     let result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No past versions found`);
+    }
     const sequence = result.rows[0].current_sequence;
 
     // If there is not a current_sequence, then there can't be past versions
@@ -112,6 +115,9 @@ export class KotsAppStore {
     ];
 
     let result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No pending versions found`);
+    }
     let sequence = result.rows[0].current_sequence;
 
     // If there is not a current_sequence, then all versions are future versions
@@ -146,6 +152,9 @@ order by sequence desc`;
       appId,
     ];
     let result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No current version found`);
+    }
     const sequence = result.rows[0].current_sequence;
 
     if (sequence === null) {
