@@ -37,21 +37,23 @@ func PullCmd() *cobra.Command {
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
 				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
-				ExcludeAdminConsole: false,
+				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
+				SharedPassword:      v.GetString("shared-password"),
 			}
-			if err := pull.Pull(args[0], pullOptions); err != nil {
+			renderDir, err := pull.Pull(args[0], pullOptions)
+			if err != nil {
 				return err
 			}
 
 			log := logger.NewLogger()
 			log.Initialize()
-			log.Info("Kubernetes application files created in %q", v.GetString("rootdir"))
+			log.Info("Kubernetes application files created in %s", renderDir)
 			if len(v.GetStringSlice("downstream")) == 0 {
-				log.Info("To deploy, run kubectl -k %s", path.Join(v.GetString("rootdir"), "overlays", "midstream"))
+				log.Info("To deploy, run kubectl apply -k %s", path.Join(renderDir, "overlays", "midstream"))
 			} else if len(v.GetStringSlice("downstream")) == 1 {
-				log.Info("To deploy, run kubectl -k %s", path.Join(v.GetString("rootdir"), "overlays", "downstreams", v.GetStringSlice("downstream")[0]))
+				log.Info("To deploy, run kubectl apply -k %s", path.Join(renderDir, "overlays", "downstreams", v.GetStringSlice("downstream")[0]))
 			} else {
-				log.Info("To deploy, run kubectl -k from the downstream directory you would like to deploy")
+				log.Info("To deploy, run kubectl apply -k from the downstream directory you would like to deploy")
 			}
 
 			return nil
@@ -67,6 +69,8 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().Bool("exclude-kots-kinds", true, "set to true to exclude rendering kots custom objects to the base directory")
+	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
+	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
 
 	return cmd
 }

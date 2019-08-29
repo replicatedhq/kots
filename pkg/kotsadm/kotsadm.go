@@ -23,19 +23,30 @@ var (
 )
 
 type DeployOptions struct {
-	Namespace      string
-	Kubeconfig     string
-	IncludeShip    bool
-	IncludeGitHub  bool
-	SharedPassword string
-	ServiceType    string
-	NodePort       int32
-	Hostname       string
+	Namespace           string
+	Kubeconfig          string
+	IncludeShip         bool
+	IncludeGitHub       bool
+	SharedPassword      string
+	ServiceType         string
+	NodePort            int32
+	Hostname            string
+	ApplicationMetadata []byte
 }
 
 // YAML will return a map containing the YAML needed to run the admin console
 func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
+
+	if deployOptions.ApplicationMetadata != nil {
+		metadataDocs, err := getApplicationMetadataYAML(deployOptions.ApplicationMetadata, deployOptions.Namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get application metadata yaml")
+		}
+		for n, v := range metadataDocs {
+			docs[n] = v
+		}
+	}
 
 	minioDocs, err := getMinioYAML(deployOptions.Namespace)
 	if err != nil {

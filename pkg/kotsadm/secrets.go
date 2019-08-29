@@ -28,7 +28,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	if err := s.Encode(pgSecret(deployOptions.Namespace, postgresPassword), &pg); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal pg secret")
 	}
-	docs["secret-pg.yaml"] = jwt.Bytes()
+	docs["secret-pg.yaml"] = pg.Bytes()
 
 	bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(deployOptions.SharedPassword), 10)
 	if err != nil {
@@ -44,7 +44,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	if err := s.Encode(s3Secret(deployOptions.Namespace), &s3); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal s3 secret")
 	}
-	docs["secret-s3.yaml"] = jwt.Bytes()
+	docs["secret-s3.yaml"] = s3.Bytes()
 
 	return docs, nil
 }

@@ -43,7 +43,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, includeAdminConsole bool) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, includeAdminConsole bool, sharedPassword string) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -100,7 +100,7 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	}
 
 	if includeAdminConsole {
-		adminConsoleFiles, err := generateAdminConsoleFiles()
+		adminConsoleFiles, err := generateAdminConsoleFiles(sharedPassword)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate admin console files")
 		}
@@ -131,8 +131,6 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s", u.Scheme, hostname, license.Spec.AppSlug)
-
-	fmt.Printf("%s\n", url)
 
 	if r.Channel != nil {
 		url = fmt.Sprintf("%s/%s", url, *r.Channel)
@@ -445,16 +443,20 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 	return upstreamFiles, nil
 }
 
-func generateAdminConsoleFiles() ([]UpstreamFile, error) {
+func generateAdminConsoleFiles(sharedPassword string) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
 	deployOptions := kotsadm.DeployOptions{
 		Namespace: "default",
 	}
 
-	sharedPassword, err := promptForSharedPassword()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to prompt for shared password")
+	if sharedPassword == "" {
+		p, err := promptForSharedPassword()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to prompt for shared password")
+		}
+
+		sharedPassword = p
 	}
 
 	deployOptions.SharedPassword = sharedPassword
@@ -507,4 +509,39 @@ func promptForSharedPassword() (string, error) {
 		return result, nil
 	}
 
+}
+
+// GetApplicationMetadata will return any available application yaml from
+// the upstream. If there is no application.yaml, it will return
+// a placeholder one
+func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
+	r, err := parseReplicatedURL(upstream)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse replicated upstream")
+	}
+
+	url := fmt.Sprintf("https://replicated.app/metadata/%s", r.AppSlug)
+	//url := fmt.Sprintf("http://localhost:something/metadata/%s", r.AppSlug)
+
+	if r.Channel != nil {
+		url = fmt.Sprintf("%s/%s", url, *r.Channel)
+	}
+
+	getReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to call newrequest")
+	}
+
+	getResp, err := http.DefaultClient.Do(getReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute get request")
+	}
+
+	if getResp.StatusCode >= 400 {
+		return nil, errors.Errorf("expected result from get request: %d", getResp.StatusCode)
+	}
+
+	defer getResp.Body.Close()
+
+	return nil, nil
 }

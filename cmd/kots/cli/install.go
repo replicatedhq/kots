@@ -65,20 +65,26 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if canPull {
-				if err := pull.Pull(args[0], pullOptions); err != nil {
+				if _, err := pull.Pull(args[0], pullOptions); err != nil {
 					return err
 				}
 			}
 
+			applicationMetadata, err := pull.PullApplicationMetadata(args[0])
+			if err != nil {
+				return err
+			}
+
 			deployOptions := kotsadm.DeployOptions{
-				Namespace:      v.GetString("namespace"),
-				Kubeconfig:     v.GetString("kubeconfig"),
-				IncludeShip:    v.GetBool("include-ship"),
-				IncludeGitHub:  v.GetBool("include-github"),
-				SharedPassword: v.GetString("shared-password"),
-				ServiceType:    v.GetString("service-type"),
-				NodePort:       v.GetInt32("node-port"),
-				Hostname:       v.GetString("hostname"),
+				Namespace:           v.GetString("namespace"),
+				Kubeconfig:          v.GetString("kubeconfig"),
+				IncludeShip:         v.GetBool("include-ship"),
+				IncludeGitHub:       v.GetBool("include-github"),
+				SharedPassword:      v.GetString("shared-password"),
+				ServiceType:         v.GetString("service-type"),
+				NodePort:            v.GetInt32("node-port"),
+				Hostname:            v.GetString("hostname"),
+				ApplicationMetadata: applicationMetadata,
 			}
 
 			log := logger.NewLogger()
