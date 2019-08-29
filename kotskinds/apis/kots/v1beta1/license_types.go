@@ -22,10 +22,11 @@ import (
 
 // LicenseSpec defines the desired state of LicenseSpec
 type LicenseSpec struct {
-	Signature []byte `json:"signature"`
-	AppSlug   string `json:"appSlug"`
-	Endpoint  string `json:"endpoint,omitempty"`
-	LicenseID string `json:"licenseID"`
+	Signature         []byte `json:"signature"`
+	AppSlug           string `json:"appSlug"`
+	Endpoint          string `json:"endpoint,omitempty"`
+	LicenseID         string `json:"licenseID"`
+	IsAirgapSupported bool   `json:"isAirgapSupported,omitempty"`
 }
 
 // LicenseStatus defines the observed state of License

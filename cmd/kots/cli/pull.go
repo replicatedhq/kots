@@ -31,7 +31,6 @@ func PullCmd() *cobra.Command {
 			pullOptions := pull.PullOptions{
 				HelmRepoURI:         v.GetString("repo"),
 				RootDir:             ExpandDir(v.GetString("rootdir")),
-				Overwrite:           v.GetBool("overwrite"),
 				Namespace:           v.GetString("namespace"),
 				Downstreams:         v.GetStringSlice("downstream"),
 				LocalPath:           ExpandDir(v.GetString("local-path")),
@@ -63,7 +62,6 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")
 	cmd.Flags().String("repo", "", "repo uri to use when downloading a helm chart")
 	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
-	cmd.Flags().Bool("overwrite", true, "if the upstream already exists, overwrite it")
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")

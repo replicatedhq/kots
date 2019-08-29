@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -29,6 +30,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	renderDir = path.Join(renderDir, "upstream")
 
 	var previousValuesContent []byte
+	var previousAdminConsoleManifests map[string][]byte
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
@@ -44,6 +46,24 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 				previousValuesContent = c
 			}
 
+			// we also save the admin console upstream from before
+			adminConsoleManifests, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
+			if err == nil {
+				previousAdminConsoleManifests = map[string][]byte{}
+				for _, adminConsoleManifest := range adminConsoleManifests {
+					if adminConsoleManifest.IsDir() {
+						continue
+					}
+
+					content, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", adminConsoleManifest.Name()))
+					if err != nil {
+						return errors.Wrap(err, "failed to read previous admin console file")
+					}
+
+					previousAdminConsoleManifests[adminConsoleManifest.Name()] = content
+				}
+			}
+
 			if err := os.RemoveAll(renderDir); err != nil {
 				return errors.Wrap(err, "failed to remove previous content in upstream")
 			}
@@ -54,15 +74,28 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 
 	for _, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
-		d, _ := path.Split(fileRenderPath)
+		d, f := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
 				return errors.Wrap(err, "failed to mkdir")
 			}
 		}
+
+		// if it's an admin console file, see if we have it from before
+		pathSplit := strings.Split(file.Path, string(os.PathSeparator))
+		if pathSplit[0] == "admin-console" {
+			prevContent, ok := previousAdminConsoleManifests[f]
+			if ok {
+				if err := ioutil.WriteFile(fileRenderPath, prevContent, 0644); err != nil {
+					return errors.Wrap(err, "failed to write upstream file")
+				}
+				goto Wrote
+			}
+		}
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
+	Wrote:
 	}
 
 	if previousValuesContent != nil {

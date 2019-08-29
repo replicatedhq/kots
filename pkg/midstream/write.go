@@ -1,7 +1,6 @@
 package midstream
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 type WriteOptions struct {
 	MidstreamDir string
 	BaseDir      string
-	Overwrite    bool
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
@@ -26,13 +24,8 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 
 	_, err = os.Stat(renderDir)
 	if err == nil {
-		if options.Overwrite {
-			if err := os.RemoveAll(renderDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in midstream")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", renderDir)
-		}
+		// no error, the midstream already exists
+		return nil
 	}
 
 	fileRenderPath := path.Join(renderDir, "kustomization.yaml")
