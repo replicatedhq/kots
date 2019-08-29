@@ -106,7 +106,7 @@ createBucket kotsadm none false`,
 func minioStatefulset(namespace string) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -271,7 +271,7 @@ func minioService(namespace string) *corev1.Service {
 func minioJob(namespace string) *batchv1.Job {
 	job := &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "batch/v1",
 			Kind:       "Job",
 		},
 		ObjectMeta: metav1.ObjectMeta{

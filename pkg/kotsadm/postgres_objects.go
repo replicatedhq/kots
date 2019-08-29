@@ -11,7 +11,7 @@ import (
 func postgresStatefulset(namespace string) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "apps/v1",
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
