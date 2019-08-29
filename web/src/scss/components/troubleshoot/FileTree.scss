@@ -1,5 +1,17 @@
 .AnalyzerFileTree--wrapper,
 .ApplicationTree--wrapper {
+  position: relative;
+
+  .edit-files-banner {
+    background-color: #326DE6;
+    color: #ffffff;
+    padding: 13px 20px 12px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    text-align: center;
+  }
 
   .dirtree-wrapper {
     max-width: 260px;
@@ -140,5 +152,20 @@
   .AceEditor .active-highlight {
     background: #fffbdd;
     position: absolute;
+  }
+}
+
+.DisplayInstructionsModal--wrapper {
+  .instruction-modal-number {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border: 2px solid #326DE6;
+    color: #326DE6;
+    border-radius: 100%;
+    line-height: 14px;
+    margin-right: 10px;
+    position: relative;
+    top: 5px;
   }
 }
