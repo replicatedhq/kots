@@ -44,7 +44,7 @@ nginx -g "daemon off;"`, deployOptions.Hostname, deployOptions.Hostname,
 func webDeployment(namespace string) *appsv1.Deployment {
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{

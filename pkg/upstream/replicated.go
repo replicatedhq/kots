@@ -43,7 +43,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, includeAdminConsole bool) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, includeAdminConsole bool, sharedPassword string) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -100,7 +100,7 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	}
 
 	if includeAdminConsole {
-		adminConsoleFiles, err := generateAdminConsoleFiles()
+		adminConsoleFiles, err := generateAdminConsoleFiles(sharedPassword)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate admin console files")
 		}
@@ -131,8 +131,6 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s", u.Scheme, hostname, license.Spec.AppSlug)
-
-	fmt.Printf("%s\n", url)
 
 	if r.Channel != nil {
 		url = fmt.Sprintf("%s/%s", url, *r.Channel)
@@ -445,16 +443,20 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 	return upstreamFiles, nil
 }
 
-func generateAdminConsoleFiles() ([]UpstreamFile, error) {
+func generateAdminConsoleFiles(sharedPassword string) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
 	deployOptions := kotsadm.DeployOptions{
 		Namespace: "default",
 	}
 
-	sharedPassword, err := promptForSharedPassword()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to prompt for shared password")
+	if sharedPassword == "" {
+		p, err := promptForSharedPassword()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to prompt for shared password")
+		}
+
+		sharedPassword = p
 	}
 
 	deployOptions.SharedPassword = sharedPassword

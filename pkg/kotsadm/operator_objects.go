@@ -12,7 +12,7 @@ import (
 func operatorRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -34,7 +34,7 @@ func operatorRole(namespace string) *rbacv1.Role {
 func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,7 +61,7 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 func operatorDeployment(namespace string) *appsv1.Deployment {
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{

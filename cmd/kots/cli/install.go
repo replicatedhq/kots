@@ -65,7 +65,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if canPull {
-				if err := pull.Pull(args[0], pullOptions); err != nil {
+				if _, err := pull.Pull(args[0], pullOptions); err != nil {
 					return err
 				}
 			}

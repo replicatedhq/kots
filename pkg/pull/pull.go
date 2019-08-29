@@ -26,6 +26,7 @@ type PullOptions struct {
 	LicenseFile         string
 	ExcludeKotsKinds    bool
 	ExcludeAdminConsole bool
+	SharedPassword      string
 }
 
 // CanPullUpstream will return a bool indicating if the specified upstream
@@ -46,8 +47,8 @@ func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) 
 }
 
 // Pull will download the application specified in upstreamURI using the options
-// specified in pullOptions
-func Pull(upstreamURI string, pullOptions PullOptions) error {
+// specified in pullOptions. It returns the directory that the app was pulled to
+func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log := logger.NewLogger()
 	log.Initialize()
 
@@ -55,11 +56,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 	fetchOptions.LocalPath = pullOptions.LocalPath
 	fetchOptions.ExcludeAdminConsole = pullOptions.ExcludeAdminConsole
+	fetchOptions.SharedPassword = pullOptions.SharedPassword
 
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse license from file")
+			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 
 		fetchOptions.License = license
@@ -69,7 +71,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to fetch upstream")
+		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
 
 	writeUpstreamOptions := upstream.WriteOptions{
@@ -79,7 +81,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to write upstream")
+		return "", errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
 
@@ -90,7 +92,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 	log.ActionWithSpinner("Creating base")
 	b, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
-		return errors.Wrap(err, "failed to render upstream")
+		return "", errors.Wrap(err, "failed to render upstream")
 	}
 	log.FinishSpinner()
 
@@ -100,13 +102,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
-		return errors.Wrap(err, "failed to write base")
+		return "", errors.Wrap(err, "failed to write base")
 	}
 
 	log.ActionWithSpinner("Creating midstream")
 	m, err := midstream.CreateMidstream(b)
 	if err != nil {
-		return errors.Wrap(err, "failed to create midstream")
+		return "", errors.Wrap(err, "failed to create midstream")
 	}
 	log.FinishSpinner()
 
@@ -116,14 +118,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		Overwrite:    pullOptions.Overwrite,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
-		return errors.Wrap(err, "failed to write midstream")
+		return "", errors.Wrap(err, "failed to write midstream")
 	}
 
 	for _, downstreamName := range pullOptions.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
 		d, err := downstream.CreateDownstream(m, downstreamName)
 		if err != nil {
-			return errors.Wrap(err, "failed to create downstream")
+			return "", errors.Wrap(err, "failed to create downstream")
 		}
 
 		writeDownstreamOptions := downstream.WriteOptions{
@@ -132,12 +134,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) error {
 		}
 
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
-			return errors.Wrap(err, "failed to write downstream")
+			return "", errors.Wrap(err, "failed to write downstream")
 		}
 
 		log.FinishSpinner()
 	}
-	return nil
+
+	return path.Join(pullOptions.RootDir, u.Name), nil
 }
 
 func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
