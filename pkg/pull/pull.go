@@ -19,7 +19,6 @@ import (
 type PullOptions struct {
 	HelmRepoURI         string
 	RootDir             string
-	Overwrite           bool
 	Namespace           string
 	Downstreams         []string
 	LocalPath           string
@@ -98,7 +97,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeUpstreamOptions := upstream.WriteOptions{
 		RootDir:      pullOptions.RootDir,
 		CreateAppDir: true,
-		Overwrite:    pullOptions.Overwrite,
+		Overwrite:    true,
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
@@ -119,7 +118,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		Overwrite:        pullOptions.Overwrite,
+		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
@@ -136,7 +135,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
-		Overwrite:    pullOptions.Overwrite,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")

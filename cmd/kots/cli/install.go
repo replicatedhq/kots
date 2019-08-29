@@ -49,7 +49,6 @@ func InstallCmd() *cobra.Command {
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
 				RootDir:     rootDir,
-				Overwrite:   false,
 				Namespace:   v.GetString("namespace"),
 				Downstreams: []string{
 					"local", // this is the auto-generated operator downstream

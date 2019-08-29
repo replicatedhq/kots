@@ -29,6 +29,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	renderDir = path.Join(renderDir, "upstream")
 
 	var previousValuesContent []byte
+	var previousAdminConsoleManifests map[string][]byte
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
@@ -42,6 +43,25 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 				}
 
 				previousValuesContent = c
+			}
+
+			// we also save the admin console upstream from before
+			adminConsoleManifests, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
+			if err == nil {
+				previousAdminConsoleManifests = map[string][]byte{}
+				for _, adminConsoleManifest := range adminConsoleManifests {
+					if adminConsoleManifest.IsDir() {
+						continue
+					}
+
+					content, err := ioutil.ReadFile(adminConsoleManifest.Name())
+					if err != nil {
+						return errors.Wrap(err, "failed to read previous admin console file")
+					}
+
+					_, name := path.Split(adminConsoleManifest.Name())
+					previousAdminConsoleManifests[name] = content
+				}
 			}
 
 			if err := os.RemoveAll(renderDir); err != nil {
