@@ -5,6 +5,8 @@ import { getFileFormat, rootPath } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import MonacoEditor from "react-monaco-editor";
+import Modal from "react-modal";
+import CodeSnippet from "../shared/CodeSnippet";
 
 import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
@@ -23,7 +25,8 @@ class KotsApplicationTree extends React.Component {
     fileLoadErrMessage: "",
     line: null,
     activeMarkers: [],
-    analysisError: false
+    analysisError: false,
+    displayInstructionsModal: false,
   };
 
   hasContentAlready = (path) => {
@@ -113,17 +116,22 @@ class KotsApplicationTree extends React.Component {
     }
   }
 
+  toggleInstructionsModal = () => {
+    this.setState({ displayInstructionsModal: !this.state.displayInstructionsModal });
+  }
+
   back = () => {
     this.props.history.goBack();
   }
 
   render() {
-    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading } = this.state;
+    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading, displayInstructionsModal } = this.state;
     const fileToView = find(fileContents, ["key", selectedFile]);
     const format = getFileFormat(selectedFile);
 
     return (
-      <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--20 u-paddingBottom--30">
+      <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
+        <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="u-textDecoration--underline u-fontWeight--bold u-cursor--pointer">Click here</span> to learn how</div>
         <div className="flex flex1">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
             <div className="u-overflow--auto dirtree">
@@ -177,6 +185,63 @@ class KotsApplicationTree extends React.Component {
             }
           </div>
         </div>
+        {displayInstructionsModal &&
+          <Modal
+            isOpen={displayInstructionsModal}
+            onRequestClose={this.toggleInstructionsModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Display edit instructions modal"
+            ariaHideApp={false}
+            className="DisplayInstructionsModal--wrapper Modal MediumSize"
+          >
+            <div className="Modal-body">
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit patches for your kots application</h2>
+              <div className="flex flex1 u-marginTop--20">
+                <div className="flex-auto">
+                  <span className="instruction-modal-number">1</span>
+                </div>
+                <div className="flex1">
+                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Download your application bundle.</p>
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                  >
+                    {`kubectl kots download --namespace ${this.props.match.params.slug}`}
+                  </CodeSnippet>
+                </div>
+              </div>
+
+              <div className="flex flex1 u-marginTop--30">
+                <div className="flex-auto">
+                  <span className="instruction-modal-number">2</span>
+                </div>
+                <div className="flex1">
+                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Edit any of your files in your favorite IDE.</p>
+                </div>
+              </div>
+
+              <div className="flex flex1 u-marginTop--30">
+                <div className="flex-auto">
+                  <span className="instruction-modal-number">3</span>
+                </div>
+                <div className="flex1">
+                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Upload your edited application bundle.</p>
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                  >
+                    {`kubectl kots upload ~/${this.props.match.params.slug}`}
+                  </CodeSnippet>
+                </div>
+              </div>
+              <div className="u-marginTop--30 flex">
+                <button onClick={this.toggleInstructionsModal} className="btn green primary">Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
