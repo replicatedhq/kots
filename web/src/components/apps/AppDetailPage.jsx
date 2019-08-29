@@ -7,7 +7,7 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { checkForKotsUpdates } from "../../mutations/AppsMutations";
-import { createKotsDownstream, deleteKotsDownstream } from "../../mutations/AppsMutations";
+import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -94,8 +94,8 @@ class AppDetailPage extends Component {
     this.props.clearThemeState();
   }
 
-  makeCurrentRelease = async (watchId, sequence) => {
-    await this.props.deployWatchVersion(watchId, sequence).then(() => {
+  makeCurrentRelease = async (upstreamSlug, sequence, clusterId) => {
+    await this.props.deployKotsVersion(upstreamSlug, sequence, clusterId).then(() => {
       this.props.getKotsAppQuery.refetch();
     })
   }
@@ -366,7 +366,7 @@ class AppDetailPage extends Component {
                         errorCheckingUpdate={updateError}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamOwner/:downstreamSlug/version-history" render={() =>
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history" render={() =>
                       <DownstreamWatchVersionHistory
                         watch={app}
                         makeCurrentVersion={this.makeCurrentRelease}
@@ -537,5 +537,10 @@ export default compose(
     props: ({ mutate }) => ({
       deleteKotsDownstream: (slug, clusterId) => mutate({ variables: { slug, clusterId } })
     })
-  })
+  }),
+  graphql(deployKotsVersion, {
+    props: ({ mutate }) => ({
+      deployKotsVersion: (upstreamSlug, sequence, clusterId) => mutate({ variables: { upstreamSlug, sequence, clusterId } })
+    })
+  }),
 )(AppDetailPage);

@@ -1,0 +1,32 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  name: app-downstream-version
+spec:
+  database: kotsadm-postgres
+  name: app_downstream_version
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+        - cluster_id
+        - sequence
+      columns:
+      - name: app_id
+        type: text
+      - name: cluster_id
+        type: text
+      - name: sequence
+        type: integer
+      - name: parent_sequence
+        type: integer  
+      - name: created_at
+        type: timestamp without time zone
+      - name: applied_at
+        type: timestamp without time zone
+      - name: version_label
+        type: text
+        constraints:
+          notNull: true
+      - name: status
+        type: text

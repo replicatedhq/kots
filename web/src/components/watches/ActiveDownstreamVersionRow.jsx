@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import classNames from "classnames";
 import { getClusterType } from "@src/utilities/utilities";
+import { isKotsApplication } from "../../utilities/utilities";
 
 export default function ActiveDownstreamVersionRow(props) {
   const { watch, match } = props;
   const isGit = watch.cluster.gitOpsRef;
   const icon = getClusterType(isGit) === "git" ? "icon github-small-size" : "icon ship-small-size";
   const { owner, slug } = match.params;
+  const downstreamHistoryUrl = isKotsApplication(watch) ? `/app/${slug}/downstreams/${watch.cluster.slug}/version-history` : `/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`;
   return (
     <div className="flex flex-auto ActiveDownstreamVersionRow--wrapper">
       <div className="flex-column flex1">
@@ -51,7 +53,7 @@ export default function ActiveDownstreamVersionRow(props) {
           {isGit && !watch.currentVersion ?
             <a href={`https://github.com/${watch.cluster.gitOpsRef.owner}/${watch.cluster.gitOpsRef.repo}/pull/${watch.pendingVersions[0]?.pullrequestNumber}`} className="btn secondary small" target="_blank" rel="noopener noreferrer">Review PR to deploy application</a>
           :
-          <Link to={`/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
+          <Link to={downstreamHistoryUrl} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
           }
       </div>
     </div>

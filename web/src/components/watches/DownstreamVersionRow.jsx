@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 
 export default function DownstreamVersionRow(props) {
-  const { version, downstreamWatch } = props;
+  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent } = props;
 
   if (!version) return null;
   const gitRef = downstreamWatch?.cluster?.gitOpsRef;
@@ -15,7 +15,7 @@ export default function DownstreamVersionRow(props) {
   if (!gitRef && version.status === "pending") {
     shipInstallnode = (
       <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
-        <button className="btn secondary small" onClick={() => this.handleMakeCurrent(downstreamWatch.id, version.sequence)}>Make current version</button>
+        <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.id)}>Make current version</button>
       </div>
     )
   }
@@ -54,7 +54,7 @@ export default function DownstreamVersionRow(props) {
           </p>
         }
         <div className="u-marginTop--10">
-          <Link to={`/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-fontSize--small replicated-link">View file contents</Link>
+          <Link to={isKots ? `/app/${urlParams.slug}/tree/${version.sequence}` : `/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-fontSize--small replicated-link">View file contents</Link>
         </div>
       </div>
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">

@@ -152,6 +152,27 @@ export const listAppsRaw = `
         lastUpdateCheckAt
         downstreams {
           name
+          currentVersion {
+            title
+            status
+            createdOn
+            sequence
+            deployedAt
+          }
+          pendingVersions {
+            title
+            status
+            createdOn
+            sequence
+            deployedAt
+          }
+          pastVersions {
+            title
+            status
+            createdOn
+            sequence
+            deployedAt
+          }
           cluster {
             id
             title
@@ -321,6 +342,27 @@ export const getKotsAppRaw = `
       bundleCommand
       downstreams {
         name
+        currentVersion {
+          title
+          status
+          createdOn
+          sequence
+          deployedAt
+        }
+        pendingVersions {
+          title
+          status
+          createdOn
+          sequence
+          deployedAt
+        }
+        pastVersions {
+          title
+          status
+          createdOn
+          sequence
+          deployedAt
+        }
         cluster {
           id
           title
@@ -381,3 +423,17 @@ export const listDownstreamsForAppRaw = `
 `;
 
 export const listDownstreamsForApp = gql(listDownstreamsForAppRaw);
+
+export const getKotsDownstreamHistoryRaw = `
+  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {
+    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {
+      title
+      status
+      createdOn
+      sequence
+      deployedAt
+    }
+  }
+`;
+
+export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);

@@ -25,6 +25,10 @@ export const Query = `
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
     listDownstreamsForApp(slug: String!): [Cluster]
+    getKotsDownstreamHistory(clusterSlug: String!, upstreamSlug: String!): [KotsVersion]
+    listPendingKotsVersions(slug: String!): [KotsVersion]
+    listPastKotsVersions(slug: String!): [KotsVersion]
+    getCurrentKotsVersion(slug: String!): KotsVersion
 
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
