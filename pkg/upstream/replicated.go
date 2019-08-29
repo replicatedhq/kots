@@ -510,3 +510,38 @@ func promptForSharedPassword() (string, error) {
 	}
 
 }
+
+// GetApplicationMetadata will return any available application yaml from
+// the upstream. If there is no application.yaml, it will return
+// a placeholder one
+func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
+	r, err := parseReplicatedURL(upstream)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse replicated upstream")
+	}
+
+	url := fmt.Sprintf("https://replicated.app/metadata/%s", r.AppSlug)
+	//url := fmt.Sprintf("http://localhost:something/metadata/%s", r.AppSlug)
+
+	if r.Channel != nil {
+		url = fmt.Sprintf("%s/%s", url, *r.Channel)
+	}
+
+	getReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to call newrequest")
+	}
+
+	getResp, err := http.DefaultClient.Do(getReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute get request")
+	}
+
+	if getResp.StatusCode >= 400 {
+		return nil, errors.Errorf("expected result from get request: %d", getResp.StatusCode)
+	}
+
+	defer getResp.Body.Close()
+
+	return nil, nil
+}

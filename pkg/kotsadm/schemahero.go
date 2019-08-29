@@ -35,7 +35,7 @@ func runSchemaHeroMigrations(deployOptions DeployOptions, clientset *kubernetes.
 	log.ChildActionWithSpinner("Waiting for datastore to be ready")
 	_, err := waitForHealthyPostgres(deployOptions.Namespace, clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to find health postgres pod")
+		return errors.Wrap(err, "failed to find healthy postgres pod")
 	}
 	log.FinishChildSpinner()
 

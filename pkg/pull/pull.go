@@ -29,12 +29,33 @@ type PullOptions struct {
 	SharedPassword      string
 }
 
+// PullApplicationMetadata will return the application metadata yaml, if one is
+// available for the upstream
+func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
+	u, err := url.ParseRequestURI(upstreamURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse uri")
+	}
+
+	// metadata is only currently supported on licensed apps
+	if u.Scheme != "replicated" {
+		return nil, nil
+	}
+
+	data, err := upstream.GetApplicationMetadata(u)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get application metadata")
+	}
+
+	return data, nil
+}
+
 // CanPullUpstream will return a bool indicating if the specified upstream
 // is accessible and authenticed for us.
 func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to check if can pull")
+		return false, errors.Wrap(err, "failed to parse uri")
 	}
 
 	if u.Scheme != "replicated" {
