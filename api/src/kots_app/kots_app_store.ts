@@ -6,6 +6,7 @@ import { ReplicatedError } from "../server/errors";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
+import { logger } from "../server/logger";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -144,6 +145,64 @@ order by sequence desc`;
     }
 
     return versionItems;
+  }
+
+  async getCurrentDownstreamVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
+    let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
+    let v = [
+      appId,
+      clusterId
+    ];
+    let result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No current version found`);
+    }
+    const sequence = result.rows[0].current_sequence;
+
+    if (sequence === null) {
+      return;
+    }
+
+    logger.info({ msg: "getCurrentDownstreamVersion", appId: appId, clusterId: clusterId, sequence: sequence });
+
+    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    v = [
+      appId,
+      sequence,
+      clusterId,
+    ];
+
+    result = await this.pool.query(q, v);
+    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+
+    return versionItem;
+  }
+
+  async getCurrentAppVersion(appId: string): Promise<KotsVersion | undefined> {
+    let q = `select current_sequence from app where id = $1`;
+    let v = [
+      appId,
+    ];
+    let result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No current version found`);
+    }
+    const sequence = result.rows[0].current_sequence;
+
+    if (sequence === null) {
+      return;
+    }
+
+    q = `select created_at, version_label, status, sequence, applied_at from app_version where app_id = $1 and sequence = $2`;
+    v = [
+      appId,
+      sequence,
+    ];
+
+    result = await this.pool.query(q, v);
+    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+
+    return versionItem;
   }
 
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
@@ -347,7 +406,7 @@ order by sequence desc`;
     }
     return {
       title: row.version_label,
-      status: row.status,
+      status: row.status || "",
       createdOn: row.created_at,
       sequence: row.sequence,
       deployedAt: row.applied_at,

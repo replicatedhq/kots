@@ -28,3 +28,7 @@ spec:
         type: text
       - name: preflight_spec
         type: text
+      - name: applied_at
+        type: timestamp without time zone
+      - name: status
+        type: text

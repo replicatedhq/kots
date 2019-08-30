@@ -29,7 +29,12 @@ export function KotsQueries(stores: Stores) {
     async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const results = await stores.clusterStore.listClustersForKotsApp(appId);
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(appId);
+      let results: Cluster[] = [];
+      _.map(downstreams, (downstream) => {
+        const kotsSchemaCluster = downstream.toKotsAppSchema(appId, stores);
+        results.push(kotsSchemaCluster);
+      });
       return results;
     },
 

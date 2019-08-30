@@ -10,6 +10,7 @@ const KotsApp = `
     lastUpdateCheckAt: String
     bundleCommand: String
     downstreams: [KotsDownstream]
+    currentVersion: KotsVersion
   }
 `;
 

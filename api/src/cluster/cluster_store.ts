@@ -611,14 +611,14 @@ spec:
         installationId: row.installation_id,
       }
     }
-    return {
-      id: row.id,
-      title: row.title,
-      slug: row.slug,
-      createdOn: row.created_at,
-      lastUpdated: row.updated_at,
-      gitOpsRef,
-      shipOpsRef
-    };
+    const c = new Cluster();
+    c.id = row.id;
+    c.title = row.title;
+    c.slug = row.slug;
+    c.createdOn = row.created_at;
+    c.lastUpdated = row.updated_at;
+    c.gitOpsRef = gitOpsRef;
+    c.shipOpsRef = shipOpsRef;
+    return c;
   }
 }

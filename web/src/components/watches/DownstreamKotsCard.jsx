@@ -12,7 +12,8 @@ export default class DownstreamKotsCard extends React.Component {
       toggleDeleteDeploymentModal,
       displayDownloadCommand,
       viewFiles,
-      isDownloadingAssets
+      isDownloadingAssets,
+      appSlug
      } = this.props;
 
     const type = cluster?.gitOpsRef ? "git" : "ship";
@@ -27,12 +28,12 @@ export default class DownstreamKotsCard extends React.Component {
               <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster && cluster.title || "Downstream deployment"}</p>
               <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(cluster)}></span>
             </div>
-            <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with Ship"}</p>
+            <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with kotsadm"}</p>
           </div>
         </div>
         <div className="u-marginTop--10">
           <div className="flex flex1">
-            <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">[1.0.0]</h2>
+            <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">{cluster.currentVersion?.title}</h2>
             {!cluster?.currentVersion &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon blueCircleMinus--icon u-marginLeft--10"></div>
@@ -58,7 +59,7 @@ export default class DownstreamKotsCard extends React.Component {
               </div>
             }
           </div>
-          <Link to="" className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
+          <Link to={`/app/${appSlug}/downstreams/${cluster.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
         </div>
         {cluster?.currentVersion && cluster.pendingVersions?.length >= 1 &&
           <div className="flex justifyContent--spaceBetween alignItems--center u-marginTop--10">

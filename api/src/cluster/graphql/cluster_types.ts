@@ -10,6 +10,7 @@ type Cluster {
   watchCounts: WatchCounts
   totalApplicationCount: Int
   enabled: Boolean
+  currentVersion: KotsVersion
 }
 `;
 
