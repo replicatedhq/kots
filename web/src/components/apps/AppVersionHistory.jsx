@@ -20,6 +20,8 @@ export default function AppVersionHistory(props) {
     updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
   } else if (checkingForUpdates) {
     updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateText}</p>
+  } else if (!app.lastUpdateCheck) {
+    updateText = null;
   }
 
   return (

@@ -1,3 +1,4 @@
+import { Stores } from "../schema/stores";
 
 export class Cluster {
   id: string;
@@ -7,6 +8,17 @@ export class Cluster {
   createdOn: Date;
   gitOpsRef?: GitOpsRef;
   shipOpsRef?: ShipOpsRef;
+
+  public async getCurrentVersionOnCluster(appId: string, stores: Stores) {
+    return stores.kotsAppStore.getCurrentDownstreamVersion(appId, this.id);
+  }
+
+  public toKotsAppSchema(appId: string, stores: Stores) {
+    return {
+      ...this,
+      currentVersion: () => this.getCurrentVersionOnCluster(appId, stores)
+    }
+  }
 }
 
 export interface GitOpsRef {

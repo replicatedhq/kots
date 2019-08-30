@@ -24,9 +24,15 @@ export class KotsApp {
   currentSequence?: number;
   lastUpdateCheckAt?: Date;
   bundleCommand: string;
-
+  currentVersion: KotsVersion;
 
   // Version Methods
+  public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
+    // this is to get the current version of the upsteam from the app_version table
+    // annoying to have a separate method for this but the others require a clusteId.
+    // good candidate for a refactor
+    return stores.kotsAppStore.getCurrentAppVersion(this.id);
+  }
   public async getCurrentVersion(clusterId: string, stores: Stores): Promise<KotsVersion | undefined> {
     return stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
   }
@@ -214,15 +220,15 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
+      currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {
+        const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
-          currentVersion: async () => this.getCurrentVersion(downstream.id, stores),
-          pastVersions: async () => this.getPastVersions(downstream.id, stores),
-          pendingVersions: async () => this.getPendingVersions(downstream.id, stores),
-          cluster: {
-            ...downstream
-          },
+          currentVersion: () => this.getCurrentVersion(downstream.id, stores),
+          pastVersions: () => this.getPastVersions(downstream.id, stores),
+          pendingVersions: () => this.getPendingVersions(downstream.id, stores),
+          cluster: kotsSchemaCluster,
         };
       }),
     };

@@ -53,7 +53,7 @@ export default function ActiveDownstreamVersionRow(props) {
           {isGit && !watch.currentVersion ?
             <a href={`https://github.com/${watch.cluster.gitOpsRef.owner}/${watch.cluster.gitOpsRef.repo}/pull/${watch.pendingVersions[0]?.pullrequestNumber}`} className="btn secondary small" target="_blank" rel="noopener noreferrer">Review PR to deploy application</a>
           :
-          <Link to={downstreamHistoryUrl} className="btn secondary small">View downstream {isGit ? "history" : "updates"}</Link>
+          <Link to={downstreamHistoryUrl} className="btn secondary small">View downstream versions</Link>
           }
       </div>
     </div>

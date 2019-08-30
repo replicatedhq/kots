@@ -149,6 +149,13 @@ export const listAppsRaw = `
         updatedAt
         slug
         currentSequence
+        currentVersion {
+          title
+          status
+          createdOn
+          sequence
+          deployedAt
+        }
         lastUpdateCheckAt
         downstreams {
           name
@@ -179,6 +186,13 @@ export const listAppsRaw = `
             slug
             createdOn
             lastUpdated
+            currentVersion {
+              title
+              status
+              createdOn
+              sequence
+              deployedAt
+            }
             gitOpsRef {
               owner
               repo
@@ -338,6 +352,13 @@ export const getKotsAppRaw = `
       updatedAt
       slug
       currentSequence
+      currentVersion {
+        title
+        status
+        createdOn
+        sequence
+        deployedAt
+      }
       lastUpdateCheckAt
       bundleCommand
       downstreams {
@@ -369,6 +390,13 @@ export const getKotsAppRaw = `
           slug
           createdOn
           lastUpdated
+          currentVersion {
+            title
+            status
+            createdOn
+            sequence
+            deployedAt
+          }
           gitOpsRef {
             owner
             repo
@@ -409,6 +437,13 @@ export const listDownstreamsForAppRaw = `
       slug
       createdOn
       lastUpdated
+      currentVersion {
+        title
+        status
+        createdOn
+        sequence
+        deployedAt
+      }
       gitOpsRef {
         owner
         repo

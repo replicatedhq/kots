@@ -345,7 +345,7 @@ class DetailPageApplication extends Component {
                           <div className="flex-auto">
                             {this.state[`preparing${childWatch.id}`]
                               ? <Loader size="16"/>
-                              : <span onClick={() => this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
+                              : <span onClick={() => isKotsApp ? this.navigateToFiles(watch) : this.handleEditWatchClick(childWatch)} className="u-fontSize--small replicated-link">Customize</span>
                             }
                           </div>
                         </div>
@@ -354,7 +354,7 @@ class DetailPageApplication extends Component {
                   })}
                 </div>
                 <div className="u-marginTop--10 u-paddingTop--5">
-                  <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/downstreams`} className="btn secondary">See downstreams</Link>
+                  <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/downstreams`} className="btn secondary">See all downstreams</Link>
                 </div>
               </div>
             }
