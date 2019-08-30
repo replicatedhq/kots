@@ -99,9 +99,6 @@ export class KotsAppStore {
     ];
 
     result = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`App for id ${appId} was not found`);
-    }
     const versionItems: KotsVersion[] = [];
 
     for (const row of result.rows) {
@@ -140,9 +137,6 @@ order by sequence desc`;
     ];
 
     result = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`App for id ${appId} was not found`);
-    }
     const versionItems: KotsVersion[] = [];
 
     for (const row of result.rows) {
@@ -175,9 +169,6 @@ order by sequence desc`;
     ];
 
     result = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`App for id ${appId} was not found`);
-    }
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
