@@ -26,7 +26,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	docs["secret-jwt.yaml"] = jwt.Bytes()
 
 	var pg bytes.Buffer
-	if err := s.Encode(pgSecret(deployOptions.Namespace, postgresPassword), &pg); err != nil {
+	if err := s.Encode(pgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), &pg); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal pg secret")
 	}
 	docs["secret-pg.yaml"] = pg.Bytes()
@@ -64,7 +64,7 @@ func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset
 		return errors.Wrap(err, "failed to ensure jwt session secret")
 	}
 
-	if err := ensurePostgresSecret(deployOptions.Namespace, clientset); err != nil {
+	if err := ensurePostgresSecret(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
@@ -111,14 +111,14 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func ensurePostgresSecret(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-postgres", metav1.GetOptions{})
+func ensurePostgresSecret(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get("kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing postgres secret")
 		}
 
-		_, err := clientset.CoreV1().Secrets(namespace).Create(pgSecret(namespace, postgresPassword))
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(pgSecret(deployOptions.Namespace, deployOptions.PostgresPassword))
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres secret")
 		}

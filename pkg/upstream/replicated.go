@@ -41,7 +41,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, sharedPassword string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
