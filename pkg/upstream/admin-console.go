@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -8,6 +9,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -28,19 +30,50 @@ func generateAdminConsoleFiles(renderDir string) ([]UpstreamFile, error) {
 	}
 	s3AccessKey, err := findFileAndReadSecret("kotsadm-minio", "accesskey", renderDir, existingFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "faield to find existing s3 access key")
+		return nil, errors.Wrap(err, "failed to find existing s3 access key")
 	}
 	s3SecretKey, err := findFileAndReadSecret("kotsadm-minio", "secretkey", renderDir, existingFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "faield to find existing s3 secret key")
+		return nil, errors.Wrap(err, "failed to find existing s3 secret key")
 	}
 	jwt, err := findFileAndReadSecret("kotsadm-session", "key", renderDir, existingFiles)
 	if err != nil {
-		return nil, errors.Wrap(err, "faield to find existing jwt")
+		return nil, errors.Wrap(err, "failed to find existing jwt")
 	}
-	pgPassword := "TODO"
+	pgPassword, err := findPostgresPassword(renderDir, existingFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find existing jwt")
+	}
 
 	return generateNewAdminConsoleFiles("", sharedPasswordBcrypt, s3AccessKey, s3SecretKey, jwt, pgPassword)
+}
+
+func findPostgresPassword(renderDir string, files []os.FileInfo) (string, error) {
+	for _, fi := range files {
+		data, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read file")
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(data, nil, nil)
+		if gvk.Group != "apps" || gvk.Version != "v1" || gvk.Kind != "StatefulSet" {
+			continue
+		}
+
+		statefulset := obj.(*appsv1.StatefulSet)
+
+		if statefulset.Name == "kotsadm-postgres" {
+			env := statefulset.Spec.Template.Spec.Containers[0].Env
+			for _, ev := range env {
+				if ev.Name == "POSTGRES_PASSWORD" {
+					return ev.Value, nil
+				}
+			}
+		}
+	}
+
+	return "", nil
 }
 
 func findFileAndReadSecret(secretName string, key string, renderDir string, files []os.FileInfo) (string, error) {
@@ -69,6 +102,7 @@ func findFileAndReadSecret(secretName string, key string, renderDir string, file
 func generateNewAdminConsoleFiles(sharedPassword string, sharedPasswordBcrypt string, s3AccessKey string, s3SecretKey string, jwt string, pgPassword string) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
+	fmt.Printf("pg pass = %s\n", pgPassword)
 	deployOptions := kotsadm.DeployOptions{
 		Namespace:            "default",
 		SharedPassword:       sharedPassword,
@@ -76,7 +110,7 @@ func generateNewAdminConsoleFiles(sharedPassword string, sharedPasswordBcrypt st
 		S3AccessKey:          s3AccessKey,
 		S3SecretKey:          s3SecretKey,
 		JWT:                  jwt,
-		// TODO
+		PostgresPassword:     pgPassword,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

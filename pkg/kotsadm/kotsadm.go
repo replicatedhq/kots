@@ -32,6 +32,7 @@ type DeployOptions struct {
 	S3AccessKey          string
 	S3SecretKey          string
 	JWT                  string
+	PostgresPassword     string
 	ServiceType          string
 	NodePort             int32
 	Hostname             string
@@ -60,7 +61,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	postgresDocs, err := getPostgresYAML(deployOptions.Namespace)
+	postgresDocs, err := getPostgresYAML(deployOptions.Namespace, deployOptions.PostgresPassword)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get postgres yaml")
 	}
@@ -155,7 +156,7 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
 
-	if err := ensurePostgres(deployOptions.Namespace, clientset); err != nil {
+	if err := ensurePostgres(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
 	}
 
