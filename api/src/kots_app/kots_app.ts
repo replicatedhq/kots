@@ -226,8 +226,8 @@ export class KotsApp {
         return {
           name: downstream.title,
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
-          pastVersions: async () => this.getPastVersions(downstream.id, stores),
-          pendingVersions: async () => this.getPendingVersions(downstream.id, stores),
+          pastVersions: () => this.getPastVersions(downstream.id, stores),
+          pendingVersions: () => this.getPendingVersions(downstream.id, stores),
           cluster: kotsSchemaCluster,
         };
       }),
