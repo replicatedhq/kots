@@ -20,7 +20,7 @@ import (
 func PullFromLicense(licenseData string, downstream string, outputFile string) int { 
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(licenseData), nil, nil)
+	obj, _, err := decode([]byte(licenseData), nil, nil)
 	if err != nil {
 		fmt.Printf("failed to decode license data: %s\n", err.Error())
 		return 1
@@ -48,7 +48,6 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 	defer os.RemoveAll(tmpRoot)
 	
 	pullOptions := pull.PullOptions{
-		Overwrite: true,
 		Downstreams: []string{downstream},
 		LicenseFile: licenseFile.Name(),
 		ExcludeKotsKinds: true,
@@ -56,7 +55,7 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 		ExcludeAdminConsole: true,
 	}
 
-	if err := pull.Pull(fmt.Sprintf("replicated://%", license.Spec.AppSlug), pullOptions); err != nil {
+	if _, err := pull.Pull(fmt.Sprintf("replicated://%", license.Spec.AppSlug), pullOptions); err != nil {
 		fmt.Printf("failed to pull upstream: %s\n", err.Error())
 		return 1
 	}
