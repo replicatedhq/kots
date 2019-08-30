@@ -23,15 +23,20 @@ var (
 )
 
 type DeployOptions struct {
-	Namespace           string
-	Kubeconfig          string
-	IncludeShip         bool
-	IncludeGitHub       bool
-	SharedPassword      string
-	ServiceType         string
-	NodePort            int32
-	Hostname            string
-	ApplicationMetadata []byte
+	Namespace            string
+	Kubeconfig           string
+	IncludeShip          bool
+	IncludeGitHub        bool
+	SharedPassword       string
+	SharedPasswordBcrypt string
+	S3AccessKey          string
+	S3SecretKey          string
+	JWT                  string
+	PostgresPassword     string
+	ServiceType          string
+	NodePort             int32
+	Hostname             string
+	ApplicationMetadata  []byte
 }
 
 // YAML will return a map containing the YAML needed to run the admin console
@@ -56,7 +61,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	postgresDocs, err := getPostgresYAML(deployOptions.Namespace)
+	postgresDocs, err := getPostgresYAML(deployOptions.Namespace, deployOptions.PostgresPassword)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get postgres yaml")
 	}
@@ -151,7 +156,7 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
 
-	if err := ensurePostgres(deployOptions.Namespace, clientset); err != nil {
+	if err := ensurePostgres(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
 	}
 

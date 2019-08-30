@@ -2,11 +2,9 @@ package upstream
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -16,9 +14,9 @@ import (
 )
 
 type WriteOptions struct {
-	RootDir      string
-	CreateAppDir bool
-	Overwrite    bool
+	RootDir             string
+	CreateAppDir        bool
+	IncludeAdminConsole bool
 }
 
 func (u *Upstream) WriteUpstream(options WriteOptions) error {
@@ -30,72 +28,46 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	renderDir = path.Join(renderDir, "upstream")
 
 	var previousValuesContent []byte
-	var previousAdminConsoleManifests map[string][]byte
+
+	if options.IncludeAdminConsole {
+		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate admin console")
+		}
+
+		u.Files = append(u.Files, adminConsoleFiles...)
+	}
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		if options.Overwrite {
-			// if there's already a values yaml, we need to save
-			_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
-			if err == nil {
-				c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
-				if err != nil {
-					return errors.Wrap(err, "failed to read existing values")
-				}
-
-				previousValuesContent = c
+		// if there's already a values yaml, we need to save
+		_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
+		if err == nil {
+			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
+			if err != nil {
+				return errors.Wrap(err, "failed to read existing values")
 			}
 
-			// we also save the admin console upstream from before
-			adminConsoleManifests, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
-			if err == nil {
-				previousAdminConsoleManifests = map[string][]byte{}
-				for _, adminConsoleManifest := range adminConsoleManifests {
-					if adminConsoleManifest.IsDir() {
-						continue
-					}
+			previousValuesContent = c
+		}
 
-					content, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", adminConsoleManifest.Name()))
-					if err != nil {
-						return errors.Wrap(err, "failed to read previous admin console file")
-					}
-
-					previousAdminConsoleManifests[adminConsoleManifest.Name()] = content
-				}
-			}
-
-			if err := os.RemoveAll(renderDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in upstream")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", renderDir)
+		if err := os.RemoveAll(renderDir); err != nil {
+			return errors.Wrap(err, "failed to remove previous content in upstream")
 		}
 	}
 
 	for _, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
-		d, f := path.Split(fileRenderPath)
+		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
 				return errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
-		// if it's an admin console file, see if we have it from before
-		pathSplit := strings.Split(file.Path, string(os.PathSeparator))
-		if pathSplit[0] == "admin-console" {
-			prevContent, ok := previousAdminConsoleManifests[f]
-			if ok {
-				if err := ioutil.WriteFile(fileRenderPath, prevContent, 0644); err != nil {
-					return errors.Wrap(err, "failed to write upstream file")
-				}
-				goto Wrote
-			}
-		}
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
-	Wrote:
 	}
 
 	if previousValuesContent != nil {

@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func postgresStatefulset(namespace string) *appsv1.StatefulSet {
+func postgresStatefulset(namespace string, password string) *appsv1.StatefulSet {
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -86,7 +86,7 @@ func postgresStatefulset(namespace string) *appsv1.StatefulSet {
 								},
 								{
 									Name:  "POSTGRES_PASSWORD",
-									Value: postgresPassword,
+									Value: password,
 								},
 								{
 									Name:  "POSTGRES_DB",

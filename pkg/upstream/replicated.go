@@ -15,11 +15,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +41,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, includeAdminConsole bool, sharedPassword string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, sharedPassword string) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -97,15 +95,6 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	files, err := releaseToFiles(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get files from release")
-	}
-
-	if includeAdminConsole {
-		adminConsoleFiles, err := generateAdminConsoleFiles(sharedPassword)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate admin console files")
-		}
-
-		files = append(files, adminConsoleFiles...)
 	}
 
 	upstream := &Upstream{
@@ -441,74 +430,6 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		upstreamFiles = cleanedUpstreamFiles
 	}
 	return upstreamFiles, nil
-}
-
-func generateAdminConsoleFiles(sharedPassword string) ([]UpstreamFile, error) {
-	upstreamFiles := []UpstreamFile{}
-
-	deployOptions := kotsadm.DeployOptions{
-		Namespace: "default",
-	}
-
-	if sharedPassword == "" {
-		p, err := promptForSharedPassword()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to prompt for shared password")
-		}
-
-		sharedPassword = p
-	}
-
-	deployOptions.SharedPassword = sharedPassword
-
-	adminConsoleDocs, err := kotsadm.YAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get minio yaml")
-	}
-	for n, v := range adminConsoleDocs {
-		upstreamFile := UpstreamFile{
-			Path:    path.Join("admin-console", n),
-			Content: v,
-		}
-		upstreamFiles = append(upstreamFiles, upstreamFile)
-	}
-
-	return upstreamFiles, nil
-}
-
-func promptForSharedPassword() (string, error) {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
-	prompt := promptui.Prompt{
-		Label:     "Enter a new password to be used for the Admin Console:",
-		Templates: templates,
-		Mask:      rune('•'),
-		Validate: func(input string) error {
-			if len(input) < 6 {
-				return errors.New("please enter a longer password")
-			}
-
-			return nil
-		},
-	}
-
-	for {
-		result, err := prompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
-			}
-			continue
-		}
-
-		return result, nil
-	}
-
 }
 
 // GetApplicationMetadata will return any available application yaml from
