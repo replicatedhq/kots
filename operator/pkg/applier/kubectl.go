@@ -79,13 +79,17 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 		args = append(args, "--dry-run")
 	}
 
-	args = append(args,
-		[]string{
+	if namespace != "." {
+		args = append(args, []string{
 			"-n",
 			namespace,
-			"-f",
-			"-",
 		}...)
+	}
+
+	args = append(args, []string{
+		"-f",
+		"-",
+	}...)
 
 	cmd := c.kubectlCommand(args...)
 	cmd.Stdin = bytes.NewReader(yamlDoc)

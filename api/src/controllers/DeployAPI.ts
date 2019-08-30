@@ -33,7 +33,7 @@ export class DeployAPI {
     const missing = {};
 
     for (const app of apps) {
-      const desiredNamespace = "test";
+      const desiredNamespace = ".";
       if (!(desiredNamespace in present)) {
         present[desiredNamespace] = [];
       }
