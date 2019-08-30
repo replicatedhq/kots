@@ -17,6 +17,7 @@ type WriteOptions struct {
 	RootDir             string
 	CreateAppDir        bool
 	IncludeAdminConsole bool
+	SharedPassword      string
 }
 
 func (u *Upstream) WriteUpstream(options WriteOptions) error {
@@ -30,7 +31,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	var previousValuesContent []byte
 
 	if options.IncludeAdminConsole {
-		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir)
+		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir, options.SharedPassword)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate admin console")
 		}

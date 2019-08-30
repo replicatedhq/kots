@@ -1,7 +1,6 @@
 package upstream
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,9 +13,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func generateAdminConsoleFiles(renderDir string) ([]UpstreamFile, error) {
+func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
-		return generateNewAdminConsoleFiles("", "", "", "", "", "")
+		return generateNewAdminConsoleFiles(sharedPassword, "", "", "", "", "")
 	}
 
 	existingFiles, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
@@ -102,7 +101,6 @@ func findFileAndReadSecret(secretName string, key string, renderDir string, file
 func generateNewAdminConsoleFiles(sharedPassword string, sharedPasswordBcrypt string, s3AccessKey string, s3SecretKey string, jwt string, pgPassword string) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
-	fmt.Printf("pg pass = %s\n", pgPassword)
 	deployOptions := kotsadm.DeployOptions{
 		Namespace:            "default",
 		SharedPassword:       sharedPassword,
@@ -111,6 +109,7 @@ func generateNewAdminConsoleFiles(sharedPassword string, sharedPasswordBcrypt st
 		S3SecretKey:          s3SecretKey,
 		JWT:                  jwt,
 		PostgresPassword:     pgPassword,
+		Hostname:             "localhost:8800",
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

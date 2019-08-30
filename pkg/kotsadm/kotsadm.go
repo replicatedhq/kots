@@ -11,14 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-const (
-	kotsadmURL = "https://gist.githubusercontent.com/marccampbell/fb4b367d66beeddb5b4258a82704f75f/raw/e44b48579f34375e8608fd0d0bee350dfb76e7af/kotsadm.yaml"
-)
-
 var (
-	postgresPassword       = uuid.New().String()
-	minioAccessKey         = uuid.New().String()
-	minioSecret            = uuid.New().String()
 	autoCreateClusterToken = uuid.New().String()
 )
 
@@ -69,7 +62,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	migrationDocs, err := getMigrationsYAML(deployOptions.Namespace)
+	migrationDocs, err := getMigrationsYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get migrations yaml")
 	}

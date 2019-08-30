@@ -9,11 +9,10 @@ import (
 )
 
 type FetchOptions struct {
-	HelmRepoName   string
-	HelmRepoURI    string
-	LocalPath      string
-	License        *kotsv1beta1.License
-	SharedPassword string
+	HelmRepoName string
+	HelmRepoURI  string
+	LocalPath    string
+	License      *kotsv1beta1.License
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
@@ -38,7 +37,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.SharedPassword)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

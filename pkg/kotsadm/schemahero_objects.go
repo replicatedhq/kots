@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func migrationsPod(namespace string) *corev1.Pod {
+func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 	name := fmt.Sprintf("kotsadm-migrations-%d", time.Now().Unix())
 
 	pod := &corev1.Pod{
@@ -18,7 +18,7 @@ func migrationsPod(namespace string) *corev1.Pod {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: namespace,
+			Namespace: deployOptions.Namespace,
 		},
 		Spec: corev1.PodSpec{
 			RestartPolicy: corev1.RestartPolicyOnFailure,
@@ -38,7 +38,7 @@ func migrationsPod(namespace string) *corev1.Pod {
 						},
 						{
 							Name:  "SCHEMAHERO_URI",
-							Value: fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", postgresPassword),
+							Value: fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", deployOptions.PostgresPassword),
 						},
 					},
 				},

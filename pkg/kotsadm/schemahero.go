@@ -13,12 +13,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getMigrationsYAML(namespace string) (map[string][]byte, error) {
+func getMigrationsYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var pod bytes.Buffer
-	if err := s.Encode(migrationsPod(namespace), &pod); err != nil {
+	if err := s.Encode(migrationsPod(deployOptions), &pod); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal migrations pod")
 	}
 	docs["migrations.yaml"] = pod.Bytes()
@@ -71,7 +71,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (
 }
 
 func createSchemaHeroPod(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(migrationsPod(deployOptions.Namespace))
+	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(migrationsPod(deployOptions))
 	if err != nil {
 		return errors.Wrap(err, "failed to create pod")
 	}
