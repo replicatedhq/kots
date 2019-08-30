@@ -6,7 +6,6 @@ import { ReplicatedError } from "../server/errors";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
-import { logger } from "../server/logger";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -162,8 +161,6 @@ order by sequence desc`;
     if (sequence === null) {
       return;
     }
-
-    logger.info({ msg: "getCurrentDownstreamVersion", appId: appId, clusterId: clusterId, sequence: sequence });
 
     q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
