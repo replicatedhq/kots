@@ -152,7 +152,7 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to get namespace")
 	}
 
-	if err := ensureMinio(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
 

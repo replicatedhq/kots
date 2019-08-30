@@ -97,12 +97,26 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 									Value: "kotsadm",
 								},
 								{
-									Name:  "S3_ACCESS_KEY_ID",
-									Value: minioAccessKey,
+									Name: "S3_ACCESS_KEY_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "accesskey",
+										},
+									},
 								},
 								{
-									Name:  "S3_SECRET_ACCESS_KEY",
-									Value: minioSecret,
+									Name: "S3_SECRET_ACCESS_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "secretkey",
+										},
+									},
 								},
 								{
 									Name:  "S3_BUCKET_ENDPOINT",

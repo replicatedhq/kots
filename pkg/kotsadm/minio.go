@@ -42,20 +42,20 @@ func getMinioYAML(namespace string) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensureMinio(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureMinioConfigMap(namespace, clientset); err != nil {
+func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureMinioConfigMap(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio configmap")
 	}
 
-	if err := ensureMinioStatefulset(namespace, clientset); err != nil {
+	if err := ensureMinioStatefulset(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio statefulset")
 	}
 
-	if err := ensureMinioService(namespace, clientset); err != nil {
+	if err := ensureMinioService(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio service")
 	}
 
-	if err := ensureMinioJob(namespace, clientset); err != nil {
+	if err := ensureMinioJob(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio job")
 	}
 
