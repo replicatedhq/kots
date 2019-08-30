@@ -1,34 +1,28 @@
 import * as React from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
-import { uploadKotsLicense } from "../mutations/AppsMutations";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 
-class UploadLicenseFile extends React.Component {
+class UploadAirgapBundle extends React.Component {
   state = {
-    licenseFile: {},
-    licenseValue: "",
+    bundleFile: {},
     fileUploading: false
   }
 
   clearFile = () => {
-    this.setState({ licenseFile: {}, licenseValue: "" });
+    this.setState({ bundleFile: {} });
   }
 
-  uploadLicenseFile = async () => {
+  uploadAirgapBundle = async () => {
     const { onUploadSuccess } = this.props;
-    const { licenseValue } = this.state;
     this.setState({ fileUploading: true });
     try {
-      await this.props.uploadKotsLicense(licenseValue);
+      // TODO: uploadBundle here
       onUploadSuccess().then((res) => {
-        // TODO: check response to see if it's pending airgap (to be added
-        // to the response object) if so, go to /airgap to upload the bundle,
-        // if not go to the app app detail page.
         this.props.history.replace(`/app/${res[0].slug}`);
       });
     } catch (err) {
@@ -38,11 +32,7 @@ class UploadLicenseFile extends React.Component {
   }
 
   onDrop = async (files) => {
-    const content = await files[0].text();
-    this.setState({
-      licenseFile: files[0],
-      licenseValue: content
-    });
+    this.setState({ bundleFile: files[0] });
   }
 
   render() {
@@ -50,37 +40,40 @@ class UploadLicenseFile extends React.Component {
       appName,
       logo,
     } = this.props;
-    const { licenseFile, fileUploading } = this.state;
-    const hasFile = licenseFile && !isEmpty(licenseFile);
+    const { bundleFile, fileUploading } = this.state;
+    const hasFile = bundleFile && !isEmpty(bundleFile);
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
-              {logo ?
-                <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
-              :
-                <span className="icon ship-login-icon" />
-              }
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your license file</p>
+              <div className="flex">
+                {logo ?
+                  <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
+                :
+                  <span className="icon ship-login-icon u-marginRight--10" />
+                }
+                <span className="icon airgapBundleIcon" />
+              </div>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your airgap bundle</p>
             </div>
             <div className="u-marginTop--30 flex">
               <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                 <Dropzone
                   className="Dropzone-wrapper"
-                  accept={["application/x-yaml", ".yaml", ".yml"]}
+                  accept="application/gzip, .gz"
                   onDropAccepted={this.onDrop}
                   multiple={false}
                 >
                   {hasFile ?
                     <div className="has-file-wrapper">
-                      <p className="u-fontSize--normal u-fontWeight--medium">{licenseFile.name}</p>
+                      <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
                     </div>
                     :
                     <div className="u-textAlign--center">
-                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Contact them if you are unable to locate a license file.</p>
+                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
                     </div>
                   }
                 </Dropzone>
@@ -90,7 +83,7 @@ class UploadLicenseFile extends React.Component {
                   <button
                     type="button"
                     className="btn primary large flex-auto"
-                    onClick={this.uploadLicenseFile}
+                    onClick={this.uploadAirgapBundle}
                     disabled={fileUploading || !hasFile}
                   >
                     {fileUploading ? "Uploading" : "Upload license"}
@@ -100,7 +93,7 @@ class UploadLicenseFile extends React.Component {
             </div>
             {hasFile &&
               <div className="u-marginTop--10">
-                <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
+                <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
               </div>
             }
           </div>
@@ -113,9 +106,4 @@ class UploadLicenseFile extends React.Component {
 export default compose(
   withRouter,
   withApollo,
-  graphql(uploadKotsLicense, {
-    props: ({ mutate }) => ({
-      uploadKotsLicense: (value) => mutate({ variables: { value } })
-    })
-  }),
-)(UploadLicenseFile);
+)(UploadAirgapBundle);

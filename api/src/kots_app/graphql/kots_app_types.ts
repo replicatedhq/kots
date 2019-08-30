@@ -32,10 +32,18 @@ const KotsVersion = `
     sequence: Int
     deployedAt: String
   }
-`
+`;
+
+const KotsAppMetadata = `
+  type KotsAppMetadata {
+    name: String!
+    iconUri: String!
+  }
+`;
 
 export default [
   KotsApp,
   KotsDownstream,
   KotsVersion,
+  KotsAppMetadata,
 ];

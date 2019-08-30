@@ -22,6 +22,7 @@ export const Query = `
     searchPendingInitSessions(title: String!): [PendingInitSession]
     getPendingIniSession(id: String!): PendingInitSession
 
+    getKotsMetadata: KotsAppMetadata
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
     listDownstreamsForApp(slug: String!): [Cluster]

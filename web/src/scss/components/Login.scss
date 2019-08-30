@@ -38,6 +38,15 @@
     top: 5px;
   }
 
+  .brand-login-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-position: center;
+    background-size: cover;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  }
+
   .login-form-wrapper {
     padding: 40px;
     max-width: 300px;

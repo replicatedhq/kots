@@ -2,11 +2,18 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp, KotsVersion } from "../";
+import { KotsApp, KotsVersion, KotsAppMetadata } from "../";
 import { Cluster } from "../../cluster";
 
 export function KotsQueries(stores: Stores) {
   return {
+
+    async getKotsMetadata(): Promise<KotsAppMetadata> {
+      return {
+        name: "Sentry Enterprise",
+        iconUri: "https://sentry-brand.storage.googleapis.com/sentry-glyph-black.png"
+      }
+    },
 
     async getKotsApp(root: any, args: any, context: Context): Promise<KotsApp> {
       const { slug, id } = args;

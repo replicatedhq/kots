@@ -30,7 +30,7 @@ import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 
-import { listApps } from "@src/queries/AppsQueries";
+import { getKotsMetadata, listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -38,6 +38,7 @@ import NavBar from "./components/shared/NavBar";
 import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
 import UploadLicenseFile from "./components/UploadLicenseFile";
+import UploadAirgapBundle from "./components/UploadAirgapBundle";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
@@ -87,11 +88,13 @@ const ThemeContext = React.createContext({
 class Root extends Component {
   state = {
     listApps: [],
+    appLogo: null,
+    selectedAppName: null,
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
     themeState: {
-      navbarLogo: null
+      navbarLogo: null,
     },
     rootDidInitialWatchFetch: false
   };
@@ -122,7 +125,7 @@ class Root extends Component {
      * Reference object to a blank theme state
      */
     const EMPTY_THEME_STATE = {
-      navbarLogo: null
+      navbarLogo: null,
     };
 
     this.setState({
@@ -155,7 +158,6 @@ class Root extends Component {
   }
 
   refetchListApps = async () => {
-    // @TODO: Lean out the query to only fetch the data that
     const apps = await GraphQLClient.query({
       query: listApps,
       fetchPolicy: "no-cache"
@@ -176,8 +178,25 @@ class Root extends Component {
     return allWatches;
   }
 
+  fetchKotsAppMetadata = async () => {
+    const meta = await GraphQLClient.query({
+      query: getKotsMetadata,
+      fetchPolicy: "no-cache"
+    }).catch( error => {
+      throw error;
+    });
+
+    if (meta.data.getKotsMetadata) {
+      this.setState({
+        appLogo: meta.data.getKotsMetadata.iconUri,
+        selectedAppName: meta.data.getKotsMetadata.name
+      });
+    }
+  }
+
   onRootMounted = () => {
     if (Utilities.isLoggedIn()) {
+      this.fetchKotsAppMetadata();
       this.refetchListApps().then(listApps => {
         if (listApps.length > 0 && window.location.pathname === "/watches") {
           const { slug } = listApps[0];
@@ -214,7 +233,7 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo} refetchListApps={this.refetchListApps} />
+                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
@@ -228,8 +247,9 @@ class Root extends Component {
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} onLoginSuccess={this.refetchListApps} />} />
-                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} onLoginSuccess={this.refetchListApps} />} />
+                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} />} />
+                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} />} />
+                    <Route exact path="/airgap" render={props => <UploadAirgapBundle {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
