@@ -218,19 +218,24 @@ order by sequence desc`;
   async deleteApp(appId: string): Promise<Boolean> {
     const pg = await this.pool.connect();
     try {
-      await pg.query("begin");
-      const q = `delete from user_app where app_id = $1`;
+      let q: string;
       const v = [appId];
+
+      await pg.query("begin");
+      q = `delete from user_app where app_id = $1`;
       await pg.query(q, v);
 
-      const qq = `delete from app_version where app_id = $1`;
-      await pg.query(qq, v);
+      q = `delete from app_version where app_id = $1`;
+      await pg.query(q, v);
 
-      const qqq = `delete from app_downstream where app_id = $1`;
-      await pg.query(qqq, v);
+      q = `delete from app_downstream where app_id = $1`;
+      await pg.query(q, v);
 
-      const qqqq = `delete from app where id = $1`;
-      await pg.query(qqqq, v);
+      q = `delete from app_downstream_version where app_id = $1`;
+      await pg.query(q, v);
+
+      q = `delete from app where id = $1`;
+      await pg.query(q, v);
 
       await pg.query("commit");
     } finally {
