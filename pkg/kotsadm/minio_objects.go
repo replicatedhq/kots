@@ -190,12 +190,26 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "MINIO_ACCESS_KEY",
-									Value: minioAccessKey,
+									Name: "MINIO_ACCESS_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "accesskey",
+										},
+									},
 								},
 								{
-									Name:  "MINIO_SECRET_KEY",
-									Value: minioSecret,
+									Name: "MINIO_SECRET_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "secretkey",
+										},
+									},
 								},
 								{
 									Name:  "MINIO_BROWSER",
