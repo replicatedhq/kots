@@ -18,7 +18,6 @@ import (
 type WriteOptions struct {
 	RootDir      string
 	CreateAppDir bool
-	Overwrite    bool
 }
 
 func (u *Upstream) WriteUpstream(options WriteOptions) error {
@@ -34,45 +33,44 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		if options.Overwrite {
-			// if there's already a values yaml, we need to save
-			_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
-			if err == nil {
-				c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
+		// if there's already a values yaml, we need to save
+		_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
+		if err == nil {
+			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
+			if err != nil {
+				return errors.Wrap(err, "failed to read existing values")
+			}
+
+			previousValuesContent = c
+		}
+
+		// we also save the admin console upstream from before
+		adminConsoleManifests, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
+		if err == nil {
+			previousAdminConsoleManifests = map[string][]byte{}
+			for _, adminConsoleManifest := range adminConsoleManifests {
+				if adminConsoleManifest.IsDir() {
+					continue
+				}
+
+				content, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", adminConsoleManifest.Name()))
 				if err != nil {
-					return errors.Wrap(err, "failed to read existing values")
+					return errors.Wrap(err, "failed to read previous admin console file")
 				}
 
-				previousValuesContent = c
-			}
-
-			// we also save the admin console upstream from before
-			adminConsoleManifests, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
-			if err == nil {
-				previousAdminConsoleManifests = map[string][]byte{}
-				for _, adminConsoleManifest := range adminConsoleManifests {
-					if adminConsoleManifest.IsDir() {
-						continue
-					}
-
-					content, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", adminConsoleManifest.Name()))
-					if err != nil {
-						return errors.Wrap(err, "failed to read previous admin console file")
-					}
-
-					previousAdminConsoleManifests[adminConsoleManifest.Name()] = content
+				if adminConsoleManifest.Name() == "secret-jwt.yaml" {
+					fmt.Printf("%s\n", content)
 				}
+				previousAdminConsoleManifests[adminConsoleManifest.Name()] = content
 			}
+		}
 
-			if err := os.RemoveAll(renderDir); err != nil {
-				return errors.Wrap(err, "failed to remove previous content in upstream")
-			}
-		} else {
-			return fmt.Errorf("directory %s already exists", renderDir)
+		if err := os.RemoveAll(renderDir); err != nil {
+			return errors.Wrap(err, "failed to remove previous content in upstream")
 		}
 	}
 
-	for _, file := range u.Files {
+	for fileIdx, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
 		d, f := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
@@ -89,13 +87,16 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 				if err := ioutil.WriteFile(fileRenderPath, prevContent, 0644); err != nil {
 					return errors.Wrap(err, "failed to write upstream file")
 				}
+
+				u.Files[fileIdx].Content = prevContent
+
 				goto Wrote
 			}
 		}
+
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
-	Wrote:
 	}
 
 	if previousValuesContent != nil {

@@ -52,6 +52,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 					return errors.Wrap(err, "failed to mkdir")
 				}
 			}
+
 			if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 				return errors.Wrap(err, "failed to write base file")
 			}

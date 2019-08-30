@@ -97,7 +97,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeUpstreamOptions := upstream.WriteOptions{
 		RootDir:      pullOptions.RootDir,
 		CreateAppDir: true,
-		Overwrite:    true,
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
