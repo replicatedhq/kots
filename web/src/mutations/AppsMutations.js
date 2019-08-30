@@ -37,3 +37,11 @@ export const uploadKotsLicenseRaw = `
   }
 `
 export const uploadKotsLicense = gql(uploadKotsLicenseRaw);
+
+export const deployKotsVersionRaw = `
+  mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterId: String!) {
+    deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterId: $clusterId)
+  }
+`;
+
+export const deployKotsVersion = gql(deployKotsVersionRaw);

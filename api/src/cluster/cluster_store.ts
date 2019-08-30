@@ -258,6 +258,17 @@ export class ClusterStore {
     }
   }
 
+  async getIdFromSlug(slug: string): Promise<string> {
+    const q = "select id from cluster where slug = $1";
+    const v = [slug];
+
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No cluster with slug ${slug}`);
+    }
+    return result.rows[0].id;
+  }
+
   async addUserToCluster(clusterId: string, userId: string): Promise<void> {
     const pg = await this.pool.connect();
 

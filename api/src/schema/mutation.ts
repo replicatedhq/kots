@@ -17,6 +17,7 @@ type Mutation {
   deleteKotsApp(slug: String!): Boolean
   checkForKotsUpdates(appId: ID!): Boolean
   uploadKotsLicense(value: String!): Boolean
+  deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterId: String!): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch
