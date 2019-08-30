@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
@@ -19,7 +20,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var jwt bytes.Buffer
-	if err := s.Encode(jwtSecret(deployOptions.Namespace), &jwt); err != nil {
+	if err := s.Encode(jwtSecret(deployOptions.Namespace, deployOptions.JWT), &jwt); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal jwt secret")
 	}
 	docs["secret-jwt.yaml"] = jwt.Bytes()
@@ -30,18 +31,27 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	}
 	docs["secret-pg.yaml"] = pg.Bytes()
 
-	bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(deployOptions.SharedPassword), 10)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to bcrypt shared password")
+	if deployOptions.SharedPasswordBcrypt == "" {
+		bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(deployOptions.SharedPassword), 10)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to bcrypt shared password")
+		}
+		deployOptions.SharedPasswordBcrypt = string(bcryptPassword)
 	}
 	var sharedPassword bytes.Buffer
-	if err := s.Encode(sharedPasswordSecret(deployOptions.Namespace, bcryptPassword), &sharedPassword); err != nil {
+	if err := s.Encode(sharedPasswordSecret(deployOptions.Namespace, deployOptions.SharedPasswordBcrypt), &sharedPassword); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal shared password secret")
 	}
 	docs["secret-shared-password.yaml"] = sharedPassword.Bytes()
 
 	var s3 bytes.Buffer
-	if err := s.Encode(s3Secret(deployOptions.Namespace), &s3); err != nil {
+	if deployOptions.S3SecretKey == "" {
+		deployOptions.S3SecretKey = uuid.New().String()
+	}
+	if deployOptions.S3AccessKey == "" {
+		deployOptions.S3AccessKey = uuid.New().String()
+	}
+	if err := s.Encode(s3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal s3 secret")
 	}
 	docs["secret-s3.yaml"] = s3.Bytes()
@@ -76,7 +86,7 @@ func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
 			return errors.Wrap(err, "failed to get existing s3 secret")
 		}
 
-		_, err := clientset.CoreV1().Secrets(namespace).Create(s3Secret(namespace))
+		_, err := clientset.CoreV1().Secrets(namespace).Create(s3Secret(namespace, uuid.New().String(), uuid.New().String()))
 		if err != nil {
 			return errors.Wrap(err, "failed to create s3 secret")
 		}
@@ -92,7 +102,7 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 			return errors.Wrap(err, "failed to get existing session secret")
 		}
 
-		_, err := clientset.CoreV1().Secrets(namespace).Create(jwtSecret(namespace))
+		_, err := clientset.CoreV1().Secrets(namespace).Create(jwtSecret(namespace, uuid.New().String()))
 		if err != nil {
 			return errors.Wrap(err, "failed to create jwt session secret")
 		}
@@ -138,7 +148,7 @@ func ensureSharedPasswordSecret(deployOptions *DeployOptions, clientset *kuberne
 			return errors.Wrap(err, "failed to get existing password secret")
 		}
 
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(sharedPasswordSecret(deployOptions.Namespace, bcryptPassword))
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(sharedPasswordSecret(deployOptions.Namespace, string(bcryptPassword)))
 		if err != nil {
 			return errors.Wrap(err, "failed to create password secret")
 		}

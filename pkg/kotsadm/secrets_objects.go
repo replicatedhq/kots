@@ -8,7 +8,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func jwtSecret(namespace string) *corev1.Secret {
+func jwtSecret(namespace string, jwt string) *corev1.Secret {
+	if jwt == "" {
+		jwt = uuid.New().String()
+	}
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -19,7 +23,7 @@ func jwtSecret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"key": []byte(uuid.New().String()),
+			"key": []byte(jwt),
 		},
 	}
 
@@ -44,7 +48,7 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 	return secret
 }
 
-func sharedPasswordSecret(namespace string, bcryptPassword []byte) *corev1.Secret {
+func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -55,14 +59,14 @@ func sharedPasswordSecret(namespace string, bcryptPassword []byte) *corev1.Secre
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"passwordBcrypt": bcryptPassword,
+			"passwordBcrypt": []byte(bcryptPassword),
 		},
 	}
 
 	return secret
 }
 
-func s3Secret(namespace string) *corev1.Secret {
+func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -73,8 +77,8 @@ func s3Secret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"accesskey": []byte(minioAccessKey),
-			"secretkey": []byte(minioSecret),
+			"accesskey": []byte(accessKey),
+			"secretkey": []byte(secretKey),
 		},
 	}
 

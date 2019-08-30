@@ -72,10 +72,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log := logger.NewLogger()
 	log.Initialize()
 
+	uri, err := url.ParseRequestURI(upstreamURI)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse uri")
+	}
+
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
 	fetchOptions.LocalPath = pullOptions.LocalPath
-	fetchOptions.ExcludeAdminConsole = pullOptions.ExcludeAdminConsole
 	fetchOptions.SharedPassword = pullOptions.SharedPassword
 
 	if pullOptions.LicenseFile != "" {
@@ -95,8 +99,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	writeUpstreamOptions := upstream.WriteOptions{
-		RootDir:      pullOptions.RootDir,
-		CreateAppDir: true,
+		RootDir:             pullOptions.RootDir,
+		CreateAppDir:        true,
+		IncludeAdminConsole: uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole,
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

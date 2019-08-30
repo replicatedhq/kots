@@ -23,15 +23,19 @@ var (
 )
 
 type DeployOptions struct {
-	Namespace           string
-	Kubeconfig          string
-	IncludeShip         bool
-	IncludeGitHub       bool
-	SharedPassword      string
-	ServiceType         string
-	NodePort            int32
-	Hostname            string
-	ApplicationMetadata []byte
+	Namespace            string
+	Kubeconfig           string
+	IncludeShip          bool
+	IncludeGitHub        bool
+	SharedPassword       string
+	SharedPasswordBcrypt string
+	S3AccessKey          string
+	S3SecretKey          string
+	JWT                  string
+	ServiceType          string
+	NodePort             int32
+	Hostname             string
+	ApplicationMetadata  []byte
 }
 
 // YAML will return a map containing the YAML needed to run the admin console
