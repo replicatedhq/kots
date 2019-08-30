@@ -36,6 +36,10 @@ class UploadAirgapBundle extends React.Component {
   }
 
   render() {
+    const {
+      appName,
+      logo,
+    } = this.props;
     const { bundleFile, fileUploading } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
 
@@ -45,7 +49,11 @@ class UploadAirgapBundle extends React.Component {
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
               <div className="flex">
-                <span className="icon ship-login-icon u-marginRight--10" />
+                {logo ?
+                  <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
+                :
+                  <span className="icon ship-login-icon u-marginRight--10" />
+                }
                 <span className="icon airgapBundleIcon" />
               </div>
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your airgap bundle</p>
@@ -65,7 +73,7 @@ class UploadAirgapBundle extends React.Component {
                     :
                     <div className="u-textAlign--center">
                       <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file your vendor provided. Contact them if you are unable to locate a airgap bundle.</p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
                     </div>
                   }
                 </Dropzone>

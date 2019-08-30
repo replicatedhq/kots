@@ -242,3 +242,8 @@ export interface KotsVersion {
   sequence: number;
   deployedAt: string;
 }
+
+export interface KotsAppMetadata {
+  name: string;
+  iconUri: string;
+}

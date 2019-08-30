@@ -1,5 +1,16 @@
 import gql from "graphql-tag";
 
+export const getKotsMetadataRaw = `
+  query getKotsMetadata {
+    getKotsMetadata {
+      name
+      iconUri
+    }
+  }
+`;
+
+export const getKotsMetadata = gql(getKotsMetadataRaw);
+
 export const listAppsRaw = `
   query listApps {
     listApps {
