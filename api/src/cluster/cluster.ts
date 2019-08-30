@@ -16,7 +16,7 @@ export class Cluster {
   public toKotsAppSchema(appId: string, stores: Stores) {
     return {
       ...this,
-      currentVersion: async () => this.getCurrentVersionOnCluster(appId, stores)
+      currentVersion: () => this.getCurrentVersionOnCluster(appId, stores)
     }
   }
 }
