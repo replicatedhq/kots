@@ -220,12 +220,12 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
-      currentVersion: async () => this.getCurrentAppVersion(stores),
+      currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
-          currentVersion: async () => this.getCurrentVersion(downstream.id, stores),
+          currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: async () => this.getPastVersions(downstream.id, stores),
           pendingVersions: async () => this.getPendingVersions(downstream.id, stores),
           cluster: kotsSchemaCluster,

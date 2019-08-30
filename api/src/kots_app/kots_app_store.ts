@@ -170,6 +170,7 @@ order by sequence desc`;
     ];
 
     result = await this.pool.query(q, v);
+    
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
@@ -197,6 +198,7 @@ order by sequence desc`;
     ];
 
     result = await this.pool.query(q, v);
+    // TODO: check for row length here?
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
