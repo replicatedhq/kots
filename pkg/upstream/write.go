@@ -28,8 +28,6 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 
 	renderDir = path.Join(renderDir, "upstream")
 
-	var previousValuesContent []byte
-
 	if options.IncludeAdminConsole {
 		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir, options.SharedPassword)
 		if err != nil {
@@ -39,6 +37,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 		u.Files = append(u.Files, adminConsoleFiles...)
 	}
 
+	var previousValuesContent []byte
 	_, err := os.Stat(renderDir)
 	if err == nil {
 		// if there's already a values yaml, we need to save

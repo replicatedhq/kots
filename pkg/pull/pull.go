@@ -97,10 +97,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
 
+	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
+
 	writeUpstreamOptions := upstream.WriteOptions{
 		RootDir:             pullOptions.RootDir,
 		CreateAppDir:        true,
-		IncludeAdminConsole: uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole,
+		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 	}
 	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
@@ -163,7 +165,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		log.FinishSpinner()
 	}
 
-	return path.Join(pullOptions.RootDir, u.Name), nil
+	if includeAdminConsole {
+		if err := writeArchiveAsConfigMap(pullOptions, u, u.GetBaseDir(writeUpstreamOptions)); err != nil {
+			return "", errors.Wrap(err, "failed to write archive as config map")
+		}
+	}
+
+	return path.Join(pullOptions.RootDir, u.Name, u.GetBaseDir(writeUpstreamOptions)), nil
 }
 
 func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {

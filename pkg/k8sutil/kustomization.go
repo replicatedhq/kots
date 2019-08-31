@@ -8,6 +8,20 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+func ReadKustomizationFromFile(file string) (*kustomizetypes.Kustomization, error) {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read kustomization file")
+	}
+
+	k := kustomizetypes.Kustomization{}
+	if err := yaml.Unmarshal(b, &k); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal kustomization")
+	}
+
+	return &k, nil
+}
+
 func WriteKustomizationToFile(kustomization *kustomizetypes.Kustomization, file string) error {
 	b, err := yaml.Marshal(kustomization)
 	if err != nil {
