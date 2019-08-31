@@ -58,7 +58,9 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstream.Upstream, base
 	// it's really the only way we can get the archive
 	// but etcd and config maps are limited to 1 mb
 	// so let's split it across multiple, if it's larger than 1 mb
-	encodedParts, err := util.SplitStringOnLen(encoded, 756*1000)
+	// 768*1024 was chosen as a number sufficiently below 1m so as to allow
+	// for padding or other inefficiencies.
+	encodedParts, err := util.SplitStringOnLen(encoded, 768*1024)
 	if err != nil {
 		return errors.Wrap(err, "failed to split encoded")
 	}
