@@ -17,7 +17,9 @@ import * as _ from "lodash";
 export class KotsApp {
   id: string;
   name: string;
+  license?: string;
   iconUri: string;
+  upstreamUri: string;
   createdAt: Date;
   updatedAt?: Date;
   slug: string;
@@ -42,7 +44,7 @@ export class KotsApp {
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id,   clusterId);
   }
-  
+
   // Source files
   async generateFileTreeIndex(sequence) {
     const supportBundleIndexJsonPath = "index.json";

@@ -4,16 +4,19 @@ import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsAppCheckForUpdate } from "../kots_ffi";
 
 export function KotsMutations(stores: Stores) {
   return {
     async checkForKotsUpdates(root: any, args: any, context: Context) {
       const { appId } = args;
 
-      console.log(appId);
+      const app = await stores.kotsAppStore.getApp(appId);
+      const midstreamUpdateCursor = await stores.kotsAppStore.getMidstreamUpdateCursor(appId);
 
-      return false;
+      const updateAvailable = await kotsAppCheckForUpdate(midstreamUpdateCursor, app, stores);
+
+      return updateAvailable;
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {

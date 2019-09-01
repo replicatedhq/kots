@@ -2,12 +2,38 @@ import { Parse as TarParser } from "tar";
 import { PassThrough as PassThroughStream } from "stream";
 import path from "path";
 import * as _ from "lodash";
-import { logger } from "../server/logger";
+import * as tar from "tar-stream";
+import * as concat from "concat-stream";
 
 function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
   const stream = new PassThroughStream();
   stream.end(buffer);
   return stream;
+}
+
+export function extractCursorFromTarball(tarball: Buffer): Promise<string> {
+  const extract = tar.extract();
+
+  return new Promise((resolve, reject) => {
+    extract.on("entry", (header, stream, next) => {
+      console.log(header);
+      stream.pipe(concat((data) => {
+        // const doc = yaml.safeLoad(data.toString());
+        // if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Application")) {
+        //   resolve(data.toString());
+        //   next();
+        //   return;
+        // }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve("");
+    });
+
+    extract.end(tarball);
+  });
 }
 
 export function extractDownstreamNamesFromTarball(tarball: Buffer): Promise<string[]> {

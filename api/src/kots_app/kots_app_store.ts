@@ -10,6 +10,21 @@ import _ from "lodash";
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
+  async listClusterIDsForApp(id: string): Promise<string[]> {
+    const q = `select cluster_id from app_downstream where app_id = $1`;
+    const v = [
+      id,
+    ];
+
+    const result = await this.pool.query(q, v);
+    const clusterIds: string[] = [];
+    for (const row of result.rows) {
+      clusterIds.push(row.cluster_id);
+    }
+
+    return clusterIds;
+  }
+
   async listAppsForCluster(clusterId: string): Promise<KotsApp[]> {
     const q = `select app_id from app_downstream where cluster_id = $1`;
     const v = [
@@ -36,7 +51,7 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createKotsAppVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined, downstreamClusterId: string | undefined, parentSequence: number | undefined): Promise<void> {
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
@@ -58,20 +73,30 @@ export class KotsAppStore {
     ];
 
     await this.pool.query(qq, vv);
+  }
 
-    const qqq = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
-      values ($1, $2, $3, $4, $5, $6, $7)`;
-    const vvv = [
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string): Promise<void> {
+    let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
+    let v: any[] = [
       id,
-      downstreamClusterId,
-      sequence,
+      clusterId,
+    ];
+    const result = await this.pool.query(q, v);
+
+    const newSequence = result.rowCount === 0 ? 0 : parseInt(result.rows[0].last_sequence) + 1;
+
+    q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
+      values ($1, $2, $3, $4, $5, $6, $7)`;
+    v = [
+      id,
+      clusterId,
+      newSequence,
       parentSequence,
       new Date(),
-      versionLabel,
       "pending"
     ];
 
-    await this.pool.query(qqq, vvv);
+    await this.pool.query(q, v);
   }
 
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
@@ -170,7 +195,7 @@ order by sequence desc`;
     ];
 
     result = await this.pool.query(q, v);
-    
+
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
@@ -202,6 +227,17 @@ order by sequence desc`;
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
+  }
+
+  async getMidstreamUpdateCursor(appId: string): Promise<string> {
+    const q = `select update_cursor from app_version where app_id = $1 and sequence = (select current_sequence from app where id = $1)`;
+    const v = [
+      appId,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    return result.rows[0].update_cursor;
   }
 
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
@@ -304,7 +340,7 @@ order by sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -318,6 +354,8 @@ order by sequence desc`;
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
+    kotsApp.license = row.license;
+    kotsApp.upstreamUri = row.upstream_uri;
     kotsApp.iconUri = row.icon_uri;
     kotsApp.createdAt = new Date(row.created_at);
     kotsApp.updatedAt = row.updated_at ? new Date(row.updated_at) : undefined;
