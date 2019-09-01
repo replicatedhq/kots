@@ -162,14 +162,14 @@ func InstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
-	cmd.Flags().String("namespace", "default", "the namespace to deploy to")
+	cmd.Flags().StringP("namespace", "n", "default", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
 	cmd.Flags().String("shared-password", "", "shared password to apply")
 	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
 	cmd.Flags().String("hostname", "localhost:8800", "the hostname to that the admin console will be exposed on")
-	cmd.Flags().StringP("name", "n", "", "name of the application to use in the Admin Console")
+	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 
