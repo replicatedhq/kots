@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: minio
+    release: minio
+  name: minio
+spec:
+  selector:
+    matchLabels:
+      app: minio
+      release: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+        release: minio
+      name: minio
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -ce
+        - /usr/bin/docker-entrypoint.sh minio -C /root/.minio/ server /export
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: accesskey
+              name: minio
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secretkey
+              name: minio
+        - name: MINIO_BROWSER
+          value: "on"
+        image: minio/minio:RELEASE.2019-05-14T23-57-45Z
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minio/health/live
+            port: service
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: minio
+        ports:
+          - containerPort: 9000
+            name: service
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /minio/health/ready
+            port: service
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+          - mountPath: /export
+            name: miniodata  # this is where the data is stored
+          - mountPath: /root/.minio/
+            name: minio-config-dir
+      volumes:
+      - name: miniodata
+        persistentVolumeClaim:
+          claimName: miniodata
+      - name: minio-user
+        secret:
+          secretName: minio
+      - emptyDir: {}
+        name: minio-config-dir
+
+  volumeClaimTemplates:
+  - metadata:
+      name: miniodata
+    spec:
+      accessModes:
+      - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 2Gi
