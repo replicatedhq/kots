@@ -171,7 +171,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	return path.Join(pullOptions.RootDir, u.Name, u.GetBaseDir(writeUpstreamOptions)), nil
+	return path.Join(pullOptions.RootDir, u.Name), nil
 }
 
 func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
