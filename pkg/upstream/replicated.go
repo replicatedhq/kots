@@ -402,12 +402,26 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		upstreamFiles = append(upstreamFiles, upstreamFile)
 	}
 
+	// Stash the user data for this search (we will readd at the end)
+	userdataFiles := []UpstreamFile{}
+	withoutUserdataFiles := []UpstreamFile{}
+	for _, file := range upstreamFiles {
+		d, _ := path.Split(file.Path)
+		dirs := strings.Split(d, string(os.PathSeparator))
+
+		if dirs[0] == "userdata" {
+			userdataFiles = append(userdataFiles, file)
+		} else {
+			withoutUserdataFiles = append(withoutUserdataFiles, file)
+		}
+	}
+
 	// remove any common prefix from all files
-	if len(upstreamFiles) > 0 {
-		firstFileDir, _ := path.Split(upstreamFiles[0].Path)
+	if len(withoutUserdataFiles) > 0 {
+		firstFileDir, _ := path.Split(withoutUserdataFiles[0].Path)
 		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
 
-		for _, file := range upstreamFiles {
+		for _, file := range withoutUserdataFiles {
 			d, _ := path.Split(file.Path)
 			dirs := strings.Split(d, string(os.PathSeparator))
 
@@ -416,7 +430,7 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		}
 
 		cleanedUpstreamFiles := []UpstreamFile{}
-		for _, file := range upstreamFiles {
+		for _, file := range withoutUserdataFiles {
 			d, f := path.Split(file.Path)
 			d2 := strings.Split(d, string(os.PathSeparator))
 
@@ -429,6 +443,9 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 
 		upstreamFiles = cleanedUpstreamFiles
 	}
+
+	upstreamFiles = append(upstreamFiles, userdataFiles...)
+
 	return upstreamFiles, nil
 }
 
