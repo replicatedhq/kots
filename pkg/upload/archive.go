@@ -8,6 +8,9 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func createUploadableArchive(rootPath string) (string, error) {
@@ -41,8 +44,8 @@ func createUploadableArchive(rootPath string) (string, error) {
 }
 
 func findUpdateCursor(rootPath string) (string, error) {
-	cursorFilePath := path.Join(rootPath, "base", ".kotsCursor")
-	_, err := os.Stat(cursorFilePath)
+	installationFilePath := path.Join(rootPath, "upstream", "userdata", "installation.yaml")
+	_, err := os.Stat(installationFilePath)
 	if os.IsNotExist(err) {
 		return "", nil
 	}
@@ -50,12 +53,21 @@ func findUpdateCursor(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to open file")
 	}
 
-	b, err := ioutil.ReadFile(cursorFilePath)
+	installationData, err := ioutil.ReadFile(installationFilePath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read update cursor file")
+		return "", errors.Wrap(err, "failed to read update installation file")
 	}
 
-	return string(b), nil
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(installationData), nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to devode installation data")
+	}
+
+	installation := obj.(*kotsv1beta1.Installation)
+
+	return installation.Spec.UpdateCursor, nil
 }
 
 func findLicense(rootPath string) (*string, error) {

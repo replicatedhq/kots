@@ -23,4 +23,6 @@ type ConfigExpansion interface{}
 
 type ConfigValuesExpansion interface{}
 
+type InstallationExpansion interface{}
+
 type LicenseExpansion interface{}

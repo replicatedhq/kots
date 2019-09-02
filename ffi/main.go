@@ -8,9 +8,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/mholt/archiver"
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -35,13 +36,7 @@ func UpdateCheck(fromArchivePath string) int {
 		return -1
 	}
 
-	kotsCursorFile := path.Join(tmpRoot, "base", ".kotsCursor")
-	_, err = os.Stat(kotsCursorFile)
-	if err != nil {
-		fmt.Printf("failed to find kots cursor file in archive\n")
-		return -1
-	}
-	beforeCursor, err := ioutil.ReadFile(kotsCursorFile)
+	beforeCursor, err := readCursorFromPath(tmpRoot)
 	if err != nil {
 		fmt.Printf("failed to read cursor file: %s\n", err.Error())
 		return -1
@@ -80,7 +75,7 @@ func UpdateCheck(fromArchivePath string) int {
 		return 1
 	}
 
-	afterCursor, err := ioutil.ReadFile(kotsCursorFile)
+	afterCursor, err := readCursorFromPath(tmpRoot)
 	if err != nil {
 		fmt.Printf("failed to read cursor file after update: %s\n", err.Error())
 		return -1
@@ -198,4 +193,32 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 	return 0
 }
 
+
+func readCursorFromPath(rootPath string) (string, error) {
+	installationFilePath := path.Join(rootPath, "upstream", "userdata", "installation.yaml")
+	_, err := os.Stat(installationFilePath)
+	if os.IsNotExist(err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file")
+	}
+
+	installationData, err := ioutil.ReadFile(installationFilePath)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read update installation file")
+	}
+
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(installationData), nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to devode installation data")
+	}
+
+	installation := obj.(*kotsv1beta1.Installation)
+	return installation.Spec.UpdateCursor, nil
+}
+
 func main() {}
+

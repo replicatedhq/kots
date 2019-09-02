@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -93,6 +94,24 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 		}
 	}
 
+	// Write the installation status (update cursor, etc)
+	installation := kotsv1beta1.Installation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "Installation",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: u.Name,
+		},
+		Spec: kotsv1beta1.InstallationSpec{
+			UpdateCursor: u.UpdateCursor,
+		},
+	}
+	err = ioutil.WriteFile(path.Join(renderDir, "userdata/installation.yaml"), mustMarshalInstallation(&installation), 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write installation")
+	}
+
 	return nil
 }
 
@@ -136,4 +155,17 @@ func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]by
 	}
 
 	return b.Bytes(), nil
+}
+
+func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
+	kotsscheme.AddToScheme(scheme.Scheme)
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(installation, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
 }

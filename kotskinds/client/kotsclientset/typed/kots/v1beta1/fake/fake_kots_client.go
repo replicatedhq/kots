@@ -39,6 +39,10 @@ func (c *FakeKotsV1beta1) ConfigValueses(namespace string) v1beta1.ConfigValuesI
 	return &FakeConfigValueses{c, namespace}
 }
 
+func (c *FakeKotsV1beta1) Installations(namespace string) v1beta1.InstallationInterface {
+	return &FakeInstallations{c, namespace}
+}
+
 func (c *FakeKotsV1beta1) Licenses(namespace string) v1beta1.LicenseInterface {
 	return &FakeLicenses{c, namespace}
 }
