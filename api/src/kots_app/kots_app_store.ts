@@ -83,7 +83,7 @@ export class KotsAppStore {
     ];
     const result = await this.pool.query(q, v);
 
-    const newSequence = result.rowCount === 0 ? 0 : parseInt(result.rows[0].last_sequence) + 1;
+    const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
     q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
       values ($1, $2, $3, $4, $5, $6, $7)`;
@@ -93,6 +93,7 @@ export class KotsAppStore {
       newSequence,
       parentSequence,
       new Date(),
+      "??",
       "pending"
     ];
 

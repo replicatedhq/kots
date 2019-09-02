@@ -3,7 +3,14 @@ import { PassThrough as PassThroughStream } from "stream";
 import path from "path";
 import * as _ from "lodash";
 import * as tar from "tar-stream";
-import * as concat from "concat-stream";
+import * as zlib from "zlib";
+import concat from "concat-stream";
+import yaml from "js-yaml";
+
+interface CursorAndVersion {
+  cursor: string;
+  versionLabel: string;
+}
 
 function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
   const stream = new PassThroughStream();
@@ -11,28 +18,40 @@ function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
   return stream;
 }
 
-export function extractCursorFromTarball(tarball: Buffer): Promise<string> {
+export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<CursorAndVersion> {
+  const uncompressed = zlib.unzipSync(tarball);
   const extract = tar.extract();
 
   return new Promise((resolve, reject) => {
     extract.on("entry", (header, stream, next) => {
-      console.log(header);
       stream.pipe(concat((data) => {
-        // const doc = yaml.safeLoad(data.toString());
-        // if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Application")) {
-        //   resolve(data.toString());
-        //   next();
-        //   return;
-        // }
+        const doc = yaml.safeLoad(data.toString());
+        if (doc) {
+          if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
+            console.log(doc);
+
+            const cursorAndVersion = {
+              cursor: doc.spec.updateCursor,
+              versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "??",
+            };
+
+            resolve(cursorAndVersion);
+            next();
+            return;
+          }
+        }
         next();
       }));
     });
 
     extract.on("finish", () => {
-      resolve("");
+      resolve({
+        cursor: "",
+        versionLabel: "",
+      });
     });
 
-    extract.end(tarball);
+    extract.end(uncompressed);
   });
 }
 

@@ -7,7 +7,7 @@ import { putObject } from "../util/s3";
 import path from "path";
 import tmp from "tmp";
 import fs from "fs";
-import { extractDownstreamNamesFromTarball, extractCursorFromTarball } from "../util/tar";
+import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import yaml from "js-yaml";
@@ -50,7 +50,8 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
       const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
       await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, "??", await extractCursorFromTarball(buffer), undefined, undefined);
+      const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
@@ -94,7 +95,8 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, "??", await extractCursorFromTarball(buffer), undefined, undefined);
+    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
