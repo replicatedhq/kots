@@ -32,7 +32,7 @@ export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<Cur
 
             const cursorAndVersion = {
               cursor: doc.spec.updateCursor,
-              versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "??",
+              versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",
             };
 
             resolve(cursorAndVersion);
