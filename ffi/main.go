@@ -8,10 +8,10 @@ import (
 	"os"
 	"path"
 
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -68,6 +68,7 @@ func UpdateCheck(fromArchivePath string) int {
 		RootDir:             tmpRoot,
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,
+		CreateAppDir:        false,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
@@ -94,12 +95,18 @@ func UpdateCheck(fromArchivePath string) int {
 		path.Join(tmpRoot, "overlays"),
 	}
 
-	if err := tarGz.Archive(paths, fromArchivePath); err != nil {
-		fmt.Printf("failed to write archive: %s", err.Error())
+	err = os.Remove(fromArchivePath)
+	if err != nil {
+		fmt.Printf("failed to delete archive to replace: %s\n", err.Error())
 		return -1
 	}
 
-	return 0
+	if err := tarGz.Archive(paths, fromArchivePath); err != nil {
+		fmt.Printf("failed to write archive: %s\n", err.Error())
+		return -1
+	}
+
+	return 1
 }
 
 //export PullFromLicense
@@ -139,6 +146,7 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
+		CreateAppDir:        false,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
@@ -153,36 +161,10 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 		},
 	}
 
-	// the tmp dir has the app name in it now
-	subdirs, err := ioutil.ReadDir(tmpRoot)
-	if err != nil {
-		fmt.Printf("unable to read dir: %s\n", err.Error())
-		return 1
-	}
-
-	uploadRootDir := ""
-	for _, subdir := range subdirs {
-		if subdir.IsDir() {
-			if subdir.Name() == "." {
-				continue
-			}
-			if subdir.Name() == ".." {
-				continue
-			}
-
-			uploadRootDir = path.Join(tmpRoot, subdir.Name())
-			break
-		}
-	}
-	if uploadRootDir == "" {
-		fmt.Println("failed to find upload root dir")
-		return 1
-	}
-
 	paths := []string{
-		path.Join(uploadRootDir, "upstream"),
-		path.Join(uploadRootDir, "base"),
-		path.Join(uploadRootDir, "overlays"),
+		path.Join(tmpRoot, "upstream"),
+		path.Join(tmpRoot, "base"),
+		path.Join(tmpRoot, "overlays"),
 	}
 
 	if err := tarGz.Archive(paths, outputFile); err != nil {
@@ -192,7 +174,6 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 
 	return 0
 }
-
 
 func readCursorFromPath(rootPath string) (string, error) {
 	installationFilePath := path.Join(rootPath, "upstream", "userdata", "installation.yaml")
@@ -221,4 +202,3 @@ func readCursorFromPath(rootPath string) (string, error) {
 }
 
 func main() {}
-

@@ -26,6 +26,7 @@ type PullOptions struct {
 	ExcludeKotsKinds    bool
 	ExcludeAdminConsole bool
 	SharedPassword      string
+	CreateAppDir        bool
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -101,7 +102,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	writeUpstreamOptions := upstream.WriteOptions{
 		RootDir:             pullOptions.RootDir,
-		CreateAppDir:        true,
+		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 	}
