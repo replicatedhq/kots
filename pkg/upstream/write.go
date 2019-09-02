@@ -105,6 +105,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 		},
 		Spec: kotsv1beta1.InstallationSpec{
 			UpdateCursor: u.UpdateCursor,
+			VersionLabel: u.VersionLabel,
 		},
 	}
 	err = ioutil.WriteFile(path.Join(renderDir, "userdata/installation.yaml"), mustMarshalInstallation(&installation), 0644)

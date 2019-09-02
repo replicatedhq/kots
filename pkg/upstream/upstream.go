@@ -11,4 +11,5 @@ type Upstream struct {
 	Type         string
 	Files        []UpstreamFile
 	UpdateCursor string
+	VersionLabel string
 }

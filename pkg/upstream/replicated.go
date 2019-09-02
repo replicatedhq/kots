@@ -38,6 +38,7 @@ type App struct {
 
 type Release struct {
 	UpdateCursor string
+	VersionLabel string
 	Manifests    map[string][]byte
 }
 
@@ -103,6 +104,7 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 		Files:        files,
 		Type:         "replicated",
 		UpdateCursor: release.UpdateCursor,
+		VersionLabel: release.VersionLabel,
 	}
 
 	return upstream, nil
@@ -231,6 +233,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	defer getResp.Body.Close()
 
 	updateCursor := getResp.Header.Get("X-Replicated-Sequence")
+	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
@@ -240,6 +243,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	release := Release{
 		Manifests:    make(map[string][]byte),
 		UpdateCursor: updateCursor,
+		VersionLabel: versionLabel,
 	}
 	tarReader := tar.NewReader(gzf)
 	i := 0

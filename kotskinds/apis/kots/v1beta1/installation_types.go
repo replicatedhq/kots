@@ -23,6 +23,7 @@ import (
 // InstallationSpec defines the desired state of InstallationSpec
 type InstallationSpec struct {
 	UpdateCursor string `json:"updateCursor,omitEmpty"`
+	VersionLabel string `json:"versionLabel,omitEmpty"`
 }
 
 // InstallationStatus defines the observed state of Installation
