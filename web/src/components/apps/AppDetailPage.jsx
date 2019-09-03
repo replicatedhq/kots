@@ -29,6 +29,7 @@ import Loader from "../shared/Loader";
 import SupportBundleList from "../troubleshoot/SupportBundleList";
 import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
 import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
+import AppSettings from "./AppSettings";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -401,6 +402,11 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/license" render={() =>
                       <WatchLicense
                         watch={app}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/airgap-settings" render={() =>
+                      <AppSettings
+                        app={app}
                       />
                     } />
                     <Route component={NotFound} />

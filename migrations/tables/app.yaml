@@ -42,3 +42,13 @@ spec:
         type: timestamp without time zone
       - name: is_all_users
         type: boolean
+      - name: registry_hostname
+        type: text
+      - name: registry_username
+        type: text
+      - name: registry_password
+        type: text
+      - name: namespace
+        type: text
+      - name: last_registry_sync
+        type: timestamp without time zone  

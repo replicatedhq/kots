@@ -59,3 +59,11 @@ export const deployKotsVersionRaw = `
 `;
 
 export const deployKotsVersion = gql(deployKotsVersionRaw);
+
+export const updateRegistryDetailsRaw = `
+  mutation updateRegistryDetails($registryDetails: AppRegistryDetails!) {
+    updateRegistryDetails(registryDetails: $registryDetails)
+  }
+`;
+
+export const updateRegistryDetails = gql(updateRegistryDetailsRaw);

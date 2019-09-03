@@ -78,6 +78,15 @@ export default [
       return Boolean(watch.name);
     }
   },
+  {
+    tabName: "airgap-settings",
+    displayName: "Airgap settings",
+    to: (slug) => `/app/${slug}/airgap-settings`,
+    displayRule: watch => {
+      // TODO: show only if you're in an airgapped install
+      return Boolean(watch.name);
+    }
+  },
   // {
   //   tabName: "integrations",
   //   displayName: "Integrations",

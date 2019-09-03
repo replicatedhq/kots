@@ -158,3 +158,16 @@
   }
 
 }
+
+
+.AirgapSettings--wrapper {
+  max-width: 415px;
+  width: 100%;
+
+  .test-connection-box {
+    padding: 14px 12px;
+    border-radius: 4px;
+    background-color: #F5F8FC;
+    border: 1px solid #C4C8CA;
+  }
+}

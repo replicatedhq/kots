@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp, KotsVersion, KotsAppMetadata } from "../";
+import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails } from "../";
 import { Cluster } from "../../cluster";
 
 export function KotsQueries(stores: Stores) {
@@ -82,6 +82,11 @@ export function KotsQueries(stores: Stores) {
       }
 
       return versions;
+    },
+
+    async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails> {
+      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
+      return await stores.kotsAppStore.getAppRegistryDetails(appId);
     },
 
     // TODO: This code is currently duplicated between kots apps and wathes.
