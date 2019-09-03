@@ -38,7 +38,9 @@ func PullCmd() *cobra.Command {
 				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
+				CreateAppDir:        true,
 			}
+
 			renderDir, err := pull.Pull(args[0], pullOptions)
 			if err != nil {
 				return err

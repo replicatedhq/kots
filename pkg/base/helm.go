@@ -101,13 +101,6 @@ func renderHelm(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, erro
 		baseFiles = cleanedBaseFiles
 	}
 
-	// Add a file with the update cursor
-	cursorFile := BaseFile{
-		Path:    ".kotsCursor",
-		Content: []byte(u.UpdateCursor),
-	}
-	baseFiles = append(baseFiles, cursorFile)
-
 	return &Base{
 		Files: baseFiles,
 	}, nil

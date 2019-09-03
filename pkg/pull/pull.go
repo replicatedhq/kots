@@ -26,6 +26,7 @@ type PullOptions struct {
 	ExcludeKotsKinds    bool
 	ExcludeAdminConsole bool
 	SharedPassword      string
+	CreateAppDir        bool
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -101,7 +102,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	writeUpstreamOptions := upstream.WriteOptions{
 		RootDir:             pullOptions.RootDir,
-		CreateAppDir:        true,
+		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 	}
@@ -171,7 +172,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	return path.Join(pullOptions.RootDir, u.Name, u.GetBaseDir(writeUpstreamOptions)), nil
+	return path.Join(pullOptions.RootDir, u.Name), nil
 }
 
 func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {

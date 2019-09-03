@@ -47,10 +47,6 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) boo
 // ShouldBeIncludedInBaseFilesystem attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
 func (f BaseFile) ShouldBeIncludedInBaseFilesystem(excludeKotsKinds bool) bool {
-	if f.Path == ".kotsCursor" {
-		return true
-	}
-
 	o := OverlySimpleGVK{}
 
 	if err := yaml.Unmarshal(f.Content, &o); err != nil {
