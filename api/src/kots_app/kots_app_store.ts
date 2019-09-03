@@ -75,7 +75,7 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string): Promise<void> {
     let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
     let v: any[] = [
       id,
@@ -93,7 +93,7 @@ export class KotsAppStore {
       newSequence,
       parentSequence,
       new Date(),
-      "??",
+      versionLabel,
       "pending"
     ];
 
