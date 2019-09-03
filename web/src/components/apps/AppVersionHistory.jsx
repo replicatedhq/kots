@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Loader from "../shared/Loader";
 import ActiveDownstreamVersionRow from "../watches/ActiveDownstreamVersionRow";
-
+import { isSingleTenant } from "../../utilities/utilities";
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
 
@@ -50,7 +50,7 @@ export default function AppVersionHistory(props) {
               {checkingForUpdates ?
                 <Loader size="32" />
               :
-                <button className="btn secondary green" onClick={props.onCheckForUpdates}>Check for updates</button>
+                <button className="btn secondary green" onClick={isSingleTenant() ? props.onUploadNewVersion : props.onCheckForUpdates}>{isSingleTenant() ? "Upload new version" : "Check for updates"}</button>
               }
               {updateText}
             </div>
