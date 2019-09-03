@@ -5,6 +5,4 @@ bases:
   # - ../../../worker/kustomize/overlays/dev
   - ../../../operator/kustomize/overlays/dev
   - ../../../migrations/kustomize/overlays/dev
-
-resources:
-  - ./minio/minio.yaml
+  - ./minio

@@ -7,9 +7,10 @@ import { putObject } from "../util/s3";
 import path from "path";
 import tmp from "tmp";
 import fs from "fs";
-import { extractDownstreamNamesFromTarball } from "../util/tar";
+import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
+import yaml from "js-yaml";
 
 const GoString = Struct({
   p: "string",
@@ -18,8 +19,50 @@ const GoString = Struct({
 
 function kots() {
   return ffi.Library("/lib/kots.so", {
-    PullFromLicense: [GoString, [GoString, GoString, GoString]],
+    PullFromLicense: ["longlong", [GoString, GoString, GoString]],
+    UpdateCheck: ["longlong", [GoString]],
   });
+}
+
+export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
+  // We need to include the last archive because if there is an update, the ffi function will update it
+  const tmpDir = tmp.dirSync();
+  const archive = path.join(tmpDir.name, "archive.tar.gz");
+  try {
+    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
+
+    const archiveParam = new GoString();
+    archiveParam["p"] = archive;
+    archiveParam["n"] = archive.length;
+
+    const isUpdateAvailable = kots().UpdateCheck(archiveParam);
+
+    if (isUpdateAvailable < 0) {
+      console.log("error checking for updates")
+      return false;
+    }
+
+    if (isUpdateAvailable > 0) {
+      // if there was an update available, expect that the new archive is in the smae place as the one we pased in
+      const params = await Params.getParams();
+      const buffer = fs.readFileSync(archive);
+      const newSequence = app.currentSequence! + 1;
+      const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
+      await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+      const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+
+      const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
+      for (const clusterId of clusterIds) {
+        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId);
+      }
+    }
+
+    return isUpdateAvailable > 0;
+  } finally {
+    tmpDir.removeCallback();
+  }
 }
 
 export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
@@ -44,12 +87,16 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       return;
     }
 
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, "replicated://sentry-enterprise", licenseData);
+    const parsedLicense = yaml.safeLoad(licenseData);
+    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData);
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
@@ -63,7 +110,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       }
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createKotsAppVersion(kotsApp.id, 0, "??", "0", undefined, undefined, cluster.id, kotsApp.currentSequence);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id);
     }
 
     return kotsApp;

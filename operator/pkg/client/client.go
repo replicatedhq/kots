@@ -37,7 +37,9 @@ func (c *Client) Run() error {
 	for {
 		desiredState, err := getDesiredStateFromKotsadmServer(c.APIEndpoint, c.Token)
 		if err != nil {
-			return errors.Wrap(err, "failed to get desired state from server")
+			fmt.Printf("failed to get destired state, waiting to try again: %s\n", err.Error())
+			time.Sleep(time.Minute)
+			continue
 		}
 
 		// Deploy

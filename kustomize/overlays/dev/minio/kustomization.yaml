@@ -1,0 +1,6 @@
+resources:
+  - ./init.yaml
+  - ./configmap.yaml
+  - ./service.yaml
+  - ./secret.yaml
+  - ./statefulset.yaml

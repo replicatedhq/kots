@@ -3,6 +3,7 @@ package applier
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/pkg/errors"
@@ -79,10 +80,15 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 		args = append(args, "--dry-run")
 	}
 
+	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
 	if namespace != "." {
+		targetNamespace = namespace
+	}
+
+	if targetNamespace != "" {
 		args = append(args, []string{
 			"-n",
-			namespace,
+			targetNamespace,
 		}...)
 	}
 
