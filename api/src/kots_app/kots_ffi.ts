@@ -55,7 +55,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
-        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId);
+        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, cursorAndVersion.versionLabel);
       }
     }
 
@@ -110,7 +110,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       }
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
     }
 
     return kotsApp;

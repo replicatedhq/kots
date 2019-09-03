@@ -139,7 +139,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id);
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
     }
 
 
@@ -174,7 +174,7 @@ export class KotsAPI {
 
     const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
     for (const clusterId of clusterIds) {
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId);
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel);
     }
 
     return {
