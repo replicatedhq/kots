@@ -199,6 +199,10 @@ class AppDetailPage extends Component {
     })
   }
 
+  handleUploadNewVersionClick = () => {
+    this.props.history.push("/airgap");
+  }
+
   /**
    * Refetch all the GraphQL data for this component and all its children
    *
@@ -359,6 +363,7 @@ class AppDetailPage extends Component {
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
+                        onUploadNewVersion={this.handleUploadNewVersionClick}
                         onCheckForUpdates={this.onCheckForUpdates}
                         checkingForUpdates={this.state.checkingForUpdates}
                         checkingUpdateText={checkingUpdateText}
