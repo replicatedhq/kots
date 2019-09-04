@@ -1,10 +1,11 @@
 import _ from "lodash";
 import { Context } from "../../context";
 import yaml from "js-yaml";
+import fs from "fs";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsAppCheckForUpdate } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsAppCheckForUpdate, kotsAppFromAirgapData } from "../kots_ffi";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -48,8 +49,41 @@ export function KotsMutations(stores: Stores) {
         }
       }
 
+      if (parsedLicense.spec.isAirgapSupported) {
+        // TODO: this needs to be in DB
+        fs.writeFileSync("/tmp/license.rli", value);
+      } else {
+        const name = parsedLicense.spec.appSlug.replace("-", " ")
+        await kotsAppFromLicenseData(value, name, downstream.title, stores);  
+      }
+      return true;
+    },
+
+    async getAirgapPutUrl(root: any, args: any, context: Context) {
+      const { filename } = args;
+      const url = await stores.kotsAppStore.getAirgapBundlePutUrl(filename);
+      return url;
+    },
+
+    async markAirgapBundleUploaded(root: any, args: any, context: Context) {
+      const { filename } = args;
+      // TODO: this needs to come from DB
+      const licenseData = fs.readFileSync("/tmp/license.rli").toString();
+      const parsedLicense = yaml.safeLoad(licenseData);
+
+      const clusters = await stores.clusterStore.listAllUsersClusters();
+      let downstream;
+      for (const cluster of clusters) {
+        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+          downstream = cluster;
+        }
+      }
+
+      const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
+
       const name = parsedLicense.spec.appSlug.replace("-", " ")
-      await kotsAppFromLicenseData(value, name, downstream.title, stores);
+      await kotsAppFromAirgapData(licenseData, url, name, downstream.title, stores);  
+
       return true;
     },
 

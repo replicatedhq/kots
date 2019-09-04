@@ -18,6 +18,7 @@ export class Params {
   readonly shipEditBaseURL: string;
   readonly shipWatchBaseURL: string;
   readonly shipOutputBucket: string;
+  readonly airgapBucket: string;
   readonly sigsciRpcAddress: string;
   readonly shipApiEndpoint: string;
   readonly skipDeployToWorker: string;
@@ -44,6 +45,7 @@ export class Params {
     shipEditBaseURL,
     shipWatchBaseURL,
     shipOutputBucket,
+    airgapBucket,
     sigsciRpcAddress,
     shipApiEndpoint,
     skipDeployToWorker,
@@ -69,6 +71,7 @@ export class Params {
     this.shipEditBaseURL = shipEditBaseURL;
     this.shipWatchBaseURL = shipWatchBaseURL;
     this.shipOutputBucket = shipOutputBucket;
+    this.airgapBucket = airgapBucket;
     this.sigsciRpcAddress = sigsciRpcAddress;
     this.shipApiEndpoint = shipApiEndpoint;
     this.skipDeployToWorker = skipDeployToWorker;
@@ -101,6 +104,7 @@ export class Params {
       bugsnagKey: await param("BUGSNAG_KEY", "/shipcloud/bugsnag/key", false),
       sessionKey: await param("SESSION_KEY", "/shipcloud/session/key", true),
       shipOutputBucket: await param("S3_BUCKET_NAME", "/shipcloud/s3/ship_output_bucket", false),
+      airgapBucket: await param("AIRGAP_BUNDLE_S3_BUCKET", "/shipcloud/airgap_bucket_name", false),
       sigsciRpcAddress: await param("SIGSCI_RPC_ADDRESS", "/shipcloud/sigsci_rpc_address", false),
       shipApiEndpoint: process.env["SHIP_API_ENDPOINT"],
       skipDeployToWorker: process.env["SKIP_DEPLOY_TO_WORKER"],

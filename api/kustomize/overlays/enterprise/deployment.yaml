@@ -34,6 +34,9 @@ spec:
             - name: S3_BUCKET_NAME
               value: >
                 {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}ship-enterprise{{repl else}}{{repl ConfigOption "s3_bucket"}}{{repl end}}
+            - name: AIRGAP_BUNDLE_S3_BUCKET
+              value: >
+                {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}airgap-ship-enterprise{{repl else}}{{repl ConfigOption "airgap_s3_bucket"}}{{repl end}}
             - name: S3_ACCESS_KEY_ID
               value: >
                 {{repl if ConfigOptionEquals "s3_type" "s3_type_embedded"}}{{repl ConfigOption "embedded_s3_access_key_id"}}{{repl else}}{{repl ConfigOption "s3_access_key_id"}}{{repl end}}

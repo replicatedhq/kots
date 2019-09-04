@@ -38,6 +38,20 @@ export const uploadKotsLicenseRaw = `
 `
 export const uploadKotsLicense = gql(uploadKotsLicenseRaw);
 
+export const getAirgapPutUrlRaw = `
+  mutation getAirgapPutUrl($filename: String!) {
+    getAirgapPutUrl(filename: $filename)
+  }
+`
+export const getAirgapPutUrl = gql(getAirgapPutUrlRaw);
+
+export const markAirgapBundleUploadedRaw = `
+  mutation markAirgapBundleUploaded($filename: String!) {
+    markAirgapBundleUploaded(filename: $filename)
+  }
+`
+export const markAirgapBundleUploaded = gql(markAirgapBundleUploadedRaw);
+
 export const deployKotsVersionRaw = `
   mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterId: String!) {
     deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterId: $clusterId)
