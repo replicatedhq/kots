@@ -4,7 +4,7 @@ export GOPROXY=https://proxy.golang.org
 
 .PHONY: test
 test:
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	go test ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
 
 .PHONY: kots
 kots: fmt vet
@@ -12,7 +12,7 @@ kots: fmt vet
 
 .PHONY: ffi
 ffi: fmt vet
-	go build -o bin/kots.so -buildmode=c-shared ffi/main.go
+	go build -o bin/kots.so -buildmode=c-shared ./ffi/...
 
 .PHONY: fmt
 fmt:
