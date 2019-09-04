@@ -104,7 +104,7 @@ class UploadAirgapBundle extends React.Component {
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in air gapped environment</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
             </div>
             <div className="u-marginTop--30">
               <AirgapRegistrySettings
@@ -128,8 +128,8 @@ class UploadAirgapBundle extends React.Component {
                     </div>
                     :
                     <div className="u-textAlign--center">
-                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your air gap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a air gap bundle.</p>
+                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
                     </div>
                   }
                 </Dropzone>
@@ -142,7 +142,7 @@ class UploadAirgapBundle extends React.Component {
                     onClick={this.uploadAirgapBundle}
                     disabled={fileUploading || !hasFile}
                   >
-                    {fileUploading ? "Uploading" : "Upload air gap bundle"}
+                    {fileUploading ? "Uploading" : "Upload airgap bundle"}
                   </button>
                 </div>
               }
@@ -155,7 +155,7 @@ class UploadAirgapBundle extends React.Component {
           </div>
         </div>
         <div className="u-marginTop--20">
-          <button className="btn primary large">Install {appName} online</button>
+          <button className="btn secondary green large">Download {appName} from the internet</button>
         </div>
       </div>
     );
