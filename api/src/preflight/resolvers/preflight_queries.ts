@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { PreflightResult } from "../";
+import { PreflightResult, KotsPreflightResult } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
@@ -25,5 +25,17 @@ export function PrefightQueries(stores: Stores) {
 
       return preflights;
     },
+
+    async getKotsPreflightResult(root: any, args: any, context: Context): Promise<KotsPreflightResult> {
+      const { appId, clusterId, sequence } = args;
+
+      const result = await stores.preflightStore.getKotsPreflightResult(appId, clusterId, sequence);
+      return result;
+    },
+
+    async getLatestKotsPreflightResult(root: any, args: any, context: Context): Promise<KotsPreflightResult> {
+      const result = await stores.preflightStore.getLatestKotsPreflightResult();
+      return result;
+    }
   };
 }

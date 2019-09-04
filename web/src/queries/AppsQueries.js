@@ -497,3 +497,25 @@ export const getAppRegistryDetailsRaw = `
 `;
 
 export const getAppRegistryDetails = gql(getAppRegistryDetailsRaw);
+
+export const getKotsPreflightResultRaw = `
+  query getKotsPreflightResult($appId: String!, $clusterId: String!, $sequence: Int!) {
+    getKotsPreflightResult(appId: $appId, clusterId: $clusterId, sequence: $sequence) {
+      result
+      updatedAt
+    }
+  }
+`;
+
+export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
+
+export const getLatestKotsPreflightRaw = `
+  query getLatestKotsPreflight() {
+    getLatestKotsPreflightResult() {
+      result
+      updatedAt
+    }
+  }
+`;
+
+export const getLatestKotsPreflight = gql(getLatestKotsPreflightRaw);

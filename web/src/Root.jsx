@@ -15,6 +15,7 @@ import VersionHistory from "./components/watches/VersionHistory";
 import DiffShipReleases from "./components/watches/DiffShipReleases";
 import DiffGitHubReleases from "./components/watches/DiffGitHubReleases";
 import StateFileViewer from "./components/state/StateFileViewer";
+import PreflightResultPage from "./components/PreflightResultPage";
 import PreflightCheckPage from "./components/PreflightCheckPage";
 import Ship from "./components/Ship";
 import ShipInitPre from "./components/ShipInitPre";
@@ -252,6 +253,7 @@ class Root extends Component {
 
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
+                    <Route path="/preflight" render={props => <PreflightResultPage {...props} /> }/>
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} />} />
                     <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />

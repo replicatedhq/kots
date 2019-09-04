@@ -4,5 +4,13 @@ const PreflightResult = `
     result: String!
     createdAt: String!
   }
-`
-export default [ PreflightResult ];
+`;
+
+const KotsPreflightResult = `
+  type KotsPreflightResult {
+    result: String
+    updatedAt: String
+  }
+`;
+
+export default [ PreflightResult, KotsPreflightResult ];

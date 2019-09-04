@@ -3,6 +3,8 @@ import randomstring from "randomstring";
 
 import { PreflightSpec, PreflightResult } from "./";
 import { ReplicatedError } from "../server/errors";
+import { KotsPreflightResult } from "./preflight";
+
 export class PreflightStore {
   constructor(
     private readonly pool: pg.Pool
@@ -98,5 +100,66 @@ export class PreflightStore {
     ];
 
     await this.pool.query(q,v);
+  }
+
+  async getKotsPreflightSpec(appId: string, sequence: number): Promise<string> {
+    const q = `
+      SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2
+    `;
+
+    const result = await this.pool.query(q, [appId, sequence]);
+
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`Unable to find Preflight Spec with appId ${appId}`);
+    }
+
+    return result.rows[0].preflight_spec;
+  }
+
+  async getKotsPreflightResult(appId: string, clusterId: string, sequence: number): Promise<KotsPreflightResult> {
+    const q = `
+      SELECT preflight_result, preflight_result_updated_at
+        FROM app_downstream_version
+        WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3
+    `;
+
+    const v = [ appId, clusterId, sequence ];
+
+    const result = await this.pool.query(q,v);
+
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`Couldn't find preflight spec with appId: ${appId}, clusterId: ${clusterId}, sequence: ${sequence}`);
+    }
+
+    const kotsPreflightResult = new KotsPreflightResult();
+    kotsPreflightResult.result = result.rows[0].preflight_result;
+    kotsPreflightResult.updatedAt = result.rows[9].preflight_result_updated_at;
+
+    return kotsPreflightResult;
+
+  }
+
+  async getLatestKotsPreflightResult(): Promise<KotsPreflightResult> {
+    const q = `SELECT id FROM app WHERE current_sequence = 0 ORDER BY created_at DESC LIMIT 1`;
+    const r = await this.pool.query(q);
+    const appId = r.rows[0].id;
+
+    const qq = `
+      SELECT preflight_result, preflight_result_updated_at
+        FROM app_downstream_version
+      WHERE sequence = 0 AND app_id = $1
+    `;
+
+    const vv = [ appId ];
+
+    const result = await this.pool.query(qq,vv);
+
+    const kotsPreflightResult = new KotsPreflightResult();
+    kotsPreflightResult.result = result.rows[0].preflight_result;
+    kotsPreflightResult.updatedAt = result.rows[9].preflight_result_updated_at;
+
+    return kotsPreflightResult;
+
+
   }
 }

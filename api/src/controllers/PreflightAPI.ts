@@ -6,74 +6,65 @@ import { Params } from "../server/params";
 
 @Controller("/api/v1/preflight")
 export class PreflightAPI {
-  @Get("/*")
+  @Get("/:appSlug/:clusterSlug/:sequence")
   async getPreflightStatus(
     @Req() request: Request,
     @Res() response: Response,
 
   ): Promise<void> {
-    const splitPath = request.path.split('/').slice(1);
-    let watchSlug;
-    let clusterSlug;
+    const { appSlug, clusterSlug, sequence } = request.params;
 
-    if (splitPath.length === 3) {
-      watchSlug = splitPath.slice(0, 2).join('/');
-      clusterSlug = splitPath[2];
-    } else if (splitPath.length === 2) {
-      watchSlug = splitPath[0];
-      clusterSlug = splitPath[1];
-    } else {
+    if (!appSlug || !clusterSlug || !sequence) {
       response.send(400);
-      return;
     }
+
+    const seqInt = parseInt(sequence, 10);
 
     try {
       // Fetch YAML from the database and return to client with injected key
-      const preflightSpec = await request.app.locals.stores.preflightStore.getPreflightSpecBySlug(watchSlug);
+      const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(appSlug);
 
-      if (!preflightSpec) {
-        console.log(`Preflight spec for slug: ${watchSlug} not found`);
+      const preflightSpecYaml = await request.app.locals.stores.preflightStore.getKotsPreflightSpec(appId, seqInt);
+
+      if (!preflightSpecYaml) {
+        console.log(`Preflight spec for slug: ${appSlug} not found`);
         response.send(404);
         return;
       }
-      const specString = preflightSpec.spec;
+
+      const specJson = jsYaml.load(preflightSpecYaml);
       const params = await Params.getParams();
-      const putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${watchSlug}/${clusterSlug}`;
-      const parsedPreflightSpec = jsYaml.load(specString);
-      parsedPreflightSpec.spec.uploadResultsTo = putUrl;
+      const putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+      specJson.spec.uploadResultsTo = putUrl;
 
-      response.send(200, parsedPreflightSpec);
-
+      response.send(200, specJson);
 
     } catch (err) {
       throw err;
     }
-
   }
 
-  @Post("/*")
+  @Post("/:appSlug/:clusterSlug/:sequence")
   async putPreflightStatus(
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<void> {
 
-    const splitPath = request.path.split('/').slice(1);
-    let watchSlug;
+    const { appSlug, clusterSlug, sequence } = request.params;
+    const seqInt = parseInt(sequence, 10);
 
-    if (splitPath.length === 3) {
-      watchSlug = splitPath.slice(0, 2).join('/');
-
-    } else if (splitPath.length === 2) {
-      watchSlug = splitPath[0];
-
-    } else {
+    if (!appSlug || !clusterSlug || !sequence) {
       response.send(400);
-      return;
+    }
+    const preflightResult = request.body;
+    const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(appSlug);
+    const clusterId = await request.app.locals.stores.clusterStore.getIdFromSlug(clusterSlug);
+
+    if (!appId || !clusterId) {
+      response.send(400);
     }
 
-    // Write preflight results to the database
-    const result = request.body;
-    await request.app.locals.stores.preflightStore.addPreflightResult(watchSlug, result);
+    await request.app.locals.stores.kotsAppStore.addKotsPreflight(appId, clusterId, seqInt, preflightResult);
     response.send(200);
   }
 }
