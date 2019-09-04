@@ -84,7 +84,7 @@ export function KotsQueries(stores: Stores) {
       return versions;
     },
 
-    async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails> {
+    async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails | {}> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       return await stores.kotsAppStore.getAppRegistryDetails(appId);
     },

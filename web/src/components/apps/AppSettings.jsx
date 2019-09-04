@@ -6,6 +6,7 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 import { getAppRegistryDetails } from "@src/queries/AppsQueries";
 import { updateRegistryDetails } from "@src/mutations/AppsMutations";
 import Loader from "../shared/Loader";
+import { Utilities } from "../../utilities/utilities";
 
 class AppSettings extends Component {
   
@@ -38,11 +39,16 @@ class AppSettings extends Component {
     }
   }
 
+  testRegistryConnection = () => {
+    console.log("implement test");
+  }
+
   componentDidUpdate(lastProps) {
     const { getKotsAppRegistryQuery } = this.props;
     if (getKotsAppRegistryQuery.getAppRegistryDetails && getKotsAppRegistryQuery.getAppRegistryDetails !== lastProps.getKotsAppRegistryQuery.getAppRegistryDetails) {
       this.setState({
         hostname: getKotsAppRegistryQuery.getAppRegistryDetails.registryHostname,
+        pingedEndpoint: getKotsAppRegistryQuery.getAppRegistryDetails.registryHostname,
         username: getKotsAppRegistryQuery.getAppRegistryDetails.registryUsername,
         password: getKotsAppRegistryQuery.getAppRegistryDetails.registryPassword,
         namespace: getKotsAppRegistryQuery.getAppRegistryDetails.namespace,
@@ -87,7 +93,18 @@ class AppSettings extends Component {
                 <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
               </div>
             </div>
-            <div className="flex u-marginBottom--20">
+            <div className="test-connection-box u-marginBottom--20">
+              <div className="flex">
+                <div>
+                  <button type="button" className="btn secondary" onClick={this.testRegistryConnection}>Test connection</button>
+                </div>
+                <div className="flex-column justifyContent--center">
+                  <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+                </div>
+              </div>
+              <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">Last connection test on {Utilities.dateFormat(lastSync, "MMMM D, YYYY")}</p>
+            </div>
+            <div className="flex u-marginBottom--5">
               <div className="flex1">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace</p>
                 <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Changing the namespace will rewrite all of your airgap images and push them to your registry.</p>
@@ -95,17 +112,6 @@ class AppSettings extends Component {
               </div>
             </div>
           </form>
-          <div className="test-connection-box u-marginTop--5 u-marginBottom--5">
-            <div className="flex">
-              <div>
-                <button className="btn secondary">Test connection</button>
-              </div>
-              <div className="flex-column justifyContent--center">
-                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--10">Last tested on {lastSync}</p>
-              </div>
-            </div>
-            <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Successful ping to [artifactory.some-big-bank.com]</p>
-          </div>
           <div className="u-marginTop--20">
             <button className="btn primary" onClick={this.onSubmit}>Save changes</button>
           </div>
