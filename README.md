@@ -3,7 +3,7 @@
 ## CLI
 
 ### `kots install`
-The `install` command is the recommended way to learn kots. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm`) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated apps.
+The `install` command is the recommended way to learn kots. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated apps.
 
 To try it, just choose a helm chart ([Elasticsearch](https://github.com/elastic/helm-charts/tree/master/elasticsearch)) and run the following command:
 
