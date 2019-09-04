@@ -78,6 +78,7 @@ data:
     connectToMinio $scheme
     # Create the bucket
     createBucket shipbucket none false
+    createBucket airgap none false
 kind: ConfigMap
 metadata:
   labels:

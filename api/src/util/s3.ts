@@ -42,13 +42,14 @@ export async function putObject(params: Params, filepath: string, body: any, buc
    });
 }
 
-export async function signGetRequest(params: Params, bucket: string, key: string): Promise<any> {
+export async function signGetRequest(params: Params, bucket: string, key: string, expires?: number): Promise<any> {
   const s3 = getS3(params);
 
   return new Promise((resolve, reject) => {
     const params = {
       Bucket: bucket,
       Key: key,
+      Expires: expires,
     };
 
     s3.getSignedUrl("getObject", params, (err: any, url: string) => {
@@ -58,7 +59,6 @@ export async function signGetRequest(params: Params, bucket: string, key: string
       }
 
       if (process.env["S3_ENDPOINT"]) {
-
         url = url.replace(process.env["S3_ENDPOINT"]!, `${process.env["S3_ENDPOINT"]}${bucket}/`);
       }
 
@@ -67,7 +67,7 @@ export async function signGetRequest(params: Params, bucket: string, key: string
   });
 }
 
-export async function signPutRequest(params: Params, bucket: string, key: string, contentType: string): Promise<string> {
+export async function signPutRequest(params: Params, bucket: string, key: string, contentType: string, expires?: number): Promise<string> {
   const s3 = getS3(params);
 
   return new Promise((resolve, reject) => {
@@ -75,6 +75,7 @@ export async function signPutRequest(params: Params, bucket: string, key: string
       Bucket: bucket,
       Key: key,
       ContentType: contentType,
+      Expires: expires,
     };
 
     s3.getSignedUrl("putObject", params, (err, uploadUrl) => {

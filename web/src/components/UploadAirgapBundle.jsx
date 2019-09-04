@@ -1,8 +1,9 @@
 import * as React from "react";
-import { compose, withApollo } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import { getAirgapPutUrl, markAirgapBundleUploaded } from "../mutations/AppsMutations";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -10,7 +11,8 @@ import "../scss/components/Login.scss";
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
-    fileUploading: false
+    fileUploading: false,
+    filePutUrl: ""
   }
 
   clearFile = () => {
@@ -18,13 +20,35 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
-    const { onUploadSuccess } = this.props;
+    // const { onUploadSuccess } = this.props;
     this.setState({ fileUploading: true });
     try {
-      // TODO: uploadBundle here
-      onUploadSuccess().then((res) => {
-        this.props.history.replace(`/app/${res[0].slug}`);
+      let response = await fetch(this.state.filePutUrl, {
+        method: "PUT",
+        body: this.state.bundleFile,
+        headers: {
+          "Content-Type": "application/tar+gzip",
+        },
       });
+      await response;
+
+      this.props.markAirgapBundleUploaded(this.state.bundleFile.name)
+        .then(async (response) => {
+          this.setState({ fileUploading: false });
+          // this.props.history.replace(`/app/${res[0].slug}`);
+
+
+          // if (this.props.submitCallback && typeof this.props.submitCallback === "function") {
+          //   this.props.submitCallback(response.data.markSupportBundleUploaded.id);
+          // }
+        })
+        .catch((err) => {
+          this.setState({ fileUploading: false });
+        })
+
+      // onUploadSuccess().then((res) => {
+      //   this.props.history.replace(`/app/${res[0].slug}`);
+      // });
     } catch (err) {
       this.setState({ fileUploading: false });
       console.log(err);
@@ -32,7 +56,17 @@ class UploadAirgapBundle extends React.Component {
   }
 
   onDrop = async (files) => {
-    this.setState({ bundleFile: files[0] });
+    const file = files[0];
+    this.props.getAirgapPutUrl(file.name)
+      .then((response) => {
+        this.setState({
+          bundleFile: file,
+          filePutUrl: response.data.getAirgapPutUrl,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   render() {
@@ -106,4 +140,14 @@ class UploadAirgapBundle extends React.Component {
 export default compose(
   withRouter,
   withApollo,
+  graphql(getAirgapPutUrl, {
+    props: ({ mutate }) => ({
+      getAirgapPutUrl: (filename) => mutate({ variables: { filename } })
+    })
+  }),
+  graphql(markAirgapBundleUploaded, {
+    props: ({ mutate }) => ({
+      markAirgapBundleUploaded: (filename) => mutate({ variables: { filename } })
+    })
+  })
 )(UploadAirgapBundle);

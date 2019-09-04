@@ -32,6 +32,8 @@ spec:
               value: http://minio.default.svc.cluster.local:9000/
             - name: S3_BUCKET_NAME
               value: ship-enterprise
+            - name: AIRGAP_BUNDLE_S3_BUCKET
+              value: airgap-ship-enterprise
             - name: S3_ACCESS_KEY_ID
               value: not-a-key
             - name: S3_SECRET_ACCESS_KEY

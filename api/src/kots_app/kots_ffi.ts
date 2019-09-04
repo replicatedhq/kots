@@ -20,6 +20,7 @@ const GoString = Struct({
 function kots() {
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
+    PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString]],
     UpdateCheck: ["longlong", [GoString]],
   });
 }
@@ -83,6 +84,66 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     outParam["n"] = out.length;
 
     const pullResult = kots().PullFromLicense(licenseDataParam, downstreamParam, outParam);
+    if (pullResult > 0) {
+      return;
+    }
+
+    const parsedLicense = yaml.safeLoad(licenseData);
+    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData);
+
+    const params = await Params.getParams();
+    const buffer = fs.readFileSync(out);
+    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
+    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+
+    const downstreams = await extractDownstreamNamesFromTarball(buffer);
+    const clusters = await stores.clusterStore.listAllUsersClusters();
+    for (const downstream of downstreams) {
+      const cluster = _.find(clusters, (c: Cluster) => {
+        return c.title === downstream;
+      });
+
+      if (!cluster) {
+        continue;
+      }
+
+      await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
+    }
+
+    return kotsApp;
+  } catch (err) {
+    console.log(err);
+  } finally {
+    tmpDir.removeCallback();
+  }
+}
+
+export async function kotsAppFromAirgapData(licenseData: string, airgapUrl: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
+  const tmpDir = tmp.dirSync();
+
+  try {
+    const licenseDataParam = new GoString();
+    licenseDataParam["p"] = licenseData;
+    licenseDataParam["n"] = licenseData.length;
+
+    const downstreamParam = new GoString();
+    downstreamParam["p"] = downstreamName;
+    downstreamParam["n"] = downstreamName.length;
+
+    const airgapUrlParam = new GoString();
+    airgapUrlParam["p"] = airgapUrl;
+    airgapUrlParam["n"] = airgapUrl.length;
+
+    const out = path.join(tmpDir.name, "archive.tar.gz");
+    const outParam = new GoString();
+    outParam["p"] = out;
+    outParam["n"] = out.length;
+
+    const pullResult = kots().PullFromAirgap(licenseDataParam, airgapUrlParam, downstreamParam, outParam);
     if (pullResult > 0) {
       return;
     }
