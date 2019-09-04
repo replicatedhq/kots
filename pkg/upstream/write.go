@@ -73,13 +73,13 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 
 	if previousValuesContent != nil {
 		for i, f := range u.Files {
-			if f.Path == "userdata/values.yaml" {
+			if f.Path == path.Join("userdata", "values.yaml") {
 				mergedValues, err := mergeValues(previousValuesContent, f.Content)
 				if err != nil {
 					return errors.Wrap(err, "failed to merge values")
 				}
 
-				err = ioutil.WriteFile(path.Join(renderDir, "userdata/values.yaml"), mergedValues, 0644)
+				err = ioutil.WriteFile(path.Join(renderDir, "userdata", "values.yaml"), mergedValues, 0644)
 				if err != nil {
 					return errors.Wrap(err, "failed to replace values with previous values")
 				}
@@ -108,7 +108,12 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 			VersionLabel: u.VersionLabel,
 		},
 	}
-	err = ioutil.WriteFile(path.Join(renderDir, "userdata/installation.yaml"), mustMarshalInstallation(&installation), 0644)
+	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Join(renderDir, "userdata"), 0755); err != nil {
+			return errors.Wrap(err, "failed to create userdata dir")
+		}
+	}
+	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), mustMarshalInstallation(&installation), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
 	}
