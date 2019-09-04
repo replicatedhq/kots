@@ -7,12 +7,14 @@ import { getAirgapPutUrl, markAirgapBundleUploaded } from "../mutations/AppsMuta
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
+import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
     fileUploading: false,
-    filePutUrl: ""
+    filePutUrl: "",
+    registryDetails: {}
   }
 
   clearFile = () => {
@@ -55,6 +57,18 @@ class UploadAirgapBundle extends React.Component {
     }
   }
 
+  getRegistryDetails = (fields) => {
+    this.setState({
+      ...this.state,
+      registryDetails: {
+        hostname: fields.hostname,
+        username: fields.username,
+        password: fields.password,
+        namespace: fields.namespace
+      }
+    });
+  }
+
   onDrop = async (files) => {
     const file = files[0];
     this.props.getAirgapPutUrl(file.name)
@@ -90,9 +104,17 @@ class UploadAirgapBundle extends React.Component {
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your airgap bundle</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in air gapped environment</p>
             </div>
-            <div className="u-marginTop--30 flex">
+            <div className="u-marginTop--30">
+              <AirgapRegistrySettings
+                app={null}
+                hideCta={true}
+                hideTestConnection={true}
+                gatherDetails={this.getRegistryDetails}
+              />
+            </div>
+            <div className="u-marginTop--20 flex">
               <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                 <Dropzone
                   className="Dropzone-wrapper"
@@ -106,8 +128,8 @@ class UploadAirgapBundle extends React.Component {
                     </div>
                     :
                     <div className="u-textAlign--center">
-                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
+                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your air gap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a air gap bundle.</p>
                     </div>
                   }
                 </Dropzone>
@@ -131,6 +153,9 @@ class UploadAirgapBundle extends React.Component {
               </div>
             }
           </div>
+        </div>
+        <div className="u-marginTop--20">
+          <button className="btn primary large">Install {appName} online</button>
         </div>
       </div>
     );
