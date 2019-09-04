@@ -142,7 +142,7 @@ class UploadAirgapBundle extends React.Component {
                     onClick={this.uploadAirgapBundle}
                     disabled={fileUploading || !hasFile}
                   >
-                    {fileUploading ? "Uploading" : "Upload license"}
+                    {fileUploading ? "Uploading" : "Upload air gap bundle"}
                   </button>
                 </div>
               }
