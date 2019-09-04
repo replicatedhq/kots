@@ -27,6 +27,7 @@ type PullOptions struct {
 	ExcludeAdminConsole bool
 	SharedPassword      string
 	CreateAppDir        bool
+	Silent              bool
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -71,6 +72,11 @@ func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) 
 // specified in pullOptions. It returns the directory that the app was pulled to
 func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log := logger.NewLogger()
+
+	if pullOptions.Silent {
+		log.Silence()
+	}
+
 	log.Initialize()
 
 	uri, err := url.ParseRequestURI(upstreamURI)

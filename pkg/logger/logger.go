@@ -12,21 +12,38 @@ type Logger struct {
 	spinnerStopCh chan bool
 	spinnerMsg    string
 	spinnerArgs   []interface{}
+	isSilent      bool
 }
 
 func NewLogger() *Logger {
 	return &Logger{}
 }
 
+func (l *Logger) Silence() {
+	l.isSilent = true
+}
+
 func (l *Logger) Initialize() {
+	if l.isSilent {
+		return
+	}
+
 	fmt.Println("")
 }
 
 func (l *Logger) Finish() {
+	if l.isSilent {
+		return
+	}
+
 	fmt.Println("")
 }
 
 func (l *Logger) Info(msg string, args ...interface{}) {
+	if l.isSilent {
+		return
+	}
+
 	yellow := color.New(color.FgHiYellow)
 	yellow.Printf("    ")
 	yellow.Println(fmt.Sprintf(msg, args...))
@@ -34,6 +51,10 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
+	if l.isSilent {
+		return
+	}
+
 	if msg == "" {
 		fmt.Println("")
 		return
@@ -45,12 +66,20 @@ func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
+	if l.isSilent {
+		return
+	}
+
 	white := color.New(color.FgHiWhite)
 	white.Printf("    • ")
 	white.Println(fmt.Sprintf(msg, args...))
 }
 
 func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
+	if l.isSilent {
+		return
+	}
+
 	s := spin.New()
 
 	c := color.New(color.FgHiCyan)
@@ -78,6 +107,10 @@ func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
+	if l.isSilent {
+		return
+	}
+
 	s := spin.New()
 
 	c := color.New(color.FgHiCyan)
@@ -105,6 +138,10 @@ func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) FinishChildSpinner() {
+	if l.isSilent {
+		return
+	}
+
 	white := color.New(color.FgHiWhite)
 	green := color.New(color.FgHiGreen)
 
@@ -119,6 +156,10 @@ func (l *Logger) FinishChildSpinner() {
 }
 
 func (l *Logger) FinishSpinner() {
+	if l.isSilent {
+		return
+	}
+
 	white := color.New(color.FgHiWhite)
 	green := color.New(color.FgHiGreen)
 
@@ -133,6 +174,10 @@ func (l *Logger) FinishSpinner() {
 }
 
 func (l *Logger) FinishSpinnerWithError() {
+	if l.isSilent {
+		return
+	}
+
 	white := color.New(color.FgHiWhite)
 	red := color.New(color.FgHiRed)
 
@@ -147,6 +192,10 @@ func (l *Logger) FinishSpinnerWithError() {
 }
 
 func (l *Logger) Error(err error) {
+	if l.isSilent {
+		return
+	}
+
 	c := color.New(color.FgHiRed)
 	c.Printf("  • ")
 	c.Println(fmt.Sprintf("%#v", err))
