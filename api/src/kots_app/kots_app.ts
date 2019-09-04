@@ -249,3 +249,19 @@ export interface KotsAppMetadata {
   name: string;
   iconUri: string;
 }
+
+export interface AppRegistryDetails {
+  appSlug: string;
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+}
+
+export interface KotsAppRegistryDetails {
+  registryHostname: string;
+  registryUsername: string;
+  registryPassword: string;
+  namespace: string;
+  lastSyncedAt: string;
+}

@@ -7,12 +7,14 @@ import { getAirgapPutUrl, markAirgapBundleUploaded } from "../mutations/AppsMuta
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
+import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
     fileUploading: false,
-    filePutUrl: ""
+    filePutUrl: "",
+    registryDetails: {}
   }
 
   clearFile = () => {
@@ -55,6 +57,18 @@ class UploadAirgapBundle extends React.Component {
     }
   }
 
+  getRegistryDetails = (fields) => {
+    this.setState({
+      ...this.state,
+      registryDetails: {
+        hostname: fields.hostname,
+        username: fields.username,
+        password: fields.password,
+        namespace: fields.namespace
+      }
+    });
+  }
+
   onDrop = async (files) => {
     const file = files[0];
     this.props.getAirgapPutUrl(file.name)
@@ -90,9 +104,17 @@ class UploadAirgapBundle extends React.Component {
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your airgap bundle</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
             </div>
-            <div className="u-marginTop--30 flex">
+            <div className="u-marginTop--30">
+              <AirgapRegistrySettings
+                app={null}
+                hideCta={true}
+                hideTestConnection={true}
+                gatherDetails={this.getRegistryDetails}
+              />
+            </div>
+            <div className="u-marginTop--20 flex">
               <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                 <Dropzone
                   className="Dropzone-wrapper"
@@ -120,7 +142,7 @@ class UploadAirgapBundle extends React.Component {
                     onClick={this.uploadAirgapBundle}
                     disabled={fileUploading || !hasFile}
                   >
-                    {fileUploading ? "Uploading" : "Upload license"}
+                    {fileUploading ? "Uploading" : "Upload airgap bundle"}
                   </button>
                 </div>
               }
@@ -131,6 +153,9 @@ class UploadAirgapBundle extends React.Component {
               </div>
             }
           </div>
+        </div>
+        <div className="u-marginTop--20">
+          <button className="btn secondary green large">Download {appName} from the internet</button>
         </div>
       </div>
     );

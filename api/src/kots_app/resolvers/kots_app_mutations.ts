@@ -87,6 +87,14 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
+    async updateRegistryDetails(root: any, args: any, context) {
+      const { appSlug, hostname, username, password, namespace } = args.registryDetails;
+      const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
+      // TODO: encrypt password before setting it to the DB
+      await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
+      return true;
+    },
+
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterId } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);

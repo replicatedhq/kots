@@ -1,7 +1,6 @@
 import pg from "pg";
 import { Params } from "../server/params";
-import { KotsApp } from "./";
-import { KotsVersion } from "./";
+import { KotsApp, KotsVersion, KotsAppRegistryDetails } from "./";
 import { ReplicatedError } from "../server/errors";
 import { signPutRequest, signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
@@ -280,6 +279,31 @@ order by sequence desc`;
       await this.pool.query(q, v);
   }
 
+  async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
+    const q = `select registry_hostname, registry_username, registry_password, namespace, last_registry_sync from app where id = $1`;
+    const v = [
+      appId
+    ];
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`Unable to get registry details for app with the ID of ${appId}`);
+    }
+    return this.mapAppRegistryDetails(result.rows[0]);
+  }
+
+  async updateRegistryDetails(appId: string, hostname: string, username: string, password: string, namespace: string): Promise<void> {
+    const q = `update app set registry_hostname = $1, registry_username = $2, registry_password = $3, namespace = $4, last_registry_sync = $5 where id = $6`;
+    const v = [
+      hostname,
+      username,
+      password,
+      namespace,
+      new Date(),
+      appId,
+    ];
+    await this.pool.query(q, v);
+  }
+
   async listKotsApps(userId?: string): Promise<KotsApp[]> {
     const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1`;
     const v = [userId];
@@ -373,6 +397,9 @@ order by sequence desc`;
     const v = [slug];
 
     const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`Unable to find appId for slug ${slug}`);
+    }
     return result.rows[0].id;
   }
 
@@ -461,4 +488,17 @@ order by sequence desc`;
     const signed = await signGetRequest(this.params, this.params.airgapBucket, filename, 60);
     return signed
   }
+  private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {
+    if (!row) {
+      throw new ReplicatedError("No app provided to map function");
+    }
+    return {
+      registryHostname: row.registry_hostname,
+      registryUsername: row.registry_username,
+      registryPassword: row.registry_password,
+      namespace: row.namespace,
+      lastSyncedAt: row.last_registry_sync,
+    };
+  }
+
 }

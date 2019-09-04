@@ -41,9 +41,31 @@ const KotsAppMetadata = `
   }
 `;
 
+const AppRegistryDetails = `
+  input AppRegistryDetails {
+    appSlug: String!
+    hostname: String!
+    username: String!
+    password: String!
+    namespace: String!
+  }
+`;
+
+const KotsAppRegistryDetails = `
+  type KotsAppRegistryDetails {
+    registryHostname: String
+    registryUsername: String
+    registryPassword: String
+    namespace: String
+    lastSyncedAt: String
+  }
+`;
+
 export default [
   KotsApp,
   KotsDownstream,
   KotsVersion,
   KotsAppMetadata,
+  AppRegistryDetails,
+  KotsAppRegistryDetails,
 ];

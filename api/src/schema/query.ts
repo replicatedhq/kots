@@ -30,6 +30,7 @@ export const Query = `
     listPendingKotsVersions(slug: String!): [KotsVersion]
     listPastKotsVersions(slug: String!): [KotsVersion]
     getCurrentKotsVersion(slug: String!): KotsVersion
+    getAppRegistryDetails(slug: String!): KotsAppRegistryDetails
 
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart

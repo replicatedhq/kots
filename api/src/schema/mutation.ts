@@ -20,6 +20,7 @@ type Mutation {
   getAirgapPutUrl(filename: String!): String
   markAirgapBundleUploaded(filename: String!): Boolean
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterId: String!): Boolean
+  updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch

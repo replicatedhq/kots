@@ -3,6 +3,7 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import yaml from "js-yaml";
 import { uploadKotsLicense } from "../mutations/AppsMutations";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
@@ -22,14 +23,14 @@ class UploadLicenseFile extends React.Component {
   uploadLicenseFile = async () => {
     const { onUploadSuccess } = this.props;
     const { licenseValue } = this.state;
+    const yml = yaml.safeLoad(licenseValue);
+    const airgapEnabled = yml.spec.isAirgapSupported;
     this.setState({ fileUploading: true });
     try {
       await this.props.uploadKotsLicense(licenseValue);
       onUploadSuccess().then((res) => {
-        // TODO: check response to see if it's pending airgap (to be added
-        // to the response object) if so, go to /airgap to upload the bundle,
-        // if not go to the app app detail page.
-        this.props.history.replace(`/app/${res[0].slug}`);
+        const url = airgapEnabled ? "/airgap" : `/app/${res[0].slug}`;
+        this.props.history.replace(url);
       });
     } catch (err) {
       this.setState({ fileUploading: false });
