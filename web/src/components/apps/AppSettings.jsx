@@ -33,7 +33,7 @@ class AppSettings extends Component {
     const appSlug = slug;
     try {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
-      // TODO: refetch registry settings here
+      await this.props.getKotsAppRegistryQuery.refetch();
     } catch (error) {
       console.log(error);
     }
@@ -44,14 +44,13 @@ class AppSettings extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getKotsAppRegistryQuery } = this.props;
+    const { getKotsAppRegistryQuery, app } = this.props;
     if (getKotsAppRegistryQuery.getAppRegistryDetails && getKotsAppRegistryQuery.getAppRegistryDetails !== lastProps.getKotsAppRegistryQuery.getAppRegistryDetails) {
       this.setState({
         hostname: getKotsAppRegistryQuery.getAppRegistryDetails.registryHostname,
-        pingedEndpoint: getKotsAppRegistryQuery.getAppRegistryDetails.registryHostname,
         username: getKotsAppRegistryQuery.getAppRegistryDetails.registryUsername,
         password: getKotsAppRegistryQuery.getAppRegistryDetails.registryPassword,
-        namespace: getKotsAppRegistryQuery.getAppRegistryDetails.namespace,
+        namespace: getKotsAppRegistryQuery.getAppRegistryDetails.namespace || app.slug,
         lastSync: getKotsAppRegistryQuery.getAppRegistryDetails.lastSyncedAt
       })
     }
@@ -80,17 +79,17 @@ class AppSettings extends Component {
               <div className="flex1">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
                 <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-                <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname} autoComplete="" onChange={(e) => { this.setState({ hostname: e.target.value }) }}/>
+                <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.setState({ hostname: e.target.value }) }}/>
               </div>
             </div>
             <div className="flex u-marginBottom--20">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Username</p>
-                <input type="text" className="Input" placeholder="username" value={username} autoComplete="username" onChange={(e) => { this.setState({ username: e.target.value }) }}/>
+                <input type="text" className="Input" placeholder="username" value={username || ""} autoComplete="username" onChange={(e) => { this.setState({ username: e.target.value }) }}/>
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
-                <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
+                <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password || ""} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
               </div>
             </div>
             <div className="test-connection-box u-marginBottom--20">
@@ -98,9 +97,11 @@ class AppSettings extends Component {
                 <div>
                   <button type="button" className="btn secondary" onClick={this.testRegistryConnection}>Test connection</button>
                 </div>
-                <div className="flex-column justifyContent--center">
-                  <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
-                </div>
+                {this.state.pingedEndpoint &&
+                  <div className="flex-column justifyContent--center">
+                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+                  </div>
+                }
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">Last connection test on {Utilities.dateFormat(lastSync, "MMMM D, YYYY")}</p>
             </div>
@@ -108,7 +109,7 @@ class AppSettings extends Component {
               <div className="flex1">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace</p>
                 <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Changing the namespace will rewrite all of your airgap images and push them to your registry.</p>
-                <input type="text" className="Input" placeholder="namespace" value={namespace} autoComplete="" onChange={(e) => { this.setState({ namespace: e.target.value }) }}/>
+                <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.setState({ namespace: e.target.value }) }}/>
               </div>
             </div>
           </form>

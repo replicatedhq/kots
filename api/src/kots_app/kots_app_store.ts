@@ -6,6 +6,7 @@ import { signPutRequest, signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
+import { logger } from "../server/logger";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -75,7 +76,7 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string): Promise<void> {
     let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
     let v: any[] = [
       id,
@@ -93,7 +94,7 @@ export class KotsAppStore {
       newSequence,
       parentSequence,
       new Date(),
-      "??",
+      versionLabel,
       "pending"
     ];
 
@@ -279,14 +280,14 @@ order by sequence desc`;
       await this.pool.query(q, v);
   }
 
-  async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails | {}> {
+  async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
     const q = `select registry_hostname, registry_username, registry_password, namespace, last_registry_sync from app where id = $1`;
     const v = [
       appId
     ];
     const result = await this.pool.query(q, v);
     if (result.rowCount === 0) {
-      return {};
+      throw new ReplicatedError(`Unable to get registry details for app with the ID of ${appId}`);
     }
     return this.mapAppRegistryDetails(result.rows[0]);
   }

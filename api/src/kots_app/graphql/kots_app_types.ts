@@ -53,11 +53,11 @@ const AppRegistryDetails = `
 
 const KotsAppRegistryDetails = `
   type KotsAppRegistryDetails {
-    registryHostname: String!
-    registryUsername: String!
-    registryPassword: String!
-    namespace: String!
-    lastSyncedAt: String!
+    registryHostname: String
+    registryUsername: String
+    registryPassword: String
+    namespace: String
+    lastSyncedAt: String
   }
 `;
 

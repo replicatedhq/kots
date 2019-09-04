@@ -86,7 +86,11 @@ export function KotsQueries(stores: Stores) {
 
     async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails | {}> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      return await stores.kotsAppStore.getAppRegistryDetails(appId);
+      const details = await stores.kotsAppStore.getAppRegistryDetails(appId);
+      if (!details.registryHostname) {
+        return {}
+      }
+      return details;
     },
 
     // TODO: This code is currently duplicated between kots apps and wathes.
