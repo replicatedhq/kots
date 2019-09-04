@@ -6,7 +6,6 @@ import { signPutRequest, signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
-import { logger } from "../server/logger";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}

@@ -99,19 +99,19 @@ class AirgapRegistrySettings extends Component {
             </div>
           </div>
           {hideTestConnection ? null :
-          <div className="test-connection-box u-marginBottom--20">
-            <div className="flex">
-              <div>
-                <button type="button" className="btn secondary" onClick={this.testRegistryConnection}>Test connection</button>
-              </div>
-              {this.state.pingedEndpoint &&
-                <div className="flex-column justifyContent--center">
-                  <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+            <div className="test-connection-box u-marginBottom--20">
+              <div className="flex">
+                <div>
+                  <button type="button" className="btn secondary" onClick={this.testRegistryConnection}>Test connection</button>
                 </div>
-              }
+                {this.state.pingedEndpoint &&
+                  <div className="flex-column justifyContent--center">
+                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+                  </div>
+                }
+              </div>
+              <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{lastSync ? `Last connection test on ${Utilities.dateFormat(lastSync, "MMMM D, YYYY")}`: "Connection has not been tested"}</p>
             </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{lastSync ? `Last connection test on ${Utilities.dateFormat(lastSync, "MMMM D, YYYY")}`: "Connection has not been tested"}</p>
-          </div>
           }
           <div className="flex u-marginBottom--5">
             <div className="flex1">
