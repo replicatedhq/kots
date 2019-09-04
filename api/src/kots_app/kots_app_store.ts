@@ -51,7 +51,7 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined): Promise<void> {
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | null): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
@@ -82,9 +82,18 @@ export class KotsAppStore {
       clusterId,
     ];
     const result = await this.pool.query(q, v);
+    let status = "pending";
+
+    const getPreflightSpecQuery =
+      `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+    const preflightSpecQueryResults = await this.pool.query(getPreflightSpecQuery, [id, parentSequence]);
+    let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+
+    if (preflightSpec) {
+      status = "pending_preflight";
+    }
 
     const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
-
     q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     v = [
@@ -94,7 +103,7 @@ export class KotsAppStore {
       parentSequence,
       new Date(),
       versionLabel,
-      "pending"
+      status
     ];
 
     await this.pool.query(q, v);
@@ -489,6 +498,24 @@ order by sequence desc`;
       await pg.query("rollback");
       pg.release();
     }
+  }
+
+  async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
+    const q = `
+      UPDATE app_downstream_version SET
+        preflight_result = $1
+        preflight_result_updated_at = NOW()
+      WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4
+    `;
+
+    const v = [
+      preflightResult,
+      appId,
+      clusterId,
+      sequence
+    ];
+
+    await this.pool.query(q, v);
   }
 
   private mapKotsAppVersion(row: any): KotsVersion {

@@ -21,17 +21,31 @@ class UploadLicenseFile extends React.Component {
   }
 
   uploadLicenseFile = async () => {
-    const { onUploadSuccess } = this.props;
+    const { onUploadSuccess, history } = this.props;
     const { licenseValue } = this.state;
     const yml = yaml.safeLoad(licenseValue);
     const airgapEnabled = yml.spec.isAirgapSupported;
     this.setState({ fileUploading: true });
     try {
-      await this.props.uploadKotsLicense(licenseValue);
-      onUploadSuccess().then((res) => {
-        const url = airgapEnabled ? "/airgap" : `/app/${res[0].slug}`;
-        this.props.history.replace(url);
+      const resp = await this.props.uploadKotsLicense(licenseValue);
+      const kotsApp = resp.data.uploadKotsLicense;
+      onUploadSuccess().then(appList => {
+        if (airgapEnabled) {
+          history.replace("/airgap");
+          return;
+        }
+
+        if (kotsApp.hasPreflight) {
+          history.replace("/preflight");
+          return;
+        }
+        if (kotsApp.slug) {
+          history.replace(`/app/${kotsApp.slug}`);
+          return;
+        }
+        history.replace(`/app/${appList[0].slug}`);
       });
+
     } catch (err) {
       this.setState({ fileUploading: false });
       console.log(err);
@@ -87,7 +101,7 @@ class UploadLicenseFile extends React.Component {
                   }
                 </Dropzone>
               </div>
-              {hasFile && 
+              {hasFile &&
                 <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
                   <button
                     type="button"

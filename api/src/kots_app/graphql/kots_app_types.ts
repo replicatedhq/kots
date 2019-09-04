@@ -11,6 +11,7 @@ const KotsApp = `
     bundleCommand: String
     downstreams: [KotsDownstream]
     currentVersion: KotsVersion
+    hasPreflight: Boolean
   }
 `;
 

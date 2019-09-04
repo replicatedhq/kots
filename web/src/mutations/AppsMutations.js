@@ -33,7 +33,10 @@ export const checkForKotsUpdates = gql(checkForKotsUpdatesRaw);
 
 export const uploadKotsLicenseRaw = `
   mutation uploadKotsLicense($value: String!) {
-    uploadKotsLicense(value: $value)
+    uploadKotsLicense(value: $value) {
+      hasPreflight
+      slug
+    }
   }
 `
 export const uploadKotsLicense = gql(uploadKotsLicenseRaw);
