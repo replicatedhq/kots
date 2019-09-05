@@ -10,6 +10,7 @@ const KotsPreflightResult = `
   type KotsPreflightResult {
     result: String
     updatedAt: String
+    clusterId: String
   }
 `;
 

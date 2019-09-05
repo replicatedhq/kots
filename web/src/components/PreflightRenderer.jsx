@@ -9,7 +9,7 @@ export default function PreflightRenderer(props) {
       <p className="u-fontSize--jumbo u-color--tuna u-fontWeight--bold u-marginBottom--15">
         Results from your preflight checks
       </p>
-      {preflightJSON.results.map( (row, idx) => {
+      {preflightJSON?.results.map( (row, idx) => {
         let icon;
         if (row.isWarn) {
           icon = "exclamationMark--icon";

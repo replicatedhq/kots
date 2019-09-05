@@ -118,7 +118,7 @@ export class PreflightStore {
 
   async getKotsPreflightResult(appId: string, clusterId: string, sequence: number): Promise<KotsPreflightResult> {
     const q = `
-      SELECT preflight_result, preflight_result_updated_at
+      SELECT preflight_result, preflight_result_updated_at, cluster_id
         FROM app_downstream_version
         WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3
     `;
@@ -134,6 +134,7 @@ export class PreflightStore {
     const kotsPreflightResult = new KotsPreflightResult();
     kotsPreflightResult.result = result.rows[0].preflight_result;
     kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
+    kotsPreflightResult.clusterId = result.rows[0].cluster_id;
 
     return kotsPreflightResult;
 

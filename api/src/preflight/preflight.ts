@@ -21,8 +21,9 @@ export class PreflightSpec {
 }
 
 export class KotsPreflightResult {
-  public result: string
-  public updatedAt: string
+  public result: string;
+  public updatedAt: string;
+  public clusterId: string;
 
   public toSchema(): any {
     return {

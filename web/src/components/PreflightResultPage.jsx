@@ -9,19 +9,18 @@ import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 
 class PreflightResultPage extends Component {
-  constructor(props) {
-    super(props);
 
-    this.state = {
-      preflightResults: false
-    };
+  deployKotsDownstream = () => {
+    const { makeCurrentVersion, match, data, history } = this.props;
 
+    const upstreamSlug = match.params.slug;
+    const sequence = parseInt(match.params.sequence, 10);
+    const gqlData = data.getKotsPreflightResult || data.getLatestKotsPreflight;
+
+    makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterId).then( () => {
+      history.push(`/app/${match.params.slug}/downstreams/${match.params.downstreamSlug}/version-history`);
+    });
   }
-
-  componentDidUpdate() {
-
-  }
-
   render() {
     const { data } = this.props;
     const isLoading = data.loading;
@@ -33,6 +32,8 @@ class PreflightResultPage extends Component {
     if (hasData) {
       data.stopPolling();
     }
+
+
 
     return (
       <div className="flex-column flex1">
@@ -53,9 +54,10 @@ class PreflightResultPage extends Component {
               {
                 hasData && (
                   <div className="flex-column">
-                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold">Preflights last run at: {moment(preflightResultData.updatedAt).format("MMM D, YYYY h:mm A")}</p>
+                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold">Preflights last run at: {moment(new Date(preflightResultData.updatedAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
                     <PreflightRenderer
                       className="u-marginTop--30"
+                      onDeployClick={this.deployKotsDownstream}
                       results={preflightResultData.result}
                     />
                   </div>
@@ -64,14 +66,17 @@ class PreflightResultPage extends Component {
             </div>
           </div>
         </div>
-        <div className="flex-auto flex justifyContent--flexEnd">
-          <button
-            type="button"
-            className="btn primary u-marginRight--30 u-marginBottom--15"
-          >
-            Create Downstream Cluster
+        { hasData && (
+          <div className="flex-auto flex justifyContent--flexEnd">
+            <button
+              type="button"
+              className="btn primary u-marginRight--30 u-marginBottom--15"
+              onClick={this.deployKotsDownstream}
+            >
+              Create Downstream Cluster
           </button>
-        </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -506,6 +506,7 @@ export const getKotsPreflightResultRaw = `
     getKotsPreflightResult(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
       result
       updatedAt
+      clusterId
     }
   }
 `;
