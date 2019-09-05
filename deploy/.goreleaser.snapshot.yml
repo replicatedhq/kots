@@ -33,6 +33,10 @@ builds:
       - CGO_ENABLED=1
       - GO111MODULE=on
     main: ffi/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
     flags: -buildmode=c-shared
     binary: kots.so
     hooks: {}

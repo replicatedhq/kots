@@ -33,6 +33,10 @@ builds:
       - CGO_ENABLED=1
       - GO111MODULE=on
     main: ffi/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
     flags: -buildmode=c-shared
     binary: kots.so
     hooks: {}
@@ -41,12 +45,25 @@ archives:
   - id: kots
     builds:
       - kots
-      - so
     format: tar.gz
     format_overrides:
       - goos: windows
         format: zip
     name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
+  - id: kots.so
+    builds:
+      - so
+    format: tar.gz
+    name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}_so'
     files:
       - licence*
       - LICENCE*
