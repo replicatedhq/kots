@@ -32,6 +32,8 @@ const KotsVersion = `
     createdOn: String!
     sequence: Int
     deployedAt: String
+    preflightResult: String
+    preflightResultUpdatedAt: String
   }
 `;
 

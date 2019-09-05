@@ -478,6 +478,8 @@ export const getKotsDownstreamHistoryRaw = `
       createdOn
       sequence
       deployedAt
+      preflightResult
+      preflightResultUpdatedAt
     }
   }
 `;
@@ -510,8 +512,8 @@ export const getKotsPreflightResultRaw = `
 export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
 
 export const getLatestKotsPreflightRaw = `
-  query getLatestKotsPreflight() {
-    getLatestKotsPreflightResult() {
+  query getLatestKotsPreflight {
+    getLatestKotsPreflightResult {
       result
       updatedAt
     }

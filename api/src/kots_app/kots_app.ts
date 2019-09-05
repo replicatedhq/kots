@@ -245,6 +245,8 @@ export interface KotsVersion {
   createdOn: string;
   sequence: number;
   deployedAt: string;
+  preflightResult: string;
+  preflightResultUpdatedAt: string;
 }
 
 export interface KotsAppMetadata {

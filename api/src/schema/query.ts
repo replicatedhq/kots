@@ -76,6 +76,6 @@ export const Query = `
 
     listPreflightResults(watchId: String, slug: String): [PreflightResult]
     getKotsPreflightResult(appId: String, clusterId: String, sequence: Int): KotsPreflightResult
-    getLatestKotsPreflightResult(): KotsPreflightResult
+    getLatestKotsPreflightResult: KotsPreflightResult
   }
 `;
