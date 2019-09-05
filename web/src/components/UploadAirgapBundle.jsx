@@ -35,16 +35,16 @@ class UploadAirgapBundle extends React.Component {
       await response;
 
       this.props.markAirgapBundleUploaded(this.state.bundleFile.name)
-        .then(async (response) => {
+        .then(async () => {
           this.setState({ fileUploading: false });
-          // this.props.history.replace(`/app/${res[0].slug}`);
+          // this.props.history.replace(`/app/${response[0].slug}`);
 
 
           // if (this.props.submitCallback && typeof this.props.submitCallback === "function") {
           //   this.props.submitCallback(response.data.markSupportBundleUploaded.id);
           // }
         })
-        .catch((err) => {
+        .catch(() => {
           this.setState({ fileUploading: false });
         })
 
