@@ -49,13 +49,9 @@ export function KotsMutations(stores: Stores) {
         }
       }
 
-      if (parsedLicense.spec.isAirgapSupported) {
-        // TODO: this needs to be in DB
-        fs.writeFileSync("/tmp/license.rli", value);
-      } else {
-        const name = parsedLicense.spec.appSlug.replace("-", " ")
-        await kotsAppFromLicenseData(value, name, downstream.title, stores);  
-      }
+      const name = parsedLicense.spec.appSlug.replace("-", " ")
+      await kotsAppFromLicenseData(value, name, downstream.title, stores);  
+
       return true;
     },
 
@@ -67,9 +63,7 @@ export function KotsMutations(stores: Stores) {
 
     async markAirgapBundleUploaded(root: any, args: any, context: Context) {
       const { filename } = args;
-      // TODO: this needs to come from DB
-      const licenseData = fs.readFileSync("/tmp/license.rli").toString();
-      const parsedLicense = yaml.safeLoad(licenseData);
+      const app = await stores.kotsAppStore.getPendingKotsAirgapApp()
 
       const clusters = await stores.clusterStore.listAllUsersClusters();
       let downstream;
@@ -81,8 +75,7 @@ export function KotsMutations(stores: Stores) {
 
       const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
 
-      const name = parsedLicense.spec.appSlug.replace("-", " ")
-      await kotsAppFromAirgapData(licenseData, url, name, downstream.title, stores);  
+      await kotsAppFromAirgapData(app, String(app.license), url, downstream.title, stores);  
 
       return true;
     },

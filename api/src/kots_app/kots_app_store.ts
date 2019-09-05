@@ -304,8 +304,8 @@ order by sequence desc`;
     await this.pool.query(q, v);
   }
 
-  async listKotsApps(userId?: string): Promise<KotsApp[]> {
-    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1`;
+  async listInstalledKotsApps(userId?: string): Promise<KotsApp[]> {
+    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1 and app.airgap_upload_pending = false`;
     const v = [userId];
 
     const result = await this.pool.query(q, v);
@@ -314,13 +314,36 @@ order by sequence desc`;
       apps.push(await this.getApp(row.id));
     }
 
-    const qq = `select id from app where is_all_users = true`;
+    const qq = `select id from app where is_all_users = true and airgap_upload_pending = false`;
     const resultTwo = await this.pool.query(qq);
     for (const row of resultTwo.rows) {
       apps.push(await this.getApp(row.id));
     }
 
     return apps;
+  }
+
+  async getPendingKotsAirgapApp(): Promise<KotsApp> {
+    const q = `select id from app where airgap_upload_pending = true`;
+    const v = [];
+
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No pending airgap apps found`);
+    }
+    if (result.rows.length > 1) {
+      throw new ReplicatedError(`Airgap install is not allowed`);
+    }
+
+    const app = await this.getApp(result.rows[0].id);
+    return app;
+  }
+
+  async setKotsAirgapAppInstalled(appId: string) {
+    const q = `update app set airgap_upload_pending = false where id = $1`;
+    const v = [appId];
+
+    await this.pool.query(q, v);
   }
 
   async deleteDownstream(appId: string, clusterId: string): Promise<Boolean> {
@@ -389,6 +412,7 @@ order by sequence desc`;
     kotsApp.currentSequence = row.current_sequence;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
+    kotsApp.airgapUploadPending = row.airgap_upload_pending;
     return kotsApp;
   }
 
@@ -403,7 +427,7 @@ order by sequence desc`;
     return result.rows[0].id;
   }
 
-  async createKotsApp(name: string, upstreamURI: string, license: string, userId?: string): Promise<KotsApp> {
+  async createKotsApp(name: string, upstreamURI: string, license: string, airgapEnabled: boolean, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
     }
@@ -435,8 +459,8 @@ order by sequence desc`;
 
     try {
       await pg.query("begin");
-      const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users)
-      values ($1, $2, $3, $4, $5, $6, $7, $8)`;
+      const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, airgap_upload_pending)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
       const v = [
         id,
         name,
@@ -445,7 +469,8 @@ order by sequence desc`;
         slugProposal,
         upstreamURI,
         license,
-        !userId
+        !userId,
+        airgapEnabled
       ];
 
       await pg.query(q, v);

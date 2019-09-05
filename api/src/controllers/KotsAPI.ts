@@ -37,7 +37,7 @@ export class KotsAPI {
   // async kotsList(
   //   @Req() request: Request,
   // ): Promise<any> {
-  //   const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
+  //   const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
 
   //   const result = _.map(apps, (app: KotsApp) => {
   //     return {
@@ -57,7 +57,7 @@ export class KotsAPI {
   ): Promise<any> {
     // this assumes single tenant and single app for now
 
-    const apps = await request.app.locals.stores.kotsAppStore.listKotsApps();
+    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
     const app = _.find(apps, (a: KotsApp) => {
       return a.slug === slug;
     });
