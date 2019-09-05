@@ -27,6 +27,7 @@ export class KotsApp {
   lastUpdateCheckAt?: Date;
   bundleCommand: string;
   currentVersion: KotsVersion;
+  airgapUploadPending: boolean;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {

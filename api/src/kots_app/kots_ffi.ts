@@ -70,6 +70,12 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
   const tmpDir = tmp.dirSync();
 
   try {
+    const parsedLicense = yaml.safeLoad(licenseData);
+    if (parsedLicense.spec.isAirgapSupported) {
+      const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
+      return kotsApp;
+    }
+
     const licenseDataParam = new GoString();
     licenseDataParam["p"] = licenseData;
     licenseDataParam["n"] = licenseData.length;
@@ -88,8 +94,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       return;
     }
 
-    const parsedLicense = yaml.safeLoad(licenseData);
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData);
+    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
@@ -122,7 +127,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
   }
 }
 
-export async function kotsAppFromAirgapData(licenseData: string, airgapUrl: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
+export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapUrl: string, downstreamName: string, stores: Stores): Promise<void> {
   const tmpDir = tmp.dirSync();
 
   try {
@@ -148,16 +153,13 @@ export async function kotsAppFromAirgapData(licenseData: string, airgapUrl: stri
       return;
     }
 
-    const parsedLicense = yaml.safeLoad(licenseData);
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData);
-
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
+    const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, "0.tar.gz");
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
@@ -170,13 +172,11 @@ export async function kotsAppFromAirgapData(licenseData: string, airgapUrl: stri
         continue;
       }
 
-      await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
+      await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
+      await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, cursorAndVersion.versionLabel);
     }
 
-    return kotsApp;
-  } catch (err) {
-    console.log(err);
+    await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
   } finally {
     tmpDir.removeCallback();
   }
