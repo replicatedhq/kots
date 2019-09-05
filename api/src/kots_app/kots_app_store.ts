@@ -408,7 +408,6 @@ order by sequence desc`;
     }
     const row = result.rows[0];
     const current_sequence = row.current_sequence;
-
     const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
     const vv = [
       id,
@@ -416,7 +415,7 @@ order by sequence desc`;
     ];
 
     const rr = await this.pool.query(qq,vv);
-
+    console.log(rr.rows[0])
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
@@ -430,8 +429,9 @@ order by sequence desc`;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
     kotsApp.airgapUploadPending = row.airgap_upload_pending;
-
-    kotsApp.hasPreflight = !!rr.rows[0].preflight_spec
+    // This is to avoid a race condition when uploading a license file where the row in app_version
+    // has not been created yet
+    kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     return kotsApp;
   }
 
