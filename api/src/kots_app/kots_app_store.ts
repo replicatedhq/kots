@@ -415,7 +415,6 @@ order by sequence desc`;
     ];
 
     const rr = await this.pool.query(qq,vv);
-    console.log(rr.rows[0])
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
