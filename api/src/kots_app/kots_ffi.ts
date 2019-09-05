@@ -172,7 +172,8 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
