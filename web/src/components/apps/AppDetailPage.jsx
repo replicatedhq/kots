@@ -20,6 +20,7 @@ import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
+import PreflightResultPage from "../PreflightResultPage";
 import WatchConfig from "../watches/WatchConfig";
 import WatchLicense from "../watches/WatchLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
@@ -378,6 +379,11 @@ class AppDetailPage extends Component {
                         makeCurrentVersion={this.makeCurrentRelease}
                       />
                     } />
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => {
+                      return (
+                      <PreflightResultPage />
+                      );
+                    }} />
                     <Route exact path="/app/:slug/config" render={() =>
                       <WatchConfig
                         watch={app}

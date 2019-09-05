@@ -502,8 +502,8 @@ export const getAppRegistryDetailsRaw = `
 export const getAppRegistryDetails = gql(getAppRegistryDetailsRaw);
 
 export const getKotsPreflightResultRaw = `
-  query getKotsPreflightResult($appId: String!, $clusterId: String!, $sequence: Int!) {
-    getKotsPreflightResult(appId: $appId, clusterId: $clusterId, sequence: $sequence) {
+  query getKotsPreflightResult($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
+    getKotsPreflightResult(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
       result
       updatedAt
     }

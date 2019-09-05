@@ -27,7 +27,10 @@ export function PrefightQueries(stores: Stores) {
     },
 
     async getKotsPreflightResult(root: any, args: any, context: Context): Promise<KotsPreflightResult> {
-      const { appId, clusterId, sequence } = args;
+      const { appSlug, clusterSlug, sequence } = args;
+
+      const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
 
       const result = await stores.preflightStore.getKotsPreflightResult(appId, clusterId, sequence);
       return result;

@@ -75,7 +75,7 @@ export const Query = `
     getSupportBundleCommand(watchSlug: String!): String
 
     listPreflightResults(watchId: String, slug: String): [PreflightResult]
-    getKotsPreflightResult(appId: String, clusterId: String, sequence: Int): KotsPreflightResult
+    getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsPreflightResult
     getLatestKotsPreflightResult: KotsPreflightResult
   }
 `;
