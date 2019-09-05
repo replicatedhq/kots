@@ -363,6 +363,7 @@ export const getKotsAppRaw = `
       updatedAt
       slug
       currentSequence
+      hasPreflight
       currentVersion {
         title
         status

@@ -6,7 +6,7 @@ import { Utilities } from "@src/utilities/utilities";
 import Loader from "../shared/Loader";
 
 export default function DownstreamVersionRow(props) {
-  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent } = props;
+  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight } = props;
 
   if (!version) { return null; }
   const gitRef = downstreamWatch?.cluster?.gitOpsRef;
@@ -70,6 +70,11 @@ export default function DownstreamVersionRow(props) {
                 "grayCircleMinus--icon": version.status === "closed"
                 })}
               />
+              {hasPreflight && version.status !== "pending" && (
+                <span className="u-fontSize--normal">
+                  View Preflight Results
+                </span>
+              )}
               <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
                 "u-color--nevada": version.status === "deployed" || version.status === "merged",
                 "u-color--orange": version.status === "opened" || version.status === "pending",

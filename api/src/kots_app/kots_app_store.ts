@@ -406,8 +406,16 @@ order by sequence desc`;
     if (result.rowCount == 0) {
       throw new ReplicatedError("not found");
     }
-
     const row = result.rows[0];
+    const current_sequence = row.current_sequence;
+
+    const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+    const vv = [
+      id,
+      current_sequence
+    ];
+
+    const rr = await this.pool.query(qq,vv);
 
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
@@ -422,6 +430,8 @@ order by sequence desc`;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
     kotsApp.airgapUploadPending = row.airgap_upload_pending;
+
+    kotsApp.hasPreflight = !!rr.rows[0].preflight_spec
     return kotsApp;
   }
 

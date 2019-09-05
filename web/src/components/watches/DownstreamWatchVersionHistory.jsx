@@ -75,6 +75,7 @@ class DownstreamWatchVersionHistory extends Component {
             ? centeredLoader
             : versionHistory?.length > 0 && versionHistory.map( version => (
               <DownstreamVersionRow
+                hasPreflight={watch.hasPreflight}
                 key={`${version.title}-${version.sequence}`}
                 downstreamWatch={downstreamWatch}
                 version={version}
