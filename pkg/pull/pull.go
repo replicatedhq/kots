@@ -10,6 +10,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/downstream"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -28,6 +29,7 @@ type PullOptions struct {
 	SharedPassword      string
 	CreateAppDir        bool
 	Silent              bool
+	Images              []image.Image
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -139,7 +141,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	log.ActionWithSpinner("Creating midstream")
-	m, err := midstream.CreateMidstream(b)
+	m, err := midstream.CreateMidstream(b, pullOptions.Images)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
 	}

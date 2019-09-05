@@ -5,18 +5,19 @@ import "C"
 import (
 	"archive/tar"
 	"compress/gzip"
-	"os/exec"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -28,7 +29,7 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		fmt.Printf("failed to create temp dir: %s\n", err)
 		return 1
 	}
-	// defer os.RemoveAll(workspace)
+	defer os.RemoveAll(workspace)
 
 	// airgapDir contains release tar and all images as individual tars
 	airgapDir, err := downloadAirgapAchive(workspace, airgapURL)
@@ -43,8 +44,6 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		fmt.Printf("failed to extract app release: %s\n", err)
 		return 1
 	}
-
-	///............
 
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -73,7 +72,13 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		fmt.Printf("failed to create temp root path: %s\n", err.Error())
 		return 1
 	}
-	// defer os.RemoveAll(tmpRoot)
+	defer os.RemoveAll(tmpRoot)
+
+	images, err := pushImages(filepath.Join(airgapDir, "images"), []string{})
+	if err != nil {
+		fmt.Printf("unable to push images: %s\n", err.Error())
+		return 1
+	}
 
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{downstream},
@@ -82,6 +87,7 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
+		Images:              images,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
@@ -96,8 +102,6 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		},
 	}
 
-	// TODO: Rewrite images....
-
 	paths := []string{
 		filepath.Join(tmpRoot, "upstream"),
 		filepath.Join(tmpRoot, "base"),
@@ -106,11 +110,6 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 
 	if err := tarGz.Archive(paths, outputFile); err != nil {
 		fmt.Printf("failed to write archive: %s", err.Error())
-		return 1
-	}
-
-	if err := pushImages(filepath.Join(airgapDir, "images"), []string{}); err != nil {
-		fmt.Printf("unable to push images: %s\n", err.Error())
 		return 1
 	}
 
@@ -258,66 +257,82 @@ func extractOneArchive(tgzFile string, destDir string) error {
 	return nil
 }
 
-func pushImages(srcDir string, imageNameParts []string) error {
+func pushImages(srcDir string, imageNameParts []string) ([]image.Image, error) {
 	files, err := ioutil.ReadDir(srcDir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to list image files")
+		return nil, errors.Wrapf(err, "failed to list image files")
 	}
 
+	images := make([]image.Image, 0)
 	for _, file := range files {
 		if file.IsDir() {
 			// this function will modify the array argument
-			err := pushImages(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name()))
+			moreImages, err := pushImages(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name()))
 			if err != nil {
-				return errors.Wrapf(err, "failed to push images")
+				return nil, errors.Wrapf(err, "failed to push images")
 			}
+			images = append(images, moreImages...)
 		} else {
 			// this function will modify the array argument
-			if err := pushImageFromFile(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name())); err != nil {
-				return errors.Wrapf(err, "failed to push image")
+			image, err := pushImageFromFile(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name()))
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to push image")
 			}
+			images = append(images, image)
 		}
 	}
 
-	return nil
+	return images, nil
 }
 
-func pushImageFromFile(filename string, imageNameParts []string) error {
+func pushImageFromFile(filename string, imageNameParts []string) (image.Image, error) {
 	// TODO: don't hardcode registry name
-	imageName, err := imageNameFromNameParts("image-registry-lb:5000", imageNameParts)
+	imageName, image, err := imageNameFromNameParts("image-registry-lb:5000", imageNameParts)
 	if err != nil {
-		return errors.Wrapf(err, "failed to generate image name from %v", imageNameParts)
+		return image, errors.Wrapf(err, "failed to generate image name from %v", imageNameParts)
 	}
 	cmd := exec.Command("skopeo", "copy", "--dest-tls-verify=false", fmt.Sprintf("oci-archive:%s", filename), fmt.Sprintf("docker://%s", imageName))
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("run failed with output: %s\n", stdoutStderr)
-		return errors.Wrap(err, "failed to execute skopeo")
+		return image, errors.Wrap(err, "failed to execute skopeo")
 	}
 
-	return nil
+	return image, nil
 }
 
-func imageNameFromNameParts(registry string, nameParts []string) (string, error) {
+func imageNameFromNameParts(registry string, nameParts []string) (string, image.Image, error) {
 	// imageNameParts looks like this:
 	// ["quay.io", "someorg", "imagename", "imagetag"]
 	// or
 	// ["quay.io", "someorg", "imagename", "sha256", "<sha>"]
 	// we want to replace host with local registry and build image name from the remaining parts
 
+	image := image.Image{}
+
 	if len(nameParts) < 4 {
-		return "", fmt.Errorf("not enough parts in image name: %v", nameParts)
+		return "", image, fmt.Errorf("not enough parts in image name: %v", nameParts)
 	}
 
-	var name, tag string
-	nameParts[0] = registry
-	if nameParts[len(nameParts) - 2] == "sha256" {
-		tag = fmt.Sprintf("@sha256:%s", nameParts[len(nameParts) - 1])
+	var originalName, name, tag, separator string
+	if nameParts[len(nameParts)-2] == "sha256" {
+		originalName = filepath.Join(nameParts[:len(nameParts)-2]...)
+		nameParts[0] = registry
 		name = filepath.Join(nameParts[:len(nameParts)-2]...)
+		tag = fmt.Sprintf("sha256:%s", nameParts[len(nameParts)-1])
+		separator = "@"
+		image.Digest = tag
 	} else {
-		tag = fmt.Sprintf(":%s", nameParts[len(nameParts) - 1])
+		originalName = filepath.Join(nameParts[:len(nameParts)-1]...)
+		nameParts[0] = registry
 		name = filepath.Join(nameParts[:len(nameParts)-1]...)
+		tag = fmt.Sprintf("%s", nameParts[len(nameParts)-1])
+		separator = ":"
+		image.NewTag = tag
 	}
 
-	return fmt.Sprintf("%s%s", name, tag), nil
+	image.Name = fmt.Sprintf("%s%s%s", originalName, separator, tag)
+	image.NewName = name
+
+	return fmt.Sprintf("%s%s%s", name, separator, tag), image, nil
 }
