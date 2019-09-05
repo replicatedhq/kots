@@ -63,7 +63,7 @@ archives:
     builds:
       - so
     format: tar.gz
-    name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}_so'
+    name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
     files:
       - licence*
       - LICENCE*
