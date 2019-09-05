@@ -32,7 +32,7 @@ builds:
     env:
       - CGO_ENABLED=1
       - GO111MODULE=on
-    main: ffi/main.go
+    main: ./ffi
     ldflags: -s -w
       -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
       -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
