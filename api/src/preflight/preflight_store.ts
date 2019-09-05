@@ -133,7 +133,7 @@ export class PreflightStore {
 
     const kotsPreflightResult = new KotsPreflightResult();
     kotsPreflightResult.result = result.rows[0].preflight_result;
-    kotsPreflightResult.updatedAt = result.rows[9].preflight_result_updated_at;
+    kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
 
     return kotsPreflightResult;
 
@@ -156,7 +156,7 @@ export class PreflightStore {
 
     const kotsPreflightResult = new KotsPreflightResult();
     kotsPreflightResult.result = result.rows[0].preflight_result;
-    kotsPreflightResult.updatedAt = result.rows[9].preflight_result_updated_at;
+    kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
 
     return kotsPreflightResult;
 
