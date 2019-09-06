@@ -90,6 +90,7 @@ class Root extends Component {
     listApps: [],
     appLogo: null,
     selectedAppName: null,
+    fetchingMetadata: false,
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
       : "",
@@ -179,18 +180,23 @@ class Root extends Component {
   }
 
   fetchKotsAppMetadata = async () => {
+    this.setState({ fetchingMetadata: true });
     const meta = await GraphQLClient.query({
       query: getKotsMetadata,
       fetchPolicy: "no-cache"
     }).catch( error => {
+      this.setState({ fetchingMetadata: false });
       throw error;
     });
 
     if (meta.data.getKotsMetadata) {
       this.setState({
         appLogo: meta.data.getKotsMetadata.iconUri,
-        selectedAppName: meta.data.getKotsMetadata.name
+        selectedAppName: meta.data.getKotsMetadata.name,
+        fetchingMetadata: false
       });
+    } else {
+      this.setState({ fetchingMetadata: false });
     }
   }
 
@@ -233,7 +239,7 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} />
+                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
@@ -248,7 +254,7 @@ class Root extends Component {
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} />} />
-                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} />} />
+                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
                     <Route exact path="/airgap" render={props => <UploadAirgapBundle {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />

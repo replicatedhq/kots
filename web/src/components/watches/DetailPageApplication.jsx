@@ -379,14 +379,15 @@ class DetailPageApplication extends Component {
               </div>
             }
 
-
-            <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30 u-paddingBottom--20">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Delete application</p>
-              <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Removing {this.state.appName} will permanently delete all data and integrations associated with it and will not be&nbsp;recoverable.</p>
-              <div className="u-marginTop--10">
-                <button type="button" className="btn primary red" onClick={this.toggleConfirmDelete}>Delete application</button>
+            {!isSingleTenant() && (
+              <div className="u-marginTop--30 u-borderTop--gray u-paddingTop--30 u-paddingBottom--20">
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Delete application</p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Removing {this.state.appName} will permanently delete all data and integrations associated with it and will not be&nbsp;recoverable.</p>
+                <div className="u-marginTop--10">
+                  <button type="button" className="btn primary red" onClick={this.toggleConfirmDelete}>Delete application</button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
             {watch?.currentVersion &&

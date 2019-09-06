@@ -78,7 +78,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, logo } = this.props;
+    const { className, logo, fetchingMetadata } = this.props;
     const { user } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
@@ -95,7 +95,8 @@ export class NavBar extends PureComponent {
                     <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
                       {logo
                         ? <span className="watch-logo clickable" style={{ backgroundImage: `url(${logo})` }} />
-                        : <span className="logo icon clickable" />
+                        : !fetchingMetadata ? <span className="logo icon clickable" />
+                        : <span style={{ width: "30px", height: "30px" }} />
                       }
                     </Link>
                   </div>
