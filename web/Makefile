@@ -19,7 +19,7 @@ clean:
 	rm -rf dist
 
 .PHONY: test
-test:
+test: deps
 	rm -rf pacts/kotsadm-web-kotsadm-api.json
 	yarn test
 	yarn test:unit
