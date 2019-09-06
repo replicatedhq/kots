@@ -18,14 +18,14 @@ class PreflightResultPage extends Component {
     // If this is the latest...
     if (!match.params.clusterSlug) {
 
-      this.props.deployKotsVersion(gqlData.appSlug, 0, gqlData.clusterId).then( () => {
+      this.props.deployKotsVersion(gqlData.appSlug, 0, gqlData.clusterSlug).then( () => {
         history.replace(`/`);
       });
       return;
 
     }
     const sequence = parseInt(match.params.sequence, 10);
-    makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterId).then( () => {
+    makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterSlug).then( () => {
       history.push(`/app/${match.params.slug}/downstreams/${match.params.downstreamSlug}/version-history`);
     });
   }
@@ -124,7 +124,7 @@ export default compose(
   }),
   graphql(deployKotsVersion, {
     props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterId) => mutate({ variables: { upstreamSlug, sequence, clusterId } })
+      deployKotsVersion: (upstreamSlug, sequence, clusterSlug) => mutate({ variables: { upstreamSlug, sequence, clusterSlug } })
     })
   }),
 )(PreflightResultPage);

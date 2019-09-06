@@ -15,7 +15,7 @@ export default function DownstreamVersionRow(props) {
   if (!gitRef && version.status === "pending") {
     shipInstallnode = (
       <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
-        <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.id)}>Make current version</button>
+        <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.slug)}>Make current version</button>
       </div>
     )
   }

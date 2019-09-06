@@ -96,8 +96,8 @@ class AppDetailPage extends Component {
     this.props.clearThemeState();
   }
 
-  makeCurrentRelease = async (upstreamSlug, sequence, clusterId) => {
-    await this.props.deployKotsVersion(upstreamSlug, sequence, clusterId).then(() => {
+  makeCurrentRelease = async (upstreamSlug, sequence, clusterSlug) => {
+    await this.props.deployKotsVersion(upstreamSlug, sequence, clusterSlug).then(() => {
       this.props.getKotsAppQuery.refetch();
     })
   }
@@ -558,7 +558,7 @@ export default compose(
   }),
   graphql(deployKotsVersion, {
     props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterId) => mutate({ variables: { upstreamSlug, sequence, clusterId } })
+      deployKotsVersion: (upstreamSlug, sequence, clusterSlug) => mutate({ variables: { upstreamSlug, sequence, clusterSlug } })
     })
   }),
 )(AppDetailPage);

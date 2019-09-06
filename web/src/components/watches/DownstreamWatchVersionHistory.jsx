@@ -13,9 +13,9 @@ import { isKotsApplication } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
 
-  handleMakeCurrent = (upstreamSlug, sequence, clusterId) => {
+  handleMakeCurrent = (upstreamSlug, sequence, clusterSlug) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
-      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterId);
+      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
     }
   }
 
