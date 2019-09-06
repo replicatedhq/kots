@@ -193,7 +193,7 @@ class Root extends Component {
       this.setState({
         appLogo: meta.data.getKotsMetadata.iconUri,
         selectedAppName: meta.data.getKotsMetadata.name,
-        fetchingMetadata: true
+        fetchingMetadata: false
       });
     } else {
       this.setState({ fetchingMetadata: false });
