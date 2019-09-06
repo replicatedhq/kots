@@ -22,8 +22,9 @@ var (
 
 // DestiredState is what we receive from the kotsadm-api server
 type DesiredState struct {
-	Present map[string][]string `json:"present"`
-	Missing map[string][]string `json:"missing"`
+	Present   map[string][]string `json:"present"`
+	Missing   map[string][]string `json:"missing"`
+	Preflight []string            `json:"preflight"`
 }
 
 type Client struct {
@@ -40,6 +41,13 @@ func (c *Client) Run() error {
 			fmt.Printf("failed to get destired state, waiting to try again: %s\n", err.Error())
 			time.Sleep(time.Minute)
 			continue
+		}
+
+		// Preflight
+		for _, preflightURI := range desiredState.Preflight {
+			if err := runPreflight(preflightURI); err != nil {
+				fmt.Printf("error running preflight: %s\n", err.Error())
+			}
 		}
 
 		// Deploy
@@ -133,11 +141,26 @@ func reportCurrentStateToKotsadmServer(apiEndpoint string, token string, helmApp
 	return nil
 }
 
+func runPreflight(preflightURI string) error {
+	kubectl, err := exec.LookPath("kubectl")
+	if err != nil {
+		return errors.Wrap(err, "failed to find kubectl")
+	}
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get in cluster config")
+	}
+
+	kubernetesApplier := applier.NewKubectl(kubectl, config)
+
+	return kubernetesApplier.Preflight(preflightURI)
+}
+
 func ensureResourcesPresent(namespace string, input []byte) error {
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
 
-	fmt.Println("finding kubectl")
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")

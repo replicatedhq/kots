@@ -31,22 +31,37 @@ export class DeployAPI {
 
     const present = {};
     const missing = {};
+    let preflight = [];
 
     for (const app of apps) {
-      const desiredNamespace = ".";
-      if (!(desiredNamespace in present)) {
-        present[desiredNamespace] = [];
+      // app existing in a cluster doesn't always mean deploy.
+      // this means that we could possible have a version and/or preflights to run
+
+      // this needs to be updated after the preflight PR is merged
+      const pendingPreflightURLs = [];  // todo get this from the store, the fully rendered URLs?
+      const deployedAppSequence = app.currentSequence;  // todo this should be 0-n for installed, -1 for no version
+
+      if (pendingPreflightURLs.length > 0) {
+        preflight = preflight.concat(pendingPreflightURLs);
       }
 
-      const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
-      const b = new Buffer(rendered);
-      present[desiredNamespace].push(b.toString("base64"));
+      if (deployedAppSequence > -1) {
+        const desiredNamespace = ".";
+        if (!(desiredNamespace in present)) {
+          present[desiredNamespace] = [];
+        }
+
+        const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+        const b = new Buffer(rendered);
+        present[desiredNamespace].push(b.toString("base64"));
+      }
     }
 
     response.status(200);
     return {
       present,
       missing,
+      preflight,
     }
   }
 }
