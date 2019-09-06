@@ -8,6 +8,7 @@ const PreflightResult = `
 
 const KotsPreflightResult = `
   type KotsPreflightResult {
+    appId: String
     result: String
     updatedAt: String
     clusterId: String

@@ -3,8 +3,8 @@ import { graphql, compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import moment from "moment";
 
-import { getKotsPreflightResult } from "@src/queries/AppsQueries";
-import { getLatestKotsPreflight } from "../queries/AppsQueries";
+import { getKotsPreflightResult, getLatestKotsPreflight } from "@src/queries/AppsQueries";
+import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 
@@ -12,21 +12,33 @@ class PreflightResultPage extends Component {
 
   deployKotsDownstream = () => {
     const { makeCurrentVersion, match, data, history } = this.props;
-
+    const gqlData = data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
     const upstreamSlug = match.params.slug;
+
+    // If this is the latest...
+    if (!match.params.clusterSlug) {
+      // TODO: Clean up deployKotsVersion so we don't get an ugly signature like this
+      this.props.deployKotsVersion(undefined, 0, gqlData.clusterId, gqlData.appId).then( () => {
+        history.replace(`/`);
+      });
+      return;
+
+    }
     const sequence = parseInt(match.params.sequence, 10);
-    const gqlData = data.getKotsPreflightResult || data.getLatestKotsPreflight;
+
 
     makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterId).then( () => {
       history.push(`/app/${match.params.slug}/downstreams/${match.params.downstreamSlug}/version-history`);
     });
   }
+
   render() {
     const { data } = this.props;
     const isLoading = data.loading;
+
     const preflightResultData = isLoading
       ? null
-      : data.getKotsPreflightResult || data.getLatestKotsPreflight;
+      : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
     const hasData = preflightResultData?.result;
 
     if (hasData) {
@@ -115,5 +127,10 @@ export default compose(
         pollInterval: 2000
       }
     }
-  })
+  }),
+  graphql(deployKotsVersion, {
+    props: ({ mutate }) => ({
+      deployKotsVersion: (upstreamSlug, sequence, clusterId, appId) => mutate({ variables: { upstreamSlug, sequence, clusterId, appId } })
+    })
+  }),
 )(PreflightResultPage);

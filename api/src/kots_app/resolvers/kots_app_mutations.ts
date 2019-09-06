@@ -88,7 +88,17 @@ export function KotsMutations(stores: Stores) {
 
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterId } = args;
-      const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
+      let appId;
+      if (!upstreamSlug) {
+        appId = args.appId;
+      } else {
+        appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
+      }
+
+      if (!clusterId && !appId) {
+        throw new ReplicatedError(`deployKotsVersion requires appId or upStreamSlug (appSlug). No appId found for upstreamSlug of ${upstreamSlug}`);
+      }
+
       await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
       return true;
     },

@@ -558,7 +558,7 @@ export default compose(
   }),
   graphql(deployKotsVersion, {
     props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterId) => mutate({ variables: { upstreamSlug, sequence, clusterId } })
+      deployKotsVersion: (upstreamSlug, sequence, clusterId, appId) => mutate({ variables: { upstreamSlug, sequence, clusterId, appId } })
     })
   }),
 )(AppDetailPage);

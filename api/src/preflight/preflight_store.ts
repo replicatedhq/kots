@@ -146,7 +146,7 @@ export class PreflightStore {
     const appId = r.rows[0].id;
 
     const qq = `
-      SELECT preflight_result, preflight_result_updated_at
+      SELECT preflight_result, preflight_result_updated_at, cluster_id, app_id
         FROM app_downstream_version
       WHERE sequence = 0 AND app_id = $1
     `;
@@ -154,10 +154,11 @@ export class PreflightStore {
     const vv = [ appId ];
 
     const result = await this.pool.query(qq,vv);
-
     const kotsPreflightResult = new KotsPreflightResult();
+    kotsPreflightResult.appId = result.rows[0].app_id;
     kotsPreflightResult.result = result.rows[0].preflight_result;
     kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
+    kotsPreflightResult.clusterId = result.rows[0].cluster_id;
 
     return kotsPreflightResult;
 

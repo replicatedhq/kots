@@ -21,6 +21,7 @@ export class PreflightSpec {
 }
 
 export class KotsPreflightResult {
+  public appId: string;
   public result: string;
   public updatedAt: string;
   public clusterId: string;

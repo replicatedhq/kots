@@ -516,8 +516,10 @@ export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
 export const getLatestKotsPreflightRaw = `
   query getLatestKotsPreflight {
     getLatestKotsPreflightResult {
+      appId
       result
       updatedAt
+      clusterId
     }
   }
 `;
