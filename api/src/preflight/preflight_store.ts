@@ -3,7 +3,6 @@ import randomstring from "randomstring";
 
 import { PreflightSpec, PreflightResult } from "./";
 import { ReplicatedError } from "../server/errors";
-import { KotsPreflightResult } from "./preflight";
 
 export class PreflightStore {
   constructor(
@@ -12,7 +11,7 @@ export class PreflightStore {
 
   private mapPreflightResult(row: any): PreflightResult {
     const preflightResult = new PreflightResult();
-    preflightResult.watchId = row.watch_id;
+    preflightResult.appId = row.watch_id;
     preflightResult.result = row.result;
     preflightResult.createdAt = row.created_at;
 
@@ -116,12 +115,21 @@ export class PreflightStore {
     return result.rows[0].preflight_spec;
   }
 
-  async getKotsPreflightResult(appId: string, clusterId: string, sequence: number): Promise<KotsPreflightResult> {
-    const q = `
-      SELECT preflight_result, preflight_result_updated_at, cluster_id
-        FROM app_downstream_version
-        WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3
-    `;
+  async getKotsPreflightResult(appId: string, clusterId: string, sequence: number): Promise<PreflightResult> {
+    const q =
+      `SELECT
+        app_downstream_version.preflight_result,
+        app_downstream_version.preflight_result_updated_at,
+        app_downstream_version.cluster_id,
+        app.id as app_id,
+        app.slug as app_slug
+      FROM app_downstream_version
+        INNER JOIN app ON app_downstream_version.app_id = app.id
+        INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
+      WHERE
+        app_downstream_version.app_id = $1 AND
+        app_downstream_version.cluster_id = $2 AND
+        app_downstream_version.sequence = $3`;
 
     const v = [
       appId,
@@ -135,34 +143,48 @@ export class PreflightStore {
       throw new Error(`Couldn't find preflight spec with appId: ${appId}, clusterId: ${clusterId}, sequence: ${sequence}`);
     }
 
-    const kotsPreflightResult = new KotsPreflightResult();
-    kotsPreflightResult.result = result.rows[0].preflight_result;
-    kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
-    kotsPreflightResult.clusterId = result.rows[0].cluster_id;
+    const preflightResult = new PreflightResult();
+    preflightResult.appId = result.rows[0].app_id;
+    preflightResult.appSlug = result.rows[0].app_slug;
+    preflightResult.result = result.rows[0].preflight_result;
+    preflightResult.createdAt = result.rows[0].preflight_result_updated_at;
 
-    return kotsPreflightResult;
+    return preflightResult;
 
   }
 
-  async getLatestKotsPreflightResult(): Promise<KotsPreflightResult> {
+  async getLatestKotsPreflightResult(): Promise<PreflightResult> {
     const q = `SELECT id FROM app WHERE current_sequence = 0 ORDER BY created_at DESC LIMIT 1`;
     const r = await this.pool.query(q);
     const appId = r.rows[0].id;
 
     const qq =
-      `SELECT preflight_result, preflight_result_updated_at, cluster_id, app_id FROM app_downstream_version WHERE sequence = 0 AND app_id = $1`;
+      `SELECT
+        app_downstream_version.preflight_result,
+        app_downstream_version.preflight_result_updated_at,
+        app_downstream_version.cluster_id,
+        app.id as app_id,
+        app.slug as app_slug,
+        cluster.slug as cluster_slug
+
+      FROM app_downstream_version
+        INNER JOIN app ON app_downstream_version.app_id = app.id
+        INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
+      WHERE
+        app_downstream_version.app_id = $1 AND
+        app_downstream_version.sequence = 0`;
 
     const vv = [ appId ];
+    const result = await this.pool.query(qq, vv);
 
-    const result = await this.pool.query(qq,vv);
-    const kotsPreflightResult = new KotsPreflightResult();
-    kotsPreflightResult.appId = result.rows[0].app_id;
-    kotsPreflightResult.result = result.rows[0].preflight_result;
-    kotsPreflightResult.updatedAt = result.rows[0].preflight_result_updated_at;
-    kotsPreflightResult.clusterId = result.rows[0].cluster_id;
+    const preflightResult = new PreflightResult();
+    preflightResult.appId = result.rows[0].app_id;
+    preflightResult.appSlug = result.rows[0].app_slug;
+    preflightResult.clusterId = result.rows[0].cluster_id;
+    preflightResult.clusterSlug = result.rows[0].cluster_slug;
+    preflightResult.result = result.rows[0].preflight_result;
+    preflightResult.createdAt = result.rows[0].preflight_result_updated_at;
 
-    return kotsPreflightResult;
-
-
+    return preflightResult;
   }
 }

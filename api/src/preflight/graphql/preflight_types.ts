@@ -1,18 +1,12 @@
 const PreflightResult = `
   type PreflightResult {
-    watchId: String!
-    result: String!
-    createdAt: String!
-  }
-`;
-
-const KotsPreflightResult = `
-  type KotsPreflightResult {
-    appId: String
+    appId: String!
+    appSlug: String!
+    clusterId: String!
+    clusterSlug: String!
     result: String
-    updatedAt: String
-    clusterId: String
+    createdAt: String
   }
 `;
 
-export default [ PreflightResult, KotsPreflightResult ];
+export default [ PreflightResult ];

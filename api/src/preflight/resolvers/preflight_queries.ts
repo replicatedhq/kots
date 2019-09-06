@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { PreflightResult, KotsPreflightResult } from "../";
+import { PreflightResult } from "../";
 import { ReplicatedError } from "../../server/errors";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
@@ -26,7 +26,7 @@ export function PrefightQueries(stores: Stores) {
       return preflights;
     },
 
-    async getKotsPreflightResult(root: any, args: any, context: Context): Promise<KotsPreflightResult> {
+    async getKotsPreflightResult(root: any, args: any, context: Context): Promise<PreflightResult> {
       const { appSlug, clusterSlug, sequence } = args;
 
       const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
@@ -36,7 +36,7 @@ export function PrefightQueries(stores: Stores) {
       return result;
     },
 
-    async getLatestKotsPreflightResult(root: any, args: any, context: Context): Promise<KotsPreflightResult> {
+    async getLatestKotsPreflightResult(root: any, args: any, context: Context): Promise<PreflightResult> {
       const result = await stores.preflightStore.getLatestKotsPreflightResult();
       return result;
     }

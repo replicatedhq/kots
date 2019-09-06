@@ -17,8 +17,8 @@ class PreflightResultPage extends Component {
 
     // If this is the latest...
     if (!match.params.clusterSlug) {
-      // TODO: Clean up deployKotsVersion so we don't get an ugly signature like this
-      this.props.deployKotsVersion(undefined, 0, gqlData.clusterId, gqlData.appId).then( () => {
+
+      this.props.deployKotsVersion(gqlData.appSlug, 0, gqlData.clusterId).then( () => {
         history.replace(`/`);
       });
       return;
@@ -62,7 +62,7 @@ class PreflightResultPage extends Component {
               {
                 hasData && (
                   <div className="flex-column">
-                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold">Preflights last run at: {moment(new Date(preflightResultData.updatedAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
+                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold">Preflights last run at: {moment(new Date(preflightResultData.createdAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
                     <PreflightRenderer
                       className="u-marginTop--30"
                       onDeployClick={this.deployKotsDownstream}
@@ -124,7 +124,7 @@ export default compose(
   }),
   graphql(deployKotsVersion, {
     props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterId, appId) => mutate({ variables: { upstreamSlug, sequence, clusterId, appId } })
+      deployKotsVersion: (upstreamSlug, sequence, clusterId) => mutate({ variables: { upstreamSlug, sequence, clusterId } })
     })
   }),
 )(PreflightResultPage);

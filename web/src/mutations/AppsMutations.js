@@ -56,8 +56,8 @@ export const markAirgapBundleUploadedRaw = `
 export const markAirgapBundleUploaded = gql(markAirgapBundleUploadedRaw);
 
 export const deployKotsVersionRaw = `
-  mutation deployKotsVersion($upstreamSlug: String, $sequence: Int!, $clusterId: String!, $appId: String) {
-    deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterId: $clusterId, appId: $appId)
+  mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterId: String!) {
+    deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterId: $clusterId)
   }
 `;
 
