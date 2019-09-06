@@ -25,6 +25,14 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+const defaultMetadata = `apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: "Application"
+spec:
+  name: "Application"
+  icon: https://cdn1.iconfinder.com/data/icons/ninja-things-1/1772/ninja-simple-512.png`
+
 type ReplicatedUpstream struct {
 	Channel      *string
 	AppSlug      string
@@ -457,13 +465,34 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 // the upstream. If there is no application.yaml, it will return
 // a placeholder one
 func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
+	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
+	}
+
+	if metadata == nil {
+		otherMetadata, err := getApplicationMetadataFromHost("staging.replicated.app", upstream)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get metadata from staging.replicated.app")
+		}
+
+		metadata = otherMetadata
+	}
+
+	if metadata == nil {
+		metadata = []byte(defaultMetadata)
+	}
+
+	return metadata, nil
+}
+
+func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, error) {
 	r, err := parseReplicatedURL(upstream)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	url := fmt.Sprintf("https://replicated.app/metadata/%s", r.AppSlug)
-	//url := fmt.Sprintf("http://localhost:something/metadata/%s", r.AppSlug)
+	url := fmt.Sprintf("https://%s/metadata/%s", host, r.AppSlug)
 
 	if r.Channel != nil {
 		url = fmt.Sprintf("%s/%s", url, *r.Channel)
@@ -477,6 +506,11 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
+	}
+
+	if getResp.StatusCode == 404 {
+		// no metadata is not an error
+		return nil, nil
 	}
 
 	if getResp.StatusCode >= 400 {
