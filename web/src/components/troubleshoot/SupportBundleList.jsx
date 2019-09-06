@@ -12,6 +12,7 @@ import AddClusterModal from "../shared/modals/AddClusterModal";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
+import { isKotsApplication } from "../../utilities/utilities";
 
 class SupportBundleList extends React.Component {
   state = {
@@ -54,6 +55,8 @@ class SupportBundleList extends React.Component {
       return <p>{error.message}</p>;
     }
 
+    const generateBundleUrl = isKotsApplication(watch) ? `/app/${watch.slug}/troubleshoot/generate` : `/watch/${watch.slug}/troubleshoot/generate`;
+
     let bundlesNode;
     if (downstreams.length) {
       if (listSupportBundles?.length) {
@@ -72,7 +75,7 @@ class SupportBundleList extends React.Component {
           <div className="flex1 flex-column justifyContent--center alignItems--center">
             <div className="flex-column u-textAlign--center alignItems--center">
               <p className="u-fontSize--largest u-color--tundora u-lineHeight--normal u-fontWeight--bold">You haven't generated any support bundles</p>
-              <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <span onClick={() => this.props.history.push(`/watch/${watch.slug}/troubleshoot/generate`)} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</span></p>
+              <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <span onClick={() => this.props.history.push(generateBundleUrl)} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</span></p>
             </div>
           </div>
         );
