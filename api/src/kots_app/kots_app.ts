@@ -47,10 +47,6 @@ export class KotsApp {
     return stores.kotsAppStore.listPastVersions(this.id,   clusterId);
   }
 
-  public async getPreflightSpec(appId: string, sequence: number, stores: Stores): Promise<string> {
-    return stores.preflightStore.getKotsPreflightSpec(appId, sequence);
-  }
-
   // Source files
   async generateFileTreeIndex(sequence) {
     const supportBundleIndexJsonPath = "index.json";
