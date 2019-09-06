@@ -2,7 +2,6 @@ import Express from "express";
 import { Controller, Get, Res, Req, HeaderParams } from "@tsed/common";
 import BasicAuth from "basic-auth";
 import _ from "lodash";
-import { KotsVersion } from "../kots_app";
 
 interface ErrorResponse {
   error: {};
@@ -41,7 +40,6 @@ export class DeployAPI {
       const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightUrls();
       const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentDownstreamVersion(app.id, cluster.id);
       const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.currentSequence;
-      console.log('preflight_urls', pendingPreflightURLs);
       if (pendingPreflightURLs.length > 0) {
         preflight = preflight.concat(pendingPreflightURLs);
       }

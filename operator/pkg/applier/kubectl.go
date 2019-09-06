@@ -78,6 +78,7 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 	}
 
 	cmd := c.kubectlCommand(args...)
+	cmd.Env = os.Environ()
 	stdoutCh := make(chan []byte)
 	stderrCh := make(chan []byte)
 	stopCh := make(chan bool)
@@ -172,5 +173,5 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 }
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {
-	return exec.Command(c.exe, append(c.connectArgs(), args...)...)
+	return exec.Command(c.exe, append(args, c.connectArgs()...)...)
 }
