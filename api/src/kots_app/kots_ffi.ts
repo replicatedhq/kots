@@ -110,6 +110,8 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
 
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+    kotsApp.hasPreflight = !!preflightSpec;
+
     await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
