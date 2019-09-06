@@ -18,18 +18,52 @@ function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
   return stream;
 }
 
+export function extractPreflightSpecFromTarball(tarball: Buffer): Promise<string | null> {
+  const uncompressed = zlib.unzipSync(tarball);
+  const extract = tar.extract();
+
+  let preflight = null;
+
+  return new Promise((resolve, reject) => {
+    extract.on("error", reject);
+
+    extract.on("entry", (header, stream, next) => {
+      stream.pipe(concat(data => {
+        const raw = data.toString();
+        const doc = yaml.safeLoad(raw);
+        if (doc) {
+          if (
+            doc.apiVersion === "troubleshoot.replicated.com/v1beta1" &&
+            doc.kind === "Preflight"
+          ) {
+            preflight = raw;
+            resolve(preflight);
+            next();
+            return;
+          }
+        }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve(preflight);
+    });
+    extract.end(uncompressed);
+  });
+}
+
 export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<CursorAndVersion> {
   const uncompressed = zlib.unzipSync(tarball);
   const extract = tar.extract();
 
   return new Promise((resolve, reject) => {
+    extract.on("error", reject);
     extract.on("entry", (header, stream, next) => {
       stream.pipe(concat((data) => {
         const doc = yaml.safeLoad(data.toString());
         if (doc) {
           if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
-            console.log(doc);
-
             const cursorAndVersion = {
               cursor: doc.spec.updateCursor,
               versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",

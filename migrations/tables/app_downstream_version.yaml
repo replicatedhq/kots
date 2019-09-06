@@ -19,7 +19,7 @@ spec:
       - name: sequence
         type: integer
       - name: parent_sequence
-        type: integer  
+        type: integer
       - name: created_at
         type: timestamp without time zone
       - name: applied_at
@@ -30,3 +30,7 @@ spec:
           notNull: true
       - name: status
         type: text
+      - name: preflight_result
+        type: text
+      - name: preflight_result_created_at
+        type: timestamp without time zone

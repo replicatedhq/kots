@@ -3,11 +3,11 @@ import dayjs from "dayjs";
 import classNames from "classnames";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
+import Loader from "../shared/Loader";
 
 export default function DownstreamVersionRow(props) {
-  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent } = props;
-
-  if (!version) return null;
+  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight } = props;
+  if (!version) { return null; }
   const gitRef = downstreamWatch?.cluster?.gitOpsRef;
   const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
   const prPending = version.pullrequestNumber && (version.status === "opened" || version.status === "pending");
@@ -15,7 +15,7 @@ export default function DownstreamVersionRow(props) {
   if (!gitRef && version.status === "pending") {
     shipInstallnode = (
       <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
-        <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.id)}>Make current version</button>
+        <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.slug)}>Make current version</button>
       </div>
     )
   }
@@ -60,20 +60,34 @@ export default function DownstreamVersionRow(props) {
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">
         <div className="">
           <div className="flex justifyContent--center alignItems--center">
-              <div
-                data-tip={`${version.title}-${version.sequence}`}
-                data-for={`${version.title}-${version.sequence}`}
-                className={classNames("icon", {
-                "checkmark-icon": version.status === "deployed" || version.status === "merged",
-                "exclamationMark--icon": version.status === "opened" || version.status === "pending",
-                "grayCircleMinus--icon": version.status === "closed"
-                })}
-              />
+            {hasPreflight && version.status === "pending" && (
+              <Link to={`/app/${urlParams.slug}/downstreams/${urlParams.downstreamSlug}/version-history/preflight/${version.sequence}`} className="u-fontSize--normal u-color--dustyGray">
+                <button className="btn primary u-marginRight--20">
+                  View Preflight Results
+                </button>
+              </Link>
+            )}
+            <div
+              data-tip={`${version.title}-${version.sequence}`}
+              data-for={`${version.title}-${version.sequence}`}
+              className={classNames("icon", {
+              "checkmark-icon": version.status === "deployed" || version.status === "merged",
+              "exclamationMark--icon": version.status === "opened" || version.status === "pending",
+              "grayCircleMinus--icon": version.status === "closed"
+              })}
+            />
               <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
                 "u-color--nevada": version.status === "deployed" || version.status === "merged",
                 "u-color--orange": version.status === "opened" || version.status === "pending",
                 "u-color--dustyGray": version.status === "closed"
-              })}>{Utilities.toTitleCase(version.status)}</span>
+              })}>
+                {Utilities.toTitleCase(version.status).replace("_", " ")}
+              </span>
+              {version.status === "pending_preflight" && (
+                <span className="u-paddingLeft--5">
+                  <Loader size="20" />
+                </span>
+              )}
           </div>
         </div>
       </div>

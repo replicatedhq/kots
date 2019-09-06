@@ -48,11 +48,9 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-
       const name = parsedLicense.spec.appSlug.replace("-", " ")
-      await kotsAppFromLicenseData(value, name, downstream.title, stores);  
-
-      return true;
+      const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
+      return kotsApp;
     },
 
     async getAirgapPutUrl(root: any, args: any, context: Context) {
@@ -75,7 +73,7 @@ export function KotsMutations(stores: Stores) {
 
       const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
 
-      await kotsAppFromAirgapData(app, String(app.license), url, downstream.title, stores);  
+      await kotsAppFromAirgapData(app, String(app.license), url, downstream.title, stores);
 
       return true;
     },
@@ -89,8 +87,10 @@ export function KotsMutations(stores: Stores) {
     },
 
     async deployKotsVersion(root: any, args: any, context: Context) {
-      const { upstreamSlug, sequence, clusterId } = args;
+      const { upstreamSlug, sequence, clusterSlug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
+
       await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
       return true;
     },

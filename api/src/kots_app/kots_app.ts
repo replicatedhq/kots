@@ -28,6 +28,7 @@ export class KotsApp {
   bundleCommand: string;
   currentVersion: KotsVersion;
   airgapUploadPending: boolean;
+  hasPreflight: boolean;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
@@ -244,6 +245,8 @@ export interface KotsVersion {
   createdOn: string;
   sequence: number;
   deployedAt: string;
+  preflightResult: string;
+  preflightResultCreatedAt: string;
 }
 
 export interface KotsAppMetadata {

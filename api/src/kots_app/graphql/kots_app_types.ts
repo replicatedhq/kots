@@ -11,6 +11,7 @@ const KotsApp = `
     bundleCommand: String
     downstreams: [KotsDownstream]
     currentVersion: KotsVersion
+    hasPreflight: Boolean
   }
 `;
 
@@ -31,6 +32,8 @@ const KotsVersion = `
     createdOn: String!
     sequence: Int
     deployedAt: String
+    preflightResult: String
+    preflightResultUpdatedAt: String
   }
 `;
 

@@ -51,7 +51,7 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | undefined): Promise<void> {
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: string | undefined, preflightSpec: string | null): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     const v = [
@@ -82,9 +82,18 @@ export class KotsAppStore {
       clusterId,
     ];
     const result = await this.pool.query(q, v);
+    let status = "pending";
+
+    const getPreflightSpecQuery =
+      `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+    const preflightSpecQueryResults = await this.pool.query(getPreflightSpecQuery, [id, parentSequence]);
+    let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+
+    if (preflightSpec) {
+      status = "pending_preflight";
+    }
 
     const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
-
     q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     v = [
@@ -94,7 +103,7 @@ export class KotsAppStore {
       parentSequence,
       new Date(),
       versionLabel,
-      "pending"
+      status
     ];
 
     await this.pool.query(q, v);
@@ -117,7 +126,7 @@ export class KotsAppStore {
       return [];
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
     v = [
       appId,
       sequence,
@@ -152,7 +161,7 @@ export class KotsAppStore {
     }
 
     q = `
-select created_at, version_label, status, sequence, applied_at
+select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at
 from app_downstream_version
 where app_id = $1 and cluster_id = $3 and sequence > $2
 order by sequence desc`;
@@ -188,7 +197,7 @@ order by sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -256,7 +265,7 @@ order by sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -397,9 +406,16 @@ order by sequence desc`;
     if (result.rowCount == 0) {
       throw new ReplicatedError("not found");
     }
-
     const row = result.rows[0];
+    const current_sequence = row.current_sequence;
+    const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
 
+    const vv = [
+      id,
+      current_sequence
+    ];
+
+    const rr = await this.pool.query(qq, vv);
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
@@ -413,6 +429,9 @@ order by sequence desc`;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
     kotsApp.airgapUploadPending = row.airgap_upload_pending;
+    // This is to avoid a race condition when uploading a license file where the row in app_version
+    // has not been created yet
+    kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     return kotsApp;
   }
 
@@ -491,6 +510,19 @@ order by sequence desc`;
     }
   }
 
+  async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
+    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW(), status = 'pending' WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
+
+    const v = [
+      preflightResult,
+      appId,
+      clusterId,
+      sequence
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   private mapKotsAppVersion(row: any): KotsVersion {
     if (!row) {
       throw new ReplicatedError("No app provided to map function");
@@ -501,6 +533,8 @@ order by sequence desc`;
       createdOn: row.created_at,
       sequence: row.sequence,
       deployedAt: row.applied_at,
+      preflightResult: row.preflight_result,
+      preflightResultCreatedAt: row.preflight_result_created_at,
     };
   }
 

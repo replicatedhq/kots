@@ -7,7 +7,11 @@ import { putObject } from "../util/s3";
 import path from "path";
 import tmp from "tmp";
 import fs from "fs";
-import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../util/tar";
+import {
+  extractDownstreamNamesFromTarball,
+  extractCursorAndVersionFromTarball,
+  extractPreflightSpecFromTarball
+} from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import yaml from "js-yaml";
@@ -52,7 +56,8 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
       await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
       const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+      const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
@@ -98,11 +103,16 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
+
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+
+    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+    kotsApp.hasPreflight = !!preflightSpec;
+
+    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
@@ -159,7 +169,8 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();

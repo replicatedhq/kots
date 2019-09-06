@@ -363,6 +363,7 @@ export const getKotsAppRaw = `
       updatedAt
       slug
       currentSequence
+      hasPreflight
       currentVersion {
         title
         status
@@ -478,6 +479,8 @@ export const getKotsDownstreamHistoryRaw = `
       createdOn
       sequence
       deployedAt
+      preflightResult
+      preflightResultUpdatedAt
     }
   }
 `;
@@ -497,3 +500,29 @@ export const getAppRegistryDetailsRaw = `
 `;
 
 export const getAppRegistryDetails = gql(getAppRegistryDetailsRaw);
+
+export const getKotsPreflightResultRaw = `
+  query getKotsPreflightResult($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
+    getKotsPreflightResult(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
+      appSlug
+      clusterSlug
+      result
+      createdAt
+    }
+  }
+`;
+
+export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
+
+export const getLatestKotsPreflightRaw = `
+  query getLatestKotsPreflight {
+    getLatestKotsPreflightResult {
+      appSlug
+      clusterSlug
+      result
+      createdAt
+    }
+  }
+`;
+
+export const getLatestKotsPreflight = gql(getLatestKotsPreflightRaw);

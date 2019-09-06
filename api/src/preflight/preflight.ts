@@ -1,5 +1,6 @@
 export class PreflightResult {
-  public watchId: string;
+  public appSlug: string;
+  public clusterSlug: string;
   public result: string;
   public createdAt: string;
 

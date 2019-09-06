@@ -16,10 +16,10 @@ type Mutation {
   deleteKotsDownstream(slug: String!, clusterId: String!): Boolean
   deleteKotsApp(slug: String!): Boolean
   checkForKotsUpdates(appId: ID!): Boolean
-  uploadKotsLicense(value: String!): String
+  uploadKotsLicense(value: String!): KotsApp
   getAirgapPutUrl(filename: String!): String
   markAirgapBundleUploaded(filename: String!): Boolean
-  deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterId: String!): Boolean
+  deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
 
   createWatch(stateJSON: String!): Watch

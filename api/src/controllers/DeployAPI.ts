@@ -18,7 +18,6 @@ export class DeployAPI {
     const credentials: BasicAuth.Credentials = BasicAuth.parse(auth);
 
     let cluster;
-
     try {
       cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(credentials.pass);
     } catch (err) {
@@ -31,22 +30,37 @@ export class DeployAPI {
 
     const present = {};
     const missing = {};
+    let preflight = [];
 
     for (const app of apps) {
-      const desiredNamespace = ".";
-      if (!(desiredNamespace in present)) {
-        present[desiredNamespace] = [];
+      // app existing in a cluster doesn't always mean deploy.
+      // this means that we could possible have a version and/or preflights to run
+
+      // this needs to be updated after the preflight PR is merged
+      const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightUrls();
+      const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentDownstreamVersion(app.id, cluster.id);
+      const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.currentSequence;
+      if (pendingPreflightURLs.length > 0) {
+        preflight = preflight.concat(pendingPreflightURLs);
       }
 
-      const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
-      const b = new Buffer(rendered);
-      present[desiredNamespace].push(b.toString("base64"));
+      if (deployedAppSequence > -1) {
+        const desiredNamespace = ".";
+        if (!(desiredNamespace in present)) {
+          present[desiredNamespace] = [];
+        }
+
+        const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+        const b = new Buffer(rendered);
+        present[desiredNamespace].push(b.toString("base64"));
+      }
     }
 
     response.status(200);
     return {
       present,
       missing,
+      preflight,
     }
   }
 }

@@ -71,6 +71,46 @@ func (c *Kubectl) Remove(namespace string, yamlDoc []byte) error {
 	return nil
 }
 
+func (c *Kubectl) Preflight(preflightURI string) error {
+	args := []string{
+		"preflight",
+		preflightURI,
+	}
+
+	cmd := c.kubectlCommand(args...)
+	cmd.Env = os.Environ()
+	stdoutCh := make(chan []byte)
+	stderrCh := make(chan []byte)
+	stopCh := make(chan bool)
+
+	stdout := [][]byte{}
+	stderr := [][]byte{}
+
+	defer func() {
+		stopCh <- true
+	}()
+
+	go func() {
+		for {
+			select {
+			case o := <-stdoutCh:
+				stdout = append(stdout, o)
+			case e := <-stderrCh:
+				stderr = append(stderr, e)
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+
+	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
+		fmt.Printf("error running kubectl preflight: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+		return errors.Wrap(err, "failed to run kubectl preflight")
+	}
+
+	return nil
+}
+
 func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 	args := []string{
 		"apply",
@@ -133,5 +173,5 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 }
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {
-	return exec.Command(c.exe, append(c.connectArgs(), args...)...)
+	return exec.Command(c.exe, append(args, c.connectArgs()...)...)
 }

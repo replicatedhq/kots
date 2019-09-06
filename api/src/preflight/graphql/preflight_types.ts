@@ -1,8 +1,12 @@
 const PreflightResult = `
   type PreflightResult {
-    watchId: String!
-    result: String!
-    createdAt: String!
+    appId: String!
+    appSlug: String!
+    clusterId: String!
+    clusterSlug: String!
+    result: String
+    createdAt: String
   }
-`
+`;
+
 export default [ PreflightResult ];

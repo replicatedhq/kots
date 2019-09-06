@@ -13,9 +13,9 @@ import { isKotsApplication } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
 
-  handleMakeCurrent = (upstreamSlug, sequence, clusterId) => {
+  handleMakeCurrent = (upstreamSlug, sequence, clusterSlug) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
-      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterId);
+      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
     }
   }
 
@@ -75,6 +75,7 @@ class DownstreamWatchVersionHistory extends Component {
             ? centeredLoader
             : versionHistory?.length > 0 && versionHistory.map( version => (
               <DownstreamVersionRow
+                hasPreflight={watch.hasPreflight}
                 key={`${version.title}-${version.sequence}`}
                 downstreamWatch={downstreamWatch}
                 version={version}
