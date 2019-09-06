@@ -32,5 +32,5 @@ spec:
         type: text
       - name: preflight_result
         type: text
-      - name: preflight_result_updated_at
+      - name: preflight_result_created_at
         type: timestamp without time zone

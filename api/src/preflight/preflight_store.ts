@@ -11,7 +11,6 @@ export class PreflightStore {
 
   private mapPreflightResult(row: any): PreflightResult {
     const preflightResult = new PreflightResult();
-    preflightResult.appId = row.watch_id;
     preflightResult.result = row.result;
     preflightResult.createdAt = row.created_at;
 
@@ -119,7 +118,7 @@ export class PreflightStore {
     const q =
       `SELECT
         app_downstream_version.preflight_result,
-        app_downstream_version.preflight_result_updated_at,
+        app_downstream_version.preflight_result_created_at,
         app_downstream_version.cluster_id,
         app.id as app_id,
         app.slug as app_slug
@@ -144,10 +143,10 @@ export class PreflightStore {
     }
 
     const preflightResult = new PreflightResult();
-    preflightResult.appId = result.rows[0].app_id;
     preflightResult.appSlug = result.rows[0].app_slug;
+    preflightResult.clusterSlug = result.rows[0].app_id;
     preflightResult.result = result.rows[0].preflight_result;
-    preflightResult.createdAt = result.rows[0].preflight_result_updated_at;
+    preflightResult.createdAt = result.rows[0].preflight_result_created_at;
 
     return preflightResult;
 
@@ -161,12 +160,9 @@ export class PreflightStore {
     const qq =
       `SELECT
         app_downstream_version.preflight_result,
-        app_downstream_version.preflight_result_updated_at,
-        app_downstream_version.cluster_id,
-        app.id as app_id,
+        app_downstream_version.preflight_result_created_at,
         app.slug as app_slug,
         cluster.slug as cluster_slug
-
       FROM app_downstream_version
         INNER JOIN app ON app_downstream_version.app_id = app.id
         INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
@@ -178,12 +174,10 @@ export class PreflightStore {
     const result = await this.pool.query(qq, vv);
 
     const preflightResult = new PreflightResult();
-    preflightResult.appId = result.rows[0].app_id;
     preflightResult.appSlug = result.rows[0].app_slug;
-    preflightResult.clusterId = result.rows[0].cluster_id;
     preflightResult.clusterSlug = result.rows[0].cluster_slug;
     preflightResult.result = result.rows[0].preflight_result;
-    preflightResult.createdAt = result.rows[0].preflight_result_updated_at;
+    preflightResult.createdAt = result.rows[0].preflight_result_created_at;
 
     return preflightResult;
   }

@@ -1,8 +1,6 @@
 export class PreflightResult {
-  public appId: string;
   public appSlug: string;
   public clusterSlug: string;
-  public clusterId: string;
   public result: string;
   public createdAt: string;
 

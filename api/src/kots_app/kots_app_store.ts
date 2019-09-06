@@ -126,7 +126,7 @@ export class KotsAppStore {
       return [];
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_updated_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
     v = [
       appId,
       sequence,
@@ -161,7 +161,7 @@ export class KotsAppStore {
     }
 
     q = `
-select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_updated_at
+select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at
 from app_downstream_version
 where app_id = $1 and cluster_id = $3 and sequence > $2
 order by sequence desc`;
@@ -197,7 +197,7 @@ order by sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_updated_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -265,7 +265,7 @@ order by sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_updated_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -409,12 +409,13 @@ order by sequence desc`;
     const row = result.rows[0];
     const current_sequence = row.current_sequence;
     const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+
     const vv = [
       id,
       current_sequence
     ];
 
-    const rr = await this.pool.query(qq,vv);
+    const rr = await this.pool.query(qq, vv);
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
@@ -538,7 +539,7 @@ order by sequence desc`;
       sequence: row.sequence,
       deployedAt: row.applied_at,
       preflightResult: row.preflight_result,
-      preflightResultUpdatedAt: row.preflight_result_updated_at,
+      preflightResultCreatedAt: row.preflight_result_created_at,
     };
   }
 

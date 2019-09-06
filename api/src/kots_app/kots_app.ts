@@ -250,7 +250,7 @@ export interface KotsVersion {
   sequence: number;
   deployedAt: string;
   preflightResult: string;
-  preflightResultUpdatedAt: string;
+  preflightResultCreatedAt: string;
 }
 
 export interface KotsAppMetadata {
