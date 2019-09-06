@@ -514,7 +514,7 @@ order by sequence desc`;
     const q = `
       UPDATE app_downstream_version SET
         preflight_result = $1
-        preflight_result_updated_at = NOW()
+        preflight_result_created_at = NOW()
       WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4
     `;
 
