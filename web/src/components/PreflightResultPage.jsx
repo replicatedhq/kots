@@ -67,7 +67,7 @@ class PreflightResultPage extends Component {
             </div>
           </div>
         </div>
-        { hasData && !isLicenseFlow (
+        { hasData && !isLicenseFlow && (
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
