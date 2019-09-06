@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .PHONY: test
 test:
 	make -C web test
-	make -C ship-cd test-pact
+	make -C operator test
 
 	make -C migrations/fixtures schema-fixtures build run
 	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures

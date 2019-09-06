@@ -54,7 +54,7 @@ test: export S3_ACCESS_KEY_ID = S3RVER
 test: export S3_SECRET_ACCESS_KEY = S3RVER
 test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
-test:
+test: deps
 	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
 	docker run --rm -d --name kotsadm-fixtures -p 15432:5432 kotsadm/kotsadm-fixtures:local
