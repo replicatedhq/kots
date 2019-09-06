@@ -26,7 +26,7 @@ class PreflightResultPage extends Component {
     const isLoading = data.loading;
 
     // No cluster slug is present if coming from the license upload view
-    const isLicenseFlow = match.params.clusterSlug;
+    const isLicenseFlow = !match.params.clusterSlug;
     const preflightResultData = isLoading
       ? null
       : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
