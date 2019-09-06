@@ -34,7 +34,7 @@ export class PreflightAPI {
 
       const specJson = jsYaml.load(preflightSpecYaml);
       const params = await Params.getParams();
-      const putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+      const putUrl = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
       specJson.spec.uploadResultsTo = putUrl;
 
       response.send(200, specJson);

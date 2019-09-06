@@ -1,6 +1,7 @@
 import pg from "pg";
 import randomstring from "randomstring";
 
+import { Params } from "../server/params";
 import { PreflightSpec, PreflightResult } from "./";
 import { ReplicatedError } from "../server/errors";
 
@@ -181,4 +182,33 @@ export class PreflightStore {
 
     return preflightResult;
   }
+
+  async getPendingPreflightUrls(): Promise<string[]> {
+    const params = await Params.getParams();
+    const q =
+      `SELECT
+        app_downstream_version.sequence as sequence,
+        app.slug as app_slug,
+        cluster.slug as cluster_slug
+      FROM app_downstream_version
+        INNER JOIN app ON app_downstream_version.app_id = app.id
+        INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
+      WHERE app_downstream_version.status = 'pending_preflight'`;
+
+    const result = await this.pool.query(q);
+
+    const preflightUrls: string[] = [];
+    for (const row of result.rows) {
+      const {
+        app_slug: appSlug,
+        cluster_slug: clusterSlug,
+        sequence
+      } = row;
+      preflightUrls.push(`${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`);
+    }
+
+    return preflightUrls;
+  }
+
+
 }
