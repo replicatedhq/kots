@@ -29,7 +29,10 @@ class UploadLicenseFile extends React.Component {
     try {
       const resp = await this.props.uploadKotsLicense(licenseValue);
       const kotsApp = resp.data.uploadKotsLicense;
-      onUploadSuccess().then(appList => {
+
+      // When successful, refetch all the user's apps with onUploadSuccess
+      onUploadSuccess().then(() => {
+
         if (airgapEnabled) {
           history.replace("/airgap");
           return;
@@ -39,11 +42,9 @@ class UploadLicenseFile extends React.Component {
           history.replace("/preflight");
           return;
         }
-        if (kotsApp.slug) {
-          history.replace(`/app/${kotsApp.slug}`);
-          return;
-        }
-        history.replace(`/app/${appList[0].slug}`);
+
+        // No airgap or preflight? Go to the kotsApp detail view that was just uploaded
+        history.replace(`/app/${kotsApp.slug}`);
       });
 
     } catch (err) {

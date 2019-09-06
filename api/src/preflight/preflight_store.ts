@@ -123,12 +123,16 @@ export class PreflightStore {
         WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3
     `;
 
-    const v = [ appId, clusterId, sequence ];
+    const v = [
+      appId,
+      clusterId,
+      sequence,
+    ];
 
     const result = await this.pool.query(q,v);
 
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`Couldn't find preflight spec with appId: ${appId}, clusterId: ${clusterId}, sequence: ${sequence}`);
+      throw new Error(`Couldn't find preflight spec with appId: ${appId}, clusterId: ${clusterId}, sequence: ${sequence}`);
     }
 
     const kotsPreflightResult = new KotsPreflightResult();
@@ -145,11 +149,8 @@ export class PreflightStore {
     const r = await this.pool.query(q);
     const appId = r.rows[0].id;
 
-    const qq = `
-      SELECT preflight_result, preflight_result_updated_at, cluster_id, app_id
-        FROM app_downstream_version
-      WHERE sequence = 0 AND app_id = $1
-    `;
+    const qq =
+      `SELECT preflight_result, preflight_result_updated_at, cluster_id, app_id FROM app_downstream_version WHERE sequence = 0 AND app_id = $1`;
 
     const vv = [ appId ];
 

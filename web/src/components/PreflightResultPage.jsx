@@ -25,8 +25,6 @@ class PreflightResultPage extends Component {
 
     }
     const sequence = parseInt(match.params.sequence, 10);
-
-
     makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterId).then( () => {
       history.push(`/app/${match.params.slug}/downstreams/${match.params.downstreamSlug}/version-history`);
     });
@@ -44,8 +42,6 @@ class PreflightResultPage extends Component {
     if (hasData) {
       data.stopPolling();
     }
-
-
 
     return (
       <div className="flex-column flex1">
@@ -105,7 +101,6 @@ export default compose(
       const { match } = props;
 
       return {
-        fetchPolicy: "no-cache",
         pollInterval: 2000,
         variables: {
           appSlug: match.params.slug,
@@ -123,7 +118,6 @@ export default compose(
     },
     options: () => {
       return {
-        fetchPolicy: "no-cace",
         pollInterval: 2000
       }
     }
