@@ -15,15 +15,6 @@ class PreflightResultPage extends Component {
     const gqlData = data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
     const upstreamSlug = match.params.slug;
 
-    // If this is the latest...
-    if (!match.params.clusterSlug) {
-
-      this.props.deployKotsVersion(gqlData.appSlug, 0, gqlData.clusterSlug).then( () => {
-        history.replace(`/`);
-      });
-      return;
-
-    }
     const sequence = parseInt(match.params.sequence, 10);
     makeCurrentVersion(upstreamSlug, sequence, gqlData.clusterSlug).then( () => {
       history.push(`/app/${match.params.slug}/downstreams/${match.params.downstreamSlug}/version-history`);
@@ -31,9 +22,11 @@ class PreflightResultPage extends Component {
   }
 
   render() {
-    const { data } = this.props;
+    const { data, match } = this.props;
     const isLoading = data.loading;
 
+    // No cluster slug is present if coming from the license upload view
+    const isLicenseFlow = match.params.clusterSlug;
     const preflightResultData = isLoading
       ? null
       : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
@@ -74,7 +67,7 @@ class PreflightResultPage extends Component {
             </div>
           </div>
         </div>
-        { hasData && (
+        { hasData && !isLicenseFlow (
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
