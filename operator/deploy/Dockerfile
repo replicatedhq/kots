@@ -21,8 +21,12 @@ ENV PATH="/root/.krew/bin:$PATH"
 
 # Install our plugins
 # RUN kubectl krew install preflight
-ADD ./preflight /usr/local/bin/preflight
 RUN kubectl krew install support-bundle
+
+## This is used when we aren't on a release of preflight
+RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.8/preflight_0.9.8_linux_amd64-0.9.8.tar.gz" > /tmp/preflight.tar.gz && \
+  cd /tmp && tar xzvf preflight.tar.gz && \
+  mv /tmp/preflight /usr/local/bin/preflight
 
 COPY ./bin/kotsadm-operator /kotsadm-operator
 
