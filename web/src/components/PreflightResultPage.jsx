@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { graphql, compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import moment from "moment";
 
 import { getKotsPreflightResult, getLatestKotsPreflight } from "@src/queries/AppsQueries";
 import { deployKotsVersion } from "@src/mutations/AppsMutations";
@@ -45,6 +44,9 @@ class PreflightResultPage extends Component {
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
+              <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
+                Preflight checks are designed to be run against a target cluster before installing an application. Preflights are simply a different set of collectors + analyzers. These checks are optional but are recommended to ensure that the application you install will work properly.
+              </p>
               { (isLoading || !hasData ) && (
                 <div className="flex-column justifyContent--center alignItems--center u-minHeight--full u-minWidth--full">
                   <Loader size="60" />
@@ -53,9 +55,8 @@ class PreflightResultPage extends Component {
               {
                 hasData && (
                   <div className="flex-column">
-                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold u-marginTop--20">Preflights last run at: {moment(new Date(preflightResultData.createdAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
                     <PreflightRenderer
-                      className="u-marginTop--30"
+                      className="u-marginTop--20"
                       onDeployClick={this.deployKotsDownstream}
                       results={preflightResultData.result}
                     />
