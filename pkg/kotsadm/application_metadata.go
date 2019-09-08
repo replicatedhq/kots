@@ -4,7 +4,10 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -19,4 +22,20 @@ func getApplicationMetadataYAML(data []byte, namespace string) (map[string][]byt
 	docs["application.yaml"] = configMap.Bytes()
 
 	return docs, nil
+}
+
+func ensureApplicationMetadata(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing metadata config map")
+		}
+
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(applicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create metadata config map")
+		}
+	}
+
+	return nil
 }

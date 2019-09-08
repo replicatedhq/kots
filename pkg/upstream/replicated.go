@@ -25,12 +25,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-const defaultMetadata = `apiVersion: kots.io/v1beta1
+const DefaultMetadata = `apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
   name: "Application"
 spec:
-  name: "Application"
+  title: "Application"
   icon: https://cdn1.iconfinder.com/data/icons/ninja-things-1/1772/ninja-simple-512.png`
 
 type ReplicatedUpstream struct {
@@ -480,7 +480,7 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 	}
 
 	if metadata == nil {
-		metadata = []byte(defaultMetadata)
+		metadata = []byte(DefaultMetadata)
 	}
 
 	return metadata, nil

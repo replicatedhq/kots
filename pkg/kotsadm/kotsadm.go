@@ -140,7 +140,6 @@ func Deploy(deployOptions DeployOptions) error {
 			return errors.Wrap(err, "failed to create namespace")
 		}
 		log.FinishChildSpinner()
-
 	} else if err != nil {
 		return errors.Wrap(err, "failed to get namespace")
 	}
