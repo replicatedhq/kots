@@ -51,8 +51,10 @@ spec:
           env:
             - name: AUTO_CREATE_CLUSTER
               value: "0"
-            - name: TRACER_NAME
-              value: kotsadm-api
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           readinessProbe:
             httpGet:
               path: /healthz

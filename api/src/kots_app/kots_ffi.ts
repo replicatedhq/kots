@@ -26,7 +26,22 @@ function kots() {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
     PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString]],
     UpdateCheck: ["longlong", [GoString]],
+    ReadMetadata: [GoString, [GoString]],
+    RemoveMetadata: ["longlong", [GoString]],
   });
+}
+
+export async function kotsAppGetBranding(): Promise<string> {
+  const namespace = process.env["POD_NAMESPACE"];
+  if (!namespace) {
+    throw new Error("unable to determine current namespace");
+  }
+  const namespaceParam = new GoString();
+  namespaceParam["p"] = namespace;
+  namespaceParam["n"] = namespace.length;
+
+  const branding = kots().ReadMetadata(namespaceParam);
+  return branding.p;
 }
 
 export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
