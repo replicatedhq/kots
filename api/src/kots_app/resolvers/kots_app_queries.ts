@@ -4,14 +4,18 @@ import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
 import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails } from "../";
 import { Cluster } from "../../cluster";
+import { kotsAppGetBranding } from "../kots_ffi";
+import yaml from "js-yaml";
 
 export function KotsQueries(stores: Stores) {
   return {
-
     async getKotsMetadata(): Promise<KotsAppMetadata> {
+      const rawBranding = await kotsAppGetBranding();
+      const parsedBranding = yaml.safeLoad(rawBranding);
+
       return {
-        name: "Sentry Enterprise",
-        iconUri: "https://sentry-brand.storage.googleapis.com/sentry-glyph-black.png"
+        name: parsedBranding.spec.title,
+        iconUri: parsedBranding.spec.icon,
       }
     },
 
