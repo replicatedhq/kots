@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { Link } from "react-router-dom";
 import { graphql, compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import moment from "moment";
@@ -39,23 +40,20 @@ class PreflightResultPage extends Component {
     return (
       <div className="flex-column flex1">
         <div className="flex1 u-overflow--auto">
-          <div className="PreflightChecks--wrapper u-paddingTop--30 u-overflow--hidden">
+          <div className="PreflightChecks--wrapper flex u-paddingTop--30 u-overflow--hidden">
             <div className="u-minWidth--full u-minHeight--full">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
-              <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
-                Preflight checks are designed to be run against a target cluster before installing an application. Preflights are simply a different set of collectors + analyzers. These checks are optional but are recommended to ensure that the application you install will work properly.
-              </p>
               { (isLoading || !hasData ) && (
-                <div className="flex-column justifyContent--center alignItems--center">
+                <div className="flex-column justifyContent--center alignItems--center u-minHeight--full u-minWidth--full">
                   <Loader size="60" />
                 </div>
               )}
               {
                 hasData && (
                   <div className="flex-column">
-                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold">Preflights last run at: {moment(new Date(preflightResultData.createdAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
+                    <p className="u-fontSize--large u-color--dustyGray u-fontWeight--bold u-marginTop--20">Preflights last run at: {moment(new Date(preflightResultData.createdAt).toISOString()).format("MMM D, YYYY h:mm A")}</p>
                     <PreflightRenderer
                       className="u-marginTop--30"
                       onDeployClick={this.deployKotsDownstream}
@@ -78,6 +76,20 @@ class PreflightResultPage extends Component {
           </button>
           </div>
         )}
+        {
+          hasData && isLicenseFlow && (
+            <div className="flex-auto flex justifyContent--flexEnd">
+              <Link to={`/app/${preflightResultData.appSlug}`}>
+              <button
+                type="button"
+                className="btn primary u-marginRight--30 u-marginBottom--15"
+              >
+                Continue
+              </button>
+              </Link>
+            </div>
+          )
+        }
       </div>
     );
   }
