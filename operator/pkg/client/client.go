@@ -147,12 +147,24 @@ func runPreflight(preflightURI string) error {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
 
+	preflight := ""
+	localPreflight, err := exec.LookPath("preflight")
+	if err == nil {
+		preflight = localPreflight
+	}
+
+	supportBundle := ""
+	localSupportBundle, err := exec.LookPath("support-bundle")
+	if err == nil {
+		supportBundle = localSupportBundle
+	}
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get in cluster config")
 	}
 
-	kubernetesApplier := applier.NewKubectl(kubectl, config)
+	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
 	return kubernetesApplier.Preflight(preflightURI)
 }
@@ -166,6 +178,18 @@ func ensureResourcesPresent(namespace string, input []byte) error {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
 
+	preflight := ""
+	localPreflight, err := exec.LookPath("preflight")
+	if err == nil {
+		preflight = localPreflight
+	}
+
+	supportBundle := ""
+	localSupportBundle, err := exec.LookPath("support-bundle")
+	if err == nil {
+		supportBundle = localSupportBundle
+	}
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get in cluster config")
@@ -173,7 +197,7 @@ func ensureResourcesPresent(namespace string, input []byte) error {
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, config)
+	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
 	fmt.Println("dry run applying manifests(s)")
 	if err := kubernetesApplier.Apply(namespace, input, true); err != nil {
@@ -189,11 +213,22 @@ func ensureResourcesPresent(namespace string, input []byte) error {
 func ensureResourcesMissing(namespace string, input []byte) error {
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
-
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		fmt.Println(err)
 		return err
+	}
+
+	preflight := ""
+	localPreflight, err := exec.LookPath("preflight")
+	if err == nil {
+		preflight = localPreflight
+	}
+
+	supportBundle := ""
+	localSupportBundle, err := exec.LookPath("support-bundle")
+	if err == nil {
+		supportBundle = localSupportBundle
 	}
 
 	config, err := rest.InClusterConfig()
@@ -203,7 +238,7 @@ func ensureResourcesMissing(namespace string, input []byte) error {
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, config)
+	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 	go kubernetesApplier.Remove(namespace, input)
 
 	return nil

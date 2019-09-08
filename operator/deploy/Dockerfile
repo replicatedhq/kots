@@ -20,7 +20,8 @@ RUN /install-krew.sh
 ENV PATH="/root/.krew/bin:$PATH"
 
 # Install our plugins
-RUN kubectl krew install preflight
+# RUN kubectl krew install preflight
+ADD ./preflight /usr/local/bin/preflight
 RUN kubectl krew install support-bundle
 
 COPY ./bin/kotsadm-operator /kotsadm-operator

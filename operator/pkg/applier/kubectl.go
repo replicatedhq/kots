@@ -11,14 +11,18 @@ import (
 )
 
 type Kubectl struct {
-	exe    string
-	config *rest.Config
+	kubectl       string
+	preflight     string
+	supportBundle string
+	config        *rest.Config
 }
 
-func NewKubectl(exe string, config *rest.Config) *Kubectl {
+func NewKubectl(kubectl string, preflight string, supportBundle string, config *rest.Config) *Kubectl {
 	return &Kubectl{
-		exe:    exe,
-		config: config,
+		kubectl:       kubectl,
+		preflight:     preflight,
+		supportBundle: supportBundle,
+		config:        config,
 	}
 }
 
@@ -72,12 +76,12 @@ func (c *Kubectl) Remove(namespace string, yamlDoc []byte) error {
 }
 
 func (c *Kubectl) Preflight(preflightURI string) error {
+	fmt.Printf("running kubectl preflight %s\n", preflightURI)
 	args := []string{
-		"preflight",
 		preflightURI,
 	}
 
-	cmd := c.kubectlCommand(args...)
+	cmd := c.preflightCommand(args...)
 	cmd.Env = os.Environ()
 	stdoutCh := make(chan []byte)
 	stderrCh := make(chan []byte)
@@ -173,5 +177,13 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 }
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {
-	return exec.Command(c.exe, append(args, c.connectArgs()...)...)
+	return exec.Command(c.kubectl, append(args, c.connectArgs()...)...)
+}
+
+func (c *Kubectl) preflightCommand(args ...string) *exec.Cmd {
+	if c.preflight != "" {
+		return exec.Command(c.preflight, append(args, c.connectArgs()...)...)
+	}
+
+	return exec.Command(c.kubectl, append(append([]string{"preflight"}, args...), c.connectArgs()...)...)
 }
