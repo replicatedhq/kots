@@ -86,7 +86,7 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 								},
 								{
 									Name:  "SHIP_API_ADVERTISE_ENDPOINT",
-									Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", namespace),
+									Value: "http://localhost:8800",
 								},
 								{
 									Name:  "S3_ENDPOINT",
