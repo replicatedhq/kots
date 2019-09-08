@@ -63,7 +63,7 @@ func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error
 		return errors.Wrap(err, "failed to ensure operator role binding")
 	}
 
-	if err := ensuureOperatorServiceAccount(namespace, clientset); err != nil {
+	if err := ensureOperatorServiceAccount(namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator service account")
 	}
 
@@ -102,7 +102,7 @@ func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset
 	return nil
 }
 
-func ensuureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
+func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
 	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get("kotsadm-operator-serviceaccount", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
