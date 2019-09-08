@@ -27,6 +27,12 @@ func getOperatorYAML(namespace string) (map[string][]byte, error) {
 	}
 	docs["operator-rolebinding.yaml"] = roleBinding.Bytes()
 
+	var serviceAccount bytes.Buffer
+	if err := s.Encode(operatorServiceAccount(namespace), &serviceAccount); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal operator service account")
+	}
+	docs["operator-serviceaccount.yaml"] = serviceAccount.Bytes()
+
 	var deployment bytes.Buffer
 	if err := s.Encode(operatorDeployment(namespace), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator deployment")
@@ -55,6 +61,10 @@ func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error
 
 	if err := ensureOperatorRoleBinding(namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator role binding")
+	}
+
+	if err := ensuureOperatorServiceAccount(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator service account")
 	}
 
 	return nil
@@ -86,6 +96,22 @@ func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset
 		_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
+		}
+	}
+
+	return nil
+}
+
+func ensuureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get("kotsadm-operator-serviceaccount", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get serviceaccouont")
+		}
+
+		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(operatorServiceAccount(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create serviceaccount")
 		}
 	}
 

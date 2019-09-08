@@ -44,7 +44,7 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "default",
+				Name:      "kotsadm-operator",
 				Namespace: namespace,
 			},
 		},
@@ -56,6 +56,21 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 	}
 
 	return roleBinding
+}
+
+func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
+	serviceAccount := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-operator",
+			Namespace: namespace,
+		},
+	}
+
+	return serviceAccount
 }
 
 func operatorDeployment(namespace string) *appsv1.Deployment {
@@ -81,7 +96,8 @@ func operatorDeployment(namespace string) *appsv1.Deployment {
 					},
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyAlways,
+					ServiceAccountName: "kotsadm-operator",
+					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
 							Image:           "kotsadm/kotsadm-operator:alpha",

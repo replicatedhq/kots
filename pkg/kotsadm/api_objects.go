@@ -86,7 +86,7 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 								},
 								{
 									Name:  "SHIP_API_ADVERTISE_ENDPOINT",
-									Value: fmt.Sprintf("http://localhost:8800", namespace),
+									Value: "http://localhost:8800",
 								},
 								{
 									Name:  "S3_ENDPOINT",
