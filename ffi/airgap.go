@@ -5,14 +5,16 @@ import "C"
 import (
 	"archive/tar"
 	"compress/gzip"
-	"os/exec"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/docker/distribution/reference"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -21,21 +23,90 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+type ImageRef struct {
+	Domain string
+	Name   string
+	Tag    string
+	Digest string
+}
+
+//export RewriteAndPushImageName
+func RewriteAndPushImageName(imageFile, image, registryHost, registryOrg, username, password string) int {
+	imageRef, err := parseImageRef(image)
+	if err != nil {
+		fmt.Printf("failed to parse image %s: %s\n", image, err)
+		return 1
+	}
+	localImage := imageRefToString(imageRef, registryHost, registryOrg)
+
+	cmdArgs := []string{
+		"copy",
+		"--dest-tls-verify=false",
+	}
+	if len(username) > 0 && len(password) > 0 {
+		cmdArgs = append(cmdArgs, fmt.Sprintf("--dest-creds=%s:%s", username, password))
+	}
+	cmdArgs = append(cmdArgs,
+		fmt.Sprintf("oci-archive:%s", imageFile),
+		fmt.Sprintf("docker://%s", localImage),
+	)
+
+	cmd := exec.Command("skopeo", cmdArgs...)
+	cmdOutput, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("run failed with output: %s\n", cmdOutput)
+		return 1
+	}
+
+	return 0
+}
+
+func parseImageRef(image string) (*ImageRef, error) {
+	ref := &ImageRef{}
+
+	// named, err := reference.ParseNormalizedNamed(image)
+	parsed, err := reference.ParseAnyReference(image)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse image name %q", image)
+	}
+
+	if named, ok := parsed.(reference.Named); ok {
+		ref.Domain = reference.Domain(named)
+		ref.Name = named.Name()
+	} else {
+		return nil, errors.New(fmt.Sprintf("unsupported ref type: %T", parsed))
+	}
+
+	if tagged, ok := parsed.(reference.Tagged); ok {
+		ref.Tag = tagged.Tag()
+	} else if can, ok := parsed.(reference.Canonical); ok {
+		ref.Digest = can.Digest().String()
+	} else {
+		ref.Tag = "latest"
+	}
+
+	return ref, nil
+}
+
+func imageRefToString(ref *ImageRef, registryHost, registryOrg string) string {
+	pathParts := strings.Split(ref.Name, "/")
+	imageName := fmt.Sprintf("%s/%s", registryOrg, pathParts[len(pathParts)-1])
+
+	// there might be a way to do this with reference package too
+	if ref.Digest != "" {
+		return fmt.Sprintf("%s/%s@sha256:%s", registryHost, imageName, ref.Digest)
+	}
+	return fmt.Sprintf("%s/%s:%s", registryHost, imageName, ref.Tag)
+}
+
 //export PullFromAirgap
-func PullFromAirgap(licenseData string, airgapURL string, downstream string, outputFile string) int {
+func PullFromAirgap(licenseData, airgapDir, downstream, outputFile, registryHost, registryNamesapce string) int {
 	workspace, err := ioutil.TempDir("", "kots-airgap")
 	if err != nil {
 		fmt.Printf("failed to create temp dir: %s\n", err)
 		return 1
 	}
-	// defer os.RemoveAll(workspace)
-
-	// airgapDir contains release tar and all images as individual tars
-	airgapDir, err := downloadAirgapAchive(workspace, airgapURL)
-	if err != nil {
-		fmt.Printf("failed to download airgap archive: %s\n", err)
-		return 1
-	}
+	defer os.RemoveAll(workspace)
 
 	// releaseDir is the contents of the release tar (yaml, no images)
 	releaseDir, err := extractAppRelease(workspace, airgapDir)
@@ -43,8 +114,6 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		fmt.Printf("failed to extract app release: %s\n", err)
 		return 1
 	}
-
-	///............
 
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -73,7 +142,7 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		fmt.Printf("failed to create temp root path: %s\n", err.Error())
 		return 1
 	}
-	// defer os.RemoveAll(tmpRoot)
+	defer os.RemoveAll(tmpRoot)
 
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{downstream},
@@ -82,6 +151,11 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
+		RewriteImages: pull.RewriteImages{
+			ImageFiles: filepath.Join(airgapDir, "images"),
+			Host:       registryHost,
+			Namespace:  registryNamesapce,
+		},
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
@@ -106,11 +180,6 @@ func PullFromAirgap(licenseData string, airgapURL string, downstream string, out
 
 	if err := tarGz.Archive(paths, outputFile); err != nil {
 		fmt.Printf("failed to write archive: %s", err.Error())
-		return 1
-	}
-
-	if err := pushImages(filepath.Join(airgapDir, "images"), []string{}); err != nil {
-		fmt.Printf("unable to push images: %s\n", err.Error())
 		return 1
 	}
 
@@ -256,68 +325,4 @@ func extractOneArchive(tgzFile string, destDir string) error {
 	}
 
 	return nil
-}
-
-func pushImages(srcDir string, imageNameParts []string) error {
-	files, err := ioutil.ReadDir(srcDir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to list image files")
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			// this function will modify the array argument
-			err := pushImages(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name()))
-			if err != nil {
-				return errors.Wrapf(err, "failed to push images")
-			}
-		} else {
-			// this function will modify the array argument
-			if err := pushImageFromFile(filepath.Join(srcDir, file.Name()), append(imageNameParts, file.Name())); err != nil {
-				return errors.Wrapf(err, "failed to push image")
-			}
-		}
-	}
-
-	return nil
-}
-
-func pushImageFromFile(filename string, imageNameParts []string) error {
-	// TODO: don't hardcode registry name
-	imageName, err := imageNameFromNameParts("image-registry-lb:5000", imageNameParts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to generate image name from %v", imageNameParts)
-	}
-	cmd := exec.Command("skopeo", "copy", "--dest-tls-verify=false", fmt.Sprintf("oci-archive:%s", filename), fmt.Sprintf("docker://%s", imageName))
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("run failed with output: %s\n", stdoutStderr)
-		return errors.Wrap(err, "failed to execute skopeo")
-	}
-
-	return nil
-}
-
-func imageNameFromNameParts(registry string, nameParts []string) (string, error) {
-	// imageNameParts looks like this:
-	// ["quay.io", "someorg", "imagename", "imagetag"]
-	// or
-	// ["quay.io", "someorg", "imagename", "sha256", "<sha>"]
-	// we want to replace host with local registry and build image name from the remaining parts
-
-	if len(nameParts) < 4 {
-		return "", fmt.Errorf("not enough parts in image name: %v", nameParts)
-	}
-
-	var name, tag string
-	nameParts[0] = registry
-	if nameParts[len(nameParts) - 2] == "sha256" {
-		tag = fmt.Sprintf("@sha256:%s", nameParts[len(nameParts) - 1])
-		name = filepath.Join(nameParts[:len(nameParts)-2]...)
-	} else {
-		tag = fmt.Sprintf(":%s", nameParts[len(nameParts) - 1])
-		name = filepath.Join(nameParts[:len(nameParts)-1]...)
-	}
-
-	return fmt.Sprintf("%s%s", name, tag), nil
 }

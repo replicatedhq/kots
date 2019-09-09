@@ -11,6 +11,7 @@ require (
 	github.com/cjbassi/drawille-go v0.0.0-20190126131713-27dc511fe6fd // indirect
 	github.com/cloudflare/cfssl v0.0.0-20190808011637-b1ec8c586c2a // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/elazarl/goproxy v0.0.0-20190711103511-473e67f1d7d2 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190711103511-473e67f1d7d2 // indirect
