@@ -34,7 +34,13 @@ class UploadAirgapBundle extends React.Component {
       });
       await response;
 
-      this.props.markAirgapBundleUploaded(this.state.bundleFile.name)
+
+      this.props.markAirgapBundleUploaded(
+        this.state.bundleFile.name,
+        this.state.registryDetails.hostname,
+        this.state.registryDetails.namespace,
+        this.state.registryDetails.username,
+        this.state.registryDetails.password)
         .then(async () => {
           this.setState({ fileUploading: false });
           // this.props.history.replace(`/app/${response[0].slug}`);
@@ -172,7 +178,7 @@ export default compose(
   }),
   graphql(markAirgapBundleUploaded, {
     props: ({ mutate }) => ({
-      markAirgapBundleUploaded: (filename) => mutate({ variables: { filename } })
+      markAirgapBundleUploaded: (filename, registryHost, registryNamespace, username, password) => mutate({ variables: { filename, registryHost, registryNamespace, username, password } })
     })
   })
 )(UploadAirgapBundle);

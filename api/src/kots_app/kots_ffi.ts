@@ -24,7 +24,8 @@ const GoString = Struct({
 function kots() {
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
-    PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString]],
+    PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
+    RewriteAndPushImageName: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["longlong", [GoString]],
     ReadMetadata: [GoString, [GoString]],
     RemoveMetadata: ["longlong", [GoString]],
@@ -152,8 +153,8 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
   }
 }
 
-export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapUrl: string, downstreamName: string, stores: Stores): Promise<void> {
-  const tmpDir = tmp.dirSync();
+export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): Promise<void> {
+  const tmpDstDir = tmp.dirSync();
 
   try {
     const licenseDataParam = new GoString();
@@ -164,16 +165,24 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
     downstreamParam["p"] = downstreamName;
     downstreamParam["n"] = downstreamName.length;
 
-    const airgapUrlParam = new GoString();
-    airgapUrlParam["p"] = airgapUrl;
-    airgapUrlParam["n"] = airgapUrl.length;
+    const airgapDirParam = new GoString();
+    airgapDirParam["p"] = airgapDir;
+    airgapDirParam["n"] = airgapDir.length;
 
-    const out = path.join(tmpDir.name, "archive.tar.gz");
+    const out = path.join(tmpDstDir.name, "archive.tar.gz");
     const outParam = new GoString();
     outParam["p"] = out;
     outParam["n"] = out.length;
 
-    const pullResult = kots().PullFromAirgap(licenseDataParam, airgapUrlParam, downstreamParam, outParam);
+    const registryHostParam = new GoString();
+    registryHostParam["p"] = registryHost;
+    registryHostParam["n"] = registryHost.length;
+
+    const registryNamespaceParam = new GoString();
+    registryNamespaceParam["p"] = registryNamespace;
+    registryNamespaceParam["n"] = registryNamespace.length;
+
+    const pullResult = kots().PullFromAirgap(licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam);
     if (pullResult > 0) {
       return;
     }
@@ -204,6 +213,37 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
 
     await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
   } finally {
-    tmpDir.removeCallback();
+    tmpDstDir.removeCallback();
+  }
+}
+
+export async function kotsRewriteAndPushImageName(imageFile: string, image: string, registryHost: string, registryOrg: string, username: string, password: string): Promise<void> {
+  const imageFileParam = new GoString();
+  imageFileParam["p"] = imageFile;
+  imageFileParam["n"] = imageFile.length;
+
+  const imageParam = new GoString();
+  imageParam["p"] = image;
+  imageParam["n"] = image.length;
+
+  const registryHostParam = new GoString();
+  registryHostParam["p"] = registryHost;
+  registryHostParam["n"] = registryHost.length;
+
+  const registryOrgParam = new GoString();
+  registryOrgParam["p"] = registryOrg;
+  registryOrgParam["n"] = registryOrg.length;
+
+  const usernameParam = new GoString();
+  usernameParam["p"] = username;
+  usernameParam["n"] = username.length;
+
+  const passwordParam = new GoString();
+  passwordParam["p"] = password;
+  passwordParam["n"] = password.length;
+
+  const result = kots().RewriteAndPushImageName(imageFileParam, imageParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
+  if (result > 0) {
+    throw new Error("ffi failed");
   }
 }

@@ -49,8 +49,8 @@ export const getAirgapPutUrlRaw = `
 export const getAirgapPutUrl = gql(getAirgapPutUrlRaw);
 
 export const markAirgapBundleUploadedRaw = `
-  mutation markAirgapBundleUploaded($filename: String!) {
-    markAirgapBundleUploaded(filename: $filename)
+  mutation markAirgapBundleUploaded($filename: String, $registryHost: String, $registryNamespace: String, $username: String, $password: String) {
+    markAirgapBundleUploaded(filename: $filename, registryHost: $registryHost, registryNamespace: $registryNamespace, username: $username, password: $password)
   }
 `
 export const markAirgapBundleUploaded = gql(markAirgapBundleUploadedRaw);
