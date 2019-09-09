@@ -460,6 +460,44 @@
       }
     },
     {
+      "description": "a mutation to upload a license",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJ1cGxvYWQtbGljZW5zZS1zZXNzaW9uLTEifQ.hM-ydRhVNFgALwlIlsFU1VJ_H6MBjh6qJdPlL4Cal68",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "uploadKotsLicense",
+          "query": "\n  mutation uploadKotsLicense($value: String!) {\n    uploadKotsLicense(value: $value) {\n      hasPreflight\n      slug\n    }\n  }\n",
+          "variables": {
+            "value": "\napiVersion: kots.io/v1beta1\nkind: License\nmetadata:\n  name: horseysuprise\nspec:\n  licenseID: this-is-a-totally-valid-license-id\n  appSlug: sentry-enterprise\n  endpoint: https://replicated.app\n  signature: IA==\n"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*mutation\\s*uploadKotsLicense\\(\\$value:\\s*String!\\)\\s*\\{\\s*uploadKotsLicense\\(value:\\s*\\$value\\)\\s*\\{\\s*hasPreflight\\s*slug\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "uploadKotsLicense": {
+              "hasPreflight": true,
+              "slug": "sentry-enterprise"
+            }
+          }
+        }
+      }
+    },
+    {
       "description": "a query to get a watch's contributors",
       "request": {
         "method": "POST",

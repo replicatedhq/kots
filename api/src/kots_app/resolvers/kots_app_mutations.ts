@@ -44,13 +44,14 @@ export function KotsMutations(stores: Stores) {
       const { value } = args;
       const parsedLicense = yaml.safeLoad(value);
 
-      const clusters = await stores.clusterStore.listAllUsersClusters();
+      const clusters = await context.listClusters();
       let downstream;
       for (const cluster of clusters) {
         if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
           downstream = cluster;
         }
       }
+
       const name = parsedLicense.spec.appSlug.replace("-", " ")
       const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
       return kotsApp;
@@ -83,7 +84,7 @@ export function KotsMutations(stores: Stores) {
         for (const image of imageMap) {
           kotsRewriteAndPushImageName(image.filePath, image.shortName, registryHost, registryNamespace, username, password);
         }
-  
+
         const app = await stores.kotsAppStore.getPendingKotsAirgapApp()
 
         const clusters = await stores.clusterStore.listAllUsersClusters();

@@ -54,6 +54,8 @@ test: export S3_ACCESS_KEY_ID = S3RVER
 test: export S3_SECRET_ACCESS_KEY = S3RVER
 test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
+test: export AUTO_CREATE_CLUSTER_NAME = microk8s-test
+test: export AUTO_CREATE_CLUSTER_TOKEN = this-is-definite-not-a-secret
 test: deps
 	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :

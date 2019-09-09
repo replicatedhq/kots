@@ -22,6 +22,7 @@ const GoString = Struct({
 });
 
 function kots() {
+  // TODO: Allow this lib to work from a pact test environment
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
     PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
@@ -89,14 +90,13 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 
 export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
   const tmpDir = tmp.dirSync();
-
+  console.log("START FFI");
   try {
     const parsedLicense = yaml.safeLoad(licenseData);
     if (parsedLicense.spec.isAirgapSupported) {
       const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
       return kotsApp;
     }
-
     const licenseDataParam = new GoString();
     licenseDataParam["p"] = licenseData;
     licenseDataParam["n"] = licenseData.length;
@@ -109,7 +109,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     const outParam = new GoString();
     outParam["p"] = out;
     outParam["n"] = out.length;
-
     const pullResult = kots().PullFromLicense(licenseDataParam, downstreamParam, outParam);
     if (pullResult > 0) {
       return;
@@ -144,7 +143,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
       await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
     }
-
+    console.log("END: KOTS_FFI");
     return kotsApp;
   } catch (err) {
     console.log(err);
