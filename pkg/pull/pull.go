@@ -3,17 +3,19 @@ package pull
 import (
 	"io/ioutil"
 	"net/url"
-	"path"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/downstream"
+	kotsimage "github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 type PullOptions struct {
@@ -28,6 +30,13 @@ type PullOptions struct {
 	SharedPassword      string
 	CreateAppDir        bool
 	Silent              bool
+	RewriteImages       RewriteImages
+}
+
+type RewriteImages struct {
+	ImageFiles string
+	Host       string
+	Namespace  string
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -138,15 +147,24 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write base")
 	}
 
+	var images []image.Image
+	if pullOptions.LocalPath != "" {
+		i, err := kotsimage.BuildRewriteList(pullOptions.RewriteImages.ImageFiles, pullOptions.RewriteImages.Host, pullOptions.RewriteImages.Namespace)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to rewrite images")
+		}
+		images = i
+	}
+
 	log.ActionWithSpinner("Creating midstream")
-	m, err := midstream.CreateMidstream(b)
+	m, err := midstream.CreateMidstream(b, images)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
 	}
 	log.FinishSpinner()
 
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
@@ -161,7 +179,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		writeDownstreamOptions := downstream.WriteOptions{
-			DownstreamDir: path.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
+			DownstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
 			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
 		}
 
@@ -178,7 +196,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	return path.Join(pullOptions.RootDir, u.Name), nil
+	return filepath.Join(pullOptions.RootDir, u.Name), nil
 }
 
 func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {

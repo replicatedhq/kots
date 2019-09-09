@@ -80,4 +80,3 @@ func PullFromLicense(licenseData string, downstream string, outputFile string) i
 
 	return 0
 }
-

@@ -16,11 +16,11 @@ ffi: fmt vet
 
 .PHONY: fmt
 fmt:
-	go fmt ./pkg/... ./cmd/...
+	go fmt ./pkg/... ./cmd/... ./ffi/...
 
 .PHONY: vet
 vet:
-	go vet ./pkg/... ./cmd/...
+	go vet ./pkg/... ./cmd/... ./ffi/...
 
 .PHONY: gosec
 gosec:
