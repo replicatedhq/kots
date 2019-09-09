@@ -1,11 +1,14 @@
 import _ from "lodash";
 import { Context } from "../../context";
 import yaml from "js-yaml";
-import fs from "fs";
+import tmp from "tmp";
+import path from "path";
+import request from "request";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsAppCheckForUpdate, kotsAppFromAirgapData } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsAppCheckForUpdate, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../kots_ffi";
+import { extractFromURL, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/airgap";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -60,22 +63,45 @@ export function KotsMutations(stores: Stores) {
     },
 
     async markAirgapBundleUploaded(root: any, args: any, context: Context) {
-      const { filename } = args;
-      const app = await stores.kotsAppStore.getPendingKotsAirgapApp()
+      const dstDir = tmp.dirSync();
 
-      const clusters = await stores.clusterStore.listAllUsersClusters();
-      let downstream;
-      for (const cluster of clusters) {
-        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
-          downstream = cluster;
+      try {
+
+        const { filename, registryHost, registryNamespace, username, password } = args;
+
+        // note we don't have to use signed url here... we can get a stream from s3 object.
+        const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
+        await extractFromURL(request({url: url}), dstDir.name);
+        const imageFiles = await getImageFiles(path.join(dstDir.name, "images"));
+        const imageMap = imageFiles.map(imageFile => {
+          return {
+            filePath: imageFile,
+            shortName: pathToShortImageName(path.join(dstDir.name, "images"), imageFile),
+            fullName: pathToImageName(path.join(dstDir.name, "images"), imageFile),
+          }
+        });
+        for (const image of imageMap) {
+          kotsRewriteAndPushImageName(image.filePath, image.shortName, registryHost, registryNamespace, username, password);
         }
+  
+        const app = await stores.kotsAppStore.getPendingKotsAirgapApp()
+
+        const clusters = await stores.clusterStore.listAllUsersClusters();
+        let downstream;
+        for (const cluster of clusters) {
+          if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+            downstream = cluster;
+          }
+        }
+
+        await kotsAppFromAirgapData(app, String(app.license), dstDir.name, downstream.title, stores, registryHost, registryNamespace);
+
+        await stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, registryNamespace);
+
+        return true;
+      } finally {
+        dstDir.removeCallback();
       }
-
-      const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
-
-      await kotsAppFromAirgapData(app, String(app.license), url, downstream.title, stores);
-
-      return true;
     },
 
     async updateRegistryDetails(root: any, args: any, context) {
