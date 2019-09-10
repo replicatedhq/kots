@@ -5,9 +5,75 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func apiRole(namespace string) *rbacv1.Role {
+	role := &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-api-role",
+			Namespace: namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{"kotsadm-application-metadata"},
+				Verbs:         metav1.Verbs{"get", "delete"},
+			},
+		},
+	}
+
+	return role
+}
+
+func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
+	roleBinding := &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-operator-rolebinding",
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "kotsadm-api",
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "kotsadm-api-role",
+		},
+	}
+
+	return roleBinding
+}
+
+func apiServiceAccount(namespace string) *corev1.ServiceAccount {
+	serviceAccount := &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-api",
+			Namespace: namespace,
+		},
+	}
+
+	return serviceAccount
+}
 
 func apiDeployment(namespace string) *appsv1.Deployment {
 	deployment := &appsv1.Deployment{
@@ -32,7 +98,8 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 					},
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyAlways,
+					ServiceAccountName: "kotsadm-api",
+					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
 							Image:           "kotsadm/kotsadm-api:alpha",
@@ -141,6 +208,14 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 												Name: "kotsadm-postgres",
 											},
 											Key: "uri",
+										},
+									},
+								},
+								{
+									Name: "POD_NAMESPACE",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
 										},
 									},
 								},
