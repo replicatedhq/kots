@@ -12,11 +12,11 @@ import updateWatch from "./contracts/update-watch";
 import deleteWatch from "./contracts/delete-watch";
 import duplicateSlugCheck from "./contracts/duplicate-slug-check";
 import getWatchContributors from "./contracts/get-watch-contributors";
-import uploadAirgapLicense from "./contracts/upload-airgap-license";
 
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
 describe("ShipAPI GraphQL Pact", () => {
+
   describe("solo-account:listClusters", () => listClusters() );
   describe("solo-account:createShipCluster", () => createShipCluster() );
   describe("solo-account:createGitOpsCluster", () => createGitOpsCluster() );
@@ -35,8 +35,5 @@ describe("ShipAPI GraphQL Pact", () => {
   // describe("auth:shipAuthSignup", () => shipauthSignup() );
   // describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
   // describe("gitops-cluster-account:getWatchVersion", () => getWatchVersionGitOpsCluster() );
-  describe("upload-license", () => uploadAirgapLicense());
   describe("get-watch-contributors", () => getWatchContributors() );
-
-
 });
