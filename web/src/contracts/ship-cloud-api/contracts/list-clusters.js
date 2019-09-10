@@ -29,8 +29,6 @@ export default () => {
     expect(result.data.listClusters[1].gitOpsRef).to.deep.equal({"owner": "lonely-github-dev", "repo": "gitops-deploy", "branch": "master"});
     expect(result.data.listClusters[1].shipOpsRef).to.be.null;
 
-    // expect(result.data.listClusters[2].id).to.equal("microk8s-test")
-
     global.provider.verify().then(() => done());
   });
 }

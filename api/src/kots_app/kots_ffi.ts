@@ -22,7 +22,6 @@ const GoString = Struct({
 });
 
 function kots() {
-  // TODO: Allow this lib to work from a pact test environment - Talk to dmitiriy
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
     PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
