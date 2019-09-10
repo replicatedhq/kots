@@ -9,6 +9,7 @@ const KotsApp = `
     currentSequence: Int
     lastUpdateCheckAt: String
     bundleCommand: String
+    isAirgap: Boolean
     downstreams: [KotsDownstream]
     currentVersion: KotsVersion
     hasPreflight: Boolean

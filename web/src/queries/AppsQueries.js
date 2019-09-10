@@ -364,6 +364,7 @@ export const getKotsAppRaw = `
       slug
       currentSequence
       hasPreflight
+      isAirgap
       currentVersion {
         title
         status
