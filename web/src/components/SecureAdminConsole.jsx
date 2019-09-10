@@ -95,6 +95,7 @@ class SecureAdminConsole extends React.Component {
     const {
       appName,
       logo,
+      fetchingMetadata,
     } = this.props;
     const {
       password,
@@ -108,10 +109,10 @@ class SecureAdminConsole extends React.Component {
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
-              {logo ?
-                <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
-              :
-                <span className="icon ship-login-icon" />
+              {logo
+              ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
+              : !fetchingMetadata ? <span className="icon ship-login-icon" />
+              : <span style={{ width: "60px", height: "60px" }} />
               }
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in to {appName}</p>
             </div>

@@ -93,6 +93,7 @@ class UploadAirgapBundle extends React.Component {
     const {
       appName,
       logo,
+      fetchingMetadata,
     } = this.props;
     const { bundleFile, fileUploading } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
@@ -103,10 +104,10 @@ class UploadAirgapBundle extends React.Component {
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
               <div className="flex">
-                {logo ?
-                  <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
-                :
-                  <span className="icon ship-login-icon u-marginRight--10" />
+                {logo
+                ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
+                : !fetchingMetadata ? <span className="icon ship-login-icon u-marginRight--10" />
+                : <span style={{ width: "60px", height: "60px" }} />
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
