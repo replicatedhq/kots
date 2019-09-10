@@ -144,6 +144,14 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 										},
 									},
 								},
+								{
+									Name: "POD_NAMESPACE",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
 							},
 						},
 					},
