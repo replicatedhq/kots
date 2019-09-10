@@ -6,16 +6,22 @@ import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails } from ".
 import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
+import { logger } from "../../server/logger";
 
 export function KotsQueries(stores: Stores) {
   return {
-    async getKotsMetadata(): Promise<KotsAppMetadata> {
-      const rawBranding = await kotsAppGetBranding();
-      const parsedBranding = yaml.safeLoad(rawBranding);
+    async getKotsMetadata(): Promise<KotsAppMetadata|null> {
+      try {
+        const rawBranding = await kotsAppGetBranding();
+        const parsedBranding = yaml.safeLoad(rawBranding);
 
-      return {
-        name: parsedBranding.spec.title,
-        iconUri: parsedBranding.spec.icon,
+        return {
+          name: parsedBranding.spec.title,
+          iconUri: parsedBranding.spec.icon,
+        };
+      } catch (error) {
+        logger.error("[kotsAppGetBranding] - Unable to retrieve or parse branding information");
+        return null;
       }
     },
 

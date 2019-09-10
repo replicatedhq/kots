@@ -201,8 +201,8 @@ class Root extends Component {
   }
 
   onRootMounted = () => {
+    this.fetchKotsAppMetadata();
     if (Utilities.isLoggedIn()) {
-      this.fetchKotsAppMetadata();
       this.refetchListApps().then(listApps => {
         if (listApps.length > 0 && window.location.pathname === "/watches") {
           const { slug } = listApps[0];
