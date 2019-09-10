@@ -19,10 +19,11 @@ kind: License
 metadata:
   name: horseysuprise
 spec:
-  licenseID: this-is-a-totally-valid-license-id
+  licenseID: valid-license-id-1
   appSlug: sentry-enterprise
   endpoint: https://replicated.app
   signature: IA==
+  isAirgapSupported: true
 `;
 
 export default () => {
@@ -39,8 +40,8 @@ export default () => {
       console.log({ error: JSON.stringify(e) });
     });
     const { uploadKotsLicense: gqlResponse } = result.data;
-    expect(gqlResponse.hasPreflight).to.be(true);
-    expect(gqlResponse.slug).to.be("sentry-enterprise");
+    expect(gqlResponse.hasPreflight).toBe(false);
+    expect(gqlResponse.slug).toBe("sentry-enterprise");
 
     global.provider.verify().then(() => done());
   });
@@ -68,7 +69,7 @@ const uploadKotsLicenseInteraction = new Pact.GraphQLInteraction()
     body: {
       data: {
         uploadKotsLicense: {
-          hasPreflight: true,
+          hasPreflight: false,
           slug: "sentry-enterprise"
         }
       }

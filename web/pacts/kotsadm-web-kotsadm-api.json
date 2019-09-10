@@ -472,7 +472,7 @@
           "operationName": "uploadKotsLicense",
           "query": "\n  mutation uploadKotsLicense($value: String!) {\n    uploadKotsLicense(value: $value) {\n      hasPreflight\n      slug\n    }\n  }\n",
           "variables": {
-            "value": "\napiVersion: kots.io/v1beta1\nkind: License\nmetadata:\n  name: horseysuprise\nspec:\n  licenseID: this-is-a-totally-valid-license-id\n  appSlug: sentry-enterprise\n  endpoint: https://replicated.app\n  signature: IA==\n"
+            "value": "\napiVersion: kots.io/v1beta1\nkind: License\nmetadata:\n  name: horseysuprise\nspec:\n  licenseID: valid-license-id-1\n  appSlug: sentry-enterprise\n  endpoint: https://replicated.app\n  signature: IA==\n  isAirgapSupported: true\n"
           }
         },
         "matchingRules": {
@@ -490,7 +490,7 @@
         "body": {
           "data": {
             "uploadKotsLicense": {
-              "hasPreflight": true,
+              "hasPreflight": false,
               "slug": "sentry-enterprise"
             }
           }
