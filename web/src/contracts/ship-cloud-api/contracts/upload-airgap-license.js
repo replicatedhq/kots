@@ -35,9 +35,6 @@ export default () => {
       variables: {
         value: YAML_LICENSE
       }
-    }).catch(e => {
-      console.log("something bad happen");
-      console.log({ error: JSON.stringify(e) });
     });
     const { uploadKotsLicense: gqlResponse } = result.data;
     expect(gqlResponse.hasPreflight).toBe(false);
