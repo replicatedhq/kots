@@ -68,8 +68,8 @@ export class Schema {
 
   public generateClusterFixture(cluster: any): string[] {
     const statements: string[] = [
-      escape(`insert into cluster (id, title, slug, created_at, updated_at, token, cluster_type, is_all_users) values (%L, %L, %L, %L, %L, %L, %L, ${false})`,
-        cluster.id, cluster.title, cluster.slug, cluster.created_at, cluster.updated_at, cluster.token, cluster.cluster_type),
+      escape(`insert into cluster (id, title, slug, created_at, updated_at, token, cluster_type, is_all_users) values (%L, %L, %L, %L, %L, %L, %L, %L)`,
+        cluster.id, cluster.title, cluster.slug, cluster.created_at, cluster.updated_at, cluster.token, cluster.cluster_type, cluster.is_all_users === "true" ? "true" : "false"),
     ];
 
     if (cluster.github) {
@@ -78,13 +78,13 @@ export class Schema {
           cluster.id, cluster.github.owner, cluster.github.repo, cluster.github.branch, ''+cluster.github.installation_id),
       );
     }
-
-    for (const user of cluster.users) {
-      statements.push(
-        escape(`insert into user_cluster (user_id, cluster_id) values (%L, %L)`, user, cluster.id)
-      );
+    if (cluster.users) {
+      for (const user of cluster.users) {
+        statements.push(
+          escape(`insert into user_cluster (user_id, cluster_id) values (%L, %L)`, user, cluster.id)
+        );
+      }
     }
-
     return statements;
   }
 

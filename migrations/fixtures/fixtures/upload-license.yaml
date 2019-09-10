@@ -1,0 +1,21 @@
+users:
+  - id: "upload-license-1"
+    created_at: "2019-04-20 12:34:56.789"
+    username: "upload-license-user"
+    github_id: 339382
+    avatar_url: "https://avatars3.githubusercontent.com/u/234568?v=4"
+    email: "upload-license-user-1@face.net"
+    sessions:
+      - upload-license-session-1
+
+clusters:
+  - id: kotsadm-cluster-1
+    title: microk8s-test
+    slug: "microk8s-test-1"
+    created_at: "2019-04-20 12:34:56.789"
+    updated_at: ~
+    token: ~
+    cluster_type: "ship"
+    is_all_users: "false"
+    users:
+      - "upload-license-1"

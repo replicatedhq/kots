@@ -96,7 +96,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
       return kotsApp;
     }
-
     const licenseDataParam = new GoString();
     licenseDataParam["p"] = licenseData;
     licenseDataParam["n"] = licenseData.length;
@@ -109,7 +108,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     const outParam = new GoString();
     outParam["p"] = out;
     outParam["n"] = out.length;
-
     const pullResult = kots().PullFromLicense(licenseDataParam, downstreamParam, outParam);
     if (pullResult > 0) {
       return;
@@ -144,7 +142,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
       await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
     }
-
     return kotsApp;
   } catch (err) {
     console.log(err);
