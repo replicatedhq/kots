@@ -182,8 +182,12 @@ func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {
 
 func (c *Kubectl) preflightCommand(args ...string) *exec.Cmd {
 	if c.preflight != "" {
-		return exec.Command(c.preflight, append(args, c.connectArgs()...)...)
+		allArgs := append([]string{"--interactive=false"}, args...)
+		allArgs = append(allArgs, c.connectArgs()...)
+		return exec.Command(c.preflight, allArgs...)
 	}
 
-	return exec.Command(c.kubectl, append(append([]string{"preflight"}, args...), c.connectArgs()...)...)
+	allArgs := append([]string{"preflight", "--interactive=false"}, args...)
+	allArgs = append(allArgs, c.connectArgs()...)
+	return exec.Command(c.kubectl, allArgs...)
 }
