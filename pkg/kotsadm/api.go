@@ -19,6 +19,24 @@ func getApiYAML(namespace string) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
+	var role bytes.Buffer
+	if err := s.Encode(apiRole(namespace), &role); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal api role")
+	}
+	docs["api-role.yaml"] = role.Bytes()
+
+	var roleBinding bytes.Buffer
+	if err := s.Encode(apiRoleBinding(namespace), &roleBinding); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal api role binding")
+	}
+	docs["api-rolebinding.yaml"] = roleBinding.Bytes()
+
+	var serviceAccount bytes.Buffer
+	if err := s.Encode(apiServiceAccount(namespace), &serviceAccount); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal api service account")
+	}
+	docs["api-serviceaccount.yaml"] = serviceAccount.Bytes()
+
 	var deployment bytes.Buffer
 	if err := s.Encode(apiDeployment(namespace), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api deployment")
@@ -60,6 +78,10 @@ func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) e
 }
 
 func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureApiRBAC(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api rbac")
+	}
+
 	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure custom branding")
 	}
@@ -69,6 +91,70 @@ func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) er
 
 	if err := ensureAPIService(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api service")
+	}
+
+	return nil
+}
+
+func ensureApiRBAC(namespace string, clientset *kubernetes.Clientset) error {
+	if err := ensureApiRole(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api role")
+	}
+
+	if err := ensureApiRoleBinding(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api role binding")
+	}
+
+	if err := ensureApiServiceAccount(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api service account")
+	}
+
+	return nil
+}
+
+func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().Roles(namespace).Get("kotsadm-api-role", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get role")
+		}
+
+		_, err := clientset.RbacV1().Roles(namespace).Create(apiRole(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create role")
+		}
+	}
+
+	return nil
+}
+
+func ensureApiRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().RoleBindings(namespace).Get("kotsadm-api-rolebinding", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get rolebinding")
+		}
+
+		_, err := clientset.RbacV1().RoleBindings(namespace).Create(apiRoleBinding(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create rolebinding")
+		}
+	}
+
+	return nil
+}
+
+func ensureApiServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get("kotsadm-api", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get serviceaccouont")
+		}
+
+		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(apiServiceAccount(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create serviceaccount")
+		}
 	}
 
 	return nil
