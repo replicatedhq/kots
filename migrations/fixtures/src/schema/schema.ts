@@ -168,28 +168,64 @@ export class Schema {
 
     const yamlLicense = yaml.safeDump(app.license);
     statements.push(
-      escape(`INSERT INTO app (id, name, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_all_users, upstream_uri, license, registry_hostname, registry_username, registry_password, namespace, last_registry_sync, airgap_upload_pending) VALUES (%L, %L, %L, %L, %L, %L, ${app.current_sequence}, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L)`,
-        app.id, app.name, app.icon_uri, app.created_at, app.updated_at, app.slug, app.last_update_check_at, app.is_all_users === "true" ? "true" : "false", app.upstream_uri, yamlLicense, app.registry_hostname, app.registry_username, app.registry_password, app.namespace, app.last_registry_sync, app.airgap_upload_pending === "true" ? "true" : "false"
+      escape(`INSERT INTO app (
+        id,
+        name,
+        icon_uri,
+        created_at,
+        updated_at,
+        slug,
+        current_sequence,
+        last_update_check_at,
+        is_all_users,
+        upstream_uri,
+        license,
+        registry_hostname,
+        registry_username,
+        registry_password,
+        namespace,
+        last_registry_sync,
+        airgap_upload_pending
+        ) VALUES (
+          %L, %L, %L, %L, %L, %L, ${app.current_sequence}, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L)`,
+        app.id,
+        app.name,
+        app.icon_uri,
+        app.created_at,
+        app.updated_at,
+        app.slug,
+        app.last_update_check_at,
+        app.is_all_users === "true" ? "true" : "false",
+        app.upstream_uri,
+        yamlLicense,
+        app.registry_hostname,
+        app.registry_username,
+        app.registry_password,
+        app.namespace,
+        app.last_registry_sync,
+        app.airgap_upload_pending === "true" ? "true" : "false"
       )
     );
-
-    for (const user of app.users) {
-      statements.push(
-        escape(`INSERT INTO user_app (user_id, app_id) VALUES (%L, %L)`,
-          user, app.id
-        )
-      );
+    if (app.users) {
+      for (const user of app.users) {
+        statements.push(
+          escape(`INSERT INTO user_app (user_id, app_id) VALUES (%L, %L)`,
+            user, app.id
+          )
+        );
+      }
     }
 
-    for (const clusterId of app.downstream) {
-      // NOTE: Clusters will use both cluster id for name and title.
-      statements.push(
-        escape(`INSERT INTO app_downstream (app_id, cluster_id, downstream_name, current_sequence) VALUES (%L, %L, %L, ${app.current_sequence})`,
-          app.id, clusterId, clusterId
-        )
-      );
+    if (app.downstream) {
+      for (const clusterId of app.downstream) {
+        // NOTE: Clusters will use both cluster id for name and title.
+        statements.push(
+          escape(`INSERT INTO app_downstream (app_id, cluster_id, downstream_name, current_sequence) VALUES (%L, %L, %L, ${app.current_sequence})`,
+            app.id, clusterId, clusterId
+          )
+        );
+      }
     }
-
     return statements;
   }
 }
