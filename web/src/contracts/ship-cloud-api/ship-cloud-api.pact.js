@@ -11,6 +11,7 @@ import shipauthSignup from "./contracts/shipauth-signup";
 import updateWatch from "./contracts/update-watch";
 import deleteWatch from "./contracts/delete-watch";
 import duplicateSlugCheck from "./contracts/duplicate-slug-check";
+import getKotsAppCheck from "./contracts/get-kots-app";
 import getWatchContributors from "./contracts/get-watch-contributors";
 
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
@@ -26,7 +27,7 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("duplicate-slug-check", () => duplicateSlugCheck() );
 
   // describe("solo-account:listImageWatches", () => listImageWatches() );
-
+  describe("get-kots-app", () => getKotsAppCheck());
   describe("single-user:updateWatch", () => updateWatch() );
   // describe("single-user:deleteWatch", () => deleteWatch() );
 
@@ -36,4 +37,5 @@ describe("ShipAPI GraphQL Pact", () => {
   // describe("ship-cluster-account:listWatches", () => listWatchesShipCluster() );
   // describe("gitops-cluster-account:getWatchVersion", () => getWatchVersionGitOpsCluster() );
   describe("get-watch-contributors", () => getWatchContributors() );
+
 });
