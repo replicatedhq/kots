@@ -541,11 +541,6 @@ order by sequence desc`;
     };
   }
 
-  async getAirgapBundlePutUrl(filename: string): Promise<string> {
-    const signed = await signPutRequest(this.params, this.params.airgapBucket, filename, "application/tar+gzip", 60);
-    return signed
-  }
-
   async getAirgapBundleGetUrl(filename: string): Promise<string> {
     const signed = await signGetRequest(this.params, this.params.airgapBucket, filename, 60);
     return signed

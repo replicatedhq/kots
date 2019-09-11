@@ -41,13 +41,6 @@ export const uploadKotsLicenseRaw = `
 `
 export const uploadKotsLicense = gql(uploadKotsLicenseRaw);
 
-export const getAirgapPutUrlRaw = `
-  mutation getAirgapPutUrl($filename: String!) {
-    getAirgapPutUrl(filename: $filename)
-  }
-`
-export const getAirgapPutUrl = gql(getAirgapPutUrlRaw);
-
 export const deployKotsVersionRaw = `
   mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterSlug: String!) {
     deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterSlug: $clusterSlug)

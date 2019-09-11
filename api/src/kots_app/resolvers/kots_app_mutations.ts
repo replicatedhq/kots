@@ -52,12 +52,6 @@ export function KotsMutations(stores: Stores) {
       return kotsApp;
     },
 
-    async getAirgapPutUrl(root: any, args: any, context: Context) {
-      const { filename } = args;
-      const url = await stores.kotsAppStore.getAirgapBundlePutUrl(filename);
-      return url;
-    },
-
     async updateRegistryDetails(root: any, args: any, context) {
       const { appSlug, hostname, username, password, namespace } = args.registryDetails;
       const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);

@@ -1,9 +1,8 @@
 import * as React from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
-import { getAirgapPutUrl } from "../mutations/AppsMutations";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -146,10 +145,5 @@ class UploadAirgapBundle extends React.Component {
 
 export default compose(
   withRouter,
-  withApollo,
-  graphql(getAirgapPutUrl, {
-    props: ({ mutate }) => ({
-      getAirgapPutUrl: (filename) => mutate({ variables: { filename } })
-    })
-  })
+  withApollo
 )(UploadAirgapBundle);
