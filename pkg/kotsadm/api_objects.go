@@ -40,7 +40,7 @@ func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
 			Kind:       "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-operator-rolebinding",
+			Name:      "kotsadm-api-rolebinding",
 			Namespace: namespace,
 		},
 		Subjects: []rbacv1.Subject{
