@@ -431,6 +431,7 @@ order by sequence desc`;
     kotsApp.currentSequence = row.current_sequence;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
+    kotsApp.airgapUploadPending = row.airgap_upload_pending;
     // This is to avoid a race condition when uploading a license file where the row in app_version
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
