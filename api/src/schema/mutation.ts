@@ -18,7 +18,6 @@ type Mutation {
   checkForKotsUpdates(appId: ID!): Boolean
   uploadKotsLicense(value: String!): KotsApp
   getAirgapPutUrl(filename: String!): String
-  markAirgapBundleUploaded(filename: String, registryHost: String, registryNamespace: String, username: String, password: String): Boolean
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
 
