@@ -83,8 +83,8 @@ export default [
     displayName: "Airgap settings",
     to: (slug) => `/app/${slug}/airgap-settings`,
     displayRule: watch => {
-      // TODO: show only if you're in an airgapped install
-      return Boolean(watch.name);
+      // watch.isAirgap is already typed as a Boolean from GraphQL
+      return watch.isAirgap;
     }
   },
   // {

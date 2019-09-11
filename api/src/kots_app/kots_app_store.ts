@@ -6,6 +6,7 @@ import { signPutRequest, signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
+import jsYaml from "js-yaml";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -414,12 +415,14 @@ order by sequence desc`;
       id,
       current_sequence
     ];
+    const parsedLicense = jsYaml.safeLoad(row.license);
 
     const rr = await this.pool.query(qq, vv);
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
     kotsApp.license = row.license;
+    kotsApp.isAirgap = !!parsedLicense.spec.isAirgapSupported;
     kotsApp.upstreamUri = row.upstream_uri;
     kotsApp.iconUri = row.icon_uri;
     kotsApp.createdAt = new Date(row.created_at);

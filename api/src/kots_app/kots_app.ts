@@ -28,6 +28,7 @@ export class KotsApp {
   bundleCommand: string;
   currentVersion: KotsVersion;
   airgapUploadPending: boolean;
+  isAirgap: boolean;
   hasPreflight: boolean;
 
   // Version Methods
