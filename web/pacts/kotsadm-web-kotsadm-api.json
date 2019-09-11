@@ -392,6 +392,67 @@
       }
     },
     {
+      "description": "A query to get a kots app",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJnZXQta290cy1hcHAtdXNlci1zZXNzaW9uIn0.2zd4bH-mpHwEOwkp4JW1l_tOR5J36IfcyxfAvLxe8WE",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "getKotsApp",
+          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      currentSequence\n      hasPreflight\n      isAirgap\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          gitOpsRef {\n            owner\n            repo\n            branch\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
+          "variables": {
+            "slug": "kots-app-slug"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*gitOpsRef\\s*\\{\\s*owner\\s*repo\\s*branch\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "getKotsApp": {
+              "id": "get-kots-app-id",
+              "name": "kots-app-name",
+              "createdAt": "date",
+              "updatedAt": "date",
+              "slug": "kots-app-slug",
+              "currentSequence": 0,
+              "hasPreflight": false,
+              "isAirgap": false,
+              "currentVersion": null,
+              "lastUpdateCheckAt": "date",
+              "bundleCommand": "\n      kubectl krew install support-bundle\n      kubectl support-bundle undefined/api/v1/troubleshoot/kots-app-slug\n    ",
+              "downstreams": [
+
+              ]
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.getKotsApp.createdAt": {
+            "match": "type"
+          },
+          "$.body.data.getKotsApp.updatedAt": {
+            "match": "type"
+          },
+          "$.body.data.getKotsApp.lastUpdateCheckAt": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "a mutation to update a watch for single user",
       "request": {
         "method": "POST",
