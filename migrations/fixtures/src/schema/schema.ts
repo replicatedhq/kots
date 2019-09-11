@@ -226,6 +226,36 @@ export class Schema {
         );
       }
     }
+
+    if (app.downstream_versions) {
+      for (const downstreamVersion of app.downstream_versions) {
+        statements.push(
+          escape(`INSERT INTO app_downstream_version (
+            app_id,
+            cluster_id,
+            sequence,
+            parent_sequence,
+            created_at,
+            applied_at,
+            version_label,
+            status,
+            preflight_result,
+            preflight_result_created_at
+          ) VALUES (
+            %L, %L, ${downstreamVersion.sequence}, ${app.current_sequence}, %L, %L, %L, %L, %L, %L
+          )`,
+          app.id,
+          downstreamVersion.cluster_id,
+          downstreamVersion.created_at,
+          downstreamVersion.applied_at,
+          downstreamVersion.version_label,
+          downstreamVersion.status,
+          downstreamVersion.preflight_result,
+          downstreamVersion.preflight_result_created_at
+          )
+        )
+      }
+    }
     return statements;
   }
 }
