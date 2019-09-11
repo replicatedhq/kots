@@ -39,7 +39,7 @@ export class DeployAPI {
       // this needs to be updated after the preflight PR is merged
       const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightUrls();
       const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentDownstreamVersion(app.id, cluster.id);
-      const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.currentSequence;
+      const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.sequence;
       if (pendingPreflightURLs.length > 0) {
         preflight = preflight.concat(pendingPreflightURLs);
       }
