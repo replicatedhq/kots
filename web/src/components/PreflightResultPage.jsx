@@ -101,7 +101,7 @@ export default compose(
   graphql(getKotsPreflightResult, {
     skip: props => {
       const { match } = props;
-      return !match.params.clusterSlug;
+      return !match.params.downstreamSlug;
     },
     options: props => {
       const { match } = props;
@@ -120,7 +120,7 @@ export default compose(
     skip: props => {
       const { match } = props;
 
-      return !!match.params.clusterSlug;
+      return !!match.params.downstreamSlug;
     },
     options: () => {
       return {
