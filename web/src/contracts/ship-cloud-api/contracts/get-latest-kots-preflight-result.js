@@ -6,7 +6,7 @@ import chaiAsPromised from "chai-as-promised";
 import { getShipClient, createSessionToken } from "../utils";
 import * as Pact from "@pact-foundation/pact";
 import { Matchers } from "@pact-foundation/pact";
-import { getLatestKotsPreflight, getLatestKotsPreflightRaw } from "../../../queries/AppsQueries";
+import { getLatestKotsPreflightResult, getLatestKotsPreflightResultRaw } from "../../../queries/AppsQueries";
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -15,15 +15,15 @@ export default () => {
   it("Gets the latest preflight result for a kots app", async done => {
     await global.provider.addInteraction(getLatestKotsPreflightResultInteraction);
     const result = await getShipClient("get-latest-kots-preflight-result-user-session").query({
-      query: getLatestKotsPreflight
+      query: getLatestKotsPreflightResult
     });
 
-    // const { getLatestKotsPreflightResult: gqlData } = result.data;
+    const { getLatestKotsPreflightResult: gqlData } = result.data;
 
-    // expect(gqlData.appSlug).to.equal("get-latest-kots-preflight-result-app-slug");
-    // expect(gqlData.clusterSlug).to.equal("get-latest-kots-preflight-result-cluster-slug");
-    // expect(typeof gqlData.result).to.equal("string");
-    // expect(typeof gqlData.createdAt).to.equal("string");
+    expect(gqlData.appSlug).to.equal("get-latest-kots-preflight-result-app-slug");
+    expect(gqlData.clusterSlug).to.equal("get-latest-kots-preflight-result-cluster-slug");
+    expect(typeof gqlData.result).to.equal("string");
+    expect(typeof gqlData.createdAt).to.equal("string");
 
     global.provider.verify().then(() => done());
   });
@@ -39,8 +39,8 @@ const getLatestKotsPreflightResultInteraction = new Pact.GraphQLInteraction()
       "Content-Type": "application/json",
     }
   })
-  .withOperation("getLatestKotsPreflight")
-  .withQuery(getLatestKotsPreflightRaw)
+  .withOperation("getLatestKotsPreflightResult")
+  .withQuery(getLatestKotsPreflightResultRaw)
   .withVariables({})
   .willRespondWith({
     status: 200,

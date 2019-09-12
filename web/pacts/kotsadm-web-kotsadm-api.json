@@ -512,15 +512,15 @@
           "Content-Type": "application/json"
         },
         "body": {
-          "operationName": "getLatestKotsPreflight",
-          "query": "\n  query getLatestKotsPreflight {\n    getLatestKotsPreflightResult {\n      appSlug\n      clusterSlug\n      result\n      createdAt\n    }\n  }\n",
+          "operationName": "getLatestKotsPreflightResult",
+          "query": "\n  query getLatestKotsPreflightResult {\n    getLatestKotsPreflightResult {\n      appSlug\n      clusterSlug\n      result\n      createdAt\n    }\n  }\n",
           "variables": {
           }
         },
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getLatestKotsPreflight\\s*\\{\\s*getLatestKotsPreflightResult\\s*\\{\\s*appSlug\\s*clusterSlug\\s*result\\s*createdAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getLatestKotsPreflightResult\\s*\\{\\s*getLatestKotsPreflightResult\\s*\\{\\s*appSlug\\s*clusterSlug\\s*result\\s*createdAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },
