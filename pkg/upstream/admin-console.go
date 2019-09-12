@@ -56,6 +56,10 @@ func findPostgresPassword(renderDir string, files []os.FileInfo) (string, error)
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(data, nil, nil)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode")
+		}
+
 		if gvk.Group != "apps" || gvk.Version != "v1" || gvk.Kind != "StatefulSet" {
 			continue
 		}
@@ -84,6 +88,9 @@ func findFileAndReadSecret(secretName string, key string, renderDir string, file
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(data, nil, nil)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode")
+		}
 		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
 			continue
 		}
