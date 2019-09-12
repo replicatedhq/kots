@@ -487,12 +487,15 @@
             "getKotsPreflightResult": {
               "appSlug": "get-kots-preflight-result-app-slug",
               "clusterSlug": "get-kots-preflight-result-cluster-slug",
-              "result": "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}",
+              "result": "JSONString",
               "createdAt": "date"
             }
           }
         },
         "matchingRules": {
+          "$.body.data.getKotsPreflightResult.result": {
+            "match": "type"
+          },
           "$.body.data.getKotsPreflightResult.createdAt": {
             "match": "type"
           }

@@ -27,7 +27,7 @@ export default () => {
 
     expect(gqlData.appSlug).to.equal("get-kots-preflight-result-app-slug");
     expect(gqlData.clusterSlug).to.equal("get-kots-preflight-result-cluster-slug");
-    expect(JSON.parse(gqlData.result)).is.ok;
+    expect(typeof gqlData.result).to.equal("string");
     expect(typeof gqlData.createdAt).to.equal("string");
 
     global.provider.verify().then(() => done());
@@ -60,7 +60,7 @@ const getKotsPreflightResultInteraction = new Pact.GraphQLInteraction()
         getKotsPreflightResult: {
           appSlug: "get-kots-preflight-result-app-slug",
           clusterSlug: "get-kots-preflight-result-cluster-slug",
-          result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}",
+          result: Matchers.like("JSONString"),
           createdAt: Matchers.like("date")
         },
       },
