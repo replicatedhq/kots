@@ -515,8 +515,8 @@ export const getKotsPreflightResultRaw = `
 
 export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
 
-export const getLatestKotsPreflightRaw = `
-  query getLatestKotsPreflight {
+export const getLatestKotsPreflightResultRaw = `
+  query getLatestKotsPreflightResult {
     getLatestKotsPreflightResult {
       appSlug
       clusterSlug
@@ -526,4 +526,4 @@ export const getLatestKotsPreflightRaw = `
   }
 `;
 
-export const getLatestKotsPreflight = gql(getLatestKotsPreflightRaw);
+export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);

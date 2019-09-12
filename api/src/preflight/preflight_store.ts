@@ -172,7 +172,6 @@ export class PreflightStore {
 
     const vv = [ appId ];
     const result = await this.pool.query(qq, vv);
-
     const preflightResult = new PreflightResult();
     preflightResult.appSlug = result.rows[0].app_slug;
     preflightResult.clusterSlug = result.rows[0].cluster_slug;

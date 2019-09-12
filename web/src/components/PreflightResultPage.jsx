@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { graphql, compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 
-import { getKotsPreflightResult, getLatestKotsPreflight } from "@src/queries/AppsQueries";
+import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queries/AppsQueries";
 import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
@@ -116,7 +116,7 @@ export default compose(
       };
     }
   }),
-  graphql(getLatestKotsPreflight, {
+  graphql(getLatestKotsPreflightResult, {
     skip: props => {
       const { match } = props;
 

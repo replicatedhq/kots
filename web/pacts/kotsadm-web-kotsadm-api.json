@@ -503,6 +503,53 @@
       }
     },
     {
+      "description": "a query to get the latest kots preflight result",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJnZXQtbGF0ZXN0LWtvdHMtcHJlZmxpZ2h0LXJlc3VsdC11c2VyLXNlc3Npb24ifQ.slbB1d3nuhQUlEYWbbQf6yf5NnnMQG1DHSh_aydIPSI",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "getLatestKotsPreflightResult",
+          "query": "\n  query getLatestKotsPreflightResult {\n    getLatestKotsPreflightResult {\n      appSlug\n      clusterSlug\n      result\n      createdAt\n    }\n  }\n",
+          "variables": {
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*getLatestKotsPreflightResult\\s*\\{\\s*getLatestKotsPreflightResult\\s*\\{\\s*appSlug\\s*clusterSlug\\s*result\\s*createdAt\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "getLatestKotsPreflightResult": {
+              "appSlug": "get-latest-kots-preflight-result-app-slug",
+              "clusterSlug": "get-latest-kots-preflight-result-cluster-slug",
+              "result": "JSONString",
+              "createdAt": "date"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.getLatestKotsPreflightResult.result": {
+            "match": "type"
+          },
+          "$.body.data.getLatestKotsPreflightResult.createdAt": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "a mutation to update a watch for single user",
       "request": {
         "method": "POST",
