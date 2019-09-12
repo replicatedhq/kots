@@ -145,7 +145,7 @@ export class PreflightStore {
 
     const preflightResult = new PreflightResult();
     preflightResult.appSlug = result.rows[0].app_slug;
-    preflightResult.clusterSlug = result.rows[0].app_id;
+    preflightResult.clusterSlug = result.rows[0].cluster_slug;
     preflightResult.result = result.rows[0].preflight_result;
     preflightResult.createdAt = result.rows[0].preflight_result_created_at;
 
