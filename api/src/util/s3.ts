@@ -22,6 +22,18 @@ export function getS3(params: Params): AWS.S3 {
   return new AWS.S3(s3Params);
 };
 
+export async function upload(params: Params, key: string, body: any, bucket: string): Promise<any> {
+  const s3 = getS3(params);
+
+  const uploadParams = {
+    Body: body,
+    Bucket: bucket,
+    Key: key,
+   };
+
+   return s3.upload(uploadParams);
+}
+
 export async function putObject(params: Params, filepath: string, body: any, bucket: string): Promise<boolean> {
   const s3 = getS3(params);
 

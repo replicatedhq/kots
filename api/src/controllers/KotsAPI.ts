@@ -1,14 +1,17 @@
 import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
 import { Request, Response } from "express";
-import { putObject } from "../util/s3";
+import { putObject, upload } from "../util/s3";
 import { Params } from "../server/params";
 import path from "path";
 import fs from "fs";
+import tmp from "tmp";
 import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../util/tar";
 import { Cluster } from "../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../kots_app";
+import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../airgap/airgap";
+import { kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../kots_app/kots_ffi";
 
 interface CreateAppBody {
   metadata: string;
@@ -179,6 +182,64 @@ export class KotsAPI {
 
     return {
       uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
+    };
+  }
+
+  @Post("/airgap")
+  async kotsUploadAirgap(
+    @MultipartFile("file") file: Express.Multer.File,
+    @BodyParams("") body: any,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<any> {
+    // TODO: does this need authentication check or is that magical?
+    // TODO: check that mimetype is 'application/gzip'?
+
+    const { registryHost, namespace, username, password } = body;
+
+    const params = await Params.getParams();
+
+    await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
+
+    const dstDir = tmp.dirSync();
+    var appSlug: string;
+    try {
+      await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
+      const imageFiles = await getImageFiles(path.join(dstDir.name, "images"));
+      const imageMap = imageFiles.map(imageFile => {
+        return {
+          filePath: imageFile,
+          shortName: pathToShortImageName(path.join(dstDir.name, "images"), imageFile),
+          fullName: pathToImageName(path.join(dstDir.name, "images"), imageFile),
+        }
+      });
+      for (const image of imageMap) {
+        await kotsRewriteAndPushImageName(image.filePath, image.shortName, registryHost, namespace, username, password);
+      }
+
+      const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp()
+
+      const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
+      let downstream;
+      for (const cluster of clusters) {
+        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+          downstream = cluster;
+        }
+      }
+
+      await kotsAppFromAirgapData(app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
+
+      await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
+
+      appSlug = app.slug;
+    } finally {
+      dstDir.removeCallback();
+    }
+
+    response.header("Content-Type", "application/json");
+    response.status(200);
+    return {
+      slug: appSlug,
     };
   }
 }

@@ -1,14 +1,10 @@
 import _ from "lodash";
 import { Context } from "../../context";
 import yaml from "js-yaml";
-import tmp from "tmp";
-import path from "path";
-import request from "request";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsAppCheckForUpdate, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../kots_ffi";
-import { extractFromURL, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/airgap";
+import { kotsAppFromLicenseData, kotsAppCheckForUpdate } from "../kots_ffi";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -54,54 +50,6 @@ export function KotsMutations(stores: Stores) {
       const name = parsedLicense.spec.appSlug.replace("-", " ")
       const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
       return kotsApp;
-    },
-
-    async getAirgapPutUrl(root: any, args: any, context: Context) {
-      const { filename } = args;
-      const url = await stores.kotsAppStore.getAirgapBundlePutUrl(filename);
-      return url;
-    },
-
-    async markAirgapBundleUploaded(root: any, args: any, context: Context) {
-      const dstDir = tmp.dirSync();
-
-      try {
-
-        const { filename, registryHost, registryNamespace, username, password } = args;
-
-        // note we don't have to use signed url here... we can get a stream from s3 object.
-        const url = await stores.kotsAppStore.getAirgapBundleGetUrl(filename);
-        await extractFromURL(request({url: url}), dstDir.name);
-        const imageFiles = await getImageFiles(path.join(dstDir.name, "images"));
-        const imageMap = imageFiles.map(imageFile => {
-          return {
-            filePath: imageFile,
-            shortName: pathToShortImageName(path.join(dstDir.name, "images"), imageFile),
-            fullName: pathToImageName(path.join(dstDir.name, "images"), imageFile),
-          }
-        });
-        for (const image of imageMap) {
-          kotsRewriteAndPushImageName(image.filePath, image.shortName, registryHost, registryNamespace, username, password);
-        }
-  
-        const app = await stores.kotsAppStore.getPendingKotsAirgapApp()
-
-        const clusters = await stores.clusterStore.listAllUsersClusters();
-        let downstream;
-        for (const cluster of clusters) {
-          if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
-            downstream = cluster;
-          }
-        }
-
-        await kotsAppFromAirgapData(app, String(app.license), dstDir.name, downstream.title, stores, registryHost, registryNamespace);
-
-        await stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, registryNamespace);
-
-        return true;
-      } finally {
-        dstDir.removeCallback();
-      }
     },
 
     async updateRegistryDetails(root: any, args: any, context) {

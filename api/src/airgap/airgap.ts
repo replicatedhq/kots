@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import mkdirp from "mkdirp";
 
-export async function extractFromURL(tgzStream: any, dstDir: string): Promise<void> {
+export async function extractFromTgzStream(tgzStream: any, dstDir: string): Promise<void> {
     const extract = tar.extract();
     const gzunipStream = zlib.createGunzip();
 
