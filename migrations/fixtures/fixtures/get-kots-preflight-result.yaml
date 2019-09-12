@@ -1,0 +1,63 @@
+users:
+  - id: "get-kots-preflight-result-user-id"
+    created_at: "2019-04-18 12:34:56.789"
+    type: "github"
+    github:
+      username: "get-kots-preflight-result-github-user"
+      github_id: 99101235
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "get-kots-preflight-result-user-email@replicated.com"
+    sessions:
+      - get-kots-preflight-result-user-session
+
+clusters:
+  - id: "get-kots-preflight-result-cluster-id"
+    cluster_type: "ship"
+    title: "get-kots-preflight-result-cluster-title"
+    slug: "get-kots-preflight-result-cluster-slug"
+    created_at: "2019-04-20 12:34:56.789"
+    updated_at: ~
+    token: ~
+    users:
+      - "get-kots-preflight-result-user-id"
+
+apps:
+  - id: "get-kots-preflight-result-app-id"
+    name: "kots-app-name"
+    icon_uri: "kots-app-icon-uri"
+    created_at: "2019-04-18 12:34:56.789"
+    updated_at: "2019-04-19 01:23:45.567"
+    slug: "get-kots-preflight-result-app-slug"
+    current_sequence: 0
+    last_update_check_at: "2019-04-19 01:23:45.567"
+    is_all_users: false
+    upstream_uri: "get-kots-preflight-result-app-upstream-uri"
+    license:
+      apiVersion: "kots.io/v1beta1"
+      kind: License
+      metadata:
+        name: my-customer
+      spec:
+        licenseID: my-awesome-license-id
+        appSlug: kots-app-slug
+        endpoint: https://replicated-app:3000
+        signature: IA==
+    registry_hostname: "hostname"
+    registry_username: "username"
+    registry_password: "password"
+    namespace: "kots-namespace"
+    last_registry_sync: "2019-04-19 01:23:45.567"
+    airgap_upload_pending: false
+    users:
+      - get-kots-preflight-result-user-id
+    downstream:
+      - "get-kots-preflight-result-cluster-id"
+    downstream_versions:
+      - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
+        preflight_result_created_at: "2019-04-19 01:23:45.567"
+        cluster_id: "get-kots-preflight-result-cluster-id"
+        sequence: 0
+        version_label: "my-awesome-version"
+        created_at: "2019-04-19 01:23:45.567"
+        applied_at: "2019-04-19 01:23:45.567"
+        status: "pending"
