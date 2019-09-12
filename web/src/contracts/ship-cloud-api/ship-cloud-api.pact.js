@@ -14,6 +14,7 @@ import duplicateSlugCheck from "./contracts/duplicate-slug-check";
 import getKotsAppCheck from "./contracts/get-kots-app";
 import getWatchContributors from "./contracts/get-watch-contributors";
 import getKotsPreflightResult from "./contracts/get-kots-preflight-result";
+import getLatestKotsPreflightResult from "./contracts/get-latest-kots-preflight-result";
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
 describe("ShipAPI GraphQL Pact", () => {
@@ -29,6 +30,7 @@ describe("ShipAPI GraphQL Pact", () => {
   // describe("solo-account:listImageWatches", () => listImageWatches() );
   describe("get-kots-app", () => getKotsAppCheck());
   describe("get-kots-preflight-result", () => getKotsPreflightResult());
+  describe("get-latest-kots-preflight-result", () => getLatestKotsPreflightResult());
   describe("single-user:updateWatch", () => updateWatch() );
   // describe("single-user:deleteWatch", () => deleteWatch() );
 
