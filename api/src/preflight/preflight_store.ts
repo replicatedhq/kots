@@ -120,9 +120,8 @@ export class PreflightStore {
       `SELECT
         app_downstream_version.preflight_result,
         app_downstream_version.preflight_result_created_at,
-        app_downstream_version.cluster_id,
-        app.id as app_id,
-        app.slug as app_slug
+        app.slug as app_slug,
+        cluster.slug as cluster_slug
       FROM app_downstream_version
         INNER JOIN app ON app_downstream_version.app_id = app.id
         INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id

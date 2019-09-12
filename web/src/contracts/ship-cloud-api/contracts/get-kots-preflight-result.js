@@ -23,6 +23,13 @@ export default () => {
       },
     });
 
+    const { getKotsPreflightResult: gqlData } = result.data;
+
+    expect(gqlData.appSlug).to.equal("get-kots-preflight-result-app-slug");
+    expect(gqlData.clusterSlug).to.equal("get-kots-preflight-result-cluster-slug");
+    expect(JSON.parse(gqlData.result)).is.ok;
+    expect(typeof gqlData.createdAt).to.equal("string");
+
     global.provider.verify().then(() => done());
   });
 };
