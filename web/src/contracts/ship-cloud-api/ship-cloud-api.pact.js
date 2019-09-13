@@ -15,6 +15,7 @@ import getKotsAppCheck from "./contracts/get-kots-app";
 import getWatchContributors from "./contracts/get-watch-contributors";
 import getKotsPreflightResult from "./contracts/get-kots-preflight-result";
 import getLatestKotsPreflightResult from "./contracts/get-latest-kots-preflight-result";
+import deployKotsVersion from "./contracts/deploy-kots-version";
 // import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
 describe("ShipAPI GraphQL Pact", () => {
@@ -31,6 +32,7 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("get-kots-app", () => getKotsAppCheck());
   describe("get-kots-preflight-result", () => getKotsPreflightResult());
   describe("get-latest-kots-preflight-result", () => getLatestKotsPreflightResult());
+  describe("deploy-kots-version", () => deployKotsVersion());
   describe("single-user:updateWatch", () => updateWatch() );
   // describe("single-user:deleteWatch", () => deleteWatch() );
 
