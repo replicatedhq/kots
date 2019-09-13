@@ -30,6 +30,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+# Install skopeo
+
+ADD ./deploy/skopeo /bin/skopeo
+ADD ./deploy/policy.json /etc/containers/policy.json
+RUN apt-get -y update && apt-get install -y --no-install-recommends \
+    ca-certificates libgpgme-dev libdevmapper-dev \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /src
 ADD . /src
 RUN make deps build
