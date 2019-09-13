@@ -550,6 +550,43 @@
       }
     },
     {
+      "description": "a mutation to deploy a kots version",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJkZXBsb3kta290cy12ZXJzaW9uLXVzZXItc2Vzc2lvbiJ9.pLpB0KiQvda0NeN79dNGIGjePpEEmcFmSJuDhq7rAl0",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "deployKotsVersion",
+          "query": "\n  mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterSlug: String!) {\n    deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterSlug: $clusterSlug)\n  }\n",
+          "variables": {
+            "upstreamSlug": "deploy-kots-version-app-slug",
+            "sequence": 1,
+            "clusterSlug": "deploy-kots-version-cluster-slug"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*mutation\\s*deployKotsVersion\\(\\$upstreamSlug:\\s*String!,\\s*\\$sequence:\\s*Int!,\\s*\\$clusterSlug:\\s*String!\\)\\s*\\{\\s*deployKotsVersion\\(upstreamSlug:\\s*\\$upstreamSlug,\\s*sequence:\\s*\\$sequence,\\s*clusterSlug:\\s*\\$clusterSlug\\)\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "deployKotsVersion": true
+          }
+        }
+      }
+    },
+    {
       "description": "a mutation to update a watch for single user",
       "request": {
         "method": "POST",
