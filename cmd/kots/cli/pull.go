@@ -13,8 +13,8 @@ import (
 func PullCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "pull [upstream uri]",
-		Short:         "",
-		Long:          ``,
+		Short:         "Pull Kubernetes manifests from remote upstream to the local filesystem",
+		Long:          `Pull Kubernetes manifests from the remote upstream and save them to the local filesystem, so they can be edited before deploying them to a cluster.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PreRun: func(cmd *cobra.Command, args []string) {

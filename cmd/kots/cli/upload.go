@@ -13,8 +13,8 @@ import (
 func UploadCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "upload [namespace]",
-		Short:         "",
-		Long:          ``,
+		Short:         "Upload Kubernetes manifests from the local filesystem to your cluster",
+		Long:          `Upload Kubernetes manifests from the local filesystem to a cluster, creating a new version of the application that can be deployed.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {

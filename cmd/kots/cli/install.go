@@ -22,8 +22,8 @@ import (
 func InstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "install [upstream uri]",
-		Short:         "",
-		Long:          ``,
+		Short:         "Install an application to a cluster",
+		Long:          `Pull Kubernetes manifests from the remote upstream, deploy them to the specified cluster, then setup port forwarding to make the kotsadm admin console accessible.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
