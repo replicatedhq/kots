@@ -54,7 +54,10 @@ func RewriteAndPushImageName(imageFile, image, registryHost, registryOrg, userna
 	cmd := exec.Command("skopeo", cmdArgs...)
 	cmdOutput, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("run failed with output: %s\n", cmdOutput)
+		fmt.Printf("failed to run skopeo: %v\n", err)
+		if len(cmdOutput) > 0 {
+			fmt.Printf("run failed with output: %s\n", cmdOutput)
+		}
 		return 1
 	}
 
