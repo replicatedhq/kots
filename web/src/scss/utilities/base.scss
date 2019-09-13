@@ -13,6 +13,7 @@ body {
   flex-direction: column;
   flex: 1;
   -webkit-font-smoothing: antialiased;
+  overflow: auto;
 }
 
 body a {
@@ -24,6 +25,7 @@ body a {
   display: flex;
   flex-direction: column;
   flex: 1;
+  overflow: hidden;
 }
 
 .replicated-link {
