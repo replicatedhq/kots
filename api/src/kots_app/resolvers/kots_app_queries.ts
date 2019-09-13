@@ -125,7 +125,13 @@ export function KotsQueries(stores: Stores) {
         throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
       }
       return jsonFiles;
-    }
+    },
 
+    async getAirgapBundleProgress(root: any, args: any, context: Context): Promise<any> {
+      const randomNumber = parseInt((Math.random() * 100).toString(), 10);
+      return { value: randomNumber };
+    }
   }
+
+
 }

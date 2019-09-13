@@ -527,3 +527,13 @@ export const getLatestKotsPreflightResultRaw = `
 `;
 
 export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);
+
+export const getAirgapBundleProgressRaw = `
+  query getAirgapBundleProgress {
+    getAirgapBundleProgress {
+      value
+    }
+  }
+`;
+
+export const getAirgapBundleProgress = gql(getAirgapBundleProgressRaw);

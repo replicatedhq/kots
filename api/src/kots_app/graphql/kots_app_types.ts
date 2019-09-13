@@ -65,6 +65,12 @@ const KotsAppRegistryDetails = `
   }
 `;
 
+const AirgapUploadProgress = `
+  type AirgapUploadProgress {
+    value: Int
+  }
+`;
+
 export default [
   KotsApp,
   KotsDownstream,
@@ -72,4 +78,5 @@ export default [
   KotsAppMetadata,
   AppRegistryDetails,
   KotsAppRegistryDetails,
+  AirgapUploadProgress
 ];

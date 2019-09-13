@@ -77,5 +77,7 @@ export const Query = `
     listPreflightResults(watchId: String, slug: String): [PreflightResult]
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult
     getLatestKotsPreflightResult: PreflightResult
+
+    getAirgapBundleProgress: AirgapUploadProgress
   }
 `;
