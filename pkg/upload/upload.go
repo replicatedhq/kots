@@ -3,11 +3,11 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -29,7 +29,7 @@ type UploadOptions struct {
 	UpdateCursor    string
 	License         *string
 	Endpoint        string
-	Silent bool
+	Silent          bool
 }
 
 // Upload will upload the application version at path
@@ -97,7 +97,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	if uploadOptions.Silent {
 		log.Silence()
 	}
-	
+
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
 	// upload using http to the pod directly

@@ -1,6 +1,6 @@
 package upload
 
-import (	
+import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"

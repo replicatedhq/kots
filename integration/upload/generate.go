@@ -4,8 +4,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/pkg/errors"
 	"github.com/otiai10/copy"
+	"github.com/pkg/errors"
 )
 
 // GenerateTest will create a new upload test fixture for integration tests
@@ -26,6 +26,6 @@ func GenerateTest(name string, applicationPath string) error {
 	}
 
 	// TODO...
-	
+
 	return nil
 }

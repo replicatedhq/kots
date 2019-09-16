@@ -99,7 +99,7 @@ func InstallCmd() *cobra.Command {
 				NewAppName:   v.GetString("name"),
 				VersionLabel: "todo",
 				UpstreamURI:  args[0],
-				Endpoint: "http://localhost:3000",
+				Endpoint:     "http://localhost:3000",
 			}
 
 			if canPull {
