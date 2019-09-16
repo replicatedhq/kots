@@ -2,7 +2,8 @@ package cli
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/integration/replicated/pull"
+	"github.com/replicatedhq/kots/integration/replicated"
+	"github.com/replicatedhq/kots/integration/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,7 +26,13 @@ func NewFixture() *cobra.Command {
 			}
 
 			if v.GetString("type") == "replicated" {
-				if err := pull.GenerateTest(v.GetString("name"), args[0]); err != nil {
+				if err := replicated.GenerateTest(v.GetString("name"), args[0]); err != nil {
+					return err
+				}
+				return nil
+			}
+			if v.GetString("type") == "upload" {
+				if err := upload.GenerateTest(v.GetString("name"), args[0]); err != nil {
 					return err
 				}
 				return nil

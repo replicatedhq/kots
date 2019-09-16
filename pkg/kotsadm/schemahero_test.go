@@ -1,14 +1,14 @@
 package kotsadm
 
 import (
+	"fmt"
 	"testing"
 	"time"
-	"fmt"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Test_getMigrationsYAML(t *testing.T) {
@@ -31,7 +31,7 @@ func Test_getMigrationsYAML(t *testing.T) {
 			req := require.New(t)
 
 			deployOptions := DeployOptions{
-				Namespace: test.namespace,
+				Namespace:        test.namespace,
 				PostgresPassword: fmt.Sprintf("%d", time.Now().Unix()),
 			}
 
@@ -47,8 +47,7 @@ func Test_getMigrationsYAML(t *testing.T) {
 			req.NoError(err)
 
 			pod := obj.(*corev1.Pod)
-			
-			
+
 			assert.Equal(t, test.namespace, pod.Namespace)
 			assert.Equal(t, corev1.RestartPolicyOnFailure, pod.Spec.RestartPolicy)
 

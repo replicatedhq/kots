@@ -1,4 +1,4 @@
-package pull
+package replicated
 
 import (
 	"context"

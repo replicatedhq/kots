@@ -1,4 +1,4 @@
-package pull
+package replicated
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/pull"
 )
 
 func GenerateTest(name string, rawArchivePath string) error {
@@ -109,7 +109,7 @@ func generateExpectedFilesystem(rawArchivePath string) ([]byte, error) {
 	}
 	defer os.RemoveAll(tmpRootDir)
 
-	pullOptions := kotspull.PullOptions{
+	pullOptions := pull.PullOptions{
 		RootDir:             tmpRootDir,
 		LocalPath:           rawArchivePath,
 		ExcludeKotsKinds:    true,
@@ -118,7 +118,7 @@ func generateExpectedFilesystem(rawArchivePath string) ([]byte, error) {
 		Silent:              true,
 	}
 
-	_, err = kotspull.Pull("replicated://integration", pullOptions)
+	_, err = pull.Pull("replicated://integration", pullOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to pull")
 	}

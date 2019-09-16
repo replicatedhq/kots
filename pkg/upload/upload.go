@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -14,13 +15,8 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type UploadOptions struct {
@@ -32,8 +28,11 @@ type UploadOptions struct {
 	VersionLabel    string
 	UpdateCursor    string
 	License         *string
+	Endpoint        string
 }
 
+// Upload will upload the application version at path
+// using the options in uploadOptions
 func Upload(path string, uploadOptions UploadOptions) error {
 	license, err := findLicense(path)
 	if err != nil {
@@ -96,22 +95,8 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
-	podName, err := findKotsadm(uploadOptions.Namespace)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to find kotsadm pod")
-	}
-
-	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(uploadOptions.Kubeconfig, 3000, 3000, uploadOptions.Namespace, podName)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to start port forwarding")
-	}
-	defer close(stopCh)
-
 	// upload using http to the pod directly
-	req, err := createUploadRequest(archiveFilename, uploadOptions, "http://localhost:3000/api/v1/kots")
+	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/kots", uploadOptions.Endpoint))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create upload request")
@@ -145,31 +130,6 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	log.FinishSpinner()
 
 	return nil
-}
-
-func findKotsadm(namespace string) (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list pods")
-	}
-
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			return pod.Name, nil
-		}
-	}
-
-	return "", errors.New("unable to find kotsadm pod")
 }
 
 func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (*http.Request, error) {

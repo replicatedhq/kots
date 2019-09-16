@@ -7,9 +7,8 @@ import (
 	"testing"
 
 	"github.com/mholt/archiver"
-	"github.com/replicatedhq/kots/integration/replicated/pull"
 	"github.com/replicatedhq/kots/integration/util"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +46,7 @@ func Test_PullReplicated(t *testing.T) {
 			archiveData, err := ioutil.ReadFile(path.Join(test.testDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			stopCh, err := pull.StartMockServer(endpoint, "integration", "integration", archiveData)
+			stopCh, err := StartMockServer(endpoint, "integration", "integration", archiveData)
 			req.NoError(err)
 
 			defer func() {
@@ -58,14 +57,14 @@ func Test_PullReplicated(t *testing.T) {
 			req.NoError(err)
 			defer os.RemoveAll(actualDir)
 
-			pullOptions := kotspull.PullOptions{
+			pullOptions := pull.PullOptions{
 				RootDir:             actualDir,
 				LicenseFile:         path.Join(test.testDir, "license.yaml"),
 				ExcludeAdminConsole: true,
 				ExcludeKotsKinds:    true,
 				Silent:              true,
 			}
-			_, err = kotspull.Pull("replicated://integration", pullOptions)
+			_, err = pull.Pull("replicated://integration", pullOptions)
 			req.NoError(err)
 
 			// create an archive of the actual results

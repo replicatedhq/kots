@@ -3,28 +3,28 @@ package kotsadm
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/kubernetes/scheme"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Test_getPostgresYAML(t *testing.T) {
 	tests := []struct {
 		name      string
 		namespace string
-		password string
+		password  string
 	}{
 		{
 			name:      "no namespace",
 			namespace: "",
-			password: "test",
+			password:  "test",
 		},
 		{
 			name:      "default namespace",
 			namespace: "default",
-			password: "test",
+			password:  "test",
 		},
 	}
 
@@ -49,7 +49,7 @@ func Test_getPostgresYAML(t *testing.T) {
 			obj, _, err = decode(serviceManifest, nil, nil)
 			req.NoError(err)
 			service := obj.(*corev1.Service)
-			
+
 			assert.Len(t, statefulSet.Spec.VolumeClaimTemplates, 1)
 
 			assert.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
