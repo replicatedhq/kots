@@ -154,7 +154,8 @@ func PullFromAirgap(licenseData, airgapDir, downstream, outputFile, registryHost
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
-		RewriteImages: pull.RewriteImages{
+		RewriteImages:       true,
+		RewriteImageOptions: pull.RewriteImageOptions{
 			ImageFiles: filepath.Join(airgapDir, "images"),
 			Host:       registryHost,
 			Namespace:  registryNamesapce,

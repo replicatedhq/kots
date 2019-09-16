@@ -1,13 +1,13 @@
 package util
 
 import (
-	"io"
-	"fmt"
-	"os"
-	"bytes"
-	"crypto/md5"
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
+	"crypto/md5"
+	"fmt"
+	"io"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -40,14 +40,14 @@ func CompareTars(expected []byte, actual []byte, compareOptions CompareOptions) 
 			unexpectedFiles = append(unexpectedFiles, actualFilename)
 		}
 
-		NextFile:
+	NextFile:
 	}
 
 	if len(unexpectedFiles) > 0 {
 		return false, errors.Errorf("unexpected files: %#v\n", unexpectedFiles)
 	}
 
-	return  true, nil
+	return true, nil
 }
 
 func parseTar(in []byte) (map[string]string, error) {

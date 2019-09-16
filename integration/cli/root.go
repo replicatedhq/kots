@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/replicatedhq/kots/integration/replicated"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,22 +18,6 @@ func RootCmd() *cobra.Command {
 		SilenceErrors: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			v := viper.GetViper()
-
-			fmt.Println("\nRunning integration tests")
-
-			for _, appType := range v.GetStringSlice("upstream") {
-				if appType == "replicated" {
-					if err := replicated.RunIntegration(); err != nil {
-						return err
-					}
-				}
-			}
-
-			fmt.Println("\nAll integration tests completed")
-			return nil
 		},
 	}
 

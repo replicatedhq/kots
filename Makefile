@@ -6,11 +6,14 @@ export GOPROXY=https://proxy.golang.org
 test:
 	go test ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
 
+.PHONY: integration-cli
+integration-cli:
+	go build -o bin/kots-integration ./integration
+	
 .PHONY: integration
 integration:
-	go build -o bin/kots-integration ./integration
-	./bin/kots-integration
-
+	go test -v ./integration/...
+	
 .PHONY: kots
 kots: fmt vet
 	go build -o bin/kots github.com/replicatedhq/kots/cmd/kots

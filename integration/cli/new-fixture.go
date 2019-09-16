@@ -26,7 +26,7 @@ func NewFixture() *cobra.Command {
 
 			if v.GetString("type") == "replicated" {
 				if err := pull.GenerateTest(v.GetString("name"), args[0]); err != nil {
-					return errors.Cause(err)
+					return err
 				}
 				return nil
 			}

@@ -6,15 +6,47 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"testing"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/integration/replicated/pull"
 	"github.com/replicatedhq/kots/integration/util"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/stretchr/testify/require"
 )
 
-const endpoint = "http://localhost:3000"
+func Test_PullReplicated(t *testing.T) {
+	tests := []struct {
+		name      string
+		testDir   string
+		licenseID string
+	}{
+		{
+			name:      "kitchen sink",
+			testDir:   "kitchen-sink",
+			licenseID: "integration",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			licenseFile, err := ioutil.TempFile("", "license")
+			req.NoError(err)
+
+			// license := kotsv1beta1.License{}
+
+			licenseData := []byte("")
+
+			err = ioutil.WriteFile(licenseFile.Name(), licenseData, 0644)
+			req.NoError(err)
+
+			defer os.Remove(licenseFile.Name())
+		})
+	}
+}
 
 func runPullTests() error {
 	pullTests := pull.ReplicatedPullTests()
@@ -55,7 +87,7 @@ func runPullTests() error {
 			RootDir:             testDir,
 			LicenseFile:         licenseFile.Name(),
 			ExcludeAdminConsole: true,
-			ExcludeKotsKinds: true,
+			ExcludeKotsKinds:    true,
 			Silent:              true,
 		}
 		_, err = kotspull.Pull("replicated://integration", pullOptions)
