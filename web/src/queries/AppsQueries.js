@@ -528,12 +528,13 @@ export const getLatestKotsPreflightResultRaw = `
 
 export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);
 
-export const getAirgapBundleProgressRaw = `
-  query getAirgapBundleProgress {
-    getAirgapBundleProgress {
-      value
+export const getAirgapInstallStatusRaw = `
+  query getAirgapInstallStatus {
+    getAirgapInstallStatus {
+      installStatus
+      currentMessage
     }
   }
 `;
 
-export const getAirgapBundleProgress = gql(getAirgapBundleProgressRaw);
+export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);

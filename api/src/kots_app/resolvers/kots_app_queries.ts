@@ -127,9 +127,11 @@ export function KotsQueries(stores: Stores) {
       return jsonFiles;
     },
 
-    async getAirgapBundleProgress(root: any, args: any, context: Context): Promise<any> {
-      const randomNumber = parseInt((Math.random() * 100).toString(), 10);
-      return { value: randomNumber };
+    async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<any> {
+      return {
+        installStatus: "airgap_upload_in_progress",
+        currentMessage: "We are still working on this right now"
+      };
     }
   }
 

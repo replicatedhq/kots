@@ -40,7 +40,7 @@ import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
-import AirgapUploadProgress from './components/AirgapUploadProgress';
+import AirgapUploadProgress from "./components/AirgapUploadProgress";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 

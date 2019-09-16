@@ -78,6 +78,6 @@ export const Query = `
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult
     getLatestKotsPreflightResult: PreflightResult
 
-    getAirgapBundleProgress: AirgapUploadProgress
+    getAirgapInstallStatus: AirgapInstallStatus
   }
 `;

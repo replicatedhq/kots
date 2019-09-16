@@ -65,9 +65,10 @@ const KotsAppRegistryDetails = `
   }
 `;
 
-const AirgapUploadProgress = `
-  type AirgapUploadProgress {
-    value: Int
+const AirgapInstallStatus = `
+  type AirgapInstallStatus {
+    installStatus: String
+    currentMessage: String
   }
 `;
 
@@ -78,5 +79,5 @@ export default [
   KotsAppMetadata,
   AppRegistryDetails,
   KotsAppRegistryDetails,
-  AirgapUploadProgress
+  AirgapInstallStatus
 ];
