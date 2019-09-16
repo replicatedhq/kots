@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- manifests/sentry-secrets.yaml
+- manifests/worker-deployment.yaml
+- manifests/postgres-deployment.yaml
+- manifests/init-job.yaml
+- manifests/redis-secret.yaml
+- manifests/usercreate-job.yaml
+- manifests/sentry-configmap.yaml
+- manifests/redis-service-2.yaml
+- manifests/redis-deployment-2.yaml
+- manifests/sentry-service.yaml
+- manifests/postgres-service.yaml
+- manifests/redis-statefulset.yaml
+- manifests/redis-service.yaml
+- manifests/web-deployment.yaml
+- manifests/cron-deployment.yaml
+- manifests/postgres-pvc.yaml
+- manifests/postgres-secret.yaml
+- manifests/sentry-pvc.yaml

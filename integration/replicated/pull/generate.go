@@ -1,12 +1,10 @@
 package pull
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"text/template"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
@@ -35,25 +33,42 @@ spec:
 		return errors.Wrap(err, "failed to generate expected filesystem")
 	}
 
-	context := map[string]string{
-		"Name":                 name,
-		"LicenseData":          integrationLicenseData,
-		"ReplicatedAppArchive": base64.StdEncoding.EncodeToString(replicatedAppArchive),
-		"ExpectedFilesystem":   base64.StdEncoding.EncodeToString(expectedFilesystem),
+	testRoot := path.Join("integration", "replicated", "tests", name)
+	if err := os.MkdirAll(testRoot, 0755); err != nil {
+		return errors.Wrap(err, "failed to create test root")
 	}
 
-	tmpl, err := template.New(name).Parse(testTemplate)
+	err = ioutil.WriteFile(path.Join(testRoot, "license.yaml"), []byte(integrationLicenseData), 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse template")
+		return errors.Wrap(err, "failed to write license")
 	}
 
-	f, err := os.Create(path.Join("integration", "replicated", "pull", fmt.Sprintf("%s.go", name)))
+	err = ioutil.WriteFile(path.Join(testRoot, "archive.tar.gz"), replicatedAppArchive, 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to create new test file")
+		return errors.Wrap(err, "failed to write archive")
 	}
 
-	if err := tmpl.Execute(f, context); err != nil {
-		return errors.Wrap(err, "failed to execute template")
+	expectedRoot := path.Join(testRoot, "expected")
+	if err := os.MkdirAll(expectedRoot, 0755); err != nil {
+		return errors.Wrap(err, "failed to create expected root")
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	tempExpectedFile, err := ioutil.TempDir("", "kotsintegration")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp file")
+	}
+	defer os.RemoveAll(tempExpectedFile)
+	err = ioutil.WriteFile(path.Join(tempExpectedFile, "archive.tar.gz"), expectedFilesystem, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write to temp file")
+	}
+	if err := tarGz.Unarchive(path.Join(tempExpectedFile, "archive.tar.gz"), expectedRoot); err != nil {
+		return errors.Wrap(err, "failed to unarchive expected")
 	}
 
 	return nil
