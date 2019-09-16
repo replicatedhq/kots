@@ -25,32 +25,31 @@ type UploadOptions struct {
 	Kubeconfig      string
 	ExistingAppSlug string
 	NewAppName      string
-	VersionLabel    string
-	UpdateCursor    string
-	License         *string
 	Endpoint        string
 	Silent          bool
+	updateCursor    string
+	license         *string
+	versionLabel    string
 }
 
 // Upload will upload the application version at path
 // using the options in uploadOptions
 func Upload(path string, uploadOptions UploadOptions) error {
+	fmt.Printf("path = %s\n", path)
 	license, err := findLicense(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license")
 	}
-	uploadOptions.License = license
+	uploadOptions.license = license
 
 	updateCursor, err := findUpdateCursor(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to find update cursor")
 	}
-
 	if updateCursor == "" {
 		return errors.New("no update cursor found. this is not yet supported")
 	}
-
-	uploadOptions.UpdateCursor = updateCursor
+	uploadOptions.updateCursor = updateCursor
 
 	archiveFilename, err := createUploadableArchive(path)
 	if err != nil {
@@ -160,8 +159,8 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		method = "PUT"
 		metadata := map[string]string{
 			"slug":         uploadOptions.ExistingAppSlug,
-			"versionLabel": uploadOptions.VersionLabel,
-			"updateCursor": uploadOptions.UpdateCursor,
+			"versionLabel": uploadOptions.versionLabel,
+			"updateCursor": uploadOptions.updateCursor,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -179,13 +178,13 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 
 		body := map[string]string{
 			"name":         uploadOptions.NewAppName,
-			"versionLabel": uploadOptions.VersionLabel,
+			"versionLabel": uploadOptions.versionLabel,
 			"upstreamURI":  uploadOptions.UpstreamURI,
-			"updateCursor": uploadOptions.UpdateCursor,
+			"updateCursor": uploadOptions.updateCursor,
 		}
 
-		if uploadOptions.License != nil {
-			body["license"] = *uploadOptions.License
+		if uploadOptions.license != nil {
+			body["license"] = *uploadOptions.license
 		}
 
 		b, err := json.Marshal(body)

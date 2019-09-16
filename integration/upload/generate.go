@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/mholt/archiver"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 )
@@ -25,7 +26,22 @@ func GenerateTest(name string, applicationPath string) error {
 		return errors.Wrap(err, "failed to copy input")
 	}
 
-	// TODO...
+	// Create the expected archive
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: true,
+		},
+	}
+
+	paths := []string{
+		path.Join(applicationPath, "upstream"),
+		path.Join(applicationPath, "base"),
+		path.Join(applicationPath, "overlays"),
+	}
+
+	if err := tarGz.Archive(paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {
+		return errors.Wrap(err, "failed to create tar gz")
+	}
 
 	return nil
 }

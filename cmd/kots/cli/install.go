@@ -94,12 +94,11 @@ func InstallCmd() *cobra.Command {
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
-				Namespace:    v.GetString("namespace"),
-				Kubeconfig:   v.GetString("kubeconfig"),
-				NewAppName:   v.GetString("name"),
-				VersionLabel: "todo",
-				UpstreamURI:  args[0],
-				Endpoint:     "http://localhost:3000",
+				Namespace:   v.GetString("namespace"),
+				Kubeconfig:  v.GetString("kubeconfig"),
+				NewAppName:  v.GetString("name"),
+				UpstreamURI: args[0],
+				Endpoint:    "http://localhost:3000",
 			}
 
 			if canPull {
