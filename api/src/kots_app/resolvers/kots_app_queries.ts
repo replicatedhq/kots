@@ -127,11 +127,9 @@ export function KotsQueries(stores: Stores) {
       return jsonFiles;
     },
 
-    async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<any> {
-      return {
-        installStatus: "airgap_upload_in_progress",
-        currentMessage: "We are still working on this right now"
-      };
+    async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
+      const airgapInstallStatus = await stores.kotsAppStore.getAirgapInstallStatus();
+      return airgapInstallStatus;
     }
   }
 

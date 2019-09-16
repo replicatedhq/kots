@@ -1,29 +1,32 @@
-import React from "react";
+import React from "react"
+import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql} from "react-apollo";
 import { getAirgapInstallStatus } from "../queries/AppsQueries";
 import Loader from "./shared/Loader";
 
 function AirgapUploadProgress(props) {
+  const { history } = props;
+  const { getAirgapInstallStatus } = props.data;
 
-  const { loading, getAirgapInstallStatus } = props.data;
-  if (loading) {
-    return (
-      <div className="flex1 flex-column alignItems--center justifyContent--center">
-        <Loader size={60} />
-      </div>
-    );
+  if (getAirgapInstallStatus?.installStatus === "installed") {
+    history.replace("/");
   }
+
   return (
     <div className="flex1 flex-column alignItems--center justifyContent--center">
-      Checking in on your airgap bundle right now...<br />
-      Install Status: {getAirgapInstallStatus?.installStatus} <br/>
-      Current Message: {getAirgapInstallStatus?.currentMessage} <br />
-
+      <div className="flex1 flex-column alignItems--center justifyContent--center u-color--tuna">
+        <Loader size={60} color="#326DE6"/>
+        Checking in on your airgap bundle right now...<br />
+        <div className="u-marginTop--20">
+          {getAirgapInstallStatus?.currentMessage}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default compose(
+  withRouter,
   withApollo,
   graphql(getAirgapInstallStatus, {
     options: () => {

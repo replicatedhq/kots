@@ -545,7 +545,7 @@ order by sequence desc`;
     return signed
   }
 
-  async getAirgapInstallStatus(): Promise<any> {
+  async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string}> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const r = await this.pool.query(q);
 
@@ -557,7 +557,7 @@ order by sequence desc`;
     }
 
     return {
-      installStatus: r.rows[0].install_status,
+      installStatus: r.rows[0].install_state,
       currentMessage: rr.rows[0].current_message
     };
   }
