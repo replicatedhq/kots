@@ -10,14 +10,16 @@ import (
 	"github.com/replicatedhq/kots/integration/replicated/pull"
 	"github.com/replicatedhq/kots/integration/util"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type replicatedPullTest struct {
 	name    string
 	testDir string
 }
+
+const endpoint = "http://localhost:3000"
 
 func Test_PullReplicated(t *testing.T) {
 	tests := []replicatedPullTest{}

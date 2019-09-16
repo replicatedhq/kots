@@ -5,6 +5,6 @@ metadata:
   name: sentry-enterprise
 spec:
   values:
-    embedded_postgres_password: _NjyNG5J3E_mgbbnGtiGmTzTGqyHeykg
-    secret_key: 7RbmFcp1ft14K_UK7ujSH1nxuwsEtFiH8Z_Fft22
+    embedded_postgres_password: 1gSczt1EhlCsWHYmNtWQciULda5MDn7W
+    secret_key: ld6mXMqXRSRpLyzc3cSaXqrCqOP2yH0u9TjlLbYD
 status: {}

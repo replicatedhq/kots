@@ -10,9 +10,10 @@ test:
 integration-cli:
 	go build -o bin/kots-integration ./integration
 	
-.PHONY: integration
-integration:
-	go test -v ./integration/...
+.PHONY: ci-test
+ci-test:
+	go test ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
+
 	
 .PHONY: kots
 kots: fmt vet
