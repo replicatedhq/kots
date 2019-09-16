@@ -12,15 +12,21 @@ import (
 func Test_Upload(t *testing.T) {
 	tests := []struct {
 		path                 string
+		namespace            string
+		upstreamURI          string
 		expectedUpdateCursor string
 		expectedVersionLabel string
 		expectedLicense      string
+		newAppName           string
 	}{
 		{
 			path:                 "kitchen-sink",
+			namespace:            "default",
+			upstreamURI:          "replicated://kitchen-sink",
 			expectedUpdateCursor: "",
 			expectedVersionLabel: "",
 			expectedLicense:      "",
+			newAppName:           "kitchen-sink",
 		},
 	}
 
@@ -29,18 +35,19 @@ func Test_Upload(t *testing.T) {
 			req := require.New(t)
 
 			uploadOptions := kotsupload.UploadOptions{
-				Namespace:       "",
-				UpstreamURI:     "",
+				Namespace:       test.namespace,
+				UpstreamURI:     test.upstreamURI,
 				ExistingAppSlug: "",
-				NewAppName:      "",
-				Endpoint:        "http://localhost:3000",
+				NewAppName:      test.newAppName,
+				Endpoint:        "http://localhost:3001",
+				Silent:          true,
 			}
 
 			expectedData, err := ioutil.ReadFile(path.Join("tests", test.path, "expected-archive.tar.gz"))
 			req.NoError(err)
 
 			method := "POST"
-			stopCh, err := StartMockServer("http://localhost:3000", method, test.expectedUpdateCursor, test.expectedVersionLabel, test.expectedLicense, expectedData)
+			stopCh, err := StartMockServer("http://localhost:3001", method, test.expectedUpdateCursor, test.expectedVersionLabel, test.expectedLicense, expectedData)
 			req.NoError(err)
 
 			defer func() {
