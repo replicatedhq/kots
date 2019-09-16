@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
+// GenerateTest will create a new replicated app fixture for integration tests
 func GenerateTest(name string, rawArchivePath string) error {
 	integrationLicenseData := fmt.Sprintf(`apiVersion: kots.io/v1beta1
 kind: License

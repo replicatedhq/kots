@@ -29,6 +29,7 @@ type UploadOptions struct {
 	UpdateCursor    string
 	License         *string
 	Endpoint        string
+	Silent bool
 }
 
 // Upload will upload the application version at path
@@ -93,6 +94,10 @@ func Upload(path string, uploadOptions UploadOptions) error {
 
 	// Find the kotadm-api pod
 	log := logger.NewLogger()
+	if uploadOptions.Silent {
+		log.Silence()
+	}
+	
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
 	// upload using http to the pod directly
