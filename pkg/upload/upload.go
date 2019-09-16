@@ -3,6 +3,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -14,13 +15,8 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type UploadOptions struct {
@@ -29,28 +25,31 @@ type UploadOptions struct {
 	Kubeconfig      string
 	ExistingAppSlug string
 	NewAppName      string
-	VersionLabel    string
-	UpdateCursor    string
-	License         *string
+	Endpoint        string
+	Silent          bool
+	updateCursor    string
+	license         *string
+	versionLabel    string
 }
 
+// Upload will upload the application version at path
+// using the options in uploadOptions
 func Upload(path string, uploadOptions UploadOptions) error {
+	fmt.Printf("path = %s\n", path)
 	license, err := findLicense(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license")
 	}
-	uploadOptions.License = license
+	uploadOptions.license = license
 
 	updateCursor, err := findUpdateCursor(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to find update cursor")
 	}
-
 	if updateCursor == "" {
 		return errors.New("no update cursor found. this is not yet supported")
 	}
-
-	uploadOptions.UpdateCursor = updateCursor
+	uploadOptions.updateCursor = updateCursor
 
 	archiveFilename, err := createUploadableArchive(path)
 	if err != nil {
@@ -94,24 +93,14 @@ func Upload(path string, uploadOptions UploadOptions) error {
 
 	// Find the kotadm-api pod
 	log := logger.NewLogger()
+	if uploadOptions.Silent {
+		log.Silence()
+	}
+
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
-	podName, err := findKotsadm(uploadOptions.Namespace)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to find kotsadm pod")
-	}
-
-	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(uploadOptions.Kubeconfig, 3000, 3000, uploadOptions.Namespace, podName)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to start port forwarding")
-	}
-	defer close(stopCh)
-
 	// upload using http to the pod directly
-	req, err := createUploadRequest(archiveFilename, uploadOptions, "http://localhost:3000/api/v1/kots")
+	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/kots", uploadOptions.Endpoint))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create upload request")
@@ -147,31 +136,6 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	return nil
 }
 
-func findKotsadm(namespace string) (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list pods")
-	}
-
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			return pod.Name, nil
-		}
-	}
-
-	return "", errors.New("unable to find kotsadm pod")
-}
-
 func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (*http.Request, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -195,8 +159,8 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		method = "PUT"
 		metadata := map[string]string{
 			"slug":         uploadOptions.ExistingAppSlug,
-			"versionLabel": uploadOptions.VersionLabel,
-			"updateCursor": uploadOptions.UpdateCursor,
+			"versionLabel": uploadOptions.versionLabel,
+			"updateCursor": uploadOptions.updateCursor,
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -214,13 +178,13 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 
 		body := map[string]string{
 			"name":         uploadOptions.NewAppName,
-			"versionLabel": uploadOptions.VersionLabel,
+			"versionLabel": uploadOptions.versionLabel,
 			"upstreamURI":  uploadOptions.UpstreamURI,
-			"updateCursor": uploadOptions.UpdateCursor,
+			"updateCursor": uploadOptions.updateCursor,
 		}
 
-		if uploadOptions.License != nil {
-			body["license"] = *uploadOptions.License
+		if uploadOptions.license != nil {
+			body["license"] = *uploadOptions.license
 		}
 
 		b, err := json.Marshal(body)

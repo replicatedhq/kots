@@ -94,11 +94,11 @@ func InstallCmd() *cobra.Command {
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
-				Namespace:    v.GetString("namespace"),
-				Kubeconfig:   v.GetString("kubeconfig"),
-				NewAppName:   v.GetString("name"),
-				VersionLabel: "todo",
-				UpstreamURI:  args[0],
+				Namespace:   v.GetString("namespace"),
+				Kubeconfig:  v.GetString("kubeconfig"),
+				NewAppName:  v.GetString("name"),
+				UpstreamURI: args[0],
+				Endpoint:    "http://localhost:3000",
 			}
 
 			if canPull {
@@ -125,7 +125,14 @@ func InstallCmd() *cobra.Command {
 					return errors.New("unable to find directory in rootDir")
 				}
 
+				stopCh, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
+				if err != nil {
+					return err
+				}
+				defer close(stopCh)
+
 				if err := upload.Upload(uploadRootDir, uploadOptions); err != nil {
+					log.FinishSpinnerWithError()
 					return errors.Cause(err)
 				}
 			}

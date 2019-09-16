@@ -1,0 +1,111 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sentry-web
+  labels:
+    app: sentry
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sentry
+        release: "release-name"
+        role: web
+    spec:
+      containers:
+      - name: sentry-web
+        image: "sentry:9.1.1"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9000
+        env:
+        - name: SENTRY_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: sentry-secret
+        - name: SENTRY_DB_USER
+          value: "sentry"
+        - name: SENTRY_DB_NAME
+          value: "sentry"
+        - name: SENTRY_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sentry-postgresql
+              key: postgres-password
+        - name: SENTRY_POSTGRES_HOST
+          value: sentry-postgresql
+        - name: SENTRY_POSTGRES_PORT
+          value: "5432"
+        - name: SENTRY_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sentry-redis
+              key: redis-password
+        - name: SENTRY_REDIS_HOST
+          value: sentry-redis-master
+        - name: SENTRY_REDIS_PORT
+          value: "6379"
+        - name: SENTRY_EMAIL_HOST
+          value: ''
+        - name: SENTRY_EMAIL_PORT
+          value: ''
+        - name: SENTRY_EMAIL_USER
+          value: ''
+        - name: SENTRY_EMAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: smtp-password
+        - name: SENTRY_EMAIL_USE_TLS
+          value: "false"
+        - name: SENTRY_SERVER_EMAIL
+          value: "sentry@sentry.local"
+
+        - name: GITHUB_APP_ID
+          value: ""
+        - name: GITHUB_API_SECRET
+          value: ""
+
+        volumeMounts:
+        - mountPath: /etc/sentry
+          name: config
+          readOnly: true
+        - mountPath: /var/lib/sentry/files
+          name: sentry-data
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /_health/
+            port: 9000
+            scheme: HTTP
+          initialDelaySeconds: 50
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        readinessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /_health/
+            port: 9000
+            scheme: HTTP
+          initialDelaySeconds: 50
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+            limits:
+              cpu: 500m
+              memory: 500Mi
+            requests:
+              cpu: 300m
+              memory: 300Mi
+
+      volumes:
+      - name: config
+        configMap:
+          name: sentry
+      - name: sentry-data
+        persistentVolumeClaim:
+          claimName: sentry

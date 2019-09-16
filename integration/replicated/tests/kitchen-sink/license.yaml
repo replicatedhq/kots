@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: integration
+spec:
+  licenseID: kitchen-sink
+  appSlug: kitchen-sink
+  endpoint: http://localhost:3000
+  signature: IA==

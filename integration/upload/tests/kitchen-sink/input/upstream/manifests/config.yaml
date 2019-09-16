@@ -1,0 +1,39 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+spec:
+  groups:
+    - name: sentry
+      title: Sentry
+      description: Sentry Defaults
+      items:
+        - name: admin_username
+          title: Admin Username
+          type: text
+          default: 'admin'
+        - name: admin_password
+          title: Admin Password
+          type: text
+          default: 'password'
+        - name: secret_key
+          title: Secret Key
+          type: password
+          hidden: true
+          value: "{{repl RandomString 40}}"
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          value: "{{repl RandomString 32}}"

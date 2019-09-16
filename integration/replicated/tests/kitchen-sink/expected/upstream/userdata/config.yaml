@@ -1,0 +1,10 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: sentry-enterprise
+spec:
+  values:
+    embedded_postgres_password: 1gSczt1EhlCsWHYmNtWQciULda5MDn7W
+    secret_key: ld6mXMqXRSRpLyzc3cSaXqrCqOP2yH0u9TjlLbYD
+status: {}
