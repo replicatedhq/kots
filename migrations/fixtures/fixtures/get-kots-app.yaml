@@ -47,7 +47,7 @@ apps:
     registry_password: "password"
     namespace: "kots-namespace"
     last_registry_sync: "2019-04-19 01:23:45.567"
-    airgap_upload_pending: false
+    install_state: "installed"
     users:
       - get-kots-app-user-id
     downstream:
