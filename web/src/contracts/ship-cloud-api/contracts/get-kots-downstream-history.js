@@ -15,7 +15,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 export default () => {
-  it("gets a kots app", async done => {
+  it("gets downstream version history for a kots app", async done => {
 
     await global.provider.addInteraction(getKotsDownstreamHistoryInteraction);
     const result = await getShipClient("get-kots-downstream-history-user-session").mutate({
@@ -37,7 +37,7 @@ export default () => {
   });
 
   const getKotsDownstreamHistoryInteraction = new Pact.GraphQLInteraction()
-    .uponReceiving("A query to get a kots app")
+    .uponReceiving("A query to get kots downstream version history")
     .withRequest({
       path: "/graphql",
       method: "POST",
@@ -50,7 +50,7 @@ export default () => {
     .withQuery(getKotsDownstreamHistoryRaw)
     .withVariables({
       clusterSlug: "get-kots-downstream-history-cluster-slug",
-      upstreamSlug: "get-kots-downstrea-history-app-slug"
+      upstreamSlug: "get-kots-downstream-history-app-slug"
     })
     .willRespondWith({
       status: 200,
@@ -58,8 +58,8 @@ export default () => {
       body: {
         data: {
           getKotsDownstreamHistory: {
-            title: "",
-            status: "",
+            title: "get-kots-downstream-history-cluster-title",
+            status: "pending",
             createdOn: Matchers.like("date"),
             sequence: 0,
             deployedAt: Matchers.like("date"),

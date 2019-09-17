@@ -4,7 +4,7 @@ users:
     type: "github"
     github:
       username: "get-kots-downstream-history-github-user"
-      github_id: 99101235
+      github_id: 9910124
       avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
       email: "get-kots-downstream-history-user-email@replicated.com"
     sessions:
