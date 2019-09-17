@@ -368,15 +368,20 @@ export const Utilities = {
 
   logoutUser(client) {
     const token = this.getToken();
+    const isSharedConsoleAdmin = isSingleTenant();
     // TODO: for now we just remove the token,
     // this DOES NOT perform an actual logout of GitHub.
     if (token) {
       if (client) {client.resetStore();}
       window.localStorage.removeItem("token");
-      window.location = "/login";
+    }
+
+    if (isSharedConsoleAdmin) {
+      window.location = "/secure-console";
     } else {
       window.location = "/login";
     }
+
   },
 
   isEmailValid(email) {
