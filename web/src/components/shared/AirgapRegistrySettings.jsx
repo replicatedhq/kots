@@ -23,7 +23,6 @@ class AirgapRegistrySettings extends Component {
   }
 
   onSubmit = async () => {
-    const { history } = this.props;
     const {
       hostname,
       username,
@@ -35,7 +34,8 @@ class AirgapRegistrySettings extends Component {
     try {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
       await this.props.getKotsAppRegistryQuery.refetch();
-      history.push("/airgap/progress");
+      // Uncomment this line to see the airgap progress page
+      // this.props.history.push("/airgap/progress");
 
     } catch (error) {
       console.log(error);
