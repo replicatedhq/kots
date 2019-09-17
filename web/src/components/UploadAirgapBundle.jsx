@@ -1,9 +1,9 @@
 import * as React from "react";
-import { compose, withApollo } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
-
+import { setAirgapToInstalled } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
@@ -61,6 +61,17 @@ class UploadAirgapBundle extends React.Component {
     this.setState({
       bundleFile: files[0],
     });
+  }
+
+  handleOnlineInstall = async () => {
+    const { slug } = this.props.match.params;
+    try {
+      await this.props.setAirgapToInstalled(slug);
+      this.props.onUploadSuccess();
+      this.props.history.push(`/app/${slug}`);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   render() {
@@ -140,7 +151,7 @@ class UploadAirgapBundle extends React.Component {
           </div>
         </div>
         <div className="u-marginTop--20">
-          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
         </div>
       </div>
     );
@@ -149,5 +160,10 @@ class UploadAirgapBundle extends React.Component {
 
 export default compose(
   withRouter,
-  withApollo
+  withApollo,
+  graphql(setAirgapToInstalled, {
+    props:({ mutate }) => ({
+      setAirgapToInstalled: (slug) => mutate({ variables: { slug } })
+    })
+  })
 )(UploadAirgapBundle);

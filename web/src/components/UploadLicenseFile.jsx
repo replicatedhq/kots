@@ -34,7 +34,7 @@ class UploadLicenseFile extends React.Component {
       onUploadSuccess().then(() => {
 
         if (airgapEnabled) {
-          history.replace("/airgap");
+          history.replace(`/${kotsApp.slug}/airgap`);
           return;
         }
 

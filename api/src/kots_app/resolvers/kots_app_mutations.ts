@@ -60,6 +60,13 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
+    async setAirgapToInstalled(root: any, args: any, context: Context) {
+      const { slug } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      await stores.kotsAppStore.setKotsAirgapAppInstalled(appId);
+      return true;
+    },
+
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterSlug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
