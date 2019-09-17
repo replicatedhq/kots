@@ -527,3 +527,14 @@ export const getLatestKotsPreflightResultRaw = `
 `;
 
 export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);
+
+export const getAirgapInstallStatusRaw = `
+  query getAirgapInstallStatus {
+    getAirgapInstallStatus {
+      installStatus
+      currentMessage
+    }
+  }
+`;
+
+export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);

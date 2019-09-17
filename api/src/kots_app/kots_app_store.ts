@@ -315,7 +315,7 @@ order by sequence desc`;
   }
 
   async listInstalledKotsApps(userId?: string): Promise<KotsApp[]> {
-    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1 and app.airgap_upload_pending = false`;
+    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1 and install_state = 'installed'`;
     const v = [userId];
 
     const result = await this.pool.query(q, v);
@@ -324,7 +324,7 @@ order by sequence desc`;
       apps.push(await this.getApp(row.id));
     }
 
-    const qq = `select id from app where is_all_users = true and airgap_upload_pending = false`;
+    const qq = `select id from app where is_all_users = true and install_state = 'installed'`;
     const resultTwo = await this.pool.query(qq);
     for (const row of resultTwo.rows) {
       apps.push(await this.getApp(row.id));
@@ -334,7 +334,7 @@ order by sequence desc`;
   }
 
   async getPendingKotsAirgapApp(): Promise<KotsApp> {
-    const q = `select id from app where airgap_upload_pending = true`;
+    const q = `select id from app where install_state = 'airgap_upload_pending' or install_state = 'airgap_upload_in_progress`;
     const v = [];
 
     const result = await this.pool.query(q, v);
@@ -350,7 +350,7 @@ order by sequence desc`;
   }
 
   async setKotsAirgapAppInstalled(appId: string) {
-    const q = `update app set airgap_upload_pending = false where id = $1`;
+    const q = `update app set install_state = 'installed' where id = $1`;
     const v = [appId];
 
     await this.pool.query(q, v);
@@ -431,7 +431,6 @@ order by sequence desc`;
     kotsApp.currentSequence = row.current_sequence;
     kotsApp.lastUpdateCheckAt = row.last_update_check_at ? new Date(row.last_update_check_at) : undefined;
     kotsApp.bundleCommand = await kotsApp.getSupportBundleCommand(row.slug);
-    kotsApp.airgapUploadPending = row.airgap_upload_pending;
     // This is to avoid a race condition when uploading a license file where the row in app_version
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
@@ -481,7 +480,7 @@ order by sequence desc`;
 
     try {
       await pg.query("begin");
-      const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, airgap_upload_pending)
+      const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state)
       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
       const v = [
         id,
@@ -492,7 +491,7 @@ order by sequence desc`;
         upstreamURI,
         license,
         !userId,
-        airgapEnabled
+        airgapEnabled ? "airgap_upload_pending" : "installed"
       ];
 
       await pg.query(q, v);
@@ -545,6 +544,24 @@ order by sequence desc`;
     const signed = await signGetRequest(this.params, this.params.airgapBucket, filename, 60);
     return signed
   }
+
+  async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string}> {
+    const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
+    const result = await this.pool.query(q);
+
+    const qq = `SELECT current_message from airgap_install_status LIMIT 1`;
+    const messageQueryResult = await this.pool.query(qq);
+
+    if (result.rows.length !== 1) {
+      throw new Error("Could not find any kots app in getAirgapInstallStatus()");
+    }
+
+    return {
+      installStatus: result.rows[0].install_state,
+      currentMessage: messageQueryResult.rows[0].current_message
+    };
+  }
+
   private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {
     if (!row) {
       throw new ReplicatedError("No app provided to map function");

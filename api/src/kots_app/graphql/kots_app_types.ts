@@ -65,6 +65,13 @@ const KotsAppRegistryDetails = `
   }
 `;
 
+const AirgapInstallStatus = `
+  type AirgapInstallStatus {
+    installStatus: String
+    currentMessage: String
+  }
+`;
+
 export default [
   KotsApp,
   KotsDownstream,
@@ -72,4 +79,5 @@ export default [
   KotsAppMetadata,
   AppRegistryDetails,
   KotsAppRegistryDetails,
+  AirgapInstallStatus
 ];

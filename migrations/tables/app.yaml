@@ -51,9 +51,6 @@ spec:
       - name: namespace
         type: text
       - name: last_registry_sync
-        type: timestamp without time zone  
-      - name: airgap_upload_pending
-        type: boolean
-        constraints:
-          notNull: true
-        default: "false"
+        type: timestamp without time zone
+      - name: install_state
+        type: text

@@ -125,7 +125,12 @@ export function KotsQueries(stores: Stores) {
         throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
       }
       return jsonFiles;
-    }
+    },
 
+    async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
+      return await stores.kotsAppStore.getAirgapInstallStatus();
+    }
   }
+
+
 }

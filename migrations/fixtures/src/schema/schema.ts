@@ -185,7 +185,7 @@ export class Schema {
         registry_password,
         namespace,
         last_registry_sync,
-        airgap_upload_pending
+        install_state
         ) VALUES (
           %L, %L, %L, %L, %L, %L, ${app.current_sequence}, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L)`,
         app.id,
@@ -203,7 +203,7 @@ export class Schema {
         app.registry_password,
         app.namespace,
         app.last_registry_sync,
-        app.airgap_upload_pending === "true" ? "true" : "false"
+        app.install_state
       )
     );
     if (app.users) {
