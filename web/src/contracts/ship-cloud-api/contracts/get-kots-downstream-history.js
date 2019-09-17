@@ -25,13 +25,13 @@ export default () => {
         upstreamSlug: "get-kots-downstream-history-app-slug"
       },
     });
-    // expect(result.data.getKotsApp.id).to.equal("get-kots-downstream-history-id");
-    // expect(result.data.getKotsApp.name).to.equal("kots-app-name");
-    // expect(result.data.getKotsApp.slug).to.equal("kots-app-slug");
-    // expect(result.data.getKotsApp.currentSequence).to.equal(0);
-    // expect(result.data.getKotsApp.hasPreflight).to.equal(false);
-    // expect(result.data.getKotsApp.isAirgap).to.equal(false);
-    // expect(result.data.getKotsApp.currentVersion).to.equal(null);
+    expect(result.data.getKotsDownstreamHistory[0].title).to.equal("my-awesome-version");
+    expect(result.data.getKotsDownstreamHistory[0].status).to.equal("pending");
+    expect(typeof result.data.getKotsDownstreamHistory[0].createdOn).to.equal("string");
+    expect(result.data.getKotsDownstreamHistory[0].sequence).to.equal(0);
+    expect(typeof result.data.getKotsDownstreamHistory[0].deployedAt).to.equal("string");
+    expect(typeof result.data.getKotsDownstreamHistory[0].preflightResult).to.equal("string");
+    expect(typeof result.data.getKotsDownstreamHistory[0].preflightResultCreatedAt).to.equal("string");
 
     global.provider.verify().then(() => done());
 
