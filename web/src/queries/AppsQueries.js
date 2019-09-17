@@ -481,7 +481,7 @@ export const getKotsDownstreamHistoryRaw = `
       sequence
       deployedAt
       preflightResult
-      preflightResultUpdatedAt
+      preflightResultCreatedAt
     }
   }
 `;
