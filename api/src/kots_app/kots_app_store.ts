@@ -547,18 +547,18 @@ order by sequence desc`;
 
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string}> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
-    const r = await this.pool.query(q);
+    const result = await this.pool.query(q);
 
     const qq = `SELECT current_message from airgap_install_status LIMIT 1`;
-    const rr = await this.pool.query(qq);
+    const messageQueryResult = await this.pool.query(qq);
 
-    if (r.rows.length !== 1) {
+    if (result.rows.length !== 1) {
       throw new Error("Could not find any kots app in getAirgapInstallStatus()");
     }
 
     return {
-      installStatus: r.rows[0].install_state,
-      currentMessage: rr.rows[0].current_message
+      installStatus: result.rows[0].install_state,
+      currentMessage: messageQueryResult.rows[0].current_message
     };
   }
 
