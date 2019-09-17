@@ -128,8 +128,7 @@ export function KotsQueries(stores: Stores) {
     },
 
     async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
-      const airgapInstallStatus = await stores.kotsAppStore.getAirgapInstallStatus();
-      return airgapInstallStatus;
+      return await stores.kotsAppStore.getAirgapInstallStatus();
     }
   }
 

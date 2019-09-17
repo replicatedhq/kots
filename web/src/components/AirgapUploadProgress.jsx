@@ -22,7 +22,7 @@ function AirgapUploadProgress(props) {
     <div className="flex1 flex-column alignItems--center justifyContent--center">
       <div className="flex1 flex-column alignItems--center justifyContent--center u-color--tuna">
         <Loader size={60} color="#326DE6"/>
-        Checking in on your airgap bundle right now...<br />
+        Uploading your airgap bundle<br />
         <div className={classNames("u-marginTop--20", {
           "u-color--chestnut": hasError
         })}>
