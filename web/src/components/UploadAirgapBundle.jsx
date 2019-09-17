@@ -1,9 +1,9 @@
 import * as React from "react";
-import { compose, withApollo } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
-
+import { setAirgapToInstalled } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
@@ -63,6 +63,17 @@ class UploadAirgapBundle extends React.Component {
     });
   }
 
+  handleOnlineInstall = async () => {
+    const { slug } = this.props.match.params;
+    try {
+      await this.props.setAirgapToInstalled(slug);
+      this.props.onUploadSuccess();
+      this.props.history.push(`/app/${slug}`);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   render() {
     const {
       appName,
@@ -86,12 +97,16 @@ class UploadAirgapBundle extends React.Component {
                 <span className="icon airgapBundleIcon" />
               </div>
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
+              <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+                To install on an airgapped network, you will need to provide access to a Docker registry. The images in {appName} will be retagged and pushed to the registry that you provide here.
+              </p>
             </div>
             <div className="u-marginTop--30">
               <AirgapRegistrySettings
                 app={null}
                 hideCta={true}
                 hideTestConnection={true}
+                namespaceDescription="What namespace do you want the application images pushed to?"
                 gatherDetails={this.getRegistryDetails}
               />
             </div>
@@ -99,7 +114,7 @@ class UploadAirgapBundle extends React.Component {
               <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                 <Dropzone
                   className="Dropzone-wrapper"
-                  accept="application/gzip, .gz"
+                  accept=".airgap"
                   onDropAccepted={this.onDrop}
                   multiple={false}
                 >
@@ -110,7 +125,7 @@ class UploadAirgapBundle extends React.Component {
                     :
                     <div className="u-textAlign--center">
                       <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .tar.gz file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
                     </div>
                   }
                 </Dropzone>
@@ -136,7 +151,7 @@ class UploadAirgapBundle extends React.Component {
           </div>
         </div>
         <div className="u-marginTop--20">
-          <button className="btn secondary green large">Download {appName} from the internet</button>
+          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
         </div>
       </div>
     );
@@ -145,5 +160,10 @@ class UploadAirgapBundle extends React.Component {
 
 export default compose(
   withRouter,
-  withApollo
+  withApollo,
+  graphql(setAirgapToInstalled, {
+    props:({ mutate }) => ({
+      setAirgapToInstalled: (slug) => mutate({ variables: { slug } })
+    })
+  })
 )(UploadAirgapBundle);

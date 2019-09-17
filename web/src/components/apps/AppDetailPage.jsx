@@ -202,7 +202,7 @@ class AppDetailPage extends Component {
   }
 
   handleUploadNewVersionClick = () => {
-    this.props.history.push("/airgap");
+    this.props.history.push(`/${this.props.match.params.slug}/airgap`);
   }
 
   /**
