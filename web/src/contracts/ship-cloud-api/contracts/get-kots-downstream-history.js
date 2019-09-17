@@ -21,7 +21,8 @@ export default () => {
     const result = await getShipClient("get-kots-downstream-history-user-session").mutate({
       mutation: getKotsDownstreamHistory,
       variables: {
-        slug: "kots-app-slug"
+        clusterSlug: "get-kots-downstream-history-cluster-slug",
+        upstreamSlug: "get-kots-downstream-history-app-slug"
       },
     });
     // expect(result.data.getKotsApp.id).to.equal("get-kots-downstream-history-id");
@@ -57,15 +58,17 @@ export default () => {
       headers: { "Content-Type": "application/json" },
       body: {
         data: {
-          getKotsDownstreamHistory: {
-            title: "get-kots-downstream-history-cluster-title",
-            status: "pending",
-            createdOn: Matchers.like("date"),
-            sequence: 0,
-            deployedAt: Matchers.like("date"),
-            preflightResult: Matchers.like("JSONPreflightResult"),
-            preflightResultUpdateAt: Matchers.like("date")
-          },
+          getKotsDownstreamHistory: [
+            {
+              title: "my-awesome-version",
+              status: "pending",
+              createdOn: Matchers.like("date"),
+              sequence: 0,
+              deployedAt: Matchers.like("date"),
+              preflightResult: Matchers.like("JSONPreflightResult"),
+              preflightResultCreatedAt: Matchers.like("date")
+            }
+          ],
         },
       },
     });
