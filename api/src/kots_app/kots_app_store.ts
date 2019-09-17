@@ -334,7 +334,7 @@ order by sequence desc`;
   }
 
   async getPendingKotsAirgapApp(): Promise<KotsApp> {
-    const q = `select id from app where install_state = 'airgap_upload_pending' or install_state = 'airgap_upload_in_progress`;
+    const q = `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error')`;
     const v = [];
 
     const result = await this.pool.query(q, v);
@@ -560,6 +560,31 @@ order by sequence desc`;
       installStatus: result.rows[0].install_state,
       currentMessage: messageQueryResult.rows[0].current_message
     };
+  }
+
+  async setAirgapInstallStatus(msg: string): Promise<void> {
+    const q = `insert into airgap_install_status (id, updated_at, current_message) values ($1, $2, $3)
+    on conflict(id) do update set current_message = EXCLUDED.current_message`;
+    const v = [0, new Date(), msg];
+    await this.pool.query(q, v);
+  }
+
+  async updateAirgapInstallLiveness(): Promise<void> {
+    const q = `update airgap_install_status set updated_at = $1 where id = $2`;
+    const v = [new Date(), 0];
+    await this.pool.query(q, v);
+  }
+
+  async setAirgapInstallFailed(appId: string): Promise<void> {
+    const q = `update app set install_state = 'airgap_upload_error' where id = $1`;
+    const v = [appId];
+    await this.pool.query(q, v);
+  }
+
+  async setAirgapInstallInProgress(appId: string): Promise<void> {
+    const q = `update app set install_state = 'airgap_upload_in_progress' where id = $1`;
+    const v = [appId];
+    await this.pool.query(q, v);
   }
 
   private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {

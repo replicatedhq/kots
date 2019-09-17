@@ -12,7 +12,7 @@ function AirgapUploadProgress(props) {
   if (getAirgapInstallStatus?.installStatus === "installed") {
     history.replace("/");
   }
-  const hasError = getAirgapInstallStatus?.installStatus === "airgap_upload_in_error";
+  const hasError = getAirgapInstallStatus?.installStatus === "airgap_upload_error";
 
   if (hasError) {
     getAirgapInstallStatus.stopPolling();

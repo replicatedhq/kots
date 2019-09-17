@@ -10,7 +10,8 @@ import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
-import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/airgap";
+import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/archive";
+import { StatusServer } from "../../airgap/status";
 import { kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
 
 interface CreateAppBody {
@@ -192,18 +193,22 @@ export class KotsAPI {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<any> {
-    // TODO: does this need authentication check or is that magical?
-    // TODO: check that mimetype is 'application/gzip'?
-
     const { registryHost, namespace, username, password } = body;
 
     const params = await Params.getParams();
 
     await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
 
+    const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp();
+    await request.app.locals.stores.kotsAppStore.setAirgapInstallInProgress(app.id);
+
     const dstDir = tmp.dirSync();
     var appSlug: string;
+    var liveness: any;
     try {
+      liveness = setInterval(() => {
+        Promise.all([request.app.locals.stores.kotsAppStore.updateAirgapInstallLiveness()]);
+      }, 1000);
       await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
       const imageFiles = await getImageFiles(path.join(dstDir.name, "images"));
       const imageMap = imageFiles.map(imageFile => {
@@ -213,11 +218,28 @@ export class KotsAPI {
           fullName: pathToImageName(path.join(dstDir.name, "images"), imageFile),
         }
       });
-      for (const image of imageMap) {
-        await kotsRewriteAndPushImageName(image.filePath, image.shortName, registryHost, namespace, username, password);
-      }
 
-      const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp()
+      for (const image of imageMap) {
+        const statusServer = new StatusServer();
+        await statusServer.start(dstDir.name);
+        kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, registryHost, namespace, username, password);
+        await statusServer.connection();
+        await statusServer.termination((resolve, reject, obj): boolean => {
+          // Return true if completed
+          if (obj.status === "running") {
+            Promise.all([request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message)]);
+            return false;
+          } else if (obj.status === "terminated") {
+            if (obj.exit_code === 0) {
+              resolve();
+            } else {
+              reject(new Error("process failed"));
+            }
+            return true;
+          }
+          return false;
+        });
+      }
 
       const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
       let downstream;
@@ -232,7 +254,14 @@ export class KotsAPI {
       await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
 
       appSlug = app.slug;
+
+    } catch(err) {
+
+      await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
+      throw(err);
+
     } finally {
+      clearInterval(liveness);
       dstDir.removeCallback();
     }
 
