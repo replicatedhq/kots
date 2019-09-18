@@ -38,7 +38,7 @@ class UploadAirgapBundle extends React.Component {
       .then(function (result) {
         return result.json();
       })
-      .then(onUploadSuccess)
+      .then(onUploadSuccess) // Refetch list apps
       .then( () => {
         this.props.history.replace("/apps");
       })
