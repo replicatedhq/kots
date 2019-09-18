@@ -228,7 +228,7 @@ class AppDetailPage extends Component {
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
     } else {
-      history.replace("/watches");
+      history.replace("/upload-license");
     }
   }
 
