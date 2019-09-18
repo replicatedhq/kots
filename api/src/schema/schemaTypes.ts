@@ -5,7 +5,6 @@ import Unfork from "../unfork/graphql/unfork_types";
 import Feature from "../feature/graphql/feature_types";
 import Init from "../init/graphql/init_types";
 import Watch from "../watch/graphql/watch_types";
-import ImageWatch from "../imagewatch/graphql/imagewatch_types";
 import Update from "../update/graphql/update_types";
 import Notification from "../notification/graphql/notification_types";
 import Edit from "../edit/graphql/edit_types";
@@ -43,7 +42,6 @@ export const ShipClusterSchemaTypes = [
   ...Init,
   ...Unfork,
   ...Update,
-  ...ImageWatch,
   ...Edit,
   ...Pending,
   ...HelmChart,

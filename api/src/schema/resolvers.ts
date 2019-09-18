@@ -8,7 +8,6 @@ import { InitMutations, InitQueries } from "../init";
 import { FeatureMutations, FeatureQueries } from "../feature";
 import { EditMutations, EditQueries } from "../edit";
 import { PendingQueries } from "../pending";
-import { ImageWatchMutations, ImageWatchQueries } from "../imagewatch";
 import { HealthzQueries } from "../healthz";
 import { Params } from "../server/params";
 import { Stores } from "./stores";
@@ -20,44 +19,71 @@ import { PrefightQueries } from "../preflight";
 import { AppsQueries } from "../apps";
 import { KotsQueries, KotsMutations } from "../kots_app";
 
-export const Resolvers = (stores: Stores, params: Params) => ({
-  Query: {
-    ...AppsQueries(stores),
-    ...UserQueries(stores),
-    ...ClusterQueries(stores),
-    ...WatchQueries(stores),
-    ...KotsQueries(stores),
-    ...UpdateQueries(stores),
-    ...UnforkQueries(stores),
-    ...NotificationQueries(stores),
-    ...InitQueries(stores),
+export const Resolvers = (stores: Stores, params: Params) => {
+  let query = {
     ...FeatureQueries(stores),
     ...HealthzQueries(stores),
-    ...GithubInstallationQueries(stores),
-    ...EditQueries(stores),
-    ...PendingQueries(stores),
-    ...HelmChartQueries(stores),
-    ...ImageWatchQueries(stores),
     ...TroubleshootQueries(stores),
-    ...LicenseQueries(stores),
     ...PrefightQueries(stores),
-  },
+    ...AppsQueries(stores),
+    ...ClusterQueries(stores),
+  };
 
-  Mutation: {
-    ...UserMutations(stores, params),
-    ...ClusterMutations(stores, params),
-    ...KotsMutations(stores),
-    ...WatchMutations(stores),
-    ...UpdateMutations(stores),
-    ...UnforkMutations(stores),
-    ...NotificationMutations(stores),
-    ...InitMutations(stores),
-    ...FeatureMutations(stores),
-    ...GithubInstallationMutations(stores),
-    ...EditMutations(stores),
-    ...HelmChartMutations(stores),
-    ...ImageWatchMutations(stores),
-    ...TroubleshootMutations(stores),
-    ...LicenseMutations(stores),
+  if (params.enableKots) {
+    query = {
+      ...query,
+      ...UserQueries(stores),
+      ...KotsQueries(stores),
+      ...LicenseQueries(stores),
+    }
   }
-})
+
+  if (params.enableShip) {
+    query = {
+      ...query,
+      ...WatchQueries(stores),
+      ...UpdateQueries(stores),
+      ...UnforkQueries(stores),
+      ...NotificationQueries(stores),
+      ...InitQueries(stores),
+      ...GithubInstallationQueries(stores),
+      ...EditQueries(stores),
+      ...PendingQueries(stores),
+      ...HelmChartQueries(stores),
+    }
+  }
+
+  let mutation = {
+    ...ClusterMutations(stores, params),
+    ...FeatureMutations(stores),
+    ...TroubleshootMutations(stores),
+  };
+
+  if (params.enableKots) {
+    mutation = {
+      ...mutation,
+      ...LicenseMutations(stores),
+      ...KotsMutations(stores),
+      ...UserMutations(stores, params),
+
+    };
+  }
+
+  if (params.enableShip) {
+    mutation = {
+      ...mutation,
+      ...GithubInstallationMutations(stores),
+      ...EditMutations(stores),
+      ...HelmChartMutations(stores),
+      ...WatchMutations(stores),
+      ...UpdateMutations(stores),
+      ...UnforkMutations(stores),
+      ...NotificationMutations(stores),
+      ...InitMutations(stores),
+    };
+  }
+  return {
+    Query: query,
+    Mutation: mutation,
+  };
+};

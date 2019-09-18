@@ -63,8 +63,6 @@ export const Query = `
     getNotification(notificationId: String!): Notification
     pullRequestHistory(notificationId: String!): [PullRequestHistory]
 
-    imageWatches(batchId: String!): [ImageWatch]
-
     getGitHubInstallationId: String!
 
     watchCollectors(watchId: String!): TroubleshootCollectSpec

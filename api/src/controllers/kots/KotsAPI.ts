@@ -1,17 +1,17 @@
 import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
 import { Request, Response } from "express";
-import { putObject, upload } from "../util/s3";
-import { Params } from "../server/params";
+import { putObject, upload } from "../../util/s3";
+import { Params } from "../../server/params";
 import path from "path";
 import fs from "fs";
 import tmp from "tmp";
 import * as _ from "lodash";
-import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../util/tar";
-import { Cluster } from "../cluster";
-import { KotsApp, kotsAppFromLicenseData } from "../kots_app";
-import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../airgap/airgap";
-import { kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../kots_app/kots_ffi";
+import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../../util/tar";
+import { Cluster } from "../../cluster";
+import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
+import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/airgap";
+import { kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
 
 interface CreateAppBody {
   metadata: string;
