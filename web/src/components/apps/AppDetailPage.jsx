@@ -223,12 +223,12 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return;
     }
+    const firstApp = listApps?.find( app => app.name);
 
-    if (listApps.kotsApps.length > 0) {
-      const firstApp = listApps.find(app => app.name);
+    if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
     } else {
-      history.replace("/watch/create/init");
+      history.replace("/watches");
     }
   }
 
