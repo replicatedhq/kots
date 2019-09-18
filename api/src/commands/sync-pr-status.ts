@@ -5,7 +5,7 @@ import * as _ from "lodash";
 
 import { getPostgresPool } from "../util/persistence/db";
 import GitHubApi from "@octokit/rest";
-import { getGitHubBearerToken } from "../controllers/GitHubHookAPI";
+import { getGitHubBearerToken } from "../controllers/ship/GitHubHookAPI";
 import { Params } from "../server/params";
 import { WatchStore } from "../watch/watch_store";
 

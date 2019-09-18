@@ -24,7 +24,6 @@ import { NotificationStore } from "../notification";
 import { UpdateStore } from "../update/update_store";
 import { UnforkStore } from "../unfork/unfork_store";
 import { InitStore } from "../init/init_store";
-import { ImageWatchStore } from "../imagewatch/imagewatch_store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
@@ -38,14 +37,29 @@ import { GithubInstallationsStore } from "../github_installation/github_installa
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
 
+let mount = {};
+
+const enableShip = process.env["ENABLE_SHIP"] === "1";
+const enableKots = process.env["ENABLE_KOTS"] === "1";
+if (enableKots && enableShip) {
+  mount = {
+    "/": "${rootDir}/../controllers/**/*.*s",
+  };
+} else if (enableShip) {
+  mount = {
+    "/": "${rootDir}/../controllers/{*.*s,!(kots)/*.*s}",
+  };
+} else if (enableKots) {
+  mount = {
+    "/": "${rootDir}/../controllers/{*.*s,!(ship)/*.*s}",
+  };
+}
+
 @ServerSettings({
     rootDir: path.resolve(__dirname),
     httpPort: 3000,
     httpsPort: false,
-    mount: {
-      // tslint:disable-next-line
-      "/": "${rootDir}/../controllers/**/*.*s",
-    },
+    mount,
     componentsScan: [
       "${rootDir}/../middlewares/**/*.ts"
     ],
@@ -105,7 +119,6 @@ export class Server extends ServerLoader {
       updateStore: new UpdateStore(pool, params),
       unforkStore: new UnforkStore(pool, params),
       initStore: new InitStore(pool, params),
-      imageWatchStore: new ImageWatchStore(pool),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool, params),
       watchDownload: new WatchDownload(watchStore),

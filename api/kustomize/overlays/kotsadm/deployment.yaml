@@ -63,6 +63,10 @@ spec:
               value: http://localhost:30065
             - name: GRAPHQL_PREM_ENDPOINT
               value: https://pg.replicated.com/graphql
+            - name: ENABLE_SHIP
+              value: "0"
+            - name: ENABLE_KOTS
+              value: "1"
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github

@@ -1,10 +1,10 @@
 import Express from "express";
 import { Controller, Post, Get, Res, Req, BodyParams, PathParams } from "@tsed/common";
-import { Params } from "../server/params";
-import { logger } from "../server/logger";
+import { Params } from "../../server/params";
+import { logger } from "../../server/logger";
 import jsYaml from "js-yaml";
-import { TroubleshootStore } from "../troubleshoot";
-import { analyzeSupportBundle } from "../troubleshoot/troubleshoot_ffi";
+import { TroubleshootStore } from "../../troubleshoot";
+import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 
 interface ErrorResponse {
   error: {};

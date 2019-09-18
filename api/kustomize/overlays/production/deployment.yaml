@@ -53,3 +53,7 @@ spec:
               value: https://pg.replicated.com/graphql
             - name: SEGMENTIO_ANALYTICS_WRITE_KEY
               value: check-ssm
+            - name: ENABLE_SHIP
+              value: "1"
+            - name: ENABLE_KOTS
+              value: "0"

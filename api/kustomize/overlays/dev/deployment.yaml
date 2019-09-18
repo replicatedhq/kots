@@ -67,6 +67,10 @@ spec:
               value: "microk8s"
             - name: AUTO_CREATE_CLUSTER_TOKEN
               value: this-is-definitely-not-a-secret
+            - name: ENABLE_SHIP
+              value: "1"
+            - name: ENABLE_KOTS
+              value: "0"
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github

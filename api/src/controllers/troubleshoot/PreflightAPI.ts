@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { Controller, Get, Post, Res, Req } from "@tsed/common";
 import jsYaml from "js-yaml";
 
-import { Params } from "../server/params";
+import { Params } from "../../server/params";
 
 @Controller("/api/v1/preflight")
 export class PreflightAPI {

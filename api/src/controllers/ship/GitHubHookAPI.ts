@@ -1,15 +1,15 @@
 import Express from "express";
 import { BodyParams, Controller, HeaderParams, Post, Req, Res, Header } from "@tsed/common";
-import { logger } from "../server/logger";
-import { Params } from "../server/params";
+import { logger } from "../../server/logger";
+import { Params } from "../../server/params";
 import fs from "fs";
-import { trackNewGithubInstall } from "../util/analytics";
+import { trackNewGithubInstall } from "../../util/analytics";
 import uuid from "uuid";
 import GitHubApi from "@octokit/rest";
 import WebhooksApi from "@octokit/webhooks";
 import jwt from "jsonwebtoken";
-import { Cluster } from "../cluster";
-import { Watch } from "../watch"
+import { Cluster } from "../../cluster";
+import { Watch } from "../../watch"
 import * as _ from "lodash";
 
 interface ErrorResponse {

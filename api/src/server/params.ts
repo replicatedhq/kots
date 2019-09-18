@@ -30,6 +30,8 @@ export class Params {
   readonly apiAdvertiseEndpoint: string;
   readonly graphqlPremEndpoint: string;
   readonly segmentioAnalyticsKey: string;
+  readonly enableShip: boolean;
+  readonly enableKots: boolean;
 
   constructor({
     githubAppInstallURL,
@@ -56,7 +58,9 @@ export class Params {
     s3BucketEndpoint,
     apiAdvertiseEndpoint,
     graphqlPremEndpoint,
-    segmentioAnalyticsKey
+    segmentioAnalyticsKey,
+    enableShip,
+    enableKots,
   }) {
     this.githubAppInstallURL = githubAppInstallURL;
     this.githubClientId = githubClientId;
@@ -83,6 +87,8 @@ export class Params {
     this.apiAdvertiseEndpoint = apiAdvertiseEndpoint;
     this.graphqlPremEndpoint = graphqlPremEndpoint;
     this.segmentioAnalyticsKey = segmentioAnalyticsKey;
+    this.enableShip = enableShip;
+    this.enableKots = enableKots;
   }
 
   static async getParams(): Promise<Params> {
@@ -115,7 +121,9 @@ export class Params {
       s3BucketEndpoint: await param("S3_BUCKET_ENDPOINT", "/shipcloud/s3/bucket_endpoint", false),
       apiAdvertiseEndpoint: process.env["SHIP_API_ADVERTISE_ENDPOINT"],
       graphqlPremEndpoint: await param("GRAPHQL_PREM_ENDPOINT", "/graphql/prem_endpoint", false),
-      segmentioAnalyticsKey: await param("SEGMENTIO_ANALYTICS_WRITE_KEY", "/shipcloud/segmentio/analytics_write_key", true)
+      segmentioAnalyticsKey: await param("SEGMENTIO_ANALYTICS_WRITE_KEY", "/shipcloud/segmentio/analytics_write_key", true),
+      enableShip: process.env["ENABLE_SHIP"] === "1",
+      enableKots: process.env["ENABLE_KOTS"] === "1",
     });
 
     return Params.instance;
