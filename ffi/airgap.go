@@ -31,37 +31,48 @@ type ImageRef struct {
 }
 
 //export RewriteAndPushImageName
-func RewriteAndPushImageName(imageFile, image, registryHost, registryOrg, username, password string) int {
-	imageRef, err := parseImageRef(image)
-	if err != nil {
-		fmt.Printf("failed to parse image %s: %s\n", image, err)
-		return 1
-	}
-	localImage := imageRefToString(imageRef, registryHost, registryOrg)
+func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg, username, password string) {
+	go func() {
+		var rewriteErr error
 
-	cmdArgs := []string{
-		"copy",
-		"--dest-tls-verify=false",
-	}
-	if len(username) > 0 && len(password) > 0 {
-		cmdArgs = append(cmdArgs, fmt.Sprintf("--dest-creds=%s:%s", username, password))
-	}
-	cmdArgs = append(cmdArgs,
-		fmt.Sprintf("oci-archive:%s", imageFile),
-		fmt.Sprintf("docker://%s", localImage),
-	)
-
-	cmd := exec.Command("skopeo", cmdArgs...)
-	cmdOutput, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("failed to run skopeo: %v\n", err)
-		if len(cmdOutput) > 0 {
-			fmt.Printf("run failed with output: %s\n", cmdOutput)
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
 		}
-		return 1
-	}
+		defer statusClient.end(rewriteErr)
 
-	return 0
+		imageRef, err := parseImageRef(image)
+		if err != nil {
+			fmt.Printf("failed to parse image %s: %s\n", image, err)
+			rewriteErr = err
+			return
+		}
+		localImage := imageRefToString(imageRef, registryHost, registryOrg)
+
+		cmdArgs := []string{
+			"copy",
+			"--dest-tls-verify=false",
+		}
+		if len(username) > 0 && len(password) > 0 {
+			cmdArgs = append(cmdArgs, fmt.Sprintf("--dest-creds=%s:%s", username, password))
+		}
+		cmdArgs = append(cmdArgs,
+			fmt.Sprintf("oci-archive:%s", imageFile),
+			fmt.Sprintf("docker://%s", localImage),
+		)
+
+		cmd := exec.Command("skopeo", cmdArgs...)
+		cmd.Stderr = statusClient.getOutputWriter()
+		cmd.Stdout = statusClient.getOutputWriter()
+		if err := cmd.Start(); err != nil {
+			rewriteErr = err
+			return
+		}
+		if err := cmd.Wait(); err != nil {
+			rewriteErr = err
+			return
+		}
+	}()
 }
 
 func parseImageRef(image string) (*ImageRef, error) {
