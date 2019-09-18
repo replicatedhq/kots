@@ -29,7 +29,7 @@ export default () => {
         const [user] = result.data.watchContributors;
 
         expect(user.id).to.equal("get-watch-contributors-user");
-        expect(user.createdAt).to.equal("Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)");
+        expect(user.createdAt).to.startWith("Thu Apr 18 2019 12:34:56 GMT+0000");
         expect(user.githubId).to.equal(1235);
         expect(user.login).to.equal("get-watch-contributors-username");
         expect(user.avatar_url).to.equal("https://avatars3.githubusercontent.com/u/234567?v=4");
