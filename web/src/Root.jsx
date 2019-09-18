@@ -202,7 +202,10 @@ class Root extends Component {
   }
 
   onRootMounted = () => {
-    this.fetchKotsAppMetadata();
+    if (!window.env.DISABLE_KOTS) {
+      this.fetchKotsAppMetadata();
+    }
+
     if (Utilities.isLoggedIn()) {
       this.refetchListApps().then(listApps => {
         if (listApps.length > 0 && window.location.pathname === "/watches") {
