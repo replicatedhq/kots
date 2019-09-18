@@ -34,9 +34,9 @@ class AirgapRegistrySettings extends Component {
     try {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
       await this.props.getKotsAppRegistryQuery.refetch();
-      // Uncomment this line to see the airgap progress page
-      // this.props.history.push("/airgap/progress");
-      this.props.history.push("/");
+
+      this.props.history.push("/airgap/progress");
+
 
     } catch (error) {
       console.log(error);
