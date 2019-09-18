@@ -27,12 +27,12 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...PrefightQueries(stores),
     ...AppsQueries(stores),
     ...ClusterQueries(stores),
+    ...UserQueries(stores),
   };
 
   if (params.enableKots) {
     query = {
       ...query,
-      ...UserQueries(stores),
       ...KotsQueries(stores),
       ...LicenseQueries(stores),
     }
@@ -57,6 +57,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...ClusterMutations(stores, params),
     ...FeatureMutations(stores),
     ...TroubleshootMutations(stores),
+    ...UserMutations(stores, params),
   };
 
   if (params.enableKots) {
@@ -64,7 +65,6 @@ export const Resolvers = (stores: Stores, params: Params) => {
       ...mutation,
       ...LicenseMutations(stores),
       ...KotsMutations(stores),
-      ...UserMutations(stores, params),
 
     };
   }

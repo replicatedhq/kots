@@ -10,6 +10,7 @@ export function AppsQueries(stores: Stores) {
       const params = await Params.getParams();
       const result: any = {};
       if (params.enableShip) {
+        result.kotsApps = [];
         result.watches = async () => (await stores.watchStore.listWatches(context.session.userId)).map(watch => watch.toSchema(root, stores, context));
         result.pendingUnforks = async () => {
           const clusters = await stores.clusterStore.listClusters(context.session.userId);
@@ -26,6 +27,8 @@ export function AppsQueries(stores: Stores) {
           const downstreams = await stores.clusterStore.listClustersForKotsApp(kotsApp.id);
           return kotsApp.toSchema(downstreams, stores);
         });
+        result.watches = [];
+        result.pendingUnforks = [];
       }
 
       return result;
