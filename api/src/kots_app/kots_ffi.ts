@@ -25,7 +25,7 @@ function kots() {
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["longlong", [GoString, GoString, GoString]],
     PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
-    RewriteAndPushImageName: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
+    RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["longlong", [GoString]],
     ReadMetadata: [GoString, [GoString]],
     RemoveMetadata: ["longlong", [GoString]],
@@ -93,6 +93,13 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
   try {
     const parsedLicense = yaml.safeLoad(licenseData);
     if (parsedLicense.spec.isAirgapSupported) {
+      try {
+        const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
+        return kotsApp
+      } catch(e) {
+        console.log("no pending airgap install found, creating a new app");
+      }
+
       const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
       return kotsApp;
     }
@@ -217,7 +224,11 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
   }
 }
 
-export async function kotsRewriteAndPushImageName(imageFile: string, image: string, registryHost: string, registryOrg: string, username: string, password: string): Promise<void> {
+export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, registryHost: string, registryOrg: string, username: string, password: string): void {
+  const socketParam = new GoString();
+  socketParam["p"] = socket;
+  socketParam["n"] = socket.length;
+
   const imageFileParam = new GoString();
   imageFileParam["p"] = imageFile;
   imageFileParam["n"] = imageFile.length;
@@ -242,8 +253,5 @@ export async function kotsRewriteAndPushImageName(imageFile: string, image: stri
   passwordParam["p"] = password;
   passwordParam["n"] = password.length;
 
-  const result = kots().RewriteAndPushImageName(imageFileParam, imageParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
-  if (result > 0) {
-    throw new Error("ffi failed");
-  }
+  kots().RewriteAndPushImageName(socketParam, imageFileParam, imageParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
 }
