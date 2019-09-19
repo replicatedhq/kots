@@ -228,7 +228,7 @@ class AppDetailPage extends Component {
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
     } else {
-      history.replace("/upload-license");
+      history.replace(window.env.NO_APPS_REDIRECT);
     }
   }
 

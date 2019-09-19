@@ -12,6 +12,7 @@ module.exports = {
   SECURE_ADMIN_CONSOLE: false,
   DISABLE_KOTS: false,
   AVAILABLE_LOGIN_TYPES: ["github", "traditional"],
+  NO_APPS_REDIRECT: "/upload-license",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return String(Date.now());
   }()),
