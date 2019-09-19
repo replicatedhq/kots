@@ -503,9 +503,9 @@ order by sequence desc`;
       }
 
       await pg.query("commit");
-      const watch = await this.getApp(id);
+      const app = await this.getApp(id);
 
-      return watch;
+      return app;
     } finally {
       await pg.query("rollback");
       pg.release();

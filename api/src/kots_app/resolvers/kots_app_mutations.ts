@@ -4,7 +4,7 @@ import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsAppCheckForUpdate } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -60,9 +60,18 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
-    async setAirgapToInstalled(root: any, args: any, context: Context) {
+    async resumeInstallOnline(root: any, args: any, context: Context) {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await stores.kotsAppStore.getApp(appId);
+      const clusters = await stores.clusterStore.listAllUsersClusters();
+      let downstream;
+      for (const cluster of clusters) {
+        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+          downstream = cluster;
+        }
+      }
+      await kotsFinalizeApp(app, downstream.title, stores)
       await stores.kotsAppStore.setKotsAirgapAppInstalled(appId);
       return true;
     },

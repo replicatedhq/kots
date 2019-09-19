@@ -19,7 +19,7 @@ type Mutation {
   uploadKotsLicense(value: String!): KotsApp
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
-  setAirgapToInstalled(slug: String!): Boolean
+  resumeInstallOnline(slug: String!): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch
