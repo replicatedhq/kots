@@ -9,7 +9,7 @@ import { getDownstreamHistory } from "../../queries/WatchQueries";
 import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
-import { isKotsApplication } from "../../utilities/utilities";
+import { isKotsApplication, hasPendingPreflight } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
 
@@ -39,6 +39,13 @@ class DownstreamWatchVersionHistory extends Component {
         <Loader size="60" />
       </div>
     );
+
+    if (isKots && hasPendingPreflight(versionHistory)) {
+      data?.startPolling(2000);
+    } else {
+      this.props?.refreshAppData();
+      data?.stopPolling();
+    }
 
     return (
       <div className="flex-column flex1 u-position--relative u-padding--20 u-overflow--auto">
