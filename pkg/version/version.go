@@ -16,13 +16,12 @@ var (
 
 // Build holds details about this build of the Ship binary
 type Build struct {
-	Version       string     `json:"version,omitempty"`
-	GitSHA        string     `json:"git,omitempty"`
-	BuildTime     time.Time  `json:"buildTime,omitempty"`
-	TimeFallback  string     `json:"buildTimeFallback,omitempty"`
-	GoInfo        GoInfo     `json:"go,omitempty"`
-	RunAt         *time.Time `json:"runAt,omitempty"`
-	LatestVersion string     `json:"latestVersion,omitempty"`
+	Version      string     `json:"version,omitempty"`
+	GitSHA       string     `json:"git,omitempty"`
+	BuildTime    time.Time  `json:"buildTime,omitempty"`
+	TimeFallback string     `json:"buildTimeFallback,omitempty"`
+	GoInfo       GoInfo     `json:"go,omitempty"`
+	RunAt        *time.Time `json:"runAt,omitempty"`
 }
 
 type GoInfo struct {
@@ -53,20 +52,6 @@ func GetBuild() Build {
 	return build
 }
 
-// GetLatestVersionBuild attempts to populate the 'latest version' field and then returns the build
-func GetLatestVersionBuild() Build {
-	if build.LatestVersion != "" {
-		return build
-	}
-
-	latestVersion, err := GetLatestRelease()
-	if err != nil {
-		return build
-	}
-	build.LatestVersion = latestVersion
-	return build
-}
-
 // Version gets the version
 func Version() string {
 	return build.Version
@@ -89,19 +74,6 @@ func getGoInfo() GoInfo {
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
 	}
-}
-
-// GetLatestRelease queries github for the latest release in the project repo and returns the name as a string.
-func GetLatestRelease() (string, error) {
-	client := github.NewClient(nil)
-	latest, _, err := client.Repositories.GetLatestRelease(context.Background(), "replicatedhq", "kots")
-	if err != nil {
-		return "", errors.Wrap(err, "find latest release")
-	}
-	if latest.Name == nil {
-		return "", errors.New("latest release name was nil")
-	}
-	return *latest.Name, nil
 }
 
 // IsLatestRelease queries github for the latest release in the project repo. If that release has a semver greater
