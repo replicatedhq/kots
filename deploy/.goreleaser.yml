@@ -18,7 +18,7 @@ builds:
     main: cmd/kots/main.go
     ldflags: -s -w
       -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
-      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
       -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
       -extldflags "-static"
     flags: -tags netgo -installsuffix netgo
@@ -35,7 +35,7 @@ builds:
     main: ./ffi
     ldflags: -s -w
       -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
-      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
       -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
     flags: -buildmode=c-shared
     binary: kots.so
