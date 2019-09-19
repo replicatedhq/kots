@@ -30,10 +30,11 @@ type PullOptions struct {
 	SharedPassword      string
 	CreateAppDir        bool
 	Silent              bool
-	RewriteImages       RewriteImages
+	RewriteImages       bool
+	RewriteImageOptions RewriteImageOptions
 }
 
-type RewriteImages struct {
+type RewriteImageOptions struct {
 	ImageFiles string
 	Host       string
 	Namespace  string
@@ -147,16 +148,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write base")
 	}
 
+	log.ActionWithSpinner("Creating midstream")
+
 	var images []image.Image
-	if pullOptions.LocalPath != "" {
-		i, err := kotsimage.BuildRewriteList(pullOptions.RewriteImages.ImageFiles, pullOptions.RewriteImages.Host, pullOptions.RewriteImages.Namespace)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to rewrite images")
+	if pullOptions.RewriteImages {
+		if pullOptions.LocalPath != "" {
+			i, err := kotsimage.BuildRewriteList(pullOptions.RewriteImageOptions.ImageFiles, pullOptions.RewriteImageOptions.Host, pullOptions.RewriteImageOptions.Namespace)
+			if err != nil {
+				return "", errors.Wrap(err, "failed to rewrite images")
+			}
+			images = i
 		}
-		images = i
 	}
 
-	log.ActionWithSpinner("Creating midstream")
 	m, err := midstream.CreateMidstream(b, images)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")

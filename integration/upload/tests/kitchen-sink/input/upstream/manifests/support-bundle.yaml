@@ -1,0 +1,27 @@
+apiVersion: troubleshoot.replicated.com/v1beta1
+kind: Collector
+metadata:
+  name: sentry-enterprise
+spec:
+  collectors:
+    - secret:
+        name: myapp-postgres
+        key: uri
+        includeValue: false
+    - logs:
+        selector:
+          - app=sentry
+          - role=worker
+        limits:
+          maxAge: 30d
+          maxLines: 10000
+    - run:
+        collectorName: ping-google
+        image: flungo/netutils
+        command: ["ping"]
+        args: ["www.google.com"]
+        timeout: 5s
+    - http:
+        collectorName: echo-ip
+        get:
+          url: https://api.replicated.com/market/v1/echo/ip

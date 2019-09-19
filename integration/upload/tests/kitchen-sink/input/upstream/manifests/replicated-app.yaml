@@ -1,0 +1,7 @@
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: sentry-enterprise
+spec:
+  title: Sentry Enterprise
+  icon: https://sentry-brand.storage.googleapis.com/sentry-glyph-black.png

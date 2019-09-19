@@ -14,7 +14,7 @@ kubectl kots install helm://elastic/elasticsearch --repo https://helm.elastic.co
 After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. You can connect to this using kubectl port-forward, or set up an ingress/load balancer of your own.
 
 ```
-kubectl port-forward --namespace elasticsearch svc/kotsadm 8800:8800
+kubectl admin-console elasticsearchs
 ```
 
 And now visit http://localhost:8800 to set the Elasticsearch Admin Console.
@@ -24,7 +24,7 @@ And now visit http://localhost:8800 to set the Elasticsearch Admin Console.
 The `pull` command will create a local directory set up so you can create Kustomize-friendly patches and then use kubectl to deploy to a cluster yourself. The pull command will not add the admin console to a cluster or install anything in your cluster.
 
 ```
-kubectl kots pull helm://elastic/elasticsearch --repo https://helm.elastic.co --namespace elasticsearch
+kubectl kots pull helm://elastic/elasticsearch --namespace elasticsearch
 kubectl apply -k ./elasticsearch/overlays/midstream
 ```
 
@@ -32,14 +32,14 @@ kubectl apply -k ./elasticsearch/overlays/midstream
 The `upload` command will upload a directory with an upstream, base and overlays directory to a kotsdm server.
 
 ```
-kubectl kots upload ~/mysql
+kubectl kots upload ~/elasticsearch
 ```
 
 ### `kots download`
 The `download` command will download an application YAML from a kotsadm server. This is especially useful when paired with `upload` (above) to iterate on and make changes to an application.
 
 ```
-kubectl kots download [--namespace=] [app-slug]
+kubectl kots download [--namespace] [app-slug]
 ```
 
 The app-slug argument is optional. If there is more than 1 application in the specified namespace, kots will prompt for which one to download.

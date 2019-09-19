@@ -102,7 +102,7 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
-							Image:           "kotsadm/kotsadm-api:alpha",
+							Image:           "kotsadm/kotsadm-api:v0.9.3",
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-api",
 							Ports: []corev1.ContainerPort{
@@ -218,6 +218,14 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 											FieldPath: "metadata.namespace",
 										},
 									},
+								},
+								{
+									Name:  "ENABLE_KOTS",
+									Value: "1",
+								},
+								{
+									Name:  "ENABLE_SHIP",
+									Value: "0",
 								},
 							},
 						},

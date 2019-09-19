@@ -36,6 +36,15 @@ endef
 test:
 	go test ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
 
+.PHONY: integration-cli
+integration-cli:
+	go build -o bin/kots-integration ./integration
+	
+.PHONY: ci-test
+ci-test:
+	go test ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
+
+	
 .PHONY: kots
 kots: fmt vet
 	go build ${LDFLAGS} -o bin/kots github.com/replicatedhq/kots/cmd/kots
