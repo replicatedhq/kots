@@ -3,16 +3,34 @@ package k8sutil
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
 
+func IsPortAvailable(port int) bool {
+	host := ":" + strconv.Itoa(port)
+	server, err := net.Listen("tcp", host)
+	if err != nil {
+		return false
+	}
+
+	server.Close()
+	return true
+}
+
 func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string) (chan struct{}, error) {
+	if !IsPortAvailable(localPort) {
+		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
+	}
+
 	// port forward
 	config, err := clientcmd.BuildConfigFromFlags("", kubeContext)
 	if err != nil {
