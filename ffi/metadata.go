@@ -13,67 +13,103 @@ import (
 )
 
 //export ReadMetadata
-func ReadMetadata(namespace string) *C.char {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		fmt.Printf("error getting kubernetes config: %s\n", err.Error())
-		return C.CString(upstream.DefaultMetadata)
-	}
+func ReadMetadata(socket, namespace string) {
+	go func() {
+		var ffiResult *FFIResult
 
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		fmt.Printf("error creating kubernetes clientset: %s\n", err.Error())
-		return C.CString(upstream.DefaultMetadata)
-	}
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
+		}
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
-	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return C.CString(upstream.DefaultMetadata)
+		cfg, err := config.GetConfig()
+		if err != nil {
+			fmt.Printf("error getting kubernetes config: %s\n", err.Error())
+			ffiResult = NewFFIResult(0).WithData(upstream.DefaultMetadata)
+			return
 		}
 
-		fmt.Printf("error reading branding: %s\n", err.Error())
-		return C.CString(upstream.DefaultMetadata)
-	}
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			fmt.Printf("error creating kubernetes clientset: %s\n", err.Error())
+			ffiResult = NewFFIResult(0).WithData(upstream.DefaultMetadata)
+			return
+		}
 
-	data, ok := configMap.Data["application.yaml"]
-	if !ok {
-		fmt.Printf("metdata did not contain required key: %#v\n", configMap.Data)
-		return C.CString(upstream.DefaultMetadata)
-	}
+		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				ffiResult = NewFFIResult(0).WithData(upstream.DefaultMetadata)
+				return
+			}
 
-	return C.CString(data)
+			fmt.Printf("error reading branding: %s\n", err.Error())
+			ffiResult = NewFFIResult(0).WithData(upstream.DefaultMetadata)
+			return
+		}
+
+		data, ok := configMap.Data["application.yaml"]
+		if !ok {
+			fmt.Printf("metdata did not contain required key: %#v\n", configMap.Data)
+			ffiResult = NewFFIResult(0).WithData(upstream.DefaultMetadata)
+			return
+		}
+
+		ffiResult = NewFFIResult(0).WithData(data)
+	}()
 }
 
 //export RemoveMetadata
-func RemoveMetadata(namespace string) int {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		fmt.Printf("error getting kubernetes config: %s\n", err.Error())
-		return -1
-	}
+func RemoveMetadata(socket, namespace string) {
+	go func() {
+		var ffiResult *FFIResult
 
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		fmt.Printf("error creating kubernetes clientset: %s\n", err.Error())
-		return -1
-	}
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
+		}
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
-	_, err = clientset.CoreV1().ConfigMaps(namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return 0
+		cfg, err := config.GetConfig()
+		if err != nil {
+			fmt.Printf("error getting kubernetes config: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
 		}
 
-		fmt.Printf("error reading branding: %s\n", err.Error())
-		return -1
-	}
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			fmt.Printf("error creating kubernetes clientset: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	err = clientset.CoreV1().ConfigMaps(namespace).Delete("kotsadm-application-metadata", &metav1.DeleteOptions{})
-	if err != nil {
-		fmt.Printf("error deleting metadata: %s\n", err.Error())
-		return -1
-	}
+		_, err = clientset.CoreV1().ConfigMaps(namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				ffiResult = NewFFIResult(0)
+				return
+			}
 
-	return 0
+			fmt.Printf("error reading branding: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
+		err = clientset.CoreV1().ConfigMaps(namespace).Delete("kotsadm-application-metadata", &metav1.DeleteOptions{})
+		if err != nil {
+			fmt.Printf("error deleting metadata: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
+		ffiResult = NewFFIResult(0)
+	}()
 }

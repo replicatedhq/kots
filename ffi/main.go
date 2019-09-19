@@ -19,7 +19,7 @@ import (
 //export UpdateCheck
 func UpdateCheck(socket, fromArchivePath string) {
 	go func() {
-		var ffiErr error
+		var ffiResult *FFIResult
 
 		statusClient, err := connectToStatusServer(socket)
 		if err != nil {
@@ -27,13 +27,13 @@ func UpdateCheck(socket, fromArchivePath string) {
 			return
 		}
 		defer func() {
-			statusClient.end(ffiErr)
+			statusClient.end(ffiResult)
 		}()
 
 		tmpRoot, err := ioutil.TempDir("", "kots")
 		if err != nil {
 			fmt.Printf("failed to create temp path: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 		defer os.RemoveAll(tmpRoot)
@@ -46,14 +46,14 @@ func UpdateCheck(socket, fromArchivePath string) {
 		}
 		if err := tarGz.Unarchive(fromArchivePath, tmpRoot); err != nil {
 			fmt.Printf("failed to unarchive: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
 		beforeCursor, err := readCursorFromPath(tmpRoot)
 		if err != nil {
 			fmt.Printf("failed to read cursor file: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
@@ -61,13 +61,13 @@ func UpdateCheck(socket, fromArchivePath string) {
 		_, err = os.Stat(expectedLicenseFile)
 		if err != nil {
 			fmt.Printf("failed to find license file in archive\n")
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 		licenseData, err := ioutil.ReadFile(expectedLicenseFile)
 		if err != nil {
 			fmt.Printf("failed to read license file: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
@@ -76,7 +76,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 		obj, _, err := decode([]byte(licenseData), nil, nil)
 		if err != nil {
 			fmt.Printf("failed to decode license data: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 		license := obj.(*kotsv1beta1.License)
@@ -91,14 +91,14 @@ func UpdateCheck(socket, fromArchivePath string) {
 
 		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
 			fmt.Printf("failed to pull upstream: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
 		afterCursor, err := readCursorFromPath(tmpRoot)
 		if err != nil {
 			fmt.Printf("failed to read cursor file after update: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
@@ -106,6 +106,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 
 		isUpdateAvailable := string(beforeCursor) != string(afterCursor)
 		if !isUpdateAvailable {
+			ffiResult = NewFFIResult(0)
 			return
 		}
 
@@ -118,17 +119,17 @@ func UpdateCheck(socket, fromArchivePath string) {
 		err = os.Remove(fromArchivePath)
 		if err != nil {
 			fmt.Printf("failed to delete archive to replace: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
 		if err := tarGz.Archive(paths, fromArchivePath); err != nil {
 			fmt.Printf("failed to write archive: %s\n", err.Error())
-			ffiErr = NewFFIError(err, -1)
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
-		ffiErr = NewFFIError(nil, 1)
+		ffiResult = NewFFIResult(1)
 	}()
 }
 
