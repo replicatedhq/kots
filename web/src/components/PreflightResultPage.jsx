@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { graphql, compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
+import Modal from "react-modal";
 
 import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queries/AppsQueries";
 import { deployKotsVersion } from "@src/mutations/AppsMutations";
@@ -9,6 +10,9 @@ import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 
 class PreflightResultPage extends Component {
+  state = {
+    showSkipModal: false
+  }
 
   deployKotsDownstream = () => {
     const { makeCurrentVersion, match, data, history } = this.props;
@@ -21,8 +25,21 @@ class PreflightResultPage extends Component {
     });
   }
 
+  showSkipModal = () => {
+    this.setState({
+      showSkipModal: true
+    })
+  }
+
+  hideSkipModal = () => {
+    this.setState({
+      showSkipModal: false
+    });
+  }
+
   render() {
     const { data, match } = this.props;
+    const { showSkipModal } = this.state;
     const isLoading = data.loading;
 
     // No cluster slug is present if coming from the license upload view
@@ -34,6 +51,9 @@ class PreflightResultPage extends Component {
 
     if (hasData) {
       data.stopPolling();
+      if (showSkipModal) {
+        this.hideSkipModal();
+      }
     }
 
     return (
@@ -89,6 +109,39 @@ class PreflightResultPage extends Component {
               </button>
               </Link>
             </div>
+          )
+        }
+        { !hasData && (
+          <div className="flex-auto flex justifyContent--flexEnd">
+            <button
+              type="button"
+              className="btn primary u-marginRight--30 u-marginBottom--15"
+              onClick={this.showSkipModal}
+            >
+              Skip
+            </button>
+          </div>
+        )}
+        {
+          showSkipModal && (
+            <Modal
+              isOpen={showSkipModal}
+              onRequestClose={this.hideSkipModal}
+              shouldReturnFocusAfterClose={false}
+              contentLabel="Skip yer preflighterididdily doos"
+              ariaHideApp={false}
+              className="Modal"
+            >
+              <div className="Modal-body">
+
+                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {preflightResultData?.appSlug} dashboard? </p>
+                <div className="u-marginTop--10 flex">
+                  <Link to={`/app/${preflightResultData?.appSlug}`}>
+                    <button type="button" className="btn green primary">Go to Dashboard</button>
+                  </Link>
+                </div>
+              </div>
+            </Modal>
           )
         }
       </div>
