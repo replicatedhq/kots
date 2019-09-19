@@ -41,7 +41,7 @@ class UploadAirgapBundle extends React.Component {
         if (response.slug) {
           this.props.history.replace(`/app/${response.slug}`);
         } else {
-          this.props.history.replace("/apps");
+          throw new Error(`Error uploading airgap bundle: ${response}`);
         }
       })
       .catch(function (err) {
