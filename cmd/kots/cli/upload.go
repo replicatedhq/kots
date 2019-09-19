@@ -34,7 +34,7 @@ func UploadCmd() *cobra.Command {
 				ExistingAppSlug: v.GetString("slug"),
 				NewAppName:      v.GetString("name"),
 				UpstreamURI:     v.GetString("upstream-uri"),
-				Endpoint:        "http://localhohst:3000",
+				Endpoint:        "http://localhost:3000",
 			}
 
 			stopCh, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
