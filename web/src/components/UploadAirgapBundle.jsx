@@ -3,6 +3,8 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+
 import { setAirgapToInstalled } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -20,8 +22,9 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
+    const { onUploadSuccess } = this.props;
     this.setState({ fileUploading: true });
-      var formData  = new FormData();
+      const formData = new FormData();
       formData.append("file", this.state.bundleFile);
       formData.append("registryHost", this.state.registryDetails.hostname);
       formData.append("namespace", this.state.registryDetails.namespace);
@@ -32,13 +35,15 @@ class UploadAirgapBundle extends React.Component {
         method: "POST",
         body: formData
       })
-      .then(function (result) {
-        return result.json();
+      .then(async (result) => {
+        const response = await result.json();
+        await onUploadSuccess(); // Refetch list apps
+        if (response.slug) {
+          this.props.history.replace(`/app/${response.slug}`);
+        } else {
+          throw new Error(`Error uploading airgap bundle: ${response}`);
+        }
       })
-      .then(function (data) {
-        this.setState({ fileUploading: false });
-        this.props.history.replace(`/app/${data.slug}`);
-      }.bind(this))
       .catch(function (err) {
         this.setState({ fileUploading: false });
         console.log(err);
@@ -82,6 +87,10 @@ class UploadAirgapBundle extends React.Component {
     } = this.props;
     const { bundleFile, fileUploading } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
+
+    if (fileUploading) {
+      return <AirgapUploadProgress />;
+    }
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
@@ -130,7 +139,7 @@ class UploadAirgapBundle extends React.Component {
                   }
                 </Dropzone>
               </div>
-              {hasFile && 
+              {hasFile &&
                 <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
                   <button
                     type="button"

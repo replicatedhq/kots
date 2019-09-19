@@ -70,7 +70,7 @@ spec:
             - name: ENABLE_SHIP
               value: "1"
             - name: ENABLE_KOTS
-              value: "0"
+              value: "1"
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github
