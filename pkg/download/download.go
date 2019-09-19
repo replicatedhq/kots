@@ -50,14 +50,14 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 
 	tmpFile, err := ioutil.TempFile("", "kots")
 	if err != nil {
-		log.FinishSpinnerWithError()
+		log.FinishSpinner()
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	defer os.Remove(tmpFile.Name())
 
 	_, err = io.Copy(tmpFile, resp.Body)
 	if err != nil {
-		log.FinishSpinnerWithError()
+		log.FinishSpinner()
 		return errors.Wrap(err, "failed to write archive")
 	}
 
@@ -68,6 +68,8 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 				return errors.Wrap(err, "failed to delete existing download")
 			}
 		} else {
+			log.FinishSpinner()
+			log.Info("Directory %s already exists. You can re-run this command with --overwrite to automatically overwrite it", path)
 			return errors.Errorf("directory already exists at %s", path)
 		}
 	}

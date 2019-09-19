@@ -15,7 +15,7 @@ func DownloadCmd() *cobra.Command {
 		Short:         "",
 		Long:          ``,
 		SilenceUsage:  true,
-		SilenceErrors: false,
+		SilenceErrors: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
