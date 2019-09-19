@@ -24,7 +24,7 @@ func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 			RestartPolicy: corev1.RestartPolicyOnFailure,
 			Containers: []corev1.Container{
 				{
-					Image:           "kotsadm/kotsadm-migrations:v0.9.3",
+					Image:           "kotsadm/kotsadm-migrations:v0.9.4",
 					ImagePullPolicy: corev1.PullAlways,
 					Name:            name,
 					Env: []corev1.EnvVar{
