@@ -35,12 +35,14 @@ class UploadAirgapBundle extends React.Component {
         method: "POST",
         body: formData
       })
-      .then(function (result) {
-        return result.json();
-      })
-      .then(onUploadSuccess) // Refetch list apps
-      .then( () => {
-        this.props.history.replace("/apps");
+      .then(async (result) => {
+        const response = await result.json();
+        await onUploadSuccess(); // Refetch list apps
+        if (response.slug) {
+          this.props.history.replace(`/app/${response.slug}`);
+        } else {
+          this.props.history.replace("/apps");
+        }
       })
       .catch(function (err) {
         this.setState({ fileUploading: false });
