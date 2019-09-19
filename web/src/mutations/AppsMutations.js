@@ -58,11 +58,11 @@ export const updateRegistryDetailsRaw = `
 export const updateRegistryDetails = gql(updateRegistryDetailsRaw);
 
 
-export const setAirgapToInstalledRaw = `
-  mutation setAirgapToInstalled($slug: String!) {
-    setAirgapToInstalled(slug: $slug)
+export const resumeInstallOnlineRaw = `
+  mutation resumeInstallOnline($slug: String!) {
+    resumeInstallOnline(slug: $slug)
   }
 `;
 
-export const setAirgapToInstalled = gql(setAirgapToInstalledRaw);
+export const resumeInstallOnline = gql(resumeInstallOnlineRaw);
 

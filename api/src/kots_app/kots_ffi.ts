@@ -88,25 +88,32 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 }
 
 export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
+  const parsedLicense = yaml.safeLoad(licenseData);
+  if (parsedLicense.spec.isAirgapSupported) {
+    try {
+      const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
+      return kotsApp;
+    } catch(e) {
+      console.log("no pending airgap install found, creating a new app");
+    }
+
+    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
+    return kotsApp;
+  }
+
+  const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
+  await kotsFinalizeApp(kotsApp, downstreamName, stores)
+
+  return kotsApp;
+}
+
+export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, stores: Stores) {
   const tmpDir = tmp.dirSync();
 
   try {
-    const parsedLicense = yaml.safeLoad(licenseData);
-    if (parsedLicense.spec.isAirgapSupported) {
-      try {
-        const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
-        return kotsApp
-      } catch(e) {
-        console.log("no pending airgap install found, creating a new app");
-      }
-
-      const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
-      return kotsApp;
-    }
-
     const licenseDataParam = new GoString();
-    licenseDataParam["p"] = licenseData;
-    licenseDataParam["n"] = licenseData.length;
+    licenseDataParam["p"] = kotsApp.license;
+    licenseDataParam["n"] = String(kotsApp.license).length;
 
     const downstreamParam = new GoString();
     downstreamParam["p"] = downstreamName;
@@ -121,8 +128,6 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     if (pullResult > 0) {
       return;
     }
-
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
