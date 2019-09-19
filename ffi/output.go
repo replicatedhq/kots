@@ -79,8 +79,13 @@ func (c *StatusClient) end(err error) {
 	exitCode := 0
 	message := ""
 	if err != nil {
-		exitCode = 1
-		message = err.Error()
+		if ffiErr, ok := err.(FFIError); ok {
+			exitCode = ffiErr.ExitCode
+			message = ffiErr.Error()
+		} else {
+			exitCode = 1
+			message = err.Error()
+		}
 	}
 
 	c.Chan <- statusMessage{
@@ -90,4 +95,23 @@ func (c *StatusClient) end(err error) {
 	}
 
 	close(c.Chan)
+}
+
+type FFIError struct {
+	Err      error
+	ExitCode int
+}
+
+func NewFFIError(err error, exitCode int) error {
+	return FFIError{
+		Err:      err,
+		ExitCode: exitCode,
+	}
+}
+
+func (e FFIError) Error() string {
+	if e.Err == nil {
+		return ""
+	}
+	return e.Err.Error()
 }

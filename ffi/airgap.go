@@ -33,18 +33,21 @@ type ImageRef struct {
 //export RewriteAndPushImageName
 func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg, username, password string) {
 	go func() {
-		var rewriteErr error
+		var ffiErr error
 
 		statusClient, err := connectToStatusServer(socket)
 		if err != nil {
 			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
 		}
-		defer statusClient.end(rewriteErr)
+		defer func() {
+			statusClient.end(ffiErr)
+		}()
 
 		imageRef, err := parseImageRef(image)
 		if err != nil {
 			fmt.Printf("failed to parse image %s: %s\n", image, err)
-			rewriteErr = err
+			ffiErr = err
 			return
 		}
 		localImage := imageRefToString(imageRef, registryHost, registryOrg)
@@ -65,11 +68,11 @@ func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg
 		cmd.Stderr = statusClient.getOutputWriter()
 		cmd.Stdout = statusClient.getOutputWriter()
 		if err := cmd.Start(); err != nil {
-			rewriteErr = err
+			ffiErr = err
 			return
 		}
 		if err := cmd.Wait(); err != nil {
-			rewriteErr = err
+			ffiErr = err
 			return
 		}
 	}()
@@ -116,18 +119,21 @@ func imageRefToString(ref *ImageRef, registryHost, registryOrg string) string {
 //export PullFromAirgap
 func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, registryHost, registryNamesapce string) {
 	go func() {
-		var pullErr error
+		var ffiErr error
 
 		statusClient, err := connectToStatusServer(socket)
 		if err != nil {
 			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
 		}
-		defer statusClient.end(pullErr)
+		defer func() {
+			statusClient.end(ffiErr)
+		}()
 
 		workspace, err := ioutil.TempDir("", "kots-airgap")
 		if err != nil {
 			fmt.Printf("failed to create temp dir: %s\n", err)
-			pullErr = err
+			ffiErr = err
 			return
 		}
 		defer os.RemoveAll(workspace)
@@ -136,7 +142,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		releaseDir, err := extractAppRelease(workspace, airgapDir)
 		if err != nil {
 			fmt.Printf("failed to extract app release: %s\n", err)
-			pullErr = err
+			ffiErr = err
 			return
 		}
 
@@ -145,7 +151,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		obj, _, err := decode([]byte(licenseData), nil, nil)
 		if err != nil {
 			fmt.Printf("failed to decode license data: %s\n", err.Error())
-			pullErr = err
+			ffiErr = err
 			return
 		}
 		license := obj.(*kotsv1beta1.License)
@@ -153,14 +159,14 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		licenseFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
 			fmt.Printf("failed to create temp file: %s\n", err)
-			pullErr = err
+			ffiErr = err
 			return
 		}
 		defer os.Remove(licenseFile.Name())
 
 		if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
 			fmt.Printf("failed to write license to temp file: %s\n", err.Error())
-			pullErr = err
+			ffiErr = err
 			return
 		}
 
@@ -168,7 +174,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		tmpRoot, err := ioutil.TempDir("", "kots")
 		if err != nil {
 			fmt.Printf("failed to create temp root path: %s\n", err.Error())
-			pullErr = err
+			ffiErr = err
 			return
 		}
 		defer os.RemoveAll(tmpRoot)
@@ -190,7 +196,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 
 		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
 			fmt.Printf("failed to pull upstream: %s\n", err.Error())
-			pullErr = err
+			ffiErr = err
 			return
 		}
 
@@ -209,7 +215,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 
 		if err := tarGz.Archive(paths, outputFile); err != nil {
 			fmt.Printf("failed to write archive: %s", err.Error())
-			pullErr = err
+			ffiErr = err
 			return
 		}
 	}()
