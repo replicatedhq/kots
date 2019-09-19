@@ -266,6 +266,7 @@ class AppDetailPage extends Component {
     );
 
     const app = getKotsAppQuery?.getKotsApp;
+    const refreshAppData = getKotsAppQuery.refetch;
     const loading = getKotsAppQuery?.loading || !rootDidInitialAppFetch;
 
     if (!rootDidInitialAppFetch) {
@@ -377,6 +378,7 @@ class AppDetailPage extends Component {
                       <DownstreamWatchVersionHistory
                         watch={app}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        refreshAppData={refreshAppData}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => {

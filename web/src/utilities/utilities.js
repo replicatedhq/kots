@@ -262,6 +262,21 @@ export function isKotsApplication(watch) {
   return Boolean(watch.name);
 }
 
+/**
+ * Returns true if any item in version history is awaiting preflight results
+ * from kotsadm operator.
+ * @param {Array} versionHistory - Downstream version history for a kots app
+ * @return {Boolean}
+ */
+export function hasPendingPreflight(versionHistory) {
+  for(const version of versionHistory) {
+    if (version.status === "pending_preflight") {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
