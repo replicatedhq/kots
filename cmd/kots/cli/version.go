@@ -23,7 +23,7 @@ func VersionCmd() *cobra.Command {
 			if err != nil {
 				fmt.Printf("\nUnable to check for newer releases: %s\n", err.Error())
 			} else if !isLatest {
-				fmt.Printf("\nVersion %s is available for kots. To install updates, run\n  $ kubectl krew upgrade kots\n", latestVer)
+				fmt.Printf("\nVersion %s is available for kots. To install updates, run\n  $ curl https://kots.io/install | bash\n", latestVer)
 			}
 
 			return nil
