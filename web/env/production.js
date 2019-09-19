@@ -15,6 +15,7 @@ module.exports = {
   PUBLIC_ASSET_PATH: "*https://www.replicated.com/",
   SHOW_SCM_LEADS: true,
   DISABLE_KOTS: true,
+  NO_APPS_REDIRECT: "/watch/create/init",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return process.env.SHIP_CLUSTER_BUILD_VERSION;
   }()),

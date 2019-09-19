@@ -67,7 +67,7 @@ export class NavBar extends PureComponent {
   }
 
   handleAddNewApplication = () => {
-    this.props.history.push("/watch/create/init");
+    this.props.history.push(window.env.NO_APPS_REDIRECT);
   }
 
   redirectToDashboard = () => {
@@ -131,7 +131,7 @@ export class NavBar extends PureComponent {
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
                   <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
-                    <Link className="btn secondary green rounded" to="/watch/create/init">
+                    <Link className="btn secondary green rounded" to={window.env.NO_APPS_REDIRECT}>
                       Add a new application
                     </Link>
                   </div>

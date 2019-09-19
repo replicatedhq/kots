@@ -15,6 +15,7 @@ module.exports = {
   PUBLIC_ASSET_PATH: "*https://www.staging.replicated.com/",
   SHOW_SCM_LEADS: true,
   AVAILABLE_LOGIN_TYPES: ["github"],
+  NO_APPS_REDIRECT: "/watch/create/init",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return process.env.SHIP_CLUSTER_BUILD_VERSION;
   }()),

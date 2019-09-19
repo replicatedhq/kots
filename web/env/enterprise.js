@@ -15,6 +15,7 @@ module.exports = {
   SECURE_ADMIN_CONSOLE: true,
   PROD_PERFECT_WRITE_KEY: "",
   AVAILABLE_LOGIN_TYPES: ["github", "traditional", "bitbucket", "gitlab"],
+  NO_APPS_REDIRECT: "/upload-license",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return process.env.SHIP_CLUSTER_BUILD_VERSION;
   }()),
