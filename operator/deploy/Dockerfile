@@ -29,6 +29,7 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9
   mv /tmp/preflight /usr/local/bin/preflight
 
 COPY ./bin/kotsadm-operator /kotsadm-operator
+RUN chmod a+x /kotsadm-operator
 
 EXPOSE 3000
 # ARG version=unknown
