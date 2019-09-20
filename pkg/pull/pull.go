@@ -10,7 +10,6 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/downstream"
-	kotsimage "github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -129,6 +128,38 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
+	var images []image.Image
+	if pullOptions.RewriteImages {
+		if pullOptions.RewriteImageOptions.ImageFiles == "" {
+			writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
+				RootDir:      pullOptions.RootDir,
+				CreateAppDir: pullOptions.CreateAppDir,
+				Log:          log,
+			}
+			if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
+				return "", errors.Wrap(err, "failed to write upstream images")
+			}
+		}
+
+		// If the request includes a rewrite image options host name, then also
+		// push the images
+		if pullOptions.RewriteImageOptions.Host != "" {
+			pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
+				RootDir:           pullOptions.RootDir,
+				CreateAppDir:      pullOptions.CreateAppDir,
+				Log:               log,
+				RegistryHost:      pullOptions.RewriteImageOptions.Host,
+				RegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
+			}
+			rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
+			if err != nil {
+				return "", errors.Wrap(err, "failed to push upstream images")
+			}
+
+			images = rewrittenImages
+		}
+	}
+
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML: true,
 		Namespace:         pullOptions.Namespace,
@@ -151,17 +182,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	log.ActionWithSpinner("Creating midstream")
-
-	var images []image.Image
-	if pullOptions.RewriteImages {
-		if pullOptions.LocalPath != "" {
-			i, err := kotsimage.BuildRewriteList(pullOptions.RewriteImageOptions.ImageFiles, pullOptions.RewriteImageOptions.Host, pullOptions.RewriteImageOptions.Namespace)
-			if err != nil {
-				return "", errors.Wrap(err, "failed to rewrite images")
-			}
-			images = i
-		}
-	}
 
 	m, err := midstream.CreateMidstream(b, images)
 	if err != nil {

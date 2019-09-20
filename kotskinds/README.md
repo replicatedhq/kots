@@ -5,3 +5,6 @@ This directory contains the definitions and clientsets for the kots.io kinds. Th
 ## Building
 
 To build these, simply run `make` in this directory. This will execute the kubernetes controller-gen and client-gen code to generate a typed client and the necessary deepcopy methods for these types.
+
+
+

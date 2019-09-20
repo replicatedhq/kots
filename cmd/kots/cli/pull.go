@@ -28,6 +28,9 @@ func PullCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			// registry host should not have the scheme (https).  need to
+			// strip it if included or else the rewrite images will fail
+
 			pullOptions := pull.PullOptions{
 				HelmRepoURI:         v.GetString("repo"),
 				RootDir:             ExpandDir(v.GetString("rootdir")),
@@ -40,6 +43,11 @@ func PullCmd() *cobra.Command {
 				SharedPassword:      v.GetString("shared-password"),
 				CreateAppDir:        true,
 				HelmOptions:         v.GetStringSlice("set"),
+				RewriteImages:       v.GetBool("rewrite-images"),
+				RewriteImageOptions: pull.RewriteImageOptions{
+					Host:      v.GetString("registry-endpoint"),
+					Namespace: v.GetString("image-namespace"),
+				},
 			}
 
 			renderDir, err := pull.Pull(args[0], pullOptions)
@@ -67,11 +75,14 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
-	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
+	cmd.Flags().String("local-path", "", "specify a local-path to pull a locally available replicated app (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().Bool("exclude-kots-kinds", true, "set to true to exclude rendering kots custom objects to the base directory")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
+	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
+	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
+	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 
 	return cmd
 }

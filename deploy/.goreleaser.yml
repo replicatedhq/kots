@@ -21,7 +21,7 @@ builds:
       -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
       -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
       -extldflags "-static"
-    flags: -tags netgo -installsuffix netgo
+    flags: -tags netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp -installsuffix netgo
     binary: kots
     hooks: {}
   - id: so
