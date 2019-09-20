@@ -15,6 +15,7 @@ import {
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import yaml from "js-yaml";
+import { StatusServer } from "../airgap/status";
 
 const GoString = Struct({
   p: "string",
@@ -23,12 +24,12 @@ const GoString = Struct({
 
 function kots() {
   return ffi.Library("/lib/kots.so", {
-    PullFromLicense: ["longlong", [GoString, GoString, GoString]],
-    PullFromAirgap: ["longlong", [GoString, GoString, GoString, GoString, GoString, GoString]],
+    PullFromLicense: ["void", [GoString, GoString, GoString, GoString]],
+    PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
-    UpdateCheck: ["longlong", [GoString]],
-    ReadMetadata: [GoString, [GoString]],
-    RemoveMetadata: ["longlong", [GoString]],
+    UpdateCheck: ["void", [GoString, GoString]],
+    ReadMetadata: ["void", [GoString, GoString]],
+    RemoveMetadata: ["void", [GoString, GoString]],
   });
 }
 
@@ -37,12 +38,43 @@ export async function kotsAppGetBranding(): Promise<string> {
   if (!namespace) {
     throw new Error("unable to determine current namespace");
   }
-  const namespaceParam = new GoString();
-  namespaceParam["p"] = namespace;
-  namespaceParam["n"] = namespace.length;
 
-  const branding = kots().ReadMetadata(namespaceParam);
-  return branding.p;
+  const tmpDir = tmp.dirSync();
+  try {
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const namespaceParam = new GoString();
+    namespaceParam["p"] = namespace;
+    namespaceParam["n"] = namespace.length;
+
+    let branding = "";
+    kots().ReadMetadata(socketParam, namespaceParam);
+
+    await statusServer.connection();
+    await statusServer.termination((resolve, reject, obj): boolean => {
+      // Return true if completed
+      if (obj.status === "terminated") {
+        branding = obj.data;
+        if (obj.exit_code === 0) {
+          resolve();
+        } else {
+          reject(new Error("process failed"));
+        }
+        return true;
+      }
+      return false;
+    });
+
+    return branding;
+
+  } finally {
+    tmpDir.removeCallback();
+  }
 }
 
 export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
@@ -52,11 +84,34 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
   try {
     fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
 
+    let isUpdateAvailable = -1;
+
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
     const archiveParam = new GoString();
     archiveParam["p"] = archive;
     archiveParam["n"] = archive.length;
 
-    const isUpdateAvailable = kots().UpdateCheck(archiveParam);
+    kots().UpdateCheck(socketParam, archiveParam);
+    await statusServer.connection();
+    await statusServer.termination((resolve, reject, obj): boolean => {
+      // Return true if completed
+      if (obj.status === "terminated") {
+        isUpdateAvailable = obj.exit_code;
+        if (obj.exit_code !== -1) {
+          resolve();
+        } else {
+          reject(new Error("process failed"));
+        }
+        return true;
+      }
+      return false;
+    });
 
     if (isUpdateAvailable < 0) {
       console.log("error checking for updates")
@@ -111,6 +166,13 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
   const tmpDir = tmp.dirSync();
 
   try {
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
     const licenseDataParam = new GoString();
     licenseDataParam["p"] = kotsApp.license;
     licenseDataParam["n"] = String(kotsApp.license).length;
@@ -124,10 +186,20 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     outParam["p"] = out;
     outParam["n"] = out.length;
 
-    const pullResult = kots().PullFromLicense(licenseDataParam, downstreamParam, outParam);
-    if (pullResult > 0) {
-      return;
-    }
+    kots().PullFromLicense(socketParam, licenseDataParam, downstreamParam, outParam);
+    await statusServer.connection();
+    await statusServer.termination((resolve, reject, obj): boolean => {
+      // Return true if completed
+      if (obj.status === "terminated") {
+        if (obj.exit_code === 0) {
+          resolve();
+        } else {
+          reject(new Error("process failed"));
+        }
+        return true;
+      }
+      return false;
+    });
 
     const params = await Params.getParams();
     const buffer = fs.readFileSync(out);
@@ -158,79 +230,73 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     }
 
     return kotsApp;
-  } catch (err) {
-    console.log(err);
   } finally {
     tmpDir.removeCallback();
   }
 }
 
-export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): Promise<{ hasPreflight: Boolean} | undefined> {
-  const tmpDstDir = tmp.dirSync();
+export async function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string) {
+  const socketParam = new GoString();
+  socketParam["p"] = socket;
+  socketParam["n"] = socket.length;
 
-  try {
-    const licenseDataParam = new GoString();
-    licenseDataParam["p"] = licenseData;
-    licenseDataParam["n"] = licenseData.length;
+  const licenseDataParam = new GoString();
+  licenseDataParam["p"] = licenseData;
+  licenseDataParam["n"] = licenseData.length;
 
-    const downstreamParam = new GoString();
-    downstreamParam["p"] = downstreamName;
-    downstreamParam["n"] = downstreamName.length;
+  const downstreamParam = new GoString();
+  downstreamParam["p"] = downstreamName;
+  downstreamParam["n"] = downstreamName.length;
 
-    const airgapDirParam = new GoString();
-    airgapDirParam["p"] = airgapDir;
-    airgapDirParam["n"] = airgapDir.length;
+  const airgapDirParam = new GoString();
+  airgapDirParam["p"] = airgapDir;
+  airgapDirParam["n"] = airgapDir.length;
 
-    const out = path.join(tmpDstDir.name, "archive.tar.gz");
-    const outParam = new GoString();
-    outParam["p"] = out;
-    outParam["n"] = out.length;
+  const outParam = new GoString();
+  outParam["p"] = out;
+  outParam["n"] = out.length;
 
-    const registryHostParam = new GoString();
-    registryHostParam["p"] = registryHost;
-    registryHostParam["n"] = registryHost.length;
+  const registryHostParam = new GoString();
+  registryHostParam["p"] = registryHost;
+  registryHostParam["n"] = registryHost.length;
 
-    const registryNamespaceParam = new GoString();
-    registryNamespaceParam["p"] = registryNamespace;
-    registryNamespaceParam["n"] = registryNamespace.length;
+  const registryNamespaceParam = new GoString();
+  registryNamespaceParam["p"] = registryNamespace;
+  registryNamespaceParam["n"] = registryNamespace.length;
 
-    const pullResult = kots().PullFromAirgap(licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam);
-    if (pullResult > 0) {
-      return;
+  kots().PullFromAirgap(socketParam, licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam);
+}
+
+export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: Boolean}> {
+  const params = await Params.getParams();
+  const buffer = fs.readFileSync(out);
+  const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, "0.tar.gz");
+  await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+  const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+  const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+  await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
+
+  const downstreams = await extractDownstreamNamesFromTarball(buffer);
+  const clusters = await stores.clusterStore.listAllUsersClusters();
+  for (const downstream of downstreams) {
+    const cluster = _.find(clusters, (c: Cluster) => {
+      return c.title === downstream;
+    });
+
+    if (!cluster) {
+      continue;
     }
 
-    const params = await Params.getParams();
-    const buffer = fs.readFileSync(out);
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, "0.tar.gz");
-    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
-
-    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
-    await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec);
-
-    const downstreams = await extractDownstreamNamesFromTarball(buffer);
-    const clusters = await stores.clusterStore.listAllUsersClusters();
-    for (const downstream of downstreams) {
-      const cluster = _.find(clusters, (c: Cluster) => {
-        return c.title === downstream;
-      });
-
-      if (!cluster) {
-        continue;
-      }
-
-      await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, cursorAndVersion.versionLabel);
-    }
-
-    await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
-    // NOTE: Finally statement will still run, despite try {} block returning
-    return {
-      hasPreflight: !!preflightSpec
-    };
-  } finally {
-    tmpDstDir.removeCallback();
+    await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, cursorAndVersion.versionLabel);
   }
+
+  await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
+
+  return {
+    hasPreflight: !!preflightSpec
+  };
 }
 
 export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, registryHost: string, registryOrg: string, username: string, password: string): void {
