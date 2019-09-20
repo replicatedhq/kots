@@ -5,4 +5,5 @@ var KnownRepos = map[string]string{
 	"local":   "http://127.0.0.1:8879",
 	"elastic": "https://helm.elastic.co",
 	"gomods":  "https://athens.blob.core.windows.net/charts",
+	"harbor":  "https://helm.goharbor.io",
 }
