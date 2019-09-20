@@ -15,6 +15,7 @@ type statusMessage struct {
 	Status         string `json:"status,omitempty"`
 	DisplayMessage string `json:"display_message,omitempty"`
 	ExitCode       *int   `json:"exit_code,omitempty"`
+	Data           string `json:"data,omitempty"`
 }
 
 type StatusClient struct {
@@ -75,19 +76,40 @@ func (c *StatusClient) getOutputWriter() io.WriteCloser {
 	return pipeWriter
 }
 
-func (c *StatusClient) end(err error) {
-	exitCode := 0
+func (c *StatusClient) end(result *FFIResult) {
 	message := ""
-	if err != nil {
-		exitCode = 1
-		message = err.Error()
+	if result.Err != nil {
+		message = result.Err.Error()
 	}
 
 	c.Chan <- statusMessage{
 		Status:         "terminated",
-		ExitCode:       &exitCode,
+		ExitCode:       &result.ExitCode,
 		DisplayMessage: message,
+		Data:           result.Data,
 	}
 
 	close(c.Chan)
+}
+
+type FFIResult struct {
+	Err      error
+	ExitCode int
+	Data     string
+}
+
+func NewFFIResult(exitCode int) *FFIResult {
+	return &FFIResult{
+		ExitCode: exitCode,
+	}
+}
+
+func (f *FFIResult) WithError(err error) *FFIResult {
+	f.Err = err
+	return f
+}
+
+func (f *FFIResult) WithData(data string) *FFIResult {
+	f.Data = data
+	return f
 }

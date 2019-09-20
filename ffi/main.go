@@ -17,96 +17,120 @@ import (
 )
 
 //export UpdateCheck
-func UpdateCheck(fromArchivePath string) int {
-	tmpRoot, err := ioutil.TempDir("", "kots")
-	if err != nil {
-		fmt.Printf("failed to create temp path: %s\n", err.Error())
-		return -1
-	}
-	defer os.RemoveAll(tmpRoot)
+func UpdateCheck(socket, fromArchivePath string) {
+	go func() {
+		var ffiResult *FFIResult
 
-	// extract the current archive to this root
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Unarchive(fromArchivePath, tmpRoot); err != nil {
-		fmt.Printf("failed to unarchive: %s\n", err.Error())
-		return -1
-	}
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
+		}
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
-	beforeCursor, err := readCursorFromPath(tmpRoot)
-	if err != nil {
-		fmt.Printf("failed to read cursor file: %s\n", err.Error())
-		return -1
-	}
+		tmpRoot, err := ioutil.TempDir("", "kots")
+		if err != nil {
+			fmt.Printf("failed to create temp path: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		defer os.RemoveAll(tmpRoot)
 
-	expectedLicenseFile := path.Join(tmpRoot, "upstream", "userdata", "license.yaml")
-	_, err = os.Stat(expectedLicenseFile)
-	if err != nil {
-		fmt.Printf("failed to find license file in archive\n")
-		return -1
-	}
-	licenseData, err := ioutil.ReadFile(expectedLicenseFile)
-	if err != nil {
-		fmt.Printf("failed to read license file: %s\n", err.Error())
-		return -1
-	}
+		// extract the current archive to this root
+		tarGz := archiver.TarGz{
+			Tar: &archiver.Tar{
+				ImplicitTopLevelFolder: false,
+			},
+		}
+		if err := tarGz.Unarchive(fromArchivePath, tmpRoot); err != nil {
+			fmt.Printf("failed to unarchive: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	kotsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseData), nil, nil)
-	if err != nil {
-		fmt.Printf("failed to decode license data: %s\n", err.Error())
-		return -1
-	}
-	license := obj.(*kotsv1beta1.License)
+		beforeCursor, err := readCursorFromPath(tmpRoot)
+		if err != nil {
+			fmt.Printf("failed to read cursor file: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	pullOptions := pull.PullOptions{
-		LicenseFile:         expectedLicenseFile,
-		RootDir:             tmpRoot,
-		ExcludeKotsKinds:    true,
-		ExcludeAdminConsole: true,
-		CreateAppDir:        false,
-	}
+		expectedLicenseFile := path.Join(tmpRoot, "upstream", "userdata", "license.yaml")
+		_, err = os.Stat(expectedLicenseFile)
+		if err != nil {
+			fmt.Printf("failed to find license file in archive\n")
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		licenseData, err := ioutil.ReadFile(expectedLicenseFile)
+		if err != nil {
+			fmt.Printf("failed to read license file: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-		fmt.Printf("failed to pull upstream: %s\n", err.Error())
-		return 1
-	}
+		kotsscheme.AddToScheme(scheme.Scheme)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(licenseData), nil, nil)
+		if err != nil {
+			fmt.Printf("failed to decode license data: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		license := obj.(*kotsv1beta1.License)
 
-	afterCursor, err := readCursorFromPath(tmpRoot)
-	if err != nil {
-		fmt.Printf("failed to read cursor file after update: %s\n", err.Error())
-		return -1
-	}
+		pullOptions := pull.PullOptions{
+			LicenseFile:         expectedLicenseFile,
+			RootDir:             tmpRoot,
+			ExcludeKotsKinds:    true,
+			ExcludeAdminConsole: true,
+			CreateAppDir:        false,
+		}
 
-	fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
+		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
+			fmt.Printf("failed to pull upstream: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	isUpdateAvailable := string(beforeCursor) != string(afterCursor)
-	if !isUpdateAvailable {
-		return 0
-	}
+		afterCursor, err := readCursorFromPath(tmpRoot)
+		if err != nil {
+			fmt.Printf("failed to read cursor file after update: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	paths := []string{
-		path.Join(tmpRoot, "upstream"),
-		path.Join(tmpRoot, "base"),
-		path.Join(tmpRoot, "overlays"),
-	}
+		fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
 
-	err = os.Remove(fromArchivePath)
-	if err != nil {
-		fmt.Printf("failed to delete archive to replace: %s\n", err.Error())
-		return -1
-	}
+		isUpdateAvailable := string(beforeCursor) != string(afterCursor)
+		if !isUpdateAvailable {
+			ffiResult = NewFFIResult(0)
+			return
+		}
 
-	if err := tarGz.Archive(paths, fromArchivePath); err != nil {
-		fmt.Printf("failed to write archive: %s\n", err.Error())
-		return -1
-	}
+		paths := []string{
+			path.Join(tmpRoot, "upstream"),
+			path.Join(tmpRoot, "base"),
+			path.Join(tmpRoot, "overlays"),
+		}
 
-	return 1
+		err = os.Remove(fromArchivePath)
+		if err != nil {
+			fmt.Printf("failed to delete archive to replace: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
+		if err := tarGz.Archive(paths, fromArchivePath); err != nil {
+			fmt.Printf("failed to write archive: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
+		ffiResult = NewFFIResult(1)
+	}()
 }
 
 func readCursorFromPath(rootPath string) (string, error) {

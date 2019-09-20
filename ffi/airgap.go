@@ -33,18 +33,21 @@ type ImageRef struct {
 //export RewriteAndPushImageName
 func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg, username, password string) {
 	go func() {
-		var rewriteErr error
+		var ffiResult *FFIResult
 
 		statusClient, err := connectToStatusServer(socket)
 		if err != nil {
 			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
 		}
-		defer statusClient.end(rewriteErr)
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
 		imageRef, err := parseImageRef(image)
 		if err != nil {
 			fmt.Printf("failed to parse image %s: %s\n", image, err)
-			rewriteErr = err
+			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
 		localImage := imageRefToString(imageRef, registryHost, registryOrg)
@@ -65,13 +68,15 @@ func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg
 		cmd.Stderr = statusClient.getOutputWriter()
 		cmd.Stdout = statusClient.getOutputWriter()
 		if err := cmd.Start(); err != nil {
-			rewriteErr = err
+			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
 		if err := cmd.Wait(); err != nil {
-			rewriteErr = err
+			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
+
+		ffiResult = NewFFIResult(0)
 	}()
 }
 
@@ -114,91 +119,110 @@ func imageRefToString(ref *ImageRef, registryHost, registryOrg string) string {
 }
 
 //export PullFromAirgap
-func PullFromAirgap(licenseData, airgapDir, downstream, outputFile, registryHost, registryNamesapce string) int {
-	workspace, err := ioutil.TempDir("", "kots-airgap")
-	if err != nil {
-		fmt.Printf("failed to create temp dir: %s\n", err)
-		return 1
-	}
-	defer os.RemoveAll(workspace)
+func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, registryHost, registryNamesapce string) {
+	go func() {
+		var ffiResult *FFIResult
 
-	// releaseDir is the contents of the release tar (yaml, no images)
-	releaseDir, err := extractAppRelease(workspace, airgapDir)
-	if err != nil {
-		fmt.Printf("failed to extract app release: %s\n", err)
-		return 1
-	}
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
+		}
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
-	kotsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseData), nil, nil)
-	if err != nil {
-		fmt.Printf("failed to decode license data: %s\n", err.Error())
-		return 1
-	}
-	license := obj.(*kotsv1beta1.License)
+		workspace, err := ioutil.TempDir("", "kots-airgap")
+		if err != nil {
+			fmt.Printf("failed to create temp dir: %s\n", err)
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+		defer os.RemoveAll(workspace)
 
-	licenseFile, err := ioutil.TempFile("", "kots")
-	if err != nil {
-		fmt.Printf("failed to create temp file: %s\n", err)
-		return 1
-	}
-	defer os.Remove(licenseFile.Name())
+		// releaseDir is the contents of the release tar (yaml, no images)
+		releaseDir, err := extractAppRelease(workspace, airgapDir)
+		if err != nil {
+			fmt.Printf("failed to extract app release: %s\n", err)
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
 
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
-		fmt.Printf("failed to write license to temp file: %s\n", err.Error())
-		return 1
-	}
+		kotsscheme.AddToScheme(scheme.Scheme)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(licenseData), nil, nil)
+		if err != nil {
+			fmt.Printf("failed to decode license data: %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+		license := obj.(*kotsv1beta1.License)
 
-	// pull to a tmp dir
-	tmpRoot, err := ioutil.TempDir("", "kots")
-	if err != nil {
-		fmt.Printf("failed to create temp root path: %s\n", err.Error())
-		return 1
-	}
-	defer os.RemoveAll(tmpRoot)
+		licenseFile, err := ioutil.TempFile("", "kots")
+		if err != nil {
+			fmt.Printf("failed to create temp file: %s\n", err)
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+		defer os.Remove(licenseFile.Name())
 
-	pullOptions := pull.PullOptions{
-		Downstreams:         []string{downstream},
-		LocalPath:           releaseDir,
-		LicenseFile:         licenseFile.Name(),
-		ExcludeKotsKinds:    true,
-		RootDir:             tmpRoot,
-		ExcludeAdminConsole: true,
-		RewriteImages:       true,
-		RewriteImageOptions: pull.RewriteImageOptions{
-			ImageFiles: filepath.Join(airgapDir, "images"),
-			Host:       registryHost,
-			Namespace:  registryNamesapce,
-		},
-	}
+		if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
+			fmt.Printf("failed to write license to temp file: %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
 
-	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-		fmt.Printf("failed to pull upstream: %s\n", err.Error())
-		return 1
-	}
+		// pull to a tmp dir
+		tmpRoot, err := ioutil.TempDir("", "kots")
+		if err != nil {
+			fmt.Printf("failed to create temp root path: %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+		defer os.RemoveAll(tmpRoot)
 
-	// make an archive
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: true,
-		},
-	}
+		pullOptions := pull.PullOptions{
+			Downstreams:         []string{downstream},
+			LocalPath:           releaseDir,
+			LicenseFile:         licenseFile.Name(),
+			ExcludeKotsKinds:    true,
+			RootDir:             tmpRoot,
+			ExcludeAdminConsole: true,
+			RewriteImages:       true,
+			RewriteImageOptions: pull.RewriteImageOptions{
+				ImageFiles: filepath.Join(airgapDir, "images"),
+				Host:       registryHost,
+				Namespace:  registryNamesapce,
+			},
+		}
 
-	// TODO: Rewrite images....
+		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
+			fmt.Printf("failed to pull upstream: %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
 
-	paths := []string{
-		filepath.Join(tmpRoot, "upstream"),
-		filepath.Join(tmpRoot, "base"),
-		filepath.Join(tmpRoot, "overlays"),
-	}
+		// make an archive
+		tarGz := archiver.TarGz{
+			Tar: &archiver.Tar{
+				ImplicitTopLevelFolder: true,
+			},
+		}
 
-	if err := tarGz.Archive(paths, outputFile); err != nil {
-		fmt.Printf("failed to write archive: %s", err.Error())
-		return 1
-	}
+		paths := []string{
+			filepath.Join(tmpRoot, "upstream"),
+			filepath.Join(tmpRoot, "base"),
+			filepath.Join(tmpRoot, "overlays"),
+		}
 
-	return 0
+		if err := tarGz.Archive(paths, outputFile); err != nil {
+			fmt.Printf("failed to write archive: %s", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+
+		ffiResult = NewFFIResult(0)
+	}()
 }
 
 func downloadAirgapAchive(workspace string, airgapURL string) (string, error) {
