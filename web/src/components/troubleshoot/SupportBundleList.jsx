@@ -75,7 +75,7 @@ class SupportBundleList extends React.Component {
           <div className="flex1 flex-column justifyContent--center alignItems--center">
             <div className="flex-column u-textAlign--center alignItems--center">
               <p className="u-fontSize--largest u-color--tundora u-lineHeight--normal u-fontWeight--bold">You haven't generated any support bundles</p>
-              <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <span onClick={() => this.props.history.push(generateBundleUrl)} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</span></p>
+              <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <Link to={generateBundleUrl} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</Link></p>
             </div>
           </div>
         );
