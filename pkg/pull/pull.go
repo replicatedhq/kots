@@ -32,6 +32,7 @@ type PullOptions struct {
 	Silent              bool
 	RewriteImages       bool
 	RewriteImageOptions RewriteImageOptions
+	HelmOptions         []string
 }
 
 type RewriteImageOptions struct {
@@ -131,6 +132,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML: true,
 		Namespace:         pullOptions.Namespace,
+		HelmOptions:       pullOptions.HelmOptions,
 	}
 	log.ActionWithSpinner("Creating base")
 	b, err := base.RenderUpstream(u, &renderOptions)

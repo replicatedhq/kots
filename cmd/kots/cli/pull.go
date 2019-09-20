@@ -39,6 +39,7 @@ func PullCmd() *cobra.Command {
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
 				CreateAppDir:        true,
+				HelmOptions:         v.GetStringSlice("set"),
 			}
 
 			renderDir, err := pull.Pull(args[0], pullOptions)
@@ -61,7 +62,7 @@ func PullCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")
+	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 	cmd.Flags().String("repo", "", "repo uri to use when downloading a helm chart")
 	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
 	cmd.Flags().String("namespace", "default", "namespace to render the upstream to in the base")

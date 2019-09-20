@@ -11,6 +11,7 @@ import (
 type FetchOptions struct {
 	HelmRepoName string
 	HelmRepoURI  string
+	HelmOptions  []string
 	LocalPath    string
 	License      *kotsv1beta1.License
 }

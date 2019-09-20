@@ -1,17 +1,20 @@
 package base
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
+	"k8s.io/helm/pkg/strvals"
 	"k8s.io/helm/pkg/timeconv"
 )
 
@@ -40,7 +43,19 @@ func renderHelm(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, erro
 		}
 	}
 
-	config := &chart.Config{Raw: string(""), Values: map[string]*chart.Value{}}
+	vals := map[string]interface{}{}
+	for _, value := range renderOptions.HelmOptions {
+		fmt.Printf("\n\n value %s \n\n", value)
+		if err := strvals.ParseInto(value, vals); err != nil {
+			return nil, errors.Wrap(err, "failed to parse helm value")
+		}
+	}
+	marshalledVals, err := yaml.Marshal(vals)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal helm values")
+	}
+
+	config := &chart.Config{Raw: string(marshalledVals), Values: map[string]*chart.Value{}}
 
 	c, err := chartutil.Load(chartPath)
 	if err != nil {
