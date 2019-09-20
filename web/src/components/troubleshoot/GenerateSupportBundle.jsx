@@ -130,7 +130,7 @@ class GenerateSupportBundle extends React.Component {
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
-          <title>{`${watch.watchName} Troubleshoot`}</title>
+          <title>{`${watch.watchName || watch.name} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
           {!watchClusters.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
@@ -169,13 +169,6 @@ class GenerateSupportBundle extends React.Component {
                     canCopy={true}
                     onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                   >
-                    {
-                      /*
-                      kubectl krew install support-bundle
-                      kubectl support-bundle ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
-                      */
-
-                    }
                     {selectedWatch?.bundleCommand?.split("\n") || watch.bundleCommand?.split("\n")}
                   </CodeSnippet>
                 </div>
