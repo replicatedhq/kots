@@ -165,7 +165,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
   }
 }
 
-export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): Promise<void> {
+export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): Promise<{ hasPreflight: Boolean} | undefined> {
   const tmpDstDir = tmp.dirSync();
 
   try {
@@ -224,6 +224,10 @@ export async function kotsAppFromAirgapData(app: KotsApp, licenseData: string, a
     }
 
     await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
+    // NOTE: Finally statement will still run, despite try {} block returning
+    return {
+      hasPreflight: !!preflightSpec
+    };
   } finally {
     tmpDstDir.removeCallback();
   }
