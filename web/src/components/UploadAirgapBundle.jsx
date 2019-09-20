@@ -37,7 +37,10 @@ class UploadAirgapBundle extends React.Component {
       .then(async (result) => {
         const response = await result.json();
         await onUploadSuccess(); // Refetch list apps
-        if (response.slug) {
+
+        if (response.hasPreflight) {
+          this.props.history.replace(`/preflight`);
+        } else if (response.slug) {
           this.props.history.replace(`/app/${response.slug}`);
         } else {
           throw new Error(`Error uploading airgap bundle: ${response}`);

@@ -204,6 +204,7 @@ export class KotsAPI {
 
     const dstDir = tmp.dirSync();
     var appSlug: string;
+    let hasPreflight: Boolean | undefined;
     var liveness: any;
     try {
       liveness = setInterval(() => {
@@ -249,12 +250,12 @@ export class KotsAPI {
         }
       }
 
-      await kotsAppFromAirgapData(app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
+      const kotsApp = await kotsAppFromAirgapData(app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
 
       await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
 
       appSlug = app.slug;
-
+      hasPreflight = kotsApp && kotsApp.hasPreflight;
     } catch(err) {
 
       await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
@@ -269,6 +270,7 @@ export class KotsAPI {
     response.status(200);
     return {
       slug: appSlug,
+      hasPreflight
     };
   }
 }
