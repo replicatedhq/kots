@@ -159,6 +159,7 @@ repositories: []`
 			Type:         "helm",
 			Files:        files,
 			UpdateCursor: chartVersion,
+			VersionLabel: chartVersion,
 		}
 
 		return upstream, nil

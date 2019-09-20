@@ -5,11 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 
 	"github.com/ahmetalpbalkan/go-cursor"
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -25,7 +23,7 @@ func InstallCmd() *cobra.Command {
 		Short:         "",
 		Long:          ``,
 		SilenceUsage:  true,
-		SilenceErrors: false,
+		SilenceErrors: true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -103,38 +101,14 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if canPull {
-				// get the first dir in rootDir and use that as the upload dir
-				subdirs, err := ioutil.ReadDir(rootDir)
-				if err != nil {
-					return err
-				}
-				uploadRootDir := ""
-				for _, subdir := range subdirs {
-					if subdir.IsDir() {
-						if subdir.Name() == "." {
-							continue
-						}
-						if subdir.Name() == ".." {
-							continue
-						}
-
-						uploadRootDir = path.Join(rootDir, subdir.Name())
-						break
-					}
-				}
-				if uploadRootDir == "" {
-					return errors.New("unable to find directory in rootDir")
-				}
-
 				stopCh, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
 				if err != nil {
 					return err
 				}
 				defer close(stopCh)
 
-				if err := upload.Upload(uploadRootDir, uploadOptions); err != nil {
-					log.FinishSpinnerWithError()
-					return errors.Cause(err)
+				if err := upload.Upload(rootDir, uploadOptions); err != nil {
+					return err
 				}
 			}
 

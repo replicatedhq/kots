@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -45,7 +44,6 @@ func renderHelm(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, erro
 
 	vals := map[string]interface{}{}
 	for _, value := range renderOptions.HelmOptions {
-		fmt.Printf("\n\n value %s \n\n", value)
 		if err := strvals.ParseInto(value, vals); err != nil {
 			return nil, errors.Wrap(err, "failed to parse helm value")
 		}

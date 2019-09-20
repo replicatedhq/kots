@@ -35,7 +35,6 @@ type UploadOptions struct {
 // Upload will upload the application version at path
 // using the options in uploadOptions
 func Upload(path string, uploadOptions UploadOptions) error {
-	fmt.Printf("path = %s\n", path)
 	license, err := findLicense(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license")
