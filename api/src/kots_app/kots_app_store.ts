@@ -415,14 +415,24 @@ order by sequence desc`;
       id,
       current_sequence
     ];
-    const parsedLicense = jsYaml.safeLoad(row.license);
+
+    // Determine if an app is airgapped
+    let isAirgap = false;
+    if (row.license) {
+      try {
+        const parsedLicense = jsYaml.safeLoad(row.license);
+        isAirgap = !!parsedLicense.spec.isAirgapSupported;
+      } catch (error) {
+        // Unable to parse license to determine airgap status
+      }
+    }
 
     const rr = await this.pool.query(qq, vv);
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
     kotsApp.license = row.license;
-    kotsApp.isAirgap = !!parsedLicense.spec.isAirgapSupported;
+    kotsApp.isAirgap = isAirgap;
     kotsApp.upstreamUri = row.upstream_uri;
     kotsApp.iconUri = row.icon_uri;
     kotsApp.createdAt = new Date(row.created_at);
