@@ -9,6 +9,7 @@ spec:
   schema:
     postgres:
       primaryKey:
+        - app_id
         - cluster_id
         - sequence
       columns:
