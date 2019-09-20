@@ -56,6 +56,7 @@ func InstallCmd() *cobra.Command {
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
 				ExcludeAdminConsole: true,
+				HelmOptions:         v.GetStringSlice("set"),
 			}
 
 			canPull, err := pull.CanPullUpstream(args[0], pullOptions)
@@ -181,7 +182,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
-	cmd.Flags().StringArray("set", []string{}, "values to pass to helm when running helm template")
+	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
 	return cmd
 }

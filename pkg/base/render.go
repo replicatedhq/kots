@@ -8,6 +8,7 @@ import (
 type RenderOptions struct {
 	SplitMultiDocYAML bool
 	Namespace         string
+	HelmOptions       []string
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required
