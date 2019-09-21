@@ -100,9 +100,11 @@ export class Server extends ServerLoader {
 
     // Place http-proxy-middleware before body-parser
     // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924
-    this.use("/api/v1/init/:id", InitProxy);
-    this.use("/api/v1/update/:id", UpdateProxy);
-    this.use("/api/v1/edit/:id", EditProxy);
+    if (process.env["ENABLE_SHIP"]) {
+      this.use("/api/v1/init/:id", InitProxy);
+      this.use("/api/v1/update/:id", UpdateProxy);
+      this.use("/api/v1/edit/:id", EditProxy);
+    }
 
     const bodyParser = require("body-parser");
     this.use(bodyParser.json({ limit: "5mb" }));
