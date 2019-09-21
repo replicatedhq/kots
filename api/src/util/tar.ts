@@ -29,18 +29,17 @@ export function extractPreflightSpecFromTarball(tarball: Buffer): Promise<string
 
     extract.on("entry", (header, stream, next) => {
       stream.pipe(concat(data => {
-        const raw = data.toString();
-        const doc = yaml.safeLoad(raw);
-        if (doc) {
-          if (
-            doc.apiVersion === "troubleshoot.replicated.com/v1beta1" &&
-            doc.kind === "Preflight"
-          ) {
-            preflight = raw;
-            resolve(preflight);
-            next();
-            return;
-          }
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
+
+        const doc = yaml.safeLoad(data.toString());
+        if (doc.apiVersion === "troubleshoot.replicated.com/v1beta1" && doc.kind === "Preflight") {
+          preflight = data.toString();
+          resolve(preflight);
+          next();
+          return;
         }
         next();
       }));
@@ -49,6 +48,7 @@ export function extractPreflightSpecFromTarball(tarball: Buffer): Promise<string
     extract.on("finish", () => {
       resolve(preflight);
     });
+
     extract.end(uncompressed);
   });
 }
@@ -59,20 +59,24 @@ export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<Cur
 
   return new Promise((resolve, reject) => {
     extract.on("error", reject);
+
     extract.on("entry", (header, stream, next) => {
       stream.pipe(concat((data) => {
-        const doc = yaml.safeLoad(data.toString());
-        if (doc) {
-          if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
-            const cursorAndVersion = {
-              cursor: doc.spec.updateCursor,
-              versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",
-            };
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
 
-            resolve(cursorAndVersion);
-            next();
-            return;
-          }
+        const doc = yaml.safeLoad(data.toString());
+        if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
+          const cursorAndVersion = {
+            cursor: doc.spec.updateCursor,
+            versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",
+          };
+
+          resolve(cursorAndVersion);
+          next();
+          return;
         }
         next();
       }));
@@ -116,4 +120,19 @@ export function extractDownstreamNamesFromTarball(tarball: Buffer): Promise<stri
       })
       .on('error', reject);
   });
+}
+
+function isYaml(data: string): boolean {
+  try {
+    const doc = yaml.safeLoad(data.toString());
+    if (doc && doc.apiVersion) {
+      // we only support kubernetes yaml, so this is a little bit rough,
+      // but should be valid for now
+      return true;
+    }
+  } catch (err) {
+    /* nothing */
+  }
+
+  return false;
 }
