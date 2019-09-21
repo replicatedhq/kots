@@ -14,7 +14,6 @@ func VersionCmd() *cobra.Command {
 		Short: "Print the current version and exit",
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			// print basic version info
 			fmt.Printf("Replicated Kots %s\n", version.Version())
 

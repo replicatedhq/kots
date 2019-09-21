@@ -79,7 +79,7 @@ func webDeployment(namespace string) *appsv1.Deployment {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           "kotsadm/kotsadm-web:v0.9.4",
+							Image:           fmt.Sprintf("kotsadm/kotsadm-web:%s", kotsadmTag()),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-web",
 							Args: []string{
