@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -14,7 +15,7 @@ func VersionCmd() *cobra.Command {
 		Short: "Print the current version and exit",
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
+			fmt.Printf("%s\n", kotsadm.Tag())
 			// print basic version info
 			fmt.Printf("Replicated Kots %s\n", version.Version())
 
