@@ -5,10 +5,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func Tag() string {
-	return kotsadmTag()
-}
-
 // return "alpha" for all prerelease or invalid versions of kots,
 // kotsadm tag that matches this version for others
 func kotsadmTag() string {
