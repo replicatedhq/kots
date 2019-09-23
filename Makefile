@@ -32,26 +32,27 @@ define LDFLAGS
 "
 endef
 
+BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+
 .PHONY: test
 test:
-	go test ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
+	go test -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
 
 .PHONY: integration-cli
 integration-cli:
 	go build -o bin/kots-integration ./integration
-	
+
 .PHONY: ci-test
 ci-test:
-	go test ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
+	go test -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
 
-	
 .PHONY: kots
 kots: fmt vet
-	go build ${LDFLAGS} -o bin/kots github.com/replicatedhq/kots/cmd/kots
+	go build ${LDFLAGS} -o bin/kots -tags "$(BUILDTAGS)" github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: ffi
 ffi: fmt vet
-	go build ${LDFLAGS} -o bin/kots.so -buildmode=c-shared ./ffi/...
+	go build ${LDFLAGS} -o bin/kots.so -tags "$(BUILDTAGS)" -buildmode=c-shared ./ffi/...
 
 .PHONY: fmt
 fmt:
@@ -59,7 +60,7 @@ fmt:
 
 .PHONY: vet
 vet:
-	go vet ./pkg/... ./cmd/... ./ffi/...
+	go vet -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/...
 
 .PHONY: gosec
 gosec:

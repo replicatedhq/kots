@@ -50,7 +50,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			image, err := imageInfoFromFile(registry, namespace, test.parts)
+			image, err := ImageInfoFromFile(registry, namespace, test.parts)
 			if test.isError {
 				assert.Error(t, err)
 			} else {
