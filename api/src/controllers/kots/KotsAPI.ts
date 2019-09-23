@@ -143,7 +143,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
     }
 
 

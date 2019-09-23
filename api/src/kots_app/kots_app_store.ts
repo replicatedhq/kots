@@ -76,14 +76,13 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string = "pending"): Promise<void> {
     let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
     let v: any[] = [
       id,
       clusterId,
     ];
     const result = await this.pool.query(q, v);
-    let status = "pending";
 
     const getPreflightSpecQuery =
       `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
@@ -91,18 +90,11 @@ export class KotsAppStore {
 
     const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
-    // If this is a brand new app, set status to deployed if there are no preflights
-    if (newSequence === 0) {
-      status = "deployed";
-    }
-
     let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
 
     if (preflightSpec) {
       status = "pending_preflight";
     }
-
-
 
     q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
       values ($1, $2, $3, $4, $5, $6, $7)`;
@@ -296,6 +288,19 @@ order by sequence desc`;
         clusterId,
       ];
       await this.pool.query(q, v);
+
+    const qq =
+      `UPDATE app_downstream_version
+        SET status = 'deployed'
+      WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
+
+    const vv = [
+      sequence,
+      appId,
+      clusterId,
+    ];
+
+    await this.pool.query(qq, vv);
   }
 
   async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
