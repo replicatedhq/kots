@@ -539,22 +539,23 @@ order by sequence desc`;
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
     let status = "pending";
 
-    // Always deploy sequence 0
-    if (sequence === 0) {
-      // deployVersion sets status to "deployed"
-      await this.deployVersion(appId, sequence, clusterId);
-    }
-
-    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW() WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
+    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW(), status = $2 WHERE app_id = $3 AND cluster_id = $4 AND sequence = $5`;
 
     const v = [
       preflightResult,
+      status,
       appId,
       clusterId,
       sequence
     ];
 
     await this.pool.query(q, v);
+
+    // Always deploy sequence 0
+    if (sequence === 0) {
+      // deployVersion sets status to "deployed"
+      await this.deployVersion(appId, sequence, clusterId);
+    }
   }
 
   private mapKotsAppVersion(row: any): KotsVersion {
