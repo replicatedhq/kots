@@ -88,13 +88,22 @@ export class KotsAppStore {
     const getPreflightSpecQuery =
       `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
     const preflightSpecQueryResults = await this.pool.query(getPreflightSpecQuery, [id, parentSequence]);
+
+    const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
+
+    // If this is a brand new app, set status to deployed if there are no preflights
+    if (newSequence === 0) {
+      status = "deployed";
+    }
+
     let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
 
     if (preflightSpec) {
       status = "pending_preflight";
     }
 
-    const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
+
+
     q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
       values ($1, $2, $3, $4, $5, $6, $7)`;
     v = [
