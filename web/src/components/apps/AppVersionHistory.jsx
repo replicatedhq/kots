@@ -24,7 +24,7 @@ export default function AppVersionHistory(props) {
     updateText = null;
   }
 
-  const isAirgap = false;
+  const isAirgap = app.isAirgap;
 
   return (
     <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
