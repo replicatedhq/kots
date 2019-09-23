@@ -31,7 +31,7 @@ type ImageRef struct {
 }
 
 //export RewriteAndPushImageName
-func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg, username, password string) {
+func RewriteAndPushImageName(socket, imageFile, image, format, registryHost, registryOrg, username, password string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -60,7 +60,7 @@ func RewriteAndPushImageName(socket, imageFile, image, registryHost, registryOrg
 			cmdArgs = append(cmdArgs, fmt.Sprintf("--dest-creds=%s:%s", username, password))
 		}
 		cmdArgs = append(cmdArgs,
-			fmt.Sprintf("oci-archive:%s", imageFile),
+			fmt.Sprintf("%s:%s", format, imageFile),
 			fmt.Sprintf("docker://%s", localImage),
 		)
 
