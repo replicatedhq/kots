@@ -77,38 +77,47 @@ export class KotsAppStore {
   }
 
   async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string = "pending"): Promise<void> {
-    let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
-    let v: any[] = [
-      id,
-      clusterId,
-    ];
-    const result = await this.pool.query(q, v);
+    const pg = await this.pool.connect();
 
-    const getPreflightSpecQuery =
-      `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
-    const preflightSpecQueryResults = await this.pool.query(getPreflightSpecQuery, [id, parentSequence]);
+    try {
+      await pg.query("begin");
+      const q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
+      const v = [
+        id,
+        clusterId,
+      ];
+      const result = await pg.query(q, v);
 
-    const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
+      const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
-    let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+      const getPreflightSpecQuery =
+        `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+      const preflightSpecQueryResults = await pg.query(getPreflightSpecQuery, [id, parentSequence]);
 
-    if (preflightSpec) {
-      status = "pending_preflight";
+      let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+
+      if (preflightSpec) {
+        status = "pending_preflight";
+      }
+      const qq = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status) values ($1, $2, $3, $4, $5, $6, $7)`;
+      const vv = [
+        id,
+        clusterId,
+        newSequence,
+        parentSequence,
+        new Date(),
+        versionLabel,
+        status
+      ];
+      await pg.query(qq, vv);
+      await pg.query("commit");
+
+    } catch (error) {
+      await pg.query("rollback");
+      throw error;
+    } finally {
+      pg.release();
     }
-
-    q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
-      values ($1, $2, $3, $4, $5, $6, $7)`;
-    v = [
-      id,
-      clusterId,
-      newSequence,
-      parentSequence,
-      new Date(),
-      versionLabel,
-      status
-    ];
-
-    await this.pool.query(q, v);
   }
 
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
