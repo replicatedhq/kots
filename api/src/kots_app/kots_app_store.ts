@@ -541,14 +541,14 @@ order by sequence desc`;
 
     // Always deploy sequence 0
     if (sequence === 0) {
-      status = "deployed";
+      // deployVersion sets status to "deployed"
+      await this.deployVersion(appId, sequence, clusterId);
     }
 
-    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW(), status = $2 WHERE app_id = $3 AND cluster_id = $4 AND sequence = $5`;
+    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW() WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
 
     const v = [
       preflightResult,
-      status,
       appId,
       clusterId,
       sequence
