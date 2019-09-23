@@ -26,7 +26,7 @@ function kots() {
   return ffi.Library("/lib/kots.so", {
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString]],
     PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
-    RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
+    RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
@@ -299,7 +299,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   };
 }
 
-export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, registryHost: string, registryOrg: string, username: string, password: string): void {
+export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, format: string, registryHost: string, registryOrg: string, username: string, password: string): void {
   const socketParam = new GoString();
   socketParam["p"] = socket;
   socketParam["n"] = socket.length;
@@ -311,6 +311,10 @@ export function kotsRewriteAndPushImageName(socket: string, imageFile: string, i
   const imageParam = new GoString();
   imageParam["p"] = image;
   imageParam["n"] = image.length;
+
+  const formatParam = new GoString();
+  formatParam["p"] = format;
+  formatParam["n"] = format.length;
 
   const registryHostParam = new GoString();
   registryHostParam["p"] = registryHost;
@@ -328,5 +332,5 @@ export function kotsRewriteAndPushImageName(socket: string, imageFile: string, i
   passwordParam["p"] = password;
   passwordParam["n"] = password.length;
 
-  kots().RewriteAndPushImageName(socketParam, imageFileParam, imageParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
+  kots().RewriteAndPushImageName(socketParam, imageFileParam, imageParam, formatParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
 }

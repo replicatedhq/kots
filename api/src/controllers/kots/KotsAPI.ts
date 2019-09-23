@@ -10,7 +10,7 @@ import * as _ from "lodash";
 import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
-import { extractFromTgzStream, getImageFiles, pathToShortImageName, pathToImageName } from "../../airgap/archive";
+import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import { kotsPullFromAirgap, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
 
@@ -214,19 +214,30 @@ export class KotsAPI {
       await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
 
       await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
-      const imageFiles = await getImageFiles(path.join(dstDir.name, "images"));
-      const imageMap = imageFiles.map(imageFile => {
-        return {
-          filePath: imageFile,
-          shortName: pathToShortImageName(path.join(dstDir.name, "images"), imageFile),
-          fullName: pathToImageName(path.join(dstDir.name, "images"), imageFile),
-        }
-      });
+      const imagesRoot = path.join(dstDir.name, "images");
+
+      const imageFormats = getImageFormats(imagesRoot);
+
+      let imageMap: any[] = [];
+      for (const format of imageFormats) {
+        const formatRoot = path.join(imagesRoot, format);
+        const files = await getImageFiles(formatRoot);
+
+        const m = files.map(imageFile => {
+          return {
+            format: format,
+            filePath: imageFile,
+            shortName: pathToShortImageName(formatRoot, imageFile),
+            fullName: pathToImageName(formatRoot, imageFile),
+          }
+        });
+        imageMap = imageMap.concat(m);
+      }
 
       for (const image of imageMap) {
         const statusServer = new StatusServer();
         await statusServer.start(dstDir.name);
-        kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, registryHost, namespace, username, password);
+        kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, image.format, registryHost, namespace, username, password);
         await statusServer.connection();
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed

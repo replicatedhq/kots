@@ -37,6 +37,22 @@ export async function extractFromTgzStream(tgzStream: any, dstDir: string): Prom
     });
 }
 
+export function getImageFormats(rootDir: string): string[] {
+  // top level folders are image format names
+
+  var imageFormats: string[] = [];
+
+  fs.readdirSync(rootDir).forEach(file => {
+    const fullPath = path.join(rootDir, file);
+    const fileStat = fs.statSync(fullPath);
+    if (fileStat.isDirectory()) {
+      imageFormats.push(file);
+    }
+  });
+
+  return imageFormats
+}
+
 export function getImageFiles(rootDir: string): string[] {
   var imageFiles: string[] = [];
 
@@ -57,7 +73,8 @@ export function getImageFiles(rootDir: string): string[] {
 }
 
 export function pathToImageName(rootDir: string, filePath: string): string {
-  // input is /tmp/akjsdh/images/docker.io/couches/redis/2.0
+  // filePath is /tmp/akjsdh/images/<format>/docker.io/couches/redis/2.0
+  // rootDir is everything up to docker.io (registry host)
   // first turn it into docker.io/couches/redis/2.0
   // then extract image name and tag from the end of the string
 
