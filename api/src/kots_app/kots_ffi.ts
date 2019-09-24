@@ -63,7 +63,7 @@ export async function kotsAppGetBranding(): Promise<string> {
         if (obj.exit_code === 0) {
           resolve();
         } else {
-          reject(new Error("process failed"));
+          reject(new Error(`process failed: ${obj.display_message}`));
         }
         return true;
       }
@@ -106,7 +106,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
         if (obj.exit_code !== -1) {
           resolve();
         } else {
-          reject(new Error("process failed"));
+          reject(new Error(`process failed: ${obj.display_message}`));
         }
         return true;
       }
@@ -194,7 +194,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         if (obj.exit_code === 0) {
           resolve();
         } else {
-          reject(new Error("process failed"));
+          reject(new Error(`process failed: ${obj.display_message}`));
         }
         return true;
       }
