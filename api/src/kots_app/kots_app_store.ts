@@ -546,13 +546,21 @@ order by sequence desc`;
   }
 
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
-    let status = "pending";
-
-    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW(), status = $2 WHERE app_id = $3 AND cluster_id = $4 AND sequence = $5`;
+    const q =
+      `UPDATE app_downstream_version SET
+        preflight_result = $1,
+        preflight_result_created_at = NOW(),
+        status = (
+          CASE WHEN status = 'deployed' THEN
+            'deployed'
+          ELSE
+            'pending'
+          END
+          )
+      WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
 
     const v = [
       preflightResult,
-      status,
       appId,
       clusterId,
       sequence
