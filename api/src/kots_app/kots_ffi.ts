@@ -132,7 +132,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
-        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, cursorAndVersion.versionLabel);
+        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, cursorAndVersion.versionLabel, "pending");
       }
     }
 
@@ -226,7 +226,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       }
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
     }
 
     return kotsApp;
@@ -289,7 +289,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     }
 
     await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, cursorAndVersion.versionLabel);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
   }
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);

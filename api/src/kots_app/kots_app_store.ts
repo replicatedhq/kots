@@ -76,38 +76,54 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string): Promise<void> {
-    let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
-    let v: any[] = [
-      id,
-      clusterId,
-    ];
-    const result = await this.pool.query(q, v);
-    let status = "pending";
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string): Promise<void> {
+    const pg = await this.pool.connect();
 
-    const getPreflightSpecQuery =
-      `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
-    const preflightSpecQueryResults = await this.pool.query(getPreflightSpecQuery, [id, parentSequence]);
-    let preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+    try {
+      await pg.query("begin");
+      const q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
+      const v = [
+        id,
+        clusterId,
+      ];
+      const result = await pg.query(q, v);
 
-    if (preflightSpec) {
-      status = "pending_preflight";
+      const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
+
+      const qq =
+        `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+
+      const vv = [
+        id,
+        parentSequence
+      ];
+
+      const preflightSpecQueryResults = await pg.query(qq, vv);
+
+      const preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
+
+      if (preflightSpec) {
+        status = "pending_preflight";
+      }
+      const qqq = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status) values ($1, $2, $3, $4, $5, $6, $7)`;
+      const vvv = [
+        id,
+        clusterId,
+        newSequence,
+        parentSequence,
+        new Date(),
+        versionLabel,
+        status
+      ];
+      await pg.query(qqq, vvv);
+      await pg.query("commit");
+
+    } catch (error) {
+      await pg.query("rollback");
+      throw error;
+    } finally {
+      pg.release();
     }
-
-    const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
-    q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status)
-      values ($1, $2, $3, $4, $5, $6, $7)`;
-    v = [
-      id,
-      clusterId,
-      newSequence,
-      parentSequence,
-      new Date(),
-      versionLabel,
-      status
-    ];
-
-    await this.pool.query(q, v);
   }
 
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
@@ -287,6 +303,19 @@ order by sequence desc`;
         clusterId,
       ];
       await this.pool.query(q, v);
+
+    const qq =
+      `UPDATE app_downstream_version
+        SET status = 'deployed'
+      WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
+
+    const vv = [
+      sequence,
+      appId,
+      clusterId,
+    ];
+
+    await this.pool.query(qq, vv);
   }
 
   async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
@@ -523,7 +552,18 @@ order by sequence desc`;
   }
 
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
-    const q = `UPDATE app_downstream_version SET preflight_result = $1, preflight_result_created_at = NOW(), status = 'pending' WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
+    const q =
+      `UPDATE app_downstream_version SET
+        preflight_result = $1,
+        preflight_result_created_at = NOW(),
+        status = (
+          CASE WHEN status = 'deployed' THEN
+            'deployed'
+          ELSE
+            'pending'
+          END
+          )
+      WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
 
     const v = [
       preflightResult,
@@ -533,6 +573,12 @@ order by sequence desc`;
     ];
 
     await this.pool.query(q, v);
+
+    // Always deploy sequence 0
+    if (sequence === 0) {
+      // deployVersion sets status to "deployed"
+      await this.deployVersion(appId, sequence, clusterId);
+    }
   }
 
   private mapKotsAppVersion(row: any): KotsVersion {
