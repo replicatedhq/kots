@@ -237,7 +237,7 @@ export class KotsAPI {
       for (const image of imageMap) {
         const statusServer = new StatusServer();
         await statusServer.start(dstDir.name);
-        kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, image.format, registryHost, namespace, username, password);
+        const args = kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, image.format, registryHost, namespace, username, password);
         await statusServer.connection();
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed
@@ -272,7 +272,7 @@ export class KotsAPI {
 
         const statusServer = new StatusServer();
         await statusServer.start(dstDir.name);
-        kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
+        const args = kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
         await statusServer.connection();
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed

@@ -235,7 +235,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
   }
 }
 
-export async function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string) {
+export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): any {
   const socketParam = new GoString();
   socketParam["p"] = socket;
   socketParam["n"] = socket.length;
@@ -265,6 +265,17 @@ export async function kotsPullFromAirgap(socket: string, out: string, app: KotsA
   registryNamespaceParam["n"] = registryNamespace.length;
 
   kots().PullFromAirgap(socketParam, licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam);
+
+  // args are returned so they are not garbage collected before native code is done
+  return {
+    socketParam,
+    licenseDataParam,
+    downstreamParam,
+    airgapDirParam,
+    outParam,
+    registryHostParam,
+    registryNamespaceParam,
+  };
 }
 
 export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: Boolean}> {
@@ -299,7 +310,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   };
 }
 
-export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, format: string, registryHost: string, registryOrg: string, username: string, password: string): void {
+export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, format: string, registryHost: string, registryOrg: string, username: string, password: string): any {
   const socketParam = new GoString();
   socketParam["p"] = socket;
   socketParam["n"] = socket.length;
@@ -333,4 +344,16 @@ export function kotsRewriteAndPushImageName(socket: string, imageFile: string, i
   passwordParam["n"] = password.length;
 
   kots().RewriteAndPushImageName(socketParam, imageFileParam, imageParam, formatParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
+
+  // args are returned so they are not garbage collected before native code is done
+  return {
+    socketParam,
+    imageFileParam,
+    imageParam,
+    formatParam,
+    registryHostParam,
+    registryOrgParam,
+    usernameParam,
+    passwordParam,
+  };
 }
