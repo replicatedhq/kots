@@ -248,7 +248,7 @@ export class KotsAPI {
             if (obj.exit_code === 0) {
               resolve();
             } else {
-              reject(new Error("process failed"));
+              reject(new Error(`process failed: ${obj.display_message}`));
             }
             return true;
           }
@@ -280,7 +280,7 @@ export class KotsAPI {
             if (obj.exit_code === 0) {
               resolve();
             } else {
-              reject(new Error("process failed"));
+              reject(new Error(`process failed: ${obj.display_message}`));
             }
             return true;
           }
