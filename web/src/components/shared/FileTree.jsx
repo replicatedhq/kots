@@ -30,13 +30,24 @@ export default class FileTree extends React.Component {
 
   componentDidUpdate(lastProps) {
     const { isRoot, topLevelPaths } = this.props;
-    if (isRoot && topLevelPaths && topLevelPaths !== lastProps.topLevelPaths) {
+    const { initialOpenComplete } = this.state;
+
+    if (isRoot && !initialOpenComplete && topLevelPaths && topLevelPaths !== lastProps.topLevelPaths) {
       const defaultSelected = topLevelPaths.reduce((current, path) => {
         current[path] = true;
         return current;
       }, {});
+
+      let didInitialOpen = false;
+
+      // The root folder(s) have already set themselves to be open.
+      // Do not open root level folders anymore.
+      if (Object.keys(defaultSelected).length) {
+        didInitialOpen = true;
+      }
       this.setState({
-        selected: defaultSelected
+        selected: defaultSelected,
+        initialOpenComplete: didInitialOpen
       });
     }
   }
