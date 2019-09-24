@@ -121,7 +121,8 @@ func saveOneImage(imagesDir string, image string) error {
 		return errors.Wrap(err, "failed to parse image ref")
 	}
 
-	pathInBundle := imageRef.pathInBundle()
+	imageFormat := "docker-archive"
+	pathInBundle := imageRef.pathInBundle(imageFormat)
 	archiveName := filepath.Join(imagesDir, pathInBundle)
 	destDir := filepath.Dir(archiveName)
 
@@ -143,9 +144,10 @@ func saveOneImage(imagesDir string, image string) error {
 		return errors.Wrap(err, "failed to parse source image name")
 	}
 
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker-archive:%s", archiveName))
+	destStr := fmt.Sprintf("%s:%s", imageFormat, archiveName)
+	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse dest image name")
+		return errors.Wrapf(err, "failed to parse local image name: %s", destStr)
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
@@ -190,8 +192,8 @@ func imageRefImage(image string) (*ImageRef, error) {
 	return ref, nil
 }
 
-func (ref *ImageRef) pathInBundle() string {
-	path := []string{ref.Name}
+func (ref *ImageRef) pathInBundle(formatPrefix string) string {
+	path := []string{formatPrefix, ref.Name}
 	if ref.Tag != "" {
 		path = append(path, ref.Tag)
 	}
@@ -217,9 +219,10 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string)
 		return errors.Wrap(err, "failed to parse src image name")
 	}
 
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s:%s", name, tag))
+	destStr := fmt.Sprintf("docker://%s:%s", name, tag)
+	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse dest image name")
+		return errors.Wrapf(err, "failed to parse dest image name: %s", destStr)
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
