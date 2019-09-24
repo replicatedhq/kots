@@ -13,9 +13,10 @@ import { isKotsApplication, hasPendingPreflight } from "../../utilities/utilitie
 
 class DownstreamWatchVersionHistory extends Component {
 
-  handleMakeCurrent = (upstreamSlug, sequence, clusterSlug) => {
+  handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
-      this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
+      await this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
+      await this.props.data.refetch();
     }
   }
 
