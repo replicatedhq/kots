@@ -76,7 +76,7 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string = "pending"): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
