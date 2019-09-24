@@ -146,6 +146,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if pullOptions.RewriteImageOptions.Host != "" {
 			pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
 				RootDir:           pullOptions.RootDir,
+				ImagesDir:         imagesDirFromOptions(u, pullOptions),
 				CreateAppDir:      pullOptions.CreateAppDir,
 				Log:               log,
 				RegistryHost:      pullOptions.RewriteImageOptions.Host,
@@ -243,4 +244,16 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	}
 
 	return license.(*kotsv1beta1.License), nil
+}
+
+func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) string {
+	if pullOptions.RewriteImageOptions.ImageFiles != "" {
+		return pullOptions.RewriteImageOptions.ImageFiles
+	}
+
+	if pullOptions.CreateAppDir {
+		return filepath.Join(pullOptions.RootDir, upstream.Name, "images")
+	}
+
+	return filepath.Join(pullOptions.RootDir, "images")
 }

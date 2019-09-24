@@ -18,8 +18,8 @@ func TestReleaseStartNum(t *testing.T) {
 		Tag:    "2.5",
 	}, ref)
 	require.Equal(t,
-		"docker.io/library/debian/2.5",
-		ref.pathInBundle())
+		"docker-archive/docker.io/library/debian/2.5",
+		ref.pathInBundle("docker-archive"))
 
 	ref, err = imageRefImage("debian")
 	require.NoError(t, err)
@@ -29,8 +29,8 @@ func TestReleaseStartNum(t *testing.T) {
 		Tag:    "latest",
 	}, ref)
 	require.Equal(t,
-		"docker.io/library/debian/latest",
-		ref.pathInBundle())
+		"oci-archive/docker.io/library/debian/latest",
+		ref.pathInBundle("oci-archive"))
 
 	ref, err = imageRefImage("quay.io/replicated/debian:2.5")
 	require.NoError(t, err)
@@ -40,8 +40,8 @@ func TestReleaseStartNum(t *testing.T) {
 		Tag:    "2.5",
 	}, ref)
 	require.Equal(t,
-		"quay.io/replicated/debian/2.5",
-		ref.pathInBundle())
+		"docker-archive/quay.io/replicated/debian/2.5",
+		ref.pathInBundle("docker-archive"))
 
 	ref, err = imageRefImage("myorg/ubuntu:14")
 	require.NoError(t, err)
@@ -51,8 +51,8 @@ func TestReleaseStartNum(t *testing.T) {
 		Tag:    "14",
 	}, ref)
 	require.Equal(t,
-		"docker.io/myorg/ubuntu/14",
-		ref.pathInBundle())
+		"docker-archive/docker.io/myorg/ubuntu/14",
+		ref.pathInBundle("docker-archive"))
 
 	ref, err = imageRefImage("myorg/ubuntu@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2")
 	require.NoError(t, err)
@@ -62,6 +62,6 @@ func TestReleaseStartNum(t *testing.T) {
 		Digest: "sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
 	}, ref)
 	require.Equal(t,
-		"docker.io/myorg/ubuntu/sha256/45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
-		ref.pathInBundle())
+		"docker-archive/docker.io/myorg/ubuntu/sha256/45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+		ref.pathInBundle("docker-archive"))
 }
