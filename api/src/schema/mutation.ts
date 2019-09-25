@@ -20,6 +20,7 @@ type Mutation {
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
   resumeInstallOnline(slug: String!): Boolean
+  updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch

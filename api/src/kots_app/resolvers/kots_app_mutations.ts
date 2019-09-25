@@ -97,7 +97,14 @@ export function KotsMutations(stores: Stores) {
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       await stores.kotsAppStore.deleteApp(appId);
       return true;
-    }
+    },
 
+    async updateAppConfig(root: any, args: any, context: Context) {
+      const { slug, sequence, configGroups } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await stores.kotsAppStore.getApp(appId);
+      await app.updateAppConfig(stores, slug, sequence, configGroups);
+      return true;
+    },
   }
 }

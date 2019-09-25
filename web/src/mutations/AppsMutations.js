@@ -66,3 +66,8 @@ export const resumeInstallOnlineRaw = `
 
 export const resumeInstallOnline = gql(resumeInstallOnlineRaw);
 
+export const updateAppConfig = gql`
+  mutation updateAppConfig($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
+    updateAppConfig(slug: $slug, sequence: $sequence, configGroups: $configGroups)
+  }
+`;

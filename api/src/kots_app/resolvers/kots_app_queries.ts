@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails } from "../";
+import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails, KotsConfigGroup } from "../";
 import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
@@ -37,7 +37,6 @@ export function KotsQueries(stores: Stores) {
         _id = id;
       }
       const app = await stores.kotsAppStore.getApp(_id);
-
       const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
 
       return app.toSchema(downstreams, stores);
@@ -127,10 +126,14 @@ export function KotsQueries(stores: Stores) {
       return jsonFiles;
     },
 
+    async getKotsConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
+      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
+      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
+      return await app.getConfigGroups(args.sequence);
+    },
+
     async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
       return await stores.kotsAppStore.getAirgapInstallStatus();
     }
   }
-
-
 }
