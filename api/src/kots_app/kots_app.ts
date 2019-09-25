@@ -339,8 +339,8 @@ export class KotsApp {
     }
     const paths: string[] = await this.getFilesPaths(sequence);
     const files: FilesAsString = await this.getFiles(sequence, paths);
-    const { configContentPath } = await this.getConfigData(files);
-    return configContentPath !== "";
+    const { configPath } = await this.getConfigData(files);
+    return configPath !== "";
   }
 
   private readFile(s: NodeJS.ReadableStream): Promise<string> {
