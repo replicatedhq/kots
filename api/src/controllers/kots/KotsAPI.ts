@@ -146,7 +146,6 @@ export class KotsAPI {
       await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
     }
 
-
     return {
       uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
     };
@@ -159,31 +158,10 @@ export class KotsAPI {
     @Req() request: Request,
   ): Promise<any> {
     const metadata = JSON.parse(body.metadata);
-
-    // Todo this could use some proper not-found error handling stuffs
-    const kotsApp = await request.app.locals.stores.kotsAppStore.getApp(await request.app.locals.stores.kotsAppStore.getIdFromSlug(metadata.slug));
-
-    const newSequence = kotsApp.currentSequence + 1;
-
-    const params = await Params.getParams();
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${newSequence}.tar.gz`);
     const buffer = fs.readFileSync(file.path);
-    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+    const stores = request.app.locals.stores;
 
-    const supportBundleSpec = undefined;
-    const preflightSpec = undefined;
-
-    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
-
-    const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
-    for (const clusterId of clusterIds) {
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel);
-    }
-
-    return {
-      uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
-    };
+    return uploadUpdate(stores, metadata.slug, buffer);
   }
 
   @Post("/airgap")
@@ -314,4 +292,30 @@ export class KotsAPI {
       hasPreflight: hasPreflight,
     };
   }
+}
+
+export async function uploadUpdate(stores, slug, buffer) {
+  // Todo this could use some proper not-found error handling stuffs
+  const kotsApp = await stores.kotsAppStore.getApp(await stores.kotsAppStore.getIdFromSlug(slug));
+
+  const newSequence = kotsApp.currentSequence + 1;
+
+  const params = await Params.getParams();
+  const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${newSequence}.tar.gz`);
+  await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+  const supportBundleSpec = undefined;
+  const preflightSpec = undefined;
+
+  const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+
+  const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
+  for (const clusterId of clusterIds) {
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel);
+  }
+
+  return {
+    uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
+  };
 }

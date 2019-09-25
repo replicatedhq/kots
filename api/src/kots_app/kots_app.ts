@@ -1,7 +1,9 @@
 import { Params } from "../server/params";
 import { Stores } from "../schema/stores";
 import zlib from "zlib";
-import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "../troubleshoot/util";
+import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
+import { ReplicatedError } from "../server/errors";
+import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
 import { logger } from "../server/logger";
 import tmp from "tmp";
@@ -13,6 +15,7 @@ import { exec } from "child_process";
 import { Cluster } from "../cluster";
 import { KotsVersion } from "./"
 import * as _ from "lodash";
+import yaml from "js-yaml";
 
 export class KotsApp {
   id: string;
@@ -45,19 +48,18 @@ export class KotsApp {
     return stores.kotsAppStore.listPendingVersions(this.id, clusterId);
   }
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
-    return stores.kotsAppStore.listPastVersions(this.id,   clusterId);
+    return stores.kotsAppStore.listPastVersions(this.id, clusterId);
   }
 
-  // Source files
-  async generateFileTreeIndex(sequence) {
-    const supportBundleIndexJsonPath = "index.json";
+  async getFilesPaths(sequence: string): Promise<string[]> {
+    const bundleIndexJsonPath = "index.json";
     const indexFiles = await this.downloadFiles(this.id, sequence, [{
-      path: supportBundleIndexJsonPath,
-      matcher: eq(supportBundleIndexJsonPath),
+      path: bundleIndexJsonPath,
+      matcher: eq(bundleIndexJsonPath),
     }]);
 
-    const index = indexFiles.files[supportBundleIndexJsonPath] &&
-      JSON.parse(indexFiles.files[supportBundleIndexJsonPath]);
+    const index = indexFiles.files[bundleIndexJsonPath] &&
+      JSON.parse(indexFiles.files[bundleIndexJsonPath]);
 
     let paths: string[] = [];
     if (!index) {
@@ -66,6 +68,136 @@ export class KotsApp {
       index.map((p) => (paths.push(p.path)));
     }
 
+    return paths;
+  }
+
+  getPasswordMask(): string {
+    return "***HIDDEN***";
+  }
+
+  getOriginalItem(groups: KotsConfigGroup[], itemName: string) {
+    for (let g = 0; g < groups.length; g++) {
+      const group = groups[g];
+      for (let i = 0; i < group.items.length; i++) {
+        const item = group.items[i];
+        if (item.name === itemName) {
+          return item;
+        }
+      }
+    }
+    return null;
+  }
+
+  async getConfigData(files: FilesAsString): Promise<any> {
+    let configContent: any = {},
+        configPath: string = "",
+        configValuesContent: any = {},
+        configValuesPath: string = "";
+
+    for (const path in files.files) {
+      const content = yaml.safeLoad(files.files[path]);
+      if (!content) {
+        continue;
+      }
+      if (content.kind === "Config" && content.apiVersion === "kots.io/v1beta1") {
+        configContent = content;
+        configPath = path;
+      } else if (content.kind === "ConfigValues" && content.apiVersion === "kots.io/v1beta1") {
+        configValuesContent = content;
+        configValuesPath = path;
+      }
+    }
+
+    return {
+      configContent,
+      configPath,
+      configValuesContent,
+      configValuesPath,
+    }
+  }
+
+  shouldUpdateConfigValues(configGroups: KotsConfigGroup[], configValues: any, item: KotsConfigItem): boolean {
+    if (item.hidden || (item.type === "password" && item.value === this.getPasswordMask())) {
+      return false;
+    }
+    if (item.name in configValues) {
+      return item.value !== configValues[item.name];
+    } else {
+      const originalItem = this.getOriginalItem(configGroups, item.name);
+      if (originalItem && item.value) {
+        if (originalItem.value) {
+          return item.value !== originalItem.value;
+        } else if (originalItem.default) {
+          return item.value !== originalItem.default;
+        } else {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  async getConfigGroups(sequence: string): Promise<KotsConfigGroup[]> {
+    const paths: string[] = await this.getFilesPaths(sequence);
+    const files: FilesAsString = await this.getFiles(sequence, paths);
+    
+    const { configContent, configValuesContent } = await this.getConfigData(files);
+    
+    let configValues = {}, configGroups: KotsConfigGroup[] = [];
+    if (configContent.spec && configContent.spec.groups) {
+      configGroups = configContent.spec.groups;
+    }
+    if (configValuesContent.spec && configValuesContent.spec.values) {
+      configValues = configValuesContent.spec.values;
+    }
+
+    configGroups.forEach(group => {
+      group.items.forEach(item => {
+        if (item.type === "password") {
+          item.value = this.getPasswordMask();
+        } else if (item.name in configValues) {
+          item.value = configValues[item.name];
+        }
+      });
+    });
+    return configGroups;
+  }
+
+  async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[]): Promise<void> {
+    const paths: string[] = await this.getFilesPaths(sequence);
+    const files: FilesAsString = await this.getFiles(sequence, paths);
+
+    const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
+    
+    let configGroups: KotsConfigGroup[] = [];
+    if (configContent.spec && configContent.spec.groups) {
+      configGroups = configContent.spec.groups;
+    }
+
+    if (!configValuesContent.spec || !configValuesContent.spec.values || configValuesPath === "") {
+      throw new ReplicatedError("No config values were found in the files list");
+    }
+
+    const configValues = configValuesContent.spec.values;
+    updatedConfigGroups.forEach(group => {
+      group.items.forEach(async item => {
+        if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
+          configValues[item.name] = item.value;
+        }
+      });
+    });
+
+    files.files[configValuesPath] = yaml.safeDump(configValuesContent);
+
+    const bundlePacker = new TarballPacker();
+    const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
+
+    await uploadUpdate(stores, slug, tarGzBuffer);
+  }
+
+  // Source files
+  async generateFileTreeIndex(sequence) {
+    const paths = await this.getFilesPaths(sequence);
     const dirTree = await this.arrangeIntoTree(paths);
     return dirTree;
   }
@@ -175,7 +307,7 @@ export class KotsApp {
             mkdirp.sync(parsed.dir);
           }
 
-            fs.writeFileSync(fileName, contents);
+          fs.writeFileSync(fileName, contents);
           next();
         });
 
@@ -183,7 +315,7 @@ export class KotsApp {
           // Run kustomize
           exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, (err, stdout, stderr) => {
             if (err) {
-              logger.error({msg: "err running kustomize", err, stderr})
+              logger.error({ msg: "err running kustomize", err, stderr })
               reject(err);
               return;
             }
@@ -198,6 +330,17 @@ export class KotsApp {
     } finally {
       // tmpDir.removeCallback();
     }
+  }
+
+  private async isAppConfigurable(): Promise<boolean> {
+    const sequence = this.currentSequence ? `${this.currentSequence}` : "";
+    if (sequence === "") {
+      return false;
+    }
+    const paths: string[] = await this.getFilesPaths(sequence);
+    const files: FilesAsString = await this.getFiles(sequence, paths);
+    const { configPath } = await this.getConfigData(files);
+    return configPath !== "";
   }
 
   private readFile(s: NodeJS.ReadableStream): Promise<string> {
@@ -225,6 +368,7 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
+      isConfigurable: () => this.isAppConfigurable(),
       currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
@@ -233,7 +377,7 @@ export class KotsApp {
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: () => this.getPastVersions(downstream.id, stores),
           pendingVersions: () => this.getPendingVersions(downstream.id, stores),
-          cluster: kotsSchemaCluster,
+          cluster: kotsSchemaCluster
         };
       }),
     };
@@ -269,4 +413,39 @@ export interface KotsAppRegistryDetails {
   registryPassword: string;
   namespace: string;
   lastSyncedAt: string;
+}
+
+export interface KotsConfigChildItem {
+  name: string;
+  title: string;
+  recommended: boolean;
+  default: string;
+  value: string;
+}
+
+export interface KotsConfigItem {
+  name: string;
+  type: string;
+  title: string;
+  helpText: string;
+  recommended: boolean;
+  default: string;
+  value: string;
+  multiValue: [string];
+  readOnly: boolean;
+  writeOnce: boolean;
+  when: string;
+  multiple: boolean;
+  hidden: boolean;
+  position: number;
+  affix: string;
+  required: boolean;
+  items: KotsConfigChildItem[];
+}
+
+export interface KotsConfigGroup {
+  name: string;
+  title: string;
+  description: string;
+  items: KotsConfigItem[];
 }

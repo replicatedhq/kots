@@ -21,7 +21,7 @@ import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
 import PreflightResultPage from "../PreflightResultPage";
-import WatchConfig from "../watches/WatchConfig";
+import AppConfig from "../apps/AppConfig";
 import WatchLicense from "../watches/WatchLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
@@ -388,9 +388,9 @@ class AppDetailPage extends Component {
                       );
                     }} />
                     <Route exact path="/app/:slug/config" render={() =>
-                      <WatchConfig
-                        watch={app}
-                        onActiveInitSession={this.props.onActiveInitSession}
+                      <AppConfig
+                        app={app}
+                        refreshAppData={refreshAppData}
                       />
                     } />
                     <Route exact path="/app/:slug/troubleshoot" render={() =>

@@ -13,6 +13,7 @@ const KotsApp = `
     downstreams: [KotsDownstream]
     currentVersion: KotsVersion
     hasPreflight: Boolean
+    isConfigurable: Boolean
   }
 `;
 
@@ -72,12 +73,102 @@ const AirgapInstallStatus = `
   }
 `;
 
+const KotsConfigChildItem = `
+  type KotsConfigChildItem {
+    name: String
+    title: String
+    recommended: Boolean
+    default: String
+    value: String
+  }
+`;
+
+const KotsConfigChildItemInput = `
+  input KotsConfigChildItemInput {
+    name: String
+    title: String
+    recommended: Boolean
+    default: String
+    value: String
+  }
+`;
+
+const KotsConfigItem = `
+  type KotsConfigItem {
+    name: String
+    type: String
+    title: String
+    helpText: String
+    recommended: Boolean
+    default: String
+    value: String
+    multiValue: [String]
+    readOnly: Boolean
+    writeOnce: Boolean
+    when: String
+    multiple: Boolean
+    hidden: Boolean
+    position: Int
+    affix: String
+    required: Boolean
+    items: [KotsConfigChildItem]
+  }
+`;
+
+const KotsConfigItemInput = `
+  input KotsConfigItemInput {
+    name: String
+    type: String
+    title: String
+    helpText: String
+    recommended: Boolean
+    default: String
+    value: String
+    multiValue: [String]
+    readOnly: Boolean
+    writeOnce: Boolean
+    when: String
+    multiple: Boolean
+    hidden: Boolean
+    position: Int
+    affix: String
+    required: Boolean
+    items: [KotsConfigChildItemInput]
+  }
+`;
+
+const KotsConfigGroup = `
+  type KotsConfigGroup {
+    name: String!
+    title: String
+    description: String
+    items: [KotsConfigItem]
+  }
+`;
+
+const KotsConfigGroupInput = `
+  input KotsConfigGroupInput {
+    name: String!
+    title: String
+    description: String
+    items: [KotsConfigItemInput]
+  }
+`;
+
 export default [
   KotsApp,
   KotsDownstream,
   KotsVersion,
   KotsAppMetadata,
+  
   AppRegistryDetails,
   KotsAppRegistryDetails,
-  AirgapInstallStatus
+  AirgapInstallStatus,
+
+  KotsConfigChildItem,
+  KotsConfigChildItemInput,
+  KotsConfigItem,
+  KotsConfigItemInput,
+  KotsConfigGroup,
+  KotsConfigGroupInput,
 ];

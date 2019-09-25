@@ -1,4 +1,5 @@
 import tar from "tar-stream";
+import zlib from "zlib";
 
 export interface FilesAsString {
   fakeIndex: string[];
@@ -40,13 +41,13 @@ export class TarballUnpacker {
    */
   public async unpackFrom(tarStream: NodeJS.ReadableStream, filesWeCareAbout?: RequestedFile[]): Promise<FilesAsString> {
     if (!tarStream) {
-      return {files: {}, fakeIndex: []};
+      return { files: {}, fakeIndex: [] };
     }
 
     return await new Promise<FilesAsString>((resolve, reject) => {
       const extract = tar.extract();
 
-      const extractedFiles: FilesAsString = {files: {}, fakeIndex: []};
+      const extractedFiles: FilesAsString = { files: {}, fakeIndex: [] };
       const promises: Array<Promise<any>> = [];
 
       extract.on("entry", (header: any, stream: NodeJS.ReadableStream, requestNextTarFile: () => void) => {
@@ -101,5 +102,31 @@ export class TarballUnpacker {
         resolve(contents);
       });
     });
+  }
+}
+
+export class TarballPacker {
+
+  /**
+   * packFiles will create a .tar.gz for files
+   */
+  public async packFiles(files: FilesAsString): Promise<Buffer> {
+    return new Promise(resolve => {
+      const pack = tar.pack();
+      for (const path in files.files) {
+        pack.entry({ name: path }, files.files[path]);
+      }
+      const buffers: Buffer[] = [];
+      const gzipStream = zlib.createGzip();
+      pack.pipe(gzipStream)
+        .on('data', (buffer: Buffer) => {
+          buffers.push(buffer);
+        })
+        .on('end', () => {
+          const tarGz = Buffer.concat(buffers);
+          resolve(tarGz);
+        });
+      pack.finalize();
+    })
   }
 }

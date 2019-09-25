@@ -365,6 +365,7 @@ export const getKotsAppRaw = `
       currentSequence
       hasPreflight
       isAirgap
+      isConfigurable
       currentVersion {
         title
         status
@@ -538,3 +539,38 @@ export const getAirgapInstallStatusRaw = `
 `;
 
 export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);
+
+export const getKotsConfigGroups = gql`
+  query getKotsConfigGroups($slug: String!, $sequence: Int!) {
+    getKotsConfigGroups(slug: $slug, sequence: $sequence) {
+      name
+      title
+      description
+      items {
+        name
+        type
+        title
+        helpText
+        recommended
+        default
+        value
+        multiValue
+        readOnly
+        writeOnce
+        when
+        multiple
+        hidden
+        position
+        affix
+        required
+        items {
+          name
+          title
+          recommended
+          default
+          value
+        }
+      }
+    }
+  }
+`;
