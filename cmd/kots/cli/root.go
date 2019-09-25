@@ -22,6 +22,7 @@ func RootCmd() *cobra.Command {
 	cobra.OnInitialize(initConfig)
 
 	cmd.AddCommand(PullCmd())
+	cmd.AddCommand(MakeHelmChartCmd())
 	cmd.AddCommand(InstallCmd())
 	cmd.AddCommand(UploadCmd())
 	cmd.AddCommand(DownloadCmd())
