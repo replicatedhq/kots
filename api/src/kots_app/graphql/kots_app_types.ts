@@ -13,7 +13,7 @@ const KotsApp = `
     downstreams: [KotsDownstream]
     currentVersion: KotsVersion
     hasPreflight: Boolean
-    configurable: Boolean
+    isConfigurable: Boolean
   }
 `;
 

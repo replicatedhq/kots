@@ -365,7 +365,7 @@ export const getKotsAppRaw = `
       currentSequence
       hasPreflight
       isAirgap
-      configurable
+      isConfigurable
       currentVersion {
         title
         status

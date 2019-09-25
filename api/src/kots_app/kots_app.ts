@@ -368,7 +368,7 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
-      configurable: () => this.isAppConfigurable(),
+      isConfigurable: () => this.isAppConfigurable(),
       currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);

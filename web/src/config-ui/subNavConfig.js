@@ -43,7 +43,7 @@ export default [
     displayName: "Config",
     to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/config`,
     displayRule: watch => {
-      return watch.configurable || getApplicationType(watch) === "replicated.app";
+      return watch.isConfigurable || getApplicationType(watch) === "replicated.app";
     }
   },
   {
