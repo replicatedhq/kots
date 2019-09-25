@@ -2,11 +2,17 @@ package helm
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"sigs.k8s.io/kustomize/v3/k8sdeps/kunstruct"
@@ -48,12 +54,37 @@ func MakeHelmChart(options MakeHelmChartOptions) error {
 	// Look for
 	// Create the chart
 	// This is really raw
+
+	installationData, err := ioutil.ReadFile(path.Join(options.KotsAppDir, "upstream", "userdata", "installation.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get installation data")
+	}
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(installationData), nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode installation data")
+	}
+	installation := obj.(*kotsv1beta1.Installation)
+
+	appVersion := "1.0.0"
+	parsedAppVersion, err := semver.NewVersion(installation.Spec.VersionLabel)
+	if err == nil {
+		appVersion = parsedAppVersion.Original()
+	}
+
+	applicationName, applicastionIcon, err := findApplicationNameAndIcon(path.Join(options.KotsAppDir, "upstream"))
+	if err != nil {
+		return errors.Wrap(err, "failed to find application name and icon")
+	}
+
 	chart := &chart.Metadata{
 		Name:        chartName,
-		Description: "A Helm chart for Kubernetes",
-		Version:     "0.1.0",
-		AppVersion:  "1.0",
+		Description: applicationName,
+		Version:     fmt.Sprintf("1.0.%s", installation.Spec.UpdateCursor),
+		AppVersion:  appVersion,
 		ApiVersion:  chartutil.ApiVersionV1,
+		Icon:        applicastionIcon,
 	}
 
 	_, err = chartutil.Create(chart, options.RenderDir)
@@ -62,4 +93,48 @@ func MakeHelmChart(options MakeHelmChartOptions) error {
 	}
 
 	return nil
+}
+
+func findApplicationNameAndIcon(upstreamDir string) (string, string, error) {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	applicationName := ""
+	applicationIcon := ""
+
+	err := filepath.Walk(upstreamDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			fileData, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			obj, gvk, err := decode([]byte(fileData), nil, nil)
+			if err != nil {
+				return nil // skip, might not be yaml
+			}
+
+			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Application" {
+				application := obj.(*kotsv1beta1.Application)
+
+				applicationName = application.Spec.Title
+				applicationIcon = application.Spec.Icon
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	return applicationName, applicationIcon, nil
 }

@@ -152,7 +152,7 @@ func readCursorFromPath(rootPath string) (string, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to devode installation data")
+		return "", errors.Wrap(err, "failed to decode installation data")
 	}
 
 	installation := obj.(*kotsv1beta1.Installation)

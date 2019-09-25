@@ -73,7 +73,10 @@ func MakeHelmChartCmd() *cobra.Command {
 
 			log := logger.NewLogger()
 			log.Initialize()
-			log.Info("Helm chart created in %s", renderDir)
+
+			_, name := path.Split(renderDir)
+			chartPath := path.Join(ExpandDir(v.GetString("rootdir")), name)
+			log.Info("Helm chart created in %s", chartPath)
 
 			return nil
 		},
