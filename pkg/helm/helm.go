@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/Masterminds/semver"
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -51,10 +52,6 @@ func MakeHelmChart(options MakeHelmChartOptions) error {
 		return errors.Wrap(err, "failed to run kustomize build")
 	}
 
-	// Look for
-	// Create the chart
-	// This is really raw
-
 	installationData, err := ioutil.ReadFile(path.Join(options.KotsAppDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to get installation data")
@@ -90,6 +87,15 @@ func MakeHelmChart(options MakeHelmChartOptions) error {
 	_, err = chartutil.Create(chart, options.RenderDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to render chart")
+	}
+
+	values, err := kotsConfigToHelmValues(path.Join(options.KotsAppDir, "upstream"))
+	if err != nil {
+		return errors.Wrap(err, "failed to turn kots config into helm values")
+	}
+
+	if err := ioutil.WriteFile(path.Join(options.RenderDir, chartName, "values.yaml"), values, 0644); err != nil {
+		return errors.Wrap(err, "failed to write values")
 	}
 
 	return nil
@@ -137,4 +143,62 @@ func findApplicationNameAndIcon(upstreamDir string) (string, string, error) {
 	}
 
 	return applicationName, applicationIcon, nil
+}
+
+func kotsConfigToHelmValues(upstreamDir string) ([]byte, error) {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	var values []byte
+
+	err := filepath.Walk(upstreamDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			fileData, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			obj, gvk, err := decode([]byte(fileData), nil, nil)
+			if err != nil {
+				return nil // skip, might not be yaml
+			}
+
+			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
+				config := obj.(*kotsv1beta1.Config)
+
+				simple := map[string]interface{}{}
+				for _, group := range config.Spec.Groups {
+					items := map[string]string{}
+
+					for _, item := range group.Items {
+						items[item.Name] = ""
+					}
+
+					simple[group.Name] = items
+				}
+
+				b, err := yaml.Marshal(simple)
+				if err != nil {
+					return err
+				}
+
+				values = b
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	return values, nil
 }

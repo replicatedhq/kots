@@ -61,6 +61,7 @@ func MakeHelmChartCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			makeHelmChartOptions := helm.MakeHelmChartOptions{
 				KotsAppDir:       renderDir,
 				KustomizationDir: path.Join(renderDir, "overlays", "midstream"),
