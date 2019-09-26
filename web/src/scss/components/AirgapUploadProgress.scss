@@ -1,0 +1,15 @@
+.AirgapUploadProgress--wrapper {
+
+
+  .progressbar {
+    height: 50px;
+    width:  500px;
+    border: 1px solid #323232;
+  }
+
+  .progressbar-meter {
+    transition: all 1s;
+    height: 50px;
+    background-color: #326DE6;
+  }
+}

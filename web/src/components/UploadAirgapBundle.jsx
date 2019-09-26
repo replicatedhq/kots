@@ -22,22 +22,49 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
-    const { onUploadSuccess } = this.props;
-    this.setState({ fileUploading: true });
-      const formData = new FormData();
-      formData.append("file", this.state.bundleFile);
-      formData.append("registryHost", this.state.registryDetails.hostname);
-      formData.append("namespace", this.state.registryDetails.namespace);
-      formData.append("username", this.state.registryDetails.username);
-      formData.append("password", this.state.registryDetails.password);
-      const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
-      fetch(url, {
-        method: "POST",
-        body: formData
-      })
-      .then(async (result) => {
-        const response = await result.json();
-        await onUploadSuccess(); // Refetch list apps
+    const { onUploadSuccess, match } = this.props;
+
+    // Reset the airgap upload state
+    const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
+    await fetch(resetUrl, {
+      method: "POST"
+    });
+
+    this.setState({ fileUploading: true, errorMessage: "" });
+
+    const formData = new FormData();
+    formData.append("file", this.state.bundleFile);
+    formData.append("registryHost", this.state.registryDetails.hostname);
+    formData.append("namespace", this.state.registryDetails.namespace);
+    formData.append("username", this.state.registryDetails.username);
+    formData.append("password", this.state.registryDetails.password);
+    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = event => {
+      const total = event.total;
+      const sent = event.loaded;
+
+      this.setState({
+        uploadSent: sent,
+        uploadTotal: total
+      });
+    }
+
+    xhr.upload.onerror = () => {
+      this.setState({
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
+      });
+
+    }
+
+    xhr.onloadend = async () => {
+      if (xhr.status === 200) {
+        await onUploadSuccess();
+        const response = xhr.response;
 
         if (response.hasPreflight) {
           this.props.history.replace(`/preflight`);
@@ -46,11 +73,11 @@ class UploadAirgapBundle extends React.Component {
         } else {
           throw new Error(`Error uploading airgap bundle: ${response}`);
         }
-      })
-      .catch(function (err) {
-        this.setState({ fileUploading: false });
-        console.log(err);
-      }.bind(this));
+      }
+    }
+
+    xhr.open("POST", url);
+    xhr.send(formData);
   }
 
   getRegistryDetails = (fields) => {
@@ -82,6 +109,18 @@ class UploadAirgapBundle extends React.Component {
     }
   }
 
+  onProgressError = (errorMessage) => {
+    // Push this setState call to the end of the call stack
+    setTimeout(() => {
+      this.setState({
+        errorMessage,
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0
+      });
+    }, 0);
+  }
+
   render() {
     const {
       appName,
@@ -89,13 +128,26 @@ class UploadAirgapBundle extends React.Component {
       fetchingMetadata,
       data
     } = this.props;
-    const { bundleFile, fileUploading } = this.state;
+    const {
+      bundleFile,
+      fileUploading,
+      uploadSent,
+      uploadTotal,
+      errorMessage,
+      registryDetails
+    } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
     const kotsApp = data?.getKotsApp;
     const isLoading = data.loading;
 
     if (fileUploading) {
-      return <AirgapUploadProgress />;
+      return (
+        <AirgapUploadProgress
+          total={uploadTotal}
+          sent={uploadSent}
+          onProgressError={this.onProgressError}
+        />
+      );
     }
 
     return (
@@ -120,9 +172,11 @@ class UploadAirgapBundle extends React.Component {
               <AirgapRegistrySettings
                 app={null}
                 hideCta={true}
+                errorMessage={errorMessage}
                 hideTestConnection={true}
                 namespaceDescription="What namespace do you want the application images pushed to?"
                 gatherDetails={this.getRegistryDetails}
+                registryDetails={registryDetails}
               />
             </div>
             <div className="u-marginTop--20 flex">

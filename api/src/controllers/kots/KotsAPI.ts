@@ -182,6 +182,7 @@ export class KotsAPI {
     let hasPreflight: Boolean;
     var liveness: any;
     try {
+      await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
       await request.app.locals.stores.kotsAppStore.setAirgapInstallInProgress(app.id);
 
       liveness = setInterval(() => {
@@ -272,8 +273,6 @@ export class KotsAPI {
         tmpDstDir.removeCallback();
       }
 
-      await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
-
       appSlug = app.slug;
     } catch(err) {
 
@@ -292,6 +291,19 @@ export class KotsAPI {
       hasPreflight: hasPreflight,
     };
   }
+
+  @Post("/airgap/reset/:slug")
+  async kotsResetAirgapUpload(
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    const slug = request.params.slug;
+
+    const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
+    await request.app.locals.stores.kotsAppStore.setAirgapInstallInProgress(appId);
+    response.send(200);
+  }
+
 }
 
 export async function uploadUpdate(stores, slug, buffer) {
