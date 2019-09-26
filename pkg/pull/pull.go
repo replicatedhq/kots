@@ -1,6 +1,9 @@
 package pull
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
@@ -10,9 +13,12 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/downstream"
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
 )
@@ -128,8 +134,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
+	var pullSecret *corev1.Secret
 	var images []image.Image
+	var objects []*k8sdoc.Doc
 	if pullOptions.RewriteImages {
+		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
 			writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
 				RootDir:      pullOptions.RootDir,
@@ -159,6 +168,33 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 			images = rewrittenImages
 		}
+	} else if fetchOptions.License != nil {
+		// Rewrite private images
+		registryInfo := registryProxyEndpointFromLicense(fetchOptions.License)
+		findPrivateImagesOptions := upstream.FindPrivateImagesOptions{
+			RootDir:      pullOptions.RootDir,
+			CreateAppDir: pullOptions.CreateAppDir,
+			AppSlug:      fetchOptions.License.Spec.AppSlug,
+			// TODO: This should use command line "registry-endpoint" arg as the override
+			ReplicatedRegistry:      registryInfo.Registry,
+			ReplicatedRegistryProxy: registryInfo.Proxy,
+			Log:                     log,
+		}
+		rewrittenImages, affectedObjects, err := u.FindPrivateImages(findPrivateImagesOptions)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to push upstream images")
+		}
+
+		// Note that there maybe no rewritten images if only replicated private images are being used.
+		// We still need to create the secret in that case.
+		if len(affectedObjects) > 0 {
+			pullSecret, err = pullSecretFromToken(registryInfo, fetchOptions.License.Spec.LicenseID, pullOptions.Namespace)
+			if err != nil {
+				return "", errors.Wrap(err, "create pull secret")
+			}
+		}
+		images = rewrittenImages
+		objects = affectedObjects
 	}
 
 	renderOptions := base.RenderOptions{
@@ -184,7 +220,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	log.ActionWithSpinner("Creating midstream")
 
-	m, err := midstream.CreateMidstream(b, images)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
 	}
@@ -246,6 +282,39 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	return license.(*kotsv1beta1.License), nil
 }
 
+type registryInfo struct {
+	Registry string
+	Proxy    string
+}
+
+func registryProxyEndpointFromLicense(license *kotsv1beta1.License) *registryInfo {
+	defaultInfo := &registryInfo{
+		Registry: "registry.replicated.com",
+		Proxy:    "proxy.replicated.com",
+	}
+
+	u, err := url.Parse(license.Spec.Endpoint)
+	if err != nil {
+		return defaultInfo
+	}
+
+	switch u.Hostname() {
+	case "staging.replicated.app":
+		return &registryInfo{
+			Registry: "registry.staging.replicated.com",
+			Proxy:    "proxy.staging.replicated.com",
+		}
+	case "localhost":
+		// TODO: not real info
+		return &registryInfo{
+			Registry: "localhost:1234",
+			Proxy:    "localhost:1234",
+		}
+	default:
+		return defaultInfo
+	}
+}
+
 func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) string {
 	if pullOptions.RewriteImageOptions.ImageFiles != "" {
 		return pullOptions.RewriteImageOptions.ImageFiles
@@ -256,4 +325,47 @@ func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) 
 	}
 
 	return filepath.Join(pullOptions.RootDir, "images")
+}
+
+func pullSecretFromToken(registries *registryInfo, token string, namespace string) (*corev1.Secret, error) {
+	dockercfgAuth := struct {
+		Username string `json:"username,omitempty"`
+		Password string `json:"password,omitempty"`
+		Auth     string `json:"auth,omitempty"`
+	}{
+		Username: token,
+		Password: token,
+		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", token, token))),
+	}
+
+	dockerCfgJSON := struct {
+		Auths map[string]interface{} `json:"auths"`
+	}{
+		Auths: map[string]interface{}{
+			registries.Proxy:    dockercfgAuth,
+			registries.Registry: dockercfgAuth,
+		},
+	}
+
+	secretData, err := json.Marshal(dockerCfgJSON)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal pull secret data")
+	}
+
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-replicated-registry", // TODO: hardcode or generate the name?
+			Namespace: namespace,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			".dockerconfigjson": secretData,
+		},
+	}
+
+	return secret, nil
 }

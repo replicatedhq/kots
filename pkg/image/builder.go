@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,33 +15,16 @@ import (
 	"github.com/containers/image/transports/alltransports"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
+	imagedocker "github.com/containers/image/docker"
+	"github.com/docker/distribution/registry/api/errcode"
 )
 
 var imagePolicy = []byte(`{
   "default": [{"type": "insecureAcceptAnything"}]
 }`)
-
-type k8sYAML struct {
-	Spec k8sSpec `yaml:"spec"`
-}
-
-type k8sSpec struct {
-	Template k8sTemplate `yaml:"template"`
-}
-
-type k8sTemplate struct {
-	Spec k8sPodSpec `yaml:"spec"`
-}
-
-type k8sPodSpec struct {
-	Containers []k8sContainer `yaml:"containers"`
-}
-
-type k8sContainer struct {
-	Image string `yaml:"image"`
-}
 
 type ImageRef struct {
 	Domain string
@@ -72,7 +56,7 @@ func SaveImages(log *logger.Logger, imagesDir string, upstreamDir string) error 
 				return err
 			}
 
-			err = extractImagesFromFile(log, imagesDir, contents, savedImages)
+			err = saveImagesFromFile(log, imagesDir, contents, savedImages)
 			if err != nil {
 				return errors.Wrap(err, "failed to extract images")
 			}
@@ -87,28 +71,101 @@ func SaveImages(log *logger.Logger, imagesDir string, upstreamDir string) error 
 	return nil
 }
 
-func extractImagesFromFile(log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
-	yamlDocs := bytes.Split(fileData, []byte("\n---\n"))
-	for _, yamlDoc := range yamlDocs {
-		parsed := &k8sYAML{}
-		if err := yaml.Unmarshal(yamlDoc, parsed); err != nil {
-			continue
-		}
+func GetPrivateImages(upstreamDir string) ([]string, []*k8sdoc.Doc, error) {
+	uniqueImages := make(map[string]bool)
+	objects := make([]*k8sdoc.Doc, 0) // all objects where images are referenced from
 
-		for _, container := range parsed.Spec.Template.Spec.Containers {
-			if _, saved := savedImages[container.Image]; saved {
+	err := filepath.Walk(upstreamDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
+				numPrivateImages := 0
+				for _, image := range images {
+					isPrivate, err := isPrivateImage(image)
+					if err != nil {
+						return errors.Wrap(err, "failed to check if image is private")
+					}
+					if !isPrivate {
+						continue
+					}
+					numPrivateImages = numPrivateImages + 1
+					uniqueImages[image] = true
+				}
+
+				if numPrivateImages == 0 {
+					return nil
+				}
+
+				objects = append(objects, doc)
+				return nil
+			})
+		})
+
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	result := make([]string, 0, len(uniqueImages))
+	for i := range uniqueImages {
+		result = append(result, i)
+	}
+
+	return result, objects, nil
+}
+
+func saveImagesFromFile(log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
+	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
+		for _, image := range images {
+			if _, saved := savedImages[image]; saved {
 				continue
 			}
 
-			log.ChildActionWithSpinner("Pulling image %s", container.Image)
-			err := saveOneImage(imagesDir, container.Image)
+			log.ChildActionWithSpinner("Pulling image %s", image)
+			err := saveOneImage(imagesDir, image)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrap(err, "failed to save image")
 			}
 
 			log.FinishChildSpinner()
-			savedImages[container.Image] = true
+			savedImages[image] = true
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+type processImagesFunc func([]string, *k8sdoc.Doc) error
+
+func listImagesInFile(contents []byte, handler processImagesFunc) error {
+	yamlDocs := bytes.Split(contents, []byte("\n---\n"))
+	for _, yamlDoc := range yamlDocs {
+		parsed := &k8sdoc.Doc{}
+		if err := yaml.Unmarshal(yamlDoc, parsed); err != nil {
+			continue
+		}
+
+		images := make([]string, 0)
+		for _, container := range parsed.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
+		if err := handler(images, parsed); err != nil {
+			return err
 		}
 	}
 
@@ -238,4 +295,48 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string)
 	}
 
 	return nil
+}
+
+func isPrivateImage(image string) (bool, error) {
+	// ParseReference requires the // prefix
+	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse image ref:%s", image)
+	}
+
+	remoteImage, err := ref.NewImage(context.Background(), nil)
+	if err == nil {
+		remoteImage.Close()
+		return false, nil
+	}
+
+	if !isUnauthorized(err) {
+		return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
+	}
+
+	return true, nil
+}
+
+func isUnauthorized(err error) bool {
+	if err == imagedocker.ErrUnauthorizedForCredentials {
+		return true
+	}
+
+	switch err := err.(type) {
+	case errcode.Errors:
+		for _, e := range err {
+			if isUnauthorized(e) {
+				return true
+			}
+		}
+	case errcode.Error:
+		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
+	}
+
+	cause := errors.Cause(err)
+	if cause == err {
+		return false
+	}
+
+	return isUnauthorized(cause)
 }
