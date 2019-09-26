@@ -2,6 +2,10 @@ package upstream
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path"
@@ -39,17 +43,28 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	}
 
 	var previousValuesContent []byte
+	var previousInstallationContent []byte
 	_, err := os.Stat(renderDir)
 	if err == nil {
 		// if there's already a values yaml, we need to save
-		_, err := os.Stat(path.Join(renderDir, "userdata/values.yaml"))
+		_, err := os.Stat(path.Join(renderDir, "userdata", "values.yaml"))
 		if err == nil {
-			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata/values.yaml"))
+			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "values.yaml"))
 			if err != nil {
 				return errors.Wrap(err, "failed to read existing values")
 			}
 
 			previousValuesContent = c
+		}
+
+		_, err = os.Stat(path.Join(renderDir, "userdata", "installation.yaml"))
+		if err == nil {
+			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
+			if err != nil {
+				return errors.Wrap(err, "failed to read existing installation")
+			}
+
+			previousInstallationContent = c
 		}
 
 		if err := os.RemoveAll(renderDir); err != nil {
@@ -95,6 +110,11 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	}
 
 	// Write the installation status (update cursor, etc)
+	// but preserving the encryption key, if there already is one
+	encryptionKey, err := getEncryptionKey(previousInstallationContent)
+	if err != nil {
+		return errors.Wrap(err, "failed to get encryption key")
+	}
 	installation := kotsv1beta1.Installation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",
@@ -104,8 +124,9 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 			Name: u.Name,
 		},
 		Spec: kotsv1beta1.InstallationSpec{
-			UpdateCursor: u.UpdateCursor,
-			VersionLabel: u.VersionLabel,
+			UpdateCursor:  u.UpdateCursor,
+			VersionLabel:  u.VersionLabel,
+			EncryptionKey: encryptionKey,
 		},
 	}
 	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {
@@ -130,13 +151,52 @@ func (u *Upstream) GetBaseDir(options WriteOptions) string {
 	return path.Join(renderDir, "base")
 }
 
+func getEncryptionKey(previousInstallationContent []byte) (string, error) {
+	if previousInstallationContent == nil {
+		key := make([]byte, 24) // 192 bit
+		if _, err := rand.Read(key); err != nil {
+			return "", errors.Wrap(err, "failed to read key")
+		}
+
+		block, err := aes.NewCipher(key)
+		if err != nil {
+			return "", errors.Wrap(err, "failed ro create new cipher")
+		}
+
+		gcm, err := cipher.NewGCM(block)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to wrap cipher gcm")
+		}
+
+		nonce := make([]byte, gcm.NonceSize())
+		if _, err := rand.Read(nonce); err != nil {
+			return "", errors.Wrap(err, "failed to read nonce")
+		}
+
+		newKey := base64.StdEncoding.EncodeToString(append(key, nonce...))
+
+		return newKey, nil
+	}
+
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	prevObj, _, err := decode(previousInstallationContent, nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decode previous installation")
+	}
+	installation := prevObj.(*kotsv1beta1.Installation)
+
+	return installation.Spec.EncryptionKey, nil
+}
+
 func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]byte, error) {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	prevObj, _, err := decode(previousValues, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode previoius values")
+		return nil, errors.Wrap(err, "failed to decode previous values")
 	}
 	prevValues := prevObj.(*kotsv1beta1.ConfigValues)
 

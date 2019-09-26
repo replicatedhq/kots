@@ -6,10 +6,11 @@ type UpstreamFile struct {
 }
 
 type Upstream struct {
-	URI          string
-	Name         string
-	Type         string
-	Files        []UpstreamFile
-	UpdateCursor string
-	VersionLabel string
+	URI           string
+	Name          string
+	Type          string
+	Files         []UpstreamFile
+	UpdateCursor  string
+	VersionLabel  string
+	EncryptionKey string
 }
