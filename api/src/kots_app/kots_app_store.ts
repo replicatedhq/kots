@@ -6,7 +6,6 @@ import { signPutRequest, signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
-import jsYaml from "js-yaml";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -344,7 +343,7 @@ order by sequence desc`;
   }
 
   async listInstalledKotsApps(userId?: string): Promise<KotsApp[]> {
-    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1 and install_state = 'installed'`;
+    const q = `select id from app inner join user_app on app_id = id where user_app.user_id = $1 and install_state like '%installed'`;
     const v = [userId];
 
     const result = await this.pool.query(q, v);
@@ -379,7 +378,7 @@ order by sequence desc`;
   }
 
   async setKotsAirgapAppInstalled(appId: string) {
-    const q = `update app set install_state = 'installed' where id = $1`;
+    const q = `update app set install_state = 'airgap_installed' where id = $1`;
     const v = [appId];
 
     await this.pool.query(q, v);
@@ -428,7 +427,7 @@ order by sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, install_state from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -445,23 +444,12 @@ order by sequence desc`;
       current_sequence
     ];
 
-    // Determine if an app is airgapped
-    let isAirgap = false;
-    if (row.license) {
-      try {
-        const parsedLicense = jsYaml.safeLoad(row.license);
-        isAirgap = !!parsedLicense.spec.isAirgapSupported;
-      } catch (error) {
-        // Unable to parse license to determine airgap status
-      }
-    }
-
     const rr = await this.pool.query(qq, vv);
     const kotsApp = new KotsApp();
     kotsApp.id = row.id;
     kotsApp.name = row.name;
     kotsApp.license = row.license;
-    kotsApp.isAirgap = isAirgap;
+    kotsApp.isAirgap = row.install_state.startsWith("airgap");
     kotsApp.upstreamUri = row.upstream_uri;
     kotsApp.iconUri = row.icon_uri;
     kotsApp.createdAt = new Date(row.created_at);
