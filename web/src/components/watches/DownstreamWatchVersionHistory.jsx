@@ -4,6 +4,7 @@ import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
+import filter from "lodash/filter";
 
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
@@ -20,6 +21,15 @@ class DownstreamWatchVersionHistory extends Component {
     }
   }
 
+  getActiveDownstreamVersion = versionHistory => {
+    if (!versionHistory.length) {
+      return null;
+    }
+    const deployed = filter(versionHistory, version => version.status === "deployed");
+    deployed.sort((v1, v2) => v1.sequence > v2.sequence);
+    return deployed.length ? deployed[0] : null;
+  }
+
   render() {
     const { watch, match, data } = this.props;
     const { watches, downstreams } = watch;
@@ -32,6 +42,7 @@ class DownstreamWatchVersionHistory extends Component {
     } else if (data?.getDownstreamHistory?.length) {
       versionHistory = data.getDownstreamHistory;
     }
+    const activeDownstreamVersion = this.getActiveDownstreamVersion(versionHistory);
     const downstreamSlug = downstreamWatch ? downstreamWatch.cluster?.slug : "";
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
 
@@ -57,10 +68,11 @@ class DownstreamWatchVersionHistory extends Component {
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Active release</p>
           </div>
           <div>
-            {downstreamWatch?.currentVersion ?
+            {activeDownstreamVersion ?
               <DownstreamVersionRow
+                key="current-downstream-version"
                 downstreamWatch={downstreamWatch}
-                version={downstreamWatch.currentVersion}
+                version={activeDownstreamVersion}
                 isKots={isKots}
                 urlParams={match.params}
                 handleMakeCurrent={this.handleMakeCurrent}

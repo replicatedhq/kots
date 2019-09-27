@@ -312,7 +312,7 @@ export async function uploadUpdate(stores, slug, buffer) {
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel);
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel, "pending");
   }
 
   return {
