@@ -15,7 +15,7 @@ function AirgapUploadProgress(props) {
   const hasError = getAirgapInstallStatus?.installStatus === "airgap_upload_error";
 
   if (hasError) {
-    getAirgapInstallStatus.stopPolling();
+    props.data.stopPolling();
   }
 
   return (
