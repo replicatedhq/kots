@@ -1,4 +1,6 @@
 # Kubernetes Off The Shelf (KOTS) Software
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Freplicatedhq%2Fkots.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Freplicatedhq%2Fkots?ref=badge_shield)
+
 
 ## CLI
 
@@ -43,3 +45,7 @@ kubectl kots download [--namespace] [app-slug]
 ```
 
 The app-slug argument is optional. If there is more than 1 application in the specified namespace, kots will prompt for which one to download.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Freplicatedhq%2Fkots.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Freplicatedhq%2Fkots?ref=badge_large)
