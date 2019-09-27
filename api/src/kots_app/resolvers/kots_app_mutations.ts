@@ -72,7 +72,7 @@ export function KotsMutations(stores: Stores) {
         }
       }
       await kotsFinalizeApp(app, downstream.title, stores)
-      await stores.kotsAppStore.setKotsAirgapAppInstalled(appId);
+      await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
       return true;
     },
 

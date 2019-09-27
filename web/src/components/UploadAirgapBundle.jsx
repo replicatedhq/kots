@@ -4,6 +4,7 @@ import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+import { getKotsApp } from "../queries/AppsQueries";
 import { resumeInstallOnline } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -86,9 +87,12 @@ class UploadAirgapBundle extends React.Component {
       appName,
       logo,
       fetchingMetadata,
+      data
     } = this.props;
     const { bundleFile, fileUploading } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
+    const kotsApp = data?.getKotsApp;
+    const isLoading = data.loading;
 
     if (fileUploading) {
       return <AirgapUploadProgress />;
@@ -161,9 +165,11 @@ class UploadAirgapBundle extends React.Component {
             }
           </div>
         </div>
-        <div className="u-marginTop--20">
-          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
-        </div>
+        {!isLoading && !kotsApp.isAirgap && (
+          <div className="u-marginTop--20">
+            <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+          </div>
+        )}
       </div>
     );
   }
@@ -172,6 +178,19 @@ class UploadAirgapBundle extends React.Component {
 export default compose(
   withRouter,
   withApollo,
+  graphql(getKotsApp, {
+    options: props => {
+      const { match } = props;
+      const slug = match.params.slug;
+
+      return {
+        fetchPolicy: "network-only",
+        variables: {
+          slug
+        }
+      };
+    }
+  }),
   graphql(resumeInstallOnline, {
     props:({ mutate }) => ({
       resumeInstallOnline: (slug) => mutate({ variables: { slug } })
