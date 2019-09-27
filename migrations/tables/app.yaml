@@ -54,3 +54,6 @@ spec:
         type: timestamp without time zone
       - name: install_state
         type: text
+      - name: is_airgap
+        type: boolean
+        default: "false"
