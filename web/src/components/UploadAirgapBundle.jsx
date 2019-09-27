@@ -112,6 +112,16 @@ class UploadAirgapBundle extends React.Component {
   onProgressError = (errorMessage) => {
     // Push this setState call to the end of the call stack
     setTimeout(() => {
+      const COMMON_ERRORS = {
+        "invalid username/password": "Registry credentials are invalid"
+      };
+
+      Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
+        if (errorMessage.includes(errorString)){
+          errorMessage = message;
+        }
+      });
+
       this.setState({
         errorMessage,
         fileUploading: false,

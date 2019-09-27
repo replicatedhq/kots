@@ -38,9 +38,8 @@ function AirgapUploadProgress(props) {
   return (
     <div className="AirgapUploadProgress--wrapper flex1 flex-column alignItems--center justifyContent--center">
       <div className="flex1 flex-column alignItems--center justifyContent--center u-color--tuna">
-        <Loader size={60} color="#326DE6"/>
-        {progressBar}
-        Uploading your airgap bundle<br />
+        {progressBar || <Loader size={60} color="#326DE6" />}
+        {progressBar ? "Uploading" : "Processing"} your airgap bundle<br />
         <div className={classNames("u-marginTop--20", {
           "u-color--chestnut": hasError
         })}>
