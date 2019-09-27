@@ -31,10 +31,6 @@ class AppConfig extends Component {
     }
   }
 
-  getConfigData = updatedGroups => {
-    this.setState({ configGroups: updatedGroups });
-  }
-
   handleSave = () => {
     this.setState({ savingConfig: true });
 
@@ -73,7 +69,7 @@ class AppConfig extends Component {
         <div className="ConfigOuterWrapper flex u-padding--15" >
           <div className="ConfigInnerWrapper flex1 u-padding--15">
             <div className="flex1">
-              <ShipConfigRenderer groups={configGroups} getData={this.getConfigData} />
+              <ShipConfigRenderer groups={configGroups} />
             </div>
           </div>
         </div>
