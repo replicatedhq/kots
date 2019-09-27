@@ -27,7 +27,7 @@ export class HealthzStore {
         connected: true,
       },
       storage: {
-        available: true,
+        available: storageReady,
       }
     };
   }
