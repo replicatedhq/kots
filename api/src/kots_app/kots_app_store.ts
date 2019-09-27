@@ -611,10 +611,11 @@ order by sequence desc`;
     if (result.rows.length !== 1) {
       throw new Error("Could not find any kots app in getAirgapInstallStatus()");
     }
+    const currentMessage = (messageQueryResult.rows[0] && messageQueryResult.rows[0].current_message) || "";
 
     return {
       installStatus: result.rows[0].install_state,
-      currentMessage: messageQueryResult.rows[0].current_message
+      currentMessage
     };
   }
 
