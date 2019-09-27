@@ -1,6 +1,8 @@
 package kotsadm
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/semver"
 	"github.com/replicatedhq/kots/pkg/version"
 )
@@ -18,5 +20,5 @@ func kotsadmTag() string {
 		return "alpha"
 	}
 
-	return kotsVersion
+	return fmt.Sprintf("v%s", kotsVersion)
 }
