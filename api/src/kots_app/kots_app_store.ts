@@ -377,6 +377,16 @@ order by sequence desc`;
     return app;
   }
 
+  async setKotsAppInstallState(appId: string, state: string) {
+    const q = `update app set install_state = $1 where id = $2`;
+    const v = [
+      state,
+      appId
+    ];
+
+    await this.pool.query(q,v);
+  }
+
   async setKotsAirgapAppInstalled(appId: string) {
     const q = `update app set install_state = 'installed', is_airgap = true where id = $1`;
     const v = [appId];
