@@ -140,9 +140,9 @@ export class KotsApp {
   async getConfigGroups(sequence: string): Promise<KotsConfigGroup[]> {
     const paths: string[] = await this.getFilesPaths(sequence);
     const files: FilesAsString = await this.getFiles(sequence, paths);
-    
+
     const { configContent, configValuesContent } = await this.getConfigData(files);
-    
+
     let configValues = {}, configGroups: KotsConfigGroup[] = [];
     if (configContent.spec && configContent.spec.groups) {
       configGroups = configContent.spec.groups;
@@ -168,7 +168,7 @@ export class KotsApp {
     const files: FilesAsString = await this.getFiles(sequence, paths);
 
     const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
-    
+
     let configGroups: KotsConfigGroup[] = [];
     if (configContent.spec && configContent.spec.groups) {
       configGroups = configContent.spec.groups;
@@ -333,7 +333,7 @@ export class KotsApp {
   }
 
   private async isAppConfigurable(): Promise<boolean> {
-    const sequence = this.currentSequence ? `${this.currentSequence}` : "";
+    const sequence = Number.isInteger(this.currentSequence!) ? `${this.currentSequence}` : "";
     if (sequence === "") {
       return false;
     }
