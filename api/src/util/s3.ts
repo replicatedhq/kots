@@ -148,13 +148,13 @@ export async function bucketExists(params: Params, bucketName: string): Promise<
   return new Promise<boolean>(resolve => {
     const s3 = getS3(params);
 
-    s3.headBucket({Bucket: bucketName}, err => {
-      if (err) {
-        resolve(false);
+    s3.headObject({ Bucket: bucketName, Key: "no_such_file.tar.gz" }, err => {
+      if (err.code === "NotFound") {
+        resolve(true);
         return;
       }
 
-      resolve(true);
+      resolve(false);
     });
   });
 }
