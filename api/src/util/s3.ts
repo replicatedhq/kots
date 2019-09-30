@@ -83,21 +83,21 @@ export async function signPutRequest(params: Params, bucket: string, key: string
   const s3 = getS3(params);
 
   return new Promise((resolve, reject) => {
-    const params = {
+    const s3Params = {
       Bucket: bucket,
       Key: key,
       ContentType: contentType,
       Expires: expires,
     };
 
-    s3.getSignedUrl("putObject", params, (err, uploadUrl) => {
+    s3.getSignedUrl("putObject", s3Params, (err, uploadUrl) => {
       if (err) {
         reject(err);
         return;
       }
 
       if (process.env["S3_ENDPOINT"]) {
-        uploadUrl = uploadUrl.replace(process.env["S3_ENDPOINT"]!, `http://localhost:30456/${bucket}/`);
+        uploadUrl = uploadUrl.replace(process.env["S3_ENDPOINT"]!, `${params.apiAdvertiseEndpoint}/${bucket}/`);
       }
 
       resolve(uploadUrl);

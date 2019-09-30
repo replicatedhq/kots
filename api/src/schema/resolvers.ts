@@ -56,7 +56,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
   let mutation = {
     ...ClusterMutations(stores, params),
     ...FeatureMutations(stores),
-    ...TroubleshootMutations(stores),
+    ...TroubleshootMutations(stores, params),
     ...UserMutations(stores, params),
   };
 

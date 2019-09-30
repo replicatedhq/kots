@@ -2,7 +2,7 @@ import pg from "pg";
 import { Params } from "../server/params";
 import { KotsApp, KotsVersion, KotsAppRegistryDetails } from "./";
 import { ReplicatedError } from "../server/errors";
-import { signPutRequest, signGetRequest } from "../util/s3";
+import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";

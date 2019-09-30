@@ -3,15 +3,15 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { SupportBundle, SupportBundleUpload } from "../";
 import { analyzeSupportBundle } from "../troubleshoot_ffi";
+import { Params } from "../../server/params";
 
-export function TroubleshootMutations(stores: Stores) {
+export function TroubleshootMutations(stores: Stores, params: Params) {
   return {
     async uploadSupportBundle(root: any, { watchId, size }, context: Context): Promise<SupportBundleUpload> {
       const bundle = await stores.troubleshootStore.createSupportBundle(watchId, size);
-      const uploadUri = await stores.troubleshootStore.signSupportBundlePutRequest(bundle);
 
       return {
-        uploadUri,
+        uploadUri: `${params}/api/v1/troubleshoot/${watchId}/${bundle.id}`,
         supportBundle: bundle,
       };
     },
