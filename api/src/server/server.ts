@@ -3,6 +3,7 @@ import bugsnagExpress from "@bugsnag/plugin-express";
 import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
+import concat from "concat-stream";
 import Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import { $log } from "ts-log-debug";
@@ -36,6 +37,8 @@ import { LicenseStore } from "../license";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
+import tmp from "tmp";
+import fs from "fs";
 
 let mount = {};
 
@@ -97,6 +100,21 @@ export class Server extends ServerLoader {
       const sigsci = new Sigsci(sigsciOptions);
       this.use(sigsci.express());
     }
+
+    this.use(async (req, res, next) => {
+      if (req.method === "PUT" && req.url.startsWith("/api/v1/troubleshoot/")) {
+        const tmpFile = tmp.fileSync();
+        req.on("data", (chunk) => {
+          fs.appendFileSync(tmpFile.name, chunk);
+        });
+        req.on("end", () => {
+          req.app.locals.bundleFile = tmpFile.name;
+          next();
+        });
+      } else {
+        next();
+      }
+    });
 
     // Place http-proxy-middleware before body-parser
     // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924

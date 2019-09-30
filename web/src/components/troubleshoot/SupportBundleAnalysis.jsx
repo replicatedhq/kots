@@ -36,10 +36,10 @@ export class SupportBundleAnalysis extends React.Component {
         ],
       },
     })
-      .then(() => {
-        this.props.data.refetch();
-        this.setState({ shareBundleLoading: false, displayShareBundleModal: false });
-      }).catch(() => this.setState({ shareBundleLoading: false }));
+    .then(() => {
+      this.props.data.refetch();
+      this.setState({ shareBundleLoading: false, displayShareBundleModal: false });
+    }).catch(() => this.setState({ shareBundleLoading: false }));
   }
 
   toggleConfirmShareModal = () => {
@@ -48,17 +48,17 @@ export class SupportBundleAnalysis extends React.Component {
 
   reAnalyzeBundle = (callback) => {
     this.props.markSupportBundleUploaded(this.props.getSupportBundle.getSupportBundle.id)
-      .then(async (response) => {
-        await this.props.data.refetch();
-        if (callback && typeof callback === "function") {
-          callback(response);
-        }
-      })
-      .catch((error) => {
-        if (callback && typeof callback === "function") {
-          callback(undefined, error);
-        }
-      });
+    .then(async (response) => {
+      await this.props.data.refetch();
+      if (callback && typeof callback === "function") {
+        callback(response);
+      }
+    })
+    .catch((error) => {
+      if (callback && typeof callback === "function") {
+        callback(undefined, error);
+      }
+    });
   }
 
   downloadBundle = () => {
