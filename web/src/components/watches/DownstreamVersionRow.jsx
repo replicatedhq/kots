@@ -12,7 +12,7 @@ export default function DownstreamVersionRow(props) {
   const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
   const prPending = version.pullrequestNumber && (version.status === "opened" || version.status === "pending");
   let shipInstallnode = null;
-  if (!gitRef && version.status === "pending") {
+  if (!gitRef && (version.status === "pending" || version.status === "pending_preflight") ) {
     shipInstallnode = (
       <div className="u-marginLeft--10 flex-column flex-auto flex-verticalCenter">
         <button className="btn secondary small" onClick={() => handleMakeCurrent(urlParams.slug, version.sequence, downstreamWatch.cluster.slug)}>Make current version</button>
