@@ -44,6 +44,7 @@ func InstallCmd() *cobra.Command {
 			}
 			defer os.RemoveAll(rootDir)
 
+			upstream := pull.RewriteUpstream(args[0])
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
 				RootDir:     rootDir,
@@ -57,18 +58,18 @@ func InstallCmd() *cobra.Command {
 				HelmOptions:         v.GetStringSlice("set"),
 			}
 
-			canPull, err := pull.CanPullUpstream(args[0], pullOptions)
+			canPull, err := pull.CanPullUpstream(upstream, pullOptions)
 			if err != nil {
 				return err
 			}
 
 			if canPull {
-				if _, err := pull.Pull(args[0], pullOptions); err != nil {
+				if _, err := pull.Pull(upstream, pullOptions); err != nil {
 					return err
 				}
 			}
 
-			applicationMetadata, err := pull.PullApplicationMetadata(args[0])
+			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 			if err != nil {
 				return err
 			}
@@ -96,7 +97,7 @@ func InstallCmd() *cobra.Command {
 				Namespace:   v.GetString("namespace"),
 				Kubeconfig:  v.GetString("kubeconfig"),
 				NewAppName:  v.GetString("name"),
-				UpstreamURI: args[0],
+				UpstreamURI: upstream,
 				Endpoint:    "http://localhost:3000",
 			}
 
