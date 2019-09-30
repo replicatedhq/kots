@@ -50,7 +50,8 @@ func PullCmd() *cobra.Command {
 				},
 			}
 
-			renderDir, err := pull.Pull(args[0], pullOptions)
+			upstream := pull.RewriteUpstream(args[0])
+			renderDir, err := pull.Pull(upstream, pullOptions)
 			if err != nil {
 				return err
 			}
