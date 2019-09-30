@@ -18,7 +18,7 @@ class AirgapRegistrySettings extends Component {
       username = "",
       password = "",
       namespace = props.app ? props.app.slug : ""
-    } = props?.registryDetails;
+    } = props?.registryDetails || {};
 
     this.state = {
       hostname,
@@ -76,7 +76,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   render() {
-    const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, errorMessage } = this.props;
+    const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription } = this.props;
     const { hostname, password, username, namespace, lastSync } = this.state;
     if (getKotsAppRegistryQuery?.loading) {
       return (
@@ -93,13 +93,6 @@ class AirgapRegistrySettings extends Component {
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              {errorMessage && (
-                <div className="u-marginBottom--10">
-                  <span className="u-fontSize--small u-color--chestnut u-fontWeight--medium">
-                    {errorMessage}
-                  </span>
-                </div>
-              )}
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
               <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }}/>

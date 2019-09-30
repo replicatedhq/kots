@@ -277,6 +277,18 @@ export function hasPendingPreflight(versionHistory) {
   return false;
 }
 
+export function formatByteSize(bytes) {
+  if (bytes < 1024) {
+    return bytes + "b";
+  } else if (bytes < 1048576) {
+    return (bytes / 1024).toFixed(2) + "kb";
+  } else if (bytes < 1073741824) {
+    return (bytes / 1048576).toFixed(2) + "mb";
+  } else {
+    return (bytes / 1073741824).toFixed(2) + "gb";
+  }
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {

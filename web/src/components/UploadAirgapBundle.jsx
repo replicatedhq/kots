@@ -1,4 +1,5 @@
 import * as React from "react";
+import classNames from "classnames";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
@@ -62,17 +63,19 @@ class UploadAirgapBundle extends React.Component {
     }
 
     xhr.onloadend = async () => {
+      const response = xhr.response;
       if (xhr.status === 200) {
         await onUploadSuccess();
-        const response = xhr.response;
 
-        if (response.hasPreflight) {
+        const jsonResponse = JSON.parse(response);
+
+        if (jsonResponse.hasPreflight) {
           this.props.history.replace(`/preflight`);
-        } else if (response.slug) {
-          this.props.history.replace(`/app/${response.slug}`);
         } else {
-          throw new Error(`Error uploading airgap bundle: ${response}`);
+          this.props.history.replace(`/app/${jsonResponse.slug}`);
         }
+      } else {
+        throw new Error(`Error uploading airgap bundle: ${response}`);
       }
     }
 
@@ -113,7 +116,8 @@ class UploadAirgapBundle extends React.Component {
     // Push this setState call to the end of the call stack
     setTimeout(() => {
       const COMMON_ERRORS = {
-        "invalid username/password": "Registry credentials are invalid"
+        "invalid username/password": "Registry credentials are invalid",
+        "no such host": "No such host"
       };
 
       Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
@@ -182,7 +186,6 @@ class UploadAirgapBundle extends React.Component {
               <AirgapRegistrySettings
                 app={null}
                 hideCta={true}
-                errorMessage={errorMessage}
                 hideTestConnection={true}
                 namespaceDescription="What namespace do you want the application images pushed to?"
                 gatherDetails={this.getRegistryDetails}
@@ -190,7 +193,10 @@ class UploadAirgapBundle extends React.Component {
               />
             </div>
             <div className="u-marginTop--20 flex">
-              <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
+              <div className={classNames("FileUpload-wrapper", "flex1", {
+                "has-file": hasFile,
+                "has-error": errorMessage
+              })}>
                 <Dropzone
                   className="Dropzone-wrapper"
                   accept=".airgap"
@@ -222,6 +228,11 @@ class UploadAirgapBundle extends React.Component {
                 </div>
               }
             </div>
+            {errorMessage && (
+              <div className="u-marginTop--10">
+                <span className="u-color--chestnut">{errorMessage}</span>
+              </div>
+            )}
             {hasFile &&
               <div className="u-marginTop--10">
                 <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
