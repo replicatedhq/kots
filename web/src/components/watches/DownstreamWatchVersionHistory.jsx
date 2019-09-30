@@ -5,6 +5,7 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 import filter from "lodash/filter";
+import Modal from "react-modal";
 
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
@@ -13,12 +14,44 @@ import "@src/scss/components/watches/WatchVersionHistory.scss";
 import { isKotsApplication, hasPendingPreflight } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
+  state = {
+    showSkipModal: false,
+    deployParams: {}
+  }
 
-  handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug) => {
+  handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
+      if (status === "pending_preflight") {
+        this.setState({
+          showSkipModal: true,
+          deployParams: {
+            upstreamSlug,
+            sequence,
+            clusterSlug
+          }
+        });
+        return;
+      }
       await this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
       await this.props.data.refetch();
+      this.setState({
+        showSkipModal: false,
+        deployParams: {}
+      });
     }
+  }
+
+  hideSkipModal = () => {
+    this.setState({
+      showSkipModal: false
+    });
+  }
+
+  onForceDeployClick = () => {
+    // Parameters are stored in state until deployed, then cleared after deploy
+    const { upstreamSlug, sequence, clusterSlug } = this.state.deployParams;
+
+    this.handleMakeCurrent(upstreamSlug, sequence, clusterSlug);
   }
 
   getActiveDownstreamVersion = versionHistory => {
@@ -32,6 +65,7 @@ class DownstreamWatchVersionHistory extends Component {
 
   render() {
     const { watch, match, data } = this.props;
+    const { showSkipModal } = this.state;
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
@@ -106,6 +140,29 @@ class DownstreamWatchVersionHistory extends Component {
             ))}
           </div>
         </div>
+        <Modal
+          isOpen={showSkipModal}
+          onRequestClose={this.hideSkipModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Skip yer preflighterididdily doos"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              Preflight checks have not finished yet. Are you sure you want to deploy this version?
+            </p>
+            <div className="u-marginTop--10 flex">
+              <button
+                onClick={this.onForceDeployClick}
+                type="button"
+                className="btn green primary">
+                Deploy this version
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
