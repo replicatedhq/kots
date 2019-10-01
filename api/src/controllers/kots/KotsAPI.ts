@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams } from "@tsed/common";
+import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams, HeaderParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
 import { Request, Response } from "express";
 import { putObject, upload } from "../../util/s3";
@@ -13,6 +13,7 @@ import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
 import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import { kotsPullFromAirgap, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
+import { Session } from "../../session";
 
 interface CreateAppBody {
   metadata: string;
@@ -81,7 +82,14 @@ export class KotsAPI {
     @BodyParams("") body: UploadLicenseBody,
     @Req() request: Request,
     @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
     let downstream;
     for (const cluster of clusters) {
@@ -110,9 +118,14 @@ export class KotsAPI {
     @MultipartFile("file") file: Express.Multer.File,
     @BodyParams("") body: CreateAppBody,
     @Req() request: Request,
+    @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
-    // IMPORTANT: this function does not have user-auth and is only usable in
-    // single tenant (on-prem mode right now)
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
 
     const metadata = JSON.parse(body.metadata);
 
@@ -296,7 +309,14 @@ export class KotsAPI {
   async kotsResetAirgapUpload(
     @Req() request: Request,
     @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ) {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const slug = request.params.slug;
 
     const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);

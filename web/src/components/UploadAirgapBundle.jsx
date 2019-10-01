@@ -10,6 +10,7 @@ import { resumeInstallOnline } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
+import { Utilities } from "../utilities/utilities";
 
 class UploadAirgapBundle extends React.Component {
   state = {
@@ -28,7 +29,11 @@ class UploadAirgapBundle extends React.Component {
     // Reset the airgap upload state
     const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
     await fetch(resetUrl, {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": Utilities.getToken(),
+      }
     });
 
     this.setState({ fileUploading: true, errorMessage: "" });
