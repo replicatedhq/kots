@@ -3,11 +3,14 @@ package cli
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 
 	"github.com/ahmetalpbalkan/go-cursor"
+	"github.com/manifoldco/promptui"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -45,10 +48,21 @@ func InstallCmd() *cobra.Command {
 			defer os.RemoveAll(rootDir)
 
 			upstream := pull.RewriteUpstream(args[0])
+
+			namespace := v.GetString("namespace")
+			if namespace == "" {
+				enteredNamespace, err := promptForNamespace(upstream)
+				if err != nil {
+					return err
+				}
+
+				namespace = enteredNamespace
+			}
+
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
 				RootDir:     rootDir,
-				Namespace:   v.GetString("namespace"),
+				Namespace:   namespace,
 				Downstreams: []string{
 					"local", // this is the auto-generated operator downstream
 				},
@@ -75,7 +89,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			deployOptions := kotsadm.DeployOptions{
-				Namespace:           v.GetString("namespace"),
+				Namespace:           namespace,
 				Kubeconfig:          v.GetString("kubeconfig"),
 				IncludeShip:         v.GetBool("include-ship"),
 				IncludeGitHub:       v.GetBool("include-github"),
@@ -94,7 +108,7 @@ func InstallCmd() *cobra.Command {
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
-				Namespace:   v.GetString("namespace"),
+				Namespace:   namespace,
 				Kubeconfig:  v.GetString("kubeconfig"),
 				NewAppName:  v.GetString("name"),
 				UpstreamURI: upstream,
@@ -114,12 +128,12 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"))
+			podName, err := k8sutil.WaitForWeb(namespace)
 			if err != nil {
 				return err
 			}
 
-			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName)
+			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName)
 			if err != nil {
 				return err
 			}
@@ -137,7 +151,7 @@ func InstallCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Cleaning up")
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console %s", v.GetString("namespace"))
+			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console %s", namespace)
 			log.ActionWithoutSpinner("")
 
 			return nil
@@ -145,7 +159,7 @@ func InstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace to deploy to")
+	cmd.Flags().StringP("namespace", "n", "", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
 	cmd.Flags().String("shared-password", "", "shared password to apply")
@@ -160,4 +174,42 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
 	return cmd
+}
+
+func promptForNamespace(upstreamURI string) (string, error) {
+	u, err := url.ParseRequestURI(upstreamURI)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse uri")
+	}
+
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Enter the namespace to deploy to:",
+		Templates: templates,
+		Default:   u.Hostname(),
+		Validate: func(input string) error {
+			if len(input) == 0 {
+				return errors.New("invalid namespace")
+			}
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
 }
