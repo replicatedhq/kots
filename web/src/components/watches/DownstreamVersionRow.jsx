@@ -6,11 +6,12 @@ import { Utilities } from "@src/utilities/utilities";
 import Loader from "../shared/Loader";
 
 export default function DownstreamVersionRow(props) {
-  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight } = props;
+  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight, isDeploying } = props;
   if (!version) { return null; }
   const gitRef = downstreamWatch?.cluster?.gitOpsRef;
   const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
   const prPending = version.pullrequestNumber && (version.status === "opened" || version.status === "pending");
+
   let shipInstallnode = null;
   if (!gitRef && (version.status === "pending" || version.status === "pending_preflight") ) {
     shipInstallnode = (
@@ -37,7 +38,10 @@ export default function DownstreamVersionRow(props) {
         <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold">
           Version {version.title}
           {prPending && openedOnTextNode}
-          {shipInstallnode}
+          {isDeploying
+            ? <Loader size="30" className="u-marginLeft--20" />
+            : shipInstallnode
+          }
         </div>
         {version.status === "deployed" || version.status === "merged" &&
           <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 flex alignItems--center">
