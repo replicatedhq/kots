@@ -11,12 +11,14 @@ import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
+import Loader from "./shared/Loader";
 
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
     fileUploading: false,
-    registryDetails: {}
+    registryDetails: {},
+    installingOnline: false
   }
 
   clearFile = () => {
@@ -108,6 +110,9 @@ class UploadAirgapBundle extends React.Component {
 
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
+    this.setState({
+      installingOnline: true
+    });
     try {
       const resp = await this.props.resumeInstallOnline(slug);
       const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
@@ -121,6 +126,9 @@ class UploadAirgapBundle extends React.Component {
 
     } catch (error) {
       console.log(error);
+      this.setState({
+        installingOnline: false
+      });
     }
   }
 
@@ -161,7 +169,8 @@ class UploadAirgapBundle extends React.Component {
       uploadSent,
       uploadTotal,
       errorMessage,
-      registryDetails
+      registryDetails,
+      installingOnline
     } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
     const kotsApp = data?.getKotsApp;
@@ -256,7 +265,11 @@ class UploadAirgapBundle extends React.Component {
           </div>
           {!isLoading && !kotsApp.isAirgap && (
             <div className="u-marginTop--20 u-marginBottom--20 u-textAlign--center">
-              <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+              {installingOnline
+                ? <Loader size="40" />
+                : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+              }
+
             </div>
           )}
         </div>
