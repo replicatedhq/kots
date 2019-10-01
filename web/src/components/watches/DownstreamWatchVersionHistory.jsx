@@ -144,7 +144,7 @@ class DownstreamWatchVersionHistory extends Component {
           isOpen={showSkipModal}
           onRequestClose={this.hideSkipModal}
           shouldReturnFocusAfterClose={false}
-          contentLabel="Skip yer preflighterididdily doos"
+          contentLabel="Skip preflight checks"
           ariaHideApp={false}
           className="Modal"
         >
