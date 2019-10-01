@@ -134,6 +134,20 @@ export class SupportBundleAnalysis extends React.Component {
       )
     }
 
+    let insightsUrl;
+    if (isKotsApp) {
+      insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
+    } else {
+      insightsUrl = `/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug`;
+    }
+
+    let fileTreeUrl;
+    if (isKotsApp) {
+      fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
+    } else {
+      fileTreeUrl = `/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
+    }
+
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
         <div className="flex1 flex-column">
@@ -166,7 +180,7 @@ export class SupportBundleAnalysis extends React.Component {
                   </div>
                   <div className="flex-column flex1 action-content">
                     <Switch>
-                      <Route exact path={`/${isKotsApp ? "app" : "watch"}/:owner/:slug/troubleshoot/analyze/:bundleSlug`} render={() =>
+                      <Route exact path={insightsUrl} render={() =>
                         <AnalyzerInsights
                           status={bundle.status}
                           refetchSupportBundle={this.props.getSupportBundle.refetch}
@@ -174,11 +188,12 @@ export class SupportBundleAnalysis extends React.Component {
                           reAnalyzeBundle={this.reAnalyzeBundle}
                         />
                       } />
-                      <Route exact path={`/${isKotsApp ? "app" : "watch"}/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*`} render={() =>
+                      <Route exact path={fileTreeUrl} render={() =>
                         <AnalyzerFileTree
                           watchSlug={watch.slug}
                           bundle={bundle}
                           downloadBundle={this.downloadBundle}
+                          isKotsApp={isKotsApp}
                         />
                       } />
                     </Switch>

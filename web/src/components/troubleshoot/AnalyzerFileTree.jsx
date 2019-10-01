@@ -55,9 +55,9 @@ class AnalyzerFileTree extends React.Component {
   }
 
   async setSelectedFile(path) {
-    const { watchSlug } = this.props;
+    const { watchSlug, isKotsApp } = this.props;
     const newPath = rootPath(path);
-    this.props.history.replace(`/watch/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`);
+    this.props.history.replace(`/${isKotsApp ? "app" : "watch"}/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`);
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) { return; } // Don't go fetch it if we already have that content in our state
     this.fetchFiles(this.state.bundleId, newPath)

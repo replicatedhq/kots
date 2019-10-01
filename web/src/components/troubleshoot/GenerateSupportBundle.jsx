@@ -10,6 +10,7 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
+import { isKotsApplication } from "../../utilities/utilities";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
@@ -232,7 +233,13 @@ class GenerateSupportBundle extends React.Component {
               watch={this.props.watch}
               bundleCommand={selectedWatch ?.bundleCommand}
               submitCallback={(bundleId) => {
-                this.props.history.push(`/watch/${this.props.match.params.owner}/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`);
+                let url;
+                if (isKotsApplication(watch)) {
+                  url = `/app/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`;
+                } else {
+                  url = `/watch/${this.props.match.params.owner}/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`;
+                }
+                this.props.history.push(url);
               }}
             />
           </div>

@@ -250,16 +250,18 @@ spec:
     return await this.getSupportBundle(id);
   }
 
-  public async markSupportBundleUploaded(id: string): Promise<SupportBundle> {
+  public async markSupportBundleUploaded(id: string): Promise<void> {
     const status: SupportBundleStatus = "uploaded";
 
     const q = `update supportbundle set status = $2, uploaded_at = $3 where id = $1`;
     const v = [id, status, new Date()];
-    const result = await this.pool.query(q, v);
-    if (result.rowCount === 0) {
-      // TODO
-    }
-    return await this.getSupportBundle(id);
+    await this.pool.query(q, v);
+  }
+
+  public async updateSupportBundleStatus(id: string, status: SupportBundleStatus): Promise<void> {
+    const q = `update supportbundle set status = $2 where id = $1`;
+    const v = [id, status];
+    await this.pool.query(q, v);
   }
 
   public async signSupportBundlePutRequest(supportBundle: SupportBundle): Promise<string> {

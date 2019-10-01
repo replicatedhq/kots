@@ -32,11 +32,13 @@ export async function analyzeSupportBundle(supportBundleId: string, stores: Stor
     compatibilityParam["n"] = compatibilityParam["p"].length;
 
     const analysisResult = troubleshoot().Analyze(bundleURLParam, outputFormatParam, compatibilityParam);
-    if (analysisResult == "") {
+    if (analysisResult == "" || analysisResult["p"] == "") {
+      await stores.troubleshootStore.updateSupportBundleStatus(supportBundleId, "analysis_error");
       return false;
     }
 
     await stores.troubleshootStore.setAnalysisResult(supportBundleId, analysisResult["p"]);
+    await stores.troubleshootStore.updateSupportBundleStatus(supportBundleId, "analyzed");
 
     return true;
   } catch (err) {

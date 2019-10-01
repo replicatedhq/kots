@@ -24,12 +24,11 @@ export function TroubleshootMutations(stores: Stores, params: Params) {
       const dirTree = await bundle.generateFileTreeIndex();
       await stores.troubleshootStore.assignTreeIndex(bundle.id, JSON.stringify(dirTree));
 
-      const uploadedBundle = await stores.troubleshootStore.markSupportBundleUploaded(id);
-
-          // Analyze it
+      // Mark as uploaded and analyze it
+      await stores.troubleshootStore.markSupportBundleUploaded(id);
       await analyzeSupportBundle(id, stores);
 
-      return uploadedBundle;
+      return await stores.troubleshootStore.getSupportBundle(id);
     },
   }
 }
