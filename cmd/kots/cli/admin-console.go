@@ -14,8 +14,8 @@ import (
 func AdminConsoleCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "admin-console [namespace]",
-		Short:         "",
-		Long:          ``,
+		Short:         "Make the admin console accessible",
+		Long:          `Establish port forwarding for localhost access to the kotsadm admin console.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
