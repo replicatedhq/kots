@@ -16,11 +16,13 @@ import { isKotsApplication, hasPendingPreflight } from "../../utilities/utilitie
 class DownstreamWatchVersionHistory extends Component {
   state = {
     showSkipModal: false,
-    deployParams: {}
+    deployParams: {},
+    deployingSequence: null
   }
 
   handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
+      await this.setDeploySequence(sequence);
       if (status === "pending_preflight") {
         this.setState({
           showSkipModal: true,
@@ -36,14 +38,23 @@ class DownstreamWatchVersionHistory extends Component {
       await this.props.data.refetch();
       this.setState({
         showSkipModal: false,
-        deployParams: {}
+        deployParams: {},
+        deployingSequence: null
       });
     }
+  }
+  setDeploySequence = deployingSequence => {
+    return new Promise( resolve => {
+      this.setState({
+        deployingSequence
+      }, resolve);
+    })
   }
 
   hideSkipModal = () => {
     this.setState({
-      showSkipModal: false
+      showSkipModal: false,
+      deployingSequence: null
     });
   }
 
@@ -132,6 +143,7 @@ class DownstreamWatchVersionHistory extends Component {
                 hasPreflight={watch.hasPreflight}
                 key={`${version.title}-${version.sequence}`}
                 downstreamWatch={downstreamWatch}
+                isDeploying={version.sequence === this.state.deployingSequence}
                 version={version}
                 isKots={isKots}
                 urlParams={match.params}
