@@ -19,7 +19,7 @@ type Mutation {
   uploadKotsLicense(value: String!): KotsApp
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
-  resumeInstallOnline(slug: String!): Boolean
+  resumeInstallOnline(slug: String!): KotsApp
   updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): Boolean
 
   createWatch(stateJSON: String!): Watch

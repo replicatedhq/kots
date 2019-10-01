@@ -109,9 +109,16 @@ class UploadAirgapBundle extends React.Component {
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
     try {
-      await this.props.resumeInstallOnline(slug);
-      this.props.onUploadSuccess();
-      this.props.history.push(`/app/${slug}`);
+      const resp = await this.props.resumeInstallOnline(slug);
+      const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
+
+      if (hasPreflight) {
+        this.props.history.push("/preflight");
+      } else {
+        await this.props.onUploadSuccess();
+        this.props.history.push(`/app/${slug}`);
+      }
+
     } catch (error) {
       console.log(error);
     }
