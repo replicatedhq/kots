@@ -1,13 +1,26 @@
 steps:
   - label: build
     commands:
-      - make kots ffi ci-test
+      - make ci-test
     plugins:
       - docker#v3.2.0:
           image: replicated/gitops-builder:buildkite-go12-node10
           always-pull: true
           mount-checkout: true
           workdir: /go/src/github.com/replicatedhq/kots
+
+
+  - label: snapshot-release
+    commands:
+      - make snapshot-release
+    plugins:
+      - docker#v3.2.0:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite-go12-node10
+          workdir: /go/src/github.com/replicatedhq/kots
+          volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "/var/lib/buildkite-agent/.docker/config.json:/home/builder/.docker/config.json"
 
   - wait
 

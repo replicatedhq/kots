@@ -4,16 +4,30 @@ release:
     owner: replicatedhq
     name: kots
 builds:
-  - id: kots
+  - id: kots-linux
     goos:
     - linux
-    # - windows
-    # - darwin
     goarch:
     - amd64
-    # - "386"
     env:
       - CGO_ENABLED=1
+      - GO111MODULE=on
+    main: cmd/kots/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
+      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
+    flags: -tags netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -installsuffix netgo
+    binary: kots
+    hooks: {}
+  - id: kots
+    goos:
+    - windows
+    - darwin
+    goarch:
+    - amd64
+    env:
+      - CGO_ENABLED=0
       - GO111MODULE=on
     main: cmd/kots/main.go
     ldflags: -s -w
@@ -44,6 +58,7 @@ archives:
   - id: kots
     builds:
       - kots
+      - kots-linux
     format: tar.gz
     format_overrides:
       - goos: windows
