@@ -126,9 +126,10 @@ export class KotsAppStore {
   }
 
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
-    let q = `select current_sequence from app where id = $1`;
+    let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
       appId,
+      clusterId,
     ];
 
     let result = await this.pool.query(q, v);
@@ -160,9 +161,10 @@ export class KotsAppStore {
   }
 
   async listPendingVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
-    let q = `select current_sequence from app where id = $1`;
+    let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
       appId,
+      clusterId,
     ];
 
     let result = await this.pool.query(q, v);
@@ -176,11 +178,10 @@ export class KotsAppStore {
       sequence = -1;
     }
 
-    q = `
-select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at
-from app_downstream_version
-where app_id = $1 and cluster_id = $3 and sequence > $2
-order by sequence desc`;
+    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at
+        from app_downstream_version
+        where app_id = $1 and cluster_id = $3 and sequence > $2
+        order by sequence desc`;
     v = [
       appId,
       sequence,
@@ -267,9 +268,10 @@ order by sequence desc`;
   }
 
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
-    let q = `select current_sequence from app where id = $1`;
+    let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
       appId,
+      clusterId,
     ];
     let result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
