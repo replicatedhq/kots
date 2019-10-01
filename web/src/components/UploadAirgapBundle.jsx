@@ -121,6 +121,7 @@ class UploadAirgapBundle extends React.Component {
     // Push this setState call to the end of the call stack
     setTimeout(() => {
       const COMMON_ERRORS = {
+        "HTTP 401": "Registry credentials are invalid",
         "invalid username/password": "Registry credentials are invalid",
         "no such host": "No such host"
       };
