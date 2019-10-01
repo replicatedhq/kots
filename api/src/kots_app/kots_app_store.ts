@@ -89,8 +89,7 @@ export class KotsAppStore {
 
       const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
-      const qq =
-        `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+      const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
 
       const vv = [
         id,
@@ -305,8 +304,7 @@ export class KotsAppStore {
       ];
       await this.pool.query(q, v);
 
-    const qq =
-      `UPDATE app_downstream_version
+    const qq = `UPDATE app_downstream_version
         SET status = 'deployed'
       WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
 
@@ -322,7 +320,7 @@ export class KotsAppStore {
   async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
     const q = `select registry_hostname, registry_username, registry_password, namespace, last_registry_sync from app where id = $1`;
     const v = [
-      appId
+      appId,
     ];
     const result = await this.pool.query(q, v);
     if (result.rowCount === 0) {
