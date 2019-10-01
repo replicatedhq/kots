@@ -173,7 +173,7 @@ class UploadAirgapBundle extends React.Component {
     return (
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="flex-column flex1">
-          <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
+          <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20">
             <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
               <div className="flex-column alignItems--center">
                 <div className="flex">
