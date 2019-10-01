@@ -104,6 +104,10 @@ class DownstreamWatchVersionHistory extends Component {
       data?.stopPolling();
     }
 
+    if (data.loading) {
+      return centeredLoader;
+    }
+
     return (
       <div className="flex-column flex1 u-position--relative u-padding--20 u-overflow--auto">
         <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--20">Downstream version history: {downstreamSlug}</p>
@@ -136,9 +140,7 @@ class DownstreamWatchVersionHistory extends Component {
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna">All releases</p>
           </div>
           <div className={classNames("flex-column", { "flex1": data.loading })}>
-            {data.loading
-            ? centeredLoader
-            : versionHistory?.length > 0 && versionHistory.map( version => (
+            {versionHistory?.length > 0 && versionHistory.map( version => (
               <DownstreamVersionRow
                 hasPreflight={watch.hasPreflight}
                 key={`${version.title}-${version.sequence}`}
