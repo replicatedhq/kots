@@ -11,7 +11,7 @@ export function TroubleshootMutations(stores: Stores, params: Params) {
       const bundle = await stores.troubleshootStore.createSupportBundle(watchId, size);
 
       return {
-        uploadUri: `${params}/api/v1/troubleshoot/${watchId}/${bundle.id}`,
+        uploadUri: `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchId}/${bundle.id}`,
         supportBundle: bundle,
       };
     },
