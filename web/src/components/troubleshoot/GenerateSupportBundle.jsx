@@ -131,15 +131,15 @@ class GenerateSupportBundle extends React.Component {
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
-          <title>{`${watch.watchName || watch.name} Troubleshoot`}</title>
+          <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
           {!watchClusters.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
            }
           <div className="u-marginTop--15">
-            <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {watch.watchName} for support</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with {watch.watchName}, you can analyze the current state to receive insights that are useful to remediate or to share with the application vendor for support.</p>
+            <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {appTitle} for support</h2>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with {appTitle}, you can analyze the current state to receive insights that are useful to remediate or to share with the application vendor for support.</p>
           </div>
           {watchClusters.length ?
             <div className="flex1 flex-column u-paddingRight--30">
@@ -189,7 +189,7 @@ class GenerateSupportBundle extends React.Component {
                   </div>
                   <div className="u-textAlign--center u-marginTop--10">
                     <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">Deploy to a cluster</p>
-                    <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium"> To troubleshoot {watch.watchName} you should first deploy your application to a cluster.</p>
+                    <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium"> To troubleshoot {appTitle} you should first deploy your application to a cluster.</p>
                   </div>
                   <div className="u-marginTop--20">
                     <button className="btn secondary" onClick={this.openClusterModal}>Add a deployment cluster</button>
