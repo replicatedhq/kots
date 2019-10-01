@@ -610,7 +610,6 @@ order by sequence desc`;
       throw new Error("Could not find any kots app in getAirgapInstallStatus()");
     }
     const currentMessage = (messageQueryResult.rows[0] && messageQueryResult.rows[0].current_message) || "";
-
     return {
       installStatus: result.rows[0].install_state,
       currentMessage
@@ -640,6 +639,9 @@ order by sequence desc`;
     const q = `update app set install_state = 'airgap_upload_in_progress' where id = $1`;
     const v = [appId];
     await this.pool.query(q, v);
+
+    const qq = `delete from airgap_install_status`;
+    await this.pool.query(qq);
   }
 
   private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {

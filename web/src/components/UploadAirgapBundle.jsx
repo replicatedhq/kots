@@ -1,4 +1,5 @@
 import * as React from "react";
+import classNames from "classnames";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Dropzone from "react-dropzone";
@@ -9,6 +10,7 @@ import { resumeInstallOnline } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
+import { Utilities } from "../utilities/utilities";
 
 class UploadAirgapBundle extends React.Component {
   state = {
@@ -22,35 +24,68 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
-    const { onUploadSuccess } = this.props;
-    this.setState({ fileUploading: true });
-      const formData = new FormData();
-      formData.append("file", this.state.bundleFile);
-      formData.append("registryHost", this.state.registryDetails.hostname);
-      formData.append("namespace", this.state.registryDetails.namespace);
-      formData.append("username", this.state.registryDetails.username);
-      formData.append("password", this.state.registryDetails.password);
-      const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
-      fetch(url, {
-        method: "POST",
-        body: formData
-      })
-      .then(async (result) => {
-        const response = await result.json();
-        await onUploadSuccess(); // Refetch list apps
+    const { onUploadSuccess, match } = this.props;
 
-        if (response.hasPreflight) {
+    // Reset the airgap upload state
+    const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
+    await fetch(resetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": Utilities.getToken(),
+      }
+    });
+
+    this.setState({ fileUploading: true, errorMessage: "" });
+
+    const formData = new FormData();
+    formData.append("file", this.state.bundleFile);
+    formData.append("registryHost", this.state.registryDetails.hostname);
+    formData.append("namespace", this.state.registryDetails.namespace);
+    formData.append("username", this.state.registryDetails.username);
+    formData.append("password", this.state.registryDetails.password);
+    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = event => {
+      const total = event.total;
+      const sent = event.loaded;
+
+      this.setState({
+        uploadSent: sent,
+        uploadTotal: total
+      });
+    }
+
+    xhr.upload.onerror = () => {
+      this.setState({
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
+      });
+
+    }
+
+    xhr.onloadend = async () => {
+      const response = xhr.response;
+      if (xhr.status === 200) {
+        await onUploadSuccess();
+
+        const jsonResponse = JSON.parse(response);
+
+        if (jsonResponse.hasPreflight) {
           this.props.history.replace(`/preflight`);
-        } else if (response.slug) {
-          this.props.history.replace(`/app/${response.slug}`);
         } else {
-          throw new Error(`Error uploading airgap bundle: ${response}`);
+          this.props.history.replace(`/app/${jsonResponse.slug}`);
         }
-      })
-      .catch(function (err) {
-        this.setState({ fileUploading: false });
-        console.log(err);
-      }.bind(this));
+      } else {
+        throw new Error(`Error uploading airgap bundle: ${response}`);
+      }
+    }
+
+    xhr.open("POST", url);
+    xhr.send(formData);
   }
 
   getRegistryDetails = (fields) => {
@@ -82,6 +117,29 @@ class UploadAirgapBundle extends React.Component {
     }
   }
 
+  onProgressError = (errorMessage) => {
+    // Push this setState call to the end of the call stack
+    setTimeout(() => {
+      const COMMON_ERRORS = {
+        "invalid username/password": "Registry credentials are invalid",
+        "no such host": "No such host"
+      };
+
+      Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
+        if (errorMessage.includes(errorString)){
+          errorMessage = message;
+        }
+      });
+
+      this.setState({
+        errorMessage,
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0
+      });
+    }, 0);
+  }
+
   render() {
     const {
       appName,
@@ -89,13 +147,26 @@ class UploadAirgapBundle extends React.Component {
       fetchingMetadata,
       data
     } = this.props;
-    const { bundleFile, fileUploading } = this.state;
+    const {
+      bundleFile,
+      fileUploading,
+      uploadSent,
+      uploadTotal,
+      errorMessage,
+      registryDetails
+    } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
     const kotsApp = data?.getKotsApp;
     const isLoading = data.loading;
 
     if (fileUploading) {
-      return <AirgapUploadProgress />;
+      return (
+        <AirgapUploadProgress
+          total={uploadTotal}
+          sent={uploadSent}
+          onProgressError={this.onProgressError}
+        />
+      );
     }
 
     return (
@@ -123,10 +194,14 @@ class UploadAirgapBundle extends React.Component {
                 hideTestConnection={true}
                 namespaceDescription="What namespace do you want the application images pushed to?"
                 gatherDetails={this.getRegistryDetails}
+                registryDetails={registryDetails}
               />
             </div>
             <div className="u-marginTop--20 flex">
-              <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
+              <div className={classNames("FileUpload-wrapper", "flex1", {
+                "has-file": hasFile,
+                "has-error": errorMessage
+              })}>
                 <Dropzone
                   className="Dropzone-wrapper"
                   accept=".airgap"
@@ -158,6 +233,11 @@ class UploadAirgapBundle extends React.Component {
                 </div>
               }
             </div>
+            {errorMessage && (
+              <div className="u-marginTop--10">
+                <span className="u-color--chestnut">{errorMessage}</span>
+              </div>
+            )}
             {hasFile &&
               <div className="u-marginTop--10">
                 <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>

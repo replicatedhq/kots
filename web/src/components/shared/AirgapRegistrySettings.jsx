@@ -13,11 +13,18 @@ class AirgapRegistrySettings extends Component {
   constructor(props) {
     super(props);
 
+    const {
+      hostname =  "",
+      username = "",
+      password = "",
+      namespace = props.app ? props.app.slug : ""
+    } = props?.registryDetails || {};
+
     this.state = {
-      hostname: "",
-      username: "",
-      password: "",
-      namespace: props.app ? props.app.slug : "",
+      hostname,
+      username,
+      password,
+      namespace,
       lastSync: null
     }
   }

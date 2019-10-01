@@ -3,11 +3,10 @@ import Clipboard from "clipboard";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
-
 import { uploadSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
+import Dropzone from "react-dropzone";
 
 import "../../scss/components/troubleshoot/UploadSupportBundleModal.scss";
-import Dropzone from "react-dropzone";
 
 class UploadSupportBundleModal extends React.Component {
   constructor() {
