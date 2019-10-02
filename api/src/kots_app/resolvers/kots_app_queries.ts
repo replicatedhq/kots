@@ -13,13 +13,15 @@ export function KotsQueries(stores: Stores) {
     async getKotsMetadata(): Promise<KotsAppMetadata|null> {
       try {
         const rawBranding = await kotsAppGetBranding();
+        console.log(rawBranding);
         const parsedBranding = yaml.safeLoad(rawBranding);
 
         return {
           name: parsedBranding.spec.title,
           iconUri: parsedBranding.spec.icon,
         };
-      } catch (error) {
+      } catch (err) {
+        console.log(err);
         logger.error("[kotsAppGetBranding] - Unable to retrieve or parse branding information");
         return null;
       }

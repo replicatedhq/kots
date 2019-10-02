@@ -13,7 +13,6 @@ import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
 import { Cluster } from "../cluster";
-import { KotsVersion } from "./"
 import * as _ from "lodash";
 import yaml from "js-yaml";
 
@@ -49,6 +48,30 @@ export class KotsApp {
   }
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id, clusterId);
+  }
+  public async getRealizedLinksFromAppSpec(stores: Stores): Promise<KotsAppLink[]> {
+    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, this.currentSequence!);
+    if (!appSpec) {
+      return [];
+    }
+
+    try {
+      const parsed = yaml.safeLoad(appSpec);
+      const links: KotsAppLink[] = [];
+      for (const unrealizedLink of parsed.spec.descriptor.links) {
+        const realized: KotsAppLink = {
+          title: unrealizedLink.description,
+          uri: unrealizedLink.url,
+        };
+
+        links.push(realized);
+      }
+
+      return links;
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
   }
 
   async getFilesPaths(sequence: string): Promise<string[]> {
@@ -374,6 +397,7 @@ export class KotsApp {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
+          links: () => this.getRealizedLinksFromAppSpec(stores),
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: () => this.getPastVersions(downstream.id, stores),
           pendingVersions: () => this.getPendingVersions(downstream.id, stores),
@@ -382,6 +406,11 @@ export class KotsApp {
       }),
     };
   }
+}
+
+export interface KotsAppLink {
+  title: string;
+  uri: string;
 }
 
 export interface KotsVersion {
