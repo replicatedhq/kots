@@ -7,7 +7,11 @@ import path from "path";
 import fs from "fs";
 import tmp from "tmp";
 import * as _ from "lodash";
-import { extractDownstreamNamesFromTarball, extractCursorAndVersionFromTarball } from "../../util/tar";
+import {
+  extractDownstreamNamesFromTarball,
+  extractCursorAndVersionFromTarball,
+  extractPreflightSpecFromTarball
+} from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
 import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
@@ -337,14 +341,17 @@ export async function uploadUpdate(stores, slug, buffer) {
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const supportBundleSpec = undefined;
-  const preflightSpec = undefined;
+  const preflightSpec = await extractPreflightSpecFromTarball(buffer);
 
   const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec);
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel, "pending");
+    const status = preflightSpec
+      ? "pending_preflight"
+      : "pending";
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel, status);
   }
 
   return {
