@@ -389,16 +389,16 @@ class DetailPageApplication extends Component {
               </div>
             )}
           </div>
-          <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
-            {watch?.currentVersion &&
-            <div>
-              <p className="uppercase-title">Current Version</p>
-              <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
-                {watch?.currentVersion?.title}
-              </p>
-            </div>
-            }
-            {!isSingleTenant() && (
+          {!isSingleTenant() && (
+            <div className="flex1 flex-column detail-right-sidebar u-paddingLeft--30">
+              {watch?.currentVersion &&
+                <div>
+                  <p className="uppercase-title">Current Version</p>
+                  <p className="u-fontSize--jumbo2 u-fontWeight--bold u-color--tuna">
+                    {watch?.currentVersion?.title}
+                  </p>
+                </div>
+              }
               <WatchContributors
                 title="contributors"
                 className="u-marginTop--30"
@@ -409,8 +409,8 @@ class DetailPageApplication extends Component {
                 watchCallback={updateCallback}
                 slug={watch.slug}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <Modal
           isOpen={this.state.showEditModal}
