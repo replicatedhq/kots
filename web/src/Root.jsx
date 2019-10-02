@@ -5,6 +5,7 @@ import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
+import Modal from "react-modal";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import GitHubAuth from "./components/github_auth/GitHubAuth";
@@ -31,7 +32,7 @@ import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 
-import { getKotsMetadata, listApps } from "@src/queries/AppsQueries";
+import { ping, getKotsMetadata, listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -98,7 +99,9 @@ class Root extends Component {
     themeState: {
       navbarLogo: null,
     },
-    rootDidInitialWatchFetch: false
+    rootDidInitialWatchFetch: false,
+    connectionTerminated: false,
+    seconds: 9,
   };
   /**
    * Sets the Theme State for the whole application
@@ -200,10 +203,36 @@ class Root extends Component {
     }
   }
 
+  tick = () => {
+    if (!this.state.connectionTerminated) {
+      clearInterval(this.timer);
+      return;
+    }
+    if (this.state.seconds > 0) {
+      this.setState({ seconds: this.state.seconds - 1 });
+    } else {
+      this.setState({ seconds: 9 });
+      clearInterval(this.timer);
+    }
+  }
+
+  ping = async () => {
+    this.timer = setInterval(this.tick, 1000);
+    await GraphQLClient.query({
+      query: ping,
+      fetchPolicy: "no-cache"
+    }).then(() => {
+      this.setState({ connectionTerminated: false });
+    }).catch(() => {
+      this.setState({ connectionTerminated: true });
+    });
+  }
+
   onRootMounted = () => {
     if (!window.env.DISABLE_KOTS) {
       this.fetchKotsAppMetadata();
     }
+    this.ping();
 
     if (Utilities.isLoggedIn()) {
       this.refetchListApps().then(listApps => {
@@ -215,8 +244,13 @@ class Root extends Component {
     }
   }
 
-  componentDidMount() {
+  componentDidMount = async () => {
     this.onRootMounted();
+    this.interval = setInterval(async () => await this.ping(), 10000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   render() {
@@ -224,7 +258,9 @@ class Root extends Component {
       initSessionId,
       themeState,
       listApps,
-      rootDidInitialWatchFetch
+      rootDidInitialWatchFetch,
+      connectionTerminated,
+      seconds
     } = this.state;
 
     return (
@@ -390,6 +426,28 @@ class Root extends Component {
             </Router>
           </ThemeContext.Provider>
         </ApolloProvider>
+        {connectionTerminated &&
+          <Modal
+            isOpen={connectionTerminated}
+            onRequestClose={undefined}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Connection terminated modal"
+            ariaHideApp={false}
+            className="ConnectionTerminated--wrapper Modal DefaultSize"
+          >
+            <div className="Modal-body u-textAlign--center">
+              <div className="flex u-marginTop--30 u-marginBottom--10 justifyContent--center">
+                <span className="icon kots-logo u-marginRight--10"/>
+                <span className="icon airgapBundleIcon" />
+              </div>
+              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal u-userSelect--none">Cannont connect</h2>
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">We're unable to reach the API right now. Check to make sure your local server is running.</p>
+              <div className="u-marginBottom--30">
+                <span className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-userSelect--none">Trying again in {`${seconds} second${seconds !== 1 ? "s" : ""}`}</span>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
