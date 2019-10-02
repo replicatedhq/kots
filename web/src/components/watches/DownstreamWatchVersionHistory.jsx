@@ -11,11 +11,12 @@ import { getDownstreamHistory } from "../../queries/WatchQueries";
 import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
-import { isKotsApplication, hasPendingPreflight } from "../../utilities/utilities";
+import { isKotsApplication, hasPendingPreflight, getPreflightResultState } from "../../utilities/utilities";
 
 class DownstreamWatchVersionHistory extends Component {
   state = {
     showSkipModal: false,
+    showDeployWarningModal: false,
     deployParams: {},
     deployingSequence: null
   }
@@ -34,10 +35,30 @@ class DownstreamWatchVersionHistory extends Component {
         });
         return;
       }
+      const version = this.props.data?.getKotsDownstreamHistory?.find( v => v.sequence === sequence);
+      // If status is undefined - this is a force deploy.
+      if (version?.preflightResult && status === "pending") {
+        const preflightResults = JSON.parse(version.preflightResult);
+        const preflightState = getPreflightResultState(preflightResults);
+
+        if (preflightState === "fail") {
+          this.setState({
+            showDeployWarningModal: true,
+            deployParams: {
+              upstreamSlug,
+              sequence,
+              clusterSlug
+            }
+          });
+          return;
+        }
+      }
+
       await this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
       await this.props.data.refetch();
       this.setState({
         showSkipModal: false,
+        showDeployWarningModal: false,
         deployParams: {},
         deployingSequence: null
       });
@@ -54,6 +75,13 @@ class DownstreamWatchVersionHistory extends Component {
   hideSkipModal = () => {
     this.setState({
       showSkipModal: false,
+      deployingSequence: null
+    });
+  }
+
+  hideDeployWarningModal = () => {
+    this.setState({
+      showDeployWarningModal: false,
       deployingSequence: null
     });
   }
@@ -76,7 +104,7 @@ class DownstreamWatchVersionHistory extends Component {
 
   render() {
     const { watch, match, data } = this.props;
-    const { showSkipModal } = this.state;
+    const { showSkipModal, showDeployWarningModal } = this.state;
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
@@ -163,7 +191,6 @@ class DownstreamWatchVersionHistory extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
               Preflight checks have not finished yet. Are you sure you want to deploy this version?
             </p>
@@ -173,6 +200,36 @@ class DownstreamWatchVersionHistory extends Component {
                 type="button"
                 className="btn green primary">
                 Deploy this version
+              </button>
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          isOpen={showDeployWarningModal}
+          onRequestClose={this.hideDeployWarningModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Skip preflight checks"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
+            </p>
+            <div className="u-marginTop--10 flex">
+              <button
+                onClick={this.onForceDeployClick}
+                type="button"
+                className="btn green primary"
+              >
+                Deploy this version
+              </button>
+              <button
+                onClick={this.hideDeployWarningModal}
+                type="button"
+                className="btn secondary u-marginLeft--20"
+              >
+                Cancel
               </button>
             </div>
           </div>

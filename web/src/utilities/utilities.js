@@ -277,6 +277,19 @@ export function hasPendingPreflight(versionHistory) {
   return false;
 }
 
+export function getPreflightResultState(preflightResults) {
+  const results = preflightResults.results;
+  let resultState = "pass";
+  for (const check of results) {
+    if (check.isWarn) {
+      resultState = "warn";
+    } else if (check.isFail) {
+      return "fail";
+    }
+  }
+  return resultState;
+}
+
 export function formatByteSize(bytes) {
   if (bytes < 1024) {
     return bytes + "b";
