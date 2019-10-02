@@ -176,6 +176,7 @@ class KotsApplicationTree extends React.Component {
                     width="100%"
                     options={{
                       readOnly: true,
+                      contextmenu: false,
                       minimap: {
                         enabled: false
                       },
