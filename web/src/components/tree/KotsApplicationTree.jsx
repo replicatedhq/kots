@@ -143,6 +143,7 @@ class KotsApplicationTree extends React.Component {
                 <FileTree
                   files={files}
                   isRoot={true}
+                  keepOpenPaths={["overlays", "base"]}
                   topLevelPaths={files?.map(f => f.path)}
                   handleFileSelect={(path) => this.setSelectedFile(path)}
                   selectedFile={this.state.selectedFile}
