@@ -18,7 +18,7 @@ class UploadAirgapBundle extends React.Component {
     bundleFile: {},
     fileUploading: false,
     registryDetails: {},
-    installingOnline: false
+    preparingOnlineInstall: false
   }
 
   clearFile = () => {
@@ -111,7 +111,7 @@ class UploadAirgapBundle extends React.Component {
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
     this.setState({
-      installingOnline: true
+      preparingOnlineInstall: true
     });
     try {
       const resp = await this.props.resumeInstallOnline(slug);
@@ -127,7 +127,7 @@ class UploadAirgapBundle extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        installingOnline: false
+        preparingOnlineInstall: false
       });
     }
   }
@@ -170,7 +170,7 @@ class UploadAirgapBundle extends React.Component {
       uploadTotal,
       errorMessage,
       registryDetails,
-      installingOnline
+      preparingOnlineInstall
     } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
     const kotsApp = data?.getKotsApp;
@@ -265,7 +265,7 @@ class UploadAirgapBundle extends React.Component {
           </div>
           {!isLoading && !kotsApp.isAirgap && (
             <div className="u-marginTop--20 u-marginBottom--20 u-textAlign--center">
-              {installingOnline
+              {preparingOnlineInstall
                 ? <Loader size="40" />
                 : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
               }
