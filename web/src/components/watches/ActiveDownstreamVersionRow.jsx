@@ -11,6 +11,14 @@ export default function ActiveDownstreamVersionRow(props) {
   const icon = getClusterType(isGit) === "git" ? "icon github-small-size" : "icon ship-small-size";
   const { owner, slug } = match.params;
   const downstreamHistoryUrl = isKotsApplication(watch) ? `/app/${slug}/downstreams/${watch.cluster.slug}/version-history` : `/watch/${owner}/${slug}/downstreams/${watch.slug}/version-history`;
+
+  let versionLabel = watch?.currentVersion?.title;
+  // If there is no current title, but 1 pending version, just show the 1 version label,
+  // as this version will be automatically deployed since it's the only one.
+  if (!versionLabel && watch.pendingVersions.length === 1) {
+    versionLabel = watch?.pendingVersions[0]?.title;
+  }
+
   return (
     <div className="flex flex-auto ActiveDownstreamVersionRow--wrapper">
       <div className="flex-column flex1">
@@ -21,7 +29,7 @@ export default function ActiveDownstreamVersionRow(props) {
           </p>
         </div>
         <div className="flex flex-auto alignItems--center u-marginTop--5">
-          <span className="u-fontSize--largest u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{watch.currentVersion ? watch.currentVersion.title : "---"}</span>
+          <span className="u-fontSize--largest u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{versionLabel || "---"}</span>
           {!watch.currentVersion &&
             <div className="flex-auto flex alignItems--center alignSelf--center">
               <div className="icon blueCircleMinus--icon"></div>
