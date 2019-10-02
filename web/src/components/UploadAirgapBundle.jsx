@@ -11,12 +11,14 @@ import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
+import Loader from "./shared/Loader";
 
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
     fileUploading: false,
-    registryDetails: {}
+    registryDetails: {},
+    preparingOnlineInstall: false
   }
 
   clearFile = () => {
@@ -108,12 +110,25 @@ class UploadAirgapBundle extends React.Component {
 
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
+    this.setState({
+      preparingOnlineInstall: true
+    });
     try {
-      await this.props.resumeInstallOnline(slug);
-      this.props.onUploadSuccess();
-      this.props.history.push(`/app/${slug}`);
+      const resp = await this.props.resumeInstallOnline(slug);
+      const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
+
+      if (hasPreflight) {
+        this.props.history.replace("/preflight");
+      } else {
+        await this.props.onUploadSuccess();
+        this.props.history.replace(`/app/${slug}`);
+      }
+
     } catch (error) {
       console.log(error);
+      this.setState({
+        preparingOnlineInstall: false
+      });
     }
   }
 
@@ -154,7 +169,8 @@ class UploadAirgapBundle extends React.Component {
       uploadSent,
       uploadTotal,
       errorMessage,
-      registryDetails
+      registryDetails,
+      preparingOnlineInstall
     } = this.state;
     const hasFile = bundleFile && !isEmpty(bundleFile);
     const kotsApp = data?.getKotsApp;
@@ -249,7 +265,11 @@ class UploadAirgapBundle extends React.Component {
           </div>
           {!isLoading && !kotsApp.isAirgap && (
             <div className="u-marginTop--20 u-marginBottom--20 u-textAlign--center">
-              <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+              {preparingOnlineInstall
+                ? <Loader size="40" />
+                : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+              }
+
             </div>
           )}
         </div>

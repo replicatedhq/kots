@@ -225,8 +225,12 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         continue;
       }
 
+      const downstreamState = kotsApp.hasPreflight
+        ? "pending_preflight"
+        : "deployed";
+
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, downstreamState);
     }
 
     return kotsApp;

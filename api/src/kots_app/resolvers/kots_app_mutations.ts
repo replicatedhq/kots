@@ -5,6 +5,7 @@ import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
+import { KotsApp } from "../kots_app";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -60,7 +61,7 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
-    async resumeInstallOnline(root: any, args: any, context: Context) {
+    async resumeInstallOnline(root: any, args: any, context: Context): Promise<KotsApp> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await stores.kotsAppStore.getApp(appId);
@@ -71,9 +72,9 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-      await kotsFinalizeApp(app, downstream.title, stores)
+      const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
       await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-      return true;
+      return kotsApp;
     },
 
     async deployKotsVersion(root: any, args: any, context: Context) {
