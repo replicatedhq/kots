@@ -92,6 +92,7 @@ class Root extends Component {
     listApps: [],
     appLogo: null,
     selectedAppName: null,
+    appNameSpace: null,
     fetchingMetadata: false,
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
@@ -196,6 +197,7 @@ class Root extends Component {
       this.setState({
         appLogo: meta.data.getKotsMetadata.iconUri,
         selectedAppName: meta.data.getKotsMetadata.name,
+        appNameSpace: meta.data.getKotsMetadata.namespace,
         fetchingMetadata: false
       });
     } else {
@@ -327,6 +329,7 @@ class Root extends Component {
                             listApps={listApps}
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
+                            appNameSpace={this.state.appNameSpace}
                           />
                         )
                       }
@@ -379,6 +382,7 @@ class Root extends Component {
                             listApps={listApps}
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
+                            appNameSpace={this.state.appNameSpace}
                           />
                         )
                       }
