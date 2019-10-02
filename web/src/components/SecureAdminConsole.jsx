@@ -104,6 +104,8 @@ class SecureAdminConsole extends React.Component {
       passwordErrMessage,
     } = this.state;
 
+    if (fetchingMetadata) return null;
+    
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
