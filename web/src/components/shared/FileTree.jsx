@@ -35,15 +35,12 @@ export default class FileTree extends React.Component {
     if (isRoot && !initialOpenComplete && topLevelPaths && topLevelPaths !== lastProps.topLevelPaths) {
       const defaultSelected = topLevelPaths.reduce((current, path) => {
         let expand = true;
-        console.log(path);
-        if (keepOpenPaths.length) {
+        if (keepOpenPaths?.length) {
           for (let i = 0; i < keepOpenPaths.length; i++) {
             const str = keepOpenPaths[i];
-            if (path.startsWith(str)) {
-              expand = true;
+            expand = path.startsWith(str);
+            if (expand) {
               break;
-            } else {
-              expand = false;
             }
           }
         }
