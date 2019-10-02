@@ -29,7 +29,7 @@ export default function ActiveDownstreamVersionRow(props) {
           </p>
         </div>
         <div className="flex flex-auto alignItems--center u-marginTop--5">
-          <span className="u-fontSize--largest u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{versionLabel}</span>
+          <span className="u-fontSize--largest u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{versionLabel || "---"}</span>
           {!watch.currentVersion &&
             <div className="flex-auto flex alignItems--center alignSelf--center">
               <div className="icon blueCircleMinus--icon"></div>
