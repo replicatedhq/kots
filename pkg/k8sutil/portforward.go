@@ -159,12 +159,12 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 					serviceStopCh, err := ServiceForward(kubeContext, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
-						return errors.Wrap(err, "failed to forward service")
+						continue // try again
 					}
 					if serviceStopCh == nil {
 						// we didn't do the port forwarding, probably because the pod isn't ready.
 						// try again next loop
-						continue
+						continue // try again
 					}
 
 					forwardedAdditionalPorts[desiredAdditionalPort] = serviceStopCh
