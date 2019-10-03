@@ -11,8 +11,10 @@ import {
   extractDownstreamNamesFromTarball,
   extractCursorAndVersionFromTarball,
   extractPreflightSpecFromTarball,
+  extractSupportBundleSpecFromTarball,
   extractAppSpecFromTarball,
   extractKotsAppSpecFromTarball,
+  extractAppTitleFromTarball
 } from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
@@ -129,10 +131,12 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
       await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
       const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+      const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
       const preflightSpec = await extractPreflightSpecFromTarball(buffer);
       const appSpec = await extractAppSpecFromTarball(buffer);
       const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
-      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec, kotsAppSpec);
+      const appTitle = await extractAppTitleFromTarball(buffer);
+      await stores.kotsAppStore.createMidstreamVersion(app.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec,  appSpec, kotsAppSpec, appTitle);
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
@@ -213,12 +217,14 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
 
+    const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
-    kotsApp.hasPreflight = !!preflightSpec;
     const appSpec = await extractAppSpecFromTarball(buffer);
     const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
+    const appTitle = await extractAppTitleFromTarball(buffer);
+    kotsApp.hasPreflight = !!preflightSpec;
 
-    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec, kotsAppSpec);
+    await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle);
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
@@ -295,10 +301,12 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+  const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
   const appSpec = await extractAppSpecFromTarball(buffer);
   const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
-  await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec, kotsAppSpec);
+  const appTitle = await extractAppTitleFromTarball(buffer);
+  await stores.kotsAppStore.createMidstreamVersion(app.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle);
 
   const downstreams = await extractDownstreamNamesFromTarball(buffer);
   const clusters = await stores.clusterStore.listAllUsersClusters();

@@ -192,6 +192,78 @@ export function extractDownstreamNamesFromTarball(tarball: Buffer): Promise<stri
   });
 }
 
+export function extractSupportBundleSpecFromTarball(tarball: Buffer): Promise<string | null> {
+  const uncompressed = zlib.unzipSync(tarball);
+  const extract = tar.extract();
+
+  let bundleSpec = null;
+
+  return new Promise((resolve, reject) => {
+    extract.on("error", reject);
+
+    extract.on("entry", (header, stream, next) => {
+      stream.pipe(concat(data => {
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
+
+        const doc = yaml.safeLoad(data.toString());
+
+        if (doc.apiVersion === "troubleshoot.replicated.com/v1beta1" && doc.kind === "Collector") {
+          bundleSpec = data.toString();
+          resolve(bundleSpec);
+          next();
+          return;
+        }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve(bundleSpec);
+    });
+
+    extract.end(uncompressed);
+  });
+}
+
+export function extractAppTitleFromTarball(tarball: Buffer): Promise<string | null> {
+  const uncompressed = zlib.unzipSync(tarball);
+  const extract = tar.extract();
+
+  let appTitle = null;
+
+  return new Promise((resolve, reject) => {
+    extract.on("error", reject);
+
+    extract.on("entry", (header, stream, next) => {
+      stream.pipe(concat(data => {
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
+
+        const doc = yaml.safeLoad(data.toString());
+
+        if (doc.apiVersion === "kots.io/v1beta1" && doc.kind === "Application") {
+          appTitle = doc.spec.title;
+          resolve(appTitle);
+          next();
+          return;
+        }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve(appTitle);
+    });
+
+    extract.end(uncompressed);
+  });
+}
+
 function isYaml(data: string): boolean {
   try {
     const doc = yaml.safeLoad(data.toString());

@@ -12,7 +12,9 @@ import {
   extractCursorAndVersionFromTarball,
   extractPreflightSpecFromTarball,
   extractAppSpecFromTarball,
-  extractKotsAppSpecFromTarball
+  extractKotsAppSpecFromTarball,
+  extractSupportBundleSpecFromTarball,
+  extractAppTitleFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
@@ -143,12 +145,13 @@ export class KotsAPI {
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    const supportBundleSpec = undefined;
+    const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
     const appSpec = await extractAppSpecFromTarball(buffer);
     const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
+    const appTitle = await extractAppTitleFromTarball(buffer);
 
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec, kotsAppSpec);
+    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle);
 
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
@@ -343,13 +346,15 @@ export async function uploadUpdate(stores, slug, buffer) {
   const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${newSequence}.tar.gz`);
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-  const supportBundleSpec = undefined;
+  const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
   const appSpec = await extractAppSpecFromTarball(buffer);
   const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
+  const appTitle = await extractAppTitleFromTarball(buffer);
+
   const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
 
-  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle);
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {

@@ -51,7 +51,7 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any): Promise<void> {
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any, appTitle: string | null): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec)
       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
     const v = [
@@ -68,9 +68,21 @@ export class KotsAppStore {
 
     await this.pool.query(q, v);
 
-    const qq = `update app set current_sequence = $1 where id = $2`;
+    let name;
+    if (!appTitle) {
+      const qqq = `select slug from app where id = $1`;
+      const vvv = [ id ];
+
+      const result = await this.pool.query(qqq, vvv);
+      name = result.rows[0].slug;
+    } else {
+      name = appTitle;
+    }
+
+    const qq = `update app set current_sequence = $1, name = $2 where id = $3`;
     const vv = [
       sequence,
+      name,
       id,
     ];
 
