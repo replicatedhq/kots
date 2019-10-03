@@ -11,7 +11,8 @@ import {
   extractDownstreamNamesFromTarball,
   extractCursorAndVersionFromTarball,
   extractPreflightSpecFromTarball,
-  extractAppSpecFromTarball
+  extractAppSpecFromTarball,
+  extractKotsAppSpecFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
@@ -145,9 +146,9 @@ export class KotsAPI {
     const supportBundleSpec = undefined;
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
     const appSpec = await extractAppSpecFromTarball(buffer);
+    const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
 
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec);
-
+    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, preflightSpec, appSpec, kotsAppSpec);
 
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
@@ -345,9 +346,10 @@ export async function uploadUpdate(stores, slug, buffer) {
   const supportBundleSpec = undefined;
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
   const appSpec = await extractAppSpecFromTarball(buffer);
+  const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
   const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
 
-  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec);
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {

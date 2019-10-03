@@ -13,7 +13,6 @@ export function KotsQueries(stores: Stores) {
     async getKotsMetadata(): Promise<KotsAppMetadata|null> {
       try {
         const rawBranding = await kotsAppGetBranding();
-        console.log(rawBranding);
         const parsedBranding = yaml.safeLoad(rawBranding);
 
         return {

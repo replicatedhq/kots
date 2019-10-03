@@ -51,9 +51,9 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec, app_spec)
-      values ($1, $2, $3, $4, $5, $6, $7, $8)`;
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any): Promise<void> {
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
     const v = [
       id,
       sequence,
@@ -63,6 +63,7 @@ export class KotsAppStore {
       supportBundleSpec,
       preflightSpec,
       appSpec,
+      kotsAppSpec,
     ];
 
     await this.pool.query(q, v);
@@ -254,6 +255,17 @@ export class KotsAppStore {
     const versionItem = this.mapKotsAppVersion(result.rows[0]);
 
     return versionItem;
+  }
+
+  async getKotsAppSpec(appId: string, sequence: number): Promise<string | undefined> {
+    const q = `select kots_app_spec from app_version where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+    return result.rows[0].kots_app_spec;
   }
 
   async getAppSpec(appId: string, sequence: number): Promise<string | undefined> {

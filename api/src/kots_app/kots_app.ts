@@ -55,13 +55,30 @@ export class KotsApp {
       return [];
     }
 
+    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    console.log(kotsAppSpec);
     try {
-      const parsed = yaml.safeLoad(appSpec);
+      const parsedAppSpec = yaml.safeLoad(appSpec);
+      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
       const links: KotsAppLink[] = [];
-      for (const unrealizedLink of parsed.spec.descriptor.links) {
+      for (const unrealizedLink of parsedAppSpec.spec.descriptor.links) {
+        // this is a pretty naive solution that works when there is 1 downstream only
+        // we need to think about what the product experience is when
+        // there are > 1 downstreams
+
+        let rewrittenUrl = unrealizedLink.url;
+        if (parsedKotsAppSpec) {
+          const mapped = _.find(parsedKotsAppSpec.spec.ports, (port: any) => {
+            return port.applicationUrl === unrealizedLink.url;
+          });
+          if (mapped) {
+            rewrittenUrl = parsedAppSpec ? `http://localhost:${mapped.localPort}`: unrealizedLink;
+          }
+        }
+
         const realized: KotsAppLink = {
           title: unrealizedLink.description,
-          uri: unrealizedLink.url,
+          uri: rewrittenUrl,
         };
 
         links.push(realized);

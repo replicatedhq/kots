@@ -285,6 +285,28 @@ class DetailPageApplication extends Component {
                 </div>
               </div>
             }
+
+            <div className="u-marginTop--30 u-paddingTop--10">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application links</p>
+              {childWatches && childWatches.map((childWatch) => {
+                return (
+                  <div className="DetailPage--linksRow flex" key={childWatch.cluster.id}>
+                    {childWatch.links.map((link) => {
+                      return (
+                        <div key={`${childWatch.cluster.id}-${link.title}`}>
+                          {childWatches.length === 1 ?
+                            <a href={link.uri} target="_blank"><button className="btn secondary">{link.title}</button></a>
+                          :
+                            <a href={link.uri} target="_blank"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="u-marginTop--30 u-paddingTop--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
               <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Update patches for your application. These patches will be applied to deployments on all clusters. To update patches for a cluster, find it below click “Customize” on the cluster you want to edit.</p>
