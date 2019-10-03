@@ -286,26 +286,28 @@ class DetailPageApplication extends Component {
               </div>
             }
 
-            <div className="u-marginTop--30 u-paddingTop--10">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application links</p>
-              {childWatches && childWatches.map((childWatch) => {
-                return (
-                  <div className="DetailPage--linksRow flex" key={childWatch.cluster.id}>
-                    {childWatch.links.map((link) => {
-                      return (
-                        <div key={`${childWatch.cluster.id}-${link.title}`}>
-                          {childWatches.length === 1 ?
-                            <a href={link.uri} target="_blank"><button className="btn secondary">{link.title}</button></a>
-                          :
-                            <a href={link.uri} target="_blank"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
-                          }
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
+            {isKotsApp && 
+              <div className="u-marginTop--30 u-paddingTop--10">
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application links</p>
+                {childWatches && childWatches.map((childWatch) => {
+                  return (
+                    <div className="DetailPage--linksRow flex" key={childWatch.cluster.id}>
+                      {childWatch.links.map((link) => {
+                        return (
+                          <div key={`${childWatch.cluster.id}-${link.title}`}>
+                            {childWatches.length === 1 ?
+                              <a href={link.uri} target="_blank"><button className="btn secondary">{link.title}</button></a>
+                            :
+                              <a href={link.uri} target="_blank"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
+                            }
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            }
 
             <div className="u-marginTop--30 u-paddingTop--10">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit application</p>
