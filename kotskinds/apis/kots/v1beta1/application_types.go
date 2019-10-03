@@ -20,10 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ApplicationPort struct {
+	ServiceName    string `json:"serviceName"`
+	ServicePort    int    `json:"servicePort"`
+	LocalPort      int    `json:"localPort,omitempty"`
+	ApplicationURL string `json:"applicationUrl,omitempty"`
+}
+
 // ApplicationSpec defines the desired state of ApplicationSpec
 type ApplicationSpec struct {
-	Title string `json:"title"`
-	Icon  string `json:"icon,omitempty"`
+	Title            string            `json:"title"`
+	Icon             string            `json:"icon,omitempty"`
+	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
 }
 
 // ApplicationStatus defines the observed state of Application

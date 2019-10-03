@@ -28,10 +28,10 @@ import (
 const DefaultMetadata = `apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
-  name: "Application"
+  name: "default-application"
 spec:
-  title: "Application"
-  icon: https://cdn1.iconfinder.com/data/icons/ninja-things-1/1772/ninja-simple-512.png`
+  title: "the application"
+  icon: https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png`
 
 type ReplicatedUpstream struct {
 	Channel      *string
