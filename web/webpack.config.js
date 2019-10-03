@@ -3,7 +3,6 @@ const webpackMerge = require("webpack-merge");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const HtmlWebpackTemplate = require("html-webpack-template");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -220,21 +219,6 @@ module.exports = function (env) {
       // })
     ],
   };
-
-  if (env !== "enterprise") {
-    common.plugins.push(
-      new CopyWebpackPlugin([
-        {
-          from: "./src/services/prodPerfect.js",
-          transform: function (content) {
-            var contentS = content.toString("utf8");
-            contentS = contentS.replace("@@PROD_PERFECT_WRITE_KEY", appEnv.PROD_PERFECT_WRITE_KEY);
-            return contentS.toString(new Buffer(contentS));
-          }
-        }
-      ]),
-    );
-  }
 
   if (env === "skaffold" || !env) {
     var dev = require("./webpack.config.dev");
