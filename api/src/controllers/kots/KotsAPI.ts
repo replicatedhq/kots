@@ -10,7 +10,9 @@ import * as _ from "lodash";
 import {
   extractDownstreamNamesFromTarball,
   extractCursorAndVersionFromTarball,
-  extractPreflightSpecFromTarball
+  extractPreflightSpecFromTarball,
+  extractSupportBundleSpecFromTarball,
+  extractAppTitleFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
@@ -141,7 +143,7 @@ export class KotsAPI {
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined);
+    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, undefined, undefined, undefined);
 
     // TODO parse and get support bundle and prefight from the upload
     const supportBundleSpec = undefined;
@@ -340,11 +342,12 @@ export async function uploadUpdate(stores, slug, buffer) {
   const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${newSequence}.tar.gz`);
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-  const supportBundleSpec = undefined;
+  const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+  const appTitle = await extractAppTitleFromTarball(buffer);
 
   const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
-  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appTitle);
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {
