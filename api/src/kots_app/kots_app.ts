@@ -442,6 +442,7 @@ export interface KotsVersion {
 export interface KotsAppMetadata {
   name: string;
   iconUri: string;
+  namespace: string;
 }
 
 export interface AppRegistryDetails {

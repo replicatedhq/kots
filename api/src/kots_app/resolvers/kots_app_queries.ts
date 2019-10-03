@@ -14,10 +14,12 @@ export function KotsQueries(stores: Stores) {
       try {
         const rawBranding = await kotsAppGetBranding();
         const parsedBranding = yaml.safeLoad(rawBranding);
+        const namespace = process.env["POD_NAMESPACE"] || "";
 
         return {
           name: parsedBranding.spec.title,
           iconUri: parsedBranding.spec.icon,
+          namespace: namespace,
         };
       } catch (err) {
         console.log(err);

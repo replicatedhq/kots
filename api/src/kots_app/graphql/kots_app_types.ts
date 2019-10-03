@@ -51,6 +51,7 @@ const KotsAppMetadata = `
   type KotsAppMetadata {
     name: String!
     iconUri: String!
+    namespace: String!
   }
 `;
 

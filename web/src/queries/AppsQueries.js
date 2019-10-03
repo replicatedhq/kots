@@ -11,6 +11,7 @@ export const getKotsMetadataRaw = `
     getKotsMetadata {
       name
       iconUri
+      namespace
     }
   }
 `;

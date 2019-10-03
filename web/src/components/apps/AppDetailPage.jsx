@@ -360,7 +360,7 @@ class AppDetailPage extends Component {
                     } />
                     <Route exact path="/app/:slug/integrations" render={() => <DetailPageIntegrations watch={app} />} />
 
-                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} />} />
+                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} appNameSpace={this.props.appNameSpace} />} />
 
                     <Route exact path="/app/:slug/version-history" render={() =>
                       <AppVersionHistory
