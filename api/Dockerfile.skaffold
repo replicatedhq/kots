@@ -21,7 +21,7 @@ cd /tmp && tar xzvf kots.tar.gz && \
 mv /tmp/kots.so /lib/kots.so
 # COPY ./kots.so /lib/kots.so
 
-RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.8/troubleshoot.so_0.9.7_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
+RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.7/troubleshoot.so_0.9.7_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
  cd /tmp && tar xzvf troubleshoot.tar.gz && \
  mv /tmp/troubleshoot.so /lib/troubleshoot.so
 # COPY ./troubleshoot.so /lib/troubleshoot.so
