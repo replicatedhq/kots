@@ -44,6 +44,20 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
+
+/**
+ * TODO:
+ * This is what needs to happen to remove Piwik on prem:
+ *
+ * * Move the Matomo/Piwik library to env/[env_name_here].js#WEBPACK_SCRIPTS
+ * * Use https://data-2.replicated.com for the URL. Follow this scheme for reference:
+ *   https://github.com/guillaumeparis2000/react-piwik/blob/master/src/React-Piwik.js
+ * * Create a new function that looks for window._paq
+ * * If it exists, return "history with Piwik" - otherwise just plain history
+ *
+ *
+ *
+ */
 let history = createBrowserHistory();
 if (process.env.NODE_ENV === "production" && !window.env.ON_PREM) {
   const piwik = new ReactPiwik({
