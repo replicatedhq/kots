@@ -58,8 +58,7 @@ webpack_build_local:
 	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode development
 
 .PHONY: webpack_build
-webpack_build:
-	SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
+webpack_build: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
 webpack_build:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
 	node \
