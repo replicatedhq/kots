@@ -383,6 +383,10 @@ export const getKotsAppRaw = `
       bundleCommand
       downstreams {
         name
+        links {
+          title
+          uri
+        }
         currentVersion {
           title
           status

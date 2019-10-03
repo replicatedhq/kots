@@ -17,6 +17,13 @@ const KotsApp = `
   }
 `;
 
+const KotsAppLink = `
+  type KotsAppLink {
+    title: String
+    uri: String
+  }
+`;
+
 const KotsDownstream = `
   type KotsDownstream {
     name: String
@@ -24,6 +31,7 @@ const KotsDownstream = `
     pendingVersions: [KotsVersion]
     pastVersions: [KotsVersion]
     cluster: Cluster
+    links: [KotsAppLink]
   }
 `;
 
@@ -157,10 +165,11 @@ const KotsConfigGroupInput = `
 
 export default [
   KotsApp,
+  KotsAppLink,
   KotsDownstream,
   KotsVersion,
   KotsAppMetadata,
-  
+
   AppRegistryDetails,
   KotsAppRegistryDetails,
   AirgapInstallStatus,

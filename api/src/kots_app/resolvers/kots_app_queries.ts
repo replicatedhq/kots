@@ -19,7 +19,8 @@ export function KotsQueries(stores: Stores) {
           name: parsedBranding.spec.title,
           iconUri: parsedBranding.spec.icon,
         };
-      } catch (error) {
+      } catch (err) {
+        console.log(err);
         logger.error("[kotsAppGetBranding] - Unable to retrieve or parse branding information");
         return null;
       }
