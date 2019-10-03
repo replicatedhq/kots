@@ -56,7 +56,6 @@ export class KotsApp {
     }
 
     const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
-    console.log(kotsAppSpec);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
       const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
