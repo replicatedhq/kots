@@ -13,7 +13,6 @@ import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
 import { Cluster } from "../cluster";
-import { KotsVersion } from "./"
 import * as _ from "lodash";
 import yaml from "js-yaml";
 
@@ -49,6 +48,46 @@ export class KotsApp {
   }
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id, clusterId);
+  }
+  public async getRealizedLinksFromAppSpec(stores: Stores): Promise<KotsAppLink[]> {
+    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, this.currentSequence!);
+    if (!appSpec) {
+      return [];
+    }
+
+    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    try {
+      const parsedAppSpec = yaml.safeLoad(appSpec);
+      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
+      const links: KotsAppLink[] = [];
+      for (const unrealizedLink of parsedAppSpec.spec.descriptor.links) {
+        // this is a pretty naive solution that works when there is 1 downstream only
+        // we need to think about what the product experience is when
+        // there are > 1 downstreams
+
+        let rewrittenUrl = unrealizedLink.url;
+        if (parsedKotsAppSpec) {
+          const mapped = _.find(parsedKotsAppSpec.spec.ports, (port: any) => {
+            return port.applicationUrl === unrealizedLink.url;
+          });
+          if (mapped) {
+            rewrittenUrl = parsedAppSpec ? `http://localhost:${mapped.localPort}`: unrealizedLink;
+          }
+        }
+
+        const realized: KotsAppLink = {
+          title: unrealizedLink.description,
+          uri: rewrittenUrl,
+        };
+
+        links.push(realized);
+      }
+
+      return links;
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
   }
 
   async getFilesPaths(sequence: string): Promise<string[]> {
@@ -374,6 +413,7 @@ export class KotsApp {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
+          links: () => this.getRealizedLinksFromAppSpec(stores),
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: () => this.getPastVersions(downstream.id, stores),
           pendingVersions: () => this.getPendingVersions(downstream.id, stores),
@@ -382,6 +422,11 @@ export class KotsApp {
       }),
     };
   }
+}
+
+export interface KotsAppLink {
+  title: string;
+  uri: string;
 }
 
 export interface KotsVersion {
