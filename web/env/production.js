@@ -26,6 +26,10 @@ module.exports = {
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js",
     "https://buttons.github.io/buttons.js",
     {
+      src: "https://data-2.replicated.com/js/",
+      type: "text/javascript",
+    },
+    {
       src: "/prodPerfect.js",
       type: "text/javascript",
     },

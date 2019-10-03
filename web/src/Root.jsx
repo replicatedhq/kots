@@ -1,7 +1,6 @@
 import { hot } from "react-hot-loader/root";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
-import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
@@ -41,34 +40,12 @@ import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
+import connectHistory from "./services/matomo";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
-
-/**
- * TODO:
- * This is what needs to happen to remove Piwik on prem:
- *
- * * Move the Matomo/Piwik library to env/[env_name_here].js#WEBPACK_SCRIPTS
- * * Use https://data-2.replicated.com for the URL. Follow this scheme for reference:
- *   https://github.com/guillaumeparis2000/react-piwik/blob/master/src/React-Piwik.js
- * * Create a new function that looks for window._paq
- * * If it exists, return "history with Piwik" - otherwise just plain history
- *
- *
- *
- */
-let history = createBrowserHistory();
-if (process.env.NODE_ENV === "production" && !window.env.ON_PREM) {
-  const piwik = new ReactPiwik({
-    url: "https://data-2.replicated.com",
-    siteId: 6,
-    trackErrors: true,
-    jsFilename: "js/",
-    phpFilename: "js/"
-  });
-  history = piwik.connectToHistory(history);
-}
+let browserHistory = createBrowserHistory();
+let history = connectHistory(browserHistory);
 
 /**
  * Create our GraphQL Client

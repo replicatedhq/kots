@@ -139,7 +139,6 @@
     "react-helmet": "^5.2.1",
     "react-modal": "^3.8.1",
     "react-monaco-editor": "^0.20.0",
-    "react-piwik": "^1.6.0",
     "react-select": "^2.4.3",
     "react-tooltip": "^3.10.0",
     "trim": "^0.0.1",
