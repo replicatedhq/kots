@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 
 	"github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
@@ -128,12 +129,12 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			podName, err := k8sutil.WaitForWeb(namespace)
+			podName, err := k8sutil.WaitForWeb(namespace, time.Minute*3)
 			if err != nil {
 				return err
 			}
 
-			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName)
+			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true)
 			if err != nil {
 				return err
 			}

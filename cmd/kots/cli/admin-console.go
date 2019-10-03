@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -31,12 +32,12 @@ func AdminConsoleCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			podName, err := k8sutil.WaitForWeb(args[0])
+			podName, err := k8sutil.WaitForWeb(args[0], time.Second*5)
 			if err != nil {
 				return err
 			}
 
-			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, args[0], podName)
+			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, args[0], podName, true)
 			if err != nil {
 				return err
 			}

@@ -16,7 +16,7 @@ func StartPortForward(namespace string, kubeconfig string) (chan struct{}, error
 	}
 
 	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(kubeconfig, 3000, 3000, namespace, podName)
+	stopCh, err := k8sutil.PortForward(kubeconfig, 3000, 3000, namespace, podName, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to start port forwarding")
 	}
