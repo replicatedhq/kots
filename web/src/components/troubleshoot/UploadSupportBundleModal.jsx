@@ -1,6 +1,5 @@
 import * as React from "react";
 import Clipboard from "clipboard";
-import { Link } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 import Dropzone from "react-dropzone";
 import randomstring from "randomstring";
