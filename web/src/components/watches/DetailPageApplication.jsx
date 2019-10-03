@@ -286,7 +286,7 @@ class DetailPageApplication extends Component {
               </div>
             }
 
-            {isKotsApp && 
+            {isKotsApp &&
               <div className="u-marginTop--30 u-paddingTop--10">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application links</p>
                 {childWatches && childWatches.map((childWatch) => {
@@ -296,9 +296,9 @@ class DetailPageApplication extends Component {
                         return (
                           <div key={`${childWatch.cluster.id}-${link.title}`}>
                             {childWatches.length === 1 ?
-                              <a href={link.uri} target="_blank"><button className="btn secondary">{link.title}</button></a>
+                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary">{link.title}</button></a>
                             :
-                              <a href={link.uri} target="_blank"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
+                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
                             }
                           </div>
                         );
