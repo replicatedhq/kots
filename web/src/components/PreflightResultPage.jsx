@@ -100,7 +100,10 @@ class PreflightResultPage extends Component {
         {
           hasData && isLicenseFlow && (
             <div className="flex-auto flex justifyContent--flexEnd">
-              <Link to={`/app/${preflightResultData.appSlug}`}>
+              <Link to={match.params.downstreamSlug
+                ? `/app/${preflightResultData.appSlug}/downstreams/${match.params.downstreamSlug}/version-history`
+                : `/app/${preflightResultData.appSlug}`
+              }>
               <button
                 type="button"
                 className="btn primary u-marginRight--30 u-marginBottom--15"
