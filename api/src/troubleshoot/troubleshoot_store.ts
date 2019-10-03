@@ -2,7 +2,7 @@ import pg from "pg";
 import randomstring from "randomstring";
 import _ from "lodash";
 import { Params } from "../server/params";
-import { signPutRequest, signGetRequest, getFileInfo } from "../util/s3";
+import { signGetRequest, getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
@@ -193,7 +193,7 @@ spec:
     const v = [id];
     const result = await this.pool.query(q, v);
 
-    return result.rows[0].count === 1;
+    return result.rows[0].count === "1";
   }
 
   public async assignTreeIndex(id: string, index: string): Promise<boolean> {
@@ -262,14 +262,6 @@ spec:
     const q = `update supportbundle set status = $2 where id = $1`;
     const v = [id, status];
     await this.pool.query(q, v);
-  }
-
-  public async signSupportBundlePutRequest(supportBundle: SupportBundle): Promise<string> {
-    if (supportBundle.status !== "pending") {
-      throw new ReplicatedError(`Unable to generate signed put request for a support bundle in status ${supportBundle.status}`);
-    }
-
-    return signPutRequest(this.params, this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`, "application/tar+gzip");
   }
 
   public async signSupportBundleGetRequest(supportBundle: SupportBundle): Promise<string> {

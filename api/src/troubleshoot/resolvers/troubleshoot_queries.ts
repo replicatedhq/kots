@@ -2,7 +2,6 @@ import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import _ from "lodash";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp } from "../../kots_app";
 
 export function TroubleshootQueries(stores: Stores) {
   return {
@@ -77,7 +76,6 @@ export function TroubleshootQueries(stores: Stores) {
       const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(watch.slug);
 
       return bundleCommand;
-    }
-
+    },
   };
 }

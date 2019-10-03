@@ -65,7 +65,7 @@ class AppDetailPage extends Component {
     const currentWatch = listApps?.find(w => w.slug === slug);
 
     // Handle updating the app theme state when a watch changes.
-    if (currentWatch ?.watchIcon) {
+    if (currentWatch?.watchIcon) {
       const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
 
@@ -277,10 +277,10 @@ class AppDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
-          condition={listApps ?.length > 1}
+          condition={listApps?.length > 1}
           sidebar={(
             <SideBar
-              items={listApps ?.map((item, idx) => {
+              items={listApps?.map((item, idx) => {
                 let sidebarItemNode;
                 if (item.name) {
                   const slugFromRoute = match.params.slug;

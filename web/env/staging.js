@@ -3,6 +3,7 @@ module.exports = {
   INSTALL_ENDPOINT: "https://www.staging.replicated.com/api/install",
   GRAPHQL_ENDPOINT: "https://www.staging.replicated.com/graphql",
   REST_ENDPOINT: "https://www.staging.replicated.com/api",
+  TROUBLESHOOT_ENDPOINT: "http://www.staging.replicated.com/api/v1/troubleshoot",
   SHIPDOWNLOAD_ENDPOINT: "https://www.staging.replicated.com/api/v1/download",
   SHIPINIT_ENDPOINT: "https://www.staging.replicated.com/api/v1/init/",
   SHIPUPDATE_ENDPOINT: "https://www.staging.replicated.com/api/v1/update/",

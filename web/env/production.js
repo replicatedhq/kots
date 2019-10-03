@@ -3,6 +3,7 @@ module.exports = {
   INSTALL_ENDPOINT: "https://www.replicated.com/api/install",
   GRAPHQL_ENDPOINT: "https://www.replicated.com/graphql",
   REST_ENDPOINT: "https://www.replicated.com/api",
+  TROUBLESHOOT_ENDPOINT: "http://www.replicated.com/api/v1/troubleshoot",
   GITHUB_CLIENT_ID: "Iv1.31f2356a7342e85f",
   SHIPDOWNLOAD_ENDPOINT: "https://www.replicated.com/api/v1/download",
   SHIPINIT_ENDPOINT: "https://www.replicated.com/api/v1/init/",

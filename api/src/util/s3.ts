@@ -79,32 +79,6 @@ export async function signGetRequest(params: Params, bucket: string, key: string
   });
 }
 
-export async function signPutRequest(params: Params, bucket: string, key: string, contentType: string, expires?: number): Promise<string> {
-  const s3 = getS3(params);
-
-  return new Promise((resolve, reject) => {
-    const s3Params = {
-      Bucket: bucket,
-      Key: key,
-      ContentType: contentType,
-      Expires: expires,
-    };
-
-    s3.getSignedUrl("putObject", s3Params, (err, uploadUrl) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-
-      if (process.env["S3_ENDPOINT"]) {
-        uploadUrl = uploadUrl.replace(process.env["S3_ENDPOINT"]!, `${params.apiAdvertiseEndpoint}/${bucket}/`);
-      }
-
-      resolve(uploadUrl);
-    });
-  });
-}
-
 // checks if a file exists in S3
 export async function checkExists(params: Params, requestParams: AWS.S3.Types.HeadObjectRequest): Promise<boolean> {
   if (params.s3BucketEndpoint && params.s3BucketEndpoint.trim() !== "") {

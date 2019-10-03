@@ -41,9 +41,6 @@ type Mutation {
   createUnforkSession(upstreamUri: String!, forkUri: String!): UnforkSession!
   createUpdateSession(watchId: ID!): UpdateSession!
   createEditSession(watchId: ID!): EditSession!
-
-  uploadSupportBundle(watchId: String!, size: Int): SupportBundleUpload
-  markSupportBundleUploaded(id: String!): SupportBundle
 }
 `;
 

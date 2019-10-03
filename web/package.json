@@ -133,6 +133,7 @@
     "monaco-editor": "0.14.3",
     "monaco-editor-webpack-plugin": "^1.5.4",
     "prismjs": "^1.17.1",
+    "randomstring": "^1.1.5",
     "react-apollo": "^2.5.5",
     "react-dropzone": "^4.2.9",
     "react-helmet": "^5.2.1",

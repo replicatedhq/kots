@@ -9,7 +9,7 @@ import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import { isKotsApplication } from "@src/utilities/utilities";
 import { getSupportBundle } from "../../queries/TroubleshootQueries";
-import { updateSupportBundle, markSupportBundleUploaded } from "../../mutations/TroubleshootMutations";
+import { updateSupportBundle } from "../../mutations/TroubleshootMutations";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 
 export class SupportBundleAnalysis extends React.Component {
@@ -36,29 +36,34 @@ export class SupportBundleAnalysis extends React.Component {
         ],
       },
     })
-    .then(() => {
-      this.props.data.refetch();
-      this.setState({ shareBundleLoading: false, displayShareBundleModal: false });
-    }).catch(() => this.setState({ shareBundleLoading: false }));
+      .then(() => {
+        this.props.getSupportBundle.refetch();
+        this.setState({ shareBundleLoading: false, displayShareBundleModal: false });
+      }).catch(() => this.setState({ shareBundleLoading: false }));
   }
 
   toggleConfirmShareModal = () => {
     this.setState({ displayShareBundleModal: !this.state.displayShareBundleModal });
   }
 
-  reAnalyzeBundle = (callback) => {
-    this.props.markSupportBundleUploaded(this.props.getSupportBundle.getSupportBundle.id)
-    .then(async (response) => {
-      await this.props.data.refetch();
+  reAnalyzeBundle = async (callback) => {
+    try {
+      const bundleId = this.props.getSupportBundle.getSupportBundle.id;
+      const bundleUrl = `${window.env.TROUBLESHOOT_ENDPOINT}/analyze/${bundleId}`;
+
+      const response = await fetch(bundleUrl, {
+        method: "POST"
+      });
+      const analyzedBundle = await response.json();
       if (callback && typeof callback === "function") {
-        callback(response);
+        callback(analyzedBundle, analyzedBundle.status === "analysis_error");
       }
-    })
-    .catch((error) => {
+      this.props.getSupportBundle.refetch();
+    } catch (error) {
       if (callback && typeof callback === "function") {
         callback(undefined, error);
       }
-    });
+    }
   }
 
   downloadBundle = () => {
@@ -111,7 +116,7 @@ export class SupportBundleAnalysis extends React.Component {
     return shareContext;
   }
 
-  componentDidUpdate( lastState) {
+  componentDidUpdate(lastState) {
     if (this.state.fullscreenTree !== lastState.fullscreenTree && this.state.fullscreenTree) {
       window.addEventListener("keydown", this.handleEscClose);
     }
@@ -239,10 +244,5 @@ export default withRouter(compose(
       },
       fetchPolicy: "no-cache"
     }),
-  }),
-  graphql(markSupportBundleUploaded, {
-    props: ({ mutate }) => ({
-      markSupportBundleUploaded: (id) => mutate({ variables: { id } })
-    })
   })
 )(SupportBundleAnalysis));

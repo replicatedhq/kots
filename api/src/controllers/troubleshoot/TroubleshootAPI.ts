@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams } from "@tsed/common";
-import { MultipartFile } from "@tsed/multipartfiles";
 import { Params } from "../../server/params";
 import { logger } from "../../server/logger";
 import jsYaml from "js-yaml";
@@ -72,34 +71,54 @@ export class TroubleshootAPI {
     @PathParams("supportBundleId") supportBundleId: string,
   ): Promise<any> {
     const bundleFile = request.app.locals.bundleFile;
+    let analyzedBundle;
 
     try {
-      const exists = await request.app.locals.stores.troubleshootStore.supportBundleExists(supportBundleId);
+      const stores = request.app.locals.stores;
+
+      const exists = await stores.troubleshootStore.supportBundleExists(supportBundleId);
       if (exists) {
         response.send(403);
-        return
+        return;
       }
 
       // upload it to s3
       const params = await Params.getParams();
       const buffer = fs.readFileSync(bundleFile);
       await putObject(params, path.join(params.shipOutputBucket.trim(), "supportbundles", supportBundleId, "supportbundle.tar.gz"), buffer, params.shipOutputBucket);
-      const fileInfo = await request.app.locals.stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
+      const fileInfo = await stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
 
       logger.debug({msg: `creating support bundle record with id ${supportBundleId} via upload callback`});
 
-      await request.app.locals.stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
-      await request.app.locals.stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
+      await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
+      await performAnalysis(supportBundleId, stores);
 
-      const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(supportBundleId);
-      const dirTree = await supportBundle.generateFileTreeIndex();
-      await request.app.locals.stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
-
-      // Analyze it
-      await analyzeSupportBundle(supportBundleId, request.app.locals.stores);
+      analyzedBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
     } finally {
       fs.unlinkSync(bundleFile);
+      response.send(200, analyzedBundle);
     }
+  }
+
+  @Post("/analyze/:supportBundleId")
+  public async performAnalysis(
+    @Res() response: Response,
+    @Req() request: Request,
+    @PathParams("supportBundleId") supportBundleId: string,
+  ): Promise<any> {
+    const stores = request.app.locals.stores;
+
+    // Check if bundle exists
+    const exists = await stores.troubleshootStore.supportBundleExists(supportBundleId);
+    if (!exists) {
+      response.send(404, "Bundle does not exist");
+      return;
+    }
+
+    await performAnalysis(supportBundleId, stores);
+    const analyzedBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
+
+    response.send(200, analyzedBundle);
   }
 
   @Post("/:watchId/:supportBundleId")
@@ -110,28 +129,33 @@ export class TroubleshootAPI {
     @PathParams("watchId") watchId: string,
     @PathParams("supportBundleId") supportBundleId: string,
   ): Promise<any> {
+    const stores = request.app.locals.stores;
 
-    // Don't ctreate support bundle if there is one with the same ID
-    const exists = await request.app.locals.stores.troubleshootStore.supportBundleExists(supportBundleId);
+    // Don't create support bundle if there is one with the same ID
+    const exists = await stores.troubleshootStore.supportBundleExists(supportBundleId);
     if (exists) {
       response.send(403);
-      return
+      return;
     }
 
-    const fileInfo = await request.app.locals.stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
+    const fileInfo = await stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
 
     logger.debug({msg: `creating support bundle record with id ${supportBundleId} via upload callback`});
 
-    await request.app.locals.stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
-    await request.app.locals.stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
-
-    const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(supportBundleId);
-    const dirTree = await supportBundle.generateFileTreeIndex();
-    await request.app.locals.stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
-
-    // Analyze it
-    await analyzeSupportBundle(supportBundleId, request.app.locals.stores);
+    await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
+    await performAnalysis(supportBundleId, stores);
 
     response.send(204, "");
   }
+}
+
+async function performAnalysis(supportBundleId, stores) {
+  await stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
+
+  const supportBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
+  const dirTree = await supportBundle.generateFileTreeIndex();
+  await stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
+
+  // Analyze it
+  await analyzeSupportBundle(supportBundleId, stores);
 }
