@@ -68,10 +68,21 @@ export class KotsAppStore {
 
     await this.pool.query(q, v);
 
+    let name;
+    if (!appTitle) {
+      const qqq = `select slug from app where id = $1`;
+      const vvv = [ id ];
+
+      const result = await this.pool.query(qqq, vvv);
+      name = result.rows[0].slug;
+    } else {
+      name = appTitle;
+    }
+
     const qq = `update app set current_sequence = $1, name = $2 where id = $3`;
     const vv = [
       sequence,
-      appTitle,
+      name,
       id,
     ];
 
