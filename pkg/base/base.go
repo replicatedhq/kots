@@ -39,6 +39,11 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) boo
 		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
 			return false
 		}
+
+		// In addition to kotskinds, we exclude the application crd for now
+		if o.APIVersion == "app.k8s.io/v1beta1" {
+			return false
+		}
 	}
 
 	return true
@@ -63,6 +68,10 @@ func (f BaseFile) ShouldBeIncludedInBaseFilesystem(excludeKotsKinds bool) bool {
 		}
 
 		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
+			return false
+		}
+
+		if o.APIVersion == "app.k8s.io/v1beta1" {
 			return false
 		}
 	}
