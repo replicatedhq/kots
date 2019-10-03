@@ -59,8 +59,7 @@ webpack_build_local:
 
 .PHONY: webpack_build
 webpack_build:
-	SHORT_BUILDKITE_COMMIT = $(shell echo ${BUILDKITE_COMMIT} | cut -c1-7)
-	SHIP_CLUSTER_BUILD_VERSION = $(shell echo ${GIT_TAG:-$(SHORT_BUILDKITE_COMMIT)})
+	SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
 webpack_build:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
 	node \
