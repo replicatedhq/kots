@@ -210,7 +210,7 @@ export function extractSupportBundleSpecFromTarball(tarball: Buffer): Promise<st
 
         const doc = yaml.safeLoad(data.toString());
 
-        if (doc.apiVersion === "kots.io/v1beta1" && doc.kind === "Application") {
+        if (doc.apiVersion === "troubleshoot.replicated.com/v1beta1" && doc.kind === "Collector") {
           bundleSpec = data.toString();
           resolve(bundleSpec);
           next();
