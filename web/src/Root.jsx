@@ -45,7 +45,7 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
 let history = createBrowserHistory();
-if(process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production" && !window.env.ON_PREM) {
   const piwik = new ReactPiwik({
     url: "https://data-2.replicated.com",
     siteId: 6,
