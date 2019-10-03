@@ -201,16 +201,6 @@ module.exports = function (env) {
           "codelens"
         ]
       }),
-      new CopyWebpackPlugin([
-        {
-          from: "./src/services/prodPerfect.js",
-          transform: function (content) {
-            var contentS = content.toString("utf8");
-            contentS = contentS.replace("@@PROD_PERFECT_WRITE_KEY", appEnv.PROD_PERFECT_WRITE_KEY);
-            return contentS.toString(new Buffer(contentS));
-          }
-        }
-      ]),
       new webpack.LoaderOptionsPlugin({
         options: {
           postcss: [
@@ -230,6 +220,21 @@ module.exports = function (env) {
       // })
     ],
   };
+
+  if (env !== "enterprise") {
+    common.plugins.push(
+      new CopyWebpackPlugin([
+        {
+          from: "./src/services/prodPerfect.js",
+          transform: function (content) {
+            var contentS = content.toString("utf8");
+            contentS = contentS.replace("@@PROD_PERFECT_WRITE_KEY", appEnv.PROD_PERFECT_WRITE_KEY);
+            return contentS.toString(new Buffer(contentS));
+          }
+        }
+      ]),
+    );
+  }
 
   if (env === "skaffold" || !env) {
     var dev = require("./webpack.config.dev");
