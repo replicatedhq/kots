@@ -34,7 +34,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	}
 
 	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(downloadOptions.Kubeconfig, 3000, 3000, downloadOptions.Namespace, podName)
+	stopCh, err := k8sutil.PortForward(downloadOptions.Kubeconfig, 3000, 3000, downloadOptions.Namespace, podName, false)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")

@@ -10,9 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var timeoutWaitingForWeb = time.Duration(time.Minute * 2)
-
-func WaitForWeb(namespace string) (string, error) {
+func WaitForWeb(namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
