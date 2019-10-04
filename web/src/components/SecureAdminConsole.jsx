@@ -1,4 +1,5 @@
 import * as React from "react";
+import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "../utilities/utilities";
@@ -104,10 +105,14 @@ class SecureAdminConsole extends React.Component {
       passwordErrMessage,
     } = this.state;
 
-    if (fetchingMetadata) return null;
-    
+    const isDefaultName = appName === "the application";
+    if (fetchingMetadata) { return null; }
+
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
+        <Helmet>
+          <title>{`${isDefaultName ? "": appName} Admin Console`.trim()}</title>
+        </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
