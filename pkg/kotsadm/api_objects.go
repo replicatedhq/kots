@@ -102,7 +102,7 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("kotsadm/kotsadm-api:%s", kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-api",
 							Ports: []corev1.ContainerPort{

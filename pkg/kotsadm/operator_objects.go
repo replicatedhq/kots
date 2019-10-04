@@ -100,7 +100,7 @@ func operatorDeployment(namespace string) *appsv1.Deployment {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("kotsadm/kotsadm-operator:%s", kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-operator",
 							Env: []corev1.EnvVar{
