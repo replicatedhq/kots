@@ -133,7 +133,7 @@ class PreflightResultPage extends Component {
               shouldReturnFocusAfterClose={false}
               contentLabel="Skip preflight checks"
               ariaHideApp={false}
-              className="Modal SkipModal"
+              className="Modal"
             >
               <div className="Modal-body">
 
@@ -142,7 +142,6 @@ class PreflightResultPage extends Component {
                   <Link to={`/app/${preflightResultData?.appSlug}`}>
                     <button type="button" className="btn green primary">Go to Dashboard</button>
                   </Link>
-                  <button type="button" className="btn secondary u-marginLeft--15">Cancel Preflights</button>
                 </div>
               </div>
             </Modal>
