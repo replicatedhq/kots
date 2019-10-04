@@ -24,6 +24,8 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: release_notes
+        type: text
       - name: supportbundle_spec
         type: text
       - name: preflight_spec

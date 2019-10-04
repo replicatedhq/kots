@@ -434,6 +434,7 @@ export interface KotsVersion {
   status: string;
   createdOn: string;
   sequence: number;
+  releaseNotes: string;
   deployedAt: string;
   preflightResult: string;
   preflightResultCreatedAt: string;

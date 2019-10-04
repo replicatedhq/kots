@@ -51,14 +51,15 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any, appTitle: string | null): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
+  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, releaseNotes: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any, appTitle: string | null): Promise<void> {
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
     const v = [
       id,
       sequence,
       new Date(),
       versionLabel,
+      releaseNotes,
       updateCursor,
       supportBundleSpec,
       preflightSpec,
@@ -125,7 +126,7 @@ export class KotsAppStore {
         parentSequence,
         new Date(),
         versionLabel,
-        status
+        status,
       ];
       await pg.query(qqq, vvv);
       await pg.query("commit");
@@ -256,7 +257,7 @@ export class KotsAppStore {
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at from app_version where app_id = $1 and sequence = $2`;
+    q = `select created_at, version_label, release_notes, status, sequence, applied_at from app_version where app_id = $1 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -649,6 +650,7 @@ export class KotsAppStore {
       status: row.status || "",
       createdOn: row.created_at,
       sequence: row.sequence,
+      releaseNotes: row.release_notes || "",
       deployedAt: row.applied_at,
       preflightResult: row.preflight_result,
       preflightResultCreatedAt: row.preflight_result_created_at,
