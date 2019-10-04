@@ -38,23 +38,6 @@ class SupportBundleList extends React.Component {
     this.props.history.push("/cluster/create");
   }
 
-  componentDidUpdate() {
-    const { listSupportBundles, history, watch } = this.props;
-    const isLoading = listSupportBundles.loading;
-
-    if (!isLoading) {
-      if (listSupportBundles?.listSupportBundles ?.length === 0) {
-        listSupportBundles.startPolling(2000);
-      }
-
-      if (listSupportBundles?.listSupportBundles.length >= 1) {
-        listSupportBundles.stopPolling();
-        const bundle = listSupportBundles.listSupportBundles[0];
-        history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
-      }
-    }
-  }
-
   render() {
     const { addNewClusterModal } = this.state;
     const { watch } = this.props;
