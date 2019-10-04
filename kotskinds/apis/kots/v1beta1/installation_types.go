@@ -24,6 +24,7 @@ import (
 type InstallationSpec struct {
 	UpdateCursor  string `json:"updateCursor,omitempty"`
 	VersionLabel  string `json:"versionLabel,omitempty"`
+	ReleaseNotes  string `json:"releaseNotes,omitempty"`
 	EncryptionKey string `json:"encryptionKey,omitempty"`
 }
 

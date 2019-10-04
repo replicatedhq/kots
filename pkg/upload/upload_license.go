@@ -63,13 +63,13 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to execute request")
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
 		log.FinishSpinnerWithError()
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()

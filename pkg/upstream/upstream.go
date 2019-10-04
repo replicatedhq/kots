@@ -12,5 +12,6 @@ type Upstream struct {
 	Files         []UpstreamFile
 	UpdateCursor  string
 	VersionLabel  string
+	ReleaseNotes  string
 	EncryptionKey string
 }

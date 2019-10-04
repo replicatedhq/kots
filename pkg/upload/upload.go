@@ -109,13 +109,13 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to execute request")
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		log.FinishSpinnerWithError()
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
