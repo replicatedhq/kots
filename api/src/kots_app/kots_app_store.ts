@@ -585,6 +585,31 @@ export class KotsAppStore {
     }
   }
 
+  async updateApp(id: string, appName?: string, iconUri?: string) {
+    const pg = await this.pool.connect();
+
+    try {
+      await pg.query("begin");
+
+      if (appName) {
+        const q = "UPDATE app SET name = $2 WHERE id = $1";
+        const v = [id, appName];
+        await pg.query(q, v);
+      }
+
+      if (iconUri) {
+        const q = "UPDATE app SET icon_uri = $2 WHERE id = $1";
+        const v = [id, iconUri];
+        await pg.query(q, v);
+      }
+
+      await pg.query("commit");
+    } finally {
+      await pg.query("rollback");
+      pg.release();
+    }
+  }
+
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
     const q =
       `UPDATE app_downstream_version SET

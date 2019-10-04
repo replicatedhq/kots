@@ -8,9 +8,8 @@ import _ from "lodash";
 import { Stores } from "../schema/stores";
 import { Watch } from "../watch";
 import slugify from "slugify";
-import {
-  Notification,
-} from "../generated/types";
+import { Notification } from "../generated/types";
+import { KotsApp } from "../kots_app";
 
 export class Context {
   constructor(private readonly stores: Stores) {}
@@ -100,6 +99,16 @@ export class Context {
     }
 
     return watch;
+  }
+
+  public async getApp(id: string): Promise<KotsApp> {
+    const app = await this.stores.kotsAppStore.getApp(id);
+
+    if (!app) {
+      throw new ReplicatedError("App not found");
+    }
+
+    return app;
   }
 
   public async getNotification(id: string): Promise<Notification> {

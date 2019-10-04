@@ -12,7 +12,7 @@ export function KotsMutations(stores: Stores) {
     async checkForKotsUpdates(root: any, args: any, context: Context) {
       const { appId } = args;
 
-      const app = await stores.kotsAppStore.getApp(appId);
+      const app = await context.getApp(appId);
       const midstreamUpdateCursor = await stores.kotsAppStore.getMidstreamUpdateCursor(appId);
 
       const updateAvailable = await kotsAppCheckForUpdate(midstreamUpdateCursor, app, stores);
@@ -64,7 +64,7 @@ export function KotsMutations(stores: Stores) {
     async resumeInstallOnline(root: any, args: any, context: Context): Promise<KotsApp> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await stores.kotsAppStore.getApp(appId);
+      const app = await context.getApp(appId);
       const clusters = await stores.clusterStore.listAllUsersClusters();
       let downstream;
       for (const cluster of clusters) {
@@ -103,8 +103,14 @@ export function KotsMutations(stores: Stores) {
     async updateAppConfig(root: any, args: any, context: Context) {
       const { slug, sequence, configGroups } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await stores.kotsAppStore.getApp(appId);
+      const app = await context.getApp(appId);
       await app.updateAppConfig(stores, slug, sequence, configGroups);
+      return true;
+    },
+
+    async updateKotsApp(root: any, args: any, context: Context): Promise<Boolean> {
+      const app = await context.getApp(args.appId);
+      await stores.kotsAppStore.updateApp(app.id, args.appName, args.iconUri);
       return true;
     },
   }
