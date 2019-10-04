@@ -44,12 +44,12 @@ class Tracker {
 }
 
 export default function connectHistory(history) {
-  if (window._paq) {
-    const tracker = new Tracker({
-      siteId: 6,
-      url: "https://data-2.replicated.com/js/"
-    });
-    return tracker.connectToHistory(history);
+  if (!window._paq) {
+    return history;
   }
-  return history;
+  const tracker = new Tracker({
+    siteId: 6,
+    url: "https://data-2.replicated.com/js/"
+  });
+  return tracker.connectToHistory(history);
 }
