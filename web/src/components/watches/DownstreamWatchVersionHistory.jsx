@@ -188,7 +188,7 @@ class DownstreamWatchVersionHistory extends Component {
           shouldReturnFocusAfterClose={false}
           contentLabel="Skip preflight checks"
           ariaHideApp={false}
-          className="Modal"
+          className="Modal SkipModal"
         >
           <div className="Modal-body">
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
@@ -201,6 +201,7 @@ class DownstreamWatchVersionHistory extends Component {
                 className="btn green primary">
                 Deploy this version
               </button>
+              <button type="button" onClick={this.hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>
             </div>
           </div>
         </Modal>
