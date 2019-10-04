@@ -25,7 +25,8 @@ class GenerateSupportBundle extends React.Component {
       clusters: [],
       selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
       addNewClusterModal: false,
-      displayUploadModal: false
+      displayUploadModal: false,
+      totalBundles: null
     };
   }
 
@@ -40,12 +41,30 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { watch } = this.props;
+    const { watch, listSupportBundles, history } = this.props;
+    const { totalBundles } = this.state;
     const clusters = watch.watches || watch.downstream;
     if (watch !== lastProps.watch && clusters) {
       const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
+    }
+
+    const isLoading = listSupportBundles.loading;
+    if (!isLoading) {
+      if (!totalBundles) {
+        this.setState({
+          totalBundles: listSupportBundles?.listSupportBundles.length
+        });
+        listSupportBundles.startPolling(2000);
+        return;
+      }
+
+      if (listSupportBundles?.listSupportBundles.length > totalBundles) {
+        listSupportBundles.stopPolling();
+        const bundle = listSupportBundles.listSupportBundles[listSupportBundles.listSupportBundles.length - 1];
+        history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
+      }
     }
   }
 
