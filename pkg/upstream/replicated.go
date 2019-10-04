@@ -31,7 +31,9 @@ metadata:
   name: "default-application"
 spec:
   title: "the application"
-  icon: https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png`
+  icon: https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png
+  releaseNotes: |
+    release notes`
 
 type ReplicatedUpstream struct {
 	Channel      *string
@@ -47,6 +49,7 @@ type App struct {
 type Release struct {
 	UpdateCursor string
 	VersionLabel string
+	ReleaseNotes string
 	Manifests    map[string][]byte
 }
 
@@ -86,6 +89,13 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 
 	// Find the config in the upstream and write out default values
 	application := findAppInRelease(release)
+	if application != nil {
+		// NOTE: this currently comes from the application spec and not the channel release meta
+		if release.ReleaseNotes == "" {
+			release.ReleaseNotes = application.Spec.ReleaseNotes
+		}
+	}
+
 	config := findConfigInRelease(release)
 	if config != nil {
 		configValues, err := createEmptyConfigValues(application.Name, config)
@@ -113,6 +123,7 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 		Type:         "replicated",
 		UpdateCursor: release.UpdateCursor,
 		VersionLabel: release.VersionLabel,
+		ReleaseNotes: release.ReleaseNotes,
 	}
 
 	return upstream, nil
@@ -176,13 +187,14 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute head request")
 	}
+	defer headResp.Body.Close()
 
 	if headResp.StatusCode == 401 {
 		return nil, errors.Wrap(err, "license was not accepted")
 	}
 
 	if headResp.StatusCode >= 400 {
-		return nil, errors.Errorf("expected result from head request: %d", headResp.StatusCode)
+		return nil, errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
 	}
 
 	return license, nil
@@ -233,12 +245,11 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
+	defer getResp.Body.Close()
 
 	if getResp.StatusCode >= 400 {
-		return nil, errors.Errorf("expected result from get request: %d", getResp.StatusCode)
+		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
 	}
-
-	defer getResp.Body.Close()
 
 	updateCursor := getResp.Header.Get("X-Replicated-Sequence")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
@@ -252,6 +263,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 		Manifests:    make(map[string][]byte),
 		UpdateCursor: updateCursor,
 		VersionLabel: versionLabel,
+		// NOTE: release notes come from Application spec
 	}
 	tarReader := tar.NewReader(gzf)
 	i := 0
@@ -507,6 +519,7 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
+	defer getResp.Body.Close()
 
 	if getResp.StatusCode == 404 {
 		// no metadata is not an error
@@ -514,10 +527,13 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 	}
 
 	if getResp.StatusCode >= 400 {
-		return nil, errors.Errorf("expected result from get request: %d", getResp.StatusCode)
+		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
 	}
 
-	defer getResp.Body.Close()
+	respBody, err := ioutil.ReadAll(getResp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
 
-	return nil, nil
+	return respBody, nil
 }

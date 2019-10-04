@@ -6,4 +6,5 @@ metadata:
 spec:
   updateCursor: "-1"
   versionLabel: ""
+  releaseNotes: ""
 status: {}

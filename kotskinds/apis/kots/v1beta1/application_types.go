@@ -32,6 +32,7 @@ type ApplicationSpec struct {
 	Title            string            `json:"title"`
 	Icon             string            `json:"icon,omitempty"`
 	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
+	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
 }
 
 // ApplicationStatus defines the observed state of Application
