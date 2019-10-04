@@ -14,9 +14,15 @@ test:
 
 	@echo All contract tests have passed.
 
-.PHONY: reset-ships
-reset-ships:
-	kubectl delete ns `kubectl get ns | grep shipwatch- | awk '{print $1}'` || true
-	kubectl delete ns `kubectl get ns | grep shipedit- | awk '{print $1}'` || true
-	kubectl delete ns `kubectl get ns | grep shipupdate- | awk '{print $1}'` || true
-	kubectl delete ns `kubectl get ns | grep shipinit- | awk '{print $1}'` || true
+.PHONY: kots-local-build
+kots-local-build: REGISTRY=registry.somebigbank.com
+kots-local-build: NAMESPACE=kotsadm
+kots-local-build: TAG=special
+kots-local-build:
+	cd api; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG}
+	cd web; docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG}
+	cd operator; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG}
+	docker pull schemahero/schemahero:alpha
+	cd migrations && docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG}
+
+
