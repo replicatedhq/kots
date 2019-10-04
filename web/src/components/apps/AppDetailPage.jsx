@@ -98,7 +98,7 @@ class AppDetailPage extends Component {
 
   makeCurrentRelease = async (upstreamSlug, sequence, clusterSlug) => {
     await this.props.deployKotsVersion(upstreamSlug, sequence, clusterSlug).then(() => {
-      this.props.getKotsAppQuery.refetch();
+      this.refetchGraphQLData();
     })
   }
 
@@ -120,7 +120,7 @@ class AppDetailPage extends Component {
     }).catch(() => {
       this.setState({ updateError: true });
     }).finally(() => {
-      this.props.getKotsAppQuery.refetch();
+      this.refetchGraphQLData();
       clearTimeout(loadingTextTimer);
       this.setState({
         checkingForUpdates: false,
@@ -211,7 +211,8 @@ class AppDetailPage extends Component {
    * @return {undefined}
    */
   refetchGraphQLData = () => {
-    this.props.getKotsAppQuery.refetch()
+    this.props.getKotsAppQuery.refetch();
+    this.props.refetchListApps();
   }
 
   /**
