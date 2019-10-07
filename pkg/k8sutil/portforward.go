@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -168,6 +169,8 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 					}
 
 					forwardedAdditionalPorts[desiredAdditionalPort] = serviceStopCh
+					log := logger.NewLogger()
+					log.Info("Go to http://localhost:%d to access the application", desiredAdditionalPort.LocalPort)
 				}
 				time.Sleep(time.Second * 5)
 			}
