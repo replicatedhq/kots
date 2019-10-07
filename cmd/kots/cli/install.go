@@ -60,6 +60,10 @@ func InstallCmd() *cobra.Command {
 				namespace = enteredNamespace
 			}
 
+			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
+			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
+			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
+
 			pullOptions := pull.PullOptions{
 				HelmRepoURI: v.GetString("repo"),
 				RootDir:     rootDir,
@@ -121,11 +125,11 @@ func InstallCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				defer close(stopCh)
 
 				if err := upload.Upload(rootDir, uploadOptions); err != nil {
 					return err
 				}
+				close(stopCh)
 			}
 
 			// port forward
@@ -173,6 +177,13 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
+
+	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().MarkHidden("kotsadm-tag")
+	cmd.Flags().MarkHidden("kotsadm-registry")
+	cmd.Flags().MarkHidden("kotsadm-namespace")
 
 	return cmd
 }
