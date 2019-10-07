@@ -52,7 +52,7 @@ class GenerateSupportBundle extends React.Component {
 
     const isLoading = listSupportBundles.loading;
     if (!isLoading) {
-      if (!totalBundles) {
+      if (totalBundles === null) {
         this.setState({
           totalBundles: listSupportBundles?.listSupportBundles.length
         });
