@@ -74,3 +74,9 @@ export const updateAppConfig = gql`
     updateAppConfig(slug: $slug, sequence: $sequence, configGroups: $configGroups)
   }
 `;
+
+export const updateKotsApp = gql`
+  mutation updateKotsApp($appId: String!, $appName: String, $iconUri: String) {
+    updateKotsApp(appId: $appId, appName: $appName, iconUri: $iconUri)
+  }
+`;

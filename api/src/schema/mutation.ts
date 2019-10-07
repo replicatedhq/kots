@@ -21,6 +21,7 @@ type Mutation {
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
   resumeInstallOnline(slug: String!): KotsApp
   updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): Boolean
+  updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch

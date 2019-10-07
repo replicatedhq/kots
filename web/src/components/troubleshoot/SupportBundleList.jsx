@@ -6,8 +6,6 @@ import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
 
-// import { archiveSupportBundle } from "../../mutations/SupportBundleMutations";
-
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";

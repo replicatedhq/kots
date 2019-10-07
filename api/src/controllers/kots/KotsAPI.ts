@@ -9,7 +9,7 @@ import tmp from "tmp";
 import * as _ from "lodash";
 import {
   extractDownstreamNamesFromTarball,
-  extractCursorAndVersionFromTarball,
+  extractInstallationSpecFromTarball,
   extractPreflightSpecFromTarball,
   extractAppSpecFromTarball,
   extractKotsAppSpecFromTarball,
@@ -145,7 +145,7 @@ export class KotsAPI {
     const buffer = fs.readFileSync(file.path);
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+    const installationSpec = await extractInstallationSpecFromTarball(buffer);
     const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
     const appSpec = await extractAppSpecFromTarball(buffer);
@@ -153,7 +153,7 @@ export class KotsAPI {
     const appTitle = await extractAppTitleFromTarball(buffer);
     const appIcon = await extractAppIconFromTarball(buffer);
 
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle, appIcon);
+    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(kotsApp.id, 0, installationSpec.versionLabel, installationSpec.releaseNotes, installationSpec.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle, appIcon);
 
     // we have a local copy of the file now, let's look for downstreams
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
@@ -168,7 +168,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, cursorAndVersion.versionLabel, "deployed");
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed");
     }
 
     return {
@@ -355,16 +355,16 @@ export async function uploadUpdate(stores, slug, buffer) {
   const appTitle = await extractAppTitleFromTarball(buffer);
   const appIcon = await extractAppIconFromTarball(buffer);
 
-  const cursorAndVersion = await extractCursorAndVersionFromTarball(buffer);
+  const installationSpec = await extractInstallationSpecFromTarball(buffer);
 
-  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, cursorAndVersion.versionLabel, cursorAndVersion.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle, appIcon);
+  await stores.kotsAppStore.createMidstreamVersion(kotsApp.id, newSequence, installationSpec.versionLabel, installationSpec.releaseNotes, installationSpec.cursor, supportBundleSpec, preflightSpec, appSpec, kotsAppSpec, appTitle, appIcon);
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);
   for (const clusterId of clusterIds) {
     const status = preflightSpec
       ? "pending_preflight"
       : "pending";
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, cursorAndVersion.versionLabel, status);
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status);
   }
 
   return {

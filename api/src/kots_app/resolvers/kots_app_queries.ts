@@ -39,7 +39,7 @@ export function KotsQueries(stores: Stores) {
       } else {
         _id = id;
       }
-      const app = await stores.kotsAppStore.getApp(_id);
+      const app = await context.getApp(_id);
       const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
 
       return app.toSchema(downstreams, stores);
@@ -60,28 +60,28 @@ export function KotsQueries(stores: Stores) {
     async listPendingKotsVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await stores.kotsAppStore.getApp(id);
+      const app = await context.getApp(id);
       return app.getPendingVersions(clusterId, stores);
     },
 
     async listPastKotsVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await stores.kotsAppStore.getApp(id);
+      const app = await context.getApp(id);
       return app.getPastVersions(clusterId, stores);
     },
 
     async getCurrentKotsVersion(root: any, args: any, context: Context): Promise<KotsVersion|undefined> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await stores.kotsAppStore.getApp(id);
+      const app = await context.getApp(id);
       return app.getCurrentVersion(clusterId, stores);
     },
 
     async getKotsDownstreamHistory(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const idFromSlug = await stores.kotsAppStore.getIdFromSlug(args.upstreamSlug);
       const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
-      const app = await stores.kotsAppStore.getApp(idFromSlug);
+      const app = await context.getApp(idFromSlug);
       const current = await app.getCurrentVersion(clusterId, stores);
       const past = await app.getPastVersions(clusterId, stores);
       const pending = await app.getPendingVersions(clusterId, stores);
@@ -110,7 +110,7 @@ export function KotsQueries(stores: Stores) {
     // by a id/sequence number regardless of the app type.
     async getKotsApplicationTree(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId); // TODO: Move to context?
       const tree = await app.generateFileTreeIndex(args.sequence);
       if (_.isEmpty(tree) || !tree[0].children) {
         throw new ReplicatedError(`Unable to get files for app with ID of ${app.id}`);
@@ -120,7 +120,7 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId); // TODO: Move to context?
       const files = await app.getFiles(args.sequence, args.fileNames);
       const jsonFiles = JSON.stringify(files.files);
       if (jsonFiles.length >= 5000000) {
@@ -131,7 +131,7 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await stores.kotsAppStore.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId); // TODO: Move to context?
       return await app.getConfigGroups(args.sequence);
     },
 

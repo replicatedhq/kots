@@ -7,9 +7,10 @@ import * as zlib from "zlib";
 import concat from "concat-stream";
 import yaml from "js-yaml";
 
-interface CursorAndVersion {
+interface InstallationSpec {
   cursor: string;
   versionLabel: string;
+  releaseNotes: string;
 }
 
 function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
@@ -123,7 +124,7 @@ export function extractPreflightSpecFromTarball(tarball: Buffer): Promise<string
   });
 }
 
-export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<CursorAndVersion> {
+export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<InstallationSpec> {
   const uncompressed = zlib.unzipSync(tarball);
   const extract = tar.extract();
 
@@ -139,12 +140,13 @@ export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<Cur
 
         const doc = yaml.safeLoad(data.toString());
         if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
-          const cursorAndVersion = {
+          const spec = {
             cursor: doc.spec.updateCursor,
             versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",
+            releaseNotes: doc.spec.releaseNotes ? doc.spec.releaseNotes : "",
           };
 
-          resolve(cursorAndVersion);
+          resolve(spec);
           next();
           return;
         }
@@ -156,6 +158,7 @@ export function extractCursorAndVersionFromTarball(tarball: Buffer): Promise<Cur
       resolve({
         cursor: "",
         versionLabel: "",
+        releaseNotes: "",
       });
     });
 

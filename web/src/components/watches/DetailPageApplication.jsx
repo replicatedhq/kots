@@ -25,7 +25,7 @@ import {
   createEditSession,
  } from "@src/mutations/WatchMutations";
 
- import { deleteKotsApp } from "@src/mutations/AppsMutations";
+ import { deleteKotsApp, updateKotsApp } from "@src/mutations/AppsMutations";
  import isEmpty from "lodash/isEmpty";
  import { getWatchLicense } from "@src/queries/WatchQueries";
 
@@ -70,15 +70,25 @@ class DetailPageApplication extends Component {
   updateWatchInfo = async e => {
     e.preventDefault();
     const { appName, iconUri } = this.state;
-    const { watch, updateCallback, updateWatch, refetchListApps } = this.props;
+    const { watch, updateCallback, updateWatch, updateKotsApp, refetchListApps } = this.props;
     this.setState({ editWatchLoading: true });
 
-    await updateWatch(watch.id, appName, iconUri).catch( error => {
-      console.error("[DetailPageApplication]: Error updating Watch info: ", error);
-      this.setState({
-        editWatchLoading: false
+    const isKotsApp = isKotsApplication(watch);
+    if (isKotsApp) {
+      await updateKotsApp(watch.id, appName, iconUri).catch(error => {
+        console.error("[DetailPageApplication]: Error updating App info: ", error);
+        this.setState({
+          editWatchLoading: false
+        });
       });
-    });
+    } else {
+      await updateWatch(watch.id, appName, iconUri).catch(error => {
+        console.error("[DetailPageApplication]: Error updating Watch info: ", error);
+        this.setState({
+          editWatchLoading: false
+        });
+      });
+    }
 
     await refetchListApps();
 
@@ -205,15 +215,17 @@ class DetailPageApplication extends Component {
       this.setWatchState(watch)
     }
     const isKotsApp = isKotsApplication(watch);
-    // current license info
-    if (!isKotsApp && this.props.getWatchLicense?.error && !this.state.watchLicense) {
-      // no current license found in db, construct from stateJSON
-      const watchLicense = getWatchLicenseFromState(this.props.watch);
-      this.setState({ watchLicense });
-    } else if (this.props.getWatchLicense !== lastProps.getWatchLicense && this.props.getWatchLicense) {
-      const { getWatchLicense } = this.props.getWatchLicense;
-      if (getWatchLicense) {
-        this.setState({ watchLicense: getWatchLicense });
+    if (!isKotsApp) {
+      // current license info
+      if (this.props.getWatchLicense?.error && !this.state.watchLicense) {
+        // no current license found in db, construct from stateJSON
+        const watchLicense = getWatchLicenseFromState(this.props.watch);
+        this.setState({ watchLicense });
+      } else if (this.props.getWatchLicense !== lastProps.getWatchLicense && this.props.getWatchLicense) {
+        const { getWatchLicense } = this.props.getWatchLicense;
+        if (getWatchLicense) {
+          this.setState({ watchLicense: getWatchLicense });
+        }
       }
     }
   }
@@ -223,8 +235,8 @@ class DetailPageApplication extends Component {
     if (watch) {
       this.setWatchState(watch);
     }
-
-    if (this.props.getWatchLicense) {
+    const isKotsApp = isKotsApplication(watch);
+    if (!isKotsApp && this.props.getWatchLicense) {
       const { getWatchLicense } = this.props.getWatchLicense;
       if (getWatchLicense) {
         this.setState({ watchLicense: getWatchLicense });
@@ -262,7 +274,7 @@ class DetailPageApplication extends Component {
               </div>
               <div className="flex-column flex1 justifyContent--center u-marginLeft--10 u-paddingLeft--5">
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold">{isKotsApp ? watch.name : watch.watchName}</p>
-                {(!isEmpty(appMeta) && appMeta.applicationType === "replicated.app") &&
+                {!isKotsApp && !isEmpty(appMeta) && appMeta.applicationType === "replicated.app" &&
                   <div className="u-marginTop--10 flex-column">
                     {watchLicense
                       ?
@@ -273,7 +285,7 @@ class DetailPageApplication extends Component {
                       :
                       <Loader size="12" />
                     }
-                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
+                    <Link to={`/watch/${watch.slug}/license`} className="u-marginTop--10 u-fontSize--small replicated-link">License details</Link>
                   </div>
                 }
               </div>
@@ -462,7 +474,7 @@ class DetailPageApplication extends Component {
               <input
                 type="text"
                 className="Input u-marginBotton--20"
-                placeholder="Type the app name here"
+                placeholder="Enter the link here"
                 value={this.state.iconUri}
                 onKeyPress={this.handleEnterPress}
                 name="iconUri"
@@ -527,6 +539,11 @@ export default compose(
   graphql(updateWatch, {
     props: ({ mutate }) => ({
       updateWatch: (watchId, watchName, iconUri) => mutate({ variables: { watchId, watchName, iconUri } })
+    })
+  }),
+  graphql(updateKotsApp, {
+    props: ({ mutate }) => ({
+      updateKotsApp: (appId, appName, iconUri) => mutate({ variables: { appId, appName, iconUri } })
     })
   }),
   graphql(deleteWatch, {

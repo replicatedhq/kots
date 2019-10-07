@@ -442,7 +442,10 @@ class Root extends Component {
             <div className="Modal-body u-textAlign--center">
               <div className="flex u-marginTop--30 u-marginBottom--10 justifyContent--center">
                 <span className="icon no-connection-icon" />
-                <span className="icon brand-login-icon u-marginLeft--10" style={{ backgroundImage: `url(${this.state.appLogo})` }} />
+                {this.state.appLogo
+                  ? <img width="60" height="60" className="u-marginLeft--10" src={this.state.appLogo} />
+                  : <span className="icon onlyAirgapBundleIcon u-marginLeft--10" />
+                }
               </div>
               <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal u-userSelect--none">Cannot connect</h2>
               <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">We're unable to reach the API right now. Check to make sure your local server is running.</p>

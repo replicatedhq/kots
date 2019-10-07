@@ -378,6 +378,7 @@ export const getKotsAppRaw = `
         status
         createdOn
         sequence
+        releaseNotes
         deployedAt
       }
       lastUpdateCheckAt
