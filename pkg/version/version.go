@@ -1,12 +1,12 @@
 package version
 
 import (
-	"context"
+	"io/ioutil"
+	"net/http"
 	"runtime"
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
-	"github.com/google/go-github/v28/github"
 	"github.com/pkg/errors"
 )
 
@@ -79,27 +79,31 @@ func getGoInfo() GoInfo {
 // IsLatestRelease queries github for the latest release in the project repo. If that release has a semver greater
 // than the current release, it returns false and the new latest release semver. Otherwise, it returns true or error
 func IsLatestRelease() (bool, string, error) {
-	client := github.NewClient(nil)
-	latest, _, err := client.Repositories.GetLatestRelease(context.Background(), "replicatedhq", "kots")
-	if err != nil {
-		return false, "", errors.Wrap(err, "find latest release")
-	}
-	if latest.GetName() == "" {
-		return false, "", errors.New("latest release name was empty")
-	}
+	return isLatestRelease(http.DefaultClient, "https://kots.io")
+}
 
-	latestSemver, err := semver.NewVersion(latest.GetName())
+func isLatestRelease(client *http.Client, upstream string) (bool, string, error) {
+	resp, err := client.Get(upstream + "/install?version")
 	if err != nil {
-		return false, "", errors.Wrapf(err, "latest release %s does not parse as semver", latest.GetName())
+		return false, "", errors.Wrapf(err, "find latest release")
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, "", errors.Wrapf(err, "read latest release body")
 	}
 
 	currentSemver, err := semver.NewVersion(Version())
 	if err != nil {
-		return false, "", errors.Wrapf(err, "current release %s does not parse as semver", latest.GetName())
+		return false, "", errors.Wrapf(err, "current release %s does not parse as semver", Version())
+	}
+
+	latestSemver, err := semver.NewVersion(string(body))
+	if err != nil {
+		return false, "", errors.Wrapf(err, "latest release %s does not parse as semver", string(body))
 	}
 
 	if currentSemver.LessThan(latestSemver) {
-		return false, latest.GetName(), nil
+		return false, string(body), nil
 	}
 
 	return true, "", nil

@@ -1,6 +1,8 @@
 package version
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -138,6 +140,61 @@ func TestGetBuild(t *testing.T) {
 			got := GetBuild()
 			got.RunAt = nil
 			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func TestIsLatestRelease(t *testing.T) {
+	tests := []struct {
+		name            string
+		version         string
+		upstreamVersion string
+		isLatest        bool
+		latest          string
+		wantErr         bool
+	}{
+		{
+			name:            "not the latest",
+			version:         "v0.9.1",
+			upstreamVersion: "v0.10.0",
+			isLatest:        false,
+			latest:          "v0.10.0",
+		},
+		{
+			name:            "local version",
+			version:         "v0.10.0-dirty",
+			upstreamVersion: "v0.10.0",
+			isLatest:        false,
+			latest:          "v0.10.0",
+		},
+		{
+			name:            "actually the latest version",
+			version:         "v0.10.1",
+			upstreamVersion: "v0.10.1",
+			isLatest:        true,
+			latest:          "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(tt.upstreamVersion))
+			})
+			server := httptest.NewTLSServer(h)
+			defer server.Close()
+			client := server.Client()
+			upstreamURL := server.URL
+
+			version = tt.version
+			initBuild()
+
+			isLatest, latest, err := isLatestRelease(client, upstreamURL)
+			req.NoError(err)
+
+			req.Equal(tt.isLatest, isLatest)
+			req.Equal(tt.latest, latest)
 		})
 	}
 }
