@@ -26,7 +26,7 @@ export default class ErrorBoundaryComponent extends React.Component {
   }
 
 
-  backToShip = () => {
+  backToAdminConsole = () => {
     window.location.replace("/");
   }
 
@@ -42,10 +42,9 @@ export default class ErrorBoundaryComponent extends React.Component {
                 className="icon errorWarningIcon u-marginBottom--20 u-textAlign--center alignSelf--center"
               ></span>
               <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-color--tundora">Oops, something went wrong.</p>
-              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-color--dustyGray u-fontSize--normal u-lineHeight--normal"> We’ve notified our team of the error that occurred and will be working to resolve the issue.
-              We apologize for any inconvenience this may have caused. </p>
+              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-color--dustyGray u-fontSize--normal u-lineHeight--normal"> Click the button below to try again. </p>
               <div className="flex alignItems--center alignSelf--center u-marginTop--20">
-                <button className="btn secondary gray" onClick={() => this.backToShip()}> Back to Ship </button>
+                <button className="btn secondary gray" onClick={() => this.backToAdminConsole()}> Back to Admin Console </button>
               </div>
             </div>
           </div>
