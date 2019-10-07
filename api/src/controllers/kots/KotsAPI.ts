@@ -23,6 +23,7 @@ import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageN
 import { StatusServer } from "../../airgap/status";
 import { kotsPullFromAirgap, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
+import yaml from "js-yaml";
 
 interface CreateAppBody {
   metadata: string;
@@ -62,6 +63,49 @@ export class KotsAPI {
 
   //   return result;
   // }
+
+  @Get("/ports")
+  async kotsPorts(
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<any> {
+    // This method is connected to over kubectl...
+    // There is no user auth, but this method should be
+    // exposed only on cluster ip to enforce that it's
+    // not exposed to the public
+    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+    const app = apps[0];
+
+    const appSpec = await request.app.locals.stores.kotsAppStore.getAppSpec(app.id, app.currentSequence);
+    if (!appSpec) {
+      return [];
+    }
+
+    const kotsAppSpec = await request.app.locals.stores.kotsAppStore.getKotsAppSpec(app.id, app.currentSequence);
+    try {
+      const parsedAppSpec = yaml.safeLoad(appSpec);
+      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
+      if (!parsedKotsAppSpec) {
+        return [];
+      }
+
+      const ports: any[] = [];
+      for (const link of parsedAppSpec.spec.descriptor.links) {
+        const mapped = _.find(parsedKotsAppSpec.spec.ports, (port: any) => {
+          return port.applicationUrl === link.url;
+        });
+
+        if (mapped) {
+          ports.push(mapped);
+        }
+      }
+
+      return ports;
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
+  }
 
   @Get("/:slug")
   async kotsDownload(
