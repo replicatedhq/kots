@@ -267,6 +267,42 @@ export function extractAppTitleFromTarball(tarball: Buffer): Promise<string | nu
   });
 }
 
+export function extractAppIconFromTarball(tarball: Buffer): Promise<string | null> {
+  const uncompressed = zlib.unzipSync(tarball);
+  const extract = tar.extract();
+
+  let appIcon = null;
+
+  return new Promise((resolve, reject) => {
+    extract.on("error", reject);
+
+    extract.on("entry", (header, stream, next) => {
+      stream.pipe(concat(data => {
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
+
+        const doc = yaml.safeLoad(data.toString());
+
+        if (doc.apiVersion === "kots.io/v1beta1" && doc.kind === "Application") {
+          appIcon = doc.spec.icon;
+          resolve(appIcon);
+          next();
+          return;
+        }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve(appIcon);
+    });
+
+    extract.end(uncompressed);
+  });
+}
+
 function isYaml(data: string): boolean {
   try {
     const doc = yaml.safeLoad(data.toString());
