@@ -41,12 +41,12 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	// port forward
 	config, err := clientcmd.BuildConfigFromFlags("", kubeContext)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "build config")
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(config)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "make spdy roundtripper")
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
@@ -54,7 +54,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 	u, err := url.Parse(config.Host)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parse host")
 	}
 
 	if u.Scheme == "http" || u.Scheme == "https" {
@@ -70,7 +70,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "create forwarder")
 	}
 
 	go func() {
@@ -99,12 +99,21 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 	start := time.Now()
 	for {
+		var lastError error
+
 		response, err := quickClient.Get(fmt.Sprintf("http://localhost:%d", localPort))
 		if err == nil && response.StatusCode == http.StatusOK {
 			break
 		}
+
+		if err != nil {
+			lastError = err
+		} else {
+			lastError = errors.Errorf("unexpected http status: %d", response.StatusCode)
+		}
+
 		if time.Now().Sub(start) > time.Duration(time.Second*10) {
-			return nil, err
+			return nil, errors.Wrap(lastError, "port wait timeout")
 		}
 
 		time.Sleep(time.Millisecond * 100)
@@ -120,28 +129,33 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		forwardedAdditionalPorts := map[AdditionalPort]chan struct{}{}
 
 		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
-		go func() error {
+		go func() {
 			for {
+				log := logger.NewLogger()
 				req, err := http.NewRequest("GET", uri, nil)
 				if err != nil {
-					return errors.Wrap(err, "failed to create request")
+					log.Error(errors.Wrap(err, "failed to create request"))
+					return
 				}
 				req.Header.Set("Accept", "application/json")
 
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
-					return errors.Wrap(err, "failed to get ports")
+					log.Error(errors.Wrap(err, "failed to get ports"))
+					return
 				}
 
 				defer resp.Body.Close()
 				b, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					return errors.Wrap(err, "failed to parse response")
+					log.Error(errors.Wrap(err, "failed to parse response"))
+					return
 				}
 
 				desiredAdditionalPorts := []AdditionalPort{}
 				if err := json.Unmarshal(b, &desiredAdditionalPorts); err != nil {
-					return errors.Wrap(err, "failed to decode response")
+					log.Error(errors.Wrap(err, "failed to decode response"))
+					return
 				}
 
 				for _, desiredAdditionalPort := range desiredAdditionalPorts {
@@ -160,16 +174,17 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 					serviceStopCh, err := ServiceForward(kubeContext, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
+						log.Info("Failed to forward, will try again: %v", err)
 						continue // try again
 					}
 					if serviceStopCh == nil {
 						// we didn't do the port forwarding, probably because the pod isn't ready.
 						// try again next loop
+						log.Info("Pod is not ready, will try again")
 						continue // try again
 					}
 
 					forwardedAdditionalPorts[desiredAdditionalPort] = serviceStopCh
-					log := logger.NewLogger()
 					log.Info("Go to http://localhost:%d to access the application", desiredAdditionalPort.LocalPort)
 				}
 				time.Sleep(time.Second * 5)
