@@ -176,6 +176,20 @@
     }
   }
 
+  &.secondary.gray {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #9B9B9B;
+    color: #9B9B9B;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #717171;
+      color: #717171;
+    }
+  }
+
   &.secondary.smallPadding {
     padding: 3px 12px 3px;
   }
