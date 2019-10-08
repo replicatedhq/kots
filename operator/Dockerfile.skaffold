@@ -1,7 +1,6 @@
 FROM golang:1.12 as deps
 RUN go get github.com/sqs/goreturns
 RUN go get -u golang.org/x/lint/golint
-RUN go get github.com/githubnemo/CompileDaemon
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.15.2
@@ -31,7 +30,5 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD . $PROJECTPATH
 
-ADD ./deploy/entrypoint-dev.sh .
-
 RUN make build
-ENTRYPOINT ["./entrypoint-dev.sh"]
+ENTRYPOINT ["./bin/kotsadm-operator"]

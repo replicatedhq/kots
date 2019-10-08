@@ -53,28 +53,6 @@ func (c *Kubectl) connectArgs() []string {
 	return args
 }
 
-func (c *Kubectl) Remove(namespace string, yamlDoc []byte) error {
-	args := []string{
-		"delete",
-		"-n",
-		namespace,
-		"-f",
-		"-",
-	}
-	cmd := c.kubectlCommand(args...)
-	cmd.Stdin = bytes.NewReader(yamlDoc)
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-	cmd.Stdout = &bytes.Buffer{}
-
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("error running kubectl delete: %q\n", err)
-		return errors.Errorf("%s", stderr.String())
-	}
-
-	return nil
-}
-
 func (c *Kubectl) Preflight(preflightURI string) error {
 	fmt.Printf("running kubectl preflight %s\n", preflightURI)
 	args := []string{
@@ -115,7 +93,7 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 	return nil
 }
 
-func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
+func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) ([]byte, []byte, error) {
 	args := []string{
 		"apply",
 	}
@@ -169,11 +147,10 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) error {
 	}()
 
 	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		fmt.Printf("error running kubectl apply: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
-		return errors.Wrap(err, "failed to run kubectl apply")
+		return bytes.Join(stdout, []byte("\n")), bytes.Join(stderr, []byte("\n")), errors.Wrap(err, "failed to run kubectl apply")
 	}
 
-	return nil
+	return bytes.Join(stdout, []byte("\n")), bytes.Join(stderr, []byte("\n")), nil
 }
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {

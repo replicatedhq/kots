@@ -49,3 +49,4 @@ resources:
 - ./app_downstream.yaml
 - ./app_downstream_version.yaml
 - ./airgap_upload_status.yaml
+- ./app_downstream_output.yaml
