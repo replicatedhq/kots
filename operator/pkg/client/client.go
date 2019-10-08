@@ -20,11 +20,17 @@ var (
 	PollInterval = time.Second * 10
 )
 
-// DestiredState is what we receive from the kotsadm-api server
+type ApplicationManifests struct {
+	AppID     string `json:"app_id"`
+	Namespace string `json:"namespace"`
+	Manifests string `json:"manifests"`
+}
+
+// DesiredState is what we receive from the kotsadm-api server
 type DesiredState struct {
-	Present   map[string][]string `json:"present"`
-	Missing   map[string][]string `json:"missing"`
-	Preflight []string            `json:"preflight"`
+	Present   []ApplicationManifests `json:"present"`
+	Missing   map[string][]string    `json:"missing"`
+	Preflight []string               `json:"preflight"`
 }
 
 type Client struct {
@@ -51,30 +57,58 @@ func (c *Client) Run() error {
 		}
 
 		// Deploy
-		for namespace, present := range desiredState.Present {
-			for _, manifest := range present {
-				decoded, err := base64.StdEncoding.DecodeString(manifest)
-				if err != nil {
-					fmt.Printf("error decoding: %#v\n", err)
-					continue
-				}
-
-				if err := ensureResourcesPresent(namespace, decoded); err != nil {
-					fmt.Printf("error in kubectl apply: %#v\n", err)
-					continue
-				}
-			}
-		}
-
-		// Delete
-		for namespace, missing := range desiredState.Missing {
-			for _, manifest := range missing {
-				fmt.Printf("corwardly refusing to delete manifests from %s: \n%#v\n", namespace, manifest)
+		for _, present := range desiredState.Present {
+			if err := c.ensureResourcesPresent(present); err != nil {
+				fmt.Printf("error in kubectl apply: %#v\n", err)
+				continue
 			}
 		}
 
 		time.Sleep(PollInterval)
 	}
+}
+
+func (c *Client) sendResult(applicationManifests ApplicationManifests, isError bool, dryrunStdout []byte, dryrunStderr []byte, applyStdout []byte, applyStderr []byte) error {
+	applyResult := struct {
+		AppID        string `json:"app_id"`
+		IsError      bool   `json:"is_error"`
+		DryrunStdout []byte `json:"dryrun_stdout"`
+		DryrunStderr []byte `json:"dryrun_stderr"`
+		ApplyStdout  []byte `json:"apply_stdout"`
+		ApplyStderr  []byte `json:"apply_stderr"`
+	}{
+		applicationManifests.AppID,
+		isError,
+		dryrunStdout,
+		dryrunStderr,
+		applyStdout,
+		applyStderr,
+	}
+
+	b, err := json.Marshal(applyResult)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal results")
+	}
+
+	client := &http.Client{}
+
+	uri := fmt.Sprintf("%s/api/v1/deploy/result", c.APIEndpoint)
+
+	fmt.Printf("Reporting results to %q\n", uri)
+	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
+	req.Header["Content-Type"] = []string{"application/json"}
+	req.SetBasicAuth("", c.Token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code from kotsadm server: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func getDesiredStateFromKotsadmServer(apiEndpoint string, token string) (*DesiredState, error) {
@@ -169,7 +203,12 @@ func runPreflight(preflightURI string) error {
 	return kubernetesApplier.Preflight(preflightURI)
 }
 
-func ensureResourcesPresent(namespace string, input []byte) error {
+func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
+	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode manifests")
+	}
+
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
 
@@ -200,46 +239,32 @@ func ensureResourcesPresent(namespace string, input []byte) error {
 	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
 	fmt.Println("dry run applying manifests(s)")
-	if err := kubernetesApplier.Apply(namespace, input, true); err != nil {
-		return errors.Wrap(err, "dry run failed")
+	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, true)
+	if dryRunErr != nil {
+		fmt.Printf("stdout (dryrun) = %s\n", drrunStdout)
+		fmt.Printf("stderr (dryrun) = %s\n", dryrunStderr)
 	}
 
-	fmt.Println("applying manifest(s)")
-	kubernetesApplier.Apply(namespace, input, false)
+	var applyStdout []byte
+	var applyStderr []byte
+	var applyErr error
+	if dryRunErr == nil {
+		fmt.Println("applying manifest(s)")
+		stdout, stderr, err := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, false)
+		if err != nil {
+			fmt.Printf("stdout (apply) = %s\n", stderr)
+			fmt.Printf("stderr (apply) = %s\n", stderr)
+		}
 
-	return nil
-}
-
-func ensureResourcesMissing(namespace string, input []byte) error {
-	// TODO sort, order matters
-	// TODO should we split multi-doc to retry on failed?
-	kubectl, err := exec.LookPath("kubectl")
-	if err != nil {
-		fmt.Println(err)
-		return err
+		applyStdout = stdout
+		applyStderr = stderr
+		applyErr = err
 	}
 
-	preflight := ""
-	localPreflight, err := exec.LookPath("preflight")
-	if err == nil {
-		preflight = localPreflight
+	hasErr := applyErr != nil || dryRunErr != nil
+	if err := c.sendResult(applicationManifests, hasErr, drrunStdout, dryrunStderr, applyStdout, applyStderr); err != nil {
+		return errors.Wrap(err, "failed to report status")
 	}
-
-	supportBundle := ""
-	localSupportBundle, err := exec.LookPath("support-bundle")
-	if err == nil {
-		supportBundle = localSupportBundle
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-
-	// this is pretty raw, and required kubectl...  we should
-	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
-	go kubernetesApplier.Remove(namespace, input)
 
 	return nil
 }
