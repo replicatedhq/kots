@@ -12,7 +12,7 @@ import (
 
 func UploadCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "upload [namespace]",
+		Use:           "upload [source]",
 		Short:         "Upload Kubernetes manifests from the local filesystem to your cluster",
 		Long:          `Upload Kubernetes manifests from the local filesystem to a cluster, creating a new version of the application that can be deployed.`,
 		SilenceUsage:  true,
@@ -26,6 +26,11 @@ func UploadCmd() *cobra.Command {
 			if len(args) == 0 {
 				cmd.Help()
 				os.Exit(1)
+			}
+
+			sourceDir := homeDir()
+			if len(args) > 0 {
+				sourceDir = ExpandDir(args[0])
 			}
 
 			uploadOptions := upload.UploadOptions{
@@ -43,7 +48,7 @@ func UploadCmd() *cobra.Command {
 			}
 			defer close(stopCh)
 
-			if err := upload.Upload(ExpandDir(args[0]), uploadOptions); err != nil {
+			if err := upload.Upload(sourceDir, uploadOptions); err != nil {
 				return errors.Cause(err)
 			}
 
@@ -52,7 +57,7 @@ func UploadCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
-	cmd.Flags().String("namespace", "default", "the namespace to upload to")
+	cmd.Flags().StringP("namespace", "n", "default", "the namespace to upload to")
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
 	cmd.Flags().String("upstream-uri", "", "the upstream uri that can be used to check for updates")
