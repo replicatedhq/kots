@@ -2,9 +2,9 @@ FROM node:8
 EXPOSE 3000 9229
 
 # Install Kubectl
-ENV KUBECTL_VERSION=v1.15.2
+ENV KUBECTL_VERSION=v1.16.1
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_SHA256SUM=a737000af13f9c8c347945bc581b819659c464eae92056424bdddae735e2e888
+ENV KUBECTL_SHA256SUM=69cfb3eeaa0b77cc4923428855acdfc9ca9786544eeaff9c21913be830869d29
 RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& echo "${KUBECTL_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
