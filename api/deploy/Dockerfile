@@ -1,9 +1,16 @@
-FROM node:8 AS builder
+FROM node:8
+WORKDIR /src
+ADD . /src
+RUN make deps build
+
+
+FROM node:8-buster-slim
+COPY --from=0 /src/build /src/build
 
 # Install Kubectl
-ENV KUBECTL_VERSION=v1.15.2
+ENV KUBECTL_VERSION=v1.16.1
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_SHA256SUM=a737000af13f9c8c347945bc581b819659c464eae92056424bdddae735e2e888
+ENV KUBECTL_SHA256SUM=69cfb3eeaa0b77cc4923428855acdfc9ca9786544eeaff9c21913be830869d29
 RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& echo "${KUBECTL_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
@@ -21,7 +28,6 @@ RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v0.9.9/kots.
   mv /tmp/kots.so /lib/kots.so
 
 # Install troubleshoot.so
-
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.7/troubleshoot.so_0.9.7_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
   cd /tmp && tar xzvf troubleshoot.tar.gz && \
   mv /tmp/troubleshoot.so /lib/troubleshoot.so
@@ -31,16 +37,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Install skopeo
-
 ADD ./deploy/skopeo /bin/skopeo
 ADD ./deploy/policy.json /etc/containers/policy.json
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
     ca-certificates libgpgme-dev libdevmapper-dev \
   && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /src
-ADD . /src
-RUN make deps build
 
 EXPOSE 3000
 ARG commit=unknown
