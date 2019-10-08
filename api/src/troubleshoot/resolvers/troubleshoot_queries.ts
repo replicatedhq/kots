@@ -20,8 +20,7 @@ export function TroubleshootQueries(stores: Stores) {
 
       const supportBundles = await stores.troubleshootStore.listSupportBundles(kotsAppId);
       return _.map(supportBundles, async (supportBundle) => {
-        const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
-        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
         return supportBundle.toSchema(downloadUri);
       });
     },
@@ -48,8 +47,7 @@ export function TroubleshootQueries(stores: Stores) {
       }
 
       return _.map(supportBundles, async (supportBundle) => {
-        const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
-        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
         return supportBundle.toSchema(downloadUri);
       });
     },
@@ -63,8 +61,7 @@ export function TroubleshootQueries(stores: Stores) {
         throw new ReplicatedError("not found");
       }
 
-      const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
-      const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+      const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
       return supportBundle.toSchema(downloadUri);
     },
 
