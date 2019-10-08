@@ -12,6 +12,7 @@ export const listSupportBundlesRaw = `
       createdAt
       uploadedAt
       isArchived
+      downloadUri
       analysis {
         id
         error
@@ -44,6 +45,7 @@ export const listKotsSupportBundlesRaw = `
       createdAt
       uploadedAt
       isArchived
+      downloadUri
       analysis {
         id
         error

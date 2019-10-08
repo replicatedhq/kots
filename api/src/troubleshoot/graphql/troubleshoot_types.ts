@@ -25,6 +25,7 @@ type SupportBundle {
   createdAt: String!
   uploadedAt: String
   isArchived: Boolean
+  downloadUri: String
 
   analysis: SupportBundleAnalysis
 

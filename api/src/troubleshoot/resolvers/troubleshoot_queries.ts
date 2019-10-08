@@ -19,7 +19,11 @@ export function TroubleshootQueries(stores: Stores) {
       const kotsAppId = await stores.kotsAppStore.getIdFromSlug(kotsSlug);
 
       const supportBundles = await stores.troubleshootStore.listSupportBundles(kotsAppId);
-      return supportBundles.map(bundle => bundle.toSchema());
+      return _.map(supportBundles, async (supportBundle) => {
+        const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
+        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+        return supportBundle.toSchema(downloadUri);
+      });
     },
 
     async listSupportBundles(root: any, { watchSlug }, context: Context) {
@@ -43,8 +47,10 @@ export function TroubleshootQueries(stores: Stores) {
         supportBundles = supportBundles.concat(childBundles);
       }
 
-      return _.map(supportBundles, (supportBundle) => {
-        return supportBundle.toSchema();
+      return _.map(supportBundles, async (supportBundle) => {
+        const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
+        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+        return supportBundle.toSchema(downloadUri);
       });
     },
 
@@ -57,7 +63,9 @@ export function TroubleshootQueries(stores: Stores) {
         throw new ReplicatedError("not found");
       }
 
-      return supportBundle.toSchema();
+      const bundle = await stores.troubleshootStore.getSupportBundle(supportBundle.id);
+      const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(bundle);
+      return supportBundle.toSchema(downloadUri);
     },
 
     async supportBundleFiles(root, { bundleId, fileNames }, context: Context, { }): Promise<any> {

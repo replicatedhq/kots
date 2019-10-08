@@ -25,6 +25,7 @@ export class SupportBundle {
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;
+  downloadUri: string;
 
   async generateFileTreeIndex() {
     const supportBundleIndexJsonPath = "index.json";
@@ -117,7 +118,7 @@ export class SupportBundle {
     });
   }
 
-  public toSchema() {
+  public toSchema(downloadUri) {
     return {
       id: this.id,
       slug: this.slug,
@@ -129,6 +130,7 @@ export class SupportBundle {
       uploadedAt: this.uploadedAt ? this.uploadedAt.toISOString() : undefined,
       isArchived: this.isArchived,
       analysis: this.analysis ? this.analysis.toSchema() : undefined,
+      downloadUri: downloadUri
     };
   }
 };

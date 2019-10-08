@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
@@ -12,7 +12,7 @@ class SupportBundleRow extends React.Component {
 
   renderSharedContext = () => {
     const { bundle } = this.props;
-    if (!bundle) {return null;}
+    if (!bundle) { return null; }
     // const notSameTeam = bundle.teamId !== VendorUtilities.getTeamId();
     // const isSameTeam = bundle.teamId === VendorUtilities.getTeamId();
     // const sharedIds = bundle.teamShareIds || [];
@@ -27,8 +27,26 @@ class SupportBundleRow extends React.Component {
     // return shareContext;
   }
 
+  handleBundleClick = (bundle) => {
+    const { appType, watchSlug } = this.props;
+    this.props.history.push(`/${appType === "watch" ? "watch" : "app"}/${watchSlug}/troubleshoot/analyze/${bundle.slug}`)
+  }
+
+  downloadBundle = (bundle) => {
+    const hiddenIFrameID = "hiddenDownloader";
+    let iframe = document.getElementById(hiddenIFrameID);
+    const url = bundle.downloadUri;
+    if (iframe === null) {
+      iframe = document.createElement("iframe");
+      iframe.id = hiddenIFrameID;
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+    }
+    iframe.src = url;
+  }
+
   render() {
-    const { bundle, watchSlug, appType } = this.props;
+    const { bundle } = this.props;
 
     if (!bundle) {
       return null;
@@ -49,11 +67,12 @@ class SupportBundleRow extends React.Component {
     }
     return (
       <div className="SupportBundle--Row u-position--relative">
-        <Link to={`/${appType === "watch" ? "watch" : "app"}/${watchSlug}/troubleshoot/analyze/${bundle.slug}`}>
+        <div>
           <div className="bundle-row-wrapper">
-            <div className="bundle-row flex-column flex1">
-              <div className="flex flex1">
-                <div className="flex1 flex">
+            <div className="bundle-row flex flex1">
+              <div className="flex flex1 flex-column" onClick={() => this.handleBundleClick(bundle)}>
+              <div className="flex">
+                <div className="flex">
                   {!this.props.isCustomer && bundle.customer ?
                     <div className="flex-column flex1 flex-verticalCenter">
                       <span className="u-fontSize--large u-color--tuna u-fontWeight--medium u-cursor--pointer">
@@ -70,7 +89,7 @@ class SupportBundleRow extends React.Component {
                   }
                 </div>
               </div>
-              <div className="flex flex1 u-marginTop--10">
+              <div className="flex u-marginTop--10">
                 {bundle?.analysis?.insights?.length ?
                   <div className="flex flex1 u-marginRight--5">
                     {sortBy(filter(bundle?.analysis?.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => (
@@ -91,9 +110,13 @@ class SupportBundleRow extends React.Component {
                   noInsightsMessage
                 }
               </div>
+              </div>
+              <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
+                <span className="u-fontSize--small u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
+              </div>
             </div>
           </div>
-        </Link>
+        </div>
       </div >
     );
   }
