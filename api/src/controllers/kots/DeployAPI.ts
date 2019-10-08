@@ -27,8 +27,24 @@ export class DeployAPI {
       return {};
     }
 
-    console.log(cluster);
-    console.log(body);
+    const output = {
+      dryRun: {
+        stderr: body.dryrun_stderr,
+        stdout: body.dryrun_stdout,
+      },
+      apply: {
+        stderr: body.apply_stderr,
+        stdout: body.apply_stdout,
+      },
+    };
+
+    const apps = await request.app.locals.stores.kotsAppStore.listAppsForCluster(cluster.id);
+
+    // sequence really should be passed down to operator and returned from it
+    const downstreamVersion = await request.app.locals.stores.kotsAppStore.getCurrentDownstreamVersion(body.app_id, cluster.id);
+
+    await request.app.locals.stores.kotsAppStore.updateDownstreamDeployStatus(body.app_id, cluster.id, downstreamVersion.sequence, body.is_error, output);
+
     return {};
   }
 
