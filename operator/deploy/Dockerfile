@@ -5,9 +5,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Kubectl
-ENV KUBECTL_VERSION=v1.15.2
+ENV KUBECTL_VERSION=v1.14.7
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_SHA256SUM=a737000af13f9c8c347945bc581b819659c464eae92056424bdddae735e2e888
+ENV KUBECTL_SHA256SUM=153fdf0ab8892b4c5e736b3f7c30a89cd4f1753c4d035ec8d771904b17ad181d
 RUN curl -fsSLO "${KUBECTL_URL}" \
 	&& echo "${KUBECTL_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
