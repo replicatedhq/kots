@@ -3,9 +3,9 @@ import bugsnagExpress from "@bugsnag/plugin-express";
 import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
-import concat from "concat-stream";
 import Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "@tsed/common";
+import "@tsed/socketio";
 import { $log } from "ts-log-debug";
 import { createBugsnagClient } from "./bugsnagClient";
 import { InitProxy } from "../init/proxy";
@@ -41,6 +41,9 @@ import tmp from "tmp";
 import fs from "fs";
 
 let mount = {};
+let componentsScan = [
+  "${rootDir}/../middlewares/**/*.ts",
+];
 
 const enableShip = process.env["ENABLE_SHIP"] === "1";
 const enableKots = process.env["ENABLE_KOTS"] === "1";
@@ -48,6 +51,7 @@ if (enableKots && enableShip) {
   mount = {
     "/": "${rootDir}/../controllers/**/*.*s",
   };
+  componentsScan.push("${rootDir}/../sockets/kots/*.ts");
 } else if (enableShip) {
   mount = {
     "/": "${rootDir}/../controllers/{*.*s,!(kots)/*.*s}",
@@ -56,21 +60,25 @@ if (enableKots && enableShip) {
   mount = {
     "/": "${rootDir}/../controllers/{*.*s,!(ship)/*.*s}",
   };
+  componentsScan.push("${rootDir}/../sockets/kots/*.ts");
+} else {
+  mount = {
+    "/": "${rootDir}/../controllers/*.*s",
+  };
 }
 
 @ServerSettings({
-    rootDir: path.resolve(__dirname),
-    httpPort: 3000,
-    httpsPort: false,
-    mount,
-    componentsScan: [
-      "${rootDir}/../middlewares/**/*.ts"
-    ],
-    acceptMimes: ["application/json"],
-    debug: true,
-    multer: {
-      dest: "${rootDir}/uploads"
-    },
+  rootDir: path.resolve(__dirname),
+  httpPort: 3000,
+  httpsPort: false,
+  mount,
+  componentsScan,
+  acceptMimes: ["application/json"],
+  debug: true,
+  multer: {
+    dest: "${rootDir}/uploads"
+  },
+  socketIO: {},
 })
 export class Server extends ServerLoader {
   async $onMountingMiddlewares(): Promise<void> {
@@ -85,10 +93,9 @@ export class Server extends ServerLoader {
 
     if (bugsnagClient) {
       bugsnagClient.use(bugsnagExpress);
-      const bugsnagMiddleware = bugsnagClient.getPlugin('express');
+      const bugsnagMiddleware = bugsnagClient.getPlugin("express");
       this.use(bugsnagMiddleware.requestHandler);
     }
-
 
     const corsHeaders = { exposedHeaders: ["Content-Disposition"] };
     this.use(cors(corsHeaders));

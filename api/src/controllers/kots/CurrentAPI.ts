@@ -11,6 +11,7 @@ interface CurrentStateRequest {
   helmApplications: any[],
 
 }
+
 @Controller("/api/v1/current")
 export class CurrentAPI {
   @Post("")

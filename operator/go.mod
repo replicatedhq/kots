@@ -27,6 +27,8 @@ require (
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.2.0
+	github.com/gorilla/websocket v1.4.0
+	github.com/graarh/golang-socketio v0.0.0-20170510162725-2c44953b9b5f
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/golang-lru v0.5.1
@@ -54,6 +56,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 	github.com/prometheus/common v0.4.0
 	github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
+	github.com/replicatedhq/golang-socketio v0.0.0-20170510162725-2c44953b9b5f
 	github.com/replicatedhq/troubleshoot v0.9.2
 	github.com/rogpeppe/go-internal v1.2.2
 	github.com/spf13/afero v1.2.2
