@@ -382,12 +382,7 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => {
-                      return (
-                      <PreflightResultPage
-                        makeCurrentVersion={this.makeCurrentRelease} />
-                      );
-                    }} />
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
                     <Route exact path="/app/:slug/config" render={() =>
                       <AppConfig
                         app={app}

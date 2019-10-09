@@ -646,6 +646,19 @@ export class KotsAppStore {
     }
   }
 
+  getPreflightResultState(preflightResults): string {
+    const results = preflightResults.results;
+    let resultState = "pass";
+    for (const check of results) {
+      if (check.isWarn) {
+        resultState = "warn";
+      } else if (check.isFail) {
+        return "fail";
+      }
+    }
+    return resultState;
+  }
+
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
     const q =
       `UPDATE app_downstream_version SET
@@ -671,8 +684,11 @@ export class KotsAppStore {
 
     // Always deploy sequence 0
     if (sequence === 0) {
-      // deployVersion sets status to "deployed"
-      await this.deployVersion(appId, sequence, clusterId);
+      const preflightState = this.getPreflightResultState(JSON.parse(preflightResult));
+      if (preflightState === "pass") {
+        // deployVersion sets status to "deployed"
+        await this.deployVersion(appId, sequence, clusterId);
+      }
     }
   }
 
