@@ -2,9 +2,10 @@ package socket
 
 import (
 	"encoding/json"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
-	"sync"
 	"reflect"
+	"sync"
+
+	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
 )
 
 const (
