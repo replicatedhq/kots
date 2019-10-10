@@ -15,14 +15,21 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	imagedocker "github.com/containers/image/docker"
+	dockerref "github.com/containers/image/docker/reference"
+	imagetypes "github.com/containers/image/types"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
+	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 const DefaultMetadata = `apiVersion: kots.io/v1beta1
@@ -536,4 +543,58 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 	}
 
 	return respBody, nil
+}
+
+type FindPrivateImagesOptions struct {
+	RootDir                 string
+	CreateAppDir            bool
+	AppSlug                 string
+	ReplicatedRegistry      string
+	ReplicatedRegistryProxy string
+	Log                     *logger.Logger
+}
+
+func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
+	rootDir := options.RootDir
+	if options.CreateAppDir {
+		rootDir = path.Join(rootDir, u.Name)
+	}
+	upstreamDir := path.Join(rootDir, "upstream")
+
+	upstreamImages, objects, err := image.GetPrivateImages(upstreamDir)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to list upstream images")
+	}
+
+	result := make([]kustomizeimage.Image, 0)
+	for _, upstreamImage := range upstreamImages {
+		// ParseReference requires the // prefix
+		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", upstreamImage))
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to parse image ref:%s", upstreamImage)
+		}
+
+		registryHost := dockerref.Domain(ref.DockerReference())
+		if registryHost == options.ReplicatedRegistry {
+			// replicated images are also private, but we don't rewrite those
+			continue
+		}
+
+		image := kustomizeimage.Image{
+			Name:    upstreamImage,
+			NewName: rewritePrivateImageURL(options.ReplicatedRegistryProxy, options.AppSlug, upstreamImage),
+		}
+		result = append(result, image)
+	}
+
+	return result, objects, nil
+}
+
+func rewritePrivateImageURL(proxyHost string, appSlug string, image string) string {
+	parts := strings.Split(image, ":")
+	return strings.Join([]string{proxyHost, "proxy", appSlug, parts[0]}, "/")
+}
+
+func parseDockerRef(image string) (imagetypes.ImageReference, error) {
+	return imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 }
