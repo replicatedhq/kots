@@ -1,7 +1,7 @@
 package config
 
 import (
-	"os"
+	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -65,6 +65,8 @@ type Config struct {
 	S3SecretAccessKey string `mapstructure:"s3_secret_access_key" ssm:"/shipcloud/s3/secret_access_key"`
 }
 
+type GetSSMParamsFunc func([]*string) (map[string]string, error)
+
 func New() *Config {
 	return &Config{
 		LogLevel:              "info",
@@ -101,25 +103,37 @@ func BindEnv(v *viper.Viper, key string) {
 	}
 }
 
-func UnmarshalSSM(config *Config, getSSMParam func(name string, encrypted bool) (string, error)) error {
+func UnmarshalSSM(config *Config, getSSMParams GetSSMParamsFunc) error {
 	t := reflect.TypeOf(Config{})
 	target := reflect.ValueOf(config)
+
+	ssmNames := []*string{}
+	ssmNameToFieldMap := map[string]string{}
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		ssmTag := field.Tag.Get("ssm")
 		if ssmTag != "" {
-			paramName, encrypted := parseSSMStructTag(ssmTag)
-
-			ssmParam, err := getSSMParam(paramName, encrypted)
-			if err != nil {
-				return errors.Wrapf(err, "unmarshall ssm %s, %s", field.Name, ssmTag)
-			}
-			if ssmParam != "" {
-				targetField := target.Elem().FieldByName(field.Name)
-				targetField.SetString(ssmParam)
+			ssmName, _ := parseSSMStructTag(ssmTag)
+			if ssmName != "" {
+				ssmNameToFieldMap[ssmName] = field.Name
+				ssmNames = append(ssmNames, aws.String(ssmName))
 			}
 		}
 	}
+
+	ssmParams, err := getSSMParams(ssmNames)
+	if err != nil {
+		return errors.Wrap(err, "get ssm params")
+	}
+	for ssmName, value := range ssmParams {
+		if value != "" {
+			targetField := target.Elem().FieldByName(ssmNameToFieldMap[ssmName])
+			if targetField.IsValid() {
+				targetField.SetString(value)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -133,36 +147,44 @@ func parseSSMStructTag(tag string) (string, bool) {
 	return paramName, encrypted
 }
 
-func GetSSMParam(ssmName string, encrypted bool) (string, error) {
-	region := "us-east-1"
-	if os.Getenv("AWS_REGION") != "" {
-		region = os.Getenv("AWS_REGION")
-	}
+func GetSSMParams(sess *session.Session) GetSSMParamsFunc {
+	return func(ssmNames []*string) (map[string]string, error) {
+		svc := ssm.New(sess)
 
-	config := &aws.Config{
-		Region: aws.String(region),
-	}
+		params := map[string]string{}
+		batch := chunkSlice(ssmNames, 10)
 
-	svc := ssm.New(session.Must(session.NewSession()), config)
+		for _, names := range batch {
+			input := &ssm.GetParametersInput{
+				Names:          names,
+				WithDecryption: aws.Bool(true),
+			}
+			output, err := svc.GetParameters(input)
+			if err != nil {
+				return params, err
+			}
 
-	params := &ssm.GetParametersInput{
-		Names: []*string{
-			&ssmName,
-		},
-		WithDecryption: aws.Bool(encrypted),
-	}
-	resp, err := svc.GetParameters(params)
-	if err != nil {
-		return "", errors.Wrapf(err, "looking up %q", ssmName)
-	}
+			for _, p := range output.InvalidParameters {
+				log.Printf("Ssm param %s invalid", *p)
+			}
 
-	// "empty string" values are not allowed in SSM,
-	// "InvalidParameters" error is returned when something is missing
-	if len(resp.InvalidParameters) > 0 {
-		// p := resp.InvalidParameters[0]
-		return "", nil
-	}
+			for _, p := range output.Parameters {
+				params[*p.Name] = *p.Value
+			}
+		}
 
-	param := resp.Parameters[0]
-	return *param.Value, nil
+		return params, nil
+	}
+}
+
+func chunkSlice(s []*string, n int) [][]*string {
+	var chunked [][]*string
+	for i := 0; i < len(s); i += n {
+		end := i + n
+		if end > len(s) {
+			end = len(s)
+		}
+		chunked = append(chunked, s[i:end])
+	}
+	return chunked
 }

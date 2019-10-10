@@ -9,15 +9,15 @@ import (
 func TestUnmarshallSSM(t *testing.T) {
 	tests := []struct {
 		name      string
-		getSSM    func(name string, encrypted bool) (string, error)
+		getSSM    func([]*string) (map[string]string, error)
 		config    *Config
 		expect    *Config
 		expectErr error
 	}{
 		{
 			name: "missing ssm leaves field unchanged",
-			getSSM: func(name string, encrypted bool) (string, error) {
-				return "", nil
+			getSSM: func([]*string) (map[string]string, error) {
+				return map[string]string{}, nil
 			},
 			config: &Config{
 				PostgresURI: "something",
@@ -28,14 +28,11 @@ func TestUnmarshallSSM(t *testing.T) {
 		},
 		{
 			name: "sets two fields",
-			getSSM: func(name string, encrypted bool) (string, error) {
-				if name == "/shipcloud/postgres/uri" && encrypted {
-					return "something", nil
-				} else if name == "/shipcloud/s3/ship_output_bucket" && !encrypted {
-					return "bucket", nil
-				}
-
-				return "", nil
+			getSSM: func([]*string) (map[string]string, error) {
+				return map[string]string{
+					"/shipcloud/postgres/uri":          "something",
+					"/shipcloud/s3/ship_output_bucket": "bucket",
+				}, nil
 			},
 			config: &Config{
 				PostgresURI: "something",

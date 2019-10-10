@@ -80,7 +80,10 @@ func (w *Worker) updateFunc(oldObj interface{}, newObj interface{}) error {
 		return nil
 	}
 
-	shipState := ship.NewStateManager(w.Config)
+	shipState, err := ship.NewStateManager(w.Config)
+	if err != nil {
+		return errors.Wrap(err, "initialize state manager")
+	}
 	stateID := newPod.ObjectMeta.Labels["state-id"]
 	deleteState := func() {
 		if stateID == "" {

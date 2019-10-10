@@ -13,21 +13,15 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kotsadm/worker/pkg/config"
 	"github.com/replicatedhq/kotsadm/worker/pkg/types"
 )
 
 func (s *SQLStore) GetS3StoreURL(shipSession types.Session) (string, error) {
-	sess, err := session.NewSession(s.getS3Config())
-	if err != nil {
-		return "", errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	resp, _ := svc.PutObjectRequest(&s3.PutObjectInput{
+	resp, _ := s.s3.PutObjectRequest(&s3.PutObjectInput{
 		Bucket: aws.String(strings.TrimSpace(s.c.S3BucketName)),
 		Key:    aws.String(shipSession.GetS3Filepath()),
 	})
@@ -62,13 +56,7 @@ func (s *SQLStore) UploadToS3(ctx context.Context, outputSession types.Output, f
 		return errors.Wrap(res.Body.Close(), "close locals3 put request body")
 	}
 
-	sess, err := session.NewSession(s.getS3Config())
-	if err != nil {
-		return errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	_, err = svc.PutObject(&s3.PutObjectInput{
+	_, err := s.s3.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(s3bucket),
 		Key:    aws.String(outputSession.GetS3Filepath()),
 		Body:   file,
@@ -81,18 +69,13 @@ func (s *SQLStore) DownloadFromS3(ctx context.Context, path string) (string, err
 	s3bucket := strings.TrimSpace(s.c.S3BucketName)
 	key := path
 
-	sess, err := session.NewSession(s.getS3Config())
-	if err != nil {
-		return "", errors.Wrap(err, "new session")
-	}
-
 	file, err := ioutil.TempFile("", "shipupdate")
 	if err != nil {
 		return "", errors.Wrap(err, "temp file")
 	}
 	defer file.Close()
 
-	downloader := s3manager.NewDownloader(sess)
+	downloader := s3manager.NewDownloaderWithClient(s.s3)
 
 	_, err = downloader.Download(file,
 		&s3.GetObjectInput{
@@ -121,7 +104,7 @@ func (s *SQLStore) SetOutputFilepath(ctx context.Context, outputSession types.Ou
 	return err
 }
 
-func (s *SQLStore) getS3Config() *aws.Config {
+func getS3Config(c *config.Config) *aws.Config {
 	region := "us-east-1"
 	if os.Getenv("AWS_REGION") != "" {
 		region = os.Getenv("AWS_REGION")
@@ -131,15 +114,15 @@ func (s *SQLStore) getS3Config() *aws.Config {
 		Region: aws.String(region),
 	}
 
-	if strings.TrimSpace(s.c.S3Endpoint) != "" {
-		s3config.Endpoint = aws.String(strings.TrimSpace(s.c.S3Endpoint))
+	if strings.TrimSpace(c.S3Endpoint) != "" {
+		s3config.Endpoint = aws.String(strings.TrimSpace(c.S3Endpoint))
 	}
 
-	if strings.TrimSpace(s.c.S3AccessKeyID) != "" && strings.TrimSpace(s.c.S3SecretAccessKey) != "" {
-		s3config.Credentials = credentials.NewStaticCredentials(strings.TrimSpace(s.c.S3AccessKeyID), strings.TrimSpace(s.c.S3SecretAccessKey), "")
+	if strings.TrimSpace(c.S3AccessKeyID) != "" && strings.TrimSpace(c.S3SecretAccessKey) != "" {
+		s3config.Credentials = credentials.NewStaticCredentials(strings.TrimSpace(c.S3AccessKeyID), strings.TrimSpace(c.S3SecretAccessKey), "")
 	}
 
-	if strings.TrimSpace(s.c.S3BucketEndpoint) != "" {
+	if strings.TrimSpace(c.S3BucketEndpoint) != "" {
 		s3config.S3ForcePathStyle = aws.Bool(true)
 	}
 

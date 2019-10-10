@@ -110,7 +110,11 @@ func (s *EditServer) CreateEditHandler(c *gin.Context) {
 		return
 	}
 
-	shipState := ship.NewStateManager(s.Worker.Config)
+	shipState, err := ship.NewStateManager(s.Worker.Config)
+	if err != nil {
+		s.Logger.Errorw("editserver failed to initialize state manager", zap.Error(err))
+		return
+	}
 	s3State, err := shipState.CreateS3State(shipEdit.StateJSON)
 	if err != nil {
 		s.Logger.Errorw("editserver failed to upload state to S3", zap.Error(err))

@@ -111,7 +111,11 @@ func (s *InitServer) CreateUnforkHandler(c *gin.Context) {
 		return
 	}
 
-	shipState := ship.NewStateManager(s.Worker.Config)
+	shipState, err := ship.NewStateManager(s.Worker.Config)
+	if err != nil {
+		s.Logger.Errorw("initserver failed to initialize state manager", zap.Error(err))
+		return
+	}
 	s3State, err := shipState.CreateS3State([]byte(""))
 	if err != nil {
 		s.Logger.Errorw("initserver failed to upload state to S3", zap.Error(err))
@@ -194,7 +198,11 @@ func (s *InitServer) CreateInitHandler(c *gin.Context) {
 		return
 	}
 
-	shipState := ship.NewStateManager(s.Worker.Config)
+	shipState, err := ship.NewStateManager(s.Worker.Config)
+	if err != nil {
+		s.Logger.Errorw("initserver failed to initialize state manager", zap.Error(err))
+		return
+	}
 	s3State, err := shipState.CreateS3State([]byte("{}"))
 	if err != nil {
 		s.Logger.Errorw("initserver failed to upload state to S3", zap.Error(err))
