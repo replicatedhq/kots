@@ -8,7 +8,7 @@ export interface ParamLookup { [key: string]: string; };
 export async function lookupParams(paramLookup: ParamLookup): Promise<{ [key: string]: string; }> {
   if (process.env["USE_EC2_PARAMETERS"]) {
     try {
-      return await getParamsFromSsm(paramLookup)
+      return await getParamsFromSsm(paramLookup);
     } catch(err) {
       // tslint:disable-next-line:no-console
       console.error(err);
@@ -29,7 +29,7 @@ async function getParamsFromSsm(paramLookup: ParamLookup): Promise<{ [key: strin
   const lookup: string[] = [];
   const reverseLookup: { [key: string]: string; } = {};
 
-  for (const key in paramLookup) {
+  for (const key of Object.keys(paramLookup)) {
     const envName = key;
     const ssmName = paramLookup[key];
 		if (ssmName) {
@@ -64,9 +64,7 @@ async function getParamsFromSsm(paramLookup: ParamLookup): Promise<{ [key: strin
 
 function getParamsFromEnv(paramLookup: ParamLookup): { [key: string]: string; } {
   const params: { [key: string]: string; } = {};
-  for (const key in paramLookup) {
-    const envName = key;
-    const ssmName = paramLookup[key];
+  for (const envName of Object.keys(paramLookup)) {
     params[envName] = process.env[envName] ? process.env[envName]! : "";
   }
   return params;
