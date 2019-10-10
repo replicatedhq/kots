@@ -11200,11 +11200,6 @@ react-monaco-editor@^0.20.0:
     monaco-editor "^0.14.2"
     prop-types "^15.6.2"
 
-react-piwik@^1.6.0:
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/react-piwik/-/react-piwik-1.6.0.tgz#3b9eee55167d953824867791cd5288593d652d66"
-  integrity sha512-ANK/SDDA3z827vcY8w77tTC8pOkpMSw1xNs5ifImho92oNS1rIfiTdVXNW7TpqP3a8hU+p9AxPAgPZhmkYtyzw==
-
 react-redux@^5.0.7:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-5.1.1.tgz#88e368682c7fa80e34e055cd7ac56f5936b0f52f"

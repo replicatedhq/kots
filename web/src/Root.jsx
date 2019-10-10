@@ -1,7 +1,6 @@
 import { hot } from "react-hot-loader/root";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
-import ReactPiwik from "react-piwik";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
@@ -41,20 +40,12 @@ import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
+import connectHistory from "./services/matomo";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
-let history = createBrowserHistory();
-if(process.env.NODE_ENV === "production") {
-  const piwik = new ReactPiwik({
-    url: "https://data-2.replicated.com",
-    siteId: 6,
-    trackErrors: true,
-    jsFilename: "js/",
-    phpFilename: "js/"
-  });
-  history = piwik.connectToHistory(history);
-}
+let browserHistory = createBrowserHistory();
+let history = connectHistory(browserHistory);
 
 /**
  * Create our GraphQL Client
