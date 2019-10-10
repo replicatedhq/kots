@@ -3,11 +3,12 @@ package socket
 import (
 	"encoding/json"
 	"errors"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
+	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
 )
 
 const (
@@ -136,7 +137,6 @@ func inLoop(c *Channel, m *methods) error {
 			go m.processIncomingMessage(c, msg)
 		}
 	}
-	return nil
 }
 
 var overflooded map[*Channel]struct{} = make(map[*Channel]struct{})
@@ -177,7 +177,6 @@ func outLoop(c *Channel, m *methods) error {
 			return closeChannel(c, m, err)
 		}
 	}
-	return nil
 }
 
 /**
