@@ -587,3 +587,14 @@ export const getKotsConfigGroups = gql`
     }
   }
 `;
+
+export const getKotsDownstreamOutput = gql`
+  query getKotsDownstreamOutput($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
+    getKotsDownstreamOutput(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
+      dryrunStdout
+      dryrunStderr
+      applyStdout
+      applyStderr
+    }
+  }
+`;

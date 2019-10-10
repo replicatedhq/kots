@@ -438,6 +438,7 @@ export interface KotsVersion {
   deployedAt: string;
   preflightResult: string;
   preflightResultCreatedAt: string;
+  hasError?: boolean;
 }
 
 export interface KotsAppMetadata {
@@ -495,4 +496,11 @@ export interface KotsConfigGroup {
   title: string;
   description: string;
   items: KotsConfigItem[];
+}
+
+export interface KotsDownstreamOutput {
+  dryrunStdout: string;
+  dryrunStderr: string;
+  applyStdout: string;
+  applyStderr: string;
 }

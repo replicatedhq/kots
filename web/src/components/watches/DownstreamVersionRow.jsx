@@ -69,6 +69,18 @@ export default function DownstreamVersionRow(props) {
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">
         <div className="">
           <div className="flex justifyContent--center alignItems--center">
+            {version.status === "failed" && (
+              <button 
+                className="btn secondary u-marginRight--20" 
+                onClick={() => {
+                  if (props.handleViewLogs) {
+                    props.handleViewLogs(version);
+                  }
+                }}
+              >
+                View Logs
+              </button>
+            )}
             {hasPreflight && version.status === "pending" && (
               <Link to={`/app/${urlParams.slug}/downstreams/${urlParams.downstreamSlug}/version-history/preflight/${version.sequence}`} className="u-fontSize--normal u-color--dustyGray">
                 <button className="btn primary u-marginRight--20">
@@ -80,15 +92,17 @@ export default function DownstreamVersionRow(props) {
               data-tip={`${version.title}-${version.sequence}`}
               data-for={`${version.title}-${version.sequence}`}
               className={classNames("icon", {
-              "checkmark-icon": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened" || version.status === "pending",
-              "grayCircleMinus--icon": version.status === "closed"
+                "checkmark-icon": version.status === "deployed" || version.status === "merged",
+                "exclamationMark--icon": version.status === "opened" || version.status === "pending",
+                "grayCircleMinus--icon": version.status === "closed",
+                "error-small": version.status === "failed"
               })}
             />
               <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
                 "u-color--nevada": version.status === "deployed" || version.status === "merged",
                 "u-color--orange": version.status === "opened" || version.status === "pending",
-                "u-color--dustyGray": version.status === "closed"
+                "u-color--dustyGray": version.status === "closed",
+                "u-color--red": version.status === "failed"
               })}>
                 {Utilities.toTitleCase(version.status).replace("_", " ")}
               </span>

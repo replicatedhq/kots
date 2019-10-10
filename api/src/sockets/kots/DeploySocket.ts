@@ -84,7 +84,7 @@ export class KotsDeploySocketService {
           }
         }
 
-        const deployedAppVersion = await this.kotsAppStore.getCurrentDownstreamVersion(app.id, clusterSocketHistory.clusterId);
+        const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
         const deployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
         if (deployedAppSequence! > -1) {
           if (clusterSocketHistory.sentDeploySequences.indexOf(`${app.id}/${deployedAppSequence!}`) === -1) {

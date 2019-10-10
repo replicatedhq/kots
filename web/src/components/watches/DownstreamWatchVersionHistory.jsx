@@ -2,14 +2,16 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
+import MonacoEditor from "react-monaco-editor";
 import Loader from "../shared/Loader";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 import filter from "lodash/filter";
 import Modal from "react-modal";
+import map from "lodash/map";
 
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
-import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
+import { getKotsDownstreamHistory, getKotsDownstreamOutput } from "../../queries/AppsQueries";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 import { isKotsApplication, hasPendingPreflight, getPreflightResultState } from "../../utilities/utilities";
@@ -20,7 +22,10 @@ class DownstreamWatchVersionHistory extends Component {
     showDeployWarningModal: false,
     deployParams: {},
     deployingSequence: null,
-    releaseNotes: null
+    releaseNotes: null,
+    logs: null,
+    selectedTab: null,
+    logsLoading: false
   }
 
   handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
@@ -100,6 +105,18 @@ class DownstreamWatchVersionHistory extends Component {
     });
   }
 
+  showLogsModal = () => {
+    this.setState({
+      showLogsModal: true
+    });
+  }
+
+  hideLogsModal = () => {
+    this.setState({
+      showLogsModal: false
+    });
+  }
+
   onForceDeployClick = () => {
     // Parameters are stored in state until deployed, then cleared after deploy
     const { upstreamSlug, sequence, clusterSlug } = this.state.deployParams;
@@ -116,9 +133,48 @@ class DownstreamWatchVersionHistory extends Component {
     return deployed.length ? deployed[0] : null;
   }
 
+  handleViewLogs = async version => {
+    this.showLogsModal();
+    this.setState({ logsLoading: true });
+    const { match } = this.props;
+    this.props.client.query({
+      query: getKotsDownstreamOutput,
+      fetchPolicy: "no-cache",
+      variables: {
+        appSlug: match.params.slug,
+        clusterSlug: match.params.downstreamSlug,
+        sequence: version.sequence
+      }
+    }).then(result => {
+      const logs = result.data.getKotsDownstreamOutput;
+      const selectedTab = Object.keys(logs)[0];
+      this.setState({ logs, selectedTab, logsLoading: false });
+    }).catch(err => {
+      console.log(err);
+      this.setState({ logsLoading: false });
+    });
+  }
+
+  renderLogsTabs = () => {
+    const { logs, selectedTab } = this.state;
+    if (!logs) {
+      return null;
+    }
+    const tabs = Object.keys(logs);
+    return (
+      <div className="flex action-tab-bar u-marginTop--10">
+        {map(tabs, tab =>  (
+          <div className={`tab-item blue ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
+            {tab}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   render() {
     const { watch, match, data } = this.props;
-    const { showSkipModal, showDeployWarningModal, releaseNotes } = this.state;
+    const { showSkipModal, showDeployWarningModal, releaseNotes, showLogsModal, logsLoading, logs, selectedTab } = this.state;
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
@@ -142,7 +198,9 @@ class DownstreamWatchVersionHistory extends Component {
     if (isKots && hasPendingPreflight(versionHistory)) {
       data?.startPolling(2000);
     } else {
-      this.props?.refreshAppData();
+      if (this.props.refreshAppData) {
+        this.props.refreshAppData();
+      }
       data?.stopPolling();
     }
 
@@ -168,6 +226,7 @@ class DownstreamWatchVersionHistory extends Component {
                 urlParams={match.params}
                 onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
+                handleViewLogs={this.handleViewLogs}
               />
             :
               <div className="no-current-version u-textAlign--center">
@@ -194,10 +253,12 @@ class DownstreamWatchVersionHistory extends Component {
                 urlParams={match.params}
                 onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
+                handleViewLogs={this.handleViewLogs}
               />
             ))}
           </div>
         </div>
+
         <Modal
           isOpen={showSkipModal}
           onRequestClose={this.hideSkipModal}
@@ -221,6 +282,7 @@ class DownstreamWatchVersionHistory extends Component {
             </div>
           </div>
         </Modal>
+
         <Modal
           isOpen={showDeployWarningModal}
           onRequestClose={this.hideDeployWarningModal}
@@ -251,6 +313,7 @@ class DownstreamWatchVersionHistory extends Component {
             </div>
           </div>
         </Modal>
+
         <Modal
           isOpen={!!releaseNotes}
           onRequestClose={this.hideReleaseNotes}
@@ -265,6 +328,46 @@ class DownstreamWatchVersionHistory extends Component {
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
             <button className="btn primary" onClick={this.hideReleaseNotes}>Close</button>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={showLogsModal}
+          onRequestClose={this.hideLogsModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="View logs"
+          ariaHideApp={false}
+          className="Modal logs-modal"
+        >
+          <div className="Modal-body flex flex1">
+            {!logs || !selectedTab || logsLoading ? (
+              <div className="flex-column flex1 alignItems--center justifyContent--center">
+                <Loader size="60" />
+              </div>
+            ) : (
+              <div className="flex-column flex1">
+                {this.renderLogsTabs()}
+                <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
+                  <MonacoEditor
+                    language="json"
+                    value={logs[selectedTab]}
+                    height="100%"
+                    width="100%"
+                    options={{
+                      readOnly: true,
+                      contextmenu: false,
+                      minimap: {
+                        enabled: false
+                      },
+                      scrollBeyondLastLine: false,
+                    }}
+                  />
+                </div>
+                <div className="u-marginTop--20 flex" onClick={this.hideLogsModal}>
+                  <button type="button" className="btn primary" onClick={this.hideWarningModal}>Ok, got it!</button>
+                </div>
+              </div>
+            )}
           </div>
         </Modal>
       </div>
