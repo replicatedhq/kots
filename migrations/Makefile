@@ -19,7 +19,7 @@ publish-release: OVERLAY = production
 publish-release: GITOPS_OWNER = replicatedcom
 publish-release: GITOPS_REPO = gitops-deploy
 publish-release: GITOPS_BRANCH = release
-publish-release: gitops
+#publish-release: gitops
 
 .PHONY: publish-alpha
 publish-alpha: OVERLAY = staging
