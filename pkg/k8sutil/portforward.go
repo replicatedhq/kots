@@ -108,6 +108,9 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		}
 
 		time.Sleep(time.Millisecond * 100)
+		if (quickClient.Timeout < time.Second) {
+			quickClient.Timeout = quickClient.Timeout + time.Millisecond * 100
+		}
 	}
 
 	if pollForAdditionalPorts {
