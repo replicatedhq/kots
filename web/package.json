@@ -129,6 +129,7 @@
     "isomorphic-fetch": "^2.2.1",
     "jest-enzyme": "^6.0.4",
     "js-yaml": "^3.13.1",
+    "markdown-it": "^10.0.0",
     "moment": "^2.24.0",
     "monaco-editor": "0.14.3",
     "monaco-editor-webpack-plugin": "^1.5.4",

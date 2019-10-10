@@ -192,7 +192,24 @@ export class KotsAppStore {
       return [];
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence < $2 order by sequence desc`;
+    q =
+      `SELECT
+         created_at,
+         version_label,
+         status,
+         sequence,
+         parent_sequence,
+         applied_at,
+         preflight_result,
+         preflight_result_created_at
+        FROM
+          app_downstream_version
+        WHERE
+          app_id = $1 AND
+          cluster_id = $3 AND
+          sequence < $2
+        ORDER BY
+          sequence DESC`;
     v = [
       appId,
       sequence,
@@ -203,7 +220,19 @@ export class KotsAppStore {
     const versionItems: KotsVersion[] = [];
 
     for (const row of result.rows) {
-      versionItems.push(this.mapKotsAppVersion(row));
+      const releaseNotes = await this.getReleaseNotes(appId, row.parent_sequence);
+
+      let versionItem: KotsVersion = {
+        title: row.version_label,
+        status: row.status,
+        createdOn: row.created_at,
+        sequence: row.sequence,
+        deployedAt: row.applied_at,
+        releaseNotes: releaseNotes || "",
+        preflightResult: row.preflight_result,
+        preflightResultCreatedAt: row.preflight_result_created_at
+      };
+      versionItems.push(versionItem);
     }
 
     return versionItems;
@@ -227,10 +256,25 @@ export class KotsAppStore {
       sequence = -1;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at
-        from app_downstream_version
-        where app_id = $1 and cluster_id = $3 and sequence > $2
-        order by sequence desc`;
+    q =
+      `SELECT
+         created_at,
+         version_label,
+         status,
+         sequence,
+         parent_sequence,
+         applied_at,
+         preflight_result,
+         preflight_result_created_at
+        FROM
+          app_downstream_version
+        WHERE
+          app_id = $1 AND
+          cluster_id = $3 AND
+          sequence > $2
+        ORDER BY
+          sequence DESC`;
+
     v = [
       appId,
       sequence,
@@ -241,7 +285,19 @@ export class KotsAppStore {
     const versionItems: KotsVersion[] = [];
 
     for (const row of result.rows) {
-      versionItems.push(this.mapKotsAppVersion(row));
+      const releaseNotes = await this.getReleaseNotes(appId, row.parent_sequence);
+
+      let versionItem: KotsVersion = {
+        title: row.version_label,
+        status: row.status,
+        createdOn: row.created_at,
+        sequence: row.sequence,
+        deployedAt: row.applied_at,
+        releaseNotes: releaseNotes || "",
+        preflightResult: row.preflight_result,
+        preflightResultCreatedAt: row.preflight_result_created_at
+      };
+      versionItems.push(versionItem);
     }
 
     return versionItems;
@@ -263,7 +319,24 @@ export class KotsAppStore {
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q =
+      `SELECT
+         created_at,
+         version_label,
+         status,
+         sequence,
+         parent_sequence,
+         applied_at,
+         preflight_result,
+         preflight_result_created_at
+        FROM
+          app_downstream_version
+        WHERE
+          app_id = $1 AND
+          cluster_id = $3 AND
+          sequence = $2
+        ORDER BY
+          sequence DESC`;
     v = [
       appId,
       sequence,
@@ -271,8 +344,24 @@ export class KotsAppStore {
     ];
 
     result = await this.pool.query(q, v);
+    const row = result.rows[0];
 
-    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+    if (!row) {
+      throw new ReplicatedError(`App Version for clusterId ${clusterId} not found. appId: ${appId}, sequence ${sequence}`);
+    }
+
+    const releaseNotes = await this.getReleaseNotes(appId, row.parent_sequence);
+
+    let versionItem: KotsVersion = {
+      title: row.version_label,
+      status: row.status,
+      createdOn: row.created_at,
+      sequence: row.sequence,
+      deployedAt: row.applied_at,
+      releaseNotes: releaseNotes || "",
+      preflightResult: row.preflight_result,
+      preflightResultCreatedAt: row.preflight_result_created_at
+    };
 
     return versionItem;
   }
@@ -299,8 +388,22 @@ export class KotsAppStore {
     ];
 
     result = await this.pool.query(q, v);
-    // TODO: check for row length here?
-    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+    
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No app version found`);
+    }
+
+    const row = result.rows[0];
+    const versionItem: KotsVersion = {
+      title: row.version_label,
+      status: row.status || "",
+      createdOn: row.created_at,
+      sequence: row.sequence,
+      releaseNotes: row.release_notes || "",
+      deployedAt: row.applied_at,
+      preflightResult: row.preflight_result,
+      preflightResultCreatedAt: row.preflight_result_created_at,
+    };
 
     return versionItem;
   }
@@ -338,6 +441,18 @@ export class KotsAppStore {
     return result.rows[0].update_cursor;
   }
 
+  async getReleaseNotes(appId: string, sequence: number): Promise<string | undefined> {
+    const q = `SELECT release_notes FROM app_version WHERE app_id = $1 AND sequence = $2`;
+    const v = [
+      appId,
+      sequence
+    ];
+    const result = await this.pool.query(q,v);
+    const row = result.rows[0];
+
+    return row && row.release_notes;
+  }
+
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
     let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
@@ -354,7 +469,25 @@ export class KotsAppStore {
       return;
     }
 
-    q = `select created_at, version_label, status, sequence, applied_at, preflight_result, preflight_result_created_at from app_downstream_version where app_id = $1 and cluster_id = $3 and sequence = $2`;
+    q =
+      `SELECT
+         created_at,
+         version_label,
+         status,
+         sequence,
+         parent_sequence,
+         applied_at,
+         preflight_result,
+         preflight_result_created_at
+        FROM
+          app_downstream_version
+        WHERE
+          app_id = $1 AND
+          cluster_id = $3 AND
+          sequence = $2
+        ORDER BY
+          sequence DESC`;
+
     v = [
       appId,
       sequence,
@@ -362,7 +495,24 @@ export class KotsAppStore {
     ];
 
     result = await this.pool.query(q, v);
-    const versionItem = this.mapKotsAppVersion(result.rows[0]);
+    const row = result.rows[0];
+
+    if (!row) {
+      throw new ReplicatedError(`App Version for clusterId ${clusterId} not found. appId: ${appId}, sequence ${sequence}`);
+    }
+
+    const releaseNotes = await this.getReleaseNotes(appId, row.parent_sequence);
+
+    let versionItem: KotsVersion = {
+      title: row.version_label,
+      status: row.status,
+      createdOn: row.created_at,
+      sequence: row.sequence,
+      deployedAt: row.applied_at,
+      releaseNotes: releaseNotes || "",
+      preflightResult: row.preflight_result,
+      preflightResultCreatedAt: row.preflight_result_created_at
+    };
 
     return versionItem;
   }
@@ -690,22 +840,6 @@ export class KotsAppStore {
         await this.deployVersion(appId, sequence, clusterId);
       }
     }
-  }
-
-  private mapKotsAppVersion(row: any): KotsVersion {
-    if (!row) {
-      throw new ReplicatedError("No app provided to map function");
-    }
-    return {
-      title: row.version_label,
-      status: row.status || "",
-      createdOn: row.created_at,
-      sequence: row.sequence,
-      releaseNotes: row.release_notes || "",
-      deployedAt: row.applied_at,
-      preflightResult: row.preflight_result,
-      preflightResultCreatedAt: row.preflight_result_created_at,
-    };
   }
 
   async getAirgapBundleGetUrl(filename: string): Promise<string> {

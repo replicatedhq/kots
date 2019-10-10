@@ -50,8 +50,8 @@ apps:
     install_state: "installed"
     users:
       - deploy-kots-version-user-id
-    downstream:
-      - "deploy-kots-version-cluster-id"
+    downstreams:
+      - id: "deploy-kots-version-cluster-id"
     downstream_versions:
       - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
         preflight_result_created_at: "2019-04-19 01:23:45.567"

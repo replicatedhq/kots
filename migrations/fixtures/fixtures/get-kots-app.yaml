@@ -50,5 +50,5 @@ apps:
     install_state: "installed"
     users:
       - get-kots-app-user-id
-    downstream:
-      - "get-kots-downstream-cluster-id"
+    downstreams:
+      - id: "get-kots-downstream-cluster-id"

@@ -492,6 +492,7 @@ export const getKotsDownstreamHistoryRaw = `
       status
       createdOn
       sequence
+      releaseNotes
       deployedAt
       preflightResult
       preflightResultCreatedAt

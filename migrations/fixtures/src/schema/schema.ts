@@ -216,12 +216,12 @@ export class Schema {
       }
     }
 
-    if (app.downstream) {
-      for (const clusterId of app.downstream) {
-        // NOTE: Clusters will use both cluster id for name and title.
+    if (app.downstreams) {
+      for (const downstream of app.downstreams) {
+        // NOTE: id is used for both id and name
         statements.push(
-          escape(`INSERT INTO app_downstream (app_id, cluster_id, downstream_name, current_sequence) VALUES (%L, %L, %L, ${app.current_sequence})`,
-            app.id, clusterId, clusterId
+          escape(`INSERT INTO app_downstream (app_id, cluster_id, downstream_name, current_sequence) VALUES (%L, %L, %L, ${downstream.sequence || app.current_sequence})`,
+            app.id, downstream.id, downstream.id
           )
         );
       }
@@ -252,6 +252,48 @@ export class Schema {
           downstreamVersion.status,
           downstreamVersion.preflight_result,
           downstreamVersion.preflight_result_created_at
+          )
+        )
+      }
+    }
+    if (app.versions) {
+      for (const version of app.versions) {
+        let appSpec = null;
+        if (version.kots_app_spec) {
+          appSpec = yaml.safeDump(version.kots_app_spec);
+        }
+
+        let preflightSpec = null;
+        if (version.preflight_spec) {
+          preflightSpec = yaml.safeDump(version.preflight_spec);
+        }
+
+        let supportbundleSpec = null;
+        if (version.supportbundle_spec) {
+          supportbundleSpec = yaml.safeDump(version.supportbundle_spec);
+        }
+
+        statements.push(
+          escape(`INSERT INTO app_version (
+            app_id,
+            sequence,
+            update_cursor,
+            created_at,
+            version_label,
+            supportbundle_spec,
+            preflight_spec,
+            release_notes,
+            kots_app_spec
+          ) VALUES (
+            %L, ${version.sequence}, ${version.update_cursor}, %L, %L, %L, %L, %L, %L
+            )`,
+            app.id,
+            version.created_at,
+            version.version_label,
+            supportbundleSpec,
+            preflightSpec,
+            version.release_notes,
+            appSpec
           )
         )
       }

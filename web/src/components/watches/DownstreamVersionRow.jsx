@@ -6,7 +6,7 @@ import { Utilities } from "@src/utilities/utilities";
 import Loader from "../shared/Loader";
 
 export default function DownstreamVersionRow(props) {
-  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight, isDeploying } = props;
+  const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight, isDeploying, onReleaseNotesClick } = props;
   if (!version) { return null; }
   const gitRef = downstreamWatch?.cluster?.gitOpsRef;
   const githubLink = gitRef && `https://github.com/${gitRef.owner}/${gitRef.repo}/pull/${version.pullrequestNumber}`;
@@ -59,6 +59,11 @@ export default function DownstreamVersionRow(props) {
         }
         <div className="u-marginTop--10">
           <Link to={isKots ? `/app/${urlParams.slug}/tree/${version.sequence}` : `/watch/${downstreamWatch.slug}/tree/${version.sequence}`} className="u-fontSize--small replicated-link">View file contents</Link>
+          {version.releaseNotes && (
+            <span className="u-paddingLeft--15"> |
+              <span className="release-notes-link u-fontSize--small u-fontWeight--medium u-paddingLeft--15" onClick={() => { onReleaseNotesClick(version.releaseNotes); }}>Release notes</span>
+            </span>
+          )}
         </div>
       </div>
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">

@@ -1,37 +1,37 @@
 users:
-  - id: "get-kots-downstream-history-user-id"
+  - id: "kots-release-notes-user-id"
     created_at: "2019-04-18 12:34:56.789"
     type: "github"
     github:
-      username: "get-kots-downstream-history-github-user"
+      username: "kots-release-notes-github-user"
       github_id: 9910124
       avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
-      email: "get-kots-downstream-history-user-email@replicated.com"
+      email: "kots-release-notes-user-email@replicated.com"
     sessions:
-      - get-kots-downstream-history-user-session
+      - kots-release-notes-user-session
 
 clusters:
-  - id: "get-kots-downstream-history-cluster-id"
+  - id: "kots-release-notes-cluster-id"
     cluster_type: "ship"
-    title: "get-kots-downstream-history-cluster-title"
-    slug: "get-kots-downstream-history-cluster-slug"
+    title: "kots-release-notes-cluster-title"
+    slug: "kots-release-notes-cluster-slug"
     created_at: "2019-04-20 12:34:56.789"
     updated_at: ~
     token: ~
     users:
-      - "get-kots-downstream-history-user-id"
+      - "kots-release-notes-user-id"
 
 apps:
-  - id: "get-kots-downstream-history-app-id"
+  - id: "kots-release-notes-app-id"
     name: "kots-app-name"
     icon_uri: "kots-app-icon-uri"
     created_at: "2019-04-18 12:34:56.789"
     updated_at: "2019-04-18 01:23:45.567"
-    slug: "get-kots-downstream-history-app-slug"
+    slug: "kots-release-notes-app-slug"
     current_sequence: 0
     last_update_check_at: "2019-04-19 01:23:45.567"
     is_all_users: false
-    upstream_uri: "get-kots-downstream-history-app-upstream-uri"
+    upstream_uri: "kots-release-notes-app-upstream-uri"
     license:
       apiVersion: "kots.io/v1beta1"
       kind: License
@@ -49,15 +49,21 @@ apps:
     last_registry_sync: "2019-04-19 01:23:45.567"
     install_state: "installed"
     users:
-      - get-kots-downstream-history-user-id
+      - kots-release-notes-user-id
     downstreams:
-      - id: "get-kots-downstream-history-cluster-id"
+      - id: "kots-release-notes-cluster-id"
     downstream_versions:
       - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
         preflight_result_created_at: "2019-04-19 01:23:45.567"
-        cluster_id: "get-kots-downstream-history-cluster-id"
+        cluster_id: "kots-release-notes-cluster-id"
         sequence: 0
-        version_label: "my-awesome-version"
+        version_label: "my-other-awesome-version"
         created_at: "2019-04-19 01:23:45.567"
         applied_at: "2019-04-19 01:23:45.567"
         status: "pending"
+    versions:
+      - sequence: 0
+        update_cursor: 1
+        created_at: "2019-04-20 01:20:00.000"
+        version_label: "my-other-awesome-version"
+        release_notes: "# Release Notes Markdown Text"

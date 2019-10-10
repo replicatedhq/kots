@@ -597,7 +597,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
           "variables": {
             "clusterSlug": "get-kots-downstream-history-cluster-slug",
             "upstreamSlug": "get-kots-downstream-history-app-slug"
@@ -606,7 +606,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -641,6 +641,170 @@
             "match": "type"
           },
           "$.body.data.getKotsDownstreamHistory[0].preflightResultCreatedAt": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A query to get kots downstream version history that has release notes",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJrb3RzLXJlbGVhc2Utbm90ZXMtdXNlci1zZXNzaW9uIn0.etnIn-jtkBXBViCV6qFXos_3DrC4AuZr5wBZppqhjPk",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "getKotsDownstreamHistory",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "variables": {
+            "clusterSlug": "kots-release-notes-cluster-slug",
+            "upstreamSlug": "kots-release-notes-app-slug"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "getKotsDownstreamHistory": [
+              {
+                "title": "my-other-awesome-version",
+                "status": "pending",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "sequence": 0,
+                "releaseNotes": "# Release Notes Markdown Text",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "preflightResult": "string",
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.getKotsDownstreamHistory[0].preflightResult": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A query to get kots downstream version history without release notes",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJrb3RzLW5vLXJlbGVhc2Utbm90ZXMtdXNlci1zZXNzaW9uIn0.eNvGKY0UU2lIXWv-NwmLLJxXFhVGY041ohDu3fKVkZU",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "getKotsDownstreamHistory",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "variables": {
+            "clusterSlug": "kots-no-release-notes-cluster-slug",
+            "upstreamSlug": "kots-no-release-notes-app-slug"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "getKotsDownstreamHistory": [
+              {
+                "title": "kots-no-release-notes-version-label",
+                "status": "pending",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "sequence": 0,
+                "releaseNotes": "",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "preflightResult": null,
+                "preflightResultCreatedAt": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "description": "A query to get downstream version history for a kots app that has different midstream sequence than the downstream",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJrb3RzLWRpZmZlcmVudC1zZXF1ZW5jZS11c2VyLXNlc3Npb24ifQ.SpkETRRfF-KcCEcOqREWO1hrKsW2Y6O-JP7eopTX0pM",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "getKotsDownstreamHistory",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "variables": {
+            "clusterSlug": "kots-different-sequence-cluster-slug",
+            "upstreamSlug": "kots-different-sequence-app-slug"
+          }
+        },
+        "matchingRules": {
+          "$.body.query": {
+            "match": "regex",
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "getKotsDownstreamHistory": [
+              {
+                "title": "my-other-awesome-version-2",
+                "status": "deployed",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "sequence": 1,
+                "releaseNotes": "# Markdown string here",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "preflightResult": "string",
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+              },
+              {
+                "title": "my-other-awesome-version",
+                "status": "deployed",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "sequence": 0,
+                "releaseNotes": "# Markdown string here",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "preflightResult": "string",
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.getKotsDownstreamHistory[0].preflightResult": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[1].preflightResult": {
             "match": "type"
           }
         }
@@ -747,7 +911,7 @@
             "watchContributors": [
               {
                 "id": "get-watch-contributors-user",
-                "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (Coordinated Universal Time)",
+                "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)",
                 "githubId": 1235,
                 "login": "get-watch-contributors-username",
                 "avatar_url": "https://avatars3.githubusercontent.com/u/234567?v=4"

@@ -7,6 +7,7 @@ import DownstreamVersionRow from "./DownstreamVersionRow";
 import filter from "lodash/filter";
 import Modal from "react-modal";
 
+import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { getDownstreamHistory } from "../../queries/WatchQueries";
 import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
 
@@ -18,7 +19,8 @@ class DownstreamWatchVersionHistory extends Component {
     showSkipModal: false,
     showDeployWarningModal: false,
     deployParams: {},
-    deployingSequence: null
+    deployingSequence: null,
+    releaseNotes: null
   }
 
   handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
@@ -86,6 +88,18 @@ class DownstreamWatchVersionHistory extends Component {
     });
   }
 
+  showReleaseNotes = notes => {
+    this.setState({
+      releaseNotes: notes
+    });
+  }
+
+  hideReleaseNotes = () => {
+    this.setState({
+      releaseNotes: null
+    });
+  }
+
   onForceDeployClick = () => {
     // Parameters are stored in state until deployed, then cleared after deploy
     const { upstreamSlug, sequence, clusterSlug } = this.state.deployParams;
@@ -104,7 +118,7 @@ class DownstreamWatchVersionHistory extends Component {
 
   render() {
     const { watch, match, data } = this.props;
-    const { showSkipModal, showDeployWarningModal } = this.state;
+    const { showSkipModal, showDeployWarningModal, releaseNotes } = this.state;
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
@@ -152,6 +166,7 @@ class DownstreamWatchVersionHistory extends Component {
                 version={activeDownstreamVersion}
                 isKots={isKots}
                 urlParams={match.params}
+                onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
               />
             :
@@ -177,6 +192,7 @@ class DownstreamWatchVersionHistory extends Component {
                 version={version}
                 isKots={isKots}
                 urlParams={match.params}
+                onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
               />
             ))}
@@ -233,6 +249,22 @@ class DownstreamWatchVersionHistory extends Component {
                 Cancel
               </button>
             </div>
+          </div>
+        </Modal>
+        <Modal
+          isOpen={!!releaseNotes}
+          onRequestClose={this.hideReleaseNotes}
+          contentLabel="Release Notes"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="flex-column">
+            <MarkdownRenderer>
+              {this.state.releaseNotes || ""}
+            </MarkdownRenderer>
+          </div>
+          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
+            <button className="btn primary" onClick={this.hideReleaseNotes}>Close</button>
           </div>
         </Modal>
       </div>
