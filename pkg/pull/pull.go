@@ -62,7 +62,7 @@ func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
 }
 
 // CanPullUpstream will return a bool indicating if the specified upstream
-// is accessible and authenticed for us.
+// is accessible and authenticated for us.
 func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {

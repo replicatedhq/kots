@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ahmetalpbalkan/go-cursor"
+	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
