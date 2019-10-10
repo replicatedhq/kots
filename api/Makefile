@@ -87,7 +87,7 @@ publish-release: GITOPS_OWNER = replicatedcom
 publish-release: GITOPS_REPO = gitops-deploy
 publish-release: GITOPS_BRANCH = release
 publish-release: GITOPS_FILENAME = kotsadm-api
-publish-release: build_and_publish
+#publish-release: build_and_publish
 
 .PHONY: publish-alpha
 publish-alpha: IMAGE_TAG = alpha
