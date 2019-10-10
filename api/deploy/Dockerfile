@@ -6,6 +6,7 @@ RUN make deps build
 
 FROM node:8-buster-slim
 COPY --from=0 /src/build /src/build
+COPY --from=0 /src/node_modules /src/node_modules
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.16.1
