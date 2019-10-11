@@ -30,7 +30,6 @@ class DownstreamWatchVersionHistory extends Component {
 
   handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
     if (this.props.makeCurrentVersion && typeof this.props.makeCurrentVersion === "function") {
-      await this.setDeploySequence(sequence);
       if (status === "pending_preflight") {
         this.setState({
           showSkipModal: true,
@@ -42,6 +41,7 @@ class DownstreamWatchVersionHistory extends Component {
         });
         return;
       }
+
       const version = this.props.data?.getKotsDownstreamHistory?.find( v => v.sequence === sequence);
       // If status is undefined - this is a force deploy.
       if (version?.preflightResult && status === "pending") {
@@ -61,6 +61,7 @@ class DownstreamWatchVersionHistory extends Component {
         }
       }
 
+      await this.setDeploySequence(sequence);
       await this.props.makeCurrentVersion(upstreamSlug, sequence, clusterSlug);
       await this.props.data.refetch();
       this.setState({
