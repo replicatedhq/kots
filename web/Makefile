@@ -102,7 +102,7 @@ release-replicated-production: OVERLAY = production
 release-replicated-production: GITOPS_OWNER = replicatedcom
 release-replicated-production: GITOPS_REPO = gitops-deploy
 release-replicated-production: GITOPS_BRANCH = release
-release-replicated-production: gitops
+#release-replicated-production: gitops
 
 gitops:
 	cd kustomize/overlays/$(OVERLAY); sed -i -- 's/GIT_SHA_PLACEHOLDER/'$${BUILDKITE_COMMIT:0:7}'/g' *.yaml

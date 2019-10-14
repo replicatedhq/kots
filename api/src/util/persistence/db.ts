@@ -1,8 +1,8 @@
 import { Pool, QueryResult } from "pg";
-import { param } from "../params";
+import { Params } from "../../server/params";
 
 export async function getPostgresPool(): Promise<Pool> {
-  const uri = await param("POSTGRES_URI", "/shipcloud/postgres/uri", true);
+  const uri = (await Params.getParams()).postgresUri;
   return new Pool({
     connectionString: uri,
   });

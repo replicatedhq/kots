@@ -69,7 +69,28 @@ export default function DownstreamVersionRow(props) {
       <div className="flex flex-auto justifyContent--flexEnd alignItems--center u-paddingRight--10">
         <div className="">
           <div className="flex justifyContent--center alignItems--center">
-            {hasPreflight && version.status === "pending" && (
+            {version.status === "failed" && (
+              <button 
+                className="btn secondary u-marginRight--20" 
+                onClick={() => {
+                  if (props.handleViewLogs) {
+                    props.handleViewLogs(version);
+                  }
+                }}
+              >
+                View Logs
+              </button>
+            )}
+            {version.status === "pending_preflight" ? (
+              <div className="flex alignItems--center u-marginRight--20">
+                <span className="u-paddingRight--5">
+                  <Loader size="20" />
+                </span>
+                <button className="btn secondary is-disabled">
+                  Running Preflight Checks
+                </button>
+              </div>
+            ) : hasPreflight && version.status === "pending" && (
               <Link to={`/app/${urlParams.slug}/downstreams/${urlParams.downstreamSlug}/version-history/preflight/${version.sequence}`} className="u-fontSize--normal u-color--dustyGray">
                 <button className="btn primary u-marginRight--20">
                   View Preflight Results
@@ -80,23 +101,20 @@ export default function DownstreamVersionRow(props) {
               data-tip={`${version.title}-${version.sequence}`}
               data-for={`${version.title}-${version.sequence}`}
               className={classNames("icon", {
-              "checkmark-icon": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened" || version.status === "pending",
-              "grayCircleMinus--icon": version.status === "closed"
+                "checkmark-icon": version.status === "deployed" || version.status === "merged",
+                "exclamationMark--icon": version.status === "opened" || version.status === "pending" || version.status === "pending_preflight",
+                "grayCircleMinus--icon": version.status === "closed",
+                "error-small": version.status === "failed"
               })}
             />
               <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
                 "u-color--nevada": version.status === "deployed" || version.status === "merged",
-                "u-color--orange": version.status === "opened" || version.status === "pending",
-                "u-color--dustyGray": version.status === "closed"
+                "u-color--orange": version.status === "opened" || version.status === "pending" || version.status === "pending_preflight",
+                "u-color--dustyGray": version.status === "closed",
+                "u-color--red": version.status === "failed"
               })}>
-                {Utilities.toTitleCase(version.status).replace("_", " ")}
+                {Utilities.toTitleCase(version.status === "pending_preflight" ? "pending" : version.status).replace("_", " ")}
               </span>
-              {version.status === "pending_preflight" && (
-                <span className="u-paddingLeft--5">
-                  <Loader size="20" />
-                </span>
-              )}
           </div>
         </div>
       </div>

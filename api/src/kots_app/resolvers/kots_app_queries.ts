@@ -2,7 +2,7 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails, KotsConfigGroup } from "../";
+import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails, KotsConfigGroup, KotsDownstreamOutput } from "../";
 import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
@@ -110,7 +110,7 @@ export function KotsQueries(stores: Stores) {
     // by a id/sequence number regardless of the app type.
     async getKotsApplicationTree(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId);
       const tree = await app.generateFileTreeIndex(args.sequence);
       if (_.isEmpty(tree) || !tree[0].children) {
         throw new ReplicatedError(`Unable to get files for app with ID of ${app.id}`);
@@ -120,7 +120,7 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId);
       const files = await app.getFiles(args.sequence, args.fileNames);
       const jsonFiles = JSON.stringify(files.files);
       if (jsonFiles.length >= 5000000) {
@@ -131,12 +131,18 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId); // TODO: Move to context?
+      const app = await context.getApp(appId);
       return await app.getConfigGroups(args.sequence);
     },
 
     async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
       return await stores.kotsAppStore.getAirgapInstallStatus();
-    }
+    },
+
+    async getKotsDownstreamOutput(root: any, args: any, context: Context): Promise<KotsDownstreamOutput> {
+      const appId = await stores.kotsAppStore.getIdFromSlug(args.appSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
+      return await stores.kotsAppStore.getDownstreamOutput(appId, clusterId, args.sequence);
+    },
   }
 }

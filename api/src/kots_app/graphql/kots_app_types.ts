@@ -45,6 +45,7 @@ const KotsVersion = `
     deployedAt: String
     preflightResult: String
     preflightResultCreatedAt: String
+    hasError: Boolean
   }
 `;
 
@@ -165,12 +166,22 @@ const KotsConfigGroupInput = `
   }
 `;
 
+const KotsDownstreamOutput = `
+  type KotsDownstreamOutput {
+    dryrunStdout: String
+    dryrunStderr: String
+    applyStdout: String
+    applyStderr: String
+  }
+`;
+
 export default [
   KotsApp,
   KotsAppLink,
   KotsDownstream,
   KotsVersion,
   KotsAppMetadata,
+  KotsDownstreamOutput,
 
   AppRegistryDetails,
   KotsAppRegistryDetails,

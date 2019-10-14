@@ -59,3 +59,59 @@ $cell-width: 140px;
     text-decoration: underline;
   }
 }
+
+.logs-modal {
+  height: 70%;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+}
+
+.monaco-editor-wrapper {
+  margin-top: 12px;
+  border-radius: 4px;
+}
+
+.action-tab-bar .tab-item {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9B9B9B;
+  padding: 0 10px;
+  border-right: 1px solid #DFDFDF;
+  line-height: 15px;
+  cursor: pointer;
+  transition: color .2s;
+  position: relative;
+
+  &:hover {
+    color: #717171;
+  }
+
+  &.is-active {
+    color: #4A4A4A;
+    font-weight: 600;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -16px;
+      display: block;
+      width: 8px;
+      height: 8px;
+      transform: rotate(45deg);
+      background-color: #ffffff;
+      border-top: 1px solid #DFDFDF;
+      border-left: 1px solid #DFDFDF;
+      left: 50%;
+      margin-left: -4px;
+    }
+  }
+
+  &.blue.is-active::after {
+    background-color: #F5F8FC;
+  }
+
+  &:last-child {
+    border-right: none
+  }
+}

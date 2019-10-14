@@ -9,7 +9,11 @@ import (
 )
 
 func (w *Worker) deployUpdate(shipUpdate *types.UpdateSession) error {
-	shipState := ship.NewStateManager(w.Config)
+	shipState, err := ship.NewStateManager(w.Config)
+	if err != nil {
+		w.Logger.Errorw("updateworker failed to initialize state manager", zap.Error(err))
+		return err
+	}
 	s3State, err := shipState.CreateS3State(shipUpdate.StateJSON)
 	if err != nil {
 		w.Logger.Errorw("updateworker failed to upload state to S3", zap.Error(err))

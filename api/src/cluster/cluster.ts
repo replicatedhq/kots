@@ -10,7 +10,7 @@ export class Cluster {
   shipOpsRef?: ShipOpsRef;
 
   public async getCurrentVersionOnCluster(appId: string, stores: Stores) {
-    return stores.kotsAppStore.getCurrentDownstreamVersion(appId, this.id);
+    return stores.kotsAppStore.getCurrentVersion(appId, this.id);
   }
 
   public toKotsAppSchema(appId: string, stores: Stores) {

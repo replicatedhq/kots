@@ -1,11 +1,12 @@
 import pg from "pg";
 import { Params } from "../server/params";
-import { KotsApp, KotsVersion, KotsAppRegistryDetails } from "./";
+import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsDownstreamOutput } from "./";
 import { ReplicatedError } from "../server/errors";
 import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
+import { decodeBase64 } from '../util/utilities';
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -72,6 +73,37 @@ export class KotsAppStore {
     ];
 
     await this.pool.query(q, v);
+  }
+
+  async getDownstreamOutput(appId: string, clusterId: string, sequence: number): Promise<KotsDownstreamOutput> {
+    const q = `
+      select dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr 
+      from app_downstream_output 
+      where app_id = $1 and cluster_id = $2 and downstream_sequence = $3
+    `;
+    const v = [
+      appId,
+      clusterId,
+      sequence,
+    ];
+    const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      return {
+        dryrunStdout: "",
+        dryrunStderr: "",
+        applyStdout: "",
+        applyStderr: ""
+      };
+    };
+
+    const row = result.rows[0];
+    return {
+      dryrunStdout: decodeBase64(row.dryrun_stdout),
+      dryrunStderr: decodeBase64(row.dryrun_stderr),
+      applyStdout: decodeBase64(row.apply_stdout),
+      applyStderr: decodeBase64(row.apply_stderr)
+    };
   }
 
   async createDownstream(appId: string, downstreamName: string, clusterId: string): Promise<void> {
@@ -194,22 +226,28 @@ export class KotsAppStore {
 
     q =
       `SELECT
-         created_at,
-         version_label,
-         status,
-         sequence,
-         parent_sequence,
-         applied_at,
-         preflight_result,
-         preflight_result_created_at
+         adv.created_at,
+         adv.version_label,
+         adv.status,
+         adv.sequence,
+         adv.parent_sequence,
+         adv.applied_at,
+         adv.preflight_result,
+         adv.preflight_result_created_at,
+         ado.is_error AS has_error
         FROM
-          app_downstream_version
+          app_downstream_version AS adv
+        LEFT JOIN
+          app_downstream_output AS ado
+        ON
+          adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
         WHERE
-          app_id = $1 AND
-          cluster_id = $3 AND
-          sequence < $2
+          adv.app_id = $1 AND
+          adv.cluster_id = $3 AND
+          adv.sequence < $2
         ORDER BY
-          sequence DESC`;
+          adv.sequence DESC`;
+
     v = [
       appId,
       sequence,
@@ -224,7 +262,7 @@ export class KotsAppStore {
 
       let versionItem: KotsVersion = {
         title: row.version_label,
-        status: row.status,
+        status: row.has_error ? "failed" : row.status,
         createdOn: row.created_at,
         sequence: row.sequence,
         deployedAt: row.applied_at,
@@ -303,11 +341,11 @@ export class KotsAppStore {
     return versionItems;
   }
 
-  async getCurrentDownstreamVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
+  async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
     let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
       appId,
-      clusterId
+      clusterId,
     ];
     let result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
@@ -321,22 +359,28 @@ export class KotsAppStore {
 
     q =
       `SELECT
-         created_at,
-         version_label,
-         status,
-         sequence,
-         parent_sequence,
-         applied_at,
-         preflight_result,
-         preflight_result_created_at
+         adv.created_at,
+         adv.version_label,
+         adv.status,
+         adv.sequence,
+         adv.parent_sequence,
+         adv.applied_at,
+         adv.preflight_result,
+         adv.preflight_result_created_at,
+         ado.is_error AS has_error
         FROM
-          app_downstream_version
+          app_downstream_version AS adv
+        LEFT JOIN
+          app_downstream_output AS ado
+        ON
+          adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
         WHERE
-          app_id = $1 AND
-          cluster_id = $3 AND
-          sequence = $2
+          adv.app_id = $1 AND
+          adv.cluster_id = $3 AND
+          adv.sequence = $2
         ORDER BY
-          sequence DESC`;
+          adv.sequence DESC`;
+
     v = [
       appId,
       sequence,
@@ -354,7 +398,7 @@ export class KotsAppStore {
 
     let versionItem: KotsVersion = {
       title: row.version_label,
-      status: row.status,
+      status: row.has_error ? "failed" : row.status,
       createdOn: row.created_at,
       sequence: row.sequence,
       deployedAt: row.applied_at,
@@ -451,70 +495,6 @@ export class KotsAppStore {
     const row = result.rows[0];
 
     return row && row.release_notes;
-  }
-
-  async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
-    let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
-    let v = [
-      appId,
-      clusterId,
-    ];
-    let result = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`No current version found`);
-    }
-    const sequence = result.rows[0].current_sequence;
-
-    if (sequence === null) {
-      return;
-    }
-
-    q =
-      `SELECT
-         created_at,
-         version_label,
-         status,
-         sequence,
-         parent_sequence,
-         applied_at,
-         preflight_result,
-         preflight_result_created_at
-        FROM
-          app_downstream_version
-        WHERE
-          app_id = $1 AND
-          cluster_id = $3 AND
-          sequence = $2
-        ORDER BY
-          sequence DESC`;
-
-    v = [
-      appId,
-      sequence,
-      clusterId,
-    ];
-
-    result = await this.pool.query(q, v);
-    const row = result.rows[0];
-
-    if (!row) {
-      throw new ReplicatedError(`App Version for clusterId ${clusterId} not found. appId: ${appId}, sequence ${sequence}`);
-    }
-
-    const releaseNotes = await this.getReleaseNotes(appId, row.parent_sequence);
-
-    let versionItem: KotsVersion = {
-      title: row.version_label,
-      status: row.status,
-      createdOn: row.created_at,
-      sequence: row.sequence,
-      deployedAt: row.applied_at,
-      releaseNotes: releaseNotes || "",
-      preflightResult: row.preflight_result,
-      preflightResultCreatedAt: row.preflight_result_created_at
-    };
-
-    return versionItem;
   }
 
   async deployVersion(appId: string, sequence: number, clusterId: string): Promise<void> {

@@ -18,7 +18,8 @@ import (
 )
 
 type StateManager struct {
-	c *config.Config
+	c  *config.Config
+	s3 *s3.S3
 }
 
 type S3State struct {
@@ -27,8 +28,12 @@ type S3State struct {
 	GetURL string
 }
 
-func NewStateManager(c *config.Config) *StateManager {
-	return &StateManager{c: c}
+func NewStateManager(c *config.Config) (*StateManager, error) {
+	sess, err := session.NewSession(getS3Config(c))
+	if err != nil {
+		return nil, errors.Wrap(err, "new aws session")
+	}
+	return &StateManager{c: c, s3: s3.New(sess)}, nil
 }
 
 func (m *StateManager) NewStateID() (string, error) {
@@ -41,13 +46,7 @@ func (m *StateManager) NewStateID() (string, error) {
 }
 
 func (m *StateManager) PutState(stateID string, stateJSON []byte) error {
-	sess, err := session.NewSession(m.getS3Config())
-	if err != nil {
-		return errors.Wrap(err, "new s3 session")
-	}
-	svc := s3.New(sess)
-
-	_, err = svc.PutObject(&s3.PutObjectInput{
+	_, err := m.s3.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
 		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
 		Body:   bytes.NewReader(stateJSON),
@@ -57,13 +56,7 @@ func (m *StateManager) PutState(stateID string, stateJSON []byte) error {
 }
 
 func (m *StateManager) GetState(stateID string) ([]byte, error) {
-	sess, err := session.NewSession(m.getS3Config())
-	if err != nil {
-		return nil, errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	result, err := svc.GetObject(&s3.GetObjectInput{
+	result, err := m.s3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
 		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
 	})
@@ -80,13 +73,7 @@ func (m *StateManager) GetState(stateID string) ([]byte, error) {
 }
 
 func (m *StateManager) DeleteState(stateID string) error {
-	sess, err := session.NewSession(m.getS3Config())
-	if err != nil {
-		return errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
-	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+	_, err := m.s3.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
 		Key:    aws.String(fmt.Sprintf("/state/%s.json", stateID)),
 	})
@@ -98,15 +85,9 @@ func (m *StateManager) DeleteState(stateID string) error {
 }
 
 func (m *StateManager) GetPresignedURLs(stateID string) (*S3State, error) {
-	sess, err := session.NewSession(m.getS3Config())
-	if err != nil {
-		return nil, errors.Wrap(err, "new session")
-	}
-	svc := s3.New(sess)
-
 	objectKey := fmt.Sprintf("/state/%s.json", stateID)
 
-	putResp, _ := svc.PutObjectRequest(&s3.PutObjectInput{
+	putResp, _ := m.s3.PutObjectRequest(&s3.PutObjectInput{
 		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
 		Key:    aws.String(objectKey),
 	})
@@ -116,7 +97,7 @@ func (m *StateManager) GetPresignedURLs(stateID string) (*S3State, error) {
 		return nil, errors.Wrap(err, "presign response")
 	}
 
-	getResp, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+	getResp, _ := m.s3.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(strings.TrimSpace(m.c.S3BucketName)),
 		Key:    aws.String(objectKey),
 	})
@@ -151,7 +132,7 @@ func (m *StateManager) CreateS3State(stateJSON []byte) (*S3State, error) {
 	return s3State, nil
 }
 
-func (m *StateManager) getS3Config() *aws.Config {
+func getS3Config(c *config.Config) *aws.Config {
 	region := "us-east-1"
 	if os.Getenv("AWS_REGION") != "" {
 		region = os.Getenv("AWS_REGION")
@@ -161,15 +142,15 @@ func (m *StateManager) getS3Config() *aws.Config {
 		Region: aws.String(region),
 	}
 
-	if strings.TrimSpace(m.c.S3Endpoint) != "" {
-		s3config.Endpoint = aws.String(strings.TrimSpace(m.c.S3Endpoint))
+	if strings.TrimSpace(c.S3Endpoint) != "" {
+		s3config.Endpoint = aws.String(strings.TrimSpace(c.S3Endpoint))
 	}
 
-	if strings.TrimSpace(m.c.S3AccessKeyID) != "" && strings.TrimSpace(m.c.S3SecretAccessKey) != "" {
-		s3config.Credentials = credentials.NewStaticCredentials(strings.TrimSpace(m.c.S3AccessKeyID), strings.TrimSpace(m.c.S3SecretAccessKey), "")
+	if strings.TrimSpace(c.S3AccessKeyID) != "" && strings.TrimSpace(c.S3SecretAccessKey) != "" {
+		s3config.Credentials = credentials.NewStaticCredentials(strings.TrimSpace(c.S3AccessKeyID), strings.TrimSpace(c.S3SecretAccessKey), "")
 	}
 
-	if strings.TrimSpace(m.c.S3BucketEndpoint) != "" {
+	if strings.TrimSpace(c.S3BucketEndpoint) != "" {
 		s3config.S3ForcePathStyle = aws.Bool(true)
 	}
 

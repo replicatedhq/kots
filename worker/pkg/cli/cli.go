@@ -3,6 +3,8 @@ package cli
 import (
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/kotsadm/worker/pkg/config"
@@ -20,7 +22,8 @@ func Execute() error {
 	v.Unmarshal(c)
 
 	if os.Getenv("USE_EC2_PARAMETERS") != "" {
-		if err := config.UnmarshalSSM(c, config.GetSSMParam); err != nil {
+		sess := session.New(aws.NewConfig().WithCredentialsChainVerboseErrors(true))
+		if err := config.UnmarshalSSM(c, config.GetSSMParams(sess)); err != nil {
 			return errors.Wrap(err, "unmarshal ssm")
 		}
 	}
