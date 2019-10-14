@@ -172,10 +172,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// Rewrite private images
 		registryInfo := registryProxyEndpointFromLicense(fetchOptions.License)
 		findPrivateImagesOptions := upstream.FindPrivateImagesOptions{
-			RootDir:      pullOptions.RootDir,
-			CreateAppDir: pullOptions.CreateAppDir,
-			AppSlug:      fetchOptions.License.Spec.AppSlug,
-			// TODO: This should use command line "registry-endpoint" arg as the override
+			RootDir:                 pullOptions.RootDir,
+			CreateAppDir:            pullOptions.CreateAppDir,
+			AppSlug:                 fetchOptions.License.Spec.AppSlug,
 			ReplicatedRegistry:      registryInfo.Registry,
 			ReplicatedRegistryProxy: registryInfo.Proxy,
 			Log:                     log,
@@ -358,7 +357,7 @@ func pullSecretFromToken(registries *registryInfo, token string, namespace strin
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-replicated-registry", // TODO: hardcode or generate the name?
+			Name:      "kotsadm-replicated-registry",
 			Namespace: namespace,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,

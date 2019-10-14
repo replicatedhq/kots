@@ -1,9 +1,8 @@
 package midstream
 
 import (
-	"github.com/replicatedhq/kots/pkg/k8sdoc"
-
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
 	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"

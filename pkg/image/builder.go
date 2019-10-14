@@ -11,15 +11,15 @@ import (
 	"strings"
 
 	"github.com/containers/image/copy"
+	imagedocker "github.com/containers/image/docker"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports/alltransports"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
-	imagedocker "github.com/containers/image/docker"
-	"github.com/docker/distribution/registry/api/errcode"
 )
 
 var imagePolicy = []byte(`{
