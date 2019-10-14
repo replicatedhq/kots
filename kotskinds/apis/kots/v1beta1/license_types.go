@@ -17,16 +17,76 @@ limitations under the License.
 package v1beta1
 
 import (
+	"encoding/json"
+	"strconv"
+
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	Int Type = iota
+	String
+	Bool
+)
+
+type Type int
+
+type EntitlementValue struct {
+	Type    Type
+	IntVal  int64
+	StrVal  string
+	BoolVal bool
+}
+
+func (entitlementValue *EntitlementValue) Value() interface{} {
+	if entitlementValue.Type == Int {
+		return entitlementValue.IntVal
+	} else if entitlementValue.Type == Bool {
+		return entitlementValue.BoolVal
+	}
+
+	return entitlementValue.StrVal
+}
+
+func (entitlementValue *EntitlementValue) UnmarshalJSON(value []byte) error {
+	if value[0] == '"' {
+		entitlementValue.Type = String
+		return json.Unmarshal(value, &entitlementValue.StrVal)
+	}
+
+	intValue, err := strconv.ParseInt(string(value), 10, 64)
+	if err == nil {
+		entitlementValue.Type = Int
+		entitlementValue.IntVal = intValue
+		return nil
+	}
+
+	boolValue, err := strconv.ParseBool(string(value))
+	if err == nil {
+		entitlementValue.Type = Bool
+		entitlementValue.BoolVal = boolValue
+		return nil
+	}
+
+	return errors.New("unknown license value type")
+}
+
+type EntitlementField struct {
+	Title       string           `json:"title,omitempty"`
+	Description string           `json:"description,omitempty"`
+	Value       EntitlementValue `json:"value,omitempty"`
+}
+
 // LicenseSpec defines the desired state of LicenseSpec
 type LicenseSpec struct {
-	Signature         []byte `json:"signature"`
-	AppSlug           string `json:"appSlug"`
-	Endpoint          string `json:"endpoint,omitempty"`
-	LicenseID         string `json:"licenseID"`
-	IsAirgapSupported bool   `json:"isAirgapSupported,omitempty"`
+	Signature         []byte                      `json:"signature"`
+	AppSlug           string                      `json:"appSlug"`
+	Endpoint          string                      `json:"endpoint,omitempty"`
+	LicenseID         string                      `json:"licenseID"`
+	IsAirgapSupported bool                        `json:"isAirgapSupported,omitempty"`
+	Entitlements      map[string]EntitlementField `json:"entitlements,omitempty"`
 }
 
 // LicenseStatus defines the observed state of License
