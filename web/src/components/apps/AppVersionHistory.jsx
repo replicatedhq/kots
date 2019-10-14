@@ -124,7 +124,7 @@ export default class AppVersionHistory extends Component {
           onRequestClose={this.hideReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
-          className="Modal"
+          className="Modal DefaultSize"
         >
           <div className="flex-column">
             <MarkdownRenderer>
