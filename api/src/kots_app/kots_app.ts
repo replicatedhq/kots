@@ -139,16 +139,20 @@ export class KotsApp {
         configValuesPath: string = "";
 
     for (const path in files.files) {
-      const content = yaml.safeLoad(files.files[path]);
-      if (!content) {
-        continue;
-      }
-      if (content.kind === "Config" && content.apiVersion === "kots.io/v1beta1") {
-        configContent = content;
-        configPath = path;
-      } else if (content.kind === "ConfigValues" && content.apiVersion === "kots.io/v1beta1") {
-        configValuesContent = content;
-        configValuesPath = path;
+      try {
+        const content = yaml.safeLoad(files.files[path]);
+        if (!content) {
+          continue;
+        }
+        if (content.kind === "Config" && content.apiVersion === "kots.io/v1beta1") {
+          configContent = content;
+          configPath = path;
+        } else if (content.kind === "ConfigValues" && content.apiVersion === "kots.io/v1beta1") {
+          configValuesContent = content;
+          configValuesPath = path;
+        }
+      } catch {
+        // this will happen on multi-doc files.
       }
     }
 
