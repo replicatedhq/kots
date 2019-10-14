@@ -49,13 +49,18 @@ export class KotsApp {
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id, clusterId);
   }
-  public async getRealizedLinksFromAppSpec(stores: Stores): Promise<KotsAppLink[]> {
-    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, this.currentSequence!);
+  public async getRealizedLinksFromAppSpec(clusterId: string, stores: Stores): Promise<KotsAppLink[]> {
+    const activeDownstream = await stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
+    if (!activeDownstream) {
+      return [];
+    }
+
+    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, activeDownstream.sequence!);
     if (!appSpec) {
       return [];
     }
 
-    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.sequence!);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
       const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
@@ -404,6 +409,7 @@ export class KotsApp {
     return bundleCommand;
   }
 
+
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
@@ -413,7 +419,7 @@ export class KotsApp {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
-          links: () => this.getRealizedLinksFromAppSpec(stores),
+          links: () => this.getRealizedLinksFromAppSpec(kotsSchemaCluster.id, stores),
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: () => this.getPastVersions(downstream.id, stores),
           pendingVersions: () => this.getPendingVersions(downstream.id, stores),

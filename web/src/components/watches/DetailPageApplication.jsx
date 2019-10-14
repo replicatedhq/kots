@@ -251,6 +251,7 @@ class DetailPageApplication extends Component {
     const isKotsApp = isKotsApplication(watch);
     const childWatches = isKotsApp ? watch.downstreams : watch.watches;
 
+
     return (
       <div className="DetailPageApplication--wrapper container flex-column flex1 alignItems--center u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <Helmet>
@@ -303,14 +304,14 @@ class DetailPageApplication extends Component {
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Application links</p>
                 {childWatches && childWatches.map((childWatch) => {
                   return (
-                    <div className="DetailPage--linksRow flex" key={childWatch.cluster.id}>
+                    <div className="DetailPage--linksRow flex u-marginTop--10 u-paddingTop--5" key={childWatch.cluster.id}>
                       {childWatch.links.map((link) => {
                         return (
                           <div key={`${childWatch.cluster.id}-${link.title}`}>
                             {childWatches.length === 1 ?
-                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary">{link.title}</button></a>
+                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary u-marginRight--5">{link.title}</button></a>
                             :
-                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary">{childWatch.name} - {link.title}</button></a>
+                              <a href={link.uri} target="_blank" rel="noopener noreferrer"><button className="btn secondary u-marginRight--5">{childWatch.name} - {link.title}</button></a>
                             }
                           </div>
                         );
