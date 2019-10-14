@@ -4,18 +4,27 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	// Find the config for the config groups
+	// Find the config for the config groups and the license
 	var config *kotsv1beta1.Config
+	var license *kotsv1beta1.License
+	var licenseData []byte
 	for _, upstreamFile := range u.Files {
 		maybeConfig := tryGetConfigFromFileContent(upstreamFile.Content)
 		if maybeConfig != nil {
 			config = maybeConfig
+		}
+
+		maybeLicense := tryGetLicenseFromFileContent(upstreamFile.Content)
+		if maybeLicense != nil {
+			license = maybeLicense
+			licenseData = upstreamFile.Content
 		}
 	}
 
@@ -54,6 +63,20 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 		baseFile := BaseFile{
 			Path:    upstreamFile.Path,
 			Content: []byte(rendered),
+		}
+
+		baseFiles = append(baseFiles, baseFile)
+	}
+
+	// add titled
+	titledDocs, err := kotsadm.GetTitledYAML(licenseData, license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get titled docs")
+	}
+	for titledFilename, titledManifest := range titledDocs {
+		baseFile := BaseFile{
+			Path:    titledFilename,
+			Content: titledManifest,
 		}
 
 		baseFiles = append(baseFiles, baseFile)
@@ -100,6 +123,25 @@ func tryGetConfigFromFileContent(content []byte) *kotsv1beta1.Config {
 		if gvk.Version == "v1beta1" {
 			if gvk.Kind == "Config" {
 				return obj.(*kotsv1beta1.Config)
+			}
+		}
+	}
+
+	return nil
+}
+
+func tryGetLicenseFromFileContent(content []byte) *kotsv1beta1.License {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil
+	}
+
+	if gvk.Group == "kots.io" {
+		if gvk.Version == "v1beta1" {
+			if gvk.Kind == "License" {
+				return obj.(*kotsv1beta1.License)
 			}
 		}
 	}

@@ -6,4 +6,5 @@ var KnownRepos = map[string]string{
 	"elastic": "https://helm.elastic.co",
 	"gomods":  "https://athens.blob.core.windows.net/charts",
 	"harbor":  "https://helm.goharbor.io",
+	"gitlab":  "https://charts.gitlab.io",
 }

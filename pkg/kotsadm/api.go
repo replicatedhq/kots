@@ -85,6 +85,7 @@ func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) er
 	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure custom branding")
 	}
+
 	if err := ensureAPIDeployment(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api deployment")
 	}
