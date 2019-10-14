@@ -248,8 +248,7 @@ class AppDetailPage extends Component {
       getKotsAppQuery,
       listApps,
       refetchListApps,
-      rootDidInitialAppFetch,
-      listDownstreamsForAppQuery,
+      rootDidInitialAppFetch
     } = this.props;
     const {
       displayRemoveClusterModal,
@@ -273,6 +272,7 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
     }
+
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -351,7 +351,7 @@ class AppDetailPage extends Component {
                           parentClusterName={app.name}
                           displayDownloadCommand={this.toggleDisplayDownloadModal}
                           preparingUpdate={this.state.preparingUpdate}
-                          childWatches={listDownstreamsForAppQuery?.listDownstreamsForApp || []}
+                          childWatches={app.downstreams}
                           handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
                           handleViewFiles={this.handleViewFiles}
                           installLatestVersion={this.makeCurrentRelease}

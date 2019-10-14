@@ -41,6 +41,8 @@ class DeploymentClusters extends React.Component {
     } = this.props;
     const { isDownloadingAssets } = this.state;
     const pageTitle = title || parentWatch.watchName;
+
+    
     return (
       <div className={classNames("installed-watch-github flex-column u-paddingTop--20 u-width--full", {
         padded: !appDetailPage
@@ -59,7 +61,7 @@ class DeploymentClusters extends React.Component {
                 if (kotsApp) {
                   return (
                     <DownstreamKotsCard
-                      key={childWatch.id}
+                      key={childWatch.cluster.id}
                       cluster={childWatch}
                       appSlug={this.props.match.params.slug}
                       viewFiles={handleViewFiles}
