@@ -320,7 +320,7 @@ class DownstreamWatchVersionHistory extends Component {
           onRequestClose={this.hideReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
-          className="Modal DefaultSize"
+          className="Modal LargeSize"
         >
           <div className="flex-column">
             <MarkdownRenderer>
