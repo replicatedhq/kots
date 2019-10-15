@@ -20,6 +20,7 @@ import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
+import DownstreamWatchVersionDiff from "../watches/DownstreamWatchVersionDiff";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../apps/AppConfig";
 import WatchLicense from "../watches/WatchLicense";
@@ -382,6 +383,12 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/:firstSequence/:secondSequence" render={() => 
+                      <DownstreamWatchVersionDiff 
+                        watch={app}
+                      /> 
+                      }
+                    />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
                     <Route exact path="/app/:slug/config" render={() =>
                       <AppConfig

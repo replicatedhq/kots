@@ -18,3 +18,23 @@
       right: auto;
     }
   }
+
+  .MonacoDiffEditor--wrapper {
+    overflow: auto;
+    border: 1px solid #DFDFDF;
+    border-radius: 4px;
+    
+    .error-highlight {
+      background:#FBEDEB;
+      position: absolute;
+    }
+  
+    .disabled-ace-editor {
+      opacity: .5;
+    }
+  
+    .ace_search {
+      left: 0;
+      right: auto;
+    }
+  }
