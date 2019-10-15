@@ -23,15 +23,13 @@ class PreflightResultPage extends Component {
 
       const preflightResults = JSON.parse(preflightResultData?.result);
       const preflightState = getPreflightResultState(preflightResults);
-      if (preflightState !== "pass") {
-        if (force) {
-          const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
-          await this.props.deployKotsVersion(preflightResultData.appSlug, sequence, preflightResultData.clusterSlug);
-        } else {
-          this.showWarningModal();
-          return;
-        }
+      if (preflightState !== "pass" && !force) {
+        this.showWarningModal();
+        return;
       }
+
+      const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+      await this.props.deployKotsVersion(preflightResultData.appSlug, sequence, preflightResultData.clusterSlug);
 
       if (match.params.downstreamSlug) {
         history.push(`/app/${preflightResultData.appSlug}/downstreams/${match.params.downstreamSlug}/version-history`);
@@ -68,12 +66,10 @@ class PreflightResultPage extends Component {
   }
 
   render() {
-    const { data, match } = this.props;
+    const { data } = this.props;
     const { showSkipModal, showWarningModal } = this.state;
     const isLoading = data.loading;
 
-    // No cluster slug is present if coming from the license upload view
-    const isLicenseFlow = !match.params.downstreamSlug;
     const preflightResultData = isLoading
       ? null
       : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
@@ -121,20 +117,20 @@ class PreflightResultPage extends Component {
               className="btn primary u-marginRight--30 u-marginBottom--15"
               onClick={() => this.deployKotsDownstream(false)}
             >
-              {isLicenseFlow ? "Continue" : "Create Downstream Cluster"}
+              Continue
             </button>
           </div>
         ) : (
-          <div className="flex-auto flex justifyContent--flexEnd">
-            <button
-              type="button"
-              className="btn primary u-marginRight--30 u-marginBottom--15"
-              onClick={this.showSkipModal}
-            >
-              Skip
+            <div className="flex-auto flex justifyContent--flexEnd">
+              <button
+                type="button"
+                className="btn primary u-marginRight--30 u-marginBottom--15"
+                onClick={this.showSkipModal}
+              >
+                Skip
             </button>
-          </div>
-        )}
+            </div>
+          )}
 
         <Modal
           isOpen={showSkipModal}
@@ -169,7 +165,7 @@ class PreflightResultPage extends Component {
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <button type="button" className="btn secondary" onClick={this.hideWarningModal}>Cancel</button>
               <button type="button" className="btn green primary u-marginLeft--10" onClick={() => this.deployKotsDownstream(true)}>
-                {isLicenseFlow ? "Deploy and continue" : "Create Downstream Cluster"}
+                Deploy and continue
               </button>
             </div>
           </div>
