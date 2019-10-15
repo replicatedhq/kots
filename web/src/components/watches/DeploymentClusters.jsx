@@ -62,7 +62,7 @@ class DeploymentClusters extends React.Component {
                   return (
                     <DownstreamKotsCard
                       key={childWatch.cluster.id}
-                      cluster={childWatch}
+                      downstream={childWatch}
                       appSlug={this.props.match.params.slug}
                       viewFiles={handleViewFiles}
                       downloadAssetsForCluster={this.downloadAssetsForCluster}

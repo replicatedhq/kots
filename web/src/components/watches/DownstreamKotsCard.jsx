@@ -8,7 +8,7 @@ export default class DownstreamKotsCard extends React.Component {
 
   render() {
     const {
-      cluster,
+      downstream,
       toggleDeleteDeploymentModal,
       displayDownloadCommand,
       viewFiles,
@@ -16,6 +16,7 @@ export default class DownstreamKotsCard extends React.Component {
       appSlug
      } = this.props;
 
+    const cluster = downstream?.cluster;
     const type = cluster?.gitOpsRef ? "git" : "ship";
     const gitPath = cluster?.gitOpsRef ? `${cluster.gitOpsRef.owner}/${cluster.gitOpsRef.repo}/${cluster.gitOpsRef.branch}${cluster.gitOpsRef.path}` : "";
 
@@ -25,43 +26,43 @@ export default class DownstreamKotsCard extends React.Component {
           <span className={`normal u-marginRight--5 icon clusterType ${type}`}></span>
           <div className="flex1 justifyContent--center">
             <div className="flex justifyContent--spaceBetween">
-              <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster && cluster.title || "Downstream deployment"}</p>
-              <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(cluster)}></span>
+              <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster?.title || "Downstream deployment"}</p>
+              <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(downstream)}></span>
             </div>
             <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with kotsadm"}</p>
           </div>
         </div>
         <div className="u-marginTop--10">
           <div className="flex flex1">
-            <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">{cluster.currentVersion?.title}</h2>
-            {!cluster?.currentVersion &&
+            <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">{downstream.currentVersion?.title}</h2>
+            {!downstream?.currentVersion &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon blueCircleMinus--icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-marginLeft--5">No deployments made</p>
               </div>
             }
-            {cluster?.currentVersion && cluster?.pendingVersions?.length === 1 &&
+            {downstream?.currentVersion && downstream?.pendingVersions?.length === 1 &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">One version behind</p>
               </div>
             }
-            {cluster?.currentVersion && cluster?.pendingVersions?.length >= 2 &&
+            {downstream?.currentVersion && downstream?.pendingVersions?.length >= 2 &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">Two or more versions behind</p>
               </div>
             }
-            {cluster?.currentVersion && !cluster?.pendingVersions?.length &&
+            {downstream?.currentVersion && !downstream?.pendingVersions?.length &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon checkmark-icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-marginLeft--5">Up to date</p>
               </div>
             }
           </div>
-          <Link to={`/app/${appSlug}/downstreams/${cluster.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
+          <Link to={`/app/${appSlug}/downstreams/${cluster?.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
         </div>
-        {cluster?.currentVersion && cluster.pendingVersions?.length >= 1 &&
+        {downstream?.currentVersion && downstream.pendingVersions?.length >= 1 &&
           <div className="flex justifyContent--spaceBetween alignItems--center u-marginTop--10">
             {type === "git" ?
               <a href="" className="btn green secondary" target="_blank" rel="noopener noreferrer">Review PR to update application</a>
@@ -72,7 +73,7 @@ export default class DownstreamKotsCard extends React.Component {
             }
           </div>
         }
-        {cluster?.currentVersion && !cluster?.pendingVersions?.length &&
+        {downstream?.currentVersion && !downstream?.pendingVersions?.length &&
           <div className="flex justifyContent--spaceBetween alignItems--center  u-marginTop--5">
             <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--more">When an update is available you will be able to deploy it from here.</p>
           </div>

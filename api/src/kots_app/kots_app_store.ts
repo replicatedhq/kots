@@ -6,7 +6,7 @@ import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
-import { decodeBase64 } from '../util/utilities';
+import { decodeBase64, getPreflightResultState } from '../util/utilities';
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -776,19 +776,6 @@ export class KotsAppStore {
     }
   }
 
-  getPreflightResultState(preflightResults): string {
-    const results = preflightResults.results;
-    let resultState = "pass";
-    for (const check of results) {
-      if (check.isWarn) {
-        resultState = "warn";
-      } else if (check.isFail) {
-        return "fail";
-      }
-    }
-    return resultState;
-  }
-
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
     const q =
       `UPDATE app_downstream_version SET
@@ -812,9 +799,10 @@ export class KotsAppStore {
 
     await this.pool.query(q, v);
 
-    // Always deploy sequence 0
+    // Always deploy sequence 0 if preflight checks pass
     if (sequence === 0) {
-      const preflightState = this.getPreflightResultState(JSON.parse(preflightResult));
+      const results = JSON.parse(JSON.stringify(preflightResult));
+      const preflightState = getPreflightResultState(results);
       if (preflightState === "pass") {
         // deployVersion sets status to "deployed"
         await this.deployVersion(appId, sequence, clusterId);

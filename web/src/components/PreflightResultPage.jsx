@@ -121,16 +121,16 @@ class PreflightResultPage extends Component {
             </button>
           </div>
         ) : (
-            <div className="flex-auto flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn primary u-marginRight--30 u-marginBottom--15"
-                onClick={this.showSkipModal}
-              >
-                Skip
+          <div className="flex-auto flex justifyContent--flexEnd">
+            <button
+              type="button"
+              className="btn primary u-marginRight--30 u-marginBottom--15"
+              onClick={this.showSkipModal}
+            >
+              Skip
             </button>
-            </div>
-          )}
+          </div>
+        )}
 
         <Modal
           isOpen={showSkipModal}

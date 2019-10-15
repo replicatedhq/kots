@@ -94,7 +94,7 @@ export default class AppVersionHistory extends Component {
         <div className="flex-column flex1 u-overflow--hidden">
           <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Active downstream versions</p>
           <div className="flex1 u-overflow--auto">
-            {app.downstreams ?.length ? app.downstreams.map((downstream) => (
+            {app.downstreams?.length ? app.downstreams.map((downstream) => (
               <ActiveDownstreamVersionRow key={downstream.cluster.slug} watch={downstream} match={match} />
             ))
               :
