@@ -197,7 +197,7 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 	defer headResp.Body.Close()
 
 	if headResp.StatusCode == 401 {
-		return nil, errors.Wrap(err, "license was not accepted")
+		return nil, errors.New("license was not accepted")
 	}
 
 	if headResp.StatusCode >= 400 {
