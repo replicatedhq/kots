@@ -71,7 +71,7 @@ export async function signGetRequest(params: Params, bucket: string, key: string
       }
 
       if (process.env["S3_ENDPOINT"]) {
-        url = url.replace(process.env["S3_ENDPOINT"]!, `${process.env["S3_ENDPOINT"]}${bucket}/`);
+        url = url.replace(process.env["S3_ENDPOINT"]!, `http://localhost:30456/${bucket}/`);
       }
 
       resolve(url);
