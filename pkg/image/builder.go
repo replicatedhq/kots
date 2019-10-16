@@ -318,10 +318,6 @@ func isPrivateImage(image string) (bool, error) {
 }
 
 func isUnauthorized(err error) bool {
-	if err == imagedocker.ErrUnauthorizedForCredentials {
-		return true
-	}
-
 	switch err := err.(type) {
 	case errcode.Errors:
 		for _, e := range err {
@@ -333,9 +329,15 @@ func isUnauthorized(err error) bool {
 		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
 	}
 
+	if err == imagedocker.ErrUnauthorizedForCredentials {
+		return true
+	}
+
 	cause := errors.Cause(err)
-	if cause == err {
-		return false
+	if cause, ok := cause.(error); ok {
+		if cause == err {
+			return false
+		}
 	}
 
 	return isUnauthorized(cause)
