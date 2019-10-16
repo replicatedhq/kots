@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -48,6 +49,22 @@ func (entitlementValue *EntitlementValue) Value() interface{} {
 	}
 
 	return entitlementValue.StrVal
+}
+
+func (entitlementValue *EntitlementValue) MarshalJSON() ([]byte, error) {
+	switch entitlementValue.Type {
+	case Int:
+		return json.Marshal(entitlementValue.IntVal)
+
+	case String:
+		return json.Marshal(entitlementValue.StrVal)
+
+	case Bool:
+		return json.Marshal(entitlementValue.BoolVal)
+
+	default:
+		return []byte{}, fmt.Errorf("impossible EntitlementValue.Type")
+	}
 }
 
 func (entitlementValue *EntitlementValue) UnmarshalJSON(value []byte) error {
