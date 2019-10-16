@@ -67,6 +67,34 @@ func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([
 				options.Log.FinishChildSpinner()
 
 				images = append(images, rewrittenImage)
+
+				// kustomize does string based comparison, so all of these are treated as different images:
+				// docker.io/library/redis:latest
+				// redis:latest
+				// redis
+				// As a workaround we add all 3 to the list
+
+				rewrittenName := rewrittenImage.Name
+				if strings.HasPrefix(rewrittenName, "docker.io/library/") {
+					rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/library/")
+					images = append(images, kustomizeimage.Image{
+						Name:    rewrittenName,
+						NewName: rewrittenImage.NewName,
+						NewTag:  rewrittenImage.NewTag,
+						Digest:  rewrittenImage.Digest,
+					})
+				}
+
+				if strings.HasSuffix(rewrittenName, ":latest") {
+					rewrittenName = strings.TrimSuffix(rewrittenName, ":latest")
+					images = append(images, kustomizeimage.Image{
+						Name:    rewrittenName,
+						NewName: rewrittenImage.NewName,
+						NewTag:  rewrittenImage.NewTag,
+						Digest:  rewrittenImage.Digest,
+					})
+				}
+
 				return nil
 			})
 
