@@ -5,6 +5,18 @@ metadata:
 spec:
   template:
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 2
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kotsadm-web
+              topologyKey: "kubernetes.io/hostname"
       containers:
         - name: kotsadm-web
           image: kotsadm/kotsadm-web
