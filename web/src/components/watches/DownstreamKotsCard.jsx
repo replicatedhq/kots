@@ -19,6 +19,7 @@ export default class DownstreamKotsCard extends React.Component {
     const cluster = downstream?.cluster;
     const type = cluster?.gitOpsRef ? "git" : "ship";
     const gitPath = cluster?.gitOpsRef ? `${cluster.gitOpsRef.owner}/${cluster.gitOpsRef.repo}/${cluster.gitOpsRef.branch}${cluster.gitOpsRef.path}` : "";
+    const hasDeployments = downstream?.currentVersion && downstream.currentVersion.status !== "failed";
 
     return (
       <div className="integration flex-column flex1 flex">
@@ -34,26 +35,26 @@ export default class DownstreamKotsCard extends React.Component {
         </div>
         <div className="u-marginTop--10">
           <div className="flex flex1">
-            <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">{downstream.currentVersion?.title}</h2>
-            {!downstream?.currentVersion &&
+            {hasDeployments && <h2 className="u-fontSize--jumbo2 alignSelf--center u-fontWeight--bold u-color--tuna">{downstream.currentVersion?.title}</h2>}
+            {!hasDeployments &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
-                <div className="icon blueCircleMinus--icon u-marginLeft--10"></div>
+                <div className="icon blueCircleMinus--icon"></div>
                 <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-marginLeft--5">No deployments made</p>
               </div>
             }
-            {downstream?.currentVersion && downstream?.pendingVersions?.length === 1 &&
+            {hasDeployments && downstream?.pendingVersions?.length === 1 &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">One version behind</p>
               </div>
             }
-            {downstream?.currentVersion && downstream?.pendingVersions?.length >= 2 &&
+            {hasDeployments && downstream?.pendingVersions?.length >= 2 &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon exclamationMark--icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--orange u-fontWeight--medium u-marginLeft--5">Two or more versions behind</p>
               </div>
             }
-            {downstream?.currentVersion && !downstream?.pendingVersions?.length &&
+            {hasDeployments && !downstream?.pendingVersions?.length &&
               <div className="flex-auto flex flex1 alignItems--center alignSelf--center">
                 <div className="icon checkmark-icon u-marginLeft--10"></div>
                 <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-marginLeft--5">Up to date</p>

@@ -253,48 +253,6 @@ order by sequence desc`;
     await this.pool.query(q, v);
   }
 
-  async setParent(watchId: string, parentId?: string): Promise<void> {
-    const q = `update watch set parent_watch_id = $1 where id = $2`;
-    const v = [
-      parentId,
-      watchId,
-    ];
-
-    await this.pool.query(q, v);
-  }
-
-  async setCluster(watchId: string, clusterId: string, githubPath?: string): Promise<void> {
-    const pg = await this.pool.connect();
-
-    try {
-      await pg.query("begin");
-
-      try {
-        let q = `delete from watch_cluster where watch_id = $1 and cluster_id = $2`;
-        let v: any[] = [
-          watchId,
-          clusterId,
-        ];
-        await pg.query(q, v);
-
-        q = `insert into watch_cluster (watch_id, cluster_id, github_path) values ($1, $2, $3)`;
-        v = [
-          watchId,
-          clusterId,
-          githubPath,
-        ];
-        await pg.query(q, v);
-
-        await pg.query("commit");
-      } catch (err) {
-        await pg.query("rollback");
-        throw err;
-      }
-    } finally {
-      pg.release();
-    }
-  }
-
   async createDownstreamToken(watchId: string): Promise<string> {
     const token = randomstring.generate({ capitalization: "lowercase" });
     const q = `insert into watch_downstream_token (watch_id, token) values ($1, $2)`;

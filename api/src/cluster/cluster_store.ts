@@ -545,11 +545,17 @@ spec:
   }
 
   async getApplicationCount(clusterId: string): Promise<number> {
-    const q = `select count(1) as count from watch_cluster where cluster_id = $1`;
-    const v = [clusterId];
-    const { rows }: { rows: any[] }  = await this.pool.query(q, v);
+    let q = `select count(1) as count from watch_cluster where cluster_id = $1`;
+    let v = [clusterId];
+    let result = await this.pool.query(q, v);
+    const wcCount = parseInt(result.rows[0].count);
 
-    return rows[0].count;
+    q = `select count(1) as count from app_downstream where cluster_id = $1`;
+    v = [clusterId];
+    result = await this.pool.query(q, v);
+    const adCount = parseInt(result.rows[0].count);
+
+    return wcCount + adCount;
   }
 
   async deleteCluster( userId: string, clusterId: string): Promise<boolean> {
@@ -558,11 +564,8 @@ spec:
     try {
       await pg.query("begin");
 
-      const q = `select count(1) as count from watch_cluster where cluster_id = $1`;
-      const v = [clusterId];
-      const { rows }: { rows: any[] } = await pg.query(q, v);
-
-      if (rows[0].count > 0) {
+      const applicationsCount = await this.getApplicationCount(clusterId);
+      if (applicationsCount > 0) {
         throw new ReplicatedError("This cluster has applications deployed to it so it cannot be deleted.");
       }
 
