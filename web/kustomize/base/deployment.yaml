@@ -3,18 +3,6 @@ kind: Deployment
 metadata:
   name: kotsadm-web
 spec:
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 2
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-            - key: app
-              operator: In
-              values:
-              - kotsadm-web
-          topologyKey: "kubernetes.io/hostname"
   selector:
     matchLabels:
       app: kotsadm-web
