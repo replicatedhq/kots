@@ -77,8 +77,8 @@ export class KotsAppStore {
 
   async getDownstreamOutput(appId: string, clusterId: string, sequence: number): Promise<KotsDownstreamOutput> {
     const q = `
-      select dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr 
-      from app_downstream_output 
+      select dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr
+      from app_downstream_output
       where app_id = $1 and cluster_id = $2 and downstream_sequence = $3
     `;
     const v = [
@@ -432,7 +432,7 @@ export class KotsAppStore {
     ];
 
     result = await this.pool.query(q, v);
-    
+
     if (result.rows.length === 0) {
       throw new ReplicatedError(`No app version found`);
     }
@@ -812,7 +812,7 @@ export class KotsAppStore {
 
   async getAirgapBundleGetUrl(filename: string): Promise<string> {
     const signed = await signGetRequest(this.params, this.params.airgapBucket, filename, 60);
-    return signed
+    return signed;
   }
 
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string}> {

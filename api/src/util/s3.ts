@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { Params } from "../server/params";
+import { bool } from "aws-sdk/clients/signer";
 
 export function getS3(params: Params): AWS.S3 {
   const s3Params: AWS.S3.ClientConfiguration = {
@@ -68,10 +69,6 @@ export async function signGetRequest(params: Params, bucket: string, key: string
       if (err) {
         reject(err);
         return;
-      }
-
-      if (process.env["S3_ENDPOINT"]) {
-        url = url.replace(process.env["S3_ENDPOINT"]!, `http://localhost:30456/${bucket}/`);
       }
 
       resolve(url);

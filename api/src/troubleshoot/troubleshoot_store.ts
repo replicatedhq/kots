@@ -2,7 +2,7 @@ import pg from "pg";
 import randomstring from "randomstring";
 import _ from "lodash";
 import { Params } from "../server/params";
-import { signGetRequest, getFileInfo } from "../util/s3";
+import { getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
@@ -262,14 +262,6 @@ spec:
     const q = `update supportbundle set status = $2 where id = $1`;
     const v = [id, status];
     await this.pool.query(q, v);
-  }
-
-  public async signSupportBundleGetRequest(supportBundle: SupportBundle): Promise<string> {
-    if (supportBundle.status === "pending") {
-      throw new ReplicatedError(`Unable to generate signed get request for a support bundle in status ${supportBundle.status}`);
-    }
-
-    return await signGetRequest(this.params, this.params.shipOutputBucket, `supportbundles/${supportBundle.id}/supportbundle.tar.gz`);
   }
 
   async getSupportBundleCommand(watchSlug: string): Promise<string> {
