@@ -9,8 +9,8 @@ import { listSupportBundles } from "../../queries/TroubleshootQueries";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
+import GenerateSupportBundle from "./GenerateSupportBundle";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
-import { isKotsApplication } from "../../utilities/utilities";
 
 class SupportBundleList extends React.Component {
   state = {
@@ -53,8 +53,6 @@ class SupportBundleList extends React.Component {
       return <p>{error.message}</p>;
     }
 
-    const generateBundleUrl = isKotsApplication(watch) ? `/app/${watch.slug}/troubleshoot/generate` : `/watch/${watch.slug}/troubleshoot/generate`;
-
     let bundlesNode;
     if (downstreams.length) {
       if (listSupportBundles?.length) {
@@ -69,13 +67,10 @@ class SupportBundleList extends React.Component {
           ))
         );
       } else {
-        bundlesNode = (
-          <div className="flex1 flex-column justifyContent--center alignItems--center">
-            <div className="flex-column u-textAlign--center alignItems--center">
-              <p className="u-fontSize--largest u-color--tundora u-lineHeight--normal u-fontWeight--bold">You haven't generated any support bundles</p>
-              <p className="u-marginTop--normal u-fontSize--normal u-color--dustyGray u-fontWeight--normal">Generating bundles is simple and we'll walk you through it, <Link to={generateBundleUrl} className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">get started now</Link></p>
-            </div>
-          </div>
+        return (
+          <GenerateSupportBundle
+            watch={watch}
+          />
         );
       }
     } else {
