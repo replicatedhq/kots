@@ -53,6 +53,14 @@ class SupportBundleList extends React.Component {
       return <p>{error.message}</p>;
     }
 
+    if (loading) {
+      return (
+        <div className="flex1 flex-column justifyContent--center alignItems--center">
+          <Loader size="60" color="#44bb66" />
+        </div>
+      );
+    }
+
     let bundlesNode;
     if (downstreams.length) {
       if (listSupportBundles?.length) {
@@ -119,13 +127,7 @@ class SupportBundleList extends React.Component {
                 </div>
               </div>
               <div className={`${downstreams.length ? "flex1 flex-column u-overflow--auto" : ""}`}>
-                {loading ?
-                  <div className="flex1 flex-column justifyContent--center alignItems--center">
-                    <Loader size="60" color="#44bb66" />
-                  </div>
-                  :
-                  bundlesNode
-                }
+                {bundlesNode}
               </div>
             </div>
           </div>
