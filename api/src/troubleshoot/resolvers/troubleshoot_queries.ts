@@ -20,7 +20,7 @@ export function TroubleshootQueries(stores: Stores) {
 
       const supportBundles = await stores.troubleshootStore.listSupportBundles(kotsAppId);
       return _.map(supportBundles, async (supportBundle) => {
-        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
+        const downloadUri = '';
         return supportBundle.toSchema(downloadUri);
       });
     },
@@ -47,7 +47,7 @@ export function TroubleshootQueries(stores: Stores) {
       }
 
       return _.map(supportBundles, async (supportBundle) => {
-        const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
+        const downloadUri = '';
         return supportBundle.toSchema(downloadUri);
       });
     },
@@ -61,7 +61,7 @@ export function TroubleshootQueries(stores: Stores) {
         throw new ReplicatedError("not found");
       }
 
-      const downloadUri = await stores.troubleshootStore.signSupportBundleGetRequest(supportBundle);
+      const downloadUri = '';
       return supportBundle.toSchema(downloadUri);
     },
 
