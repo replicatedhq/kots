@@ -91,7 +91,7 @@ class PreflightResultPage extends Component {
                 Preflight checks
               </p>
               <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
-                Preflight checks are designed to be run against a target cluster before installing an application. Preflights are simply a different set of collectors + analyzers. These checks are optional but are recommended to ensure that the application you install will work properly.
+                Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements you can still proceed, but understand that things might not work properly.
               </p>
               {(isLoading || !hasData) && (
                 <div className="flex-column justifyContent--center alignItems--center u-minHeight--full u-minWidth--full">
