@@ -22,7 +22,7 @@ export default class DiffEditor extends React.Component {
     const { original, value, specKey } = this.props;
 
     return (
-      <div className={`flex flex1 flex-column u-overflow--auto ${addedLines || removedLines || changedLines ? "u-marginTop--normal" : "u-marginTop--20"}`}>
+      <div className="flex flex1 flex-column">
         <div className="flex alignItems--center">
           {addedLines || removedLines || changedLines ?
             <div className="flex u-marginRight--10">
@@ -33,7 +33,7 @@ export default class DiffEditor extends React.Component {
             : null}
           {specKey}
         </div>
-          <div className="MonacoDiffEditor--wrapper flex flex1 u-height--full u-width--full u-marginTop--10 u-marginBottom--10">
+          <div className="MonacoDiffEditor--wrapper flex flex1 u-height--full u-width--full u-marginTop--5 u-marginBottom--20">
             <div className="flex-column u-width--full u-overflow--hidden">
               <div className="flex-column flex flex1">
                 <MonacoDiffEditor

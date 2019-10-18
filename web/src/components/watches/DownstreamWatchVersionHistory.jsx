@@ -313,7 +313,7 @@ class DownstreamWatchVersionHistory extends Component {
                 isActive={true}
                 selectedDiffReleases={selectedDiffReleases}
                 handleSelectReleasesToDiff={(activeDownstreamVersion, isChecked) => this.handleSelectReleasesToDiff(activeDownstreamVersion, isChecked, true)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === activeDownstreamVersion.sequence && !diffRelease.isActive)}
+                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === activeDownstreamVersion.sequence)}
               />
               :
               <div className="no-current-version u-textAlign--center">
@@ -344,7 +344,7 @@ class DownstreamWatchVersionHistory extends Component {
                 isActive={false}
                 selectedDiffReleases={selectedDiffReleases}
                 handleSelectReleasesToDiff={(version, isChecked) => this.handleSelectReleasesToDiff(version, isChecked, false)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.sequence && !diffRelease.isActive)}
+                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.sequence)}
               />
             ))}
           </div>

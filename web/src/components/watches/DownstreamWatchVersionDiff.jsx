@@ -4,7 +4,8 @@ import { withRouter } from "react-router-dom";
 import sortBy from "lodash/sortBy";
 import map from "lodash/map";
 import groupBy from "lodash/groupBy";
-import uniqBy from "lodash/uniqBy";
+import filter from "lodash/filter";
+import flatMap from "lodash/flatMap";
 
 import { rootPath } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -144,29 +145,12 @@ class DownstreamWatchVersionDiff extends React.Component {
     files.map((file => {
       if (file.children) {
         file.children.map((chFile => {
-          this.getAllFiles(chFile.path, sequence, first)
+          this.getFilesForPathAndSequence(chFile.path, sequence, first)
         }))
+      } else {
+        this.getFilesForPathAndSequence(file.path, sequence, first);
       }
-      this.getAllFiles(file.path, sequence, first);
     }))
-  }
-
-  hasContentAlready = (path, first) => {
-    const { firstSeqFileContents, secondSeqFileContents } = this.state;
-
-    if (first) {
-      let i;
-      for (i = 0; i < firstSeqFileContents.length; i++) {
-        if (firstSeqFileContents[i].key === path) { return true; }
-      }
-      return false;
-    } else {
-      let i;
-      for (i = 0; i < secondSeqFileContents.length; i++) {
-        if (secondSeqFileContents[i].key === path) { return true; }
-      }
-      return false;
-    }
   }
 
   buildFileContent = (data, first) => {
@@ -176,24 +160,23 @@ class DownstreamWatchVersionDiff extends React.Component {
       let newObj = {};
       newObj.content = data[key];
       newObj.key = key[0];
-      newObj.sequence = "first",
-        nextFiles.push(newObj);
-      this.setState({ secondSeqFileContents: nextFiles });
+      newObj.sequence = "first";
+      nextFiles.push(newObj);
+      this.setState({ firstSeqFileContents: nextFiles });
     } else {
       const nextFiles = this.state.secondSeqFileContents;
       const key = Object.keys(data);
       let newObj = {};
       newObj.content = data[key];
       newObj.key = key[0];
-      newObj.sequence = "second",
-        nextFiles.push(newObj);
+      newObj.sequence = "second";
+      nextFiles.push(newObj);
       this.setState({ secondSeqFileContents: nextFiles });
     }
   }
 
-  getAllFiles = (path, sequence, first) => {
+  getFilesForPathAndSequence = (path, sequence, first) => {
     const newPath = rootPath(path);
-    if (this.hasContentAlready(newPath, first)) { return; } // Don't go fetch it if we already have that content in our state
     this.fetchFiles(newPath, sequence, first)
   }
 
@@ -202,11 +185,13 @@ class DownstreamWatchVersionDiff extends React.Component {
     const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state
 
     const files = [...firstSeqFileContents, ...secondSeqFileContents];
-    const changedFiles = uniqBy(files, "content");
-    const filesByKey = groupBy(changedFiles, "key");
+    const groupedFilesByContent = groupBy(files, "content");
+    const changedFiles = filter(groupedFilesByContent, g => g.length === 1);
+    const filesByKey = groupBy(flatMap(changedFiles), "key");
+
 
     return (
-      <div className="container u-overflow--auto u-position--relative u-paddingTop--30 u-paddingBottom--20 u-minHeight--full u-width--full">
+      <div className=" u-padding--20 u-overflow--auto u-position--relative u-minHeight--full u-width--full">
         {fileLoading ?
           <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
             <Loader size="60" />
@@ -216,7 +201,7 @@ class DownstreamWatchVersionDiff extends React.Component {
             const first = value.find(val => val.sequence === "first");
             const second = value.find(val => val.sequence === "second");
             return (
-              <div className="flex u-overflow--auto u-height--half" key={key}>
+              <div className="flex u-height--half" key={key}>
                 <DiffEditor
                   original={first}
                   value={second}
