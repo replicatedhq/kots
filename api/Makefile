@@ -5,6 +5,10 @@ PROJECT_NAME ?= kotsadm-api
 deps:
 	yarn --silent --frozen-lockfile
 
+.PHONY: deps-prod
+deps-prod:
+	yarn --silent --frozen-lockfile --production=true
+
 .PHONY: prebuild
 prebuild:
 	rm -rf build

@@ -1,8 +1,11 @@
 FROM node:8
 WORKDIR /src
 ADD . /src
-RUN make deps build
 
+RUN make deps build
+RUN rm -rf node_modules
+RUN make deps-prod
+RUN curl -L https://install.goreleaser.com/github.com/tj/node-prune.sh | bash && ./bin/node-prune
 
 FROM node:8-buster-slim
 COPY --from=0 /src/build /src/build
