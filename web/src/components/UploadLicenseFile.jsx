@@ -97,7 +97,7 @@ class UploadLicenseFile extends React.Component {
                     :
                     <div className="u-textAlign--center">
                       <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Contact them if you are unable to locate a license file.</p>
+                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Please contact your account rep if you are unable to locate your license file.</p>
                     </div>
                   }
                 </Dropzone>
