@@ -3,7 +3,7 @@ import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams } from "@t
 import { Params } from "../../server/params";
 import { logger } from "../../server/logger";
 import jsYaml from "js-yaml";
-import { TroubleshootStore } from "../../troubleshoot";
+import { TroubleshootStore, injectKotsCollectors } from "../../troubleshoot";
 import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 import fs from "fs";
 import path from "path";
@@ -26,6 +26,7 @@ export class TroubleshootAPI {
     @PathParams("slug") slug: string,
   ): Promise<any | ErrorResponse> {
     let collector = TroubleshootStore.defaultSpec;
+    let isKotsSpec = true;
 
     const kotsCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForKotsSlug(slug);
     if (kotsCollector) {
@@ -33,6 +34,7 @@ export class TroubleshootAPI {
     } else {
       const watchCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForWatchSlug(slug);
       if (watchCollector) {
+        isKotsSpec = false;
         collector = watchCollector;
       }
     }
@@ -50,7 +52,10 @@ export class TroubleshootAPI {
     const params = await Params.getParams();
     const uploadUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
 
-    const parsedSpec = jsYaml.load(collector);
+    let parsedSpec = jsYaml.load(collector);
+    if (isKotsSpec) {
+      parsedSpec = await injectKotsCollectors(parsedSpec);
+    }
     parsedSpec.spec.afterCollection = [
       {
         "uploadResultsTo": {
