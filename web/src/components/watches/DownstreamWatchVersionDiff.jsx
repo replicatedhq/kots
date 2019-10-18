@@ -206,9 +206,9 @@ class DownstreamWatchVersionDiff extends React.Component {
     const filesByKey = groupBy(changedFiles, "key");
 
     return (
-      <div className="container flex-column flex1 flex u-overflow--auto u-position--relative u-paddingTop--30 u-paddingBottom--20 u-minHeight--full">
+      <div className="container u-overflow--auto u-position--relative u-paddingTop--30 u-paddingBottom--20 u-minHeight--full u-width--full">
         {fileLoading ?
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
             <Loader size="60" />
           </div>
           :
@@ -216,7 +216,7 @@ class DownstreamWatchVersionDiff extends React.Component {
             const first = value.find(val => val.sequence === "first");
             const second = value.find(val => val.sequence === "second");
             return (
-              <div className="flex flex1 flex-column u-overflow--auto" key={key}>
+              <div className="flex u-overflow--auto u-height--half" key={key}>
                 <DiffEditor
                   original={first}
                   value={second}
