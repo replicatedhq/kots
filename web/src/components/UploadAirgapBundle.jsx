@@ -161,7 +161,7 @@ class UploadAirgapBundle extends React.Component {
       logo,
       fetchingMetadata
     } = this.props;
-    
+
     const {
       bundleFile,
       fileUploading,
@@ -231,7 +231,7 @@ class UploadAirgapBundle extends React.Component {
                       :
                       <div className="u-textAlign--center">
                         <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Contact them if you are unable to locate a airgap bundle.</p>
+                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
                       </div>
                     }
                   </Dropzone>
