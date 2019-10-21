@@ -1,6 +1,8 @@
 import React from "react";
 import truncateMiddle from "truncate-middle";
 import { Link } from "react-router-dom";
+import { isSingleTenant } from "@src/utilities/utilities";
+
 import "../../scss/components/clusters/ClusterCard.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
@@ -28,7 +30,7 @@ export default class DownstreamKotsCard extends React.Component {
           <div className="flex1 justifyContent--center">
             <div className="flex justifyContent--spaceBetween">
               <p className="flex1 u-fontWeight--bold u-fontSize--large u-color--tundora u-paddingRight--5">{cluster?.title || "Downstream deployment"}</p>
-              <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(downstream)}></span>
+              {!isSingleTenant() && <span className="flex-auto icon u-grayX-icon clickable" onClick={() => toggleDeleteDeploymentModal(downstream)}></span>}
             </div>
             <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5" title={gitPath}>{type === "git" ? truncateMiddle(gitPath, 22, 22, "...") : "Deployed with kotsadm"}</p>
           </div>
