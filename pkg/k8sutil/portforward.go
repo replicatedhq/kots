@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -16,11 +18,25 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
+
+func init() {
+	// Note this changes loggers globbaly for apimachinery packages,
+	// but this is the only way to silence port forwarder.
+	f, _ := os.Create(filepath.Join(os.TempDir(), "portforward.log"))
+	logger := func(err error) {
+		if f == nil {
+			return
+		}
+		fmt.Fprintf(f, "%v\n", err)
+	}
+	runtime.ErrorHandlers = []func(error){logger}
+}
 
 func IsPortAvailable(port int) bool {
 	host := ":" + strconv.Itoa(port)
