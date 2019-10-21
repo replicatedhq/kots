@@ -8,6 +8,8 @@ spec:
       containers:
         - name: kotsadm-api
           env:
+            - name: DEV_NAMESPACE
+              value: "test"
             - name: LOG_LEVEL
               value: debug
             - name: SESSION_KEY
