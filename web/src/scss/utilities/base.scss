@@ -47,13 +47,24 @@ code {
   border-radius: 4px;
 }
 
+.inline-code {
+  font-size: 10px;
+  font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
+  border-radius: 2px;
+  background-color: #E5EAEC;
+  color: #073551;
+  padding: 1px 3px;
+}
+
 .container {
   padding: 0 20px;
   padding-top: 20px;
 }
 
 .centered-container {
-  padding: 20px 200px;
+  max-width: 964px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .HiddenText-wrapper {
