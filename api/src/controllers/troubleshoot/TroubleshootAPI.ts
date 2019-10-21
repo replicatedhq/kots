@@ -3,7 +3,7 @@ import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams } from "@t
 import { Params } from "../../server/params";
 import { logger } from "../../server/logger";
 import jsYaml from "js-yaml";
-import { TroubleshootStore, injectKotsCollectors } from "../../troubleshoot";
+import { TroubleshootStore, injectKotsCollectors, setKotsCollectorsNamespaces } from "../../troubleshoot";
 import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 import fs from "fs";
 import path from "path";
@@ -55,6 +55,7 @@ export class TroubleshootAPI {
     let parsedSpec = jsYaml.load(collector);
     if (isKotsSpec) {
       parsedSpec = await injectKotsCollectors(parsedSpec);
+      parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
     }
     parsedSpec.spec.afterCollection = [
       {

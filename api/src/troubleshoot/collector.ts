@@ -48,3 +48,54 @@ export async function injectKotsCollectors(parsedSpec: any): Promise<any> {
 
   return parsedSpec;
 }
+
+export async function setKotsCollectorsNamespaces(parsedSpec: any): Promise<any> {
+  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
+  if (!collectors) {
+    return parsedSpec;
+  }
+
+  for (let collector of collectors) {
+    let secret = _.get(collector, "secret");
+    if (secret) {
+      _.set(secret, "namespace", getCollectorNamespace());
+      continue;
+    }
+
+    let run = _.get(collector, "run");
+    if (run) {
+      _.set(run, "namespace", getCollectorNamespace());
+      continue;
+    }
+
+    let logs = _.get(collector, "logs");
+    if (logs) {
+      _.set(logs, "namespace", getCollectorNamespace());
+      continue;
+    }
+
+    let exec = _.get(collector, "exec");
+    if (exec) {
+      _.set(exec, "namespace", getCollectorNamespace());
+      continue;
+    }
+
+    let copy = _.get(collector, "copy");
+    if (copy) {
+      _.set(copy, "namespace", getCollectorNamespace());
+      continue;
+    }
+  }
+
+  return parsedSpec;
+}
+
+function getCollectorNamespace(): String {
+  if (process.env["DEV_NAMESPACE"]) {
+    return String(process.env["DEV_NAMESPACE"]);
+  }
+  if (process.env["POD_NAMESPACE"]) {
+    return String(process.env["POD_NAMESPACE"]);
+  }
+  return "default";
+}
