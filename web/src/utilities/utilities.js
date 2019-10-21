@@ -234,6 +234,29 @@ export function getFileFormat(selectedFile) {
   return "text";
 }
 
+export function getLineChanges(lineChangesArr) {
+  let addedLines = 0;
+  let removedLines = 0;
+  let changedLines = 0;
+  lineChangesArr.forEach(lineChange => {
+    if (lineChange.originalEndLineNumber === lineChange.modifiedEndLineNumber && lineChange.originalStartLineNumber === lineChange.modifiedStartLineNumber && lineChange.originalEndLineNumber) {
+      changedLines += 1;
+    }
+    if (lineChange.modifiedEndLineNumber > lineChange.modifiedStartLineNumber || lineChange.originalEndLineNumber === 0) {
+      addedLines += (lineChange.modifiedEndLineNumber - lineChange.modifiedStartLineNumber) + 1;
+    }
+    if (lineChange.originalEndLineNumber > lineChange.originalStartLineNumber || lineChange.modifiedEndLineNumber === 0) {
+      removedLines += (lineChange.originalEndLineNumber - lineChange.originalStartLineNumber) + 1;
+    }
+  })
+
+  return {
+    addedLines: addedLines,
+    removedLines: removedLines,
+    changedLines: changedLines + removedLines + addedLines
+  }
+}
+
 /**
  * @param {Watch} watch - watch to determine type
  * @return {Boolean}

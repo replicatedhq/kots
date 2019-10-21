@@ -1,0 +1,63 @@
+.ReleaseRow-wrapper {
+  width: 100%;
+  border-bottom: 1px solid #C4C8CA;
+  position: relative;
+}
+
+.ReleaseRow-wrapper .overlay {
+  position: absolute;
+  background: transparent;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  left: -1px;
+  top: -1px;
+  cursor: pointer;
+}
+.ReleaseRow-wrapper .overlay.disabled {
+  background: rgba(128,128,134,.05);
+  border: solid 1px rgba(128,128,134,.05);
+  pointer-events: none;
+}
+.ReleaseRow-wrapper .overlay.selected {
+  background: rgba(51, 122, 183, .1);
+  border: solid 1px #337AB7;
+}
+.ReleaseRow-wrapper .overlay.hidden {
+  display: none;
+}
+
+.ReleaseRow-content .content-section {
+  padding: 10px;
+  position: relative;
+}
+.ReleaseRow-content .content-section p {
+  font-size: 14px;
+}
+
+.ReleaseRow-wrapper .checkbox {
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  border: solid 1px #337AB7;
+  border-radius: 3px;
+}
+.ReleaseRow-wrapper .checkbox.checked {
+  background-color: #337AB7;
+  background-image: url("../../../images/main_spritesheet.svg");
+  background-position: 1px -431px;
+}
+.ReleaseRow-wrapper .checkbox.disabled {
+  border: solid 1px #C4C7CA;
+}
+
+
+/* ≥ 768px */
+@media screen and (min-width: 48em) {
+  .ReleaseRow-content .content-section {
+    padding: 20px;
+  }
+  .ReleaseRow-content .content-section p {
+    font-size: 15px;
+  }
+}
