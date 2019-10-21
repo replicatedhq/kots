@@ -23,6 +23,7 @@ import ShipUnfork from "./components/ShipUnfork";
 import ShipInitCompleted from "./components/ShipInitCompleted";
 import WatchDetailPage from "./components/watches/WatchDetailPage";
 import AppDetailPage from "./components/apps/AppDetailPage";
+import ClusterNodes from "./components/apps/ClusterNodes";
 import ClusterScope from "./components/clusterscope/ClusterScope";
 import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
@@ -293,6 +294,7 @@ class Root extends Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
+                    <Route path="/nodes/install" render={(props) => <ClusterNodes {...props} />} />
                     <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />

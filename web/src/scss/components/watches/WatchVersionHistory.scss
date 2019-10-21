@@ -22,9 +22,36 @@ $cell-width: 140px;
   width: $cell-width;
 }
 
-.ActiveDownstreamVersionRow--wrapper {
+.ActiveDownstreamVersionRow--wrapper,
+.NodeRow--wrapper {
   padding: 12px;
   border-top: 1px solid #DFDFDF;
+}
+
+.NodeRow--items p {
+  max-width: 120px;
+
+  .icon {
+    vertical-align: -3px;
+    margin-right: 4px;
+  }
+
+  .node-status {
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    margin-right: 4px;
+    display: inline-block;
+    vertical-align: 1px;
+
+    &.connected {
+      background-color: #44bb66;
+    }
+
+    &.disconnected {
+      background-color: #BC4752;
+    }
+  }
 }
 
 .gh-version-detail-text {
