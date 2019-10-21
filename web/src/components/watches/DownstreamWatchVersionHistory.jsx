@@ -270,11 +270,7 @@ class DownstreamWatchVersionHistory extends Component {
               selectedDiffReleases ?
                 <div className="flex">
                   <button className="btn secondary gray u-marginRight--10" onClick={() => this.onCloseReleasesToDiff()}>Cancel</button>
-                  {checkedReleasesToDiff.length === 2 ?
-                    <Link to={`${this.props.match.url}/${firstSequenceNumber}/${secondSequenceNumber}`} className="btn primary blue">Diff releases</Link>
-                    :
-                    <Link to={`${this.props.match.url}/${firstSequenceNumber}/${secondSequenceNumber}`} className="btn primary blue is-disabled u-pointerEvents--none">Diff releases</Link>
-                  }
+                  <Link to={`${this.props.match.url}/${firstSequenceNumber}/${secondSequenceNumber}`} className={`btn primary blue ${checkedReleasesToDiff.length !== 2 && "is-disabled u-pointerEvents--none"}`}>Diff releases</Link>
                 </div>
                 :
                 <div className="flex-column flex-auto flex-verticalCenter u-marginRight--10">
@@ -313,7 +309,7 @@ class DownstreamWatchVersionHistory extends Component {
                 isActive={true}
                 selectedDiffReleases={selectedDiffReleases}
                 handleSelectReleasesToDiff={(activeDownstreamVersion, isChecked) => this.handleSelectReleasesToDiff(activeDownstreamVersion, isChecked, true)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === activeDownstreamVersion.sequence)}
+                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === activeDownstreamVersion.sequence && diffRelease.isActive)}
               />
               :
               <div className="no-current-version u-textAlign--center">
@@ -344,7 +340,7 @@ class DownstreamWatchVersionHistory extends Component {
                 isActive={false}
                 selectedDiffReleases={selectedDiffReleases}
                 handleSelectReleasesToDiff={(version, isChecked) => this.handleSelectReleasesToDiff(version, isChecked, false)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.sequence)}
+                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.sequence && !diffRelease.isActive)}
               />
             ))}
           </div>

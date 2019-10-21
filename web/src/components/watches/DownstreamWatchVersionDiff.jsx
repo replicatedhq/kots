@@ -6,12 +6,15 @@ import map from "lodash/map";
 import groupBy from "lodash/groupBy";
 import filter from "lodash/filter";
 import flatMap from "lodash/flatMap";
+import size from "lodash/size";
 
 import { rootPath } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 import DiffEditor from "../shared/DiffEditor";
 
 import { getKotsApplicationTree, getKotsFiles } from "../../queries/AppsQueries";
+
+import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
 
 
 class DownstreamWatchVersionDiff extends React.Component {
@@ -114,7 +117,7 @@ class DownstreamWatchVersionDiff extends React.Component {
     }
   }
 
-  fetchFiles = (path, sequence, first) => {
+  fetchFiles = (paths, sequence, first) => {
     const { params } = this.props.match;
     const slug = params.slug;
     this.setState({ fileLoading: true, fileLoadErr: false });
@@ -123,7 +126,7 @@ class DownstreamWatchVersionDiff extends React.Component {
       variables: {
         slug: slug,
         sequence,
-        fileNames: [path]
+        fileNames: paths
       }
     })
       .then((res) => {
@@ -142,43 +145,48 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   allFilesForSequence = (files, sequence, first) => {
+    let paths=[];
     files.map((file => {
       if (file.children) {
         file.children.map((chFile => {
-          this.getFilesForPathAndSequence(chFile.path, sequence, first)
+          paths.push(chFile.path);
         }))
       } else {
-        this.getFilesForPathAndSequence(file.path, sequence, first);
+        paths.push(file.path);
       }
     }))
+    this.getFilesForPathAndSequence(paths, sequence, first);
   }
 
   buildFileContent = (data, first) => {
     if (first) {
       const nextFiles = this.state.firstSeqFileContents;
-      const key = Object.keys(data);
-      let newObj = {};
-      newObj.content = data[key];
-      newObj.key = key[0];
-      newObj.sequence = "first";
-      nextFiles.push(newObj);
+      map(data, (value, key) => {
+        let newObj = {};
+        newObj.content = value;
+        newObj.key = key;
+        newObj.sequence = "first";
+        nextFiles.push(newObj);
+      })
       this.setState({ firstSeqFileContents: nextFiles });
     } else {
       const nextFiles = this.state.secondSeqFileContents;
-      const key = Object.keys(data);
-      let newObj = {};
-      newObj.content = data[key];
-      newObj.key = key[0];
-      newObj.sequence = "second";
-      nextFiles.push(newObj);
+      map(data, (value, key) => {
+        let newObj = {};
+        newObj.content = value;
+        newObj.key = key;
+        newObj.sequence = "second";
+        nextFiles.push(newObj);
+      })
       this.setState({ secondSeqFileContents: nextFiles });
     }
   }
 
-  getFilesForPathAndSequence = (path, sequence, first) => {
-    const newPath = rootPath(path);
-    this.fetchFiles(newPath, sequence, first)
+  getFilesForPathAndSequence = (paths, sequence, first) => {
+    const newPaths = paths.map((path) => rootPath(path));
+    this.fetchFiles(newPaths, sequence, first)
   }
+
 
 
   render() {
@@ -189,14 +197,17 @@ class DownstreamWatchVersionDiff extends React.Component {
     const changedFiles = filter(groupedFilesByContent, g => g.length === 1);
     const filesByKey = groupBy(flatMap(changedFiles), "key");
 
-
-    return (
-      <div className=" u-padding--20 u-overflow--auto u-position--relative u-minHeight--full u-width--full">
-        {fileLoading ?
-          <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
+    if (fileLoading || size(files) === 0) {
+      return (
+        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
             <Loader size="60" />
           </div>
-          :
+      )
+    }
+
+    return (
+      <div className="u-padding--20 u-overflow--auto u-position--relative u-minHeight--full u-width--full">
+        {size(filesByKey) > 0 ?
           map(filesByKey, (value, key) => {
             const first = value.find(val => val.sequence === "first");
             const second = value.find(val => val.sequence === "second");
@@ -210,6 +221,13 @@ class DownstreamWatchVersionDiff extends React.Component {
               </div>
             )
           })
+          :
+          <div className="flex flex-auto alignItems--center justifyContent--center">
+          <div className="EmptyWrapper u-width--half u-textAlign--center"> 
+            <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
+          </div>
+          </div>
         }
       </div>
     );
