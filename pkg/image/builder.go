@@ -325,6 +325,7 @@ func isUnauthorized(err error) bool {
 				return true
 			}
 		}
+		return false
 	case errcode.Error:
 		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
 	}
