@@ -17,15 +17,49 @@ class UploadAirgapBundle extends React.Component {
     bundleFile: {},
     fileUploading: false,
     registryDetails: {},
-    preparingOnlineInstall: false
+    preparingOnlineInstall: false,
   }
 
   clearFile = () => {
     this.setState({ bundleFile: {} });
   }
 
+  validate = () => {
+    this.setState({
+      hostNameErr: false,
+      namespaceErr: false
+    });
+
+    if (!this.state.registryDetails) {
+      // No registry details have been set
+      this.setState({
+        hostNameErr: true,
+        namespaceErr: true
+      });
+      return false;
+    }
+
+    if (!this.state.registryDetails.hostname || !this.state.registryDetails.hostname.length) {
+      // No hostname provided or does not exist
+      this.setState({ hostNameErr: true });
+      return false;
+    }
+
+    if (!this.state.registryDetails.namespace || !this.state.registryDetails.namespace.length) {
+      // No namespace provided or does not exist
+      this.setState({ namespaceErr: true });
+      return false;
+    }
+
+    return true;
+  }
+
   uploadAirgapBundle = async () => {
     const { onUploadSuccess, match } = this.props;
+    
+    if (!this.validate()) { 
+      return;
+    }
 
     // Reset the airgap upload state
     const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
@@ -211,6 +245,10 @@ class UploadAirgapBundle extends React.Component {
                   namespaceDescription="What namespace do you want the application images pushed to?"
                   gatherDetails={this.getRegistryDetails}
                   registryDetails={registryDetails}
+                  errors={{
+                    hostname: this.state.hostNameErr,
+                    namespace: this.state.namespaceErr
+                  }}
                 />
               </div>
               <div className="u-marginTop--20 flex">
