@@ -14,6 +14,7 @@ const KotsApp = `
     currentVersion: KotsVersion
     hasPreflight: Boolean
     isConfigurable: Boolean
+    allowRollback: Boolean
   }
 `;
 
