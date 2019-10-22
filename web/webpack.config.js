@@ -135,7 +135,7 @@ module.exports = function (env) {
     plugins: [
       new HtmlWebpackPlugin({
         template: HtmlWebpackTemplate,
-        title: "Replicated Ship",
+        title: "Admin Console",
         appMountId: "app",
         externals: [
           {
