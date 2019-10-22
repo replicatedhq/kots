@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import classnames from "classnames";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
 import { getAppRegistryDetails } from "@src/queries/AppsQueries";
@@ -77,7 +76,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   render() {
-    const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, errors } = this.props;
+    const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription } = this.props;
     const { hostname, password, username, namespace, lastSync } = this.state;
     if (getKotsAppRegistryQuery?.loading) {
       return (
@@ -92,17 +91,12 @@ class AirgapRegistrySettings extends Component {
     return (
       <div>
         <form>
-          <div className="u-marginBottom--20">
+          <div className="flex u-marginBottom--20">
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-              <input type="text" className={classnames("Input", {"has-error": errors.hostname })} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }}/>
+              <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }}/>
             </div>
-            {errors.hostname && 
-              <div className="u-marginTop--5">
-                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-lineHeight--normal">A Hostname must be provided.</p>
-              </div>
-            }
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
@@ -129,17 +123,12 @@ class AirgapRegistrySettings extends Component {
               <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{lastSync ? `Last connection test on ${Utilities.dateFormat(lastSync, "MMMM D, YYYY")}`: "Connection has not been tested"}</p>
             </div>
           }
-          <div className="u-marginBottom--5">
+          <div className="flex u-marginBottom--5">
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
-              <input type="text" className={classnames("Input", {"has-error": errors.namespace })} placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }}/>
+              <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }}/>
             </div>
-            {errors.namespace && 
-              <div className="u-marginTop--5">
-                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-lineHeight--normal">A Namespace must be provided.</p>
-              </div>
-            }
           </div>
         </form>
         {hideCta ? null :
