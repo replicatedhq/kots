@@ -383,7 +383,7 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/:firstSequence/:secondSequence" render={() => 
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/diff/:firstSequence/:secondSequence" render={() => 
                       <DownstreamWatchVersionDiff 
                         watch={app}
                       /> 
