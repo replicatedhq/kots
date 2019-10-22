@@ -264,6 +264,7 @@ export class KotsAppStore {
         title: row.version_label,
         status: row.has_error ? "failed" : row.status,
         createdOn: row.created_at,
+        parentSequence: row.parent_sequence,
         sequence: row.sequence,
         deployedAt: row.applied_at,
         releaseNotes: releaseNotes || "",
@@ -329,6 +330,7 @@ export class KotsAppStore {
         title: row.version_label,
         status: row.status,
         createdOn: row.created_at,
+        parentSequence: row.parent_sequence,
         sequence: row.sequence,
         deployedAt: row.applied_at,
         releaseNotes: releaseNotes || "",
@@ -400,6 +402,7 @@ export class KotsAppStore {
       title: row.version_label,
       status: row.has_error ? "failed" : row.status,
       createdOn: row.created_at,
+      parentSequence: row.parent_sequence,
       sequence: row.sequence,
       deployedAt: row.applied_at,
       releaseNotes: releaseNotes || "",
@@ -438,6 +441,9 @@ export class KotsAppStore {
     }
 
     const row = result.rows[0];
+
+    // There is no parent sequence on midstream versions
+
     const versionItem: KotsVersion = {
       title: row.version_label,
       status: row.status || "",

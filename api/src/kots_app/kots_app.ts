@@ -55,12 +55,12 @@ export class KotsApp {
       return [];
     }
 
-    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, activeDownstream.sequence!);
+    const appSpec = await stores.kotsAppStore.getAppSpec(this.id, activeDownstream.parentSequence!);
     if (!appSpec) {
       return [];
     }
 
-    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.sequence!);
+    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
       const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
@@ -391,6 +391,20 @@ export class KotsApp {
     return configPath !== "";
   }
 
+  private async isAllowRollback(stores: Stores): Promise<boolean> {
+    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    try {
+      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
+      if (parsedKotsAppSpec && parsedKotsAppSpec.spec.allowRollback) {
+        return true;
+      }
+    } catch {
+      /* not a valid app spec */
+    }
+
+    return false;
+  }
+
   private readFile(s: NodeJS.ReadableStream): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let contents = ``;
@@ -418,6 +432,7 @@ export class KotsApp {
     return {
       ...this,
       isConfigurable: () => this.isAppConfigurable(),
+      allowRollback: () => this.isAllowRollback(stores),
       currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
@@ -443,6 +458,7 @@ export interface KotsVersion {
   title: string;
   status: string;
   createdOn: string;
+  parentSequence?: number;
   sequence: number;
   releaseNotes: string;
   deployedAt: string;
