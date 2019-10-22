@@ -305,7 +305,7 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 		}
 		err := extractOneArchive(filepath.Join(airgapDir, file.Name()), destDir)
 		if err != nil {
-			fmt.Printf("ignoring file %q\n", file.Name())
+			fmt.Printf("ignoring file %q: %v\n", file.Name(), err)
 			continue
 		}
 		numExtracted++
@@ -345,10 +345,18 @@ func extractOneArchive(tgzFile string, destDir string) error {
 
 		err = func() error {
 			fileName := filepath.Join(destDir, hdr.Name)
+
+			filePath, _ := filepath.Split(fileName)
+			err := os.MkdirAll(filePath, 0755)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create directory %q", filePath)
+			}
+
 			fileWriter, err := os.Create(fileName)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create file %q", hdr.Name)
 			}
+
 			defer fileWriter.Close()
 
 			_, err = io.Copy(fileWriter, tarReader)
