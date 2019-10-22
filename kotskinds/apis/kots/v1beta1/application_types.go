@@ -33,6 +33,7 @@ type ApplicationSpec struct {
 	Icon             string            `json:"icon,omitempty"`
 	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
 	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
+	AllowRollback    bool              `json:"allowRollback,omitempty"`
 }
 
 // ApplicationStatus defines the observed state of Application
