@@ -1,3 +1,12 @@
+const KotsAppUpload = `
+  type KotsAppUpload {
+    hasPreflight: Boolean
+    isAirgap: Boolean
+    needsRegistry: Boolean
+    slug: String
+  }
+`;
+
 const KotsApp = `
   type KotsApp {
     id: String
@@ -178,6 +187,7 @@ const KotsDownstreamOutput = `
 `;
 
 export default [
+  KotsAppUpload,
   KotsApp,
   KotsAppLink,
   KotsDownstream,

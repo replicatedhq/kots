@@ -28,6 +28,8 @@ import {
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import yaml from "js-yaml";
+import * as k8s from "@kubernetes/client-node";
+import { decodeBase64 } from "../../util/utilities";
 
 interface CreateAppBody {
   metadata: string;
@@ -244,11 +246,44 @@ export class KotsAPI {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<any> {
-    const { registryHost, namespace, username, password } = body;
-
     const params = await Params.getParams();
 
     const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp();
+
+    let registryHost, namespace, username, password = "";
+
+    let needsRegistry = true;
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+      const res = await k8sApi.readNamespacedSecret("registry-creds", "default");
+      if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
+        needsRegistry = false;
+
+        // parse the dockerconfig secret
+        const parsed = JSON.parse(decodeBase64(res.body.data[".dockerconfigjson"]));
+        const auths = parsed.auths;
+        for (const hostname in auths) {
+          const config = auths[hostname];
+          if (config.username === "kurl") {
+            registryHost = hostname;
+            username = config.username;
+            password = config.password;
+            namespace = app.slug;
+          }
+        }
+      }
+    } catch {
+      /* no need to handle, rbac problem or not a path we can read registry */
+    }
+
+    if (needsRegistry) {
+      registryHost = body.registryHost;
+      namespace = body.namespace;
+      username = body.username;
+      password = body.password;
+    }
 
     const dstDir = tmp.dirSync();
     var appSlug: string;
