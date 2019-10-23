@@ -43,10 +43,7 @@ $cell-width: 140px;
     margin-right: 4px;
     display: inline-block;
     vertical-align: 1px;
-
-    &.connected {
-      background-color: #44bb66;
-    }
+    background-color: #44bb66;
 
     &.disconnected {
       background-color: #BC4752;

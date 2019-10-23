@@ -12,6 +12,7 @@ export const getKotsMetadataRaw = `
       name
       iconUri
       namespace
+      isKurlEnabled
     }
   }
 `;

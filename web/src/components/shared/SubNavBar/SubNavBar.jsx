@@ -7,7 +7,7 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, watch } = props;
+  const { className, activeTab, watch, isKurlEnabled } = props;
   let { slug } = watch;
 
   if(isHelmChart(watch)) {
@@ -35,7 +35,7 @@ export default function SubNavBar(props) {
             </li>
           );
           if (link.displayRule) {
-            return link.displayRule(watch || {}) && generatedMenuItem;
+            return link.displayRule(watch || {}, isKurlEnabled) && generatedMenuItem;
           }
           return generatedMenuItem;
         }).filter(Boolean)}

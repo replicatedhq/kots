@@ -7,7 +7,7 @@ import _ from "lodash";
 export function KurlQueries(stores: Stores, params: Params) {
   return {
     async kurl(root: any, args: any, context: Context): Promise<any> {
-      context.hasValidSession();
+      // context.hasValidSession();
 
       if (!params.enableKurl) {
         return {

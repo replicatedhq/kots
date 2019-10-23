@@ -5,15 +5,26 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { kurl } from "../../queries/KurlQueries";
+import { drainNode, deleteNode } from "../../mutations/KurlMutations"
 
 export class ClusterNodes extends React.Component {
 
-  drainNode = (nodeId) => {
-    console.log(`drain node ${nodeId}`);
+  drainNode = (name) => {
+    try {
+      this.props.drainNode(name);
+      // feedback here showing the node was drained?
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  deleteNode = (nodeId) => {
-    console.log(`delete node ${nodeId}`);
+  deleteNode = (name) => {
+    try {
+      this.props.deleteNode(name);
+      // refecth nodes so deleted node is from the list?
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   render() {
@@ -38,12 +49,12 @@ export class ClusterNodes extends React.Component {
               canCopy={true}
               onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
             >
-              {kurl.addNodeCommand}
+              {kurl?.addNodeCommand || ""}
             </CodeSnippet>
             <div className="u-marginTop--40 u-paddingBottom--30">
               <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Your nodes</p>
               <div className="flex1 u-overflow--auto">
-                {kurl.nodes && kurl.nodes.map((node, i) => (
+                {kurl?.nodes && kurl?.nodes.map((node, i) => (
                   <NodeRow key={i} node={node} drainNode={this.drainNode} deleteNode={this.deleteNode} />
                 ))}
               </div>
@@ -63,5 +74,15 @@ export default compose(
       pollInterval: 2000,
       fetchPolicy: "no-cache",
     },
+  }),
+  graphql(drainNode, {
+    props: ({ mutate }) => ({
+      drainNode: (name) => mutate({ variables: { name } })
+    })
+  }),
+  graphql(deleteNode, {
+    props: ({ mutate }) => ({
+      deleteNode: (name) => mutate({ variables: { name } })
+    })
   })
 )(ClusterNodes);
