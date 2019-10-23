@@ -254,8 +254,8 @@ class AnalyzerFileTree extends React.Component {
                     </div>
                     : fileToView.content === "" ?
                       <div className="flex-column flex1 alignItems--center justifyContent--center">
-                      <p className="u-color--tundora u-fontSize--normal u-fontWeight--medium">This file was collected and analyzed but it contains no data.</p>
-                    </div>
+                        <p className="u-color--tundora u-fontSize--normal u-fontWeight--medium">This file was collected and analyzed but it contains no data.</p>
+                      </div>
                     :
                     <AceEditor
                       ref={(input) => this.refAceEditor = input}
