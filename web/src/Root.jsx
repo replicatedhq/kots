@@ -190,6 +190,7 @@ class Root extends Component {
         appLogo: meta.data.getKotsMetadata.iconUri,
         selectedAppName: meta.data.getKotsMetadata.name,
         appNameSpace: meta.data.getKotsMetadata.namespace,
+        isKurlEnabled: meta.data.getKotsMetadata.isKurlEnabled,
         fetchingMetadata: false
       });
     } else {
@@ -295,7 +296,7 @@ class Root extends Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
-                    <Route path="/nodes/install" render={(props) => <ClusterNodes {...props} />} />
+                    <Route path="/cluster/manage" render={(props) => <ClusterNodes {...props} />} />
                     <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
@@ -324,6 +325,7 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
+                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }
@@ -377,6 +379,7 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
+                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }
