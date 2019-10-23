@@ -31,8 +31,7 @@ function kots() {
   return ffi.Library("/lib/kots.so", {
     TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString]],
-    PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
-    RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
+    PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
@@ -256,7 +255,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
   }
 }
 
-export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string): any {
+export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string, username: string, password: string): any {
   const socketParam = new GoString();
   socketParam["p"] = socket;
   socketParam["n"] = socket.length;
@@ -285,7 +284,15 @@ export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, li
   registryNamespaceParam["p"] = registryNamespace;
   registryNamespaceParam["n"] = registryNamespace.length;
 
-  kots().PullFromAirgap(socketParam, licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam);
+  const usernameParam = new GoString();
+  usernameParam["p"] = username;
+  usernameParam["n"] = username.length;
+
+  const passwordParam = new GoString();
+  passwordParam["p"] = password;
+  passwordParam["n"] = password.length;
+
+  kots().PullFromAirgap(socketParam, licenseDataParam, airgapDirParam, downstreamParam, outParam, registryHostParam, registryNamespaceParam, usernameParam, passwordParam);
 
   // args are returned so they are not garbage collected before native code is done
   return {
@@ -296,6 +303,8 @@ export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, li
     outParam,
     registryHostParam,
     registryNamespaceParam,
+    usernameParam,
+    passwordParam,
   };
 }
 
@@ -334,54 +343,6 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
 
   return {
     hasPreflight: !!preflightSpec
-  };
-}
-
-export function kotsRewriteAndPushImageName(socket: string, imageFile: string, image: string, format: string, registryHost: string, registryOrg: string, username: string, password: string): any {
-  const socketParam = new GoString();
-  socketParam["p"] = socket;
-  socketParam["n"] = socket.length;
-
-  const imageFileParam = new GoString();
-  imageFileParam["p"] = imageFile;
-  imageFileParam["n"] = imageFile.length;
-
-  const imageParam = new GoString();
-  imageParam["p"] = image;
-  imageParam["n"] = image.length;
-
-  const formatParam = new GoString();
-  formatParam["p"] = format;
-  formatParam["n"] = format.length;
-
-  const registryHostParam = new GoString();
-  registryHostParam["p"] = registryHost;
-  registryHostParam["n"] = registryHost.length;
-
-  const registryOrgParam = new GoString();
-  registryOrgParam["p"] = registryOrg;
-  registryOrgParam["n"] = registryOrg.length;
-
-  const usernameParam = new GoString();
-  usernameParam["p"] = username;
-  usernameParam["n"] = username.length;
-
-  const passwordParam = new GoString();
-  passwordParam["p"] = password;
-  passwordParam["n"] = password.length;
-
-  kots().RewriteAndPushImageName(socketParam, imageFileParam, imageParam, formatParam, registryHostParam, registryOrgParam, usernameParam, passwordParam);
-
-  // args are returned so they are not garbage collected before native code is done
-  return {
-    socketParam,
-    imageFileParam,
-    imageParam,
-    formatParam,
-    registryHostParam,
-    registryOrgParam,
-    usernameParam,
-    passwordParam,
   };
 }
 
