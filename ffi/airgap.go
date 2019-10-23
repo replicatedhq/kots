@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -43,6 +44,17 @@ func RewriteAndPushImageName(socket, imageFile, image, format, registryHost, reg
 		defer func() {
 			statusClient.end(ffiResult)
 		}()
+
+		if registry.IsECREndpoint(registryHost) {
+			login, err := registry.GetECRLogin(registryHost, username, password)
+			if err != nil {
+				fmt.Printf("failed to get ECR login %s: %s\n", image, err)
+				ffiResult = NewFFIResult(1).WithError(err)
+				return
+			}
+			username = login.Username
+			password = login.Password
+		}
 
 		imageRef, err := parseImageRef(image)
 		if err != nil {
@@ -109,7 +121,12 @@ func parseImageRef(image string) (*ImageRef, error) {
 
 func imageRefToString(ref *ImageRef, registryHost, registryOrg string) string {
 	pathParts := strings.Split(ref.Name, "/")
-	imageName := fmt.Sprintf("%s/%s", registryOrg, pathParts[len(pathParts)-1])
+	var imageName string
+	if registryOrg == "" {
+		imageName = pathParts[len(pathParts)-1]
+	} else {
+		imageName = fmt.Sprintf("%s/%s", registryOrg, pathParts[len(pathParts)-1])
+	}
 
 	// there might be a way to do this with reference package too
 	if ref.Digest != "" {
