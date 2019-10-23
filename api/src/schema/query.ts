@@ -79,5 +79,7 @@ export const Query = `
     getLatestKotsPreflightResult: PreflightResult
 
     getAirgapInstallStatus: AirgapInstallStatus
+
+    kurl: Kurl
   }
 `;
