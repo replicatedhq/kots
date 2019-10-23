@@ -6,6 +6,7 @@ import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
 import { KotsApp } from "../kots_app";
+import * as k8s from "@kubernetes/client-node";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -13,7 +14,7 @@ export function KotsMutations(stores: Stores) {
       const { appId } = args;
 
       const app = await context.getApp(appId);
-      const midstreamUpdateCursor = await stores.kotsAppStore.getMidstreamUpdateCursor(appId);
+      const midstreamUpdateCursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
 
       const updateAvailable = await kotsAppCheckForUpdate(midstreamUpdateCursor, app, stores);
 
@@ -21,6 +22,8 @@ export function KotsMutations(stores: Stores) {
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {
+      context.requireSingleTenantSession();
+
       const { appId, clusterId } = args;
 
       const clusters = await stores.clusterStore.listAllUsersClusters();
@@ -38,6 +41,8 @@ export function KotsMutations(stores: Stores) {
     },
 
     async uploadKotsLicense(root: any, args: any, context: Context) {
+      context.requireSingleTenantSession();
+
       const { value } = args;
       const parsedLicense = yaml.safeLoad(value);
 
@@ -50,10 +55,33 @@ export function KotsMutations(stores: Stores) {
       }
       const name = parsedLicense.spec.appSlug.replace("-", " ")
       const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
-      return kotsApp;
+
+      // Carefully now, peek at registry credentials to see if we need to prompt for them
+      let needsRegistry = true;
+      try {
+        const kc = new k8s.KubeConfig();
+        kc.loadFromDefault();
+        const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+        const res = await k8sApi.readNamespacedSecret("registry-creds", "default");
+        if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
+          needsRegistry = false;
+        }
+
+      } catch {
+        /* no need to handle, rbac problem or not a path we can read registry */
+      }
+
+      return {
+        hasPreflight: kotsApp.hasPreflight,
+        isAirgap: parsedLicense.spec.isAirgapSupported,
+        needsRegistry,
+        slug: kotsApp.slug,
+      }
     },
 
-    async updateRegistryDetails(root: any, args: any, context) {
+    async updateRegistryDetails(root: any, args: any, context: Context) {
+      context.requireSingleTenantSession();
+
       const { appSlug, hostname, username, password, namespace } = args.registryDetails;
       const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
       // TODO: encrypt password before setting it to the DB
@@ -80,23 +108,27 @@ export function KotsMutations(stores: Stores) {
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterSlug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
+      const app = await context.getApp(appId);
+
       const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
 
-      await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
+      await stores.kotsAppStore.deployVersion(app.id, sequence, clusterId);
       return true;
     },
 
     async deleteKotsDownstream(root: any, args: any, context: Context) {
       const { slug, clusterId } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      await stores.kotsAppStore.deleteDownstream(appId, clusterId);
+      const app = await context.getApp(appId);
+      await stores.kotsAppStore.deleteDownstream(app.id, clusterId);
       return true;
     },
 
     async deleteKotsApp(root: any, args: any, context: Context) {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      await stores.kotsAppStore.deleteApp(appId);
+      const app = await context.getApp(appId);
+      await stores.kotsAppStore.deleteApp(app.id);
       return true;
     },
 

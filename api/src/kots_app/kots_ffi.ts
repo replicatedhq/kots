@@ -154,7 +154,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
   }
 }
 
-export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | void> {
+export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp> {
   const parsedLicense = yaml.safeLoad(licenseData);
   if (parsedLicense.spec.isAirgapSupported) {
     try {
