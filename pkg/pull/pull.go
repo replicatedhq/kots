@@ -44,6 +44,8 @@ type RewriteImageOptions struct {
 	ImageFiles string
 	Host       string
 	Namespace  string
+	Username   string
+	Password   string
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -160,6 +162,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				Log:               log,
 				RegistryHost:      pullOptions.RewriteImageOptions.Host,
 				RegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
+				Username:          pullOptions.RewriteImageOptions.Username,
+				Password:          pullOptions.RewriteImageOptions.Password,
 			}
 			rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
 			if err != nil {
