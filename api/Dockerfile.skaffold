@@ -24,7 +24,6 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9
  cd /tmp && tar xzvf troubleshoot.tar.gz && \
  mv /tmp/troubleshoot.so /lib/troubleshoot.so
 
-ADD ./deploy/skopeo /bin/skopeo
 ADD ./deploy/policy.json /etc/containers/policy.json
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
     ca-certificates libgpgme-dev libdevmapper-dev \
