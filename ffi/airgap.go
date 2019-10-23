@@ -10,133 +10,18 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
-	"github.com/docker/distribution/reference"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type ImageRef struct {
-	Domain string
-	Name   string
-	Tag    string
-	Digest string
-}
-
-//export RewriteAndPushImageName
-func RewriteAndPushImageName(socket, imageFile, image, format, registryHost, registryOrg, username, password string) {
-	go func() {
-		var ffiResult *FFIResult
-
-		statusClient, err := connectToStatusServer(socket)
-		if err != nil {
-			fmt.Printf("failed to connect to status server: %s\n", err)
-			return
-		}
-		defer func() {
-			statusClient.end(ffiResult)
-		}()
-
-		if registry.IsECREndpoint(registryHost) {
-			login, err := registry.GetECRLogin(registryHost, username, password)
-			if err != nil {
-				fmt.Printf("failed to get ECR login %s: %s\n", image, err)
-				ffiResult = NewFFIResult(1).WithError(err)
-				return
-			}
-			username = login.Username
-			password = login.Password
-		}
-
-		imageRef, err := parseImageRef(image)
-		if err != nil {
-			fmt.Printf("failed to parse image %s: %s\n", image, err)
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-		localImage := imageRefToString(imageRef, registryHost, registryOrg)
-
-		cmdArgs := []string{
-			"copy",
-			"--dest-tls-verify=false",
-		}
-		if len(username) > 0 && len(password) > 0 {
-			cmdArgs = append(cmdArgs, fmt.Sprintf("--dest-creds=%s:%s", username, password))
-		}
-		cmdArgs = append(cmdArgs,
-			fmt.Sprintf("%s:%s", format, imageFile),
-			fmt.Sprintf("docker://%s", localImage),
-		)
-
-		cmd := exec.Command("skopeo", cmdArgs...)
-		cmd.Stderr = statusClient.getOutputWriter()
-		cmd.Stdout = statusClient.getOutputWriter()
-		if err := cmd.Start(); err != nil {
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-		if err := cmd.Wait(); err != nil {
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-
-		ffiResult = NewFFIResult(0)
-	}()
-}
-
-func parseImageRef(image string) (*ImageRef, error) {
-	ref := &ImageRef{}
-
-	// named, err := reference.ParseNormalizedNamed(image)
-	parsed, err := reference.ParseAnyReference(image)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse image name %q", image)
-	}
-
-	if named, ok := parsed.(reference.Named); ok {
-		ref.Domain = reference.Domain(named)
-		ref.Name = named.Name()
-	} else {
-		return nil, errors.New(fmt.Sprintf("unsupported ref type: %T", parsed))
-	}
-
-	if tagged, ok := parsed.(reference.Tagged); ok {
-		ref.Tag = tagged.Tag()
-	} else if can, ok := parsed.(reference.Canonical); ok {
-		ref.Digest = can.Digest().String()
-	} else {
-		ref.Tag = "latest"
-	}
-
-	return ref, nil
-}
-
-func imageRefToString(ref *ImageRef, registryHost, registryOrg string) string {
-	pathParts := strings.Split(ref.Name, "/")
-	var imageName string
-	if registryOrg == "" {
-		imageName = pathParts[len(pathParts)-1]
-	} else {
-		imageName = fmt.Sprintf("%s/%s", registryOrg, pathParts[len(pathParts)-1])
-	}
-
-	// there might be a way to do this with reference package too
-	if ref.Digest != "" {
-		return fmt.Sprintf("%s/%s@sha256:%s", registryHost, imageName, ref.Digest)
-	}
-	return fmt.Sprintf("%s/%s:%s", registryHost, imageName, ref.Tag)
-}
-
 //export PullFromAirgap
-func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, registryHost, registryNamesapce string) {
+func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, registryHost, registryNamespace, username, password string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -209,7 +94,9 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 			RewriteImageOptions: pull.RewriteImageOptions{
 				ImageFiles: filepath.Join(airgapDir, "images"),
 				Host:       registryHost,
-				Namespace:  registryNamesapce,
+				Namespace:  registryNamespace,
+				Username:   username,
+				Password:   password,
 			},
 		}
 

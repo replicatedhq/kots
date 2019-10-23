@@ -20,6 +20,8 @@ type PushUpstreamImageOptions struct {
 	Log               *logger.Logger
 	RegistryHost      string
 	RegistryNamespace string
+	Username          string
+	Password          string
 }
 
 func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
@@ -59,7 +61,7 @@ func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([
 
 				// copy to the registry
 				options.Log.ChildActionWithSpinner("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag)
-				err = image.CopyFromFileToRegistry(path, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest)
+				err = image.CopyFromFileToRegistry(path, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, options.Username, options.Password)
 				if err != nil {
 					options.Log.FinishChildSpinner()
 					return errors.Wrap(err, "failed to push image")

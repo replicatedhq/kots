@@ -14,9 +14,11 @@ import (
 	imagedocker "github.com/containers/image/docker"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports/alltransports"
+	"github.com/containers/image/types"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
@@ -261,7 +263,7 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 	return filepath.Join(path...)
 }
 
-func CopyFromFileToRegistry(path string, name string, tag string, digest string) error {
+func CopyFromFileToRegistry(path string, name string, tag string, digest string, username string, password string) error {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return errors.Wrap(err, "failed to read default policy")
@@ -282,12 +284,33 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string)
 		return errors.Wrapf(err, "failed to parse dest image name: %s", destStr)
 	}
 
+	destCtx := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+	}
+
+	if username != "" && password != "" {
+		registryHost := reference.Domain(destRef.DockerReference())
+		if registry.IsECREndpoint(registryHost) {
+			login, err := registry.GetECRLogin(registryHost, username, password)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ECR login")
+			}
+			username = login.Username
+			password = login.Password
+		}
+
+		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
+			Username: username,
+			Password: password,
+		}
+	}
+
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          nil,
 		SourceCtx:             nil,
-		DestinationCtx:        nil,
+		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
 	})
 	if err != nil {
