@@ -341,7 +341,10 @@ export class KotsAPI {
         await statusServer.connection();
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed
-          if (obj.status === "terminated") {
+          if (obj.status === "running") {
+            Promise.all([request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message)]);
+            return false;
+          } else if (obj.status === "terminated") {
             if (obj.exit_code === 0) {
               resolve();
             } else {
