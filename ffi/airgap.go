@@ -91,6 +91,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,
 			RewriteImages:       true,
+			ReportWriter:        statusClient.getOutputWriter(),
 			RewriteImageOptions: pull.RewriteImageOptions{
 				ImageFiles: filepath.Join(airgapDir, "images"),
 				Host:       registryHost,

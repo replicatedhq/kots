@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -263,7 +264,7 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 	return filepath.Join(path...)
 }
 
-func CopyFromFileToRegistry(path string, name string, tag string, digest string, username string, password string) error {
+func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return errors.Wrap(err, "failed to read default policy")
@@ -288,27 +289,27 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
 
-	if username != "" && password != "" {
+	if auth.Username != "" && auth.Password != "" {
 		registryHost := reference.Domain(destRef.DockerReference())
 		if registry.IsECREndpoint(registryHost) {
-			login, err := registry.GetECRLogin(registryHost, username, password)
+			login, err := registry.GetECRLogin(registryHost, auth.Username, auth.Password)
 			if err != nil {
 				return errors.Wrap(err, "failed to get ECR login")
 			}
-			username = login.Username
-			password = login.Password
+			auth.Username = login.Username
+			auth.Password = login.Password
 		}
 
 		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
-			Username: username,
-			Password: password,
+			Username: auth.Username,
+			Password: auth.Password,
 		}
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
-		ReportWriter:          nil,
+		ReportWriter:          reportWriter,
 		SourceCtx:             nil,
 		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
