@@ -29,6 +29,7 @@ const GoString = Struct({
 
 function kots() {
   return ffi.Library("/lib/kots.so", {
+    TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString]],
     PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     RewriteAndPushImageName: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
@@ -382,4 +383,53 @@ export function kotsRewriteAndPushImageName(socket: string, imageFile: string, i
     usernameParam,
     passwordParam,
   };
+}
+
+export async function kotsTestRegistryCredentials(endpoint: string, username: string, password: string, repo: string): Promise<String> {
+  const tmpDir = tmp.dirSync();
+  try {
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const endpointParam = new GoString();
+    endpointParam["p"] = endpoint;
+    endpointParam["n"] = endpoint.length;
+
+    const usernameParam = new GoString();
+    usernameParam["p"] = username;
+    usernameParam["n"] = username.length;
+
+    const passwordParam = new GoString();
+    passwordParam["p"] = password;
+    passwordParam["n"] = password.length;
+
+    const repoParam = new GoString();
+    repoParam["p"] = repo;
+    repoParam["n"] = repo.length;
+
+    kots().TestRegistryCredentials(socketParam, endpointParam, usernameParam, passwordParam, repoParam);
+
+    let testError = "";
+    await statusServer.connection();
+    await statusServer.termination((resolve, reject, obj): boolean => {
+      // Return true if completed
+      if (obj.status === "terminated") {
+        if (obj.exit_code !== 0) {
+          testError = obj.display_message;
+        }
+        resolve();
+        return true;
+      }
+      return false;
+    });
+
+    return testError;
+
+  } finally {
+    tmpDir.removeCallback();
+  }
 }
