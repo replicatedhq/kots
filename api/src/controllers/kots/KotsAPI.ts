@@ -24,7 +24,6 @@ import { StatusServer } from "../../airgap/status";
 import {
   kotsPullFromAirgap,
   kotsAppFromAirgapData,
-  kotsRewriteAndPushImageName,
   kotsTestRegistryCredentials
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
@@ -287,28 +286,6 @@ export class KotsAPI {
         imageMap = imageMap.concat(m);
       }
 
-      for (const image of imageMap) {
-        const statusServer = new StatusServer();
-        await statusServer.start(dstDir.name);
-        const args = kotsRewriteAndPushImageName(statusServer.socketFilename, image.filePath, image.shortName, image.format, registryHost, namespace, username, password);
-        await statusServer.connection();
-        await statusServer.termination((resolve, reject, obj): boolean => {
-          // Return true if completed
-          if (obj.status === "running") {
-            Promise.all([request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message)]);
-            return false;
-          } else if (obj.status === "terminated") {
-            if (obj.exit_code === 0) {
-              resolve();
-            } else {
-              reject(new Error(`process failed: ${obj.display_message}`));
-            }
-            return true;
-          }
-          return false;
-        });
-      }
-
       const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
       let downstream;
       for (const cluster of clusters) {
@@ -325,7 +302,7 @@ export class KotsAPI {
 
         const statusServer = new StatusServer();
         await statusServer.start(dstDir.name);
-        const args = kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace);
+        const args = kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace, username, password);
         await statusServer.connection();
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed
