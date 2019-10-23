@@ -42,6 +42,9 @@ type Mutation {
   createUnforkSession(upstreamUri: String!, forkUri: String!): UnforkSession!
   createUpdateSession(watchId: ID!): UpdateSession!
   createEditSession(watchId: ID!): EditSession!
+
+  drainNode(name: String): Boolean
+  deleteNode(name: String): Boolean
 }
 `;
 

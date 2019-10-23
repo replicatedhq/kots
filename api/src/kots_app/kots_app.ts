@@ -471,6 +471,7 @@ export interface KotsAppMetadata {
   name: string;
   iconUri: string;
   namespace: string;
+  isKurlEnabled: boolean;
 }
 
 export interface AppRegistryDetails {

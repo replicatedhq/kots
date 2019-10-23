@@ -55,6 +55,7 @@ const KotsAppMetadata = `
     name: String!
     iconUri: String!
     namespace: String!
+    isKurlEnabled: Boolean
   }
 `;
 

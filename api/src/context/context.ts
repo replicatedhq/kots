@@ -44,7 +44,7 @@ export class Context {
       return new ReplicatedError("Expired session");
     }
 
-    return null
+    return null;
   }
 
   public async getUsername(): Promise<string> {

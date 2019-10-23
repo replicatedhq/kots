@@ -20,6 +20,7 @@ export function KotsQueries(stores: Stores) {
           name: parsedBranding.spec.title,
           iconUri: parsedBranding.spec.icon,
           namespace: namespace,
+          isKurlEnabled: process.env["ENABLE_KURL"] === "1",
         };
       } catch (err) {
         console.log(err);
@@ -48,7 +49,9 @@ export function KotsQueries(stores: Stores) {
     async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const downstreams = await stores.clusterStore.listClustersForKotsApp(appId);
+      const app = await context.getApp(appId);
+
+      const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
       let results: Cluster[] = [];
       _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(appId, stores);
@@ -98,7 +101,8 @@ export function KotsQueries(stores: Stores) {
 
     async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails | {}> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const details = await stores.kotsAppStore.getAppRegistryDetails(appId);
+      const app = await context.getApp(appId);
+      const details = await stores.kotsAppStore.getAppRegistryDetails(app.id);
       if (!details.registryHostname) {
         return {}
       }
@@ -141,8 +145,9 @@ export function KotsQueries(stores: Stores) {
 
     async getKotsDownstreamOutput(root: any, args: any, context: Context): Promise<KotsDownstreamOutput> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.appSlug);
+      const app = await context.getApp(appId);
       const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
-      return await stores.kotsAppStore.getDownstreamOutput(appId, clusterId, args.sequence);
+      return await stores.kotsAppStore.getDownstreamOutput(app.id, clusterId, args.sequence);
     },
   }
 }

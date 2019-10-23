@@ -33,6 +33,7 @@ export class Params {
   readonly segmentioAnalyticsKey: string;
   readonly enableShip: boolean;
   readonly enableKots: boolean;
+  readonly enableKurl: boolean;
 
   constructor({
     postgresUri,
@@ -63,6 +64,7 @@ export class Params {
     segmentioAnalyticsKey,
     enableShip,
     enableKots,
+    enableKurl,
   }) {
     this.postgresUri = postgresUri;
     this.githubAppInstallURL = githubAppInstallURL;
@@ -92,6 +94,7 @@ export class Params {
     this.segmentioAnalyticsKey = segmentioAnalyticsKey;
     this.enableShip = enableShip;
     this.enableKots = enableKots;
+    this.enableKurl = enableKurl;
   }
 
   public static async getParams(): Promise<Params> {
@@ -129,6 +132,7 @@ export class Params {
       segmentioAnalyticsKey: params["SEGMENTIO_ANALYTICS_WRITE_KEY"],
       enableShip: process.env["ENABLE_SHIP"] === "1",
       enableKots: process.env["ENABLE_KOTS"] === "1",
+      enableKurl: process.env["ENABLE_KURL"] === "1",
     });
     return Params.instance;
   }
@@ -163,6 +167,7 @@ export class Params {
       SEGMENTIO_ANALYTICS_WRITE_KEY: "/shipcloud/segmentio/analytics_write_key",
       ENABLE_SHIP: "",
       ENABLE_KOTS: "",
+      ENABLE_KURL: "",
     }
     return await lookupParams(paramLookup);
   }

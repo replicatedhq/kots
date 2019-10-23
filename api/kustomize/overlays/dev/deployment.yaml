@@ -73,6 +73,8 @@ spec:
               value: "1"
             - name: ENABLE_KOTS
               value: "1"
+            - name: ENABLE_KURL
+              value: "1"
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github
