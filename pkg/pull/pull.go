@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
@@ -38,6 +39,7 @@ type PullOptions struct {
 	RewriteImages       bool
 	RewriteImageOptions RewriteImageOptions
 	HelmOptions         []string
+	ReportWriter        io.Writer
 }
 
 type RewriteImageOptions struct {
@@ -160,6 +162,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				ImagesDir:         imagesDirFromOptions(u, pullOptions),
 				CreateAppDir:      pullOptions.CreateAppDir,
 				Log:               log,
+				ReportWriter:      pullOptions.ReportWriter,
 				RegistryHost:      pullOptions.RewriteImageOptions.Host,
 				RegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
 				Username:          pullOptions.RewriteImageOptions.Username,

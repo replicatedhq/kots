@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -18,6 +19,7 @@ type PushUpstreamImageOptions struct {
 	ImagesDir         string
 	CreateAppDir      bool
 	Log               *logger.Logger
+	ReportWriter      io.Writer
 	RegistryHost      string
 	RegistryNamespace string
 	Username          string
@@ -61,7 +63,9 @@ func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([
 
 				// copy to the registry
 				options.Log.ChildActionWithSpinner("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag)
-				err = image.CopyFromFileToRegistry(path, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, options.Username, options.Password)
+
+				registryAuth := image.RegistryAuth{Username: options.Username, Password: options.Password}
+				err = image.CopyFromFileToRegistry(path, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, options.ReportWriter)
 				if err != nil {
 					options.Log.FinishChildSpinner()
 					return errors.Wrap(err, "failed to push image")
