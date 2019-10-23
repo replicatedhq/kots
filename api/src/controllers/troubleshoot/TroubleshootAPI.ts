@@ -7,7 +7,7 @@ import { TroubleshootStore, injectKotsCollectors, setKotsCollectorsNamespaces } 
 import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 import fs from "fs";
 import path from "path";
-import { putObject } from "../../util/s3";
+import { putObject, getS3 } from "../../util/s3";
 
 interface ErrorResponse {
   error: {};
@@ -94,7 +94,7 @@ export class TroubleshootAPI {
       await putObject(params, path.join(params.shipOutputBucket.trim(), "supportbundles", supportBundleId, "supportbundle.tar.gz"), buffer, params.shipOutputBucket);
       const fileInfo = await stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
 
-      logger.debug({msg: `creating support bundle record with id ${supportBundleId} via upload callback`});
+      logger.debug({ msg: `creating support bundle record with id ${supportBundleId} via upload callback` });
 
       await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
       await performAnalysis(supportBundleId, stores);
@@ -146,12 +146,30 @@ export class TroubleshootAPI {
 
     const fileInfo = await stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
 
-    logger.debug({msg: `creating support bundle record with id ${supportBundleId} via upload callback`});
+    logger.debug({ msg: `creating support bundle record with id ${supportBundleId} via upload callback` });
 
     await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
     await performAnalysis(supportBundleId, stores);
 
     response.send(204, "");
+  }
+
+  @Get("/supportbundle/:bundleId/download")
+  async downloadSupportBundle(
+    @Req() request: Request,
+    @Res() response: Response,
+    @PathParams("bundleId") bundleId: string
+  ): Promise<any | ErrorResponse> {
+    const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(bundleId);
+
+    if (!supportBundle) {
+      response.status(404);
+      return {};
+    }
+
+    response.setHeader("Content-Disposition", `attachment; filename=supportbundle.tar.gz`);
+    response.setHeader("Content-Type", "application/tar+gzip");
+    await s3getBundle(bundleId, response);
   }
 }
 
@@ -164,4 +182,30 @@ async function performAnalysis(supportBundleId, stores) {
 
   // Analyze it
   await analyzeSupportBundle(supportBundleId, stores);
+}
+
+async function s3getBundle(bundleId, response) {
+  const replicatedParams = await Params.getParams();
+  const params = {
+    Bucket: replicatedParams.shipOutputBucket,
+    Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}supportbundles/${bundleId}/supportbundle.tar.gz`,
+  };
+
+  return new Promise((resolve, reject) => {
+    response.on("error", err => {
+      console.log(err);
+      resolve(false);
+    });
+
+    response.on("finish", async () => {
+      try {
+        resolve(true);
+      } catch (err) {
+        console.log(err);
+        resolve(false);
+      }
+    });
+
+    getS3(replicatedParams).getObject(params).createReadStream().pipe(response);
+  });
 }
