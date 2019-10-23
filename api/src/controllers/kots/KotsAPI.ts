@@ -21,7 +21,12 @@ import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
 import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
-import { kotsPullFromAirgap, kotsAppFromAirgapData, kotsRewriteAndPushImageName } from "../../kots_app/kots_ffi";
+import {
+  kotsPullFromAirgap,
+  kotsAppFromAirgapData,
+  kotsRewriteAndPushImageName,
+  kotsTestRegistryCredentials
+} from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import yaml from "js-yaml";
 
@@ -380,6 +385,30 @@ export class KotsAPI {
     response.send(200);
   }
 
+  @Post("/registry")
+  async kotsValidateRegistryAuth(
+    @BodyParams("") body: any,
+    @Req() request: Request,
+    @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
+  ): Promise<any> {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
+    const { registryHost, namespace, username, password } = body;
+
+    const testError = await kotsTestRegistryCredentials(registryHost, username, password, namespace);
+
+    if (!testError) {
+      response.send(200);
+    } else {
+      response.status(401);
+    }
+    return {error: testError};
+  }
 }
 
 export async function uploadUpdate(stores, slug, buffer) {

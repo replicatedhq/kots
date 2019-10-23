@@ -11,6 +11,7 @@ import "../scss/components/Login.scss";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import Loader from "./shared/Loader";
+import { validateRegistryInfo } from "../queries/UserQueries";
 
 class UploadAirgapBundle extends React.Component {
   state = {
@@ -27,6 +28,8 @@ class UploadAirgapBundle extends React.Component {
   uploadAirgapBundle = async () => {
     const { onUploadSuccess, match } = this.props;
 
+    this.setState({ fileUploading: true, errorMessage: "" });
+
     // Reset the airgap upload state
     const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
     await fetch(resetUrl, {
@@ -37,7 +40,24 @@ class UploadAirgapBundle extends React.Component {
       }
     });
 
-    this.setState({ fileUploading: true, errorMessage: "" });
+    const validated = await this.props.client.query({
+      query: validateRegistryInfo,
+      variables: {
+        endpoint: this.state.registryDetails.hostname,
+        username: this.state.registryDetails.username,
+        password: this.state.registryDetails.password,
+        org: this.state.registryDetails.namespace,        
+      }
+    });
+    if (validated.data.validateRegistryInfo) {
+      this.setState({
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        errorMessage: validated.data.validateRegistryInfo,
+      });
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", this.state.bundleFile);
