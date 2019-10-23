@@ -240,7 +240,7 @@ export class KotsApp {
     const bundlePacker = new TarballPacker();
     const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
 
-    await uploadUpdate(stores, slug, tarGzBuffer);
+    await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
   }
 
   // Source files
@@ -465,6 +465,8 @@ export interface KotsVersion {
   preflightResult: string;
   preflightResultCreatedAt: string;
   hasError?: boolean;
+  source?: string;
+  diffSummary?: string;
 }
 
 export interface KotsAppMetadata {

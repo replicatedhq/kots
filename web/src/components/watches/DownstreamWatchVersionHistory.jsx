@@ -450,8 +450,8 @@ class DownstreamWatchVersionHistory extends Component {
                       }}
                     />
                   </div>
-                  <div className="u-marginTop--20 flex" onClick={this.hideLogsModal}>
-                    <button type="button" className="btn primary" onClick={this.hideWarningModal}>Ok, got it!</button>
+                  <div className="u-marginTop--20 flex">
+                    <button type="button" className="btn primary" onClick={this.hideLogsModal}>Ok, got it!</button>
                   </div>
                 </div>
               )}

@@ -373,6 +373,7 @@ export const getKotsAppRaw = `
       hasPreflight
       isAirgap
       isConfigurable
+      allowRollback
       currentVersion {
         title
         status
@@ -395,6 +396,7 @@ export const getKotsAppRaw = `
           createdOn
           sequence
           deployedAt
+          source
         }
         pendingVersions {
           title
@@ -494,6 +496,8 @@ export const getKotsDownstreamHistoryRaw = `
       sequence
       releaseNotes
       deployedAt
+      source
+      diffSummary
       preflightResult
       preflightResultCreatedAt
     }

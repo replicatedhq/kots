@@ -1,6 +1,5 @@
 import React from "react";
 import truncateMiddle from "truncate-middle";
-import { Link } from "react-router-dom";
 import { isSingleTenant } from "@src/utilities/utilities";
 
 import "../../scss/components/clusters/ClusterCard.scss";
@@ -15,7 +14,6 @@ export default class DownstreamKotsCard extends React.Component {
       displayDownloadCommand,
       viewFiles,
       isDownloadingAssets,
-      appSlug
      } = this.props;
 
     const cluster = downstream?.cluster;
@@ -63,22 +61,10 @@ export default class DownstreamKotsCard extends React.Component {
               </div>
             }
           </div>
-          <Link to={`/app/${appSlug}/downstreams/${cluster?.slug}/version-history`} className="replicated-link u-fontSize--normal u-lineHeight--normal">See version history</Link>
         </div>
-        {downstream?.currentVersion && downstream.pendingVersions?.length >= 1 &&
+        {downstream?.currentVersion && downstream.pendingVersions?.length >= 1 && type === "git" &&
           <div className="flex justifyContent--spaceBetween alignItems--center u-marginTop--10">
-            {type === "git" ?
-              <a href="" className="btn green secondary" target="_blank" rel="noopener noreferrer">Review PR to update application</a>
-            :
-              <div className="flex-column">
-                <button onClick={undefined} className="btn green secondary">Install latest version</button>
-              </div>
-            }
-          </div>
-        }
-        {downstream?.currentVersion && !downstream?.pendingVersions?.length &&
-          <div className="flex justifyContent--spaceBetween alignItems--center  u-marginTop--5">
-            <p className="u-fontWeight--medium u-fontSize--small u-color--dustyGray u-marginTop--5 u-lineHeight--more">When an update is available you will be able to deploy it from here.</p>
+            <a href="" className="btn green secondary" target="_blank" rel="noopener noreferrer">Review PR to update application</a>
           </div>
         }
         <div className="flex flex1 alignItems--flexEnd">

@@ -27,6 +27,7 @@ import {
   kotsTestRegistryCredentials
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
+import { getDiffSummary } from "../../util/utilities";
 import yaml from "js-yaml";
 import * as k8s from "@kubernetes/client-node";
 import { decodeBase64 } from "../../util/utilities";
@@ -218,7 +219,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed");
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Kots Install", "");
     }
 
     return {
@@ -236,7 +237,7 @@ export class KotsAPI {
     const buffer = fs.readFileSync(file.path);
     const stores = request.app.locals.stores;
 
-    return uploadUpdate(stores, metadata.slug, buffer);
+    return uploadUpdate(stores, metadata.slug, buffer, "Kots Upload");
   }
 
   @Post("/airgap")
@@ -426,7 +427,7 @@ export class KotsAPI {
   }
 }
 
-export async function uploadUpdate(stores, slug, buffer) {
+export async function uploadUpdate(stores, slug, buffer, source) {
   // Todo this could use some proper not-found error handling stuffs
   const kotsApp = await stores.kotsAppStore.getApp(await stores.kotsAppStore.getIdFromSlug(slug));
 
@@ -452,7 +453,8 @@ export async function uploadUpdate(stores, slug, buffer) {
     const status = preflightSpec
       ? "pending_preflight"
       : "pending";
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status);
+    const diffSummary = await getDiffSummary(kotsApp);
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary);
   }
 
   return {

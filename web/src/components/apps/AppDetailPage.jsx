@@ -374,6 +374,7 @@ class AppDetailPage extends Component {
                         checkingUpdateText={checkingUpdateText}
                         handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
                         errorCheckingUpdate={updateError}
+                        makeCurrentVersion={this.makeCurrentRelease}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history" render={() =>

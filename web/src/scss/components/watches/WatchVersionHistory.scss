@@ -10,7 +10,6 @@ $cell-width: 140px;
   .watch-icon {
     width: 48px;
     height: 48px;
-    background-position: center;
     background-size: cover;
     border-radius: 40px;
     box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
@@ -140,5 +139,85 @@ $cell-width: 140px;
 
   &:last-child {
     border-right: none
+  }
+}
+
+
+.DownstreamVersionsTable {
+  width: 95%;
+  max-width: 1000px;
+  table-layout: fixed;
+
+  &.full-width {
+    width: 100%;
+  }
+
+  thead {
+    width: 100%;
+
+    &.separator {
+      border-bottom: 1px black solid;
+    }
+
+    tr {
+      width: 100%;
+
+      th {
+        color: black;
+        padding: 12px;
+        font-weight: bold;
+        text-align: left;
+      }
+    }
+  }
+
+  tbody {
+    width: 100%;
+
+    tr {
+      width: 100%;
+  
+      td {
+        color: black;
+        padding: 12px;
+
+        .DiffSummary {
+          font-size: 12px;
+          margin-top: 4px;
+        
+          .files {
+            color: black;
+          }
+        
+          .lines-added {
+            color: green;
+          }
+        
+          .lines-removed {
+            color: red;
+          }
+        }
+      }
+
+      .link {
+        font-size: 14px;
+        text-decoration: underline;
+        color: #4471B5;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.DeployedDownstreamVersion {
+  width: 95%;
+  max-width: 1000px;
+  border: 1px #44bb66 solid;
+  border-radius: 8px;
+  margin-bottom: 42px;
+  margin-top: 12px;
+
+  &.failed {
+    border: 1px red solid;
   }
 }

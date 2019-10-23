@@ -31,6 +31,10 @@ spec:
           notNull: true
       - name: status
         type: text
+      - name: source
+        type: text
+      - name: diff_summary
+        type: text
       - name: preflight_result
         type: text
       - name: preflight_result_created_at

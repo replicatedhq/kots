@@ -21,6 +21,7 @@ import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 import { StatusServer } from "../airgap/status";
+import { getDiffSummary } from "../util/utilities";
 
 const GoString = Struct({
   p: "string",
@@ -143,7 +144,8 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 
       const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
       for (const clusterId of clusterIds) {
-        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending");
+        const diffSummary = await getDiffSummary(app);
+        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
       }
     }
 
@@ -244,9 +246,10 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       const downstreamState = kotsApp.hasPreflight
         ? "pending_preflight"
         : "deployed";
+      const diffSummary = await getDiffSummary(kotsApp);
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", diffSummary);
     }
 
     return kotsApp;
@@ -335,8 +338,10 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
       continue;
     }
 
+    const diffSummary = await getDiffSummary(app);
+
     await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed");
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", diffSummary);
   }
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
