@@ -61,6 +61,7 @@ func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
 	}
 
 	white := color.New(color.FgHiWhite)
+	white.DisableColor()
 	white.Printf("  • ")
 	white.Println(fmt.Sprintf(msg, args...))
 }
@@ -71,6 +72,7 @@ func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
 	}
 
 	white := color.New(color.FgHiWhite)
+	white.DisableColor()
 	white.Printf("    • ")
 	white.Println(fmt.Sprintf(msg, args...))
 }
@@ -143,6 +145,7 @@ func (l *Logger) FinishChildSpinner() {
 	}
 
 	white := color.New(color.FgHiWhite)
+	white.DisableColor()
 	green := color.New(color.FgHiGreen)
 
 	white.Printf("\r")
@@ -161,6 +164,7 @@ func (l *Logger) FinishSpinner() {
 	}
 
 	white := color.New(color.FgHiWhite)
+	white.DisableColor()
 	green := color.New(color.FgHiGreen)
 
 	white.Printf("\r")
@@ -179,6 +183,7 @@ func (l *Logger) FinishSpinnerWithError() {
 	}
 
 	white := color.New(color.FgHiWhite)
+	white.DisableColor()
 	red := color.New(color.FgHiRed)
 
 	white.Printf("\r")
