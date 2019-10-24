@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
 import isEmpty from "lodash/isEmpty";
+import { Utilities } from "../../utilities/utilities";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
@@ -32,10 +33,11 @@ class SupportBundleRow extends React.Component {
     this.props.history.push(`/${appType === "watch" ? "watch" : "app"}/${watchSlug}/troubleshoot/analyze/${bundle.slug}`)
   }
 
-  downloadBundle = (bundle) => {
+  downloadBundle = async (bundle) => {
+    const bundleId = bundle.id;
     const hiddenIFrameID = "hiddenDownloader";
     let iframe = document.getElementById(hiddenIFrameID);
-    const url = bundle.downloadUri;
+    const url = `${window.env.TROUBLESHOOT_ENDPOINT}/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
     if (iframe === null) {
       iframe = document.createElement("iframe");
       iframe.id = hiddenIFrameID;
