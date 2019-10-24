@@ -36,6 +36,8 @@ export const uploadKotsLicenseRaw = `
     uploadKotsLicense(value: $value) {
       hasPreflight
       slug
+      isAirgap
+      needsRegistry
     }
   }
 `
