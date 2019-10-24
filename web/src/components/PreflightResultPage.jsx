@@ -31,11 +31,7 @@ class PreflightResultPage extends Component {
       const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
       await this.props.deployKotsVersion(preflightResultData.appSlug, sequence, preflightResultData.clusterSlug);
 
-      if (match.params.downstreamSlug) {
-        history.push(`/app/${preflightResultData.appSlug}/downstreams/${match.params.downstreamSlug}/version-history`);
-      } else {
-        history.push(`/app/${preflightResultData.appSlug}`);
-      }
+      history.push(`/app/${preflightResultData.appSlug}/version-history`);
     } catch(error) {
       console.log(error);
     }

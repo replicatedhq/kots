@@ -91,7 +91,7 @@ class AppVersionHistory extends Component {
         {version.source}
         {diffSummary && (
           diffSummary.filesChanged > 0 ?
-            <div className="DiffSummary u-cursor--pointer" onClick={() => history.push(`/app/${match.params.slug}/version-history/diff/${version.sequence - 1}/${version.sequence}`)}>
+            <div className="DiffSummary u-cursor--pointer" onClick={() => history.push(`/app/${match.params.slug}/version-history/diff/${version.parentSequence - 1}/${version.parentSequence}`)}>
               <span className="files">{diffSummary.filesChanged} files changed </span>
               <span className="lines-added">+{diffSummary.linesAdded} </span>
               <span className="lines-removed">-{diffSummary.linesRemoved}</span>
