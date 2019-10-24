@@ -177,6 +177,7 @@ $cell-width: 140px;
       td {
         color: black;
         padding: 12px;
+        vertical-align: middle;
 
         .DiffSummary {
           font-size: 12px;
@@ -217,4 +218,31 @@ $cell-width: 140px;
   &.failed {
     border: 1px red solid;
   }
+}
+
+.overlay {
+  cursor: pointer;
+}
+
+.overlay.selected {
+  background: rgba(51, 122, 183, .1);
+  border: solid 1px #337AB7;
+}
+
+.checkbox {
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  border: solid 1px #337AB7;
+  border-radius: 3px;
+}
+
+.checkbox.checked {
+  background-color: #337AB7;
+  background-image: url("../../../images/main_spritesheet.svg");
+  background-position: 1px -431px;
+}
+
+.checkbox.disabled {
+  border: solid 1px #C4C7CA;
 }

@@ -398,6 +398,7 @@ export const getKotsAppRaw = `
           sequence
           deployedAt
           source
+          releaseNotes
         }
         pendingVersions {
           title
@@ -495,6 +496,7 @@ export const getKotsDownstreamHistoryRaw = `
       status
       createdOn
       sequence
+      parentSequence
       releaseNotes
       deployedAt
       source

@@ -11,7 +11,7 @@ import "../../scss/components/watches/DownstreamVersionRow.scss";
 export default class DownstreamVersionRow extends React.Component {
 
   handleCheckbox(isChecked, isActive) {
-    this.props.handleSelectReleasesToDiff(this.props.version.sequence, isChecked, isActive)
+    this.props.handleSelectReleasesToDiff(this.props.version.parentSequence, isChecked, isActive)
   }
 
   render() {

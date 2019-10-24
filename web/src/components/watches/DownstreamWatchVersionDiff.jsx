@@ -184,26 +184,24 @@ class DownstreamWatchVersionDiff extends React.Component {
 
   getFilesForPathAndSequence = (paths, sequence, first) => {
     const newPaths = paths.map((path) => rootPath(path));
-    this.fetchFiles(newPaths, sequence, first)
+    this.fetchFiles(newPaths, sequence, first);
   }
 
-
-
   render() {
-    const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state
+    const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state;
+
+    if (fileLoading || size(firstSeqFileContents) === 0 || size(secondSeqFileContents) === 0) {
+      return (
+        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      );
+    }
 
     const files = [...firstSeqFileContents, ...secondSeqFileContents];
     const groupedFilesByContent = groupBy(files, "content");
     const changedFiles = filter(groupedFilesByContent, g => g.length === 1);
     const filesByKey = groupBy(flatMap(changedFiles), "key");
-
-    if (fileLoading || size(files) === 0) {
-      return (
-        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
-            <Loader size="60" />
-          </div>
-      )
-    }
 
     return (
       <div className="u-padding--20 u-overflow--auto u-position--relative u-minHeight--full u-width--full">
@@ -219,7 +217,7 @@ class DownstreamWatchVersionDiff extends React.Component {
                   specKey={key}
                 />
               </div>
-            )
+            );
           })
           :
           <div className="flex flex-auto alignItems--center justifyContent--center">

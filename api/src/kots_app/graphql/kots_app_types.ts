@@ -51,6 +51,7 @@ const KotsVersion = `
     status: String!
     createdOn: String!
     sequence: Int
+    parentSequence: Int
     releaseNotes: String
     deployedAt: String
     source: String

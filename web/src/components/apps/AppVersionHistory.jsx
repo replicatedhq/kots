@@ -11,6 +11,7 @@ import moment from "moment";
 import find from "lodash/find";
 import map from "lodash/map";
 import Loader from "../shared/Loader";
+import Tooltip from "../shared/Tooltip";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { Utilities, hasPendingPreflight, getPreflightResultState } from "@src/utilities/utilities";
 
@@ -27,7 +28,11 @@ class AppVersionHistory extends Component {
     selectedTab: null,
     showDeployWarningModal: false,
     showSkipModal: false,
-    versionToDeploy: null
+    versionToDeploy: null,
+    downstreamReleaseNotes: null,
+    selectedDiffReleases: false,
+    checkedReleasesToDiff: [],
+    diffHovered: false,
   }
 
   showReleaseNotes = () => {
@@ -42,6 +47,18 @@ class AppVersionHistory extends Component {
     });
   }
 
+  showDownstreamReleaseNotes = notes => {
+    this.setState({
+      downstreamReleaseNotes: notes
+    });
+  }
+
+  hideDownstreamReleaseNotes = () => {
+    this.setState({
+      downstreamReleaseNotes: null
+    });
+  }
+
   getVersionDiffSummary = version => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
@@ -51,6 +68,15 @@ class AppVersionHistory extends Component {
     } catch (err) {
       throw err;
     }
+  }
+
+  renderVersionSequence = version => {
+    return (
+      <div className="flex flex-column">
+        {version.sequence}
+        <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}>Release notes</span>
+      </div>
+    );
   }
 
   renderSourceAndDiff = version => {
@@ -144,6 +170,9 @@ class AppVersionHistory extends Component {
               <span className="link" style={{ fontSize: 12 }}>Preflight Results</span>
             </Link>
         }
+        {version.status === "failed" && 
+          <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.handleViewLogs(version)}>View logs</span>
+        }
       </div>
     );
   }
@@ -220,6 +249,21 @@ class AppVersionHistory extends Component {
     });
   }
 
+  onSelectReleasesToDiff = () => {
+    this.setState({
+      selectedDiffReleases: true,
+      diffHovered: false
+    });
+  }
+
+  onCloseReleasesToDiff = () => {
+    this.setState({
+      selectedDiffReleases: false,
+      checkedReleasesToDiff: [],
+      diffHovered: false
+    });
+  }
+
   handleViewLogs = async version => {
     const { match, app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
@@ -244,6 +288,49 @@ class AppVersionHistory extends Component {
     }
   }
 
+  renderDiffBtn = () => {
+    const { diffHovered, selectedDiffReleases } = this.state;
+    if (selectedDiffReleases) {
+      return null;
+    }
+    return (
+      <div className="flex-column flex-auto flex-verticalCenter u-marginRight--10 u-marginLeft--10" style={{ marginTop: -5 }}>
+        <span
+          className="icon diffReleasesIcon"
+          onMouseEnter={this.displayTooltip("diff", true)}
+          onMouseLeave={this.displayTooltip("diff", false)}
+          onClick={this.onSelectReleasesToDiff}>
+          <Tooltip
+            visible={diffHovered}
+            text="Select releases to diff"
+            minWidth="170"
+            position="top-center"
+          />
+        </span>
+      </div>
+    );
+  }
+
+  handleSelectReleasesToDiff = (releaseSequence, isChecked) => {
+    if (isChecked) {
+      this.setState({
+        checkedReleasesToDiff: [{ releaseSequence, isChecked }].concat(this.state.checkedReleasesToDiff).slice(0, 2)
+      })
+    } else {
+      this.setState({
+        checkedReleasesToDiff: this.state.checkedReleasesToDiff.filter(release => release.releaseSequence !== releaseSequence)
+      })
+    }
+  }
+
+  displayTooltip = (key, value) => {
+    return () => {
+      this.setState({
+        [`${key}Hovered`]: value,
+      });
+    };
+  }
+
   render() {
     const {
       app,
@@ -262,7 +349,10 @@ class AppVersionHistory extends Component {
       logs, 
       logsLoading,
       showDeployWarningModal,
-      showSkipModal
+      showSkipModal,
+      downstreamReleaseNotes,
+      selectedDiffReleases,
+      checkedReleasesToDiff
     } = this.state;
 
     if (!app) {
@@ -286,8 +376,18 @@ class AppVersionHistory extends Component {
       updateText = null;
     }
 
-    const isAirgap = app.isAirgap;
+    let firstSequenceNumber, secondSequenceNumber;
+    if (checkedReleasesToDiff.length === 2) {
+      if (checkedReleasesToDiff[0].releaseSequence < checkedReleasesToDiff[1].releaseSequence) {
+        firstSequenceNumber = checkedReleasesToDiff[0].releaseSequence;
+        secondSequenceNumber = checkedReleasesToDiff[1].releaseSequence;
+      } else {
+        firstSequenceNumber = checkedReleasesToDiff[1].releaseSequence;
+        secondSequenceNumber = checkedReleasesToDiff[0].releaseSequence;
+      }
+    }
 
+    const isAirgap = app.isAirgap;
     const downstream = app.downstreams.length && app.downstreams[0];
     const currentDownstreamVersion = downstream?.currentVersion;
     const versionHistory = data?.getKotsDownstreamHistory?.length ? data.getKotsDownstreamHistory : [];
@@ -382,7 +482,7 @@ class AppVersionHistory extends Component {
                         <td>{downstream.name}</td>
                         <td>{moment(currentDownstreamVersion.createdOn).format("MM/DD/YY hh:mm a")}</td>
                         <td>{currentDownstreamVersion.title}</td>
-                        <td width="11%">{currentDownstreamVersion.sequence}</td>
+                        <td width="11%">{this.renderVersionSequence(currentDownstreamVersion)}</td>
                         <td width="17%">{currentDownstreamVersion.source}</td>
                         <td>{currentDownstreamVersion.deployedAt ? moment(currentDownstreamVersion.createdOn).format("MM/DD/YY hh:mm a") : ""}</td>
                         <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
@@ -393,34 +493,51 @@ class AppVersionHistory extends Component {
                 </fieldset>
               }
 
+              {/* Diffing releases */}
+              {versionHistory.length && selectedDiffReleases && 
+                <div className="flex u-marginBottom--20">
+                  <button className="btn secondary gray u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
+                  <Link to={`/app/${match.params.slug}/version-history/diff/${firstSequenceNumber}/${secondSequenceNumber}`} className={classNames("btn primary blue", { "is-disabled u-pointerEvents--none": checkedReleasesToDiff.length !== 2 })}>Diff releases</Link>
+                </div>
+              }
+
               {/* Downstream version history */}
               {versionHistory.length &&
-                <table className="DownstreamVersionsTable">
+                <table className="DownstreamVersionsTable u-position--relative">
                   <thead className="separator">
                     <tr key="header">
+                      {selectedDiffReleases && <th width="12px" />}
                       <th>Environment</th>
                       <th>Received</th>
                       <th>Upstream</th>
                       <th width="11%">Sequence</th>
-                      <th width="17%">Source</th>
+                      <th width="17%"><div className="flex">Source {versionHistory.length > 1 && this.renderDiffBtn()}</div></th>
                       <th>Deployed</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {versionHistory.map((version) => (
-                      <tr key={version.sequence}>
-                        <td>{downstream.name}</td>
-                        <td>{moment(version.createdOn).format("MM/DD/YY hh:mm a")}</td>
-                        <td>{version.title}</td>
-                        <td width="11%">{version.sequence}</td>
-                        <td width="17%">{this.renderSourceAndDiff(version)}</td>
-                        <td>{version.deployedAt ? moment(version.createdOn).format("MM/DD/YY hh:mm a") : ""}</td>
-                        <td>{this.renderVersionStatus(version)}</td>
-                        <td>{this.renderVersionAction(version)}</td>
-                      </tr>
-                    ))}
+                    {versionHistory.map((version) => {
+                      const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.parentSequence);
+                      return (
+                        <tr 
+                          key={version.sequence} 
+                          className={classNames({ "overlay": selectedDiffReleases, "selected": isChecked })} 
+                          onClick={() => selectedDiffReleases && this.handleSelectReleasesToDiff(version.parentSequence, !isChecked)}
+                        >
+                          {selectedDiffReleases && <td width="12px"><div className={classNames("checkbox", { "checked": isChecked })} /></td>}
+                          <td>{downstream.name}</td>
+                          <td>{moment(version.createdOn).format("MM/DD/YY hh:mm a")}</td>
+                          <td>{version.title}</td>
+                          <td width="11%">{this.renderVersionSequence(version)}</td>
+                          <td width="17%">{this.renderSourceAndDiff(version)}</td>
+                          <td>{version.deployedAt ? moment(version.createdOn).format("MM/DD/YY hh:mm a") : ""}</td>
+                          <td>{this.renderVersionStatus(version)}</td>
+                          <td>{this.renderVersionAction(version)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               }
@@ -537,6 +654,23 @@ class AppVersionHistory extends Component {
               </button>
               <button type="button" onClick={this.hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>
             </div>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={!!downstreamReleaseNotes}
+          onRequestClose={this.hideDownstreamReleaseNotes}
+          contentLabel="Release Notes"
+          ariaHideApp={false}
+          className="Modal LargeSize"
+        >
+          <div className="flex-column">
+            <MarkdownRenderer>
+              {downstreamReleaseNotes || ""}
+            </MarkdownRenderer>
+          </div>
+          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
+            <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
           </div>
         </Modal>
       </div>
