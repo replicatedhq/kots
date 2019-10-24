@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams } from "@tsed/common";
+import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { Params } from "../../server/params";
 import { logger } from "../../server/logger";
 import jsYaml from "js-yaml";
@@ -8,6 +8,7 @@ import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 import fs from "fs";
 import path from "path";
 import { putObject, getS3 } from "../../util/s3";
+import { Session } from "../../session";
 
 interface ErrorResponse {
   error: {};
@@ -154,12 +155,19 @@ export class TroubleshootAPI {
     response.send(204, "");
   }
 
-  @Get("/supportbundle/:bundleId/download")
+  @Get(`/supportbundle/:bundleId/download`)
   async downloadSupportBundle(
     @Req() request: Request,
     @Res() response: Response,
-    @PathParams("bundleId") bundleId: string
+    @PathParams("bundleId") bundleId: string,
+    @QueryParams("token") token: string,
   ): Promise<any | ErrorResponse> {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(token);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(bundleId);
 
     if (!supportBundle) {
