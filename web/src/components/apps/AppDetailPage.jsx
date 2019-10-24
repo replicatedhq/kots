@@ -6,7 +6,6 @@ import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
-import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
 import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -35,7 +34,6 @@ import AppSettings from "./AppSettings";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
-let loadingTextTimer = null;
 class AppDetailPage extends Component {
   constructor(props) {
     super(props);
@@ -46,9 +44,6 @@ class AppDetailPage extends Component {
       clusterToRemove: {},
       watchToEdit: {},
       existingDeploymentClusters: [],
-      checkingForUpdates: false,
-      checkingUpdateText: "Checking for updates",
-      updateError: false,
       displayDownloadCommandModal: false
     }
   }
@@ -101,33 +96,6 @@ class AppDetailPage extends Component {
     await this.props.deployKotsVersion(upstreamSlug, sequence, clusterSlug).then(() => {
       this.refetchGraphQLData();
     })
-  }
-
-  onCheckForUpdates = async () => {
-    const { client, getKotsAppQuery } = this.props;
-    const { getKotsApp: app } = getKotsAppQuery;
-
-    this.setState({ checkingForUpdates: true });
-
-    loadingTextTimer = setTimeout(() => {
-      this.setState({ checkingUpdateText: "Almost there, hold tight..." });
-    }, 10000);
-
-    await client.mutate({
-      mutation: checkForKotsUpdates,
-      variables: {
-        appId: app.id,
-      }
-    }).catch(() => {
-      this.setState({ updateError: true });
-    }).finally(() => {
-      this.refetchGraphQLData();
-      clearTimeout(loadingTextTimer);
-      this.setState({
-        checkingForUpdates: false,
-        checkingUpdateText: "Checking for updates"
-      });
-    });
   }
 
   addClusterToApp = async (clusterId) => {
@@ -202,10 +170,6 @@ class AppDetailPage extends Component {
     })
   }
 
-  handleUploadNewVersionClick = () => {
-    this.props.history.push(`/${this.props.match.params.slug}/airgap`);
-  }
-
   /**
    * Refetch all the GraphQL data for this component and all its children
    *
@@ -255,8 +219,6 @@ class AppDetailPage extends Component {
       displayRemoveClusterModal,
       addNewClusterModal,
       clusterToRemove,
-      checkingUpdateText,
-      updateError,
       displayDownloadCommandModal
     } = this.state;
 
@@ -369,13 +331,9 @@ class AppDetailPage extends Component {
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
-                        onUploadNewVersion={this.handleUploadNewVersionClick}
-                        onCheckForUpdates={this.onCheckForUpdates}
-                        checkingForUpdates={this.state.checkingForUpdates}
-                        checkingUpdateText={checkingUpdateText}
                         handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
-                        errorCheckingUpdate={updateError}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        updateCallback={this.refetchGraphQLData}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history" render={() =>
