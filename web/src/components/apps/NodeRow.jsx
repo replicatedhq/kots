@@ -14,7 +14,7 @@ export default function NodeRow(props) {
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--10 NodeRow--items">
           <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna u-marginRight--30">
-            <span className={classNames("node-status", node.isConnected)}></span>
+            <span className={classNames("node-status", { "disconnected": !node.isConnected })}></span>
             {node.isConnected ? "Connected" : "Disconnected"}
           </p>
           <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna u-marginRight--30">

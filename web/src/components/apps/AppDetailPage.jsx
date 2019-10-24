@@ -331,6 +331,7 @@ class AppDetailPage extends Component {
                     className="flex"
                     activeTab={match.params.tab || "app"}
                     watch={app}
+                    isKurlEnabled={this.props.isKurlEnabled}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
