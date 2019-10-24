@@ -26,7 +26,7 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
-    const { onUploadSuccess, match } = this.props;
+    const { onUploadSuccess, match, showRegistry } = this.props;
 
     this.setState({ fileUploading: true, errorMessage: "" });
 
@@ -40,31 +40,37 @@ class UploadAirgapBundle extends React.Component {
       }
     });
 
-    const validated = await this.props.client.query({
-      query: validateRegistryInfo,
-      variables: {
-        endpoint: this.state.registryDetails.hostname,
-        username: this.state.registryDetails.username,
-        password: this.state.registryDetails.password,
-        org: this.state.registryDetails.namespace,        
-      }
-    });
-    if (validated.data.validateRegistryInfo) {
-      this.setState({
-        fileUploading: false,
-        uploadSent: 0,
-        uploadTotal: 0,
-        errorMessage: validated.data.validateRegistryInfo,
+    if (showRegistry) {
+      const validated = await this.props.client.query({
+        query: validateRegistryInfo,
+        variables: {
+          endpoint: this.state.registryDetails.hostname,
+          username: this.state.registryDetails.username,
+          password: this.state.registryDetails.password,
+          org: this.state.registryDetails.namespace,
+        }
       });
-      return;
+      if (validated.data.validateRegistryInfo) {
+        this.setState({
+          fileUploading: false,
+          uploadSent: 0,
+          uploadTotal: 0,
+          errorMessage: validated.data.validateRegistryInfo,
+        });
+        return;
+      }
     }
 
     const formData = new FormData();
     formData.append("file", this.state.bundleFile);
-    formData.append("registryHost", this.state.registryDetails.hostname);
-    formData.append("namespace", this.state.registryDetails.namespace);
-    formData.append("username", this.state.registryDetails.username);
-    formData.append("password", this.state.registryDetails.password);
+
+    if (showRegistry) {
+      formData.append("registryHost", this.state.registryDetails.hostname);
+      formData.append("namespace", this.state.registryDetails.namespace);
+      formData.append("username", this.state.registryDetails.username);
+      formData.append("password", this.state.registryDetails.password);
+    }
+
     const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
     const xhr = new XMLHttpRequest();
 
@@ -179,7 +185,8 @@ class UploadAirgapBundle extends React.Component {
     const {
       appName,
       logo,
-      fetchingMetadata
+      fetchingMetadata,
+      showRegistry,
     } = this.props;
 
     const {
@@ -220,10 +227,14 @@ class UploadAirgapBundle extends React.Component {
                 </div>
                 <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
                 <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
-                  To install on an airgapped network, you will need to provide access to a Docker registry. The images in {appName} will be retagged and pushed to the registry that you provide here.
+                  {showRegistry ?
+                    "To install on an airgapped network, you will need to provide access to a Docker registry. The images in {appName} will be retagged and pushed to the registry that you provide here."
+                    :
+                    "To install on an airgapped network, the images in {appName} will be uploaded from the bundle you provide to the cluster."
+                  }
                 </p>
               </div>
-              <div className="u-marginTop--30">
+              {showRegistry ? <div className="u-marginTop--30">
                 <AirgapRegistrySettings
                   app={null}
                   hideCta={true}
@@ -232,7 +243,7 @@ class UploadAirgapBundle extends React.Component {
                   gatherDetails={this.getRegistryDetails}
                   registryDetails={registryDetails}
                 />
-              </div>
+              </div> : null}
               <div className="u-marginTop--20 flex">
                 <div className={classNames("FileUpload-wrapper", "flex1", {
                   "has-file": hasFile,
