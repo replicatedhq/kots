@@ -37,8 +37,10 @@ export class KotsDeploySocketService {
             this.troubleshootStore = new TroubleshootStore(pool, params);
             this.clusterSocketHistory = [];
 
-            setInterval(this.preflightLoop.bind(this), 1000);
-            setInterval(this.supportBundleLoop.bind(this), 1000);
+            setInterval(() => {
+              Promise.all([this.preflightLoop]), 1000});
+            setInterval(() => {
+              Promise.all([this.supportBundleLoop]), 1000});
           })
       });
   }
