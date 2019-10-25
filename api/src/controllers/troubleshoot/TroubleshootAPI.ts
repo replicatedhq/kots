@@ -55,8 +55,10 @@ export class TroubleshootAPI {
 
     let parsedSpec = jsYaml.load(collector);
     if (isKotsSpec) {
-      parsedSpec = await injectKotsCollectors(parsedSpec);
+      // the injected collector has a different namespace in dev environment,
+      // so the order of these calls matters.
       parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
+      parsedSpec = await injectKotsCollectors(parsedSpec);
     }
     parsedSpec.spec.afterCollection = [
       {
