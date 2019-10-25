@@ -8,7 +8,7 @@ var (
 )
 
 type StatusInformer struct {
-	Kind      string `json:"type"`
+	Kind      string `json:"kind"`
 	Name      string `json:"name"`
 	Namespace string `json:"namespace,omitempty"`
 }
