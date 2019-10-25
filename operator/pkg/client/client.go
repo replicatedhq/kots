@@ -5,16 +5,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
+	"github.com/replicatedhq/kotsadm/operator/pkg/appstate"
+	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 	"github.com/replicatedhq/kotsadm/operator/pkg/socket"
 	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
+	"github.com/replicatedhq/kotsadm/operator/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -43,19 +49,25 @@ type SupportBundleRequest struct {
 	URI string `json:"uri"`
 }
 
+type InformRequest struct {
+	Informers []types.StatusInformer `json:"informers"`
+}
+
 type Client struct {
 	APIEndpoint string
 	Token       string
+
+	appStateMonitor *appstate.Monitor
 }
 
 func (c *Client) Run() error {
-	fmt.Println("Starting kotsadm-operator loop")
+	log.Println("Starting kotsadm-operator loop")
 
 	for {
 		err := c.connect()
 		if err != nil {
 			// this needs a backoff
-			fmt.Printf("unable to connect to api\n")
+			log.Println("unable to connect to api")
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -63,6 +75,21 @@ func (c *Client) Run() error {
 		// some easy backoff for now
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func (c *Client) runAppStateMonitor() error {
+	throttled := util.NewThrottle(time.Second)
+
+	for appStatus := range c.appStateMonitor.AppStatusChan() {
+		throttled(func() {
+			log.Printf("Sending app status %#v", appStatus)
+			if err := c.sendAppStatus(appStatus); err != nil {
+				log.Printf("error sending app status: %v", err)
+			}
+		})
+	}
+
+	return errors.New("app state monitor shutdown")
 }
 
 // connect will return an error on a fatal error, or nil if the server
@@ -81,7 +108,7 @@ func (c *Client) connect() error {
 	hasConnected := false
 	isUnexpectedlyDisconnected := false
 
-	fmt.Println("connecting to api")
+	log.Println("connecting to api")
 	socketClient, err := socket.Dial(socket.GetUrl(u.Hostname(), port, c.Token, false), transport.GetDefaultWebsocketTransport())
 	if err != nil {
 		return errors.Wrap(err, "failed to connect")
@@ -89,10 +116,28 @@ func (c *Client) connect() error {
 
 	defer socketClient.Close()
 
+	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
+	if targetNamespace != "" {
+		targetNamespace = corev1.NamespaceDefault
+	}
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get in cluster config")
+	}
+
+	c.appStateMonitor, err = appstate.NewMonitor(config, targetNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to create appstate monitor")
+	}
+	defer c.appStateMonitor.Shutdown()
+
+	go c.runAppStateMonitor()
+
 	err = socketClient.On("preflight", func(h *socket.Channel, args PreflightRequest) {
-		fmt.Printf("received a preflight event: %#v\n", args)
+		log.Printf("received a preflight event: %#v", args)
 		if err := runPreflight(args.URI); err != nil {
-			fmt.Printf("error running preflight: %s\n", err.Error())
+			log.Printf("error running preflight: %s", err.Error())
 		}
 	})
 	if err != nil {
@@ -100,9 +145,9 @@ func (c *Client) connect() error {
 	}
 
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
-		fmt.Printf("received a deploy request\n")
+		log.Println("received a deploy request")
 		if err := c.ensureResourcesPresent(args); err != nil {
-			fmt.Printf("error deploying: %s\n", err.Error())
+			log.Printf("error deploying: %s", err.Error())
 		}
 	})
 	if err != nil {
@@ -110,19 +155,29 @@ func (c *Client) connect() error {
 	}
 
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
-		fmt.Printf("received a support bundle request\n")
+		log.Println("received a support bundle request")
 		go func() {
 			// This is in a goroutine because if we disconnect and reconnect to the
 			// websocket, we will want to report that it's completed...
 			err := runSupportBundle(args.URI)
-			fmt.Printf("support bundle run completed with err = %#v\n", err)
+			log.Printf("support bundle run completed with err = %#v", err)
 			if err != nil {
-				fmt.Printf("error running support bundle: %s\n", err.Error())
+				log.Printf("error running support bundle: %s", err.Error())
 			}
 		}()
 	})
 	if err != nil {
 		return errors.Wrap(err, "error in support bundle handler")
+	}
+
+	err = socketClient.On("inform", func(h *socket.Channel, args InformRequest) {
+		log.Printf("received an inform event: %#v", args)
+		if err := c.applyInformers(args.Informers); err != nil {
+			log.Printf("error running informer: %s", err.Error())
+		}
+	})
+	if err != nil {
+		return errors.Wrap(err, "error in inform handler")
 	}
 
 	err = socketClient.On(socket.OnConnection, func(h *socket.Channel) {
@@ -133,7 +188,7 @@ func (c *Client) connect() error {
 	}
 
 	err = socketClient.On(socket.OnDisconnection, func(h *socket.Channel, args interface{}) {
-		fmt.Printf("disconnected %#v\n", args)
+		log.Printf("disconnected %#v", args)
 		isUnexpectedlyDisconnected = true
 	})
 	if err != nil {
@@ -143,13 +198,13 @@ func (c *Client) connect() error {
 	// wait for a connection for at least 2 seconds
 	time.Sleep(time.Second * 2)
 	if !hasConnected {
-		fmt.Printf("expected to be connected to the api by now, but it's not true. disappointing...  (will retry)\n")
+		log.Println("expected to be connected to the api by now, but it's not true. disappointing...  (will retry)")
 		return nil // allow another attempt
 	}
 
 	for {
 		if isUnexpectedlyDisconnected {
-			fmt.Printf("unexpectedly disconnected from api (will reconnect)\n")
+			log.Println("unexpectedly disconnected from api (will reconnect)")
 			return nil
 		}
 
@@ -179,15 +234,13 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 		return errors.Wrap(err, "failed to marshal results")
 	}
 
-	client := &http.Client{}
-
 	uri := fmt.Sprintf("%s/api/v1/deploy/result", c.APIEndpoint)
 
-	fmt.Printf("Reporting results to %q\n", uri)
+	log.Printf("Reporting results to %q", uri)
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
 	req.Header["Content-Type"] = []string{"application/json"}
 	req.SetBasicAuth("", c.Token)
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -256,6 +309,41 @@ func runPreflight(preflightURI string) error {
 	return kubernetesApplier.Preflight(preflightURI)
 }
 
+func (c *Client) applyInformers(informers []types.StatusInformer) error {
+	c.appStateMonitor.Apply(informers)
+	return nil
+}
+
+func (c *Client) sendAppStatus(appStatus types.AppStatus) error {
+	appStatusRequest := struct {
+		AppStatus types.AppStatus `json:"app_status"`
+	}{
+		AppStatus: appStatus,
+	}
+
+	b, err := json.Marshal(appStatusRequest)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal request")
+	}
+
+	uri := fmt.Sprintf("%s/api/v1/appstatus", c.APIEndpoint)
+
+	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
+	req.Header["Content-Type"] = []string{"application/json"}
+	req.SetBasicAuth("", c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("unexpected status code from kotsadm server: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
 	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
 	if err != nil {
@@ -291,22 +379,22 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
-	fmt.Println("dry run applying manifests(s)")
+	log.Println("dry run applying manifests(s)")
 	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, true)
 	if dryRunErr != nil {
-		fmt.Printf("stdout (dryrun) = %s\n", drrunStdout)
-		fmt.Printf("stderr (dryrun) = %s\n", dryrunStderr)
+		log.Printf("stdout (dryrun) = %s", drrunStdout)
+		log.Printf("stderr (dryrun) = %s", dryrunStderr)
 	}
 
 	var applyStdout []byte
 	var applyStderr []byte
 	var applyErr error
 	if dryRunErr == nil {
-		fmt.Println("applying manifest(s)")
+		log.Println("applying manifest(s)")
 		stdout, stderr, err := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, false)
 		if err != nil {
-			fmt.Printf("stdout (apply) = %s\n", stderr)
-			fmt.Printf("stderr (apply) = %s\n", stderr)
+			log.Printf("stdout (apply) = %s", stderr)
+			log.Printf("stderr (apply) = %s", stderr)
 		}
 
 		applyStdout = stdout

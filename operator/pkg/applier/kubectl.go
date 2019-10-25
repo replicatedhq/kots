@@ -3,6 +3,7 @@ package applier
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
@@ -54,7 +55,7 @@ func (c *Kubectl) connectArgs() []string {
 }
 
 func (c *Kubectl) SupportBundle(collectorURI string) error {
-	fmt.Printf("running kubectl supportBundle %s\n", collectorURI)
+	log.Printf("running kubectl supportBundle %s", collectorURI)
 	args := []string{
 		collectorURI,
 	}
@@ -86,7 +87,7 @@ func (c *Kubectl) SupportBundle(collectorURI string) error {
 	}()
 
 	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		fmt.Printf("error running kubectl support-bundle: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+		log.Printf("error running kubectl support-bundle: \n stderr %s\n stdout %s", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
 		return errors.Wrap(err, "failed to run kubectl support-bundle")
 	}
 
@@ -94,7 +95,7 @@ func (c *Kubectl) SupportBundle(collectorURI string) error {
 }
 
 func (c *Kubectl) Preflight(preflightURI string) error {
-	fmt.Printf("running kubectl preflight %s\n", preflightURI)
+	log.Printf("running kubectl preflight %s", preflightURI)
 	args := []string{
 		preflightURI,
 	}
@@ -126,7 +127,7 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 	}()
 
 	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		fmt.Printf("error running kubectl preflight: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+		log.Printf("error running kubectl preflight: \n stderr %s\n stdout %s", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
 		return errors.Wrap(err, "failed to run kubectl preflight")
 	}
 

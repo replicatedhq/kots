@@ -28,7 +28,11 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
-ADD . $PROJECTPATH
+ADD Makefile $PROJECTPATH/
+ADD go.mod $PROJECTPATH/
+ADD go.sum $PROJECTPATH/
+ADD cmd $PROJECTPATH/cmd
+ADD pkg $PROJECTPATH/pkg
 
 RUN make build
 ENTRYPOINT ["./bin/kotsadm-operator"]
