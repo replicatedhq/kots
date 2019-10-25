@@ -12,6 +12,8 @@ type Mutation {
   updateCluster(clusterId: String!, clusterName: String!, gitOpsRef: GitOpsRefInput): Cluster
   deleteCluster(clusterId: String!): Boolean
 
+  collectSupportBundle(appId: String, clusterId: String): Boolean
+
   createKotsDownstream(appId: String!, clusterId: String!): Boolean
   deleteKotsDownstream(slug: String!, clusterId: String!): Boolean
   deleteKotsApp(slug: String!): Boolean
