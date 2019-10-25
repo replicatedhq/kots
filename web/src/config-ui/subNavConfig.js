@@ -87,14 +87,6 @@ export default [
       return watch.isAirgap;
     }
   },
-  {
-    tabName: "cluster-management",
-    displayName: "Cluster Management",
-    to: () => `/cluster/manage`,
-    displayRule: (watch, isKurlEnabled) => {
-      return isKurlEnabled;
-    }
-  },
   // {
   //   tabName: "integrations",
   //   displayName: "Integrations",
