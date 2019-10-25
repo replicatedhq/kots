@@ -34,6 +34,7 @@ import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
+import { KotsLicenseStore } from "../klicenses";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
@@ -156,6 +157,7 @@ export class Server extends ServerLoader {
       helmChartStore: new HelmChartStore(pool),
       troubleshootStore: new TroubleshootStore(pool, params),
       licenseStore: new LicenseStore(pool, params),
+      kotsLicenseStore: new KotsLicenseStore(pool, params),
       githubInstall: new GithubInstallationsStore(pool),
       preflightStore: new PreflightStore(pool),
       kotsAppStore: new KotsAppStore(pool, params),

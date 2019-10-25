@@ -15,6 +15,7 @@ import { GithubInstallationQueries, GithubInstallationMutations } from "../githu
 import { HelmChartQueries, HelmChartMutations } from "../helmchart";
 import { TroubleshootQueries, TroubleshootMutations } from "../troubleshoot";
 import { LicenseQueries, LicenseMutations } from "../license";
+import { KotsLicenseQueries, KotsLicenseMutations } from "../klicenses";
 import { PrefightQueries } from "../preflight";
 import { AppsQueries } from "../apps";
 import { KotsQueries, KotsMutations } from "../kots_app";
@@ -35,7 +36,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     query = {
       ...query,
       ...KotsQueries(stores),
-      ...LicenseQueries(stores),
+      ...KotsLicenseQueries(stores),
       ...KurlQueries(stores, params),
     }
   }
@@ -52,6 +53,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
       ...EditQueries(stores),
       ...PendingQueries(stores),
       ...HelmChartQueries(stores),
+      ...LicenseQueries(stores),
     }
   }
 
@@ -65,7 +67,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
   if (params.enableKots) {
     mutation = {
       ...mutation,
-      ...LicenseMutations(stores),
+      ...KotsLicenseMutations(stores),
       ...KotsMutations(stores),
       ...KurlMutations(stores, params),
     };
@@ -82,6 +84,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
       ...UnforkMutations(stores),
       ...NotificationMutations(stores),
       ...InitMutations(stores),
+      ...LicenseMutations(stores),
     };
   }
   return {

@@ -56,7 +56,7 @@ export default [
     displayName: "License",
     to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/license`,
     displayRule: watch => {
-      return getApplicationType(watch) === "replicated.app";
+      return watch?.upstreamUri?.startsWith("replicated://") || getApplicationType(watch) === "replicated.app";
     }
   },
   {

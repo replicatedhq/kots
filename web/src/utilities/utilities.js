@@ -207,7 +207,7 @@ export function getLicenseExpiryDate(license) {
   if (!license) {
     return "";
   }
-  if (!license.expiresAt || license.expiresAt === "0001-01-01T00:00:00Z") {
+  if (!license.expiresAt || license.expiresAt === "" || license.expiresAt === "0001-01-01T00:00:00Z") {
     return "Never";
   }
   return Utilities.dateFormat(license.expiresAt, "MMM D, YYYY", false);

@@ -43,6 +43,8 @@ export const Query = `
     getWatchLicense(watchId: String!): License
     getLatestWatchLicense(licenseId: String!): License
 
+    getAppLicense(appId: String!): KLicense
+
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail
     getDownstreamHistory(slug: String!): [VersionDetail]

@@ -34,6 +34,8 @@ spec:
         type: text
       - name: kots_app_spec
         type: text
+      - name: kots_license
+        type: text
       - name: applied_at
         type: timestamp without time zone
       - name: status

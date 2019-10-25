@@ -15,6 +15,7 @@ import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { LicenseStore } from "../license";
+import { KotsLicenseStore } from "../klicenses";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
@@ -38,6 +39,7 @@ export interface Stores {
   helmChartStore: HelmChartStore,
   troubleshootStore: TroubleshootStore,
   licenseStore: LicenseStore,
+  kotsLicenseStore: KotsLicenseStore,
   githubInstall: GithubInstallationsStore,
   preflightStore: PreflightStore,
   kotsAppStore: KotsAppStore,
