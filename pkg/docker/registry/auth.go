@@ -8,9 +8,21 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/containers/image/pkg/docker/config"
+	"github.com/containers/image/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
 )
+
+func LoadAuthForRegistry(endpoint string) (string, string, error) {
+	sys := &types.SystemContext{}
+	username, password, err := config.GetAuthentication(sys, endpoint)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "error loading username and password")
+	}
+
+	return username, password, nil
+}
 
 func TestPushAccess(endpoint, username, password, org string) error {
 

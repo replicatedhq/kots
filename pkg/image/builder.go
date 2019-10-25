@@ -128,6 +128,39 @@ func GetPrivateImages(upstreamDir string) ([]string, []*k8sdoc.Doc, error) {
 	return result, objects, nil
 }
 
+func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
+	objects := make([]*k8sdoc.Doc, 0)
+
+	err := filepath.Walk(upstreamDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
+				if len(images) > 0 {
+					objects = append(objects, doc)
+				}
+				return nil
+			})
+		})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	return objects, nil
+}
+
 func saveImagesFromFile(log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {

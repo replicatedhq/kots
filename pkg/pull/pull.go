@@ -13,6 +13,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -173,7 +174,36 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				return "", errors.Wrap(err, "failed to push upstream images")
 			}
 
+			findObjectsOptions := upstream.FindObjectsWithImagesOptions{
+				RootDir:      pullOptions.RootDir,
+				CreateAppDir: pullOptions.CreateAppDir,
+				Log:          log,
+			}
+			affectedObjects, err := u.FindObjectsWithImages(findObjectsOptions)
+			if err != nil {
+				return "", errors.Wrap(err, "failed to find objects with images")
+			}
+
+			registryUser := pullOptions.RewriteImageOptions.Username
+			registryPass := pullOptions.RewriteImageOptions.Password
+			if registryUser == "" {
+				registryUser, registryPass, err = registry.LoadAuthForRegistry(pullOptions.RewriteImageOptions.Host)
+				if err != nil {
+					return "", errors.Wrapf(err, "failed to load registry auth for %q", pullOptions.RewriteImageOptions.Host)
+				}
+			}
+
+			pullSecret, err = pullSecretForRegistries(
+				[]string{pullOptions.RewriteImageOptions.Host},
+				registryUser,
+				registryPass,
+				pullOptions.Namespace,
+			)
+			if err != nil {
+				return "", errors.Wrap(err, "create pull secret")
+			}
 			images = rewrittenImages
+			objects = affectedObjects
 		}
 	} else if fetchOptions.License != nil {
 		// Rewrite private images
@@ -194,7 +224,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// Note that there maybe no rewritten images if only replicated private images are being used.
 		// We still need to create the secret in that case.
 		if len(affectedObjects) > 0 {
-			pullSecret, err = pullSecretFromToken(registryInfo, fetchOptions.License.Spec.LicenseID, pullOptions.Namespace)
+			pullSecret, err = pullSecretForRegistries(
+				registryInfo.ToSlice(),
+				fetchOptions.License.Spec.LicenseID,
+				fetchOptions.License.Spec.LicenseID,
+				pullOptions.Namespace,
+			)
 			if err != nil {
 				return "", errors.Wrap(err, "create pull secret")
 			}
@@ -293,6 +328,13 @@ type registryInfo struct {
 	Proxy    string
 }
 
+func (r *registryInfo) ToSlice() []string {
+	return []string{
+		r.Proxy,
+		r.Registry,
+	}
+}
+
 func registryProxyEndpointFromLicense(license *kotsv1beta1.License) *registryInfo {
 	defaultInfo := &registryInfo{
 		Registry: "registry.replicated.com",
@@ -333,24 +375,21 @@ func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) 
 	return filepath.Join(pullOptions.RootDir, "images")
 }
 
-func pullSecretFromToken(registries *registryInfo, token string, namespace string) (*corev1.Secret, error) {
+func pullSecretForRegistries(registries []string, username, password string, namespace string) (*corev1.Secret, error) {
 	dockercfgAuth := struct {
-		Username string `json:"username,omitempty"`
-		Password string `json:"password,omitempty"`
-		Auth     string `json:"auth,omitempty"`
+		Auth string `json:"auth,omitempty"`
 	}{
-		Username: token,
-		Password: token,
-		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", token, token))),
+		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
 
 	dockerCfgJSON := struct {
 		Auths map[string]interface{} `json:"auths"`
 	}{
-		Auths: map[string]interface{}{
-			registries.Proxy:    dockercfgAuth,
-			registries.Registry: dockercfgAuth,
-		},
+		Auths: map[string]interface{}{},
+	}
+
+	for _, r := range registries {
+		dockerCfgJSON.Auths[r] = dockercfgAuth
 	}
 
 	secretData, err := json.Marshal(dockerCfgJSON)

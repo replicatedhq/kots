@@ -590,6 +590,27 @@ func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustom
 	return result, objects, nil
 }
 
+type FindObjectsWithImagesOptions struct {
+	RootDir      string
+	CreateAppDir bool
+	Log          *logger.Logger
+}
+
+func (u *Upstream) FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
+	rootDir := options.RootDir
+	if options.CreateAppDir {
+		rootDir = path.Join(rootDir, u.Name)
+	}
+	upstreamDir := path.Join(rootDir, "upstream")
+
+	objects, err := image.GetObjectsWithImages(upstreamDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list upstream images")
+	}
+
+	return objects, nil
+}
+
 func rewritePrivateImageURL(proxyHost string, appSlug string, image string) string {
 	parts := strings.Split(image, ":")
 	return strings.Join([]string{proxyHost, "proxy", appSlug, parts[0]}, "/")
