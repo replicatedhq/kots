@@ -273,7 +273,7 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />
+                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} isKurlEnabled={this.state.isKurlEnabled} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
@@ -325,7 +325,6 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
-                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }
@@ -379,7 +378,6 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
-                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }
