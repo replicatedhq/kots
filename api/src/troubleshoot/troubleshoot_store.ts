@@ -188,6 +188,13 @@ spec:
     return supportBundle;
   }
 
+  public async clearPendingSupportBundle(id: string): Promise<void> {
+    const q = `delete from pending_supportbundle where id = $1`;
+    const v = [id];
+
+    await this.pool.query(q, v);
+  }
+
   public async listPendingSupportBundlesForCluster(clusterId: string): Promise<any[]> {
     const q = `select id, app_id, cluster_id from pending_supportbundle where cluster_id = $1`;
     const v = [clusterId];

@@ -111,9 +111,15 @@ func (c *Client) connect() error {
 
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
 		fmt.Printf("received a support bundle request\n")
-		if err := runSupportBundle(args.URI); err != nil {
-			fmt.Printf("error running support bundle: %s\n", err.Error())
-		}
+		go func() {
+			// This is in a goroutine because if we disconnect and reconnect to the
+			// websocket, we will want to report that it's completed...
+			err := runSupportBundle(args.URI)
+			fmt.Printf("support bundle run completed with err = %#v\n", err)
+			if err != nil {
+				fmt.Printf("error running support bundle: %s\n", err.Error())
+			}
+		}()
 	})
 	if err != nil {
 		return errors.Wrap(err, "error in support bundle handler")
@@ -126,7 +132,8 @@ func (c *Client) connect() error {
 		return errors.Wrap(err, "error in connected handler")
 	}
 
-	err = socketClient.On(socket.OnDisconnection, func(h *socket.Channel) {
+	err = socketClient.On(socket.OnDisconnection, func(h *socket.Channel, args interface{}) {
+		fmt.Printf("disconnected %#v\n", args)
 		isUnexpectedlyDisconnected = true
 	})
 	if err != nil {
@@ -136,15 +143,17 @@ func (c *Client) connect() error {
 	// wait for a connection for at least 2 seconds
 	time.Sleep(time.Second * 2)
 	if !hasConnected {
+		fmt.Printf("expected to be connected to the api by now, but it's not true. disappointing...  (will retry)\n")
 		return nil // allow another attempt
 	}
 
 	for {
 		if isUnexpectedlyDisconnected {
+			fmt.Printf("unexpectedly disconnected from api (will reconnect)\n")
 			return nil
 		}
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second)
 	}
 }
 

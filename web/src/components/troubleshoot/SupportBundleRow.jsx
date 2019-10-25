@@ -78,13 +78,13 @@ class SupportBundleRow extends React.Component {
                   {!this.props.isCustomer && bundle.customer ?
                     <div className="flex-column flex1 flex-verticalCenter">
                       <span className="u-fontSize--large u-color--tuna u-fontWeight--medium u-cursor--pointer">
-                        <span>Uploaded on <span className="u-fontWeight--bold">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
+                        <span>Collected on <span className="u-fontWeight--bold">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
                       </span>
                     </div>
                     :
                     <div className="flex-column flex1 flex-verticalCenter">
                       <span>
-                        <span className="u-fontSize--large u-cursor--pointer u-color--tuna u-fontWeight--medium">Uploaded on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
+                        <span className="u-fontSize--large u-cursor--pointer u-color--tuna u-fontWeight--medium">Collected on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
                         {this.renderSharedContext()}
                       </span>
                     </div>

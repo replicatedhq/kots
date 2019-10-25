@@ -11,7 +11,6 @@ interface ClusterSocketHistory {
   clusterId: string;
   socketId: string;
   sentPreflightUrls: string[];
-  sentPendingSupportBundles: string[];
   sentDeploySequences: string[];
 }
 
@@ -37,10 +36,8 @@ export class KotsDeploySocketService {
             this.troubleshootStore = new TroubleshootStore(pool, params);
             this.clusterSocketHistory = [];
 
-            setInterval(() => {
-              Promise.all([this.preflightLoop]), 1000});
-            setInterval(() => {
-              Promise.all([this.supportBundleLoop]), 1000});
+            setInterval(this.preflightLoop.bind(this), 1000);
+            setInterval(this.supportBundleLoop.bind(this), 1000);
           })
       });
   }
@@ -64,7 +61,6 @@ export class KotsDeploySocketService {
       socketId: socket.id,
       sentPreflightUrls: [],
       sentDeploySequences: [],
-      sentPendingSupportBundles: [],
     });
   }
 
@@ -86,11 +82,9 @@ export class KotsDeploySocketService {
     for (const clusterSocketHistory of this.clusterSocketHistory) {
       const pendingSupportBundles = await this.troubleshootStore.listPendingSupportBundlesForCluster(clusterSocketHistory.clusterId);
       for (const pendingSupportBundle of pendingSupportBundles) {
-        if (clusterSocketHistory.sentPendingSupportBundles.indexOf(pendingSupportBundle.id) === -1) {
-          const app = await this.kotsAppStore.getApp(pendingSupportBundle.appId);
-          this.io.in(clusterSocketHistory.clusterId).emit("supportbundle", {uri: `${this.params.shipApiEndpoint}/api/v1/troubleshoot/${app.slug}?incluster=true`});
-          clusterSocketHistory.sentPendingSupportBundles.push(pendingSupportBundle.id);
-        }
+        const app = await this.kotsAppStore.getApp(pendingSupportBundle.appId);
+        this.io.in(clusterSocketHistory.clusterId).emit("supportbundle", {uri: `${this.params.shipApiEndpoint}/api/v1/troubleshoot/${app.slug}?incluster=true`});
+        await this.troubleshootStore.clearPendingSupportBundle(pendingSupportBundle.id);
       }
     }
   }
