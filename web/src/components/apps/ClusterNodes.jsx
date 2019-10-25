@@ -32,7 +32,7 @@ export class ClusterNodes extends React.Component {
 
     if (loading) {
       return (
-        <div className="container flex-column flex1 u-overflow--auto">
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       )
