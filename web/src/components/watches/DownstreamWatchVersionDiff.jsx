@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { Fragment } from "react";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import sortBy from "lodash/sortBy";
@@ -191,7 +191,13 @@ class DownstreamWatchVersionDiff extends React.Component {
     this.fetchFiles(newPaths, sequence, first);
   }
 
+  goBack = () => {
+    const { history, watch } = this.props;
+    history.push(`/app/${watch.slug}/version-history`);
+  }
+
   render() {
+
     const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state;
 
     if (fileLoading || size(firstSeqFileContents) === 0 || size(secondSeqFileContents) === 0) {
@@ -208,30 +214,38 @@ class DownstreamWatchVersionDiff extends React.Component {
     const filesByKey = groupBy(flatMap(changedFiles), "key");
 
     return (
-      <div className="u-padding--20 u-overflow--auto u-position--relative u-minHeight--full u-width--full">
-        {size(filesByKey) > 0 ?
-          map(filesByKey, (value, key) => {
-            const first = value.find(val => val.sequence === "first");
-            const second = value.find(val => val.sequence === "second");
-            return (
-              <div className="flex u-height--half" key={key}>
-                <DiffEditor
-                  original={first}
-                  value={second}
-                  specKey={key}
-                />
+      <Fragment>
+        <p className="u-color--astral u-paddingLeft--20 u-marginTop--10 u-cursor--pointer" onClick={this.goBack}>Go Back</p>
+        <div className="u-padding--20 u-position--relative u-minHeight--full u-width--full">
+          {size(filesByKey) > 0 ?
+            map(filesByKey, (value, key) => {
+              const first = value.find(val => val.sequence === "first");
+              const second = value.find(val => val.sequence === "second");
+              return (
+                <div className="flex-column u-height--half" key={key}>
+                  <DiffEditor
+                    original={first}
+                    value={second}
+                    specKey={key}
+                    options={{
+                      contextMenu: false,
+                      readOnly: true
+                    }}
+                  />
+                </div>
+              );
+            })
+            :
+            <div className="flex flex-auto alignItems--center justifyContent--center">
+              <div className="EmptyWrapper u-width--half u-textAlign--center">
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
+                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
               </div>
-            );
-          })
-          :
-          <div className="flex flex-auto alignItems--center justifyContent--center">
-          <div className="EmptyWrapper u-width--half u-textAlign--center"> 
-            <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
-          </div>
-          </div>
-        }
-      </div>
+            </div>
+          }
+        </div>
+      </Fragment>
+
     );
   }
 }

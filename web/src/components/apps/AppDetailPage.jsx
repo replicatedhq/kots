@@ -284,7 +284,7 @@ class AppDetailPage extends Component {
               })}
             />
           )}>
-          <div className="flex-column flex1 u-width--full u-height--full">
+          <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
             {loading
               ? centeredLoader
               : (
@@ -342,10 +342,10 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/version-history/diff/:firstSequence/:secondSequence" render={() => 
-                      <DownstreamWatchVersionDiff 
+                    <Route exact path="/app/:slug/version-history/diff/:firstSequence/:secondSequence" render={() =>
+                      <DownstreamWatchVersionDiff
                         watch={app}
-                      /> 
+                      />
                       }
                     />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
