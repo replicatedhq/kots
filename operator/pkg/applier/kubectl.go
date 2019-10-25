@@ -53,6 +53,46 @@ func (c *Kubectl) connectArgs() []string {
 	return args
 }
 
+func (c *Kubectl) SupportBundle(collectorURI string) error {
+	fmt.Printf("running kubectl supportBundle %s\n", collectorURI)
+	args := []string{
+		collectorURI,
+	}
+
+	cmd := c.supportBundleCommand(args...)
+	cmd.Env = os.Environ()
+	stdoutCh := make(chan []byte)
+	stderrCh := make(chan []byte)
+	stopCh := make(chan bool)
+
+	stdout := [][]byte{}
+	stderr := [][]byte{}
+
+	defer func() {
+		stopCh <- true
+	}()
+
+	go func() {
+		for {
+			select {
+			case o := <-stdoutCh:
+				stdout = append(stdout, o)
+			case e := <-stderrCh:
+				stderr = append(stderr, e)
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+
+	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
+		fmt.Printf("error running kubectl support-bundle: \n stderr %s\n stdout %s\n", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+		return errors.Wrap(err, "failed to run kubectl support-bundle")
+	}
+
+	return nil
+}
+
 func (c *Kubectl) Preflight(preflightURI string) error {
 	fmt.Printf("running kubectl preflight %s\n", preflightURI)
 	args := []string{
@@ -155,6 +195,17 @@ func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) ([]byte, 
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {
 	return exec.Command(c.kubectl, append(args, c.connectArgs()...)...)
+}
+
+func (c *Kubectl) supportBundleCommand(args ...string) *exec.Cmd {
+	if c.supportBundle != "" {
+		allArgs := append(args, c.connectArgs()...)
+		return exec.Command(c.supportBundle, allArgs...)
+	}
+
+	allArgs := append([]string{"support-bundle"}, args...)
+	allArgs = append(allArgs, c.connectArgs()...)
+	return exec.Command(c.kubectl, allArgs...)
 }
 
 func (c *Kubectl) preflightCommand(args ...string) *exec.Cmd {

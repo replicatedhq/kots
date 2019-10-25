@@ -50,3 +50,4 @@ resources:
 - ./app_downstream_version.yaml
 - ./airgap_upload_status.yaml
 - ./app_downstream_output.yaml
+- ./pending_support_bundle.yaml

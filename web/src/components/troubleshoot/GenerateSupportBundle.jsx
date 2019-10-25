@@ -6,10 +6,12 @@ import { compose, withApollo, graphql } from "react-apollo";
 import Select from "react-select";
 import Modal from "react-modal";
 
+import Loader from "../shared/Loader";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
+import { collectSupportBundle } from "../../mutations/TroubleshootMutations";
 import { isKotsApplication } from "../../utilities/utilities";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
@@ -26,7 +28,9 @@ class GenerateSupportBundle extends React.Component {
       selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
       addNewClusterModal: false,
       displayUploadModal: false,
-      totalBundles: null
+      totalBundles: null,
+      showRunCommand: false,
+      isGeneratingBundle: false,
     };
   }
 
@@ -105,6 +109,13 @@ class GenerateSupportBundle extends React.Component {
     }
   }
 
+  toggleShowRun = (ev) => {
+    ev.preventDefault();
+    this.setState({
+      showRunCommand: !this.state.showRunCommand,
+    });
+  }
+
   getLabel = ({ shipOpsRef, gitOpsRef, title }) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
@@ -135,6 +146,32 @@ class GenerateSupportBundle extends React.Component {
     this.props.history.push("/cluster/create");
   }
 
+  collectBundle = (clusterId) => {
+    const { watch } = this.props;
+    this.setState({
+      isGeneratingBundle: true,
+    });
+
+    const currentBundles = this.props.listSupportBundles?.listSupportBundles?.map(bundle => {
+      bundle.id
+    });
+
+    this.props.collectSupportBundle(watch.id, clusterId)
+
+    setTimeout(() => {
+      this.redirectOnNewBundle(currentBundles);
+    }, 1000);
+  }
+
+  redirectOnNewBundle(currentBundles) {
+    if (this.props.listSupportBundles?.listSupportBundles?.length === currentBundles.length) {
+      setTimeout(() => {
+        this.redirectOnNewBundle(currentBundles);
+      }, 1000);
+      return;
+    }
+  }
+
   toggleModal = () => {
     this.setState({
       displayUploadModal: !this.state.displayUploadModal
@@ -142,7 +179,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { clusters, selectedCluster, addNewClusterModal, displayUploadModal } = this.state;
+    const { clusters, selectedCluster, addNewClusterModal, displayUploadModal, showRunCommand, isGeneratingBundle } = this.state;
     const { watch } = this.props;
     const watchClusters = watch.watches || watch.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
@@ -158,43 +195,70 @@ class GenerateSupportBundle extends React.Component {
            }
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {appTitle} for support</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">If you’re having issues with {appTitle}, you can analyze the current state to receive insights that are useful to remediate or to share with the application vendor for support.</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">
+              To diagnose any problems with the application, click the button below to get started. This will
+              collect logs, resources and other data from the running application and analyze them against a set of known
+              problems in {appTitle}. Logs, cluster info and other data will not leave your cluster.
+            </p>
           </div>
           {watchClusters.length ?
             <div className="flex1 flex-column u-paddingRight--30">
-              <div className="u-marginTop--40">
-                <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Which cluster do you need support with?</h2>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">Select the cluster that you are having problems with.</p>
-                <div className="u-position--relative">
-                  <div className="SelectCluster--wrapper">
-                    <div className="SelectCluster-menu">
-                      <Select
-                        className="replicated-select-container u-marginTop--10"
-                        classNamePrefix="replicated-select"
-                        placeholder="Select a cluster"
-                        options={clusters}
-                        getOptionLabel={this.getLabel}
-                        getOptionValue={(cluster) => cluster.title}
-                        value={selectedCluster}
-                        onChange={this.handleClusterChange}
-                        isOptionSelected={(option) => { option.value === selectedCluster }}
-                      />
+              <div>
+                {watchClusters.length > 1 ?
+                  <div>
+                    <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Which cluster do you need support with?</h2>
+                    <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">Select the cluster that you are having problems with.</p>
+                    <div className="u-position--relative">
+                      <div className="SelectCluster--wrapper">
+                        <div className="SelectCluster-menu">
+                          <Select
+                            className="replicated-select-container u-marginTop--10"
+                            classNamePrefix="replicated-select"
+                            placeholder="Select a cluster"
+                            options={clusters}
+                            getOptionLabel={this.getLabel}
+                            getOptionValue={(cluster) => cluster.title}
+                            value={selectedCluster}
+                            onChange={this.handleClusterChange}
+                            isOptionSelected={(option) => { option.value === selectedCluster }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="u-marginTop--40">
-                  <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
-                  <CodeSnippet
-                    language="bash"
-                    canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-                  >
-                    {selectedWatch?.bundleCommand?.split("\n") || watch.bundleCommand?.split("\n")}
-                  </CodeSnippet>
-                </div>
-                <div className="u-marginTop--15">
-                  <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
-                </div>
+                : null }
+                {isGeneratingBundle ?
+                  <div className="flex1 flex-column justifyContent--center alignItems--center">
+                    <Loader size="60" color="#44bb66" />
+                  </div>
+                :
+                  <div>
+                    <button className="btn primary u-marginTop--20" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle} </button>
+                  </div>
+                }
+                {showRunCommand ?
+                  <div>
+                    <div className="u-marginTop--40">
+                      <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                      <CodeSnippet
+                        language="bash"
+                        canCopy={true}
+                        onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                      >
+                        {selectedWatch?.bundleCommand?.split("\n") || watch.bundleCommand?.split("\n")}
+                      </CodeSnippet>
+                    </div>
+                    <div className="u-marginTop--15">
+                      <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
+                    </div>
+                  </div>
+                :
+                  <div>
+                    <div className="u-marginTop--40">
+                      If you'd prefer, <a href="#" className="replicated-link" onClick={this.toggleShowRun}>click here</a> to get a command to manually generate a support bundle.
+                    </div>
+                  </div>
+                }
               </div>
             </div>
             :
@@ -279,5 +343,10 @@ export default withRouter(compose(
         fetchPolicy: "no-cache",
       }
     }
+  }),
+  graphql(collectSupportBundle, {
+    props: ({ mutate }) => ({
+      collectSupportBundle: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
+    })
   }),
 )(GenerateSupportBundle));
