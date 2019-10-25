@@ -527,13 +527,14 @@ export class KotsAppStore {
       await this.pool.query(q, v);
 
     const qq = `UPDATE app_downstream_version
-        SET status = 'deployed'
+        SET status = 'deployed', applied_at = $4
       WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
 
     const vv = [
       sequence,
       appId,
       clusterId,
+      new Date()
     ];
 
     await this.pool.query(qq, vv);

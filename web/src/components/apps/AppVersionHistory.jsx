@@ -172,7 +172,7 @@ class AppVersionHistory extends Component {
           </span>
           : app.hasPreflight && version.status === "pending" &&
             <Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`}>
-              <span className="link" style={{ fontSize: 12 }}>Preflight Results</span>
+              <span className="link" style={{ fontSize: 12 }}>Preflight results</span>
             </Link>
         }
         {version.status === "failed" && 
@@ -530,7 +530,7 @@ class AppVersionHistory extends Component {
                         <td>{currentDownstreamVersion.title}</td>
                         <td width="11%">{this.renderVersionSequence(currentDownstreamVersion)}</td>
                         <td width="17%">{currentDownstreamVersion.source}</td>
-                        <td>{currentDownstreamVersion.deployedAt ? moment(currentDownstreamVersion.createdOn).format("MM/DD/YY hh:mm a") : ""}</td>
+                        <td>{currentDownstreamVersion.deployedAt ? moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY hh:mm a") : ""}</td>
                         <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
                         <td><Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link></td>
                       </tr>
@@ -583,7 +583,7 @@ class AppVersionHistory extends Component {
                           <td>{version.title}</td>
                           <td width="11%">{this.renderVersionSequence(version)}</td>
                           <td width="17%">{this.renderSourceAndDiff(version)}</td>
-                          <td>{version.deployedAt ? moment(version.createdOn).format("MM/DD/YY hh:mm a") : ""}</td>
+                          <td>{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY hh:mm a") : ""}</td>
                           <td>{this.renderVersionStatus(version)}</td>
                           <td>{this.renderVersionAction(version)}</td>
                         </tr>
