@@ -88,7 +88,8 @@ func (m *Monitor) run(ctx context.Context) {
 func (m *Monitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
 	informers = normalizeStatusInformers(informers, m.defaultNamespace)
 
-	// TODO: multi app support?
+	log.Printf("Running informers: %#v", informers)
+
 	appStatus := buildAppStatusFromStatusInformers(informers)
 	var didSendOnce bool
 

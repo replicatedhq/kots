@@ -117,7 +117,7 @@ func (c *Client) connect() error {
 	defer socketClient.Close()
 
 	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
-	if targetNamespace != "" {
+	if targetNamespace == "" {
 		targetNamespace = corev1.NamespaceDefault
 	}
 
