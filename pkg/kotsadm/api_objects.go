@@ -141,7 +141,7 @@ func apiDeployment(namespace string) *appsv1.Deployment {
 								},
 								{
 									Name:  "AUTO_CREATE_CLUSTER_NAME",
-									Value: "local",
+									Value: "This Cluster",
 								},
 								{
 									Name:  "AUTO_CREATE_CLUSTER_TOKEN",
