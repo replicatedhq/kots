@@ -46,32 +46,24 @@ class SecureAdminConsole extends React.Component {
   }
 
   loginToConsole = async () => {
-    const { password } = this.state;
-    if (this.validatePassword()) {
-      this.setState({ authLoading: true });
-      try {
+
+    try {
+      const { password } = this.state;
+      if (this.validatePassword()) {
+        this.setState({ authLoading: true });
         const res = await this.props.loginToAdminConsole(password);
         this.completeLogin(res.data);
-      } catch (error) {
-        error.graphQLErrors.map(({ message }) => {
-          let json;
-
-          try {
-            json = JSON.parse(message);
-            this.setState({
-              authLoading: false,
-              passwordErr: true,
-              passwordErrMessage: json.replicatedMessage || "There was an error logging in. Please try again",
-            });
-          } catch (error) {
-            this.setState({
-              authLoading: false,
-              passwordErr: true,
-              passwordErrMessage: message,
-            });
-          }
-        });
       }
+    } catch (error) {
+      const errorStack = error.graphQLErrors.map(({ msg }) => msg);
+
+      this.setState({
+        authLoading: false,
+        passwordErr: true,
+        passwordErrMessage: errorStack.length > 0
+          ? errorStack.join("\n")
+          : "There was an error logging in. Please try again"
+      });
     }
   }
 
