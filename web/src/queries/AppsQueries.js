@@ -399,6 +399,7 @@ export const getKotsAppRaw = `
           deployedAt
           source
           releaseNotes
+          parentSequence
         }
         pendingVersions {
           title
@@ -406,6 +407,7 @@ export const getKotsAppRaw = `
           createdOn
           sequence
           deployedAt
+          parentSequence
         }
         pastVersions {
           title
@@ -413,6 +415,7 @@ export const getKotsAppRaw = `
           createdOn
           sequence
           deployedAt
+          parentSequence
         }
         cluster {
           id

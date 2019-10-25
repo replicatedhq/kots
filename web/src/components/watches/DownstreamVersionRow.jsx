@@ -10,12 +10,8 @@ import "../../scss/components/watches/DownstreamVersionRow.scss";
 
 export default class DownstreamVersionRow extends React.Component {
 
-  handleCheckbox(isChecked, isActive) {
-    this.props.handleSelectReleasesToDiff(this.props.version.parentSequence, isChecked, isActive)
-  }
-
   render() {
-    const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight, isDeploying, onReleaseNotesClick, selectedDiffReleases, isChecked, isActive} = this.props;
+    const { version, downstreamWatch, isKots, urlParams, handleMakeCurrent, hasPreflight, isDeploying, onReleaseNotesClick } = this.props;
 
     if (!version) { return null; }
     const gitRef = downstreamWatch?.cluster?.gitOpsRef;
@@ -47,19 +43,6 @@ export default class DownstreamVersionRow extends React.Component {
     return (
       <div className="ReleaseRow-wrapper flex u-paddingTop--20 u-paddingBottom--20 u-borderBottom--gray">
         <div className="ReleaseRow-content flex flex1 u-paddingLeft--10">
-        {selectedDiffReleases ?
-          <div onClick={() => { this.handleCheckbox(!isChecked, isActive) }} className={`overlay ${isChecked ? "selected" : ""}`}></div>
-          :
-          null
-        }
-        {selectedDiffReleases ?
-          <div style={{ maxWidth: "20px" }} className="flex flex1 content-section u-overflow--hidden">
-            <div className="flex-column flex1 u-overflow--hidden justifyContent--center">
-              <div className={`checkbox ${isChecked ? "checked" : ""}`}></div>
-            </div>
-          </div>
-          : null
-        }
         <div className="flex-column">
           <div className="flex alignItems--center u-fontSize--larger u-color--tuna u-fontWeight--bold">
             Version {version.title}
