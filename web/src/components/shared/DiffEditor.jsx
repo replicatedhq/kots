@@ -7,7 +7,7 @@ export default class DiffEditor extends React.Component {
   state = {
     addedLines: 0,
     removedLines: 0,
-    changedLines: 0
+    changes: 0
   }
 
   onEditorValuesLoaded = () => {
@@ -18,17 +18,17 @@ export default class DiffEditor extends React.Component {
   }
 
   render() {
-    const { addedLines, removedLines, changedLines } = this.state;
+    const { addedLines, removedLines, changes } = this.state;
     const { original, value, specKey } = this.props;
 
     return (
       <div className="flex flex1 flex-column">
         <div className="flex alignItems--center">
-          {addedLines || removedLines || changedLines ?
+          {addedLines || removedLines || changes ?
             <div className="flex u-marginRight--10">
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--vidaLoca u-marginRight--5"> {addedLines >= 0 ? `+${addedLines} additions` : `+${addedLines} addition`}</span>
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chestnut u-marginRight--5"> {removedLines >= 0 ? `-${removedLines} subtractions` : `-${removedLines} subtraction`}</span>
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--doveGray"> {changedLines > 1 ? `${changedLines} lines changed` : `${changedLines} line changed`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--vidaLoca u-marginRight--5"> {`+${addedLines} ${addedLines >= 0 ? "additions" : "addition"}`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chestnut u-marginRight--5"> {`-${removedLines} ${removedLines >= 0 ? "subtractions" : "subtraction"}`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--doveGray"> {`${changes} ${changes > 1 ? "changes" : "change"}`}</span>
             </div>
             : null}
           {specKey}

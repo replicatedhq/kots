@@ -144,17 +144,21 @@ class DownstreamWatchVersionDiff extends React.Component {
       })
   }
 
-  allFilesForSequence = (files, sequence, first) => {
-    let paths=[];
-    files.map((file => {
-      if (file.children) {
-        file.children.map((chFile => {
-          paths.push(chFile.path);
-        }))
+  getPaths = (files) => {
+    let paths = [];
+    files.map(file => {
+      if (file.children.length) {
+        const subPaths = this.getPaths(file.children);
+        paths = paths.concat(subPaths);
       } else {
         paths.push(file.path);
       }
-    }))
+    });
+    return paths;
+  }
+
+  allFilesForSequence = (files, sequence, first) => {
+    const paths = this.getPaths(files);
     this.getFilesForPathAndSequence(paths, sequence, first);
   }
 

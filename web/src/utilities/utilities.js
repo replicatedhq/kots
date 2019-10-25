@@ -237,23 +237,38 @@ export function getFileFormat(selectedFile) {
 export function getLineChanges(lineChangesArr) {
   let addedLines = 0;
   let removedLines = 0;
-  let changedLines = 0;
   lineChangesArr.forEach(lineChange => {
-    if (lineChange.originalEndLineNumber === lineChange.modifiedEndLineNumber && lineChange.originalStartLineNumber === lineChange.modifiedStartLineNumber && lineChange.originalEndLineNumber) {
-      changedLines += 1;
-    }
-    if (lineChange.modifiedEndLineNumber > lineChange.modifiedStartLineNumber || lineChange.originalEndLineNumber === 0) {
-      addedLines += (lineChange.modifiedEndLineNumber - lineChange.modifiedStartLineNumber) + 1;
-    }
-    if (lineChange.originalEndLineNumber > lineChange.originalStartLineNumber || lineChange.modifiedEndLineNumber === 0) {
-      removedLines += (lineChange.originalEndLineNumber - lineChange.originalStartLineNumber) + 1;
-    }
-  })
+    const { 
+      originalStartLineNumber, 
+      originalEndLineNumber, 
+      modifiedStartLineNumber, 
+      modifiedEndLineNumber 
+    } = lineChange;
 
+    if (originalEndLineNumber === originalStartLineNumber && 
+        modifiedEndLineNumber === modifiedStartLineNumber && 
+        originalEndLineNumber && modifiedEndLineNumber) {
+      addedLines++;
+      removedLines++;
+    } else {
+      if (modifiedEndLineNumber > modifiedStartLineNumber || originalEndLineNumber === 0) {
+        addedLines += (modifiedEndLineNumber - modifiedStartLineNumber) + 1;
+        if (originalEndLineNumber === originalStartLineNumber) {
+          removedLines++;
+        }
+      }
+      if (originalEndLineNumber > originalStartLineNumber || modifiedEndLineNumber === 0) {
+        removedLines += (originalEndLineNumber - originalStartLineNumber) + 1;
+        if (modifiedEndLineNumber === modifiedStartLineNumber) {
+          addedLines++;
+        }
+      }
+    }
+  });
   return {
     addedLines: addedLines,
     removedLines: removedLines,
-    changedLines: changedLines + removedLines + addedLines
+    changes: addedLines + removedLines
   }
 }
 
