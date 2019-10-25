@@ -17,6 +17,7 @@ export async function injectKotsCollectors(parsedSpec: any): Promise<any> {
       selector: [`app=${pgConfig.host}`],
       containerName: pgConfig.host,
       namespace: process.env["POD_NAMESPACE"],
+      name: "admin_console",
       command: ["pg_dump"],
       args: ["-U", pgConfig.user],
       timeout: "10s",
