@@ -52,13 +52,13 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToClusters = () => {
-    if (this.props.location.pathname === "/clusters") {
+    if (this.props.location.pathname === "/gitops") {
       this.props.client.query({
         query: listClusters,
         fetchPolicy: "network-only",
       });
     } else {
-      this.props.history.push("/clusters");
+      this.props.history.push("/gitops");
     }
   }
 
@@ -113,7 +113,7 @@ export class NavBar extends PureComponent {
                     <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Clusters</span>
+                          <span>GitOps</span>
                         </span>
                       </span>
                     </div>
