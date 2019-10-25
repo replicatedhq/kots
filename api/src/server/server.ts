@@ -40,6 +40,7 @@ import { KotsAppStore } from "../kots_app/kots_app_store";
 import tmp from "tmp";
 import fs from "fs";
 import { KurlStore } from "../kurl/kurl_store";
+import { ReplicatedError } from "./errors";
 
 let mount = {};
 let componentsScan = [
@@ -205,14 +206,15 @@ export class Server extends ServerLoader {
         schema: shipClusterSchema.getSchema(stores, params),
         context: res.locals.context,
         cacheControl: true,
-        // formatError: (error: any) => {
-        //   return {
-        //     state: error.originalError && error.originalError.state,
-        //     locations: error.locations,
-        //     path: error.path,
-        //     ...ReplicatedError.getDetails(error),
-        //   };
-        // },
+        formatError: (error: any) => {
+          logger.error({msg: error.message, error, "stack": error.stack});
+          return {
+            state: error.originalError && error.originalError.state,
+            locations: error.locations,
+            path: error.path,
+            ...ReplicatedError.getDetails(error),
+          };
+        },
       };
     }));
 
