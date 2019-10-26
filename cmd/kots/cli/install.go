@@ -69,7 +69,7 @@ func InstallCmd() *cobra.Command {
 				RootDir:     rootDir,
 				Namespace:   namespace,
 				Downstreams: []string{
-					"This Cluster", // this is the auto-generated operator downstream
+					"this-cluster", // this is the auto-generated operator downstream
 				},
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
