@@ -10,6 +10,7 @@ const KLicense = `
 type KLicense {
   id: String
   expiresAt: String
+  channelName: String
   entitlements: [KEntitlement]
 }`;
 

@@ -64,6 +64,12 @@ class AppLicense extends Component {
               <p className="u-marginRight--10">Expires:</p>
               <p className="u-fontWeight--bold u-color--tuna">{expiresAt}</p>
             </div>
+            {appLicense.channelName && 
+              <div className="flex u-marginBottom--20">
+                <p className="u-marginRight--10">Channel:</p>
+                <p className="u-fontWeight--bold u-color--tuna">{appLicense.channelName}</p>
+              </div>
+            }
             {appLicense.entitlements?.map(entitlement => {
               return (
                 <div key={entitlement.label} className="flex u-marginBottom--20">

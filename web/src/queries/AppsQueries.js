@@ -612,6 +612,7 @@ export const getAppLicense = gql`
     getAppLicense(appId: $appId) {
       id
       expiresAt
+      channelName
       entitlements {
         title
         value
