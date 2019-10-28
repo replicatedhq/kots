@@ -624,3 +624,14 @@ export const getAppLicense = gql`
     }
   }
 `;
+
+
+export const getKotsAppStatus = gql`
+  query getKotsAppStatus($slug: String!) {
+    getKotsAppStatus(slug: $slug) {
+      appId
+      updatedAt
+      state
+    }
+  }
+`;

@@ -8,7 +8,7 @@ import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
-import { getAppLicense } from "@src/queries/AppsQueries";
+import { getAppLicense, getKotsAppStatus } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
 
 import "../../scss/components/watches/Dashboard.scss";
@@ -29,6 +29,7 @@ class Dashboard extends Component {
     versionToDeploy: null,
     showDeployWarningModal: false,
     showSkipModal: false,
+    appStatus: ""
   }
 
   updateWatchInfo = async e => {
@@ -107,11 +108,19 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
+
+    if (this.props.getKotsAppStatus !== lastProps.getKotsAppStatus && this.props.getKotsAppStatus) {
+      const { getKotsAppStatus } = this.props.getKotsAppStatus;
+      if (getKotsAppStatus) {
+        this.setState({ appStatus: getKotsAppStatus.state });
+      }
+    }
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
+    const { getKotsAppStatus } = this.props.getKotsAppStatus;
 
     if (app) {
       this.setWatchState(app);
@@ -119,6 +128,10 @@ class Dashboard extends Component {
 
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
+    }
+
+    if (getKotsAppStatus) {
+      this.setState({ appStatus: getKotsAppStatus.state });
     }
   }
 
@@ -216,21 +229,24 @@ class Dashboard extends Component {
       errorCheckingUpdate, 
       appLicense,
       showDeployWarningModal,
-      showSkipModal
+      showSkipModal,
+      appStatus
      } = this.state;
 
     const { app } = this.props;
 
+    const statusLoading = this.props.getKotsAppStatus.loading;
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams.pendingVersions?.find(version => Math.max(version.sequence));
 
-    if (!app || !appLicense) {
+    if (!app || !appLicense || statusLoading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       );
     }
+
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -262,6 +278,8 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
+                appStatus={appStatus}
+                url={this.props.match.url}
               />
               <DashboardCard
                 cardName={`Version: ${currentVersion.title}`}
@@ -406,10 +424,21 @@ export default compose(
   withRouter,
   graphql(getAppLicense, {
     name: "getAppLicense",
-    options: props => {
+    options: ({ app }) => {
       return {
         variables: {
-          appId: props.app.id
+          appId: app.id
+        },
+        fetchPolicy: "no-cache"
+      };
+    }
+  }),
+  graphql(getKotsAppStatus, {
+    name: "getKotsAppStatus",
+    options: ({ match }) => {
+      return {
+        variables: {
+          slug: match.params.slug
         },
         fetchPolicy: "no-cache"
       };
