@@ -8,8 +8,7 @@ export function TroubleshootMutations(stores: Stores, params: Params) {
   return {
     async collectSupportBundle(root, { appId, clusterId }, context: Context) {
       const app = await context.getApp(appId);
-
-      await stores.troubleshootStore.queueSupportBundleCollection(appId, clusterId);
+      await stores.troubleshootStore.queueSupportBundleCollection(app.id, clusterId);
     }
   }
 }

@@ -3,7 +3,6 @@ module.exports = {
   INSTALL_ENDPOINT: "http://localhost:30065/api/install",
   GRAPHQL_ENDPOINT: "http://localhost:30065/graphql",
   REST_ENDPOINT: "http://localhost:30065/api",
-  TROUBLESHOOT_ENDPOINT: "http://localhost:30065/api/v1/troubleshoot",
   SHIPDOWNLOAD_ENDPOINT: "http://localhost:30065/api/v1/download",
   SHIPINIT_ENDPOINT: "http://localhost:30065/api/v1/init/",
   SHIPUPDATE_ENDPOINT: "http://localhost:30065/api/v1/update/",

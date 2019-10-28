@@ -49,7 +49,7 @@ export class SupportBundleAnalysis extends React.Component {
   reAnalyzeBundle = async (callback) => {
     try {
       const bundleId = this.props.getSupportBundle.getSupportBundle.id;
-      const bundleUrl = `${window.env.TROUBLESHOOT_ENDPOINT}/analyze/${bundleId}`;
+      const bundleUrl = `${window.env.REST_ENDPOINT}/v1/troubleshoot/analyze/${bundleId}`;
 
       const response = await fetch(bundleUrl, {
         method: "POST"

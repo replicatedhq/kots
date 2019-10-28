@@ -19,7 +19,7 @@ class UploadSupportBundleModal extends React.Component {
     try {
       const { watch } = this.props;
       const bundleId = randomstring.generate({ capitalization: "lowercase" });
-      const uploadBundleUrl = `${window.env.TROUBLESHOOT_ENDPOINT}/${watch.id}/${bundleId}`;
+      const uploadBundleUrl = `${window.env.REST_ENDPOINT}/v1/troubleshoot/${watch.id}/${bundleId}`;
 
       this.setState({ fileUploading: true });
 
@@ -37,6 +37,7 @@ class UploadSupportBundleModal extends React.Component {
         this.props.onBundleUploaded(analyzedBundle.id);
       }
     } catch (err) {
+      console.log(err);
       this.setState({ fileUploading: false });
     }
   }

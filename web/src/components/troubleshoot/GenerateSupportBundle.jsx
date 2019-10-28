@@ -156,7 +156,7 @@ class GenerateSupportBundle extends React.Component {
       bundle.id
     });
 
-    this.props.collectSupportBundle(watch.id, clusterId)
+    this.props.collectSupportBundle(watch.id, clusterId);
 
     setTimeout(() => {
       this.redirectOnNewBundle(currentBundles);

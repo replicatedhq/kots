@@ -37,7 +37,7 @@ class SupportBundleRow extends React.Component {
     const bundleId = bundle.id;
     const hiddenIFrameID = "hiddenDownloader";
     let iframe = document.getElementById(hiddenIFrameID);
-    const url = `${window.env.TROUBLESHOOT_ENDPOINT}/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
+    const url = `${window.env.REST_ENDPOINT}/v1/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
     if (iframe === null) {
       iframe = document.createElement("iframe");
       iframe.id = hiddenIFrameID;
