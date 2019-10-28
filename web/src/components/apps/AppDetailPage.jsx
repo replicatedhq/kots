@@ -2,6 +2,7 @@ import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
+import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
@@ -213,7 +214,8 @@ class AppDetailPage extends Component {
       getKotsAppQuery,
       listApps,
       refetchListApps,
-      rootDidInitialAppFetch
+      rootDidInitialAppFetch,
+      appName
     } = this.props;
     const {
       displayRemoveClusterModal,
@@ -239,6 +241,9 @@ class AppDetailPage extends Component {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
+        <Helmet>
+          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+        </Helmet>
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
           condition={listApps?.length > 1}

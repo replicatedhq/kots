@@ -289,8 +289,8 @@ class Root extends Component {
                       return <Crashz />;
 
                     }}/>
-                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
-                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} /> }/>
+                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} appName={this.state.selectedAppName} />) } />
+                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} appName={this.state.selectedAppName} /> }/>
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
@@ -300,7 +300,7 @@ class Root extends Component {
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
-                    <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} />} />
+                    <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/gitops" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
@@ -329,6 +329,7 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
+                            appName={this.state.selectedAppName}
                           />
                         )
                       }
@@ -382,6 +383,7 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
+                            appName={this.state.selectedAppName}
                           />
                         )
                       }

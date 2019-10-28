@@ -1,6 +1,7 @@
 import * as React from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
@@ -40,6 +41,9 @@ export class ClusterNodes extends React.Component {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--50">
+        <Helmet>
+          <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
+        </Helmet>
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
             <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal">Install your node</p>

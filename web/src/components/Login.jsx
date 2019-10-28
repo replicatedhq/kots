@@ -2,6 +2,7 @@ import * as React from "react";
 import { withRouter } from "react-router-dom";
 import "../scss/components/Login.scss";
 import Modal from "react-modal";
+import { Helmet } from "react-helmet";
 import { Utilities } from "../utilities/utilities";
 import TrackSCMLeads from "./TrackSCMLeads";
 import TraditionalAuth from "./TraditionalAuth";
@@ -57,13 +58,16 @@ class Login extends React.Component {
   }
 
   render() {
-    const { onLoginSuccess } = this.props;
+    const { onLoginSuccess, appName } = this.props;
     const { traditionalAuth } = this.state;
     const showSCM = window.env.SHOW_SCM_LEADS;
     const allowedLogins = window.env.AVAILABLE_LOGIN_TYPES;
     const scmLeadsStyle = showSCM ? { width: "100%", maxWidth: "960px"} : {};
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
+        <Helmet>
+          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+        </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto" style={scmLeadsStyle}>
           <div className="flex-auto flex-column login-form-wrapper justifyContent--center">
             <div className="flex">

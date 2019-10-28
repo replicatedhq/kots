@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { graphql, compose } from "react-apollo";
+import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 
@@ -80,6 +81,9 @@ class PreflightResultPage extends Component {
 
     return (
       <div className="flex-column flex1">
+        <Helmet>
+          <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
+        </Helmet>
         <div className="flex1 u-overflow--auto">
           <div className="PreflightChecks--wrapper flex u-paddingTop--30 u-overflow--hidden">
             <div className="u-minWidth--full u-minHeight--full">

@@ -2,6 +2,7 @@ import * as React from "react";
 import classNames from "classnames";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
@@ -213,6 +214,9 @@ class UploadAirgapBundle extends React.Component {
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
+        <Helmet>
+          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+        </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
