@@ -69,8 +69,10 @@ func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if err := ensureSharedPasswordSecret(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure shared password secret")
+	if deployOptions.SharedPasswordBcrypt == "" {
+		if err := ensureSharedPasswordSecret(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure shared password secret")
+		}
 	}
 
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {

@@ -232,6 +232,8 @@ func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset
 		Kubeconfig:    kubeconfig,
 		IncludeShip:   false,
 		IncludeGitHub: false,
+		ServiceType:   "ClusterIP",
+		Hostname:      "localhost:8800",
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
