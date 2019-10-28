@@ -227,9 +227,9 @@ class UploadAirgapBundle extends React.Component {
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
                 {showRegistry ?
-                  "To install on an airgapped network, you will need to provide access to a Docker registry. The images in {appName} will be retagged and pushed to the registry that you provide here."
+                  `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${appName ? `in ${appName}` : ""} will be retagged and pushed to the registry that you provide here.`
                   :
-                  "To install on an airgapped network, the images in {appName} will be uploaded from the bundle you provide to the cluster."
+                  `To install on an airgapped network, the images ${appName ? `in ${appName}` : ""} will be uploaded from the bundle you provide to the cluster.`
                 }
               </p>
             </div>
