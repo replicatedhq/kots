@@ -14,12 +14,22 @@ func Test_getResourceKindCommonName(t *testing.T) {
 		want string
 	}{
 		{
-			name: "found",
+			name: "deployment",
 			args: args{a: "deploy"},
 			want: "deployment",
 		},
 		{
-			name: "not found",
+			name: "statefulset",
+			args: args{a: "sts"},
+			want: "statefulset",
+		},
+		{
+			name: "uppercase",
+			args: args{a: "StatefulSet"},
+			want: "statefulset",
+		},
+		{
+			name: "unknown",
 			args: args{a: "blah"},
 			want: "blah",
 		},

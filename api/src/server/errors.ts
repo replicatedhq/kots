@@ -33,10 +33,13 @@ export class ReplicatedError extends Error {
     this.originalMessage = msg;
   }
 
+  static notFound() {
+    return new ReplicatedError("not found");
+  }
+
   static forbidden() {
     return new ReplicatedError("Forbidden");
   }
-
 
   static requireNonEmpty(item: {}, name?: string) {
     if (_.isEmpty(item)) {
@@ -87,5 +90,12 @@ export class ReplicatedError extends Error {
         },
       ],
     };
+  }
+
+  static isNotFound(err: any): boolean {
+    if (err instanceof ReplicatedError && err.originalMessage === "not found") {
+      return true;
+    }
+    return false;
   }
 }

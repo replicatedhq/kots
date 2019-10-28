@@ -1,11 +1,15 @@
 import { IO, Nsp, SocketService, SocketSession, Socket } from "@tsed/socketio";
 import { getPostgresPool } from "../../util/persistence/db";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
+import { KotsAppStatusStore } from "../../kots_app/kots_app_status_store";
+import { State } from "../../kots_app";
 import { Params } from "../../server/params";
 import { ClusterStore } from "../../cluster";
 import { PreflightStore } from "../../preflight/preflight_store";
 import _ from "lodash";
 import { TroubleshootStore } from "../../troubleshoot";
+
+const DefaultReadyState = JSON.stringify([{state: State.Ready}]);
 
 interface ClusterSocketHistory {
   clusterId: string;
@@ -14,10 +18,12 @@ interface ClusterSocketHistory {
   sentDeploySequences: string[];
 }
 
+
 @SocketService("")
 export class KotsDeploySocketService {
   @Nsp nsp: SocketIO.Namespace;
   kotsAppStore: KotsAppStore;
+  kotsAppStatusStore: KotsAppStatusStore;
   clusterStore: ClusterStore;
   preflightStore: PreflightStore;
   troubleshootStore: TroubleshootStore;
@@ -131,6 +137,9 @@ export class KotsDeploySocketService {
                   app_id: app.id,
                   informers: kotsAppSpec.spec.statusInformers,
                 });
+              } else {
+                // no informers, set state to ready
+                await this.kotsAppStatusStore.setKotsAppStatus(app.id, DefaultReadyState, new Date());
               }
             } catch (err) {
               console.log(err);

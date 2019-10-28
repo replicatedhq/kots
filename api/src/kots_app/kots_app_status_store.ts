@@ -16,7 +16,7 @@ export class KotsAppStatusStore {
     const result = await this.pool.query(q, v);
 
     if (result.rowCount == 0) {
-      throw new ReplicatedError("not found");
+      throw ReplicatedError.notFound();
     }
 
     const kotsAppStatus = new KotsAppStatus();

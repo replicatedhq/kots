@@ -26,7 +26,8 @@ func filterStatusInformersByResourceKind(informers []types.StatusInformer, kind 
 	return
 }
 
-func buildResourceStatesFromStatusInformers(informers []types.StatusInformer) (next types.ResourceStates) {
+func buildResourceStatesFromStatusInformers(informers []types.StatusInformer) types.ResourceStates {
+	next := types.ResourceStates{}
 	for _, informer := range informers {
 		next = append(next, types.ResourceState{
 			Kind:      informer.Kind,
@@ -36,7 +37,7 @@ func buildResourceStatesFromStatusInformers(informers []types.StatusInformer) (n
 		})
 	}
 	sort.Sort(next)
-	return
+	return next
 }
 
 func resourceStatesApplyNew(resourceStates types.ResourceStates, informers []types.StatusInformer, resourceState types.ResourceState) (next types.ResourceStates, didChange bool) {

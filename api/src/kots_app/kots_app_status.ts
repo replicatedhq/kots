@@ -24,7 +24,7 @@ export class KotsAppStatus {
     }
     let max = State.Ready;
     this.resourceStates.forEach(resourceState => {
-      max = maxState(max, resourceState.state);
+      max = minState(max, resourceState.state);
     });
     return max;
   };
@@ -39,7 +39,7 @@ export class KotsAppStatus {
   }
 }
 
-function maxState(a: State, b: State): State {
+function minState(a: State, b: State): State {
   if (a === State.Missing || b === State.Missing) {
     return State.Missing;
   }
