@@ -167,6 +167,10 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 
 	resourceStateCh := make(chan types.ResourceState)
 	go runDeploymentController(ctx, m.clientset, informers, resourceStateCh)
+	go runIngressController(ctx, m.clientset, informers, resourceStateCh)
+	go runPersistentVolumeClaimController(ctx, m.clientset, informers, resourceStateCh)
+	go runServiceController(ctx, m.clientset, informers, resourceStateCh)
+	go runStatefulSetController(ctx, m.clientset, informers, resourceStateCh)
 
 	go func() {
 		defer close(resourceStateCh)

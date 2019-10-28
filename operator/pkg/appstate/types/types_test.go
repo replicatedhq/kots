@@ -48,3 +48,44 @@ func TestStatusInformerString_Parse(t *testing.T) {
 		})
 	}
 }
+
+func TestMinState(t *testing.T) {
+	tests := []struct {
+		name string
+		ss   []State
+		want State
+	}{
+		{
+			name: "ready",
+			ss:   []State{StateReady, StateReady},
+			want: StateReady,
+		},
+		{
+			name: "degraded",
+			ss:   []State{StateReady, StateDegraded, StateReady},
+			want: StateDegraded,
+		},
+		{
+			name: "unavailable",
+			ss:   []State{StateUnavailable, StateDegraded, StateReady},
+			want: StateUnavailable,
+		},
+		{
+			name: "missing",
+			ss:   []State{StateUnavailable, StateDegraded, StateMissing, StateReady},
+			want: StateMissing,
+		},
+		{
+			name: "none",
+			ss:   []State{},
+			want: StateMissing,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MinState(tt.ss...); got != tt.want {
+				t.Errorf("MinState() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

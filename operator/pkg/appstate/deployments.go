@@ -58,38 +58,38 @@ func NewDeploymentEventHandler(informers []types.StatusInformer, resourceStateCh
 }
 
 func (h *deploymentEventHandler) ObjectCreated(obj interface{}) {
-	deploy := h.cast(obj)
-	if _, ok := h.getInformer(deploy); !ok {
+	r := h.cast(obj)
+	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeDeploymentResourceState(deploy, calculateDeploymentState(deploy))
+	h.resourceStateCh <- makeDeploymentResourceState(r, calculateDeploymentState(r))
 }
 
 func (h *deploymentEventHandler) ObjectUpdated(obj interface{}) {
-	deploy := h.cast(obj)
-	if _, ok := h.getInformer(deploy); !ok {
+	r := h.cast(obj)
+	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeDeploymentResourceState(deploy, calculateDeploymentState(deploy))
+	h.resourceStateCh <- makeDeploymentResourceState(r, calculateDeploymentState(r))
 }
 
 func (h *deploymentEventHandler) ObjectDeleted(obj interface{}) {
-	deploy := h.cast(obj)
-	if _, ok := h.getInformer(deploy); !ok {
+	r := h.cast(obj)
+	if _, ok := h.getInformer(r); !ok {
 		return
 	}
-	h.resourceStateCh <- makeDeploymentResourceState(deploy, types.StateMissing)
+	h.resourceStateCh <- makeDeploymentResourceState(r, types.StateMissing)
 }
 
 func (h *deploymentEventHandler) cast(obj interface{}) *appsv1.Deployment {
-	deploy, _ := obj.(*appsv1.Deployment)
-	return deploy
+	r, _ := obj.(*appsv1.Deployment)
+	return r
 }
 
-func (h *deploymentEventHandler) getInformer(deploy *appsv1.Deployment) (types.StatusInformer, bool) {
-	if deploy != nil {
+func (h *deploymentEventHandler) getInformer(r *appsv1.Deployment) (types.StatusInformer, bool) {
+	if r != nil {
 		for _, informer := range h.informers {
-			if deploy.Namespace == informer.Namespace && deploy.Name == informer.Name {
+			if r.Namespace == informer.Namespace && r.Name == informer.Name {
 				return informer, true
 			}
 		}
@@ -97,24 +97,24 @@ func (h *deploymentEventHandler) getInformer(deploy *appsv1.Deployment) (types.S
 	return types.StatusInformer{}, false
 }
 
-func makeDeploymentResourceState(deploy *appsv1.Deployment, state types.State) types.ResourceState {
+func makeDeploymentResourceState(r *appsv1.Deployment, state types.State) types.ResourceState {
 	return types.ResourceState{
 		Kind:      DeploymentResourceKind,
-		Name:      deploy.Name,
-		Namespace: deploy.Namespace,
+		Name:      r.Name,
+		Namespace: r.Namespace,
 		State:     state,
 	}
 }
 
-func calculateDeploymentState(deploy *appsv1.Deployment) types.State {
+func calculateDeploymentState(r *appsv1.Deployment) types.State {
 	// https://github.com/kubernetes/kubernetes/blob/badcd4af3f592376ce891b7c1b7a43ed6a18a348/pkg/printers/internalversion/printers.go#L1652
-	if deploy.Status.Replicas == 0 {
+	if r.Status.Replicas == 0 {
 		// TODO: what to do here?
 	}
-	if deploy.Status.ReadyReplicas >= deploy.Status.Replicas {
+	if r.Status.ReadyReplicas >= r.Status.Replicas {
 		return types.StateReady
 	}
-	if deploy.Status.ReadyReplicas > 0 {
+	if r.Status.ReadyReplicas > 0 {
 		return types.StateDegraded
 	}
 	return types.StateUnavailable

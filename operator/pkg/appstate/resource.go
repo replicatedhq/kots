@@ -1,5 +1,7 @@
 package appstate
 
+import "strings"
+
 var (
 	resourceKindNames [][]string
 )
@@ -11,7 +13,7 @@ func registerResourceKindNames(names ...string) {
 func getResourceKindCommonName(a string) string {
 	for _, names := range resourceKindNames {
 		for _, name := range names {
-			if name == a {
+			if name == strings.ToLower(a) {
 				return names[0]
 			}
 		}

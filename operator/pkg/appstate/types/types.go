@@ -52,6 +52,24 @@ type ResourceState struct {
 
 type State string
 
+func MinState(ss ...State) (min State) {
+	if len(ss) == 0 {
+		return StateMissing
+	}
+	for _, s := range ss {
+		if s == StateMissing || min == StateMissing {
+			return StateMissing
+		} else if s == StateUnavailable || min == StateUnavailable {
+			min = StateUnavailable
+		} else if s == StateDegraded || min == StateDegraded {
+			min = StateDegraded
+		} else if s == StateReady || min == StateReady {
+			min = StateReady
+		}
+	}
+	return
+}
+
 func (a ResourceStates) Len() int {
 	return len(a)
 }
