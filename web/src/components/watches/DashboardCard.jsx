@@ -14,6 +14,21 @@ import "../../scss/components/watches/DashboardCard.scss";
 
 export default class DashboardCard extends React.Component {
 
+  renderApplicationCard = () => {
+
+    return (
+      <div>
+        <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
+        <div className="flex alignItems--center u-marginTop--5">
+              <span className="icon checkmark-icon"></span>
+              <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">
+                Ready
+              </span>
+            </div>
+      </div>
+    )
+  }
+
   renderVersionHistoryCard = () => {
     const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion } = this.props;
     const updates = downstreams.pendingVersions?.length > 0 ? "Updates available." : "No updates available.";
@@ -79,7 +94,7 @@ export default class DashboardCard extends React.Component {
             <div className="u-marginTop--15">
               <div className="flex flex1">
                 {application ?
-                  <p>TODO</p>
+                  this.renderApplicationCard()
                   : versionHistory ?
                     this.renderVersionHistoryCard()
                     : this.renderLicenseCard()
