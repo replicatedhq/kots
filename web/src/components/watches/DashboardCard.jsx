@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import Loader from "../shared/Loader";
 
 import {
+  Utilities,
   getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
@@ -15,23 +16,28 @@ import "../../scss/components/watches/DashboardCard.scss";
 export default class DashboardCard extends React.Component {
 
   renderApplicationCard = () => {
+    const { appStatus, url } = this.props;
 
     return (
       <div>
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
         <div className="flex alignItems--center u-marginTop--5">
-              <span className="icon checkmark-icon"></span>
-              <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">
-                Ready
-              </span>
-            </div>
+          <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : appStatus === "degraded" ? "spinnerOrange" : "spinnerRed"}`}></span>
+          <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-color--dustyGray" : appStatus === "degraded" ? "u-color--orange" : "u-color--chestnut"}`}>
+            {Utilities.toTitleCase(appStatus)}
+          </span>
+          {appStatus !== "ready" ?
+            <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10"> Troubleshoot </Link>
+            : null}
+        </div>
       </div>
     )
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion } = this.props;
-    const updates = downstreams.pendingVersions?.length > 0 ? "Updates available." : "No updates available.";
+    const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, deployVersion } = this.props;
+    const updatesText = downstreams.pendingVersions ?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
+    const isUpdateAvailable = downstreams.pendingVersions ?.length > 0;
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (errorCheckingUpdate) {
@@ -47,10 +53,10 @@ export default class DashboardCard extends React.Component {
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {currentVersion.status === "deployed" ? "Installed" : ""} </p>
         <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion.createdOn).format("lll")} </p>
 
-        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updates} </p>
+        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
         {checkingForUpdates
           ? <Loader size="32" className="flex justifyContent--center u-marginTop--10" />
-          : <button className="btn primary lightBlue u-marginTop--10" onClick={isAirgap ? onUploadNewVersion : onCheckForUpdates}> {isAirgap ? "Upload new version" : "Check for update"} </button>
+          : <button className="btn primary lightBlue u-marginTop--10" onClick={isAirgap ? onUploadNewVersion : isUpdateAvailable ? deployVersion : onCheckForUpdates}> {isAirgap ? "Upload new version" : isUpdateAvailable ? "Install update" : "Check for update"} </button>
         }
         {updateText}
       </div>
@@ -60,13 +66,13 @@ export default class DashboardCard extends React.Component {
   renderLicenseCard = () => {
     const { appLicense } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
-    
 
-    return(
+
+    return (
       <div>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense ?.channelName} </span></p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
-        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p> 
+        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p>
       </div>
     )
   }

@@ -7,7 +7,8 @@ import PaperIcon from "../shared/PaperIcon";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 
-import { getAppLicense } from "@src/queries/AppsQueries";
+import { getPreflightResultState } from "@src/utilities/utilities";
+import { getAppLicense, getKotsAppStatus } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
 
 import "../../scss/components/watches/Dashboard.scss";
@@ -24,7 +25,11 @@ class Dashboard extends Component {
     checkingForUpdates: false,
     checkingUpdateText: "Checking for updates",
     errorCheckingUpdate: false,
-    appLicense: null
+    appLicense: null,
+    versionToDeploy: null,
+    showDeployWarningModal: false,
+    showSkipModal: false,
+    appStatus: ""
   }
 
   updateWatchInfo = async e => {
@@ -103,11 +108,19 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
+
+    if (this.props.getKotsAppStatus !== lastProps.getKotsAppStatus && this.props.getKotsAppStatus) {
+      const { getKotsAppStatus } = this.props.getKotsAppStatus;
+      if (getKotsAppStatus) {
+        this.setState({ appStatus: getKotsAppStatus.state });
+      }
+    }
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
+    const { getKotsAppStatus } = this.props.getKotsAppStatus;
 
     if (app) {
       this.setWatchState(app);
@@ -115,6 +128,10 @@ class Dashboard extends Component {
 
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
+    }
+
+    if (getKotsAppStatus) {
+      this.setState({ appStatus: getKotsAppStatus.state });
     }
   }
 
@@ -146,22 +163,90 @@ class Dashboard extends Component {
     });
   }
 
+  deployVersion = async (version, force = false) => {
+    const { match, app } = this.props;
+    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    if (!clusterSlug) {
+      return;
+    }
+    if (!force) {
+      if (version.status === "pending_preflight") {
+        this.setState({
+          showSkipModal: true,
+          versionToDeploy: version
+        });
+        return;
+      }
+      if (version?.preflightResult && version.status === "pending") {
+        const preflightResults = JSON.parse(version.preflightResult);
+        const preflightState = getPreflightResultState(preflightResults);
+        if (preflightState === "fail") {
+          this.setState({
+            showDeployWarningModal: true,
+            versionToDeploy: version
+          });
+          return;
+        }
+      }
+    }
+    await this.props.makeCurrentVersion(match.params.slug, version.sequence, clusterSlug);
+    if (this.props.updateCallback) {
+      this.props.updateCallback();
+    }
+    this.setState({ versionToDeploy: null });
+  }
+
+  onForceDeployClick = () => {
+    this.setState({ showSkipModal: false, showDeployWarningModal: false });
+    const versionToDeploy = this.state.versionToDeploy;
+    this.deployVersion(versionToDeploy, true);
+  }
+
+  hideSkipModal = () => {
+    this.setState({
+      showSkipModal: false
+    });
+  }
+
+  hideDeployWarningModal = () => {
+    this.setState({
+      showDeployWarningModal: false
+    });
+  }
+
   onUploadNewVersion = () => {
     this.props.history.push(`/${this.props.match.params.slug}/airgap`);
   }
 
   render() {
-    const { appName, iconUri, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, appLicense } = this.state;
-    const { app } = this.props;
-    const isAirgap = app.isAirgap;
+    const { 
+      appName, 
+      iconUri, 
+      currentVersion, 
+      downstreams, 
+      checkingForUpdates, 
+      checkingUpdateText, 
+      errorCheckingUpdate, 
+      appLicense,
+      showDeployWarningModal,
+      showSkipModal,
+      appStatus
+     } = this.state;
 
-    if (!app || !appLicense) {
+    const { app } = this.props;
+
+    const statusLoading = this.props.getKotsAppStatus.loading;
+    const isAirgap = app.isAirgap;
+    const latestPendingVersion = downstreams.pendingVersions?.find(version => Math.max(version.sequence));
+
+    if (!app || !appLicense || statusLoading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       );
     }
+
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -193,6 +278,8 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
+                appStatus={appStatus}
+                url={this.props.match.url}
               />
               <DashboardCard
                 cardName={`Version: ${currentVersion.title}`}
@@ -208,6 +295,7 @@ class Dashboard extends Component {
                 errorCheckingUpdate={errorCheckingUpdate}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
+                deployVersion={() => this.deployVersion(latestPendingVersion)}
               />
               <DashboardCard
                 cardName="License"
@@ -271,6 +359,61 @@ class Dashboard extends Component {
             </form>
           </div>
         </Modal>
+
+        <Modal
+          isOpen={showSkipModal}
+          onRequestClose={this.hideSkipModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Skip preflight checks"
+          ariaHideApp={false}
+          className="Modal SkipModal"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              Preflight checks have not finished yet. Are you sure you want to deploy this version?
+            </p>
+            <div className="u-marginTop--10 flex">
+              <button
+                onClick={this.onForceDeployClick}
+                type="button"
+                className="btn green primary">
+                Deploy this version
+              </button>
+              <button type="button" onClick={this.hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={showDeployWarningModal}
+          onRequestClose={this.hideDeployWarningModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Skip preflight checks"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
+            </p>
+            <div className="u-marginTop--10 flex">
+              <button
+                onClick={this.onForceDeployClick}
+                type="button"
+                className="btn green primary"
+              >
+                Deploy this version
+              </button>
+              <button
+                onClick={this.hideDeployWarningModal}
+                type="button"
+                className="btn secondary u-marginLeft--20"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -281,10 +424,21 @@ export default compose(
   withRouter,
   graphql(getAppLicense, {
     name: "getAppLicense",
-    options: props => {
+    options: ({ app }) => {
       return {
         variables: {
-          appId: props.app.id
+          appId: app.id
+        },
+        fetchPolicy: "no-cache"
+      };
+    }
+  }),
+  graphql(getKotsAppStatus, {
+    name: "getKotsAppStatus",
+    options: ({ match }) => {
+      return {
+        variables: {
+          slug: match.params.slug
         },
         fetchPolicy: "no-cache"
       };
