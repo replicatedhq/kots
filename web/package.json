@@ -142,6 +142,7 @@
     "react-monaco-editor": "^0.20.0",
     "react-select": "^2.4.3",
     "react-tooltip": "^3.10.0",
+    "react-vis": "^1.11.7",
     "trim": "^0.0.1",
     "truncate-middle": "^1.0.6",
     "urlize": "^0.2.1",
