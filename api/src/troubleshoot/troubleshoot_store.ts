@@ -188,6 +188,49 @@ spec:
     return supportBundle;
   }
 
+  public async clearPendingSupportBundle(id: string): Promise<void> {
+    const q = `delete from pending_supportbundle where id = $1`;
+    const v = [id];
+
+    await this.pool.query(q, v);
+  }
+
+  public async listPendingSupportBundlesForCluster(clusterId: string): Promise<any[]> {
+    const q = `select id, app_id, cluster_id from pending_supportbundle where cluster_id = $1`;
+    const v = [clusterId];
+
+    const result = await this.pool.query(q, v);
+
+    const pendingSupportBundles: any[] = [];
+    for (const row of result.rows) {
+      const pendingSupportBundle = {
+        id: row.id,
+        appId: row.app_id,
+        clusterId: row.cluster_id,
+      };
+
+      pendingSupportBundles.push(pendingSupportBundle);
+    }
+
+    return pendingSupportBundles;
+  }
+
+  public async queueSupportBundleCollection(appId: string, clusterId: string): Promise<string> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+
+    const q = `insert into pending_supportbundle (id, app_id, cluster_id, created_at) values ($1, $2, $3, $4)`;
+    const v = [
+      id,
+      appId,
+      clusterId,
+      new Date(),
+    ];
+
+    await this.pool.query(q, v);
+
+    return id;
+  }
+
   public async supportBundleExists(id: string): Promise<boolean> {
     const q = `SELECT count(1) AS count FROM supportbundle WHERE id = $1`;
     const v = [id];

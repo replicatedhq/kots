@@ -25,6 +25,7 @@ export class TroubleshootAPI {
     @Req() request: Request,
     @Res() response: Response,
     @PathParams("slug") slug: string,
+    @QueryParams("incluster") inCluster: string,
   ): Promise<any | ErrorResponse> {
     let collector = TroubleshootStore.defaultSpec;
     let isKotsSpec = true;
@@ -51,12 +52,20 @@ export class TroubleshootAPI {
     const supportBundle = await request.app.locals.stores.troubleshootStore.getBlankSupportBundle(appOrWatchId);
 
     const params = await Params.getParams();
-    const uploadUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
+
+    let uploadUrl;
+    if (inCluster === "true") {
+      uploadUrl = `${params.shipApiEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
+    } else {
+      uploadUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
+    }
 
     let parsedSpec = jsYaml.load(collector);
     if (isKotsSpec) {
-      parsedSpec = await injectKotsCollectors(parsedSpec);
+      // the injected collector has a different namespace in dev environment,
+      // so the order of these calls matters.
       parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
+      parsedSpec = await injectKotsCollectors(parsedSpec);
     }
     parsedSpec.spec.afterCollection = [
       {

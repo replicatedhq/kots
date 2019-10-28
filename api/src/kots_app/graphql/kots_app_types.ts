@@ -15,6 +15,7 @@ const KotsApp = `
     createdAt: String
     updatedAt: String
     slug: String
+    upstreamUri: String
     currentSequence: Int
     lastUpdateCheckAt: String
     bundleCommand: String

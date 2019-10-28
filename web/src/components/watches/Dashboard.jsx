@@ -6,6 +6,7 @@ import Modal from "react-modal";
 import PaperIcon from "../shared/PaperIcon";
 import DashboardCard from "./DashboardCard";
 
+import { getAppLicense } from "@src/queries/AppsQueries";
 import {
   updateWatch,
   deleteWatch,
@@ -28,7 +29,8 @@ class Dashboard extends Component {
     downstreams: [],
     checkingForUpdates: false,
     checkingUpdateText: "Checking for updates",
-    errorCheckingUpdate: false
+    errorCheckingUpdate: false,
+    appLicense: null
   }
 
   updateWatchInfo = async e => {
@@ -96,15 +98,29 @@ class Dashboard extends Component {
 
   componentDidUpdate(lastProps) {
     const { app } = this.props;
+
     if (app !== lastProps.app && app) {
       this.setWatchState(app)
+    }
+
+    if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
+      const { getAppLicense } = this.props.getAppLicense;
+      if (getAppLicense) {
+        this.setState({ appLicense: getAppLicense });
+      }
     }
   }
 
   componentDidMount() {
     const { app } = this.props;
+    const { getAppLicense } = this.props.getAppLicense;
+
     if (app) {
       this.setWatchState(app);
+    }
+
+    if (getAppLicense) {
+      this.setState({ appLicense: getAppLicense });
     }
   }
 
@@ -141,7 +157,7 @@ class Dashboard extends Component {
   }
 
   render() {
-    const { appName, iconUri, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate } = this.state;
+    const { appName, iconUri, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, appLicense } = this.state;
     const { app } = this.props;
     const isAirgap = app.isAirgap;
 
@@ -196,6 +212,8 @@ class Dashboard extends Component {
                 cardName="License"
                 cardIcon="licenseIcon"
                 license={true}
+                url={this.props.match.url}
+                appLicense={appLicense}
               />
             </div>
           </div>
@@ -260,6 +278,17 @@ class Dashboard extends Component {
 export default compose(
   withApollo,
   withRouter,
+  graphql(getAppLicense, {
+    name: "getAppLicense",
+    options: props => {
+      return {
+        variables: {
+          appId: props.app.id
+        },
+        fetchPolicy: "no-cache"
+      };
+    }
+  }),
   graphql(updateWatch, {
     props: ({ mutate }) => ({
       updateWatch: (watchId, watchName, iconUri) => mutate({ variables: { watchId, watchName, iconUri } })

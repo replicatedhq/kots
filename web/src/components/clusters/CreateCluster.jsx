@@ -99,7 +99,7 @@ export class CreateCluster extends Component {
         this.props.history.push(redirect);
       }
     } else {
-      this.props.history.push("/clusters");
+      this.props.history.push("/gitops");
     }
   }
 

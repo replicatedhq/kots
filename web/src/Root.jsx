@@ -59,6 +59,10 @@ const GraphQLClient = ShipClientGQL(
 
 class ProtectedRoute extends Component {
   render() {
+    const redirectURL = window.env.DISABLE_KOTS
+      ? `/login?next=${this.props.location.pathname}${this.props.location.search}`
+      : `/secure-console?next=${this.props.location.pathname}${this.props.location.search}`;
+
     return (
       <Route path={this.props.path} render={(innerProps) => {
         if (Utilities.isLoggedIn()) {
@@ -67,9 +71,9 @@ class ProtectedRoute extends Component {
           }
           return this.props.render(innerProps);
         }
-        return <Redirect to={`/login?next=${this.props.location.pathname}${this.props.location.search}`} />;
+        return <Redirect to={redirectURL} />;
       }} />
-    )
+    );
   }
 }
 
@@ -273,7 +277,7 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />
+                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} isKurlEnabled={this.state.isKurlEnabled} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
@@ -286,19 +290,19 @@ class Root extends Component {
 
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} />) } />
-                    <Route path="/preflight" render={props => <PreflightResultPage {...props} /> }/>
+                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} /> }/>
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <Route exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
-                    <Route exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <Route exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
+                    <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
                     <Route path="/install/github" component={GitHubInstall} />
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
-                    <Route path="/cluster/manage" render={(props) => <ClusterNodes {...props} />} />
-                    <Route path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
-                    <ProtectedRoute path="/clusters" render={(props) => <Clusters {...props} />} />
+                    <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} />} />
+                    <ProtectedRoute path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
+                    <ProtectedRoute path="/gitops" render={(props) => <Clusters {...props} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute
                       path="/watches"
@@ -325,7 +329,6 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
-                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }
@@ -379,7 +382,6 @@ class Root extends Component {
                             refetchListApps={this.refetchListApps}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
-                            isKurlEnabled={this.state.isKurlEnabled}
                           />
                         )
                       }

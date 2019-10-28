@@ -171,7 +171,7 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                     <div className="upload-date-container flex u-marginTop--5 alignItems--center">
                       <div className="flex alignSelf--center">
-                        <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Uploaded on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
+                        <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Collected on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
                       </div>
                     </div>
                   </div>

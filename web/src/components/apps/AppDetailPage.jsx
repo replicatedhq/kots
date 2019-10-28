@@ -23,7 +23,7 @@ import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHist
 import DownstreamWatchVersionDiff from "../watches/DownstreamWatchVersionDiff";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../apps/AppConfig";
-import WatchLicense from "../watches/WatchLicense";
+import AppLicense from "../apps/AppLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
@@ -285,7 +285,7 @@ class AppDetailPage extends Component {
               })}
             />
           )}>
-          <div className="flex-column flex1 u-width--full u-height--full">
+          <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
             {loading
               ? centeredLoader
               : (
@@ -294,7 +294,6 @@ class AppDetailPage extends Component {
                     className="flex"
                     activeTab={match.params.tab || "app"}
                     watch={app}
-                    isKurlEnabled={this.props.isKurlEnabled}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
@@ -348,7 +347,7 @@ class AppDetailPage extends Component {
                       <DownstreamWatchVersionDiff
                         watch={app}
                       />
-                    }
+                      }
                     />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
                     <Route exact path="/app/:slug/config" render={() =>
@@ -373,8 +372,8 @@ class AppDetailPage extends Component {
                       />
                     } />
                     <Route exact path="/app/:slug/license" render={() =>
-                      <WatchLicense
-                        watch={app}
+                      <AppLicense
+                        app={app}
                       />
                     } />
                     <Route exact path="/app/:slug/airgap-settings" render={() =>

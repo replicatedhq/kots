@@ -5,6 +5,7 @@ import { Params } from "../../server/params";
 import { ClusterStore } from "../../cluster";
 import { PreflightStore } from "../../preflight/preflight_store";
 import _ from "lodash";
+import { TroubleshootStore } from "../../troubleshoot";
 
 interface ClusterSocketHistory {
   clusterId: string;
@@ -19,19 +20,24 @@ export class KotsDeploySocketService {
   kotsAppStore: KotsAppStore;
   clusterStore: ClusterStore;
   preflightStore: PreflightStore;
+  troubleshootStore: TroubleshootStore;
   clusterSocketHistory: ClusterSocketHistory[];
+  params: Params;
 
   constructor(@IO private io: SocketIO.Server) {
     getPostgresPool()
       .then((pool) => {
         Params.getParams()
           .then((params) => {
+            this.params = params;
             this.kotsAppStore = new KotsAppStore(pool, params);
             this.clusterStore = new ClusterStore(pool, params);
             this.preflightStore = new PreflightStore(pool);
+            this.troubleshootStore = new TroubleshootStore(pool, params);
             this.clusterSocketHistory = [];
 
             setInterval(this.preflightLoop.bind(this), 1000);
+            setInterval(this.supportBundleLoop.bind(this), 1000);
           })
       });
   }
@@ -66,6 +72,21 @@ export class KotsDeploySocketService {
       return csh.socketId === socket.id;
     });
     this.clusterSocketHistory = updated;
+  }
+
+  async supportBundleLoop() {
+    if (!this.clusterSocketHistory) {
+      return;
+    }
+
+    for (const clusterSocketHistory of this.clusterSocketHistory) {
+      const pendingSupportBundles = await this.troubleshootStore.listPendingSupportBundlesForCluster(clusterSocketHistory.clusterId);
+      for (const pendingSupportBundle of pendingSupportBundles) {
+        const app = await this.kotsAppStore.getApp(pendingSupportBundle.appId);
+        this.io.in(clusterSocketHistory.clusterId).emit("supportbundle", {uri: `${this.params.shipApiEndpoint}/api/v1/troubleshoot/${app.slug}?incluster=true`});
+        await this.troubleshootStore.clearPendingSupportBundle(pendingSupportBundle.id);
+      }
+    }
   }
 
   async preflightLoop() {

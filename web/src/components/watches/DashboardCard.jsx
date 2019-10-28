@@ -6,6 +6,10 @@ import dayjs from "dayjs";
 
 import Loader from "../shared/Loader";
 
+import {
+  getLicenseExpiryDate,
+} from "@src/utilities/utilities";
+
 import "../../scss/components/watches/DashboardCard.scss";
 
 export default class DashboardCard extends React.Component {
@@ -38,6 +42,19 @@ export default class DashboardCard extends React.Component {
     )
   }
 
+  renderLicenseCard = () => {
+    const { appLicense } = this.props;
+    const expiresAt = getLicenseExpiryDate(appLicense);
+
+    return(
+      <div>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
+        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p> 
+      </div>
+    )
+  }
+
   render() {
     const { cardName, cardIcon, application, versionHistory, url } = this.props;
 
@@ -56,7 +73,7 @@ export default class DashboardCard extends React.Component {
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
                 :
-                <Link to={""} className="card-link"> View license details </Link>
+                <Link to={`${url}/license`} className="card-link"> View license details </Link>
             }
             <div className="u-marginTop--15">
               <div className="flex flex1">
@@ -64,7 +81,7 @@ export default class DashboardCard extends React.Component {
                   <p>TODO</p>
                   : versionHistory ?
                     this.renderVersionHistoryCard()
-                    : <p>TODO</p>
+                    : this.renderLicenseCard()
                 }
               </div>
             </div>

@@ -11,6 +11,7 @@ import Edit from "../edit/graphql/edit_types";
 import Pending from "../pending/graphql/pending_types";
 import HelmChart from "../helmchart/graphql/helmchart_types";
 import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
+import KLicense from "../klicenses/graphql/klicense_types";
 import License from "../license/graphql/license_types";
 import Preflight from "../preflight/graphql/preflight_types";
 import Apps from "../apps/graphql/apps_types";
@@ -48,6 +49,7 @@ export const ShipClusterSchemaTypes = [
   ...HelmChart,
   ...Troubleshoot,
   ...License,
+  ...KLicense,
   ...Preflight,
   ...Kurl,
 ];

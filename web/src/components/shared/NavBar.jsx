@@ -52,18 +52,18 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToClusters = () => {
-    if (this.props.location.pathname === "/clusters") {
+    if (this.props.location.pathname === "/gitops") {
       this.props.client.query({
         query: listClusters,
         fetchPolicy: "network-only",
       });
     } else {
-      this.props.history.push("/clusters");
+      this.props.history.push("/gitops");
     }
   }
 
-  handleGoToTeams = () => {
-    console.log("to be implemented")
+  handleGoToClusterManagement = () => {
+    this.props.history.push("/cluster/manage");
   }
 
   handleAddNewApplication = () => {
@@ -78,7 +78,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, logo, fetchingMetadata } = this.props;
+    const { className, logo, fetchingMetadata, isKurlEnabled } = this.props;
     const { user } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
@@ -113,17 +113,19 @@ export class NavBar extends PureComponent {
                     <div className="NavItem u-position--relative flex">
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Clusters</span>
+                          <span>GitOps</span>
                         </span>
                       </span>
                     </div>
-                    {/* <div className="NavItem u-position--relative flex ${clustersEnabled">
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToTeams}>
-                        <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Teams</span>
+                    {isKurlEnabled &&
+                      <div className="NavItem u-position--relative flex ${clustersEnabled">
+                        <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusterManagement}>
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                            <span>Cluster Management</span>
+                          </span>
                         </span>
-                      </span>
-                    </div> */}
+                      </div>
+                    }
                   </div>
                   )
                 }

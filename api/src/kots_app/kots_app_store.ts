@@ -117,9 +117,22 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async createMidstreamVersion(id: string, sequence: number, versionLabel: string, releaseNotes: string, updateCursor: string, supportBundleSpec: any, preflightSpec: any, appSpec: any, kotsAppSpec: any, appTitle: string | null,  appIcon: string | null): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
+  async createMidstreamVersion(
+    id: string, 
+    sequence: number, 
+    versionLabel: string, 
+    releaseNotes: string, 
+    updateCursor: string, 
+    supportBundleSpec: any, 
+    preflightSpec: any, 
+    appSpec: any, 
+    kotsAppSpec: any, 
+    kotsAppLicense: any,
+    appTitle: string | null,  
+    appIcon: string | null
+  ): Promise<void> {
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
     const v = [
       id,
       sequence,
@@ -131,6 +144,7 @@ export class KotsAppStore {
       preflightSpec,
       appSpec,
       kotsAppSpec,
+      kotsAppLicense,
     ];
 
     await this.pool.query(q, v);
@@ -527,13 +541,14 @@ export class KotsAppStore {
       await this.pool.query(q, v);
 
     const qq = `UPDATE app_downstream_version
-        SET status = 'deployed'
+        SET status = 'deployed', applied_at = $4
       WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
 
     const vv = [
       sequence,
       appId,
       clusterId,
+      new Date()
     ];
 
     await this.pool.query(qq, vv);

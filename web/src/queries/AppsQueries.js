@@ -370,6 +370,7 @@ export const getKotsAppRaw = `
       createdAt
       updatedAt
       slug
+      upstreamUri
       currentSequence
       hasPreflight
       isAirgap
@@ -605,6 +606,21 @@ export const getKotsDownstreamOutput = gql`
       dryrunStderr
       applyStdout
       applyStderr
+    }
+  }
+`;
+
+export const getAppLicense = gql`
+  query getAppLicense($appId: String!) {
+    getAppLicense(appId: $appId) {
+      id
+      expiresAt
+      channelName
+      entitlements {
+        title
+        value
+        label
+      }
     }
   }
 `;
