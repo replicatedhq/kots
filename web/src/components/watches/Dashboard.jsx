@@ -282,7 +282,7 @@ class Dashboard extends Component {
                 url={this.props.match.url}
               />
               <DashboardCard
-                cardName={`Version: ${currentVersion.title}`}
+                cardName={`Version: ${currentVersion?.title}`}
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
