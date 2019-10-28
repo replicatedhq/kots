@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,16 @@ import (
 	"github.com/containers/image/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
+)
+
+var (
+	insecureClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 )
 
 func LoadAuthForRegistry(endpoint string) (string, string, error) {
@@ -45,7 +56,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 	// TODO: Support http
 	pingURL := fmt.Sprintf("https://%s/v2/", endpoint)
 
-	resp, err := http.Get(pingURL)
+	resp, err := insecureClient.Get(pingURL)
 	if err != nil {
 		return errors.Wrap(err, "failed to ping registry")
 	}
@@ -83,7 +94,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuthToken))
 
-	resp, err = http.DefaultClient.Do(req)
+	resp, err = insecureClient.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "failed to execute auth request")
 	}
