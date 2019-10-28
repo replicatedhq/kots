@@ -302,6 +302,7 @@ class AppDetailPage extends Component {
                         refetchWatch={this.props.getKotsAppQuery?.refetch}
                         updateCallback={this.refetchGraphQLData}
                         onActiveInitSession={this.props.onActiveInitSession}
+                        makeCurrentVersion={this.makeCurrentRelease}
                       />}
                     />
                     <Route exact path="/app/:slug/downstreams" render={() =>
