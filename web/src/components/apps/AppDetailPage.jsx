@@ -11,7 +11,7 @@ import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
-import DetailPageApplication from "../watches/DetailPageApplication";
+import Dashboard from "../watches/Dashboard";
 import DetailPageIntegrations from "../watches/DetailPageIntegrations";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
@@ -189,7 +189,7 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return;
     }
-    const firstApp = listApps?.find( app => app.name);
+    const firstApp = listApps?.find(app => app.name);
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
@@ -296,8 +296,8 @@ class AppDetailPage extends Component {
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
-                      <DetailPageApplication
-                        watch={app}
+                      <Dashboard
+                        app={app}
                         refetchListApps={refetchListApps}
                         refetchWatch={this.props.getKotsAppQuery?.refetch}
                         updateCallback={this.refetchGraphQLData}

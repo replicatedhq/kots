@@ -1,10 +1,9 @@
 import React, { Component } from "react";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import classNames from "classnames";
 import MonacoEditor from "react-monaco-editor";
 import Loader from "../shared/Loader";
-import Tooltip from "../shared/Tooltip";
 import DownstreamVersionRow from "./DownstreamVersionRow";
 import filter from "lodash/filter";
 import Modal from "react-modal";
@@ -27,9 +26,6 @@ class DownstreamWatchVersionHistory extends Component {
     logs: null,
     selectedTab: null,
     logsLoading: false,
-    selectedDiffReleases: false,
-    checkedReleasesToDiff: [],
-    diffHovered: false,
   }
 
   handleMakeCurrent = async (upstreamSlug, sequence, clusterSlug, status) => {
@@ -160,33 +156,6 @@ class DownstreamWatchVersionHistory extends Component {
     });
   }
 
-  onSelectReleasesToDiff = () => {
-    this.setState({
-      selectedDiffReleases: true,
-      diffHovered: false
-    });
-  }
-
-  onCloseReleasesToDiff = () => {
-    this.setState({
-      selectedDiffReleases: false,
-      checkedReleasesToDiff: [],
-      diffHovered: false
-    });
-  }
-
-  handleSelectReleasesToDiff = (releaseSequence, isChecked, isActive) => {
-    if (isChecked) {
-      this.setState({
-        checkedReleasesToDiff: [{ releaseSequence, isChecked, isActive }].concat(this.state.checkedReleasesToDiff).slice(0, 2)
-      })
-    } else {
-      this.setState({
-        checkedReleasesToDiff: this.state.checkedReleasesToDiff.filter(release => release.releaseSequence !== releaseSequence)
-      })
-    }
-  }
-
   renderLogsTabs = () => {
     const { logs, selectedTab } = this.state;
     if (!logs) {
@@ -204,18 +173,10 @@ class DownstreamWatchVersionHistory extends Component {
     );
   }
 
-  displayTooltip = (key, value) => {
-    return () => {
-      this.setState({
-        [`${key}Hovered`]: value,
-      });
-    };
-  }
-
 
   render() {
     const { watch, match, data } = this.props;
-    const { showSkipModal, showDeployWarningModal, releaseNotes, showLogsModal, logsLoading, logs, selectedTab, selectedDiffReleases, checkedReleasesToDiff, diffHovered } = this.state;
+    const { showSkipModal, showDeployWarningModal, releaseNotes, showLogsModal, logsLoading, logs, selectedTab } = this.state;
     const { watches, downstreams } = watch;
     const isKots = isKotsApplication(watch);
     const _slug = isKots ? match.params.downstreamSlug : `${match.params.downstreamOwner}/${match.params.downstreamSlug}`;
@@ -229,17 +190,6 @@ class DownstreamWatchVersionHistory extends Component {
     const activeDownstreamVersion = this.getActiveDownstreamVersion(versionHistory);
     const downstreamSlug = downstreamWatch ? downstreamWatch.cluster?.slug : "";
     const isGit = downstreamWatch?.cluster?.gitOpsRef;
-
-    let firstSequenceNumber, secondSequenceNumber;
-    if (checkedReleasesToDiff.length === 2) {
-      if (checkedReleasesToDiff[0].releaseSequence < checkedReleasesToDiff[1].releaseSequence) {
-        firstSequenceNumber = checkedReleasesToDiff[0].releaseSequence;
-        secondSequenceNumber = checkedReleasesToDiff[1].releaseSequence;
-      } else {
-        firstSequenceNumber = checkedReleasesToDiff[1].releaseSequence;
-        secondSequenceNumber = checkedReleasesToDiff[0].releaseSequence;
-      }
-    }
 
     const centeredLoader = (
       <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -265,30 +215,6 @@ class DownstreamWatchVersionHistory extends Component {
       <div className="flex-column flex1 u-position--relative u-padding--20 u-overflow--auto">
         <div className="flex alignItems--center">
           <p className="flex flex1 u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--20">Downstream version history: {downstreamSlug}</p>
-          <div className="flex justifyContent--flexEnd u-marginRight--10">
-            {versionHistory?.length > 0 ?
-              selectedDiffReleases ?
-                <div className="flex">
-                  <button className="btn secondary gray u-marginRight--10" onClick={() => this.onCloseReleasesToDiff()}>Cancel</button>
-                  <Link to={`/app/${match.params.slug}/version-history/diff/${firstSequenceNumber}/${secondSequenceNumber}`} className={`btn primary blue ${checkedReleasesToDiff.length !== 2 && "is-disabled u-pointerEvents--none"}`}>Diff releases</Link>
-                </div>
-                :
-                <div className="flex-column flex-auto flex-verticalCenter u-marginRight--10">
-                  <span
-                    className="icon diffReleasesIcon"
-                    onMouseEnter={this.displayTooltip("diff", true)}
-                    onMouseLeave={this.displayTooltip("diff", false)}
-                    onClick={() => this.onSelectReleasesToDiff()}>
-                    <Tooltip
-                      visible={diffHovered}
-                      text="Select releases to diff"
-                      minWidth="170"
-                      position="bottom-left"
-                    />
-                  </span>
-                </div>
-              : null}
-          </div>
         </div>
 
         <div className="flex-column flex-auto ActiveRelease-wrapper">
@@ -306,10 +232,6 @@ class DownstreamWatchVersionHistory extends Component {
                 onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
                 handleViewLogs={this.handleViewLogs}
-                isActive={true}
-                selectedDiffReleases={selectedDiffReleases}
-                handleSelectReleasesToDiff={(activeDownstreamVersion, isChecked) => this.handleSelectReleasesToDiff(activeDownstreamVersion, isChecked, true)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === activeDownstreamVersion.parentSequence && diffRelease.isActive)}
               />
               :
               <div className="no-current-version u-textAlign--center">
@@ -337,10 +259,6 @@ class DownstreamWatchVersionHistory extends Component {
                 onReleaseNotesClick={this.showReleaseNotes}
                 handleMakeCurrent={this.handleMakeCurrent}
                 handleViewLogs={this.handleViewLogs}
-                isActive={false}
-                selectedDiffReleases={selectedDiffReleases}
-                handleSelectReleasesToDiff={(version, isChecked) => this.handleSelectReleasesToDiff(version, isChecked, false)}
-                isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.parentSequence && !diffRelease.isActive)}
               />
             ))}
           </div>
