@@ -14,9 +14,9 @@ import (
 
 func AdminConsoleCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "admin-console [namespace]",
+		Use:           "admin-console",
 		Short:         "Make the admin console accessible",
-		Long:          `Establish port forwarding for localhost access to the kotsadm admin console.`,
+		Long:          "Establish port forwarding for localhost access to the kotsadm admin console.",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -27,17 +27,12 @@ func AdminConsoleCmd() *cobra.Command {
 
 			log := logger.NewLogger()
 
-			if len(args) == 0 {
-				cmd.Help()
-				os.Exit(1)
-			}
-
-			podName, err := k8sutil.WaitForWeb(args[0], time.Second*5)
+			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"), time.Second*5)
 			if err != nil {
 				return err
 			}
 
-			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, args[0], podName, true)
+			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true)
 			if err != nil {
 				return err
 			}
@@ -58,6 +53,9 @@ func AdminConsoleCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
+
+	cmd.AddCommand(AdminConsoleUpgradeCmd())
 
 	return cmd
 }

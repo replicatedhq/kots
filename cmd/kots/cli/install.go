@@ -156,7 +156,7 @@ func InstallCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Cleaning up")
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console %s", namespace)
+			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
 			log.ActionWithoutSpinner("")
 
 			return nil

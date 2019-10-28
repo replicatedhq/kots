@@ -41,7 +41,8 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"uri": []byte(fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", password)),
+			"uri":      []byte(fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", password)),
+			"password": []byte(password),
 		},
 	}
 

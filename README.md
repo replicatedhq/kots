@@ -14,7 +14,7 @@ kubectl kots install helm://elastic/elasticsearch --repo https://helm.elastic.co
 After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. You can connect to this using kubectl port-forward, or set up an ingress/load balancer of your own.
 
 ```
-kubectl admin-console elasticsearchs
+kubectl admin-console --namespace elasticsearch
 ```
 
 And now visit http://localhost:8800 to set the Elasticsearch Admin Console.
