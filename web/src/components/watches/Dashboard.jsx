@@ -322,6 +322,7 @@ class Dashboard extends Component {
                   <AreaSeries
                     className="area-series-example"
                     curve="curveNatural"
+                    color="#B4E4C2"
                     data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
                   />
                 </XYPlot>
@@ -339,6 +340,7 @@ class Dashboard extends Component {
                 <AreaSeries
                   className="area-series-example"
                   curve="curveNatural"
+                  color="#ADC5F5"
                   data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
                 />
               </XYPlot>
