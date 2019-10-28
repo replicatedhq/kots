@@ -313,7 +313,7 @@ export class KotsAPI {
         Promise.all([request.app.locals.stores.kotsAppStore.updateAirgapInstallLiveness()]);
       }, 1000);
 
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Uploading...");
+      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...");
       await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
 
       await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
@@ -381,6 +381,7 @@ export class KotsAPI {
       appSlug = app.slug;
     } catch(err) {
 
+      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err));
       await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
       throw(err);
 
