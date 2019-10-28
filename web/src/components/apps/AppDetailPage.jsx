@@ -12,7 +12,6 @@ import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "../watches/Dashboard";
-// import DetailPageApplication from "../watches/DetailPageApplication";
 import DetailPageIntegrations from "../watches/DetailPageIntegrations";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
@@ -59,10 +58,10 @@ class AppDetailPage extends Component {
     const { getThemeState, setThemeState, match, listApps, history, getKotsAppQuery } = this.props;
     const { search } = this.props.location;
     const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listApps ?.find(w => w.slug === slug);
+    const currentWatch = listApps?.find(w => w.slug === slug);
 
     // Handle updating the app theme state when a watch changes.
-    if (currentWatch ?.watchIcon) {
+    if (currentWatch?.watchIcon) {
       const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
 
@@ -122,7 +121,7 @@ class AppDetailPage extends Component {
 
   handleViewFiles = () => {
     const { slug } = this.props.match.params;
-    const currentSequence = this.props.getKotsAppQuery ?.getKotsApp ?.currentSequence;
+    const currentSequence = this.props.getKotsAppQuery?.getKotsApp?.currentSequence;
     this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
   }
 
@@ -138,7 +137,7 @@ class AppDetailPage extends Component {
   }
 
   toggleDeleteDeploymentModal = (cluster) => {
-    const name = this.props.getKotsAppQuery ?.getKotsApp ?.name;
+    const name = this.props.getKotsAppQuery?.getKotsApp?.name;
     this.setState({
       clusterToRemove: cluster,
       selectedWatchName: name,
@@ -190,7 +189,7 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return;
     }
-    const firstApp = listApps ?.find(app => app.name);
+    const firstApp = listApps?.find(app => app.name);
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
@@ -229,9 +228,9 @@ class AppDetailPage extends Component {
       </div>
     );
 
-    const app = getKotsAppQuery ?.getKotsApp;
+    const app = getKotsAppQuery?.getKotsApp;
     const refreshAppData = getKotsAppQuery.refetch;
-    const loading = getKotsAppQuery ?.loading || !rootDidInitialAppFetch;
+    const loading = getKotsAppQuery?.loading || !rootDidInitialAppFetch;
 
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
@@ -242,10 +241,10 @@ class AppDetailPage extends Component {
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
-          condition={listApps ?.length > 1}
+          condition={listApps?.length > 1}
           sidebar={(
             <SideBar
-              items={listApps ?.map((item, idx) => {
+              items={listApps?.map((item, idx) => {
                 let sidebarItemNode;
                 if (item.name) {
                   const slugFromRoute = match.params.slug;
@@ -300,7 +299,7 @@ class AppDetailPage extends Component {
                       <Dashboard
                         app={app}
                         refetchListApps={refetchListApps}
-                        refetchWatch={this.props.getKotsAppQuery ?.refetch}
+                        refetchWatch={this.props.getKotsAppQuery?.refetch}
                         updateCallback={this.refetchGraphQLData}
                         onActiveInitSession={this.props.onActiveInitSession}
                       />}

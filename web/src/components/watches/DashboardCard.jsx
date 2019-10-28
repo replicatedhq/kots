@@ -45,10 +45,11 @@ export default class DashboardCard extends React.Component {
   renderLicenseCard = () => {
     const { appLicense } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
+    
 
     return(
       <div>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p> 
       </div>

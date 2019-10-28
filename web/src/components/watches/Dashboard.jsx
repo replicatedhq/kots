@@ -4,17 +4,11 @@ import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Modal from "react-modal";
 import PaperIcon from "../shared/PaperIcon";
+import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 
 import { getAppLicense } from "@src/queries/AppsQueries";
-import {
-  updateWatch,
-  deleteWatch,
-} from "@src/mutations/WatchMutations";
-
-import { checkForKotsUpdates } from "../../mutations/AppsMutations";
-
-import { deleteKotsApp, updateKotsApp } from "@src/mutations/AppsMutations";
+import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
 
 import "../../scss/components/watches/Dashboard.scss";
 
@@ -161,6 +155,13 @@ class Dashboard extends Component {
     const { app } = this.props;
     const isAirgap = app.isAirgap;
 
+    if (!app || !appLicense) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      );
+    }
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -289,24 +290,9 @@ export default compose(
       };
     }
   }),
-  graphql(updateWatch, {
-    props: ({ mutate }) => ({
-      updateWatch: (watchId, watchName, iconUri) => mutate({ variables: { watchId, watchName, iconUri } })
-    })
-  }),
   graphql(updateKotsApp, {
     props: ({ mutate }) => ({
       updateKotsApp: (appId, appName, iconUri) => mutate({ variables: { appId, appName, iconUri } })
-    })
-  }),
-  graphql(deleteWatch, {
-    props: ({ mutate }) => ({
-      deleteWatch: (watchId, childWatchIds) => mutate({ variables: { watchId, childWatchIds } })
-    })
-  }),
-  graphql(deleteKotsApp, {
-    props: ({ mutate }) => ({
-      deleteKotsApp: (slug) => mutate({ variables: { slug } })
     })
   })
 )(Dashboard);
