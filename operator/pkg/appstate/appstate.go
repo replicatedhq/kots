@@ -3,24 +3,20 @@ package appstate
 import (
 	"context"
 	"log"
-	"sync"
+	"time"
 
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
 type Monitor struct {
 	clientset        kubernetes.Interface
 	defaultNamespace string
-	informersCh      chan []types.StatusInformer
+	appInformersCh   chan appInformer
 	appStatusCh      chan types.AppStatus
 	cancel           context.CancelFunc
-
-	sync.Mutex
 }
 
 type EventHandler interface {
@@ -29,30 +25,36 @@ type EventHandler interface {
 	ObjectDeleted(obj interface{})
 }
 
-func NewMonitor(restconfig *rest.Config, defaultNamespace string) (*Monitor, error) {
-	clientset, err := kubernetes.NewForConfig(restconfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "new kubernetes client")
-	}
+type appInformer struct {
+	appID     string
+	informers []types.StatusInformer
+}
 
+func NewMonitor(clientset kubernetes.Interface, defaultNamespace string) *Monitor {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Monitor{
 		clientset:        clientset,
 		defaultNamespace: defaultNamespace,
-		informersCh:      make(chan []types.StatusInformer),
+		appInformersCh:   make(chan appInformer),
 		appStatusCh:      make(chan types.AppStatus),
 		cancel:           cancel,
 	}
 	go m.run(ctx)
-	return m, nil
+	return m
 }
 
 func (m *Monitor) Shutdown() {
 	m.cancel()
 }
 
-func (m *Monitor) Apply(informers []types.StatusInformer) {
-	m.informersCh <- informers
+func (m *Monitor) Apply(appID string, informers []types.StatusInformer) {
+	m.appInformersCh <- struct {
+		appID     string
+		informers []types.StatusInformer
+	}{
+		appID:     appID,
+		informers: informers,
+	}
 }
 
 func (m *Monitor) AppStatusChan() <-chan types.AppStatus {
@@ -60,7 +62,75 @@ func (m *Monitor) AppStatusChan() <-chan types.AppStatus {
 }
 
 func (m *Monitor) run(ctx context.Context) {
-	log.Println("Starting appstate monitor loop")
+	log.Println("Starting monitor loop")
+
+	defer close(m.appStatusCh)
+
+	appMonitors := make(map[string]*AppMonitor)
+	defer func() {
+		for _, appMonitor := range appMonitors {
+			appMonitor.Shutdown()
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case appInformer := <-m.appInformersCh:
+			appMonitor, ok := appMonitors[appInformer.appID]
+			if !ok {
+				appMonitor = NewAppMonitor(m.clientset, m.defaultNamespace, appInformer.appID)
+				go func() {
+					for appStatus := range appMonitor.AppStatusChan() {
+						m.appStatusCh <- appStatus
+					}
+				}()
+				appMonitors[appInformer.appID] = appMonitor
+			}
+			appMonitor.Apply(appInformer.informers)
+		}
+	}
+}
+
+type AppMonitor struct {
+	clientset        kubernetes.Interface
+	defaultNamespace string
+	appID            string
+	informersCh      chan []types.StatusInformer
+	appStatusCh      chan types.AppStatus
+	cancel           context.CancelFunc
+}
+
+func NewAppMonitor(clientset kubernetes.Interface, defaultNamespace, appID string) *AppMonitor {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := &AppMonitor{
+		appID:            appID,
+		clientset:        clientset,
+		defaultNamespace: defaultNamespace,
+		informersCh:      make(chan []types.StatusInformer),
+		appStatusCh:      make(chan types.AppStatus),
+		cancel:           cancel,
+	}
+	go m.run(ctx)
+	return m
+}
+
+func (m *AppMonitor) Shutdown() {
+	m.cancel()
+}
+
+func (m *AppMonitor) Apply(informers []types.StatusInformer) {
+	m.informersCh <- informers
+}
+
+func (m *AppMonitor) AppStatusChan() <-chan types.AppStatus {
+	return m.appStatusCh
+}
+
+func (m *AppMonitor) run(ctx context.Context) {
+	log.Println("Starting app monitor loop")
 
 	defer close(m.informersCh)
 	defer close(m.appStatusCh)
@@ -76,7 +146,7 @@ func (m *Monitor) run(ctx context.Context) {
 		case informers := <-m.informersCh:
 			prevCancel() // cancel previous loop
 
-			log.Println("Appstate monitor got new informers")
+			log.Println("App monitor got new informers")
 
 			ctx, cancel := context.WithCancel(ctx)
 			prevCancel = cancel
@@ -85,13 +155,15 @@ func (m *Monitor) run(ctx context.Context) {
 	}
 }
 
-func (m *Monitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
+func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
 	informers = normalizeStatusInformers(informers, m.defaultNamespace)
 
 	log.Printf("Running informers: %#v", informers)
 
-	appStatus := buildAppStatusFromStatusInformers(informers)
-	var didSendOnce bool
+	appStatus := types.AppStatus{
+		AppID:          m.appID,
+		ResourceStates: buildResourceStatesFromStatusInformers(informers),
+	}
 
 	resourceStateCh := make(chan types.ResourceState)
 	go runDeploymentController(ctx, m.clientset, informers, resourceStateCh)
@@ -103,11 +175,9 @@ func (m *Monitor) runInformers(ctx context.Context, informers []types.StatusInfo
 			case <-ctx.Done():
 				return
 			case resourceState := <-resourceStateCh:
-				if a, didChange := appStatusApplyNewResourceState(appStatus, informers, resourceState); didChange || !didSendOnce {
-					appStatus = a
-					m.appStatusCh <- appStatus
-					didSendOnce = true
-				}
+				appStatus.ResourceStates, _ = resourceStatesApplyNew(appStatus.ResourceStates, informers, resourceState)
+				appStatus.UpdatedAt = time.Now() // TODO: this should come from the informer
+				m.appStatusCh <- appStatus
 			}
 		}
 	}()

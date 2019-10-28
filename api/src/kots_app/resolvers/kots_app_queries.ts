@@ -7,6 +7,7 @@ import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
 import { logger } from "../../server/logger";
+import { KotsAppStatus } from "../kots_app_status";
 
 export function KotsQueries(stores: Stores) {
   return {
@@ -34,7 +35,7 @@ export function KotsQueries(stores: Stores) {
       if (!id && !slug) {
         throw new ReplicatedError("One of slug or id is required");
       }
-      let _id;
+      let _id: string;
       if (slug) {
         _id = await stores.kotsAppStore.getIdFromSlug(slug)
       } else {
@@ -148,6 +149,15 @@ export function KotsQueries(stores: Stores) {
       const app = await context.getApp(appId);
       const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
       return await stores.kotsAppStore.getDownstreamOutput(app.id, clusterId, args.sequence);
+    },
+
+    async getKotsAppStatus(root: any, args: any, context: Context): Promise<any> {
+      const { slug } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug)
+      const app = await context.getApp(appId);
+      const appStatus = await stores.kotsAppStatusStore.getKotsAppStatus(app.id);
+      // TODO: this will throw a ReplicatedError if not found
+      return appStatus.toSchema();
     },
   }
 }

@@ -1,6 +1,7 @@
 import { Params } from "../server/params";
 import { Stores } from "../schema/stores";
 import zlib from "zlib";
+import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
@@ -48,6 +49,18 @@ export class KotsApp {
   }
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id, clusterId);
+  }
+  public async getKotsAppSpec(clusterId: string, kotsAppStore: KotsAppStore): Promise<any> {
+    const activeDownstream = await kotsAppStore.getCurrentVersion(this.id, clusterId);
+    if (!activeDownstream) {
+      return null;
+    }
+
+    const kotsAppSpec = await kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
+    if (!kotsAppSpec) {
+      return null;
+    }
+    return yaml.safeLoad(kotsAppSpec);
   }
   public async getRealizedLinksFromAppSpec(clusterId: string, stores: Stores): Promise<KotsAppLink[]> {
     const activeDownstream = await stores.kotsAppStore.getCurrentVersion(this.id, clusterId);

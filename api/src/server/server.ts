@@ -38,6 +38,7 @@ import { KotsLicenseStore } from "../klicenses";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
+import { KotsAppStatusStore } from "../kots_app/kots_app_status_store";
 import tmp from "tmp";
 import fs from "fs";
 import { KurlStore } from "../kurl/kurl_store";
@@ -161,6 +162,7 @@ export class Server extends ServerLoader {
       githubInstall: new GithubInstallationsStore(pool),
       preflightStore: new PreflightStore(pool),
       kotsAppStore: new KotsAppStore(pool, params),
+      kotsAppStatusStore: new KotsAppStatusStore(pool, params),
       kurlStore: new KurlStore(pool, params),
     }
 

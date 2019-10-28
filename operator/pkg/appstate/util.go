@@ -26,21 +26,21 @@ func filterStatusInformersByResourceKind(informers []types.StatusInformer, kind 
 	return
 }
 
-func buildAppStatusFromStatusInformers(informers []types.StatusInformer) (appStatus types.AppStatus) {
+func buildResourceStatesFromStatusInformers(informers []types.StatusInformer) (next types.ResourceStates) {
 	for _, informer := range informers {
-		appStatus = append(appStatus, types.ResourceState{
+		next = append(next, types.ResourceState{
 			Kind:      informer.Kind,
 			Name:      informer.Name,
 			Namespace: informer.Namespace,
 			State:     types.StateMissing,
 		})
 	}
-	sort.Sort(appStatus)
+	sort.Sort(next)
 	return
 }
 
-func appStatusApplyNewResourceState(appStatus types.AppStatus, informers []types.StatusInformer, resourceState types.ResourceState) (next types.AppStatus, didChange bool) {
-	for _, r := range appStatus {
+func resourceStatesApplyNew(resourceStates types.ResourceStates, informers []types.StatusInformer, resourceState types.ResourceState) (next types.ResourceStates, didChange bool) {
+	for _, r := range resourceStates {
 		if resourceState.Kind == r.Kind &&
 			resourceState.Namespace == r.Namespace &&
 			resourceState.Name == r.Name &&

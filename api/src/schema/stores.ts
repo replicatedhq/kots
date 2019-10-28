@@ -19,6 +19,7 @@ import { KotsLicenseStore } from "../klicenses";
 import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
+import { KotsAppStatusStore } from "../kots_app/kots_app_status_store";
 import { KurlStore } from "../kurl/kurl_store";
 
 export interface Stores {
@@ -26,22 +27,23 @@ export interface Stores {
   userStore: UserStore;
   githubNonceStore: GithubNonceStore;
   clusterStore: ClusterStore;
-  watchStore: WatchStore,
-  notificationStore: NotificationStore,
-  updateStore: UpdateStore,
-  unforkStore: UnforkStore,
-  initStore: InitStore,
-  pendingStore: PendingStore,
-  featureStore: FeatureStore,
-  healthzStore: HealthzStore,
-  watchDownload: WatchDownload,
-  editStore: EditStore,
-  helmChartStore: HelmChartStore,
-  troubleshootStore: TroubleshootStore,
-  licenseStore: LicenseStore,
-  kotsLicenseStore: KotsLicenseStore,
-  githubInstall: GithubInstallationsStore,
-  preflightStore: PreflightStore,
-  kotsAppStore: KotsAppStore,
-  kurlStore: KurlStore,
+  watchStore: WatchStore;
+  notificationStore: NotificationStore;
+  updateStore: UpdateStore;
+  unforkStore: UnforkStore;
+  initStore: InitStore;
+  pendingStore: PendingStore;
+  featureStore: FeatureStore;
+  healthzStore: HealthzStore;
+  watchDownload: WatchDownload;
+  editStore: EditStore;
+  helmChartStore: HelmChartStore;
+  troubleshootStore: TroubleshootStore;
+  licenseStore: LicenseStore;
+  kotsLicenseStore: KotsLicenseStore;
+  githubInstall: GithubInstallationsStore;
+  preflightStore: PreflightStore;
+  kotsAppStore: KotsAppStore;
+  kotsAppStatusStore: KotsAppStatusStore;
+  kurlStore: KurlStore;
 }

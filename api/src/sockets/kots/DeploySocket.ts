@@ -117,12 +117,24 @@ export class KotsDeploySocketService {
             const b = new Buffer(rendered);
 
             const args = {
-              "app_id": app.id,
+              app_id: app.id,
               namespace: desiredNamespace,
               manifests: b.toString("base64"),
             }
             this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
             clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
+
+            try {
+              const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore)
+              if (kotsAppSpec && kotsAppSpec.spec && kotsAppSpec.spec.statusInformers) {
+                this.io.in(clusterSocketHistory.clusterId).emit("appInformers", {
+                  app_id: app.id,
+                  informers: kotsAppSpec.spec.statusInformers,
+                });
+              }
+            } catch (err) {
+              console.log(err);
+            }
           }
         }
       }

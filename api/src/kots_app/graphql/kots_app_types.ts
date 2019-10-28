@@ -190,6 +190,24 @@ const KotsDownstreamOutput = `
   }
 `;
 
+const ResourceState = `
+  type ResourceState {
+    kind: String!
+    name: String!
+    namespace: String!
+    state: String!
+  }
+`;
+
+const KotsAppStatus = `
+  type KotsAppStatus {
+    appId: String!
+    updatedAt: String!
+    resourceStates: [ResourceState!]!
+    state: String!
+  }
+`;
+
 export default [
   KotsAppUpload,
   KotsApp,
@@ -198,6 +216,8 @@ export default [
   KotsVersion,
   KotsAppMetadata,
   KotsDownstreamOutput,
+  KotsAppStatus,
+  ResourceState,
 
   AppRegistryDetails,
   KotsAppRegistryDetails,

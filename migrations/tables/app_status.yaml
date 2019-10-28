@@ -1,0 +1,19 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  name: app-status
+spec:
+  database: kotsadm-postgres
+  name: app_status
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+        - app_id
+      columns:
+      - name: app_id
+        type: text
+      - name: resource_states
+        type: text
+      - name: updated_at
+        type: timestamp without time zone

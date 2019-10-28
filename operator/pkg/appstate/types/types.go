@@ -1,19 +1,47 @@
 package types
 
+import (
+	"errors"
+	"regexp"
+	"time"
+)
+
 var (
 	StateReady       State = "ready"
 	StateDegraded    State = "degraded"
 	StateUnavailable State = "unavailable"
 	StateMissing     State = "missing"
+
+	StatusInformerRegexp = regexp.MustCompile(`^(?:([^\/]+)\/)?([^\/]+)\/([^\/]+)$`)
 )
 
+type StatusInformerString string
+
 type StatusInformer struct {
-	Kind      string `json:"kind"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
+	Kind      string
+	Name      string
+	Namespace string
 }
 
-type AppStatus []ResourceState
+func (s StatusInformerString) Parse() (i StatusInformer, err error) {
+	matches := StatusInformerRegexp.FindStringSubmatch(string(s))
+	if len(matches) != 4 {
+		err = errors.New("status informer format string incorrect")
+		return
+	}
+	i.Namespace = matches[1]
+	i.Kind = matches[2]
+	i.Name = matches[3]
+	return
+}
+
+type AppStatus struct {
+	AppID          string         `json:"app_id"`
+	ResourceStates ResourceStates `json:"resource_states"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+}
+
+type ResourceStates []ResourceState
 
 type ResourceState struct {
 	Kind      string `json:"kind"`
@@ -24,11 +52,11 @@ type ResourceState struct {
 
 type State string
 
-func (a AppStatus) Len() int {
+func (a ResourceStates) Len() int {
 	return len(a)
 }
 
-func (a AppStatus) Less(i, j int) bool {
+func (a ResourceStates) Less(i, j int) bool {
 	if a[i].Kind < a[j].Kind {
 		return true
 	}
@@ -41,6 +69,6 @@ func (a AppStatus) Less(i, j int) bool {
 	return false
 }
 
-func (a AppStatus) Swap(i, j int) {
+func (a ResourceStates) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
