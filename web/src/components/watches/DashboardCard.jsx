@@ -50,8 +50,8 @@ export default class DashboardCard extends React.Component {
 
     return (
       <div>
-        <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {currentVersion.status === "deployed" ? "Installed" : ""} </p>
-        <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion.createdOn).format("lll")} </p>
+        <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {currentVersion?.status === "deployed" ? "Installed" : ""} </p>
+        <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
 
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
         {checkingForUpdates
