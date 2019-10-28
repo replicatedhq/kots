@@ -32,6 +32,11 @@ type DeployOptions struct {
 	ApplicationMetadata  []byte
 }
 
+type UpgradeOptions struct {
+	Namespace  string
+	Kubeconfig string
+}
+
 // YAML will return a map containing the YAML needed to run the admin console
 func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
@@ -109,6 +114,38 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
+func Upgrade(upgradeOptions UpgradeOptions) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	log := logger.NewLogger()
+
+	_, err = clientset.CoreV1().Namespaces().Get(upgradeOptions.Namespace, metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		err := errors.New("The namespace cannot be found or accessed")
+		log.Error(err)
+		return err
+	}
+
+	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, upgradeOptions.Kubeconfig, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to read deploy options")
+	}
+
+	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
+		return errors.Wrap(err, "failed to uppgrade admin console")
+	}
+
+	return nil
+}
+
 func Deploy(deployOptions DeployOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -144,6 +181,14 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to get namespace")
 	}
 
+	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
+		return errors.Wrap(err, "failed to deploy admin console")
+	}
+
+	return nil
+}
+
+func ensureKotsadm(deployOptions DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
@@ -179,4 +224,85 @@ func Deploy(deployOptions DeployOptions) error {
 	}
 
 	return nil
+}
+
+func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset *kubernetes.Clientset) (*DeployOptions, error) {
+	deployOptions := DeployOptions{
+		Namespace:     namespace,
+		Kubeconfig:    kubeconfig,
+		IncludeShip:   false,
+		IncludeGitHub: false,
+		ServiceType:   "ClusterIP",
+		Hostname:      "localhost:8800",
+	}
+
+	// Shared password, we can't read the original, but we can check if there's a bcrypted value
+	// the caller should not recreate if there is a password bcrypt on the return value
+	sharedPasswordSecret, err := getSharedPasswordSecret(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get shared password secret")
+	}
+	if sharedPasswordSecret != nil {
+		data, ok := sharedPasswordSecret.Data["passwordBcrypt"]
+		if ok {
+			deployOptions.SharedPasswordBcrypt = string(data)
+		}
+	}
+	if deployOptions.SharedPasswordBcrypt == "" {
+		sharedPassword, err := promptForSharedPassword()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to prompt for shared password")
+		}
+
+		deployOptions.SharedPassword = sharedPassword
+	}
+
+	// s3 secret, get from cluster or create new random values
+	s3Secret, err := getS3Secret(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get s3 secret")
+	}
+	if s3Secret != nil {
+		accessKey, ok := s3Secret.Data["accesskey"]
+		if ok {
+			deployOptions.S3AccessKey = string(accessKey)
+		}
+
+		secretyKey, ok := s3Secret.Data["secretkey"]
+		if ok {
+			deployOptions.S3SecretKey = string(secretyKey)
+		}
+	}
+	if deployOptions.S3AccessKey == "" {
+		deployOptions.S3AccessKey = uuid.New().String()
+	}
+	if deployOptions.S3SecretKey == "" {
+		deployOptions.S3SecretKey = uuid.New().String()
+	}
+
+	// jwt key, get or create new value
+	jwtSecret, err := getJWTSessionSecret(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get jwt secret")
+	}
+	if jwtSecret != nil {
+		sessionKey, ok := jwtSecret.Data["key"]
+		if ok {
+			deployOptions.JWT = string(sessionKey)
+		}
+	}
+
+	// postgres password, read from the secret or create new password
+	pgSecret, err := getPostgresSecret(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get postgres secret")
+	}
+	if pgSecret != nil {
+		password, ok := pgSecret.Data["password"]
+		if ok {
+			deployOptions.PostgresPassword = string(password)
+		}
+	}
+
+	return &deployOptions, nil
 }

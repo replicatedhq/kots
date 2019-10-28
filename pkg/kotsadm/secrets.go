@@ -8,6 +8,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -68,8 +69,10 @@ func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if err := ensureSharedPasswordSecret(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure shared password secret")
+	if deployOptions.SharedPasswordBcrypt == "" {
+		if err := ensureSharedPasswordSecret(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure shared password secret")
+		}
 	}
 
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
@@ -79,13 +82,26 @@ func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset
 	return nil
 }
 
-func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-minio", metav1.GetOptions{})
+func getS3Secret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	s3Secret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing s3 secret")
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
 		}
 
+		return nil, errors.Wrap(err, "failed to get s3 secret from cluster")
+	}
+
+	return s3Secret, nil
+}
+
+func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
+	existingS3Secret, err := getS3Secret(namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to check for existing s3 secret")
+	}
+
+	if existingS3Secret == nil {
 		_, err := clientset.CoreV1().Secrets(namespace).Create(s3Secret(namespace, uuid.New().String(), uuid.New().String()))
 		if err != nil {
 			return errors.Wrap(err, "failed to create s3 secret")
@@ -95,13 +111,26 @@ func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
 	return nil
 }
 
-func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-session", metav1.GetOptions{})
+func getJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	jwtSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-session", metav1.GetOptions{})
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing session secret")
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
 		}
 
+		return nil, errors.Wrap(err, "failed to get jwt session secret from cluster")
+	}
+
+	return jwtSecret, nil
+}
+
+func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) error {
+	existingJWTSessionSecret, err := getJWTSessionSecret(namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to check for existing jwt sesssion secret")
+	}
+
+	if existingJWTSessionSecret == nil {
 		_, err := clientset.CoreV1().Secrets(namespace).Create(jwtSecret(namespace, uuid.New().String()))
 		if err != nil {
 			return errors.Wrap(err, "failed to create jwt session secret")
@@ -111,13 +140,26 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func ensurePostgresSecret(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get("kotsadm-postgres", metav1.GetOptions{})
+func getPostgresSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	pgSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing postgres secret")
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
 		}
 
+		return nil, errors.Wrap(err, "failed to get postgres secret from cluster")
+	}
+
+	return pgSecret, nil
+}
+
+func ensurePostgresSecret(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	existingPgSecret, err := getPostgresSecret(deployOptions.Namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to check for existing postgres secret")
+	}
+
+	if existingPgSecret == nil {
 		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(pgSecret(deployOptions.Namespace, deployOptions.PostgresPassword))
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres secret")
@@ -125,6 +167,19 @@ func ensurePostgresSecret(deployOptions DeployOptions, clientset *kubernetes.Cli
 	}
 
 	return nil
+}
+
+func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	sharedPasswordSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-password", metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return nil, errors.Wrap(err, "failed to get shared password secret from cluster")
+	}
+
+	return sharedPasswordSecret, nil
 }
 
 func ensureSharedPasswordSecret(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
@@ -142,17 +197,18 @@ func ensureSharedPasswordSecret(deployOptions *DeployOptions, clientset *kuberne
 		return errors.Wrap(err, "failed to bcrypt shared password")
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get("kotsadm-password", metav1.GetOptions{})
+	existingSharedPasswordSecret, err := getSharedPasswordSecret(deployOptions.Namespace, clientset)
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing password secret")
-		}
-
+		return errors.Wrap(err, "failed to check for existing password secret")
+	}
+	if existingSharedPasswordSecret == nil {
 		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(sharedPasswordSecret(deployOptions.Namespace, string(bcryptPassword)))
 		if err != nil {
 			return errors.Wrap(err, "failed to create password secret")
 		}
 	}
+
+	// TODO handle update
 
 	return nil
 }
