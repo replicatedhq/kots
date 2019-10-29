@@ -532,7 +532,7 @@ class AppVersionHistory extends Component {
                         <td width="17%">{currentDownstreamVersion.source}</td>
                         <td>{currentDownstreamVersion.deployedAt ? moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY hh:mm a") : ""}</td>
                         <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
-                        <td><Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link></td>
+                        <td>{app.isConfigurable && <Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link>}</td>
                       </tr>
                     </tbody>
                   </table>

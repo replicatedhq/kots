@@ -4,6 +4,7 @@ const KotsAppUpload = `
     isAirgap: Boolean
     needsRegistry: Boolean
     slug: String
+    isConfigurable: Boolean
   }
 `;
 

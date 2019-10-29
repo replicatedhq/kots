@@ -304,6 +304,7 @@ export class KotsAPI {
     const dstDir = tmp.dirSync();
     var appSlug: string;
     let hasPreflight: Boolean;
+    let isConfigurable: Boolean;
     var liveness: any;
     try {
       await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
@@ -374,6 +375,7 @@ export class KotsAPI {
         await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Creating app...");
         const appProps = await kotsAppFromAirgapData(out, app, request.app.locals.stores);
         hasPreflight = appProps.hasPreflight;
+        isConfigurable = appProps.isConfigurable;
       } finally {
         tmpDstDir.removeCallback();
       }
@@ -394,7 +396,8 @@ export class KotsAPI {
     response.status(200);
     return {
       slug: appSlug,
-      hasPreflight: hasPreflight,
+      hasPreflight,
+      isConfigurable,
     };
   }
 

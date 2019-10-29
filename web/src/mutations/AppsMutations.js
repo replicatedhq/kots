@@ -38,6 +38,7 @@ export const uploadKotsLicenseRaw = `
       slug
       isAirgap
       needsRegistry
+      isConfigurable
     }
   }
 `
@@ -65,6 +66,7 @@ export const resumeInstallOnlineRaw = `
     resumeInstallOnline(slug: $slug) {
       hasPreflight
       slug
+      isConfigurable
     }
   }
 `;
@@ -72,8 +74,8 @@ export const resumeInstallOnlineRaw = `
 export const resumeInstallOnline = gql(resumeInstallOnlineRaw);
 
 export const updateAppConfig = gql`
-  mutation updateAppConfig($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
-    updateAppConfig(slug: $slug, sequence: $sequence, configGroups: $configGroups)
+  mutation updateAppConfig($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!, $createNewVersion: Boolean) {
+    updateAppConfig(slug: $slug, sequence: $sequence, configGroups: $configGroups, createNewVersion: $createNewVersion)
   }
 `;
 

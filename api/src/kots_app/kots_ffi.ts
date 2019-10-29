@@ -281,6 +281,9 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", diffSummary);
     }
 
+    kotsApp.currentSequence = 0;
+    kotsApp.isConfigurable = await kotsApp.isAppConfigurable();
+
     return kotsApp;
   } finally {
     tmpDir.removeCallback();
@@ -340,7 +343,7 @@ export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, li
   };
 }
 
-export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: Boolean}> {
+export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: Boolean, isConfigurable: Boolean }> {
   const params = await Params.getParams();
   const buffer = fs.readFileSync(out);
   const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, "0.tar.gz");
@@ -389,8 +392,12 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
 
+  app.currentSequence = 0;
+  const isConfigurable = await app.isAppConfigurable();
+
   return {
-    hasPreflight: !!preflightSpec
+    hasPreflight: !!preflightSpec,
+    isConfigurable,
   };
 }
 

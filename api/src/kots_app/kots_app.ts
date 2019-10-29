@@ -14,6 +14,7 @@ import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
 import { Cluster } from "../cluster";
+import { putObject } from "../util/s3";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 
@@ -33,6 +34,7 @@ export class KotsApp {
   airgapUploadPending: boolean;
   isAirgap: boolean;
   hasPreflight: boolean;
+  isConfigurable: boolean;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
@@ -224,7 +226,7 @@ export class KotsApp {
     return configGroups;
   }
 
-  async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[]): Promise<void> {
+  async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[], createNewVersion: boolean): Promise<void> {
     const paths: string[] = await this.getFilesPaths(sequence);
     const files: FilesAsString = await this.getFiles(sequence, paths);
 
@@ -253,7 +255,15 @@ export class KotsApp {
     const bundlePacker = new TarballPacker();
     const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
 
-    await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
+    if (!createNewVersion) {
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      const kotsApp = await stores.kotsAppStore.getApp(appId);
+      const params = await Params.getParams();
+      const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${sequence}.tar.gz`);
+      await putObject(params, objectStorePath, tarGzBuffer, params.shipOutputBucket);
+    } else {
+      await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
+    }
   }
 
   // Source files
@@ -393,7 +403,7 @@ export class KotsApp {
     }
   }
 
-  private async isAppConfigurable(): Promise<boolean> {
+  public async isAppConfigurable(): Promise<boolean> {
     const sequence = Number.isInteger(this.currentSequence!) ? `${this.currentSequence}` : "";
     if (sequence === "") {
       return false;
@@ -444,7 +454,6 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
-      isConfigurable: () => this.isAppConfigurable(),
       allowRollback: () => this.isAllowRollback(stores),
       currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {

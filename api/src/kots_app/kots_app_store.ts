@@ -708,6 +708,7 @@ export class KotsAppStore {
     // This is to avoid a race condition when uploading a license file where the row in app_version
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
+    kotsApp.isConfigurable = await kotsApp.isAppConfigurable();
     return kotsApp;
   }
 

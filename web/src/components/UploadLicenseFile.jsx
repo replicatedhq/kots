@@ -41,12 +41,17 @@ class UploadLicenseFile extends React.Component {
           return;
         }
 
+        if (data.isConfigurable) {
+          history.replace(`/${data.slug}/config`);
+          return;
+        }
+
         if (data.hasPreflight) {
           history.replace("/preflight");
           return;
         }
 
-        // No airgap or preflight? Go to the kotsApp detail view that was just uploaded
+        // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
         history.replace(`/app/${data.slug}`);
       });
 

@@ -22,7 +22,7 @@ type Mutation {
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
   resumeInstallOnline(slug: String!): KotsApp
-  updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): Boolean
+  updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!, createNewVersion: Boolean): Boolean
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   createWatch(stateJSON: String!): Watch

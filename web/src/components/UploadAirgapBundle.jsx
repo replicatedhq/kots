@@ -102,7 +102,9 @@ class UploadAirgapBundle extends React.Component {
 
         const jsonResponse = JSON.parse(response);
 
-        if (jsonResponse.hasPreflight) {
+        if (jsonResponse.isConfigurable) {
+          this.props.history.replace(`/${jsonResponse.slug}/config`);
+        } else if (jsonResponse.hasPreflight) {
           this.props.history.replace(`/preflight`);
         } else {
           this.props.history.replace(`/app/${jsonResponse.slug}`);
@@ -142,8 +144,11 @@ class UploadAirgapBundle extends React.Component {
     try {
       const resp = await this.props.resumeInstallOnline(slug);
       const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
+      const isConfigurable = resp?.data?.resumeInstallOnline?.isConfigurable;
 
-      if (hasPreflight) {
+      if (isConfigurable) {
+        this.props.history.replace(`/${slug}/config`);
+      } else if (hasPreflight) {
         this.props.history.replace("/preflight");
       } else {
         await this.props.onUploadSuccess();

@@ -76,6 +76,7 @@ export function KotsMutations(stores: Stores) {
         isAirgap: parsedLicense.spec.isAirgapSupported,
         needsRegistry,
         slug: kotsApp.slug,
+        isConfigurable: kotsApp.isConfigurable,
       }
     },
 
@@ -133,10 +134,10 @@ export function KotsMutations(stores: Stores) {
     },
 
     async updateAppConfig(root: any, args: any, context: Context) {
-      const { slug, sequence, configGroups } = args;
+      const { slug, sequence, configGroups, createNewVersion } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await context.getApp(appId);
-      await app.updateAppConfig(stores, slug, sequence, configGroups);
+      await app.updateAppConfig(stores, slug, sequence, configGroups, createNewVersion);
       return true;
     },
 
