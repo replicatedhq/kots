@@ -56,22 +56,6 @@ interface UpdateAppBody {
 
 @Controller("/api/v1/kots")
 export class KotsAPI {
-  // @Get("/apps")
-  // async kotsList(
-  //   @Req() request: Request,
-  // ): Promise<any> {
-  //   const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
-
-  //   const result = _.map(apps, (app: KotsApp) => {
-  //     return {
-  //       name: app.name,
-  //       slug: app.slug,
-  //     };
-  //   });
-
-  //   return result;
-  // }
-
   @Get("/ports")
   async kotsPorts(
     @Req() request: Request,
@@ -185,10 +169,20 @@ export class KotsAPI {
     @Res() response: Response,
     @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
-    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
-    if (!session || !session.userId) {
-      response.status(401);
-      return {};
+
+    // kots install command is allowed to install the first app without auth.
+    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+    if (apps.length > 0) {
+      if (!auth) {
+        response.status(401);
+        return {};
+      }
+
+      const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+      if (!session || !session.userId) {
+        response.status(401);
+        return {};
+      }
     }
 
     const metadata = JSON.parse(body.metadata);
