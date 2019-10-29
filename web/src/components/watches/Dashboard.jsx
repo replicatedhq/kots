@@ -11,6 +11,8 @@ import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppStatus } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
 
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, AreaSeries } from "react-vis";
+
 import "../../scss/components/watches/Dashboard.scss";
 
 class Dashboard extends Component {
@@ -239,6 +241,11 @@ class Dashboard extends Component {
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams.pendingVersions?.find(version => Math.max(version.sequence));
 
+    const axisStyle = {
+      title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
+      ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
+    }
+
     if (!app || !appLicense || statusLoading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -304,6 +311,44 @@ class Dashboard extends Component {
                 url={this.props.match.url}
                 appLicense={appLicense}
               />
+            </div>
+            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
+              <div className="dashboard-card graph flex-column flex1 flex">
+                <XYPlot width={460} height={180}>
+                  <VerticalGridLines />
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis />
+                  <AreaSeries
+                    className="area-series-example"
+                    curve="curveNatural"
+                    color="#B4E4C2"
+                    data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
+                  />
+                </XYPlot>
+                <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
+                  <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">CPU usage</p>
+                  <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">a few seconds ago</span>.</p>
+                </div>
+              </div>
+              <div className="dashboard-card graph flex-column flex1 flex">
+              <XYPlot width={460} height={180}>
+                <VerticalGridLines />
+                <HorizontalGridLines />
+                <XAxis tickFormat={v => `${v}s`} style={axisStyle} />
+                <YAxis tickFormat={v => `${v}mb`} style={axisStyle} />
+                <AreaSeries
+                  className="area-series-example"
+                  curve="curveNatural"
+                  color="#ADC5F5"
+                  data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
+                />
+              </XYPlot>
+                <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
+                  <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">Memory usage</p>
+                  <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">a few seconds ago</span>.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
