@@ -7,7 +7,7 @@ import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
 import { logger } from "../../server/logger";
-import { State } from "../kots_app_status";
+import { State, KotsAppStatusSchema } from "../kots_app_status";
 
 export function KotsQueries(stores: Stores) {
   return {
@@ -151,7 +151,7 @@ export function KotsQueries(stores: Stores) {
       return await stores.kotsAppStore.getDownstreamOutput(app.id, clusterId, args.sequence);
     },
 
-    async getKotsAppStatus(root: any, args: any, context: Context): Promise<any> {
+    async getKotsAppStatus(root: any, args: any, context: Context): Promise<KotsAppStatusSchema> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug)
       const app = await context.getApp(appId);
@@ -160,7 +160,12 @@ export function KotsQueries(stores: Stores) {
         return appStatus.toSchema();
       } catch (err) {
         if (ReplicatedError.isNotFound(err)) {
-          return State.Missing;
+          return {
+            appId,
+            updatedAt: new Date(),
+            resourceStates: [],
+            state: State.Missing,
+          };
         }
         throw err;
       }

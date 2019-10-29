@@ -13,6 +13,17 @@ export interface ResourceState {
   state: State;
 }
 
+export interface StateFunction {
+  (): State;
+}
+
+export interface KotsAppStatusSchema {
+  appId: string;
+  updatedAt: Date;
+  resourceStates: ResourceState[];
+  state: State | StateFunction;
+}
+
 export class KotsAppStatus {
   appId: string;
   updatedAt: Date;
@@ -29,7 +40,7 @@ export class KotsAppStatus {
     return max;
   };
 
-  public toSchema(): any {
+  public toSchema(): KotsAppStatusSchema {
     return {
       appId: this.appId,
       updatedAt: this.updatedAt,
