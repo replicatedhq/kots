@@ -31,7 +31,7 @@ class Dashboard extends Component {
     versionToDeploy: null,
     showDeployWarningModal: false,
     showSkipModal: false,
-    appStatus: ""
+    appStatus: null
   }
 
   updateWatchInfo = async e => {
@@ -117,6 +117,7 @@ class Dashboard extends Component {
         this.setState({ appStatus: getKotsAppStatus.state });
       }
     }
+
   }
 
   componentDidMount() {
@@ -132,6 +133,7 @@ class Dashboard extends Component {
       this.setState({ appLicense: getAppLicense });
     }
 
+    this.props.getKotsAppStatus.startPolling(2000);
     if (getKotsAppStatus) {
       this.setState({ appStatus: getKotsAppStatus.state });
     }

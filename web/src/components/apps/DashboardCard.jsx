@@ -25,7 +25,14 @@ export default class DashboardCard extends React.Component {
         {!isEmpty(appStatus)
           ?
           <div className="flex alignItems--center u-marginTop--5">
-            <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : appStatus === "degraded" ? "spinnerOrange" : "spinnerRed"}`}></span>
+            {appStatus === "ready" ?
+              <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : ""}`}></span>
+              :
+              appStatus === "degraded" ?
+                <Loader size="16" color="#DB9016" />
+                :
+                <Loader size="16" color="#BC4752" />
+            }
             <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-color--dustyGray" : appStatus === "degraded" ? "u-color--orange" : "u-color--chestnut"}`}>
               {Utilities.toTitleCase(appStatus)}
             </span>
