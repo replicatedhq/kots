@@ -350,7 +350,7 @@ class AppDetailPage extends Component {
                     } />
                     <Route exact path="/app/:slug/version-history/diff/:firstSequence/:secondSequence" render={() =>
                       <DownstreamWatchVersionDiff
-                        watch={app}
+                        app={app}
                       />
                       }
                     />
