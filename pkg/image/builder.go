@@ -13,6 +13,7 @@ import (
 
 	"github.com/containers/image/copy"
 	imagedocker "github.com/containers/image/docker"
+	dockerref "github.com/containers/image/docker/reference"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports/alltransports"
 	"github.com/containers/image/types"
@@ -41,7 +42,7 @@ type RegistryAuth struct {
 	Password string
 }
 
-func SaveImages(log *logger.Logger, imagesDir string, upstreamDir string) error {
+func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, upstreamDir string) error {
 	savedImages := make(map[string]bool)
 
 	err := filepath.Walk(upstreamDir,
@@ -59,7 +60,7 @@ func SaveImages(log *logger.Logger, imagesDir string, upstreamDir string) error 
 				return err
 			}
 
-			err = saveImagesFromFile(log, imagesDir, contents, savedImages)
+			err = saveImagesToFiles(srcRegistry, appSlug, log, imagesDir, contents, savedImages)
 			if err != nil {
 				return errors.Wrap(err, "failed to extract images")
 			}
@@ -161,7 +162,7 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func saveImagesFromFile(log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
+func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {
 			if _, saved := savedImages[image]; saved {
@@ -169,7 +170,7 @@ func saveImagesFromFile(log *logger.Logger, imagesDir string, fileData []byte, s
 			}
 
 			log.ChildActionWithSpinner("Pulling image %s", image)
-			err := saveOneImage(imagesDir, image)
+			err := saveOneImage(srcRegistry, imagesDir, image, appSlug)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrap(err, "failed to save image")
@@ -208,7 +209,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func saveOneImage(imagesDir string, image string) error {
+func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image string, appSlug string) error {
 	imageRef, err := imageRefImage(image)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse image ref")
@@ -232,22 +233,42 @@ func saveOneImage(imagesDir string, image string) error {
 		return errors.Wrap(err, "failed to create policy")
 	}
 
-	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", image))
-	if err != nil {
-		return errors.Wrap(err, "failed to parse source image name")
-	}
-
 	destStr := fmt.Sprintf("%s:%s", imageFormat, archiveName)
 	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse local image name: %s", destStr)
 	}
 
+	sourceCtx := &types.SystemContext{}
+
+	isPrivate, err := isPrivateImage(image)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if image is private: %s", image)
+	}
+
+	sourceImage := image
+	if isPrivate {
+		sourceCtx.DockerAuthConfig = &types.DockerAuthConfig{
+			Username: srcRegistry.Username,
+			Password: srcRegistry.Password,
+		}
+		rewritten, err := rewritePrivateImage(srcRegistry, image, appSlug)
+		if err != nil {
+			return errors.Wrapf(err, "failed to rewrite private image %s", image)
+		}
+
+		sourceImage = rewritten
+	}
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", sourceImage))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse source image name")
+	}
+
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          nil,
-		SourceCtx:             nil,
+		SourceCtx:             sourceCtx,
 		DestinationCtx:        nil,
 		ForceManifestMIMEType: "",
 	})
@@ -370,8 +391,30 @@ func isPrivateImage(image string) (bool, error) {
 	if !isUnauthorized(err) {
 		return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
 	}
-
 	return true, nil
+}
+
+func rewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
+	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse image ref:%s", image)
+	}
+
+	registryHost := dockerref.Domain(ref.DockerReference())
+	if registryHost == srcRegistry.Endpoint {
+		// replicated images are also private, but we don't rewrite those
+		return image, nil
+	}
+
+	newImage := registry.MakeProxiedImageURL(srcRegistry.ProxyEndpoint, appSlug, image)
+	if tagged, ok := ref.DockerReference().(dockerref.Tagged); ok {
+		return newImage + ":" + tagged.Tag(), nil
+	} else if can, ok := ref.DockerReference().(reference.Canonical); ok {
+		return newImage + "@" + can.Digest().String(), nil
+	}
+
+	// no tag, so it will be "latest"
+	return newImage, nil
 }
 
 func isUnauthorized(err error) bool {

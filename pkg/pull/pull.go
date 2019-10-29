@@ -139,16 +139,28 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
+	replicatedRegistryInfo := registryProxyEndpointFromLicense(fetchOptions.License)
+
 	var pullSecret *corev1.Secret
 	var images []image.Image
 	var objects []*k8sdoc.Doc
 	if pullOptions.RewriteImages {
+
 		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
 			writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
 				RootDir:      pullOptions.RootDir,
 				CreateAppDir: pullOptions.CreateAppDir,
 				Log:          log,
+				SourceRegistry: registry.RegistryOptions{
+					Endpoint:      replicatedRegistryInfo.Registry,
+					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+			}
+			if fetchOptions.License != nil {
+				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
+				writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
+				writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
 			if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
@@ -159,15 +171,25 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// push the images
 		if pullOptions.RewriteImageOptions.Host != "" {
 			pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
-				RootDir:           pullOptions.RootDir,
-				ImagesDir:         imagesDirFromOptions(u, pullOptions),
-				CreateAppDir:      pullOptions.CreateAppDir,
-				Log:               log,
-				ReportWriter:      pullOptions.ReportWriter,
-				RegistryHost:      pullOptions.RewriteImageOptions.Host,
-				RegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
-				Username:          pullOptions.RewriteImageOptions.Username,
-				Password:          pullOptions.RewriteImageOptions.Password,
+				RootDir:      pullOptions.RootDir,
+				ImagesDir:    imagesDirFromOptions(u, pullOptions),
+				CreateAppDir: pullOptions.CreateAppDir,
+				Log:          log,
+				ReplicatedRegistry: registry.RegistryOptions{
+					Endpoint:      replicatedRegistryInfo.Registry,
+					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+				ReportWriter: pullOptions.ReportWriter,
+				DestinationRegistry: registry.RegistryOptions{
+					Endpoint:  pullOptions.RewriteImageOptions.Host,
+					Namespace: pullOptions.RewriteImageOptions.Namespace,
+					Username:  pullOptions.RewriteImageOptions.Username,
+					Password:  pullOptions.RewriteImageOptions.Password,
+				},
+			}
+			if fetchOptions.License != nil {
+				pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
+				pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
 			rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
 			if err != nil {
@@ -206,15 +228,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			objects = affectedObjects
 		}
 	} else if fetchOptions.License != nil {
+
 		// Rewrite private images
-		registryInfo := registryProxyEndpointFromLicense(fetchOptions.License)
 		findPrivateImagesOptions := upstream.FindPrivateImagesOptions{
-			RootDir:                 pullOptions.RootDir,
-			CreateAppDir:            pullOptions.CreateAppDir,
-			AppSlug:                 fetchOptions.License.Spec.AppSlug,
-			ReplicatedRegistry:      registryInfo.Registry,
-			ReplicatedRegistryProxy: registryInfo.Proxy,
-			Log:                     log,
+			RootDir:      pullOptions.RootDir,
+			CreateAppDir: pullOptions.CreateAppDir,
+			AppSlug:      fetchOptions.License.Spec.AppSlug,
+			ReplicatedRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			Log: log,
 		}
 		rewrittenImages, affectedObjects, err := u.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
@@ -225,7 +249,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// We still need to create the secret in that case.
 		if len(affectedObjects) > 0 {
 			pullSecret, err = pullSecretForRegistries(
-				registryInfo.ToSlice(),
+				replicatedRegistryInfo.ToSlice(),
 				fetchOptions.License.Spec.LicenseID,
 				fetchOptions.License.Spec.LicenseID,
 				pullOptions.Namespace,
@@ -339,6 +363,10 @@ func registryProxyEndpointFromLicense(license *kotsv1beta1.License) *registryInf
 	defaultInfo := &registryInfo{
 		Registry: "registry.replicated.com",
 		Proxy:    "proxy.replicated.com",
+	}
+
+	if license == nil {
+		return defaultInfo
 	}
 
 	u, err := url.Parse(license.Spec.Endpoint)

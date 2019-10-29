@@ -17,10 +17,10 @@ import (
 
 	imagedocker "github.com/containers/image/docker"
 	dockerref "github.com/containers/image/docker/reference"
-	imagetypes "github.com/containers/image/types"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -546,12 +546,11 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 }
 
 type FindPrivateImagesOptions struct {
-	RootDir                 string
-	CreateAppDir            bool
-	AppSlug                 string
-	ReplicatedRegistry      string
-	ReplicatedRegistryProxy string
-	Log                     *logger.Logger
+	RootDir            string
+	CreateAppDir       bool
+	AppSlug            string
+	ReplicatedRegistry registry.RegistryOptions
+	Log                *logger.Logger
 }
 
 func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
@@ -575,14 +574,14 @@ func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustom
 		}
 
 		registryHost := dockerref.Domain(ref.DockerReference())
-		if registryHost == options.ReplicatedRegistry {
+		if registryHost == options.ReplicatedRegistry.Endpoint {
 			// replicated images are also private, but we don't rewrite those
 			continue
 		}
 
 		image := kustomizeimage.Image{
 			Name:    upstreamImage,
-			NewName: rewritePrivateImageURL(options.ReplicatedRegistryProxy, options.AppSlug, upstreamImage),
+			NewName: registry.MakeProxiedImageURL(options.ReplicatedRegistry.ProxyEndpoint, options.AppSlug, upstreamImage),
 		}
 		result = append(result, image)
 	}
@@ -609,13 +608,4 @@ func (u *Upstream) FindObjectsWithImages(options FindObjectsWithImagesOptions) (
 	}
 
 	return objects, nil
-}
-
-func rewritePrivateImageURL(proxyHost string, appSlug string, image string) string {
-	parts := strings.Split(image, ":")
-	return strings.Join([]string{proxyHost, "proxy", appSlug, parts[0]}, "/")
-}
-
-func parseDockerRef(image string) (imagetypes.ImageReference, error) {
-	return imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 }

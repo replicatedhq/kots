@@ -9,21 +9,20 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 type PushUpstreamImageOptions struct {
-	RootDir           string
-	ImagesDir         string
-	CreateAppDir      bool
-	Log               *logger.Logger
-	ReportWriter      io.Writer
-	RegistryHost      string
-	RegistryNamespace string
-	Username          string
-	Password          string
+	RootDir             string
+	ImagesDir           string
+	CreateAppDir        bool
+	Log                 *logger.Logger
+	ReplicatedRegistry  registry.RegistryOptions
+	ReportWriter        io.Writer
+	DestinationRegistry registry.RegistryOptions
 }
 
 func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
@@ -56,7 +55,7 @@ func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([
 
 				pathWithoutRoot := path[len(formatRoot)+1:]
 
-				rewrittenImage, err := image.ImageInfoFromFile(options.RegistryHost, options.RegistryNamespace, strings.Split(pathWithoutRoot, string(os.PathSeparator)))
+				rewrittenImage, err := image.ImageInfoFromFile(options.DestinationRegistry, strings.Split(pathWithoutRoot, string(os.PathSeparator)))
 				if err != nil {
 					return errors.Wrap(err, "failed to decode image from path")
 				}
@@ -64,7 +63,10 @@ func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([
 				// copy to the registry
 				options.Log.ChildActionWithSpinner("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag)
 
-				registryAuth := image.RegistryAuth{Username: options.Username, Password: options.Password}
+				registryAuth := image.RegistryAuth{
+					Username: options.DestinationRegistry.Username,
+					Password: options.DestinationRegistry.Password,
+				}
 				err = image.CopyFromFileToRegistry(path, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, options.ReportWriter)
 				if err != nil {
 					options.Log.FinishChildSpinner()

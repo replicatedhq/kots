@@ -5,10 +5,11 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
-func ImageInfoFromFile(registryHost string, namespace string, nameParts []string) (kustomizeimage.Image, error) {
+func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizeimage.Image, error) {
 	// imageNameParts looks like this:
 	// ["quay.io", "someorg", "imagename", "imagetag"]
 	// or
@@ -17,11 +18,11 @@ func ImageInfoFromFile(registryHost string, namespace string, nameParts []string
 
 	image := kustomizeimage.Image{}
 
-	if len(nameParts) < 4 {
+	if len(nameParts) < 3 {
 		return image, errors.Errorf("not enough parts in image name: %v", nameParts)
 	}
 
-	newImageNameParts := []string{registryHost, namespace}
+	newImageNameParts := []string{registry.Endpoint, registry.Namespace}
 	var originalName, tag, separator string
 	if nameParts[len(nameParts)-2] == "sha256" {
 		newImageNameParts = append(newImageNameParts, nameParts[len(nameParts)-3])

@@ -5,14 +5,17 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type WriteUpstreamImageOptions struct {
-	RootDir      string
-	CreateAppDir bool
-	Log          *logger.Logger
+	RootDir        string
+	CreateAppDir   bool
+	AppSlug        string
+	SourceRegistry registry.RegistryOptions
+	Log            *logger.Logger
 }
 
 func (u *Upstream) WriteUpstreamImages(options WriteUpstreamImageOptions) error {
@@ -30,7 +33,7 @@ func (u *Upstream) WriteUpstreamImages(options WriteUpstreamImageOptions) error 
 		}
 	}
 
-	if err := image.SaveImages(options.Log, imagesDir, upstreamDir); err != nil {
+	if err := image.SaveImages(options.SourceRegistry, options.AppSlug, options.Log, imagesDir, upstreamDir); err != nil {
 		return errors.Wrap(err, "failed to save images")
 	}
 
