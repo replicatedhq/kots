@@ -621,6 +621,7 @@ export const getAppLicense = gql`
         value
         label
       }
+      airgapEnabled
     }
   }
 `;
@@ -632,6 +633,12 @@ export const getKotsAppStatus = gql`
       appId
       updatedAt
       state
+      resourceStates {
+        kind
+        name
+        namespace
+        state
+      }
     }
   }
 `;

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 import dayjs from "dayjs";
 
@@ -21,23 +22,33 @@ export default class DashboardCard extends React.Component {
     return (
       <div>
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
-        <div className="flex alignItems--center u-marginTop--5">
-          <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : appStatus === "degraded" ? "spinnerOrange" : "spinnerRed"}`}></span>
-          <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-color--dustyGray" : appStatus === "degraded" ? "u-color--orange" : "u-color--chestnut"}`}>
-            {Utilities.toTitleCase(appStatus)}
-          </span>
-          {appStatus !== "ready" ?
-            <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10"> Troubleshoot </Link>
-            : null}
-        </div>
+        {!isEmpty(appStatus)
+          ?
+          <div className="flex alignItems--center u-marginTop--5">
+            {appStatus === "ready" ?
+              <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : ""}`}></span>
+              :
+              appStatus === "degraded" ?
+                <Loader size="16" color="#DB9016" />
+                :
+                <Loader size="16" color="#BC4752" />
+            }
+            <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-color--dustyGray" : appStatus === "degraded" ? "u-color--orange" : "u-color--chestnut"}`}>
+              {Utilities.toTitleCase(appStatus)}
+            </span>
+            {appStatus !== "ready" ?
+              <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10"> Troubleshoot </Link>
+              : null}
+          </div>
+          : null}
       </div>
     )
   }
 
   renderVersionHistoryCard = () => {
     const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, deployVersion } = this.props;
-    const updatesText = downstreams.pendingVersions ?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
-    const isUpdateAvailable = downstreams.pendingVersions ?.length > 0;
+    const updatesText = downstreams.pendingVersions?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
+    const isUpdateAvailable = downstreams.pendingVersions?.length > 0;
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (errorCheckingUpdate) {
@@ -70,7 +81,7 @@ export default class DashboardCard extends React.Component {
 
     return (
       <div>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense ?.channelName} </span></p>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p>
       </div>

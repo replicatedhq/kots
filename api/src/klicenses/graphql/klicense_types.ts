@@ -12,6 +12,7 @@ type KLicense {
   expiresAt: String
   channelName: String
   entitlements: [KEntitlement]
+  airgapEnabled: String
 }`;
 
 export default [

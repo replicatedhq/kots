@@ -1,5 +1,4 @@
 .dashboard-card {
-  max-width: 260px;
   min-width: 260px;
   max-height: 200px;
   width: 260px;
@@ -14,6 +13,19 @@
   &:nth-child(3n) {
     margin-right: 0;
   }
+
+  &.graph {
+    min-width: auto;
+    min-height: auto;
+    max-width: none;
+    max-height: none;
+    height: auto;
+
+    &:nth-child(2n) {
+      margin-right: 0;
+    }
+  }
+
 }
 
 .dashboard-app-icon {

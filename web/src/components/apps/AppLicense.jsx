@@ -78,6 +78,12 @@ class AppLicense extends Component {
                 </div>
               );
             })}
+            {appLicense.airgapEnabled && 
+              <div className="flex u-marginBottom--20">
+                <p className="u-marginRight--10">Airgap enabled:</p>
+                <p className="u-fontWeight--bold u-color--tuna">{appLicense.airgapEnabled}</p>
+              </div>
+            }
           </div>
         </div>
       </div>

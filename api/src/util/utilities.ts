@@ -57,6 +57,12 @@ export function getLicenseInfoFromYaml(licenseData): KLicense {
       }
     }
     license.entitlements = entitlements;
+
+    if (spec.isAirgapSupported) {
+      license.airgapEnabled = "Yes";
+    } else {
+      license.airgapEnabled = "No";
+    }
   
     return license;
   } catch(err) {

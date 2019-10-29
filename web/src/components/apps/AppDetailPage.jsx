@@ -12,7 +12,7 @@ import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
-import Dashboard from "../watches/Dashboard";
+import Dashboard from "./Dashboard";
 import DetailPageIntegrations from "../watches/DetailPageIntegrations";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
@@ -350,7 +350,7 @@ class AppDetailPage extends Component {
                     } />
                     <Route exact path="/app/:slug/version-history/diff/:firstSequence/:secondSequence" render={() =>
                       <DownstreamWatchVersionDiff
-                        watch={app}
+                        app={app}
                       />
                       }
                     />

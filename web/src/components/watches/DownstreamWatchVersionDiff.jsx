@@ -1,6 +1,7 @@
 import React, { Fragment } from "react";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
+import Helmet from "react-helmet";
 import sortBy from "lodash/sortBy";
 import map from "lodash/map";
 import groupBy from "lodash/groupBy";
@@ -192,13 +193,14 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   goBack = () => {
-    const { history, watch } = this.props;
-    history.push(`/app/${watch.slug}/version-history`);
+    const { history, app } = this.props;
+    history.push(`/app/${app.slug}/version-history`);
   }
 
   render() {
 
     const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state;
+    const { app } = this.props;
 
     if (fileLoading || size(firstSeqFileContents) === 0 || size(secondSeqFileContents) === 0) {
       return (
@@ -215,6 +217,9 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     return (
       <Fragment>
+        <Helmet>
+          <title>{`${app.name} Releases Diff`}</title>
+        </Helmet>
         <p className="u-color--astral u-paddingLeft--20 u-marginTop--10 u-cursor--pointer" onClick={this.goBack}>Go Back</p>
         <div className="u-padding--20 u-position--relative u-minHeight--full u-width--full">
           {size(filesByKey) > 0 ?
