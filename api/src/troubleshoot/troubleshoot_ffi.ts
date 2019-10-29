@@ -15,7 +15,7 @@ const GoString = Struct({
 
 function troubleshoot() {
   return ffi.Library("/lib/troubleshoot.so", {
-    Analyze: [GoString, [GoString, GoString, GoString]],
+    Analyze: [GoString, [GoString, GoString, GoString, GoString]],
   });
 }
 
@@ -48,6 +48,10 @@ export async function analyzeSupportBundle(supportBundleId: string, stores: Stor
         bundleURLParam["p"] = archive;
         bundleURLParam["n"] = archive.length;
 
+        const analyzersParam = new GoString();
+        analyzersParam["p"] = "";
+        analyzersParam["n"] = "".length;
+
         const outputFormatParam = new GoString();
         outputFormatParam["p"] = "json";
         outputFormatParam["n"] = outputFormatParam["p"].length;
@@ -56,7 +60,7 @@ export async function analyzeSupportBundle(supportBundleId: string, stores: Stor
         compatibilityParam["p"] = "support-bundle";
         compatibilityParam["n"] = compatibilityParam["p"].length;
 
-        const analysisResult = troubleshoot().Analyze(bundleURLParam, outputFormatParam, compatibilityParam);
+        const analysisResult = troubleshoot().Analyze(bundleURLParam, analyzersParam, outputFormatParam, compatibilityParam);
         if (analysisResult == "" || analysisResult["p"] == "") {
           await stores.troubleshootStore.updateSupportBundleStatus(supportBundleId, "analysis_error");
           console.log("failed to analyze");
@@ -65,7 +69,6 @@ export async function analyzeSupportBundle(supportBundleId: string, stores: Stor
 
         await stores.troubleshootStore.setAnalysisResult(supportBundleId, analysisResult["p"]);
         await stores.troubleshootStore.updateSupportBundleStatus(supportBundleId, "analyzed");
-
         resolve(true);
       } catch (err) {
         console.log(err);

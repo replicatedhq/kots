@@ -192,11 +192,9 @@ export class TroubleshootAPI {
 
 async function performAnalysis(supportBundleId, stores) {
   await stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
-
   const supportBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
   const dirTree = await supportBundle.generateFileTreeIndex();
   await stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
-
   // Analyze it
   await analyzeSupportBundle(supportBundleId, stores);
 }
