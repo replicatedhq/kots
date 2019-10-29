@@ -8,6 +8,7 @@ import MonacoEditor from "react-monaco-editor";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import moment from "moment";
+import changeCase from "change-case";
 import find from "lodash/find";
 import map from "lodash/map";
 import Loader from "../shared/Loader";
@@ -165,7 +166,7 @@ class AppVersionHistory extends Component {
             {Utilities.toTitleCase(version.status === "pending_preflight" ? "pending" : version.status).replace("_", " ")}
           </span>
         </div>
-        {version.status === "pending_preflight" ? 
+        {version.status === "pending_preflight" ?
           <span className="flex u-paddingRight--5 u-fontSize--smaller alignItems--center">
             Preflights
             <Loader size="20" />
@@ -175,7 +176,7 @@ class AppVersionHistory extends Component {
               <span className="link" style={{ fontSize: 12 }}>Preflight results</span>
             </Link>
         }
-        {version.status === "failed" && 
+        {version.status === "failed" &&
           <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.handleViewLogs(version)}>View logs</span>
         }
       </div>
@@ -395,11 +396,11 @@ class AppVersionHistory extends Component {
       match
     } = this.props;
 
-    const { 
-      viewReleaseNotes, 
-      showLogsModal, 
-      selectedTab, 
-      logs, 
+    const {
+      viewReleaseNotes,
+      showLogsModal,
+      selectedTab,
+      logs,
       logsLoading,
       showDeployWarningModal,
       showSkipModal,
@@ -525,7 +526,7 @@ class AppVersionHistory extends Component {
                     </thead>
                     <tbody>
                       <tr>
-                        <td>{downstream.name}</td>
+                        <td>{changeCase.title(downstream.name)}</td>
                         <td>{moment(currentDownstreamVersion.createdOn).format("MM/DD/YY hh:mm a")}</td>
                         <td>{currentDownstreamVersion.title}</td>
                         <td width="11%">{this.renderVersionSequence(currentDownstreamVersion)}</td>
@@ -540,11 +541,11 @@ class AppVersionHistory extends Component {
               }
 
               {/* Diffing releases */}
-              {versionHistory.length && selectedDiffReleases && 
+              {versionHistory.length && selectedDiffReleases &&
                 <div className="flex u-marginBottom--20">
                   <button className="btn secondary gray u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
-                  <Link 
-                    to={`/app/${match.params.slug}/version-history/diff/${firstSequenceNumber}/${secondSequenceNumber}`} 
+                  <Link
+                    to={`/app/${match.params.slug}/version-history/diff/${firstSequenceNumber}/${secondSequenceNumber}`}
                     className={classNames("btn primary blue", { "is-disabled u-pointerEvents--none": checkedReleasesToDiff.length !== 2 })}
                   >
                     Diff releases
@@ -572,13 +573,13 @@ class AppVersionHistory extends Component {
                     {versionHistory.map((version) => {
                       const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.releaseSequence === version.parentSequence);
                       return (
-                        <tr 
-                          key={version.sequence} 
-                          className={classNames({ "overlay": selectedDiffReleases, "selected": isChecked })} 
+                        <tr
+                          key={version.sequence}
+                          className={classNames({ "overlay": selectedDiffReleases, "selected": isChecked })}
                           onClick={() => selectedDiffReleases && this.handleSelectReleasesToDiff(version.parentSequence, !isChecked)}
                         >
                           {selectedDiffReleases && <td width="12px"><div className={classNames("checkbox", { "checked": isChecked })} /></td>}
-                          <td>{downstream.name}</td>
+                          <td>{changeCase.title(downstream.name)}</td>
                           <td>{moment(version.createdOn).format("MM/DD/YY hh:mm a")}</td>
                           <td>{version.title}</td>
                           <td width="11%">{this.renderVersionSequence(version)}</td>
@@ -595,7 +596,7 @@ class AppVersionHistory extends Component {
             </div>
           </div>
         </div>
-        
+
         <Modal
           isOpen={viewReleaseNotes}
           onRequestClose={this.hideReleaseNotes}

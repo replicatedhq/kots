@@ -28,17 +28,6 @@ export default [
     },
   },
   {
-    tabName: "downstreams",
-    displayName: "Downstreams",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/downstreams`,
-    displayRule: watch => {
-      if (isHelmChart(watch)) {
-        return false;
-      }
-      return !watch.cluster;
-    }
-  },
-  {
     tabName: "config",
     displayName: "Config",
     to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/config`,
