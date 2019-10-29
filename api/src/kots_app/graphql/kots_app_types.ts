@@ -132,7 +132,7 @@ const KotsConfigItem = `
     multiValue: [String]
     readOnly: Boolean
     writeOnce: Boolean
-    when: String
+    when: Boolean
     multiple: Boolean
     hidden: Boolean
     position: Int
@@ -154,7 +154,7 @@ const KotsConfigItemInput = `
     multiValue: [String]
     readOnly: Boolean
     writeOnce: Boolean
-    when: String
+    when: Boolean
     multiple: Boolean
     hidden: Boolean
     position: Int

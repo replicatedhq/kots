@@ -3,6 +3,7 @@ import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
+import { kotsTemplateConfig } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
@@ -147,27 +148,28 @@ export class KotsApp {
     return null;
   }
 
-  async getConfigData(files: FilesAsString): Promise<any> {
-    let configContent: any = {},
+  async getConfigData(files: FilesAsString): Promise<ConfigData> {
+    let configContent: string = "",
         configPath: string = "",
-        configValuesContent: any = {},
+        configValuesContent: string = "",
         configValuesPath: string = "";
 
     for (const path in files.files) {
       try {
-        const content = yaml.safeLoad(files.files[path]);
-        if (!content) {
+        const content = files.files[path];
+        const parsedContent = yaml.safeLoad(content);
+        if (!parsedContent) {
           continue;
         }
-        if (content.kind === "Config" && content.apiVersion === "kots.io/v1beta1") {
+        if (parsedContent.kind === "Config" && parsedContent.apiVersion === "kots.io/v1beta1") {
           configContent = content;
           configPath = path;
-        } else if (content.kind === "ConfigValues" && content.apiVersion === "kots.io/v1beta1") {
+        } else if (parsedContent.kind === "ConfigValues" && parsedContent.apiVersion === "kots.io/v1beta1") {
           configValuesContent = content;
           configValuesPath = path;
         }
       } catch {
-        // this will happen on multi-doc files.
+        // TODO: this will happen on multi-doc files.
       }
     }
 
@@ -201,68 +203,84 @@ export class KotsApp {
   }
 
   async getConfigGroups(sequence: string): Promise<KotsConfigGroup[]> {
-    const paths: string[] = await this.getFilesPaths(sequence);
-    const files: FilesAsString = await this.getFiles(sequence, paths);
+    try {
+      const paths: string[] = await this.getFilesPaths(sequence);
+      const files: FilesAsString = await this.getFiles(sequence, paths);
+  
+      const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
+      const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
+  
+      if (!templatedConfig.spec || !templatedConfig.spec.groups) {
+        throw new ReplicatedError("Config groups not found");
+      }
+  
+      const parsedConfigValues = yaml.safeLoad(configValuesContent);
+      if (!parsedConfigValues.spec || !parsedConfigValues.spec.values) {
+        throw new ReplicatedError("Config values not found");
+      }
+  
+      const configGroups = templatedConfig.spec.groups;
+      const configValues = parsedConfigValues.spec.values;
 
-    const { configContent, configValuesContent } = await this.getConfigData(files);
-
-    let configValues = {}, configGroups: KotsConfigGroup[] = [];
-    if (configContent.spec && configContent.spec.groups) {
-      configGroups = configContent.spec.groups;
-    }
-    if (configValuesContent.spec && configValuesContent.spec.values) {
-      configValues = configValuesContent.spec.values;
-    }
-
-    configGroups.forEach(group => {
-      group.items.forEach(item => {
-        if (item.type === "password") {
-          item.value = this.getPasswordMask();
-        } else if (item.name in configValues) {
-          item.value = configValues[item.name];
-        }
+      configGroups.forEach(group => {
+        group.items.forEach(item => {
+          if (item.type === "password") {
+            item.value = this.getPasswordMask();
+          } else if (item.name in configValues) {
+            item.value = configValues[item.name];
+          }
+        });
       });
-    });
-    return configGroups;
+  
+      return configGroups;
+    } catch(err) {
+      throw new ReplicatedError(`Failed to get config groups ${err}`);
+    }
   }
 
   async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[], createNewVersion: boolean): Promise<void> {
-    const paths: string[] = await this.getFilesPaths(sequence);
-    const files: FilesAsString = await this.getFiles(sequence, paths);
-
-    const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
-
-    let configGroups: KotsConfigGroup[] = [];
-    if (configContent.spec && configContent.spec.groups) {
-      configGroups = configContent.spec.groups;
-    }
-
-    if (!configValuesContent.spec || !configValuesContent.spec.values || configValuesPath === "") {
-      throw new ReplicatedError("No config values were found in the files list");
-    }
-
-    const configValues = configValuesContent.spec.values;
-    updatedConfigGroups.forEach(group => {
-      group.items.forEach(async item => {
-        if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
-          configValues[item.name] = item.value;
-        }
+    try {
+      const paths: string[] = await this.getFilesPaths(sequence);
+      const files: FilesAsString = await this.getFiles(sequence, paths);
+  
+      const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
+  
+      let configGroups: KotsConfigGroup[] = [];
+      const parsedConfig = yaml.safeLoad(configContent);
+      if (parsedConfig.spec && parsedConfig.spec.groups) {
+        configGroups = parsedConfig.spec.groups;
+      }
+  
+      const parsedConfigValues = yaml.safeLoad(configValuesContent);
+      if (!parsedConfigValues.spec || !parsedConfigValues.spec.values || configValuesPath === "") {
+        throw new ReplicatedError("No config values were found in the files list");
+      }
+  
+      const configValues = parsedConfigValues.spec.values;
+      updatedConfigGroups.forEach(group => {
+        group.items.forEach(async item => {
+          if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
+            configValues[item.name] = item.value;
+          }
+        });
       });
-    });
-
-    files.files[configValuesPath] = yaml.safeDump(configValuesContent);
-
-    const bundlePacker = new TarballPacker();
-    const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
-
-    if (!createNewVersion) {
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const kotsApp = await stores.kotsAppStore.getApp(appId);
-      const params = await Params.getParams();
-      const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${sequence}.tar.gz`);
-      await putObject(params, objectStorePath, tarGzBuffer, params.shipOutputBucket);
-    } else {
-      await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
+  
+      files.files[configValuesPath] = yaml.safeDump(parsedConfigValues);
+  
+      const bundlePacker = new TarballPacker();
+      const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
+  
+      if (!createNewVersion) {
+        const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+        const kotsApp = await stores.kotsAppStore.getApp(appId);
+        const params = await Params.getParams();
+        const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${sequence}.tar.gz`);
+        await putObject(params, objectStorePath, tarGzBuffer, params.shipOutputBucket);
+      } else {
+        await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
+      }
+    } catch(err) {
+      throw new ReplicatedError(`Error while updating app config ${err}`);
     }
   }
 
@@ -533,7 +551,7 @@ export interface KotsConfigItem {
   multiValue: [string];
   readOnly: boolean;
   writeOnce: boolean;
-  when: string;
+  when: boolean;
   multiple: boolean;
   hidden: boolean;
   position: number;
@@ -554,4 +572,11 @@ export interface KotsDownstreamOutput {
   dryrunStderr: string;
   applyStdout: string;
   applyStderr: string;
+}
+
+export interface ConfigData {
+  configContent: string, 
+  configPath: string, 
+  configValuesContent: string, 
+  configValuesPath: string 
 }

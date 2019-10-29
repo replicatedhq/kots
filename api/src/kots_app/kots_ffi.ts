@@ -23,6 +23,7 @@ import * as _ from "lodash";
 import yaml from "js-yaml";
 import { StatusServer } from "../airgap/status";
 import { getDiffSummary } from "../util/utilities";
+import { ReplicatedError } from "../server/errors";
 
 const GoString = Struct({
   p: "string",
@@ -37,6 +38,7 @@ function kots() {
     UpdateCheck: ["void", [GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
+    TemplateConfig: [GoString, [GoString, GoString, GoString]],
   });
 }
 
@@ -447,5 +449,31 @@ export async function kotsTestRegistryCredentials(endpoint: string, username: st
 
   } finally {
     tmpDir.removeCallback();
+  }
+}
+
+export async function kotsTemplateConfig(configPath: string, configContent: string, configValuesContent: string): Promise<any> {
+  const configPathParam = new GoString();
+  configPathParam["p"] = configPath;
+  configPathParam["n"] = String(configPath).length;
+
+  const configDataParam = new GoString();
+  configDataParam["p"] = configContent;
+  configDataParam["n"] = String(configContent).length;
+
+  const configValuesDataParam = new GoString();
+  configValuesDataParam["p"] = configValuesContent;
+  configValuesDataParam["n"] = String(configValuesContent).length;
+
+  const templatedConfig = kots().TemplateConfig(configPathParam, configDataParam, configValuesDataParam);
+  if (templatedConfig == "" || templatedConfig["p"] == "") {
+    console.log("failed to template config");
+    return false;
+  }
+
+  try {
+    return yaml.safeLoad(templatedConfig["p"]);
+  } catch(err) {
+    throw new ReplicatedError(`Failed to parse templated config ${err}`);
   }
 }
