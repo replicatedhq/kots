@@ -23,7 +23,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	var templateContext map[string]interface{}
 	for _, c := range u.Files {
 		if c.Path == "userdata/config.yaml" {
-			ctx, err := unmarshalConfigValuesContent(c.Content)
+			ctx, err := UnmarshalConfigValuesContent(c.Content)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to unmarshal config values content")
 			}
@@ -66,7 +66,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	return &base, nil
 }
 
-func unmarshalConfigValuesContent(content []byte) (map[string]interface{}, error) {
+func UnmarshalConfigValuesContent(content []byte) (map[string]interface{}, error) {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
