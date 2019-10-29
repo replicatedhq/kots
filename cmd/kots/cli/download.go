@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/download"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,6 +40,12 @@ func DownloadCmd() *cobra.Command {
 			if err := download.Download(appSlug, ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
 				return errors.Cause(err)
 			}
+
+			log := logger.NewLogger()
+			log.ActionWithoutSpinner("")
+			log.Info("The application manifests have been downloaded and saved in %s\n\nAfter editing these files, you can upload a new version using", ExpandDir(v.GetString("dest")))
+			log.Info("  kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, ExpandDir(v.GetString("dest")))
+			log.ActionWithoutSpinner("")
 
 			return nil
 		},
