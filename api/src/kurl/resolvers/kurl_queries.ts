@@ -42,6 +42,8 @@ export function KurlQueries(stores: Stores, params: Params) {
           return {
             name: item.metadata!.name,
             isConnected: true,
+            // TODO need to check for pods on the node
+            canDelete: !!(item.spec!.unschedulable),
             kubeletVersion: item.status!.nodeInfo!.kubeletVersion,
             cpu: {
               capacity: item.status!.capacity!.cpu,

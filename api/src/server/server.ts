@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
 import bugsnagExpress from "@bugsnag/plugin-express";
 import cors from "cors";
@@ -78,7 +79,9 @@ if (enableKots && enableShip) {
   mount,
   componentsScan,
   acceptMimes: ["application/json"],
-  debug: true,
+  logger: {
+    logRequest: false,
+  },
   multer: {
     dest: "${rootDir}/uploads"
   },

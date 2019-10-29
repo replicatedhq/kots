@@ -3,3 +3,7 @@ bases:
 
 patchesStrategicMerge:
   - ./kotsadm-api-nodeport.yaml
+  - ./kotsadm-api-service-account.yaml
+
+resources:
+  - ./cluster-rbac.yaml

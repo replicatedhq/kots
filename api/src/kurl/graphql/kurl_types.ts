@@ -9,6 +9,7 @@ const Node = `
 type Node {
   name: String
   isConnected: Boolean
+  canDelete: Boolean
   kubeletVersion: String
   cpu: CapacityAllocatable
   memory: CapacityAllocatable

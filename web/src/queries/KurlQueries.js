@@ -7,6 +7,7 @@ export const kurlRaw = `
       nodes {
         name
         isConnected
+        canDelete
         kubeletVersion
         cpu {
           capacity
