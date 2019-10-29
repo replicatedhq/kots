@@ -82,6 +82,9 @@ export class KotsAPI {
     // exposed only on cluster ip to enforce that it's
     // not exposed to the public
     const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+    if (apps.length === 0) {
+      return [];
+    }
     const app = apps[0];
 
     const appSpec = await request.app.locals.stores.kotsAppStore.getAppSpec(app.id, app.currentSequence);
