@@ -24,6 +24,7 @@ class Dashboard extends Component {
     editWatchLoading: false,
     currentVersion: {},
     downstreams: [],
+    links: [],
     checkingForUpdates: false,
     checkingUpdateText: "Checking for updates",
     errorCheckingUpdate: false,
@@ -85,7 +86,8 @@ class Dashboard extends Component {
       appName: app.name,
       iconUri: app.iconUri,
       currentVersion: app.downstreams[0].currentVersion,
-      downstreams: app.downstreams[0]
+      downstreams: app.downstreams[0],
+      links: app.downstreams[0].links
     });
   }
 
@@ -228,6 +230,7 @@ class Dashboard extends Component {
       iconUri, 
       currentVersion, 
       downstreams, 
+      links,
       checkingForUpdates, 
       checkingUpdateText, 
       errorCheckingUpdate, 
@@ -289,9 +292,10 @@ class Dashboard extends Component {
                 cardIcon="applicationIcon"
                 appStatus={appStatus}
                 url={this.props.match.url}
+                links={links}
               />
               <DashboardCard
-                cardName={`Version: ${currentVersion?.title}`}
+                cardName={`Version: ${currentVersion?.title ? currentVersion?.title : ""}`}
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
