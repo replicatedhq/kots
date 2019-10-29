@@ -108,10 +108,16 @@ func makeDeploymentResourceState(r *appsv1.Deployment, state types.State) types.
 
 func calculateDeploymentState(r *appsv1.Deployment) types.State {
 	// https://github.com/kubernetes/kubernetes/blob/badcd4af3f592376ce891b7c1b7a43ed6a18a348/pkg/printers/internalversion/printers.go#L1652
-	if r.Spec.Replicas == 0 {
+	var desiredReplicas int32
+	if r.Spec.Replicas == nil {
+		desiredReplicas = 1
+	} else {
+		desiredReplicas = *r.Spec.Replicas
+	}
+	if desiredReplicas == 0 {
 		// TODO: what to do here?
 	}
-	if r.Status.ReadyReplicas >= r.Spec.Replicas {
+	if r.Status.ReadyReplicas >= desiredReplicas {
 		return types.StateReady
 	}
 	if r.Status.ReadyReplicas > 0 {
