@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 import dayjs from "dayjs";
@@ -15,12 +16,36 @@ import {
 import "../../scss/components/watches/DashboardCard.scss";
 
 export default class DashboardCard extends React.Component {
+  state = {
+    selectedAction: ""
+  }
+
+  componentDidMount() {
+    if (this.props.links && this.props.links.length > 0) {
+      this.setState({ selectedAction: this.props.links[0] })
+    }
+  }
+
+  componentDidUpdate(lastProps) {
+    if (this.props.links !== lastProps.links && this.props.links && this.props.links.length > 0) {
+      this.setState({ selectedAction: this.props.links[0] })
+    }
+  }
+
+  onActionChange = (selectedOption) => {
+    if (selectedOption.uri) {
+      window.open(selectedOption.uri, "_blank");
+    }
+    this.setState({ selectedAction: selectedOption });
+  }
 
   renderApplicationCard = () => {
-    const { appStatus, url } = this.props;
+    const { selectedAction } = this.state;
+    const { appStatus, url, links } = this.props;
+
 
     return (
-      <div>
+      <div className="flex-column flex1">
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
         {!isEmpty(appStatus)
           ?
@@ -41,6 +66,30 @@ export default class DashboardCard extends React.Component {
               : null}
           </div>
           : null}
+        {links?.length > 0 ?
+          <div>
+            <p className="u-fontSize--normal u-fontWeight--bold u-color--dustyGray u-marginTop--15"> Actions </p>
+            {links?.length > 1 ?
+              <div className="u-marginTop--5">
+                <Select
+                  className="replicated-select-container"
+                  classNamePrefix="replicated-select"
+                  options={links}
+                  getOptionLabel={(link) => link.title}
+                  getOptionValue={(option) => option.title}
+                  value={selectedAction}
+                  onChange={this.onActionChange}
+                  isOptionSelected={(option) => { option.title === selectedAction.title }}
+                />
+              </div>
+              :
+              <div className="u-marginTop--5">
+                <a href={selectedAction?.uri} target="_blank" rel="noopener noreferrer" className="btn secondary gray"> {selectedAction.title} </a>
+              </div>
+            }
+          </div>
+          : null
+          }
       </div>
     )
   }
@@ -101,7 +150,7 @@ export default class DashboardCard extends React.Component {
               <p className="flex1 u-fontWeight--bold u-fontSize--largest u-color--tundora u-paddingRight--5 u-marginBottom--5">{cardName}</p>
             </div>
             {application ?
-              <Link to={""} className="card-link"> Configure </Link>
+              <Link to={`${url}/config`} className="card-link"> Configure </Link>
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
