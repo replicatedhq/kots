@@ -65,7 +65,14 @@ export default class DashboardCard extends React.Component {
               <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10"> Troubleshoot </Link>
               : null}
           </div>
-          : null}
+          :
+          <div className="flex alignItems--center u-marginTop--5">
+            <span className="icon grayQuestionMark--icon"></span>
+            <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">
+              Unknown
+            </span>
+          </div>
+        }
         {links?.length > 0 ?
           <div>
             <p className="u-fontSize--normal u-fontWeight--bold u-color--dustyGray u-marginTop--15"> Actions </p>
