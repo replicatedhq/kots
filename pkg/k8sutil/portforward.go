@@ -139,28 +139,36 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		forwardedAdditionalPorts := map[AdditionalPort]chan struct{}{}
 
 		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
+		sleepTime := time.Second * 1
 		go func() error {
 			for {
+				time.Sleep(sleepTime)
+				sleepTime = time.Second * 5
+
 				req, err := http.NewRequest("GET", uri, nil)
 				if err != nil {
-					return errors.Wrap(err, "failed to create request")
+					runtime.HandleError(errors.Wrap(err, "failed to create request"))
+					continue
 				}
 				req.Header.Set("Accept", "application/json")
 
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
-					return errors.Wrap(err, "failed to get ports")
+					runtime.HandleError(errors.Wrap(err, "failed to get ports"))
+					continue
 				}
 
 				defer resp.Body.Close()
 				b, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					return errors.Wrap(err, "failed to parse response")
+					runtime.HandleError(errors.Wrap(err, "failed to parse response"))
+					continue
 				}
 
 				desiredAdditionalPorts := []AdditionalPort{}
 				if err := json.Unmarshal(b, &desiredAdditionalPorts); err != nil {
-					return errors.Wrap(err, "failed to decode response")
+					runtime.HandleError(errors.Wrap(err, "failed to decode response"))
+					continue
 				}
 
 				for _, desiredAdditionalPort := range desiredAdditionalPorts {
@@ -179,11 +187,13 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 					serviceStopCh, err := ServiceForward(kubeContext, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
+						runtime.HandleError(errors.Wrap(err, "failed to forward port"))
 						continue // try again
 					}
 					if serviceStopCh == nil {
 						// we didn't do the port forwarding, probably because the pod isn't ready.
 						// try again next loop
+						runtime.HandleError(errors.New("failed to forward port; pod not ready?"))
 						continue // try again
 					}
 
@@ -191,7 +201,6 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 					log := logger.NewLogger()
 					log.Info("Go to http://localhost:%d to access the application", desiredAdditionalPort.LocalPort)
 				}
-				time.Sleep(time.Second * 5)
 			}
 		}()
 	}
