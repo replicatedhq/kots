@@ -263,7 +263,7 @@ class Dashboard extends Component {
         <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
           <div className="flex1 flex-column">
             <div className="flex flex1">
-              <div className="flex flex1 alignItems--center u-marginLeft--30">
+              <div className="flex flex1 alignItems--center">
               <div className="flex flex-auto">
                 <div
                   style={{ backgroundImage: `url(${iconUri})` }}
