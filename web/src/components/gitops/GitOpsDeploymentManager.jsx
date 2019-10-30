@@ -57,7 +57,8 @@ export default class GitOpsDeploymentManager extends React.Component {
     services: SERVICES,
     selectedService: SERVICES[0],
     otherService: "",
-    providerError: null
+    providerError: null,
+    actionPath: "commit"
   }
 
   completeSetup = () => {
