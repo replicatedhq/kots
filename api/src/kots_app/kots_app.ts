@@ -490,7 +490,7 @@ export class KotsApp {
   public async getSupportBundleCommand(watchSlug: string): Promise<string> {
     const params = await Params.getParams();
     const bundleCommand = `
-      kubectl krew install support-bundle
+      curl https://krew.sh/support-bundle | bash
       kubectl support-bundle ${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
     `;
     return bundleCommand;

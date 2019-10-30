@@ -313,7 +313,7 @@ spec:
       url = `${url}/${watchSlug}`;
     }
     const bundleCommand = `
-    kubectl krew install support-bundle
+    curl https://krew.sh/support-bundle | bash
     kubectl support-bundle ${url}
     `;
     return bundleCommand;
