@@ -20,6 +20,7 @@
   border-radius: 4px;
   background-color: #ffffff;
   cursor: pointer;
+  transition: border 0.2s;
 
   .input-wrapper {
     padding-left: 12px;
@@ -34,15 +35,24 @@
   &.is-active {
     border-color: #326DE6;
     background-color: #F5F8FC;
+    &:hover {
+      border-color: #326DE6;
+    }
   }
 
   &.is-disabled {
     opacity: .5;
     cursor: not-allowed;
-
-    > * {
-      cursor: not-allowed;
+    &:hover {
+      border-color: #C4C7CA;
     }
+    > * {
+      cursor: default;
+    }
+  }
+
+  &:hover {
+    border-color: #9B9B9B;
   }
 }
 
@@ -89,6 +99,7 @@
   }
   .replicated-select__option {
     cursor: pointer;
+    padding: 12px;
 
     &.replicated-select__option--is-focused {
       background-color: #F5F8FC;

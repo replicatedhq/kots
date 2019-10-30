@@ -13,6 +13,11 @@
   text-align: center;
   position: relative;
 
+  .StepContent--widthRestrict {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
   &.inactive {
     padding: 12px 40px;
   }
