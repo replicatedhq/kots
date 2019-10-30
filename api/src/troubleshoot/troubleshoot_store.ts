@@ -307,10 +307,14 @@ spec:
     await this.pool.query(q, v);
   }
 
-  async getSupportBundleCommand(watchSlug: string): Promise<string> {
+  async getSupportBundleCommand(watchSlug?: string): Promise<string> {
+    let url = `${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot`;
+    if (watchSlug) {
+      url = `${url}/${watchSlug}`;
+    }
     const bundleCommand = `
     kubectl krew install support-bundle
-    kubectl support-bundle ${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
+    kubectl support-bundle ${url}
     `;
     return bundleCommand;
   }

@@ -7,6 +7,13 @@ export class Collector {
 }
 
 export async function injectKotsCollectors(parsedSpec: any): Promise<any> {
+  let spec = parsedSpec;
+  spec = await injectDBCollector(spec);
+  spec = await injectAPICollector(spec);
+  return spec;
+}
+
+async function injectDBCollector(parsedSpec: any): Promise<any> {
   const uri = (await Params.getParams()).postgresUri;
   const pgConfig = parse(uri);
 
@@ -45,6 +52,28 @@ export async function injectKotsCollectors(parsedSpec: any): Promise<any> {
   }
 
   collectors.push(pgDumpCollector);
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+async function injectAPICollector(parsedSpec: any): Promise<any> {
+  let collectorNameBase = "kotsadm-api";
+  const newCollector = {
+    logs: {
+      collectorName: collectorNameBase,
+      selector: ["app=kotsadm-api"],
+      namespace: process.env["POD_NAMESPACE"],
+      name: "admin_console",
+    },
+  };
+
+  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
+  if (!collectors) {
+    collectors = [];
+  }
+
+  collectors.push(newCollector);
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;

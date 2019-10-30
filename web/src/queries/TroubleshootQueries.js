@@ -145,8 +145,8 @@ export const supportBundleFiles = gql`
   }
 `;
 
-export const getGenerateBundleCommand = gql`
-  query getGenerateBundleCommand($customerId: ID, $channelId: ID) {
-    getGenerateBundleCommand(customerId: $customerId, channelId: $channelId)
+export const getSupportBundleCommand = gql`
+  query getSupportBundleCommand($watchSlug: String) {
+    getSupportBundleCommand(watchSlug: $watchSlug)
   }
 `;
