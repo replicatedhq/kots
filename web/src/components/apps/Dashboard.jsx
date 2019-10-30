@@ -239,7 +239,6 @@ class Dashboard extends Component {
 
     const { app } = this.props;
 
-    const dashboardLoading = this.props.getKotsAppDashboard.loading;
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
 
@@ -248,7 +247,7 @@ class Dashboard extends Component {
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
     }
 
-    if (!app || !appLicense || dashboardLoading) {
+    if (!app || !appLicense) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -286,7 +285,7 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
-                appStatus={this.props.getKotsAppDashboard.getKotsAppDashboard.appStatus?.state}
+                appStatus={this.props.getKotsAppDashboard.getKotsAppDashboard?.appStatus?.state}
                 url={this.props.match.url}
                 links={links}
               />
