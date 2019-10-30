@@ -3,10 +3,11 @@ import PropTypes from "prop-types";
 import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-
+import some from "lodash/some";
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
 import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
+import GitOpsDeploymentManager from "../gitops/GitOpsDeploymentManager";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import Clipboard from "clipboard";
@@ -16,7 +17,7 @@ import { deleteCluster } from "../../mutations/ClusterMutations";
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
-export class Clusters extends React.Component {
+export class GitOps extends React.Component {
   static propTypes = {
     history: PropTypes.object.isRequired,
   };
@@ -123,6 +124,9 @@ export class Clusters extends React.Component {
   render() {
     const { clusterToManage } = this.state;
     const { listClustersQuery } = this.props;
+
+    const hasGitopsClusters = some(listClustersQuery?.listClusters, ["isGitOps"]);
+
     if (this.props.listClustersQuery.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -134,44 +138,40 @@ export class Clusters extends React.Component {
     return (
       <div className="ClusterDashboard--wrapper container flex-column flex1 u-overflow--auto">
         <Helmet>
-          <title>Connected Clusters</title>
+          <title>GitOps deployments</title>
         </Helmet>
         <div className="flex-column flex1">
-          <ContentHeader
-            title="Deployed clusters"
-            buttonText="Add a new cluster"
-            onClick={() => this.props.history.push("/cluster/create")}
-          />
-          <div className="flex-column flex-1-auto u-paddingBottom--20 u-overflow--auto">
-            {listClustersQuery ?
-              !listClustersQuery.listClusters.length ?
-                <div className="flex-column flex1 justifyContent--center alignItems--center">
-                  <div className="EmptyState flex-column flex1 alignItems--center justifyContent--center">
-                    <div className="u-textAlign--center u-marginTop--10">
-                      <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">No clusters found</p>
-                      <p className="u-fontSize--more u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">You haven't connected any deployment pipelines yet. Ship can deploy directly to a cluster or by pushing to a GitHub repo and using a GitOps workflow.</p>
-                    </div>
-                    <div className="u-marginTop--20">
-                      <button className="btn primary" onClick={() => this.props.history.push("/cluster/create")}>Connect your Kubernetes cluster</button>
-                    </div>
-                  </div>
-                </div>
-              :
-              <div className="u-flexTabletReflow flex-auto installed-clusters-wrapper flexWrap--wrap">
-                {listClustersQuery.listClusters.map((cluster, i) => (
-                  <div key={cluster.id} className="installed-cluster-wrapper flex flex-auto u-paddingBottom--20">
-                    <ClusterCard
-                      index={i}
-                      item={cluster}
-                      handleManageClick={() => this.manageClusterClick(cluster)}
-                      toggleInstallShipModal={() => this.toggleInstallShipModal(cluster)}
-                      toggleDeleteClusterModal={() => this.toggleDeleteClusterModal(cluster)}
-                    />
-                  </div>
-                ))}
+          {listClustersQuery ?
+            !hasGitopsClusters ?
+              <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
+                <GitOpsDeploymentManager 
+                  appName={this.props.appName}
+                />
               </div>
-            : null}
-          </div>
+            :
+            <div>
+              <ContentHeader
+                title="Deployed clusters"
+                buttonText="Add a new cluster"
+                onClick={() => this.props.history.push("/cluster/create")}
+              />
+              <div className="flex-column flex-1-auto u-paddingBottom--20 u-overflow--auto">
+                <div className="u-flexTabletReflow flex-auto installed-clusters-wrapper flexWrap--wrap">
+                  {listClustersQuery.listClusters.map((cluster, i) => (
+                    <div key={cluster.id} className="installed-cluster-wrapper flex flex-auto u-paddingBottom--20">
+                      <ClusterCard
+                        index={i}
+                        item={cluster}
+                        handleManageClick={() => this.manageClusterClick(cluster)}
+                        toggleInstallShipModal={() => this.toggleInstallShipModal(cluster)}
+                        toggleDeleteClusterModal={() => this.toggleDeleteClusterModal(cluster)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          : null}
         </div>
         {this.state.displayManageModal &&
           <Modal
@@ -282,4 +282,4 @@ export default compose(
       deleteCluster: (clusterId) => mutate({ variables: { clusterId }})
     })
   }),
-)(Clusters);
+)(GitOps);

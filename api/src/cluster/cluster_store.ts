@@ -125,7 +125,7 @@ export class ClusterStore {
   }
 
   async getGitOpsCluster(clusterId: string, watchId?: string): Promise<Cluster> {
-    const fields = ["id", "title", "slug", "created_at", "updated_at", "cluster_type", "owner", "repo", "branch", "installation_id"]
+    const fields = ["id", "title", "slug", "created_at", "updated_at", "is_gitops", "cluster_type", "owner", "repo", "branch", "installation_id"]
     if (watchId) {
       fields.push("wc.github_path");
     }
@@ -162,7 +162,7 @@ export class ClusterStore {
   }
 
   async getShipOpsCluster(clusterId: string): Promise<Cluster> {
-    const q = `select id, title, slug, created_at, updated_at, token, cluster_type from cluster where id = $1`;
+    const q = `select id, title, slug, created_at, is_gitops, updated_at, token, cluster_type from cluster where id = $1`;
     const v = [clusterId];
 
     const result  = await this.pool.query(q, v);
@@ -171,7 +171,7 @@ export class ClusterStore {
   }
 
   async listAllUsersClusters(): Promise<Cluster[]> {
-      const q = `select id, cluster_type from cluster where is_all_users = true order by created_at, title`;
+      const q = `select id, cluster_type, is_gitops from cluster where is_all_users = true order by created_at, title`;
       const v = [];
 
       const result = await this.pool.query(q, v);
@@ -188,7 +188,7 @@ export class ClusterStore {
   }
 
   async listClusters(userId: string): Promise<Cluster[]> {
-    const q = `select id, cluster_type from cluster inner join user_cluster on cluster_id = id where user_cluster.user_id = $1 order by created_at, title`;
+    const q = `select id, cluster_type, is_gitops from cluster inner join user_cluster on cluster_id = id where user_cluster.user_id = $1 order by created_at, title`;
     const v = [userId];
 
     const result = await this.pool.query(q, v);
@@ -205,7 +205,7 @@ export class ClusterStore {
   }
 
   async listClustersForKotsApp(appId: string): Promise<Cluster[]> {
-    const q = `select cluster_id, c.id, c.cluster_type from app_downstream
+    const q = `select cluster_id, c.id, c.cluster_type, c.is_gitops from app_downstream
       inner join cluster c on c.id = cluster_id
       where app_id = $1
       order by created_at, title`;
@@ -225,7 +225,7 @@ export class ClusterStore {
   }
 
   async getForWatch(watchId: string): Promise<Cluster | void> {
-    const q = `select cluster_id, cluster_type from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
+    const q = `select cluster_id, cluster_type, is_gitops from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
     const v = [watchId];
 
     const result  = await this.pool.query(q, v);
@@ -243,7 +243,7 @@ export class ClusterStore {
   }
 
   async getCluster(id: string): Promise<Cluster> {
-    const q = `select id, cluster_type from cluster where id = $1`;
+    const q = `select id, cluster_type, is_gitops from cluster where id = $1`;
     const v = [id];
 
     const result  = await this.pool.query(q, v);
@@ -620,6 +620,7 @@ spec:
     c.slug = row.slug;
     c.createdOn = row.created_at;
     c.lastUpdated = row.updated_at;
+    c.isGitOps = row.is_gitops;
     c.gitOpsRef = gitOpsRef;
     c.shipOpsRef = shipOpsRef;
     return c;

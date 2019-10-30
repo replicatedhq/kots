@@ -56,10 +56,29 @@
   height: 18px;
 }
 .icon.integration-card-icon-github,
-.icon.clusterType.git {
+.icon.clusterType.git,
+.icon.gitopsService--github,
+.icon.gitopsService--github_enterprise {
   background-position: -48px -163px;
   width: 19px;
   height: 18px;
+}
+.icon.gitopsService--gitlab,
+.icon.gitopsService--gitlab_enterprise {
+  background-position: -109px -163px;
+  width: 21px;
+  height: 19px;
+}
+.icon.gitopsService--bitbucket,
+.icon.gitopsService--bitbucket_server {
+  background-position: -132px -163px;
+  width: 22px;
+  height: 19px;
+}
+.icon.gitopsService--other {
+  background-position: -156px -163px;
+  width: 22px;
+  height: 12px;
 }
 .icon.integration-card-icon-github-add-new {
   background-position: -85px -163px;
@@ -395,3 +414,34 @@
   width: 16px;
   height: 16px;
 }
+
+.icon.gitopsLogo {
+  background-position: 0 -899px;
+  width: 209px;
+  height: 49px;
+}
+
+.icon.pullRequestOptionIcon {
+  background-position: -131px -538px;
+  width: 30px;
+  height: 30px;
+}
+
+.icon.commitOptionIcon {
+  background-position: -130px -518px;
+  width: 31px;
+  height: 10px;
+}
+
+.icon.singleOptionIcon {
+  background-position: -130px -589px;
+  width: 25px;
+  height: 31px;
+}
+
+.icon.fullFilesOptionIcon {
+  background-position: -131px -624px;
+  width: 29px;
+  height: 31px;
+}
+

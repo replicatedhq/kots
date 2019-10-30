@@ -54,6 +54,11 @@ code {
   background-color: #E5EAEC;
   color: #073551;
   padding: 1px 3px;
+
+  &.no-bg {
+    background-color: transparent;
+    padding: 0;
+  }
 }
 
 .container {

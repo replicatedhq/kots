@@ -20,6 +20,7 @@
   border-radius: 4px;
   background-color: #ffffff;
   cursor: pointer;
+  transition: border 0.2s;
 
   .input-wrapper {
     padding-left: 12px;
@@ -32,18 +33,31 @@
   }
   
   &.is-active {
-    border-color: #73A3CD;
+    border-color: #326DE6;
     background-color: #F5F8FC;
+    &:hover {
+      border-color: #326DE6;
+    }
   }
 
   &.is-disabled {
     opacity: .5;
     cursor: not-allowed;
-
+    &:hover {
+      border-color: #C4C7CA;
+    }
     > * {
-      cursor: not-allowed;
+      cursor: default;
     }
   }
+
+  &:hover {
+    border-color: #9B9B9B;
+  }
+}
+
+.gitops-checkboxes .BoxedCheckbox {
+  min-height: 60px;
 }
 
 .replicated-select-container {
@@ -85,6 +99,7 @@
   }
   .replicated-select__option {
     cursor: pointer;
+    padding: 12px;
 
     &.replicated-select__option--is-focused {
       background-color: #F5F8FC;
