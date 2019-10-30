@@ -20,6 +20,23 @@ interface BundleUploadedBody {
 
 @Controller("/api/v1/troubleshoot")
 export class TroubleshootAPI {
+  @Get("/")
+  async getGenericSpec(
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<any | ErrorResponse> {
+    let collector = TroubleshootStore.defaultSpec;
+
+    let parsedSpec = jsYaml.load(collector);
+
+    // the injected collector has a different namespace in dev environment,
+    // so the order of these calls matters.
+    parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
+    parsedSpec = await injectKotsCollectors(parsedSpec);
+
+    response.send(200, parsedSpec);
+  }
+
   @Get("/:slug")
   async getSpec(
     @Req() request: Request,

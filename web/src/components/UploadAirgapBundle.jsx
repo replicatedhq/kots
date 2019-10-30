@@ -5,6 +5,7 @@ import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { resumeInstallOnline } from "../mutations/AppsMutations";
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
@@ -13,23 +14,30 @@ import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import Loader from "./shared/Loader";
 import { validateRegistryInfo } from "../queries/UserQueries";
+import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
 
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
     fileUploading: false,
     registryDetails: {},
-    preparingOnlineInstall: false
+    preparingOnlineInstall: false,
+    supportBundleCommand: undefined,
+    showSupportBundleCommand: false
   }
 
   clearFile = () => {
     this.setState({ bundleFile: {} });
   }
 
+  toggleShowRun = () => {
+    this.setState({ showSupportBundleCommand: true });
+  }
+
   uploadAirgapBundle = async () => {
     const { onUploadSuccess, match, showRegistry } = this.props;
 
-    this.setState({ fileUploading: true, errorMessage: "" });
+    this.setState({ fileUploading: true, errorMessage: "", showSupportBundleCommand: false });
 
     // Reset the airgap upload state
     const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
@@ -163,8 +171,12 @@ class UploadAirgapBundle extends React.Component {
     }
   }
 
-  onProgressError = (errorMessage) => {
+  onProgressError = async (errorMessage) => {
     // Push this setState call to the end of the call stack
+    const supportBundleCommand = await this.props.client.query({
+      query: getSupportBundleCommand
+    });
+
     setTimeout(() => {
       const COMMON_ERRORS = {
         "HTTP 401": "Registry credentials are invalid",
@@ -182,7 +194,8 @@ class UploadAirgapBundle extends React.Component {
         errorMessage,
         fileUploading: false,
         uploadSent: 0,
-        uploadTotal: 0
+        uploadTotal: 0,
+        supportBundleCommand: supportBundleCommand.data.getSupportBundleCommand
       });
     }, 0);
   }
@@ -291,6 +304,24 @@ class UploadAirgapBundle extends React.Component {
             {errorMessage && (
               <div className="u-marginTop--10">
                 <span className="u-color--chestnut">{errorMessage}</span>
+                {this.state.showSupportBundleCommand ?
+                  <div className="u-marginTop--10">
+                    <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                    <CodeSnippet
+                      language="bash"
+                      canCopy={true}
+                      onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    >
+                      {this.state.supportBundleCommand.split("\n")}
+                    </CodeSnippet>
+                  </div>
+                  :
+                  <div>
+                    <div className="u-marginTop--10">
+                      <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
+                    </div>
+                  </div>
+                }
               </div>
             )}
             {hasFile &&

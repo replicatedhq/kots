@@ -78,7 +78,7 @@ export const Query = `
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
     supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
-    getSupportBundleCommand(watchSlug: String!): String
+    getSupportBundleCommand(watchSlug: String): String
 
     listPreflightResults(watchId: String, slug: String): [PreflightResult]
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult

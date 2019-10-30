@@ -73,10 +73,13 @@ export function TroubleshootQueries(stores: Stores) {
     },
 
     async getSupportBundleCommand(root, { watchSlug }, context: Context): Promise<string> {
+      if (!watchSlug) {
+        return await stores.troubleshootStore.getSupportBundleCommand();
+      }
+
       const watchId = await stores.watchStore.getIdFromSlug(watchSlug);
       const watch = await context.getWatch(watchId);
       const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(watch.slug);
-
       return bundleCommand;
     },
   };
