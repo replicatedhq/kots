@@ -50,6 +50,15 @@ class UploadAirgapBundle extends React.Component {
     });
 
     if (showRegistry) {
+      if (isEmpty(this.state.registryDetails.hostname)) {
+        this.setState({
+          fileUploading: false,
+          uploadSent: 0,
+          uploadTotal: 0,
+          errorMessage: "Please enter a value for \"Hostname\" field",
+        });
+        return;
+      }
       const validated = await this.props.client.query({
         query: validateRegistryInfo,
         variables: {
