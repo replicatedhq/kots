@@ -37,6 +37,7 @@ export class KotsDeploySocketService {
           .then((params) => {
             this.params = params;
             this.kotsAppStore = new KotsAppStore(pool, params);
+            this.kotsAppStatusStore = new KotsAppStatusStore(pool, params);
             this.clusterStore = new ClusterStore(pool, params);
             this.preflightStore = new PreflightStore(pool);
             this.troubleshootStore = new TroubleshootStore(pool, params);
