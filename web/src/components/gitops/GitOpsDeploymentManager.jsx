@@ -222,7 +222,7 @@ export default class GitOpsDeploymentManager extends React.Component {
               {selectedService?.value === "github_enterprise" &&
                 <div className="flex flex1 u-marginBottom--20">
                   <div className="flex flex1 flex-column u-marginRight--10">
-                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Hostname</p>
+                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
                     <input type="text" className={`Input ${providerError?.field === "hostname" && "has-error"}`} placeholder="hostname" value={hostname} onChange={(e) => this.setState({ hostname: e.target.value })} />
                     {providerError?.field === "hostname" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A hostname must be provided</p>}
                   </div>
