@@ -53,6 +53,7 @@ export default class GitOpsDeploymentManager extends React.Component {
     ownerRepo: "",
     branch: "",
     path: "",
+    hostname: "",
     services: SERVICES,
     selectedService: SERVICES[0],
     otherService: "",
@@ -68,7 +69,7 @@ export default class GitOpsDeploymentManager extends React.Component {
       selectedService,
       otherService,
       ownerRepo,
-      branch
+      hostname,
     } = this.state;
 
     this.setState({ providerError: null });
@@ -90,10 +91,10 @@ export default class GitOpsDeploymentManager extends React.Component {
           });
           return false;
         }
-        if (!branch.length) {
+        if (selectedService.value === "github_enterprise" && !hostname.length) {
           this.setState({
             providerError: {
-              field: "branch"
+              field: "hostname"
             }
           });
           return false;
@@ -153,13 +154,16 @@ export default class GitOpsDeploymentManager extends React.Component {
       ownerRepo,
       branch,
       path,
+      hostname,
       services,
       selectedService,
       otherService,
       providerError
     } = this.state;
 
+    const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
     const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
+    const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
 
     switch (step.step) {
       case "setup":
@@ -215,13 +219,22 @@ export default class GitOpsDeploymentManager extends React.Component {
                   </div>
                 }
               </div>
+              {selectedService?.value === "github_enterprise" &&
+                <div className="flex flex1 u-marginBottom--20">
+                  <div className="flex flex1 flex-column u-marginRight--10">
+                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Hostname</p>
+                    <input type="text" className={`Input ${providerError?.field === "hostname" && "has-error"}`} placeholder="hostname" value={hostname} onChange={(e) => this.setState({ hostname: e.target.value })} />
+                    {providerError?.field === "hostname" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A hostname must be provided</p>}
+                  </div>
+                  <div className="flex flex1 flex-column u-marginLeft--10" />
+                </div>
+              }
               {selectedService?.value !== "other" &&
                 <div className="flex flex1">
                   <div className="flex flex1 flex-column u-marginRight--10">
                     <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Branch</p>
                     <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If no branch is specified, master will be used.</p>
-                    <input type="text" className={`Input ${providerError?.field === "branch" && "has-error"}`} placeholder="master" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
-                    {providerError?.field === "branch" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A branch must be provided</p>}
+                    <input type="text" className={`Input`} placeholder="master" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
                   </div>
                   <div className="flex flex1 flex-column u-marginLeft--10">
                     <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Path</p>
@@ -241,7 +254,7 @@ export default class GitOpsDeploymentManager extends React.Component {
           <div key={`${step.step}-active`} className="GitOpsDeploy--step">
             <div className="StepContent--widthRestrict">
               <p className="step-title">{step.title}</p>
-              <p className="step-sub">When an update is available{this.props.appName ? ` to ${this.props.appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService.label === "Other" ? otherService : selectedService.label}?</p>
+              <p className="step-sub">When an update is available{this.props.appName ? ` to ${this.props.appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService.label === "Other" ? otherService : serviceSite}?</p>
               <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
                   <div className={`BoxedCheckbox flex-auto flex ${this.state.actionPath === "commit" ? "is-active" : ""}`}>
