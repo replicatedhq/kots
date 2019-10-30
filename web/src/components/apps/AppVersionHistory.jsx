@@ -79,7 +79,9 @@ class AppVersionHistory extends Component {
     return (
       <div className="flex flex-column">
         {version.sequence}
-        <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}>Release notes</span>
+        {version.releaseNotes &&
+          <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}>Release notes</span>
+        }
       </div>
     );
   }

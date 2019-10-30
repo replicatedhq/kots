@@ -103,8 +103,8 @@ export default class DashboardCard extends React.Component {
 
   renderVersionHistoryCard = () => {
     const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, deployVersion } = this.props;
-    const updatesText = downstreams.pendingVersions?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
-    const isUpdateAvailable = downstreams.pendingVersions?.length > 0;
+    const updatesText = downstreams?.pendingVersions?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
+    const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (errorCheckingUpdate) {

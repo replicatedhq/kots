@@ -85,9 +85,9 @@ class Dashboard extends Component {
     this.setState({
       appName: app.name,
       iconUri: app.iconUri,
-      currentVersion: app.downstreams[0].currentVersion,
+      currentVersion: app.downstreams[0]?.currentVersion,
       downstreams: app.downstreams[0],
-      links: app.downstreams[0].links
+      links: app.downstreams[0]?.links
     });
   }
 
@@ -244,7 +244,7 @@ class Dashboard extends Component {
 
     const statusLoading = this.props.getKotsAppStatus.loading;
     const isAirgap = app.isAirgap;
-    const latestPendingVersion = downstreams.pendingVersions?.find(version => Math.max(version.sequence));
+    const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
 
     const axisStyle = {
       title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
