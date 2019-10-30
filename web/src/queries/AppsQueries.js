@@ -642,3 +642,38 @@ export const getKotsAppStatus = gql`
     }
   }
 `;
+
+export const getConfigForGroups = gql`
+  query getConfigForGroups($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
+    getConfigForGroups(slug: $slug, sequence: $sequence, configGroups: $configGroups) {
+      name
+      title
+      description
+      items {
+        name
+        type
+        title
+        helpText
+        recommended
+        default
+        value
+        multiValue
+        readOnly
+        writeOnce
+        when
+        multiple
+        hidden
+        position
+        affix
+        required
+        items {
+          name
+          title
+          recommended
+          default
+          value
+        }
+      }
+    }
+  }
+`;

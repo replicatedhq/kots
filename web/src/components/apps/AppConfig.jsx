@@ -4,9 +4,11 @@ import { compose, withApollo, graphql } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
+import debounce from "lodash/debounce";
+import map from "lodash/map";
 
 import Loader from "../shared/Loader";
-import { getKotsConfigGroups, getKotsApp } from "../../queries/AppsQueries";
+import { getKotsConfigGroups, getKotsApp, getConfigForGroups } from "../../queries/AppsQueries";
 import { updateAppConfig } from "../../mutations/AppsMutations";
 
 import "../../scss/components/watches/WatchConfig.scss";
@@ -23,6 +25,8 @@ class AppConfig extends Component {
       configGroups: [],
       savingConfig: false
     }
+
+    this.handleConfigChange = debounce(this.handleConfigChange, 250);
   }
 
   componentWillMount() {
@@ -81,6 +85,50 @@ class AppConfig extends Component {
       });
   }
 
+  getItemInConfigGroups = (configGroups, itemName) => {
+    let foundItem;
+    map(configGroups, group => {
+      map(group.items, item => {
+        if (item.name === itemName) {
+          foundItem = item;
+        }
+      });
+    })
+    return foundItem;
+  }
+
+  handleConfigChange = groups => {
+    const { match, app, fromLicenseFlow } = this.props;
+    const sequence = fromLicenseFlow ? 0 : app.currentSequence;
+    const slug = fromLicenseFlow ? match.params.slug : app.slug;
+
+    this.props.client.query({
+      query: getConfigForGroups,
+      variables: {
+        slug: slug,
+        sequence: sequence,
+        configGroups: groups
+      },
+      fetchPolicy: "no-cache"
+    }).then(response => {
+      const oldGroups = this.state.configGroups;
+      const newGroups = response.data.getConfigForGroups;
+      map(newGroups, group => {
+        group.items.forEach(newItem => {
+          if (newItem.type === "password") {
+            const oldItem = this.getItemInConfigGroups(oldGroups, newItem.name);
+            if (oldItem) {
+              newItem.value = oldItem.value;
+            }
+          }
+        });
+      });
+      this.setState({ configGroups: newGroups });
+    }).catch((error) => {
+      console.log(error);
+    });
+  }
+
   render() {
     const { configGroups, savingConfig } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
@@ -99,7 +147,7 @@ class AppConfig extends Component {
         <div className={classNames("ConfigOuterWrapper flex u-padding--15 u-overflow--auto", { "u-marginTop--20": fromLicenseFlow })}>
           <div className="ConfigInnerWrapper flex1 u-padding--15">
             <div className="flex1">
-              <ShipConfigRenderer groups={configGroups} />
+              <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
             </div>
           </div>
         </div>
@@ -119,8 +167,8 @@ export default withRouter(compose(
       const slug = fromLicenseFlow ? match.params.slug : app.slug;
       return {
         variables: {
-          slug: slug,
-          sequence: sequence,
+          slug,
+          sequence,
         },
         fetchPolicy: "no-cache"
       }
@@ -133,7 +181,7 @@ export default withRouter(compose(
       const slug = match.params.slug;
       return {
         variables: {
-          slug: slug,
+          slug,
         },
         fetchPolicy: "no-cache"
       }

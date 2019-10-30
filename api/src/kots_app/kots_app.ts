@@ -148,7 +148,7 @@ export class KotsApp {
     return null;
   }
 
-  async getConfigData(files: FilesAsString): Promise<ConfigData> {
+  private async getConfigData(files: FilesAsString): Promise<ConfigData> {
     let configContent: string = "",
         configPath: string = "",
         configValuesContent: string = "",
@@ -182,7 +182,7 @@ export class KotsApp {
   }
 
   shouldUpdateConfigValues(configGroups: KotsConfigGroup[], configValues: any, item: KotsConfigItem): boolean {
-    if (item.hidden || (item.type === "password" && item.value === this.getPasswordMask())) {
+    if (item.hidden || item.when === "false" || (item.type === "password" && item.value === this.getPasswordMask())) {
       return false;
     }
     if (item.name in configValues) {
@@ -202,37 +202,41 @@ export class KotsApp {
     return false;
   }
 
+  async applyConfigValues(configPath: string, configContent: string, configValuesContent: string): Promise<KotsConfigGroup[]> {
+    const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
+  
+    if (!templatedConfig.spec || !templatedConfig.spec.groups) {
+      throw new ReplicatedError("Config groups not found");
+    }
+
+    const parsedConfigValues = yaml.safeLoad(configValuesContent);
+    if (!parsedConfigValues.spec || !parsedConfigValues.spec.values) {
+      throw new ReplicatedError("Config values not found");
+    }
+
+    const configGroups = templatedConfig.spec.groups;
+    const configValues = parsedConfigValues.spec.values;
+
+    configGroups.forEach(group => {
+      group.items.forEach(item => {
+        if (item.type === "password") {
+          item.value = this.getPasswordMask();
+        } else if (item.name in configValues) {
+          item.value = configValues[item.name];
+        }
+      });
+    });
+
+    return configGroups;
+  }
+
   async getConfigGroups(sequence: string): Promise<KotsConfigGroup[]> {
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
   
       const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
-      const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
-  
-      if (!templatedConfig.spec || !templatedConfig.spec.groups) {
-        throw new ReplicatedError("Config groups not found");
-      }
-  
-      const parsedConfigValues = yaml.safeLoad(configValuesContent);
-      if (!parsedConfigValues.spec || !parsedConfigValues.spec.values) {
-        throw new ReplicatedError("Config values not found");
-      }
-  
-      const configGroups = templatedConfig.spec.groups;
-      const configValues = parsedConfigValues.spec.values;
-
-      configGroups.forEach(group => {
-        group.items.forEach(item => {
-          if (item.type === "password") {
-            item.value = this.getPasswordMask();
-          } else if (item.name in configValues) {
-            item.value = configValues[item.name];
-          }
-        });
-      });
-  
-      return configGroups;
+      return await this.applyConfigValues(configPath, configContent, configValuesContent);
     } catch(err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
     }
@@ -245,18 +249,12 @@ export class KotsApp {
   
       const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
   
-      let configGroups: KotsConfigGroup[] = [];
       const parsedConfig = yaml.safeLoad(configContent);
-      if (parsedConfig.spec && parsedConfig.spec.groups) {
-        configGroups = parsedConfig.spec.groups;
-      }
-  
       const parsedConfigValues = yaml.safeLoad(configValuesContent);
-      if (!parsedConfigValues.spec || !parsedConfigValues.spec.values || configValuesPath === "") {
-        throw new ReplicatedError("No config values were found in the files list");
-      }
   
       const configValues = parsedConfigValues.spec.values;
+      const configGroups = parsedConfig.spec.groups;
+
       updatedConfigGroups.forEach(group => {
         group.items.forEach(async item => {
           if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
@@ -282,6 +280,30 @@ export class KotsApp {
     } catch(err) {
       throw new ReplicatedError(`Error while updating app config ${err}`);
     }
+  }
+
+  async getConfigForGroups(sequence: string, updatedConfigGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
+    const paths: string[] = await this.getFilesPaths(sequence);
+    const files: FilesAsString = await this.getFiles(sequence, paths);
+
+    const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
+
+    const parsedConfig = yaml.safeLoad(configContent);
+    const parsedConfigValues = yaml.safeLoad(configValuesContent);
+
+    const configValues = parsedConfigValues.spec.values;
+    const configGroups = parsedConfig.spec.groups;
+    
+    updatedConfigGroups.forEach(group => {
+      group.items.forEach(async item => {
+        if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
+          configValues[item.name] = item.value;
+        }
+      });
+    });
+
+    const updatedConfigValues = yaml.safeDump(parsedConfigValues);
+    return await this.applyConfigValues(configPath, configContent, updatedConfigValues);
   }
 
   // Source files
@@ -551,7 +573,7 @@ export interface KotsConfigItem {
   multiValue: [string];
   readOnly: boolean;
   writeOnce: boolean;
-  when: boolean;
+  when: string;
   multiple: boolean;
   hidden: boolean;
   position: number;
