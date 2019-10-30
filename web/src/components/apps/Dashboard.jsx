@@ -31,8 +31,7 @@ class Dashboard extends Component {
     appLicense: null,
     versionToDeploy: null,
     showDeployWarningModal: false,
-    showSkipModal: false,
-    appStatus: null
+    showSkipModal: false
   }
 
   updateWatchInfo = async e => {
@@ -112,20 +111,11 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
-
-    if (this.props.getKotsAppStatus !== lastProps.getKotsAppStatus && this.props.getKotsAppStatus) {
-      const { getKotsAppStatus } = this.props.getKotsAppStatus;
-      if (getKotsAppStatus) {
-        this.setState({ appStatus: getKotsAppStatus.state });
-      }
-    }
-
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
-    const { getKotsAppStatus } = this.props.getKotsAppStatus;
 
     if (app) {
       this.setWatchState(app);
@@ -136,9 +126,6 @@ class Dashboard extends Component {
     }
 
     this.props.getKotsAppStatus.startPolling(2000);
-    if (getKotsAppStatus) {
-      this.setState({ appStatus: getKotsAppStatus.state });
-    }
   }
 
   onCheckForUpdates = async () => {
@@ -290,7 +277,7 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
-                appStatus={appStatus}
+                appStatus={this.props.getKotsAppStatus.getKotsAppStatus?.state}
                 url={this.props.match.url}
                 links={links}
               />
