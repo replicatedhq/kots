@@ -106,9 +106,9 @@ export default class GitOpsDeploymentManager extends React.Component {
 
   stepFrom = (from, to) => {
     if (this.validStep(from)) {
-      let visited = this.state.visitedSteps;
+      const visited = this.state.visitedSteps;
       if (!visited.includes(from)) {
-        visited.push(from)
+        visited.push(from);
       }
       this.setState({ 
         step: to,
@@ -119,7 +119,7 @@ export default class GitOpsDeploymentManager extends React.Component {
 
   renderIcons = (service) => {
     if (service) {
-      return <span className={`icon gitopsService--${service.value}`} />
+      return <span className={`icon gitopsService--${service.value}`} />;
     } else {
       return;
     }
