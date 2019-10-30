@@ -165,7 +165,6 @@ export class KotsAppStore {
   }
 
   async createMidstreamVersion(
-<<<<<<< HEAD
     id: string, 
     sequence: number, 
     versionLabel: string, 
@@ -176,17 +175,6 @@ export class KotsAppStore {
     preflightSpec: any, 
     appSpec: any, 
     kotsAppSpec: any, 
-=======
-    id: string,
-    sequence: number,
-    versionLabel: string,
-    releaseNotes: string,
-    updateCursor: string,
-    supportBundleSpec: any,
-    preflightSpec: any,
-    appSpec: any,
-    kotsAppSpec: any,
->>>>>>> Update
     kotsAppLicense: any,
     appTitle: string | null,
     appIcon: string | null
