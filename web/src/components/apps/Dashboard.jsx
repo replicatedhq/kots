@@ -223,13 +223,11 @@ class Dashboard extends Component {
       errorCheckingUpdate, 
       appLicense,
       showDeployWarningModal,
-      showSkipModal,
-      appStatus
+      showSkipModal
      } = this.state;
 
     const { app } = this.props;
 
-    const statusLoading = this.props.getKotsAppStatus.loading;
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
 
@@ -238,7 +236,7 @@ class Dashboard extends Component {
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
     }
 
-    if (!app || !appLicense || statusLoading) {
+    if (!app || !appLicense) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
