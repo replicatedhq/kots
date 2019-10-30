@@ -529,11 +529,17 @@ class AppVersionHistory extends Component {
                     <tbody>
                       <tr>
                         <td>{changeCase.title(downstream.name)}</td>
-                        <td>{moment(currentDownstreamVersion.createdOn).format("MM/DD/YY hh:mm a")}</td>
+                        <td>
+                          {moment(currentDownstreamVersion.createdOn).format("MM/DD/YY")}<br />
+                          <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.createdOn).format("hh:mm a")}</span>
+                        </td>
                         <td>{currentDownstreamVersion.title}</td>
                         <td width="11%">{this.renderVersionSequence(currentDownstreamVersion)}</td>
                         <td width="17%">{currentDownstreamVersion.source}</td>
-                        <td>{currentDownstreamVersion.deployedAt ? moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY hh:mm a") : ""}</td>
+                        <td>
+                          {moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY")}<br />
+                          <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.deployedAt).format("hh:mm a")}</span>
+                        </td>
                         <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
                         <td>{app.isConfigurable && <Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link>}</td>
                       </tr>
@@ -582,11 +588,22 @@ class AppVersionHistory extends Component {
                         >
                           {selectedDiffReleases && <td width="12px"><div className={classNames("checkbox", { "checked": isChecked })} /></td>}
                           <td>{changeCase.title(downstream.name)}</td>
-                          <td>{moment(version.createdOn).format("MM/DD/YY hh:mm a")}</td>
+                          <td>
+                            {moment(version.createdOn).format("MM/DD/YY")}<br />
+                            <span className="u-fontSize--small u-marginLeft--5">{moment(version.createdOn).format("hh:mm a")}</span>
+                          </td>
                           <td>{version.title}</td>
                           <td width="11%">{this.renderVersionSequence(version)}</td>
                           <td width="17%">{this.renderSourceAndDiff(version)}</td>
-                          <td>{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY hh:mm a") : ""}</td>
+                          <td>
+                            {version.deployedAt ?
+                              <span>
+                                {moment(version.deployedAt).format("MM/DD/YY")}<br />
+                                <span className="u-fontSize--small u-marginLeft--5">{moment(version.deployedAt).format("hh:mm a")}</span>
+                              </span>
+                              : ""
+                            }
+                          </td>
                           <td>{this.renderVersionStatus(version)}</td>
                           <td>{this.renderVersionAction(version)}</td>
                         </tr>

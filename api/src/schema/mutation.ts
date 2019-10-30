@@ -25,6 +25,8 @@ type Mutation {
   updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!, createNewVersion: Boolean): Boolean
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
+  setAppGitOps(appId: String, clusterId: String, gitOpsInput: KotsGitOpsInput): Boolean
+
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch
   deleteWatch(watchId: String!, childWatchIds: [String]): Boolean

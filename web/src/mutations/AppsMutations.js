@@ -84,3 +84,9 @@ export const updateKotsApp = gql`
     updateKotsApp(appId: $appId, appName: $appName, iconUri: $iconUri)
   }
 `;
+
+export const setAppGitOps = gql`
+  mutation setAppGitOps($appId: String, $gitOpsInput: KotsGitOpsInput) {
+    setAppGitOps(appId: $appId, gitOpsInput: $gitOpsInput)
+  }
+`;
