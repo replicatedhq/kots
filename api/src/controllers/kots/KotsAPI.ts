@@ -19,7 +19,7 @@ import {
   extractKotsAppLicenseFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
-import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
+import { KotsApp, kotsAppFromLicenseData, KotsAppStatus } from "../../kots_app";
 import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import {
@@ -32,6 +32,7 @@ import { getDiffSummary } from "../../util/utilities";
 import yaml from "js-yaml";
 import * as k8s from "@kubernetes/client-node";
 import { decodeBase64 } from "../../util/utilities";
+import { KotsAppStore } from "../../kots_app/kots_app_store";
 
 interface CreateAppBody {
   metadata: string;
@@ -65,33 +66,41 @@ export class KotsAPI {
     // There is no user auth, but this method should be
     // exposed only on cluster ip to enforce that it's
     // not exposed to the public
-    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+
+    const kotsAppStore: KotsAppStore = request.app.locals.stores.kotsAppStore;
+
+    const apps = await kotsAppStore.listInstalledKotsApps();
     if (apps.length === 0) {
       return [];
     }
     const app = apps[0];
 
-    const appSpec = await request.app.locals.stores.kotsAppStore.getAppSpec(app.id, app.currentSequence);
+    if (!app.currentSequence) {
+      return [];
+    }
+
+    const appSpec = await kotsAppStore.getAppSpec(app.id, app.currentSequence);
     if (!appSpec) {
       return [];
     }
 
-    const kotsAppSpec = await request.app.locals.stores.kotsAppStore.getKotsAppSpec(app.id, app.currentSequence);
+    const parsedKotsAppSpec = await kotsAppStore.getKotsAppSpec(app.id, app.currentSequence);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
-      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
       if (!parsedKotsAppSpec) {
         return [];
       }
 
       const ports: any[] = [];
       for (const link of parsedAppSpec.spec.descriptor.links) {
-        const mapped = _.find(parsedKotsAppSpec.spec.ports, (port: any) => {
-          return port.applicationUrl === link.url;
-        });
+        if (parsedKotsAppSpec.ports) {
+          const mapped = _.find(parsedKotsAppSpec.ports, (port: any) => {
+            return port.applicationUrl === link.url;
+          });
 
-        if (mapped) {
-          ports.push(mapped);
+          if (mapped) {
+            ports.push(mapped);
+          }
         }
       }
 

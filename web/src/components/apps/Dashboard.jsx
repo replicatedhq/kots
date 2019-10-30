@@ -8,7 +8,7 @@ import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
-import { getAppLicense, getKotsAppStatus } from "@src/queries/AppsQueries";
+import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, AreaSeries } from "react-vis";
@@ -111,11 +111,19 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
+
+    if (this.props.getKotsAppDashboard !== lastProps.getKotsAppDashboard && this.props.getKotsAppDashboard) {
+      const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
+      if (getKotsAppDashboard) {
+        this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
+      }
+    }
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
+    const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
 
     if (app) {
       this.setWatchState(app);
@@ -125,7 +133,10 @@ class Dashboard extends Component {
       this.setState({ appLicense: getAppLicense });
     }
 
-    this.props.getKotsAppStatus.startPolling(2000);
+    this.props.getKotsAppDashboard.startPolling(2000);
+    if (getKotsAppDashboard) {
+      this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
+    }
   }
 
   onCheckForUpdates = async () => {
@@ -228,6 +239,7 @@ class Dashboard extends Component {
 
     const { app } = this.props;
 
+    const dashboardLoading = this.props.getKotsAppDashboard.loading;
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
 
@@ -236,14 +248,13 @@ class Dashboard extends Component {
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
     }
 
-    if (!app || !appLicense) {
+    if (!app || !appLicense || dashboardLoading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       );
     }
-
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -275,7 +286,7 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
-                appStatus={this.props.getKotsAppStatus.getKotsAppStatus?.state}
+                appStatus={this.props.getKotsAppDashboard.getKotsAppDashboard.appStatus?.state}
                 url={this.props.match.url}
                 links={links}
               />
@@ -469,8 +480,8 @@ export default compose(
       };
     }
   }),
-  graphql(getKotsAppStatus, {
-    name: "getKotsAppStatus",
+  graphql(getKotsAppDashboard, {
+    name: "getKotsAppDashboard",
     options: ({ match }) => {
       return {
         variables: {

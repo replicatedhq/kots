@@ -18,6 +18,7 @@ import { Cluster } from "../cluster";
 import { putObject } from "../util/s3";
 import * as _ from "lodash";
 import yaml from "js-yaml";
+import { ApplicationSpec } from "./kots_app_spec";
 
 export class KotsApp {
   id: string;
@@ -53,17 +54,13 @@ export class KotsApp {
   public async getPastVersions(clusterId: string, stores: Stores): Promise<KotsVersion[]> {
     return stores.kotsAppStore.listPastVersions(this.id, clusterId);
   }
-  public async getKotsAppSpec(clusterId: string, kotsAppStore: KotsAppStore): Promise<any> {
+  public async getKotsAppSpec(clusterId: string, kotsAppStore: KotsAppStore): Promise<ApplicationSpec | undefined> {
     const activeDownstream = await kotsAppStore.getCurrentVersion(this.id, clusterId);
     if (!activeDownstream) {
-      return null;
+      return undefined;
     }
 
-    const kotsAppSpec = await kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
-    if (!kotsAppSpec) {
-      return null;
-    }
-    return yaml.safeLoad(kotsAppSpec);
+    return kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
   }
   public async getRealizedLinksFromAppSpec(clusterId: string, stores: Stores): Promise<KotsAppLink[]> {
     const activeDownstream = await stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
@@ -76,10 +73,9 @@ export class KotsApp {
       return [];
     }
 
-    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
+    const parsedKotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
-      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
       const links: KotsAppLink[] = [];
       for (const unrealizedLink of parsedAppSpec.spec.descriptor.links) {
         // this is a pretty naive solution that works when there is 1 downstream only
@@ -87,8 +83,8 @@ export class KotsApp {
         // there are > 1 downstreams
 
         let rewrittenUrl = unrealizedLink.url;
-        if (parsedKotsAppSpec) {
-          const mapped = _.find(parsedKotsAppSpec.spec.ports, (port: any) => {
+        if (parsedKotsAppSpec && parsedKotsAppSpec.ports) {
+          const mapped = _.find(parsedKotsAppSpec.ports, (port: any) => {
             return port.applicationUrl === unrealizedLink.url;
           });
           if (mapped) {
@@ -455,10 +451,9 @@ export class KotsApp {
   }
 
   private async isAllowRollback(stores: Stores): Promise<boolean> {
-    const kotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    const parsedKotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
     try {
-      const parsedKotsAppSpec = kotsAppSpec ? yaml.safeLoad(kotsAppSpec) : null;
-      if (parsedKotsAppSpec && parsedKotsAppSpec.spec.allowRollback) {
+      if (parsedKotsAppSpec && parsedKotsAppSpec.allowRollback) {
         return true;
       }
     } catch {

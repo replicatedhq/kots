@@ -626,23 +626,6 @@ export const getAppLicense = gql`
   }
 `;
 
-
-export const getKotsAppStatus = gql`
-  query getKotsAppStatus($slug: String!) {
-    getKotsAppStatus(slug: $slug) {
-      appId
-      updatedAt
-      state
-      resourceStates {
-        kind
-        name
-        namespace
-        state
-      }
-    }
-  }
-`;
-
 export const getConfigForGroups = gql`
   query getConfigForGroups($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
     getConfigForGroups(slug: $slug, sequence: $sequence, configGroups: $configGroups) {
@@ -671,7 +654,34 @@ export const getConfigForGroups = gql`
           title
           recommended
           default
-          value
+        }
+      }
+    }
+  }
+`;
+
+export const getKotsAppDashboard = gql`
+  query getKotsAppDashboard($slug: String!) {
+    getKotsAppDashboard(slug: $slug) {
+      appStatus {
+        appId
+        updatedAt
+        state
+      }
+      metrics {
+        title
+        tickFormat
+        tickTemplate
+        series {
+          legendTemplate
+          metric {
+            name
+            value
+          }
+          data {
+            timestamp
+            value
+          }
         }
       }
     }

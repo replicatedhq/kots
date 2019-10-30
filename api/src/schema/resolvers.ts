@@ -18,7 +18,7 @@ import { LicenseQueries, LicenseMutations } from "../license";
 import { KotsLicenseQueries, KotsLicenseMutations } from "../klicenses";
 import { PrefightQueries } from "../preflight";
 import { AppsQueries } from "../apps";
-import { KotsQueries, KotsMutations } from "../kots_app";
+import { KotsQueries, KotsDashboardQueries, KotsMutations } from "../kots_app";
 import { KurlQueries, KurlMutations } from "../kurl";
 
 export const Resolvers = (stores: Stores, params: Params) => {
@@ -36,6 +36,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     query = {
       ...query,
       ...KotsQueries(stores),
+      ...KotsDashboardQueries(stores),
       ...KotsLicenseQueries(stores),
       ...KurlQueries(stores, params),
     }

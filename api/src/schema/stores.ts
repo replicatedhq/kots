@@ -21,6 +21,7 @@ import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
 import { KotsAppStatusStore } from "../kots_app/kots_app_status_store";
 import { KurlStore } from "../kurl/kurl_store";
+import { MetricStore } from "../monitoring/metric_store";
 
 export interface Stores {
   sessionStore: SessionStore;
@@ -46,4 +47,5 @@ export interface Stores {
   kotsAppStore: KotsAppStore;
   kotsAppStatusStore: KotsAppStatusStore;
   kurlStore: KurlStore;
+  metricStore: MetricStore;
 }

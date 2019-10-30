@@ -34,6 +34,7 @@ export class Params {
   readonly enableShip: boolean;
   readonly enableKots: boolean;
   readonly enableKurl: boolean;
+  readonly prometheusAddress: string;
 
   constructor({
     postgresUri,
@@ -65,6 +66,7 @@ export class Params {
     enableShip,
     enableKots,
     enableKurl,
+    prometheusAddress,
   }) {
     this.postgresUri = postgresUri;
     this.githubAppInstallURL = githubAppInstallURL;
@@ -95,6 +97,7 @@ export class Params {
     this.enableShip = enableShip;
     this.enableKots = enableKots;
     this.enableKurl = enableKurl;
+    this.prometheusAddress = prometheusAddress;
   }
 
   public static async getParams(): Promise<Params> {
@@ -133,6 +136,7 @@ export class Params {
       enableShip: process.env["ENABLE_SHIP"] === "1",
       enableKots: process.env["ENABLE_KOTS"] === "1",
       enableKurl: process.env["ENABLE_KURL"] === "1",
+      prometheusAddress: process.env["PROMETHEUS_ADDRESS"],
     });
     return Params.instance;
   }

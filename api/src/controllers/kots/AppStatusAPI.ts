@@ -1,8 +1,6 @@
 import Express from "express";
-import { Controller, Put, Get, Res, Req, HeaderParams, BodyParams } from "@tsed/common";
-import { Cluster } from "../../cluster";
+import { Controller, Put, Res, Req, HeaderParams, BodyParams } from "@tsed/common";
 import BasicAuth from "basic-auth";
-import _ from "lodash";
 import { KotsAppStatusStore } from "../../kots_app/kots_app_status_store";
 
 interface ErrorResponse {

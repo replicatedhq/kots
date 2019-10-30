@@ -209,6 +209,13 @@ const KotsAppStatus = `
   }
 `;
 
+const KotsAppDashboard = `
+type KotsAppDashboard {
+  appStatus: KotsAppStatus
+  metrics: [MetricChart]
+}
+`
+
 export default [
   KotsAppUpload,
   KotsApp,
@@ -217,7 +224,6 @@ export default [
   KotsVersion,
   KotsAppMetadata,
   KotsDownstreamOutput,
-  KotsAppStatus,
   ResourceState,
 
   AppRegistryDetails,
@@ -230,4 +236,7 @@ export default [
   KotsConfigItemInput,
   KotsConfigGroup,
   KotsConfigGroupInput,
+
+  KotsAppStatus,
+  KotsAppDashboard,
 ];

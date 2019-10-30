@@ -16,6 +16,7 @@ import License from "../license/graphql/license_types";
 import Preflight from "../preflight/graphql/preflight_types";
 import Apps from "../apps/graphql/apps_types";
 import KotsApp from "../kots_app/graphql/kots_app_types";
+import Metric from "../monitoring/graphql/metric_types";
 import Kurl from "../kurl/graphql/kurl_types";
 
 import { all as Mutation } from "./mutation";
@@ -38,6 +39,7 @@ export const ShipClusterSchemaTypes = [
   ...GitHubInstallation,
   ...Watch,
   ...KotsApp,
+  ...Metric,
   ...Cluster,
   ...Feature,
   ...Notification,

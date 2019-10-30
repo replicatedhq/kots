@@ -6,7 +6,9 @@ import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import _ from "lodash";
+import yaml from "js-yaml";
 import { decodeBase64, getPreflightResultState } from '../util/utilities';
+import { ApplicationSpec } from "./kots_app_spec";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
@@ -486,7 +488,7 @@ export class KotsAppStore {
     return versionItem;
   }
 
-  async getKotsAppSpec(appId: string, sequence: number): Promise<string | undefined> {
+  async getKotsAppSpec(appId: string, sequence: number): Promise<ApplicationSpec | undefined> {
     const q = `select kots_app_spec from app_version where app_id = $1 and sequence = $2`;
     const v = [
       appId,
@@ -494,7 +496,11 @@ export class KotsAppStore {
     ];
 
     const result = await this.pool.query(q, v);
-    return result.rows[0].kots_app_spec;
+    const spec: string = result.rows[0].kots_app_spec;
+    if (!spec) {
+      return undefined;
+    }
+    return yaml.safeLoad(spec).spec as ApplicationSpec;
   }
 
   async getAppSpec(appId: string, sequence: number): Promise<string | undefined> {
