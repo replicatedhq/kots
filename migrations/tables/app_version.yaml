@@ -40,3 +40,5 @@ spec:
         type: timestamp without time zone
       - name: status
         type: text
+      - name: encryption_key
+        type: text

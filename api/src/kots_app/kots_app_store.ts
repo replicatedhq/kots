@@ -125,6 +125,7 @@ export class KotsAppStore {
     versionLabel: string, 
     releaseNotes: string, 
     updateCursor: string, 
+    encryptionKey: string, 
     supportBundleSpec: any, 
     preflightSpec: any, 
     appSpec: any, 
@@ -133,8 +134,8 @@ export class KotsAppStore {
     appTitle: string | null,  
     appIcon: string | null
   ): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, supportbundle_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key, supportbundle_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`;
     const v = [
       id,
       sequence,
@@ -142,6 +143,7 @@ export class KotsAppStore {
       versionLabel,
       releaseNotes,
       updateCursor,
+      encryptionKey,
       supportBundleSpec,
       preflightSpec,
       appSpec,
@@ -512,6 +514,27 @@ export class KotsAppStore {
 
     const result = await this.pool.query(q, v);
     return result.rows[0].app_spec;
+  }
+
+  async getAppEncryptionKey(appId: string, sequence: string): Promise<string> {
+    const q = `select encryption_key from app_version where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+    const rows = result.rows;
+
+    if (rows.length === 0) {
+      throw new ReplicatedError("App not found while trying to get the encryption key");
+    }
+
+    if (!rows[0].encryption_key) {
+      return "";
+    }
+
+    return rows[0].encryption_key;
   }
 
   async getMidstreamUpdateCursor(appId: string): Promise<string> {

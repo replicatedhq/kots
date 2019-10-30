@@ -20,6 +20,8 @@ import * as _ from "lodash";
 import yaml from "js-yaml";
 import { ApplicationSpec } from "./kots_app_spec";
 
+const Cryptr = require('cryptr');
+
 export class KotsApp {
   id: string;
   name: string;
@@ -251,10 +253,21 @@ export class KotsApp {
       const configValues = parsedConfigValues.spec.values;
       const configGroups = parsedConfig.spec.groups;
 
+      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+      const encryptionKey = await stores.kotsAppStore.getAppEncryptionKey(appId, sequence);
+      let cryptr;
+      if (encryptionKey !== "") {
+        cryptr = new Cryptr(encryptionKey);;
+      }
+
       updatedConfigGroups.forEach(group => {
         group.items.forEach(async item => {
           if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
-            configValues[item.name] = item.value;
+            if (item.type === "password") {
+              configValues[item.name] = cryptr ? cryptr.encrypt(item.value) : item.value;
+            } else {
+              configValues[item.name] = item.value;
+            }
           }
         });
       });
@@ -265,10 +278,8 @@ export class KotsApp {
       const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
   
       if (!createNewVersion) {
-        const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-        const kotsApp = await stores.kotsAppStore.getApp(appId);
         const params = await Params.getParams();
-        const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, `${sequence}.tar.gz`);
+        const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
         await putObject(params, objectStorePath, tarGzBuffer, params.shipOutputBucket);
       } else {
         await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");

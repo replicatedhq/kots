@@ -11,6 +11,7 @@ interface InstallationSpec {
   cursor: string;
   versionLabel: string;
   releaseNotes: string;
+  encryptionKey: string;
 }
 
 function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
@@ -142,8 +143,9 @@ export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<Ins
         if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
           const spec = {
             cursor: doc.spec.updateCursor,
-            versionLabel: doc.spec.versionLabel ? doc.spec.versionLabel : "Unknown",
-            releaseNotes: doc.spec.releaseNotes ? doc.spec.releaseNotes : "",
+            versionLabel: doc.spec.versionLabel || "Unknown",
+            releaseNotes: doc.spec.releaseNotes || "",
+            encryptionKey: doc.spec.encryptionKey || "",
           };
 
           resolve(spec);
@@ -159,6 +161,7 @@ export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<Ins
         cursor: "",
         versionLabel: "",
         releaseNotes: "",
+        encryptionKey: ""
       });
     });
 
