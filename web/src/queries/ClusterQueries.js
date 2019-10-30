@@ -8,6 +8,7 @@ export const listClustersRaw = `
       slug
       createdOn
       lastUpdated
+      isGitOps
       gitOpsRef {
         owner
         repo

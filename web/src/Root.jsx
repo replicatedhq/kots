@@ -9,7 +9,7 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import GitHubAuth from "./components/github_auth/GitHubAuth";
 import GitHubInstall from "./components/github_install/GitHubInstall";
-import Clusters from "./components/clusters/Clusters";
+import GitOps from "././components/clusters/GitOps";
 import CreateCluster from "./components/clusters/CreateCluster";
 import VersionHistory from "./components/watches/VersionHistory";
 import DiffShipReleases from "./components/watches/DiffShipReleases";
@@ -304,7 +304,7 @@ class Root extends Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
-                    <ProtectedRoute path="/gitops" render={(props) => <Clusters {...props} />} />
+                    <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute
                       path="/watches"

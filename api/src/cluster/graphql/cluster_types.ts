@@ -5,6 +5,7 @@ type Cluster {
   slug: String
   lastUpdated: String
   createdOn: String
+  isGitOps: Boolean
   gitOpsRef: GitOpsRef
   shipOpsRef: ShipOpsRef
   watchCounts: WatchCounts

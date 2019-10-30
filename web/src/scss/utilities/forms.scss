@@ -32,7 +32,7 @@
   }
   
   &.is-active {
-    border-color: #73A3CD;
+    border-color: #326DE6;
     background-color: #F5F8FC;
   }
 
@@ -44,6 +44,10 @@
       cursor: not-allowed;
     }
   }
+}
+
+.gitops-checkboxes .BoxedCheckbox {
+  min-height: 60px;
 }
 
 .replicated-select-container {

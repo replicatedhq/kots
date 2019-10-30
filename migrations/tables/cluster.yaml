@@ -52,3 +52,6 @@ spec:
         constraints:
           notNull: true
         default: "false"
+      - name: is_gitops
+        type: boolean
+        default: "false"

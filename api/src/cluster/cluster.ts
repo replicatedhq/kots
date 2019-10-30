@@ -6,6 +6,7 @@ export class Cluster {
   slug: string;
   lastUpdated?: Date;
   createdOn: Date;
+  isGitOps: boolean;
   gitOpsRef?: GitOpsRef;
   shipOpsRef?: ShipOpsRef;
 

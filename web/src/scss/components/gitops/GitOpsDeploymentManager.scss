@@ -1,0 +1,57 @@
+.GitOpsDeploymentManager--wrapper {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.GitOpsDeploy--step {
+  border-radius: 4px;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0,0,0,.16);
+  padding: 40px;
+  margin-bottom: 40px;
+  text-align: center;
+  position: relative;
+
+  &.inactive {
+    padding: 12px 40px;
+  }
+
+  &::after {
+    content: "";
+    display: block;
+    background-image: url("../../../images/main_spritesheet.svg");
+    background-repeat: no-repeat;
+    background-size: initial;
+    display: inline-block;
+    cursor: default;
+    position: absolute;
+    background-position: -89px -206px;
+    width: 20px;
+    height: 12px;
+    left: 50%;
+    margin-left: -10px;
+    bottom: -26px;
+
+  }
+
+  &:last-child::after {
+    display: none;
+  }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4A4A4A;
+    margin-bottom: 12px;
+    line-height: 28px;
+  }
+
+  .step-sub {
+    font-size: 14px;
+    font-weight: 500;
+    color: #9B9B9B;
+    margin-bottom: 20px;
+    line-height: 22px;
+  }
+}
