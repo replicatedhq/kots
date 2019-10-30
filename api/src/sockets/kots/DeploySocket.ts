@@ -9,7 +9,7 @@ import { PreflightStore } from "../../preflight/preflight_store";
 import _ from "lodash";
 import { TroubleshootStore } from "../../troubleshoot";
 
-const DefaultReadyState = JSON.stringify([{state: State.Ready}]);
+const DefaultReadyState = [{kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", state: State.Ready}];
 
 interface ClusterSocketHistory {
   clusterId: string;
