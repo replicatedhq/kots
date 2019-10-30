@@ -28,3 +28,5 @@ spec:
         type: integer
       - name: gitops_path
         type: text
+      - name: gitops_format
+        type: text

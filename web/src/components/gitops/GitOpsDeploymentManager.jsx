@@ -62,7 +62,7 @@ export default class GitOpsDeploymentManager extends React.Component {
   }
 
   completeSetup = () => {
-    console.log("save to DB and create deployment");
+    console.log(this.state);
   }
 
   validStep = (step) => {
@@ -112,9 +112,9 @@ export default class GitOpsDeploymentManager extends React.Component {
       if (!visited.includes(from)) {
         visited.push(from);
       }
-      this.setState({ 
+      this.setState({
         step: to,
-        visitedSteps: visited 
+        visitedSteps: visited
       });
     }
   }

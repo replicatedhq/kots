@@ -47,6 +47,17 @@ const KotsDownstream = `
   }
 `;
 
+const KotsGitOpsInput = `
+  input KotsGitOpsInput {
+    provider: String
+    uri: String
+    branch: String
+    path: String
+    action: String
+    format: String
+  }
+`;
+
 const KotsVersion = `
   type KotsVersion {
     title: String!
@@ -225,6 +236,8 @@ export default [
   KotsAppMetadata,
   KotsDownstreamOutput,
   ResourceState,
+
+  KotsGitOpsInput,
 
   AppRegistryDetails,
   KotsAppRegistryDetails,

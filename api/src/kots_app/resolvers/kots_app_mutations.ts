@@ -10,6 +10,16 @@ import * as k8s from "@kubernetes/client-node";
 
 export function KotsMutations(stores: Stores) {
   return {
+    async setAppGitOps(root: any, args: any, context: Context) {
+      const { appId, gitOpsInput } = args;
+
+      const app = await context.getApp(appId);
+      console.log(app);
+      console.log(gitOpsInput);
+
+      return {};
+    },
+
     async checkForKotsUpdates(root: any, args: any, context: Context) {
       const { appId } = args;
 
