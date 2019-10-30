@@ -26,3 +26,5 @@ spec:
           notNull: true
       - name: current_sequence
         type: integer
+      - name: gitops_path
+        type: text
