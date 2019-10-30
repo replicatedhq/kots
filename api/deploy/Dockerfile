@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:10
 WORKDIR /src
 ADD . /src
 
@@ -7,7 +7,7 @@ RUN rm -rf node_modules
 RUN make deps-prod
 RUN curl -L https://install.goreleaser.com/github.com/tj/node-prune.sh | bash && ./bin/node-prune
 
-FROM node:8-buster-slim
+FROM node:10-buster-slim
 COPY --from=0 /src/build /src/build
 COPY --from=0 /src/node_modules /src/node_modules
 
