@@ -51,10 +51,12 @@ const KotsGitOpsInput = `
   input KotsGitOpsInput {
     provider: String
     uri: String
+    owner: String
     branch: String
     path: String
-    action: String
     format: String
+    action: String
+    otherServiceName: String
   }
 `;
 

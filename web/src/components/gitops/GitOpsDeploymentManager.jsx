@@ -1,5 +1,9 @@
 import * as React from "react";
 import Select from "react-select";
+import { withRouter } from "react-router-dom";
+import { graphql, compose, withApollo } from "react-apollo";
+import { getKotsApp } from "@src/queries/AppsQueries";
+import { setAppGitOps } from "@src/mutations/AppsMutations";
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
 const STEPS = [
@@ -46,7 +50,7 @@ const SERVICES = [
     label: "Other",
   }
 ]
-export default class GitOpsDeploymentManager extends React.Component {
+class GitOpsDeploymentManager extends React.Component {
   state = {
     step: "setup",
     visitedSteps: [],
@@ -58,11 +62,44 @@ export default class GitOpsDeploymentManager extends React.Component {
     selectedService: SERVICES[0],
     otherService: "",
     providerError: null,
-    actionPath: "commit"
+    actionPath: "commit",
+    containType: ""
   }
 
-  completeSetup = () => {
-    console.log(this.state);
+  completeSetup = async () => {
+    const { getKotsAppQuery } = this.props;
+    const {
+      selectedService,
+      ownerRepo,
+      branch,
+      path,
+      actionPath,
+      otherService,
+      containType
+    } = this.state;
+    const clusterId = getKotsAppQuery.getKotsApp?.downstreams[0]?.cluster?.id;
+    const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
+    const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
+    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+    
+    let gitOpsInput = new Object();
+    gitOpsInput.provider = selectedService.value;
+    gitOpsInput.uri = `https://${serviceUri}/${ownerRepo}`;
+    gitOpsInput.owner = ownerRepo;
+    gitOpsInput.branch = branch || "master";
+    gitOpsInput.path = path;
+    gitOpsInput.format = containType;
+    gitOpsInput.action = actionPath;
+    if (selectedService.value === "other") {
+      gitOpsInput.otherServiceName = otherService;
+    }
+
+    try {
+      await this.props.setAppGitOps(getKotsAppQuery.getKotsApp.id, clusterId, gitOpsInput);
+      // TODO: get/show deployment token;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   validStep = (step) => {
@@ -386,3 +423,25 @@ export default class GitOpsDeploymentManager extends React.Component {
     );
   }
 }
+
+export default compose(
+  withApollo,
+  withRouter,
+  graphql(getKotsApp, {
+    name: "getKotsAppQuery",
+    options: props => {
+      const { slug } = props.match.params;
+      return {
+        fetchPolicy: "no-cache",
+        variables: {
+          slug: slug
+        }
+      }
+    }
+  }),
+  graphql(setAppGitOps, {
+    props: ({ mutate }) => ({
+      setAppGitOps: (appId, clusterId, gitOpsInput) => mutate({ variables: { appId, clusterId, gitOpsInput } })
+    })
+  }),
+)(GitOpsDeploymentManager);

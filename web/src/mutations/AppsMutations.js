@@ -85,8 +85,10 @@ export const updateKotsApp = gql`
   }
 `;
 
-export const setAppGitOps = gql`
-  mutation setAppGitOps($appId: String, $gitOpsInput: KotsGitOpsInput) {
-    setAppGitOps(appId: $appId, gitOpsInput: $gitOpsInput)
+export const setAppGitOpsRaw = `
+  mutation setAppGitOps($appId: String!, $clusterId: String!, $gitOpsInput: KotsGitOpsInput!) {
+    setAppGitOps(appId: $appId, clusterId: $clusterId, gitOpsInput: $gitOpsInput)
   }
 `;
+
+export const setAppGitOps = gql(setAppGitOpsRaw);

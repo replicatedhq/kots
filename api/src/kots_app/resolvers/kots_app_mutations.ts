@@ -16,11 +16,6 @@ export function KotsMutations(stores: Stores) {
 
       const app = await context.getApp(appId);
 
-      let uri = gitOpsInput.uri;
-      if (gitOpsInput.provider === "github.com") {
-        uri = `https://github.com/${uri}`;
-      } // TODO more
-
       const { publicKey, privateKey } = generateKeyPairSync("rsa", {
         modulusLength: 4096,
         publicKeyEncoding: {
@@ -35,7 +30,7 @@ export function KotsMutations(stores: Stores) {
         }
       });
 
-      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(uri, privateKey, publicKey);
+      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.uri, privateKey, publicKey);
       await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(appId, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
 
       return {};
