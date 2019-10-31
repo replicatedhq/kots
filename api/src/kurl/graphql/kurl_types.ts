@@ -11,17 +11,17 @@ type Node {
   isConnected: Boolean
   canDelete: Boolean
   kubeletVersion: String
-  cpu: CapacityAllocatable
-  memory: CapacityAllocatable
-  pods: CapacityAllocatable
+  cpu: CapacityAvailable
+  memory: CapacityAvailable
+  pods: CapacityAvailable
   conditions: NodeConditions
 }
 `;
 
-const CapacityAllocatable = `
-type CapacityAllocatable {
-  capacity: String
-  allocatable: String
+const CapacityAvailable = `
+type CapacityAvailable {
+  capacity: Float
+  available: Float
 }
 `;
 
@@ -37,6 +37,6 @@ type NodeConditions {
 export default [
   Kurl,
   Node,
-  CapacityAllocatable,
+  CapacityAvailable,
   NodeConditions
 ];

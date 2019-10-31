@@ -203,6 +203,19 @@ export function sortAnalyzers(bundleInsight) {
   })
 }
 
+/**
+ * @param {Number} numerator
+ * @param {Number} denominator
+ * @return {String} danger, warning or check
+ */
+export function getPercentageStatus(numerator, denominator) {
+  if (!numerator || !denominator) {
+    return "unknown";
+  }
+  const percentage = numerator / denominator;
+  return percentage < 0.1 ? "danger" : percentage < 0.25 ? "warning" : "check";
+}
+
 export function getLicenseExpiryDate(license) {
   if (!license) {
     return "";

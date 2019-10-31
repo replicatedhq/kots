@@ -3,6 +3,7 @@ import { Params } from "../../server/params";
 import { Context } from "../../context";
 import * as k8s from "@kubernetes/client-node";
 import _ from "lodash";
+import request from "request-promise";
 import { logger } from "../../server/logger";
 
 export function KurlQueries(stores: Stores, params: Params) {
@@ -26,7 +27,29 @@ export function KurlQueries(stores: Stores, params: Params) {
         const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
         const res = await k8sApi.listNode();
-        const nodes = _.map(res.body.items, (item) => {
+        const nodes = _.map(res.body.items, async (item) => {
+          let usageStats = {
+            availableCPUs: -1,
+            availableMemory: -1,
+            availablePods: -1
+          };
+          const address = _.find(item.status!.addresses || [], { type: "InternalIP" });
+          if (address) {
+            const nodeIP = address.address;
+            const options = {
+              method: "GET",
+              uri: `http://${nodeIP}:10255/stats/summary`
+            };
+            const response = await request(options);
+            if (response) {
+              const stats = JSON.parse(response);
+              const totalCPUs = parseFloat(item.status!.capacity!.cpu!);
+              usageStats.availableCPUs = totalCPUs - (stats.node!.cpu!.usageNanoCores! / Math.pow(10, 9));
+              usageStats.availableMemory = stats.node!.memory!.availableBytes! / 1073741824;
+              usageStats.availablePods = parseInt(item.status!.capacity!.pods!) - stats.pods!.length;
+            }
+          }
+
           const memoryPressureCondition = _.find(item.status!.conditions!, { type: "MemoryPressure" });
           const diskPressureCondition = _.find(item.status!.conditions!, { type: "DiskPressure" });
           const pidPressureCondition = _.find(item.status!.conditions!, { type: "PIDPressure" });
@@ -39,6 +62,10 @@ export function KurlQueries(stores: Stores, params: Params) {
             ready: readyCondition ? readyCondition.status === "True" : false,
           };
 
+          let memoryCapacityStr = item.status!.capacity!.memory; // example: 134123213Ki
+          memoryCapacityStr = memoryCapacityStr.substring(0, memoryCapacityStr.length - 2);
+          const memoryCapacity = parseFloat(memoryCapacityStr) / 976562.5;
+
           return {
             name: item.metadata!.name,
             isConnected: true,
@@ -47,15 +74,15 @@ export function KurlQueries(stores: Stores, params: Params) {
             kubeletVersion: item.status!.nodeInfo!.kubeletVersion,
             cpu: {
               capacity: item.status!.capacity!.cpu,
-              allocatable: item.status!.allocatable!.cpu,
+              available: usageStats.availableCPUs,
             },
             memory: {
-              capacity: item.status!.capacity!.memory,
-              allocatable: item.status!.allocatable!.memory,
+              capacity: memoryCapacity,
+              available: usageStats.availableMemory,
             },
             pods: {
               capacity: item.status!.capacity!.pods,
-              allocatable: item.status!.allocatable!.pods,
+              available: usageStats.availablePods,
             },
             conditions,
           };

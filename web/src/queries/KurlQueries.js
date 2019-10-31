@@ -11,15 +11,15 @@ export const kurlRaw = `
         kubeletVersion
         cpu {
           capacity
-          allocatable
+          available
         }
         memory {
           capacity
-          allocatable
+          available
         }
         pods {
           capacity
-          allocatable
+          available
         }
         conditions {
           memoryPressure
