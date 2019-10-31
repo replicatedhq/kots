@@ -26,6 +26,8 @@ class UploadAirgapBundle extends React.Component {
     showSupportBundleCommand: false
   }
 
+  emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
+
   clearFile = () => {
     this.setState({ bundleFile: {} });
   }
@@ -55,7 +57,7 @@ class UploadAirgapBundle extends React.Component {
           fileUploading: false,
           uploadSent: 0,
           uploadTotal: 0,
-          errorMessage: "Please enter a value for \"Hostname\" field",
+          errorMessage: this.emptyHostnameErrMessage,
         });
         return;
       }
@@ -272,6 +274,7 @@ class UploadAirgapBundle extends React.Component {
                 namespaceDescription="What namespace do you want the application images pushed to?"
                 gatherDetails={this.getRegistryDetails}
                 registryDetails={registryDetails}
+                showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
               />
             </div> : null}
             <div className="u-marginTop--20 flex">

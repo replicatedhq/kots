@@ -226,6 +226,7 @@ const KotsAppDashboard = `
 type KotsAppDashboard {
   appStatus: KotsAppStatus
   metrics: [MetricChart]
+  prometheusAddress: String
 }
 `
 
