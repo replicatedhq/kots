@@ -125,7 +125,7 @@ export class GitOps extends React.Component {
     const { clusterToManage } = this.state;
     const { listClustersQuery } = this.props;
 
-    const hasGitopsClusters = some(listClustersQuery?.listClusters, ["isGitOps"]);
+    const hasGitopsClusters = false; // TODO: fix this
 
     if (this.props.listClustersQuery.loading) {
       return (

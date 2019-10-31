@@ -402,7 +402,7 @@
         },
         "body": {
           "operationName": "getKotsApp",
-          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          gitOpsRef {\n            owner\n            repo\n            branch\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
+          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      upstreamUri\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      allowRollback\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          source\n          releaseNotes\n          parentSequence\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          gitOpsRef {\n            owner\n            repo\n            branch\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
           "variables": {
             "slug": "kots-app-slug"
           }
@@ -410,7 +410,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*gitOpsRef\\s*\\{\\s*owner\\s*repo\\s*branch\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*upstreamUri\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*allowRollback\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*source\\s*releaseNotes\\s*parentSequence\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*gitOpsRef\\s*\\{\\s*owner\\s*repo\\s*branch\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -597,7 +597,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
           "variables": {
             "clusterSlug": "get-kots-downstream-history-cluster-slug",
             "upstreamSlug": "get-kots-downstream-history-app-slug"
@@ -606,7 +606,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -657,7 +657,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-release-notes-cluster-slug",
             "upstreamSlug": "kots-release-notes-app-slug"
@@ -666,7 +666,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -709,7 +709,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-no-release-notes-cluster-slug",
             "upstreamSlug": "kots-no-release-notes-app-slug"
@@ -718,7 +718,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -756,7 +756,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      releaseNotes\n      deployedAt\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-different-sequence-cluster-slug",
             "upstreamSlug": "kots-different-sequence-app-slug"
@@ -765,7 +765,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*\\}\\s*\\}\\s*"
           }
         }
       },

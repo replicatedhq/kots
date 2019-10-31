@@ -15,8 +15,8 @@ const (
 	ackMessage    = "43"
 
 	CloseMessage = "1"
-	PingMessage = "2"
-	PongMessage = "3"
+	PingMessage  = "2"
+	PongMessage  = "3"
 )
 
 var (
