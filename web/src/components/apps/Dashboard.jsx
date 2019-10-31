@@ -10,7 +10,7 @@ import DashboardCard from "./DashboardCard";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
-import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
+import { updateKotsApp, checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend } from "react-vis";
 
@@ -35,7 +35,10 @@ class Dashboard extends Component {
     appLicense: null,
     versionToDeploy: null,
     showDeployWarningModal: false,
-    showSkipModal: false
+    showSkipModal: false,
+    showConfigureGraphs: false,
+    promValue: "",
+    savingPromValue: false
   }
 
   updateWatchInfo = async e => {
@@ -79,6 +82,29 @@ class Dashboard extends Component {
     this.setState({
       showEditModal: !showEditModal
     });
+  }
+
+  toggleConfigureGraphs = () => {
+    const { showConfigureGraphs } = this.state;
+    this.setState({
+      showConfigureGraphs: !showConfigureGraphs
+    });
+  }
+
+  updatePromValue = () => {
+    this.setState({ savingPromValue: true });
+    this.props.client.mutate({
+      mutation: setPrometheusAddress,
+      variables: {
+        value: this.state.promValue,
+      },
+    })
+      .then(() => {
+        this.setState({ savingPromValue: false });
+      })
+      .catch(() => {
+        this.setState({ savingPromValue: false });
+      })
   }
 
   setWatchState = (app) => {
@@ -290,7 +316,10 @@ class Dashboard extends Component {
       errorCheckingUpdate, 
       appLicense,
       showDeployWarningModal,
-      showSkipModal
+      showSkipModal,
+      showConfigureGraphs,
+      promValue,
+      savingPromValue
      } = this.state;
 
     const { app } = this.props;
@@ -381,7 +410,7 @@ class Dashboard extends Component {
                     </div>
                   </div>
                   <div className="dashboard-card absolute-button  flex flex1 alignItems--center justifyContent--center alignSelf--center">
-                    <button className="btn secondary lightBlue"> Configure graphs </button>
+                    <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
                   </div>
                 </div>
               }
@@ -495,6 +524,47 @@ class Dashboard extends Component {
             </div>
           </div>
         </Modal>
+
+        <Modal
+          isOpen={showConfigureGraphs}
+          onRequestClose={this.toggleConfigureGraphs}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Configure prometheus value"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body flex-column flex1">
+            <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Configure graphs</h2>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">You can set the prometheus value to see the metrics</p>
+            <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Prometheus value</h3>
+            <form className="EditWatchForm flex-column" onSubmit={this.updatePromValue}>
+              <input
+                type="text"
+                className="Input u-marginBottom--20"
+                placeholder="Type the prometheus value here"
+                value={promValue}
+                onChange={(e) => { this.setState({ promValue: e.target.value }) }}
+              />
+              <div className="flex justifyContent--flexEnd u-marginTop--20">
+                <button
+                  type="button"
+                  onClick={this.toggleConfigureGraphs}
+                  className="btn secondary force-gray u-marginRight--20">
+                  Cancel
+              </button>
+                <button
+                  type="submit"
+                  className="btn primary lightBlue">
+                  {
+                    savingPromValue
+                      ? "Saving"
+                      : "Save"
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -528,6 +598,11 @@ export default compose(
   graphql(updateKotsApp, {
     props: ({ mutate }) => ({
       updateKotsApp: (appId, appName, iconUri) => mutate({ variables: { appId, appName, iconUri } })
+    })
+  }),
+  graphql(setPrometheusAddress, {
+    props: ({ mutate }) => ({
+      setPrometheusAddress: (value) => mutate({ variables: { value } })
     })
   })
 )(Dashboard);
