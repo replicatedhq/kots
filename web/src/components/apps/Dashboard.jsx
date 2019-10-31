@@ -50,10 +50,7 @@ class Dashboard extends Component {
         editWatchLoading: false
       });
     });
-
-
     await refetchListApps();
-
     this.setState({
       editWatchLoading: false,
       showEditModal: false
@@ -94,7 +91,6 @@ class Dashboard extends Component {
     });
   }
 
-
   toggleEditModal = () => {
     const { showEditModal } = this.state;
     this.setState({
@@ -115,19 +111,11 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
-
-    if (this.props.getKotsAppDashboard !== lastProps.getKotsAppDashboard && this.props.getKotsAppDashboard) {
-      const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
-      if (getKotsAppDashboard) {
-        this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
-      }
-    }
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
-    const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
 
     if (app) {
       this.setWatchState(app);
@@ -138,9 +126,6 @@ class Dashboard extends Component {
     }
 
     this.props.getKotsAppDashboard.startPolling(2000);
-    if (getKotsAppDashboard) {
-      this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
-    }
   }
 
   onCheckForUpdates = async () => {
@@ -275,7 +260,7 @@ class Dashboard extends Component {
       }
     }
     return (
-      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20">
+      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
         <XYPlot width={460} height={180}>
           <VerticalGridLines />
           <HorizontalGridLines />
@@ -286,11 +271,12 @@ class Dashboard extends Component {
         { legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null }
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
-          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">TODO</span>.</p>
+          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
         </div>
       </div>
     );
   }
+
 
   render() {
     const { 
@@ -320,10 +306,6 @@ class Dashboard extends Component {
       );
     }
 
-    let graphs;
-    if (this.props.getKotsAppDashboard?.getKotsAppDashboard?.metrics) {
-      graphs = this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph);
-    }
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -384,7 +366,11 @@ class Dashboard extends Component {
               />
             </div>
             <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
-              {graphs}
+              {this.props.getKotsAppDashboard?.getKotsAppDashboard?.metrics.length > 0 ?
+                this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)
+                :
+                <span> Prom is not available. <button className="btn primary lightBlue"> Configure </button></span>
+              }
             </div>
           </div>
         </div>

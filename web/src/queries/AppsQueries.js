@@ -687,3 +687,9 @@ export const getKotsAppDashboard = gql`
     }
   }
 `;
+
+export const getPrometheusAddress = gql`
+  query getPrometheusAddress {
+    getPrometheusAddress
+  }
+`
