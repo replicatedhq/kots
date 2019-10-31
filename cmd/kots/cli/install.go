@@ -74,7 +74,13 @@ func InstallCmd() *cobra.Command {
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
 				ExcludeAdminConsole: true,
+				ExcludeKotsKinds:    true,
 				HelmOptions:         v.GetStringSlice("set"),
+				RewriteImages:       v.GetBool("rewrite-images"),
+				RewriteImageOptions: pull.RewriteImageOptions{
+					Host:      v.GetString("registry-endpoint"),
+					Namespace: v.GetString("image-namespace"),
+				},
 			}
 
 			canPull, err := pull.CanPullUpstream(upstream, pullOptions)
@@ -184,6 +190,10 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-registry")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
+
+	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
+	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
+	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 
 	return cmd
 }
