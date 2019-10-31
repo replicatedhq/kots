@@ -395,7 +395,7 @@ class Dashboard extends Component {
               />
             </div>
             <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
-              {this.props.getKotsAppDashboard?.getKotsAppDashboard?.metrics.length > 0 ?
+              {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
                 this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)
                 :
                 <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
