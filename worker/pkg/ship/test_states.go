@@ -36,7 +36,7 @@ var shipEnterpriseStateJSON = `{
 	      "spec": "---\n yaml: true",
 	      "images": [],
 	      "githubContents": [],
-	      "created": "Thu Jun 20 2019 01:47:15 GMT+0000 (UTC)",
+	      "created": "Thu Jun 20 2019 01:47:15 GMT+0000 (Coordinated Universal Time)",
 	      "registrySecret": "its-a-secret",
 	      "entitlements": {
 		"meta": {

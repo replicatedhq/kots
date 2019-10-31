@@ -681,12 +681,12 @@
               {
                 "title": "my-other-awesome-version",
                 "status": "pending",
-                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "sequence": 0,
                 "releaseNotes": "# Release Notes Markdown Text",
-                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "preflightResult": "string",
-                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
               }
             ]
           }
@@ -733,10 +733,10 @@
               {
                 "title": "kots-no-release-notes-version-label",
                 "status": "pending",
-                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "sequence": 0,
                 "releaseNotes": "",
-                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "preflightResult": null,
                 "preflightResultCreatedAt": null
               }
@@ -780,22 +780,22 @@
               {
                 "title": "my-other-awesome-version-2",
                 "status": "deployed",
-                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "sequence": 1,
                 "releaseNotes": "# Markdown string here",
-                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "preflightResult": "string",
-                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
               },
               {
                 "title": "my-other-awesome-version",
                 "status": "deployed",
-                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "sequence": 0,
                 "releaseNotes": "# Markdown string here",
-                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)",
+                "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
                 "preflightResult": "string",
-                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (UTC)"
+                "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
               }
             ]
           }
@@ -911,7 +911,7 @@
             "watchContributors": [
               {
                 "id": "get-watch-contributors-user",
-                "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)",
+                "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (Coordinated Universal Time)",
                 "githubId": 1235,
                 "login": "get-watch-contributors-username",
                 "avatar_url": "https://avatars3.githubusercontent.com/u/234567?v=4"
