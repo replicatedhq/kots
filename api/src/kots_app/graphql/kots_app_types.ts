@@ -5,6 +5,7 @@ const KotsAppUpload = `
     needsRegistry: Boolean
     slug: String
     isConfigurable: Boolean
+    errorMessage: String
   }
 `;
 
