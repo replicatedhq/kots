@@ -38,7 +38,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     query = {
       ...query,
       ...KotsQueries(stores),
-      ...KotsDashboardQueries(stores),
+      ...KotsDashboardQueries(stores, params),
       ...KotsLicenseQueries(stores),
       ...KurlQueries(stores, params),
     }
