@@ -13,6 +13,51 @@ import { ApplicationSpec } from "./kots_app_spec";
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
+  async createGitOpsRepo(uri: string, privateKey: string, publicKey: string): Promise<any> {
+    const id = randomstring.generate({ capitalization: "lowercase" });
+
+    const q = `insert into gitops_repo (id, uri, key_pub, key_priv) values ($1, $2, $3, $4)`;
+    const v = [
+      id,
+      uri,
+      privateKey,
+      publicKey,
+    ];
+
+    await this.pool.query(q, v);
+
+    return {
+      id,
+    };
+  }
+
+
+  async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
+    const q = `update app_downstream set
+      gitops_branch = $1,
+      gitops_path = $2,
+      gitops_format = $3
+      where app_id = $4 and cluster_id = $5`;
+
+    const v = [
+      branch,
+      path,
+      format,
+      appId,
+      clusterId,
+    ];
+
+    await this.pool.query(q, v);
+
+    const qq = `update cluster set gitops_repo_id = $1 where id = $2`;
+    const vv = [
+      gitOpsRepoId,
+      clusterId,
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   async listClusterIDsForApp(id: string): Promise<string[]> {
     const q = `select cluster_id from app_downstream where app_id = $1`;
     const v = [
@@ -120,18 +165,18 @@ export class KotsAppStore {
   }
 
   async createMidstreamVersion(
-    id: string, 
-    sequence: number, 
-    versionLabel: string, 
-    releaseNotes: string, 
-    updateCursor: string, 
-    encryptionKey: string, 
-    supportBundleSpec: any, 
-    preflightSpec: any, 
-    appSpec: any, 
-    kotsAppSpec: any, 
+    id: string,
+    sequence: number,
+    versionLabel: string,
+    releaseNotes: string,
+    updateCursor: string,
+    encryptionKey: string,
+    supportBundleSpec: any,
+    preflightSpec: any,
+    appSpec: any,
+    kotsAppSpec: any,
     kotsAppLicense: any,
-    appTitle: string | null,  
+    appTitle: string | null,
     appIcon: string | null
   ): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key, supportbundle_spec, preflight_spec, app_spec, kots_app_spec, kots_license)

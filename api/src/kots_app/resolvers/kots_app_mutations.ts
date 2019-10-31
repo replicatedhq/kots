@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { generateKeyPairSync } from "crypto";
 import { Context } from "../../context";
 import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
@@ -10,6 +11,31 @@ import * as k8s from "@kubernetes/client-node";
 
 export function KotsMutations(stores: Stores) {
   return {
+    async setAppGitOps(root: any, args: any, context: Context) {
+      const { appId, clusterId, gitOpsInput } = args;
+
+      const app = await context.getApp(appId);
+
+      const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+        modulusLength: 4096,
+        publicKeyEncoding: {
+          type: 'spki',
+          format: 'pem'
+        },
+        privateKeyEncoding: {
+          type: 'pkcs8',
+          format: 'pem',
+          cipher: 'aes-256-cbc',
+          passphrase: 'top secret'
+        }
+      });
+
+      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.uri, privateKey, publicKey);
+      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(appId, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
+
+      return {};
+    },
+
     async checkForKotsUpdates(root: any, args: any, context: Context) {
       const { appId } = args;
 
