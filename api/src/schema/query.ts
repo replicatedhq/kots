@@ -25,7 +25,7 @@ export const Query = `
     getKotsMetadata: KotsAppMetadata
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
-    getKotsAppDashboard(slug: String!): KotsAppDashboard
+    getKotsAppDashboard(slug: String!, clusterId: String): KotsAppDashboard
     listDownstreamsForApp(slug: String!): [Cluster]
     getKotsDownstreamHistory(clusterSlug: String!, upstreamSlug: String!): [KotsVersion]
     listPendingKotsVersions(slug: String!): [KotsVersion]
