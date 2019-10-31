@@ -1,3 +1,4 @@
+import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
@@ -9,11 +10,15 @@ import DashboardCard from "./DashboardCard";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
-import { updateKotsApp, checkForKotsUpdates } from "@src/mutations/AppsMutations";
+import { updateKotsApp, checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
-import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, AreaSeries } from "react-vis";
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend } from "react-vis";
+
+import { getValueFormat } from "@grafana/ui"
+import Handlebars from "handlebars";
 
 import "../../scss/components/watches/Dashboard.scss";
+import "../../../node_modules/react-vis/dist/style";
 
 class Dashboard extends Component {
 
@@ -31,7 +36,10 @@ class Dashboard extends Component {
     appLicense: null,
     versionToDeploy: null,
     showDeployWarningModal: false,
-    showSkipModal: false
+    showSkipModal: false,
+    showConfigureGraphs: false,
+    promValue: "",
+    savingPromValue: false
   }
 
   updateWatchInfo = async e => {
@@ -46,10 +54,7 @@ class Dashboard extends Component {
         editWatchLoading: false
       });
     });
-
-
     await refetchListApps();
-
     this.setState({
       editWatchLoading: false,
       showEditModal: false
@@ -80,6 +85,29 @@ class Dashboard extends Component {
     });
   }
 
+  toggleConfigureGraphs = () => {
+    const { showConfigureGraphs } = this.state;
+    this.setState({
+      showConfigureGraphs: !showConfigureGraphs
+    });
+  }
+
+  updatePromValue = () => {
+    this.setState({ savingPromValue: true });
+    this.props.client.mutate({
+      mutation: setPrometheusAddress,
+      variables: {
+        value: this.state.promValue,
+      },
+    })
+      .then(() => {
+        this.setState({ savingPromValue: false });
+      })
+      .catch(() => {
+        this.setState({ savingPromValue: false });
+      })
+  }
+
   setWatchState = (app) => {
     this.setState({
       appName: app.name,
@@ -89,7 +117,6 @@ class Dashboard extends Component {
       links: app.downstreams[0]?.links
     });
   }
-
 
   toggleEditModal = () => {
     const { showEditModal } = this.state;
@@ -111,19 +138,11 @@ class Dashboard extends Component {
         this.setState({ appLicense: getAppLicense });
       }
     }
-
-    if (this.props.getKotsAppDashboard !== lastProps.getKotsAppDashboard && this.props.getKotsAppDashboard) {
-      const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
-      if (getKotsAppDashboard) {
-        this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
-      }
-    }
   }
 
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
-    const { getKotsAppDashboard } = this.props.getKotsAppDashboard;
 
     if (app) {
       this.setWatchState(app);
@@ -134,9 +153,6 @@ class Dashboard extends Component {
     }
 
     this.props.getKotsAppDashboard.startPolling(2000);
-    if (getKotsAppDashboard) {
-      this.setState({ appStatus: getKotsAppDashboard.appStatus.state });
-    }
   }
 
   onCheckForUpdates = async () => {
@@ -222,6 +238,73 @@ class Dashboard extends Component {
     this.props.history.push(`/${this.props.match.params.slug}/airgap`);
   }
 
+  getLegendItems = (chart) => {
+    return chart.series.map((series) => {
+      const metrics = {};
+      series.metric.forEach((metric) => {
+        metrics[metric.name] = metric.value;
+      });
+      if (series.legendTemplate) {
+        try {
+          const template = Handlebars.compile(series.legendTemplate);
+          return template(metrics);
+        } catch (err) {
+          console.error("Failed to compile legend template", err);
+        }
+      }
+      return metrics.length > 0 ? metrics[Object.keys(metrics)[0]] : "";
+    });
+  }
+
+  renderGraph = (chart) => {
+    const axisStyle = {
+      title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
+      ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
+    }
+    const legendItems = this.getLegendItems(chart);
+    const series = chart.series.map((series, idx) => {
+      const data = series.data.map((valuePair) => {
+        return {x: valuePair.timestamp, y: valuePair.value};
+      });
+      return (
+        <LineSeries
+          key={idx}
+          data={data}
+        />
+      );
+    });
+
+    let yAxisTickFormat = null;
+    if (chart.tickFormat) {
+      const valueFormatter = getValueFormat(chart.tickFormat);
+      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+    } else if (chart.tickTemplate) {
+      try {
+        const template = Handlebars.compile(chart.tickTemplate);
+        yAxisTickFormat = (v) => `${template({values: v})}`;
+      } catch (err) {
+        console.error("Failed to compile y axis tick template", err);
+      }
+    }
+    return (
+      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
+        <XYPlot width={460} height={180}>
+          <VerticalGridLines />
+          <HorizontalGridLines />
+          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
+          <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
+          {series}
+        </XYPlot>
+        { legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null }
+        <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
+          <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
+          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
+        </div>
+      </div>
+    );
+  }
+
+
   render() {
     const { 
       appName, 
@@ -234,18 +317,16 @@ class Dashboard extends Component {
       errorCheckingUpdate, 
       appLicense,
       showDeployWarningModal,
-      showSkipModal
+      showSkipModal,
+      showConfigureGraphs,
+      promValue,
+      savingPromValue
      } = this.state;
 
     const { app } = this.props;
 
     const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
-
-    const axisStyle = {
-      title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
-      ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
-    }
 
     if (!app || !appLicense) {
       return (
@@ -254,6 +335,7 @@ class Dashboard extends Component {
         </div>
       );
     }
+
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -313,43 +395,26 @@ class Dashboard extends Component {
                 appLicense={appLicense}
               />
             </div>
-            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
-              <div className="dashboard-card graph flex-column flex1 flex">
-                <XYPlot width={460} height={180}>
-                  <VerticalGridLines />
-                  <HorizontalGridLines />
-                  <XAxis />
-                  <YAxis />
-                  <AreaSeries
-                    className="area-series-example"
-                    curve="curveNatural"
-                    color="#B4E4C2"
-                    data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
-                  />
-                </XYPlot>
-                <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
-                  <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">CPU usage</p>
-                  <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">a few seconds ago</span>.</p>
+            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
+              {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
+                this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)
+                :
+                <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
+                  <div className="dashboard-card emptyGraph flex-column flex1 flex">
+                    <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
+                      <span className="icon graphIcon"></span>
+                    </div>
+                  </div>
+                  <div className="dashboard-card emptyGraph flex-column flex1 flex">
+                    <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
+                      <span className="icon graphPieIcon"></span>
+                    </div>
+                  </div>
+                  <div className="dashboard-card absolute-button  flex flex1 alignItems--center justifyContent--center alignSelf--center">
+                    <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
+                  </div>
                 </div>
-              </div>
-              <div className="dashboard-card graph flex-column flex1 flex">
-              <XYPlot width={460} height={180}>
-                <VerticalGridLines />
-                <HorizontalGridLines />
-                <XAxis tickFormat={v => `${v}s`} style={axisStyle} />
-                <YAxis tickFormat={v => `${v}mb`} style={axisStyle} />
-                <AreaSeries
-                  className="area-series-example"
-                  curve="curveNatural"
-                  color="#ADC5F5"
-                  data={[{x: 1, y: 10}, {x: 2, y: 5}, {x: 3, y: 15}]}
-                />
-              </XYPlot>
-                <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
-                  <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">Memory usage</p>
-                  <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">a few seconds ago</span>.</p>
-                </div>
-              </div>
+              }
             </div>
           </div>
         </div>
@@ -460,6 +525,47 @@ class Dashboard extends Component {
             </div>
           </div>
         </Modal>
+
+        <Modal
+          isOpen={showConfigureGraphs}
+          onRequestClose={this.toggleConfigureGraphs}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Configure prometheus value"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body flex-column flex1">
+            <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Configure graphs</h2>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">You can set the prometheus value to see the metrics</p>
+            <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Prometheus value</h3>
+            <form className="EditWatchForm flex-column" onSubmit={this.updatePromValue}>
+              <input
+                type="text"
+                className="Input u-marginBottom--20"
+                placeholder="Type the prometheus value here"
+                value={promValue}
+                onChange={(e) => { this.setState({ promValue: e.target.value }) }}
+              />
+              <div className="flex justifyContent--flexEnd u-marginTop--20">
+                <button
+                  type="button"
+                  onClick={this.toggleConfigureGraphs}
+                  className="btn secondary force-gray u-marginRight--20">
+                  Cancel
+              </button>
+                <button
+                  type="submit"
+                  className="btn primary lightBlue">
+                  {
+                    savingPromValue
+                      ? "Saving"
+                      : "Save"
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -493,6 +599,11 @@ export default compose(
   graphql(updateKotsApp, {
     props: ({ mutate }) => ({
       updateKotsApp: (appId, appName, iconUri) => mutate({ variables: { appId, appName, iconUri } })
+    })
+  }),
+  graphql(setPrometheusAddress, {
+    props: ({ mutate }) => ({
+      setPrometheusAddress: (value) => mutate({ variables: { value } })
     })
   })
 )(Dashboard);

@@ -92,3 +92,9 @@ export const setAppGitOpsRaw = `
 `;
 
 export const setAppGitOps = gql(setAppGitOpsRaw);
+
+export const setPrometheusAddress = gql`
+  mutation setPrometheusAddress($value: String!) {
+    setPrometheusAddress(value: $value)
+  }
+`;

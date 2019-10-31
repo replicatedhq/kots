@@ -70,13 +70,12 @@ const DefaultMetricGraphs: MetricGraph[] = [
     title: "CPU Usage",
     query: `sum(rate(container_cpu_usage_seconds_total{namespace="default",container_name!="POD",pod_name!=""}[5m])) by (pod_name)`,
     legend: "{{ pod_name }}",
-    yAxisFormat: AxisFormat.Short,
   },
   {
     title: "Memory Usage",
     query: `sum(container_memory_usage_bytes{namespace="default",container_name!="POD",pod_name!=""}) by (pod_name)`,
     legend: "{{ pod_name }}",
-    yAxisFormat: AxisFormat.Short,
+    yAxisFormat: AxisFormat.Bytes,
   },
 ];
 

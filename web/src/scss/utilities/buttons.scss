@@ -215,6 +215,20 @@
     }
   }
 
+  &.secondary.lightBlue {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #326DE6;
+    color: #326DE6;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #154FC6;
+      color: #154FC6;
+    }
+  }
+
   &.secondary.smallPadding {
     padding: 3px 12px 3px;
   }
