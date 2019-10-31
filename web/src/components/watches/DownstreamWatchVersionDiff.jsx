@@ -220,8 +220,11 @@ class DownstreamWatchVersionDiff extends React.Component {
         <Helmet>
           <title>{`${app.name} Releases Diff`}</title>
         </Helmet>
-        <p className="u-color--astral u-paddingLeft--20 u-marginTop--10 u-cursor--pointer" onClick={this.goBack}>Go Back</p>
-        <div className="u-padding--20 u-position--relative u-minHeight--full u-width--full">
+        <div className="u-padding--20 u-position--relative u-minHeight--full">
+          <div className="u-fontWeight--bold u-color--astral u-cursor--pointer u-marginBottom--15" onClick={this.goBack}>
+            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+            Back
+          </div>
           {size(filesByKey) > 0 ?
             map(filesByKey, (value, key) => {
               const first = value.find(val => val.sequence === "first");
