@@ -15,14 +15,16 @@
   }
 
   &.graph {
-    min-width: auto;
+    min-width: 455px;
     min-height: auto;
-    max-width: none;
+    max-width: 455px;
     max-height: none;
     height: auto;
 
     &:nth-child(2n) {
       margin-right: 0;
+      min-width: 460px;
+      max-width: 460px;
     }
   }
 

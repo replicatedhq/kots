@@ -275,20 +275,18 @@ class Dashboard extends Component {
       }
     }
     return (
-      <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
-        <div className="dashboard-card graph flex-column flex1 flex">
-          <XYPlot width={500} height={200}>
-            <VerticalGridLines />
-            <HorizontalGridLines />
-            <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
-            <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
-            {series}
-          </XYPlot>
-          { legendItems ? <DiscreteColorLegend height={200} width={300} items={legendItems} /> : null }
-          <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
-            <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
-            <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">TODO</span>.</p>
-          </div>
+      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20">
+        <XYPlot width={460} height={180}>
+          <VerticalGridLines />
+          <HorizontalGridLines />
+          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
+          <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
+          {series}
+        </XYPlot>
+        { legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null }
+        <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
+          <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
+          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">TODO</span>.</p>
         </div>
       </div>
     );
@@ -385,7 +383,7 @@ class Dashboard extends Component {
                 appLicense={appLicense}
               />
             </div>
-            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
+            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
               {graphs}
             </div>
           </div>
