@@ -18,6 +18,7 @@ import { getValueFormat } from "@grafana/ui"
 import Handlebars from "handlebars";
 
 import "../../scss/components/watches/Dashboard.scss";
+import "../../../node_modules/react-vis/dist/style";
 
 class Dashboard extends Component {
 
