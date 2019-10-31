@@ -20,26 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ApplicationPort struct {
-	ServiceName    string `json:"serviceName"`
-	ServicePort    int    `json:"servicePort"`
-	LocalPort      int    `json:"localPort,omitempty"`
-	ApplicationURL string `json:"applicationUrl,omitempty"`
-}
-
-// ApplicationSpec defines the desired state of ApplicationSpec
-type ApplicationSpec struct {
-	Title            string            `json:"title"`
-	Icon             string            `json:"icon,omitempty"`
-	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
-	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
-	AllowRollback    bool              `json:"allowRollback,omitempty"`
-}
-
-// ApplicationStatus defines the observed state of Application
-type ApplicationStatus struct {
-}
-
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // Application is the Schema for the application API
@@ -60,6 +40,50 @@ type ApplicationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Application `json:"items"`
+}
+
+// ApplicationSpec defines the desired state of ApplicationSpec
+type ApplicationSpec struct {
+	Title            string            `json:"title"`
+	Icon             string            `json:"icon,omitempty"`
+	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
+	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
+	AllowRollback    bool              `json:"allowRollback,omitempty"`
+	StatusInformers  []StatusInformer  `json:"statusInformers,omitempty"`
+	Graphs           []MetricGraph     `json:"graphs,omitempty"`
+}
+
+type ApplicationPort struct {
+	ServiceName    string `json:"serviceName"`
+	ServicePort    int    `json:"servicePort"`
+	LocalPort      int    `json:"localPort,omitempty"`
+	ApplicationURL string `json:"applicationUrl,omitempty"`
+}
+
+type StatusInformer struct {
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type MetricGraph struct {
+	Title           string        `json:"title"`
+	Query           string        `json:"query,omitempty"`
+	Legend          string        `json:"legend,omitempty"`
+	Queries         []MetricQuery `json:"queries,omitempty"`
+	DurationSeconds uint          `json:"durationSeconds,omitempty"`
+	// https://github.com/grafana/grafana/blob/009d58c4a228b89046fdae02aa82cf5ff05e5e69/packages/grafana-ui/src/utils/valueFormats/categories.ts
+	YAxisFormat   string `json:"yAxisFormat,omitempty"`
+	YAxisTemplate string `json:"yAxisTemplate,omitempty"`
+}
+
+type MetricQuery struct {
+	Query  string `json:"query"`
+	Legend string `json:"legend,omitempty"`
+}
+
+// ApplicationStatus defines the observed state of Application
+type ApplicationStatus struct {
 }
 
 func init() {
