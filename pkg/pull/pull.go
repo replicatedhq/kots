@@ -112,6 +112,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
+			if errors.Cause(err) == ErrSignatureInvalid {
+				return "", ErrSignatureInvalid
+			}
+			if errors.Cause(err) == ErrSignatureMissing {
+				return "", ErrSignatureMissing
+			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 
@@ -335,7 +341,7 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	license, gvk, err := decode(contents, nil, nil)
+	decoded, gvk, err := decode(contents, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode license file")
 	}
@@ -344,7 +350,12 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 		return nil, errors.New("not an application license")
 	}
 
-	return license.(*kotsv1beta1.License), nil
+	license := decoded.(*kotsv1beta1.License)
+	if err := verifySignature(license); err != nil {
+		return nil, errors.Wrap(err, "failed to verify signature")
+	}
+
+	return license, nil
 }
 
 type registryInfo struct {
