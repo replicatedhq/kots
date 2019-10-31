@@ -661,8 +661,8 @@ export const getConfigForGroups = gql`
 `;
 
 export const getKotsAppDashboard = gql`
-  query getKotsAppDashboard($slug: String!) {
-    getKotsAppDashboard(slug: $slug) {
+  query getKotsAppDashboard($slug: String!, $clusterId: String) {
+    getKotsAppDashboard(slug: $slug, clusterId: $clusterId) {
       appStatus {
         appId
         updatedAt
