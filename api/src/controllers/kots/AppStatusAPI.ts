@@ -28,6 +28,6 @@ export class AppStatusAPI {
 
     const kotsAppStatusStore: KotsAppStatusStore = request.app.locals.stores.kotsAppStatusStore;
     await kotsAppStatusStore.setKotsAppStatus(body.app_id, body.resource_states, body.updated_at);
-    response.status(201);
+    response.status(204);
   }
 }
