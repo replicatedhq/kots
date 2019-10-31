@@ -20,6 +20,7 @@ import { PrefightQueries } from "../preflight";
 import { AppsQueries } from "../apps";
 import { KotsQueries, KotsDashboardQueries, KotsMutations } from "../kots_app";
 import { KurlQueries, KurlMutations } from "../kurl";
+import { MonitoringQueries, MonitoringMutations } from "../monitoring";
 
 export const Resolvers = (stores: Stores, params: Params) => {
   let query = {
@@ -30,6 +31,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...AppsQueries(stores),
     ...ClusterQueries(stores),
     ...UserQueries(stores),
+    ...MonitoringQueries(stores),
   };
 
   if (params.enableKots) {
@@ -63,6 +65,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...FeatureMutations(stores),
     ...TroubleshootMutations(stores, params),
     ...UserMutations(stores, params),
+    ...MonitoringMutations(stores),
   };
 
   if (params.enableKots) {

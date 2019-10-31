@@ -45,6 +45,7 @@ import fs from "fs";
 import { KurlStore } from "../kurl/kurl_store";
 import { ReplicatedError } from "./errors";
 import { MetricStore } from "../monitoring/metric_store";
+import { ParamsStore } from "../params/params_store";
 
 let mount = {};
 let componentsScan = [
@@ -144,6 +145,7 @@ export class Server extends ServerLoader {
 
     const pool = await getPostgresPool();
     const watchStore = new WatchStore(pool, params);
+    const paramsStore = new ParamsStore(pool, params);
     const stores: Stores = {
       sessionStore: new SessionStore(pool, params),
       userStore: new UserStore(pool),
@@ -168,7 +170,8 @@ export class Server extends ServerLoader {
       kotsAppStore: new KotsAppStore(pool, params),
       kotsAppStatusStore: new KotsAppStatusStore(pool, params),
       kurlStore: new KurlStore(pool, params),
-      metricStore: new MetricStore(pool, params),
+      metricStore: new MetricStore(pool, params, paramsStore),
+      paramsStore: new ParamsStore(pool, params),
     }
 
     if (process.env["AUTO_CREATE_CLUSTER"] === "1") {

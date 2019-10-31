@@ -1,23 +1,29 @@
 import pg from "pg";
-import { MetricChart, Series, Metric, ValuePair } from "./";
-import { Params } from "../server/params";
 import rp from "request-promise";
 import { StatusCodeError } from "request-promise/errors";
+import { Params } from "../server/params";
 import { logger } from "../server/logger";
+import { ParamsStore } from "../params/params_store";
 import { MetricGraph, MetricQuery } from "../kots_app/kots_app_spec";
+import { MetricChart, Series, Metric, ValuePair } from "./";
 
 const DefaultQueryDurationSeconds: number = 15 * 60; // 15 minutes
 const DefaultGraphStepPoints: number = 80;
 
 export class MetricStore {
-  constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
+  constructor(
+    private readonly pool: pg.Pool,
+    private readonly params: Params,
+    private readonly paramsStore: ParamsStore,
+  ) {}
 
   async getKotsAppMetricCharts(graphs: MetricGraph[]): Promise<MetricChart[]> {
-    if (!this.params.prometheusAddress) {
+    const prometheusAddress = (await this.paramsStore.getParam("PROMETHEUS_ADDRESS")) || this.params.prometheusAddress;
+    if (!prometheusAddress) {
       return [];
     }
 
-    const endTime = new Date().getTime() / 1000;
+    const endTime = new Date().getTime() / 1000; // seconds
     const charts = await Promise.all(graphs.map(async (graph: MetricGraph): Promise<MetricChart | void> => {
       try {
         const queries: MetricQuery[] = [];
@@ -33,7 +39,7 @@ export class MetricStore {
         const series = await Promise.all(queries.map(async (query: MetricQuery): Promise<Series[]> => {
           const duration = graph.durationSeconds || DefaultQueryDurationSeconds;
           const matrix = await prometheusQueryRange(
-            this.params.prometheusAddress,
+            prometheusAddress,
             query.query,
             (endTime - duration),
             endTime, duration / DefaultGraphStepPoints,
@@ -75,6 +81,7 @@ export class MetricStore {
     return charts.filter((value) => !!value) as MetricChart[];
   }
 }
+
 interface SampleStream {
   metric: { [ key: string]: string };
 	values: [number, number][];

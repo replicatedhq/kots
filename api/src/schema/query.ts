@@ -87,5 +87,7 @@ export const Query = `
     getAirgapInstallStatus: AirgapInstallStatus
 
     kurl: Kurl
+
+    getPrometheusAddress: String
   }
 `;

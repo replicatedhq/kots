@@ -47,6 +47,9 @@ type Mutation {
 
   drainNode(name: String): Boolean
   deleteNode(name: String): Boolean
+
+  setPrometheusAddress(value: String!): Boolean
+  deletePrometheusAddress: Boolean
 }
 `;
 
