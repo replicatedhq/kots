@@ -92,16 +92,9 @@ export function KotsMutations(stores: Stores) {
       // If there is an error, remove everything and return the error message
       if (errorMessage) {
         return {
-          hasPreflight: false,
-          isAirgap: false,
-          needsRegistry: false,
-          slug: "",
-          isConfigurable: false,
           errorMessage
         };
-
       }
-
 
       // Carefully now, peek at registry credentials to see if we need to prompt for them
       let needsRegistry = true;
