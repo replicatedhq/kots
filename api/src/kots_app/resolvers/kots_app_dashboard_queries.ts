@@ -6,27 +6,18 @@ import { MetricChart } from "../../monitoring";
 import { MetricGraph, AxisFormat, ApplicationSpec } from "../kots_app_spec";
 import { logger } from "../../server/logger";
 
-interface AppStatusFunction {
-  (): Promise<KotsAppStatusSchema>;
-}
-
-interface AppMetricsFunction {
-  (): Promise<MetricChart[]>;
-}
-
 interface KotsAppDashboard {
-  appStatus: AppStatusFunction;
-  metrics: AppMetricsFunction;
+  appStatus: () => Promise<KotsAppStatusSchema>;
+  metrics: () => Promise<MetricChart[]>;
+  prometheusAddress: () => Promise<string>;
 }
 
 export function KotsDashboardQueries(stores: Stores) {
   return {
     async getKotsAppDashboard(root: any, args: any, context: Context): Promise<KotsAppDashboard> {
       return {
-        appStatus: async (): Promise<KotsAppStatusSchema> => {
-          return await getKotsAppStatus(stores, root, args, context);
-        },
-        metrics: async (): Promise<MetricChart[]> => {
+        appStatus: () => getKotsAppStatus(stores, root, args, context),
+        metrics: async () => {
           try {
             return await getKotsAppMetricCharts(stores, root, args, context);
           } catch(err) {
@@ -34,6 +25,7 @@ export function KotsDashboardQueries(stores: Stores) {
             return [];
           }
         },
+        prometheusAddress: async () => (await stores.paramsStore.getParam("PROMETHEUS_ADDRESS")) || this.params.prometheusAddress,
       }
     },
   };

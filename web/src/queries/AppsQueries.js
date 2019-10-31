@@ -684,6 +684,7 @@ export const getKotsAppDashboard = gql`
           }
         }
       }
+      prometheusAddress
     }
   }
 `;
