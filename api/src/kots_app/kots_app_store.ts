@@ -34,8 +34,8 @@ export class KotsAppStore {
 
   async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
     const q = `update app_downstream set
-      gitops_branch = $1
-      gitops_path = $2
+      gitops_branch = $1,
+      gitops_path = $2,
       gitops_format = $3
       where app_id = $4 and cluster_id = $5`;
 
