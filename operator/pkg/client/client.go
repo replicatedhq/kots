@@ -116,11 +116,32 @@ func (c *Client) connect() error {
 	isUnexpectedlyDisconnected := false
 
 	log.Println("connecting to api")
-	socketClient, err := socket.Dial(socket.GetUrl(u.Hostname(), port, c.Token, false), transport.GetDefaultWebsocketTransport())
+	socketClient := socket.NewClient()
+
+	err = socketClient.On(socket.OnConnection, func(h *socket.Channel) {
+		log.Println("received a connection event")
+		hasConnected = true
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to register connected handler")
+	}
+
+	err = socketClient.On(socket.OnDisconnection, func(h *socket.Channel, args interface{}) {
+		log.Printf("received a disconnected event %#v", args)
+		isUnexpectedlyDisconnected = true
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to register disconnected handler")
+	}
+
+	if err := c.registerHandlers(socketClient); err != nil {
+		return errors.Wrap(err, "failed to register handlers")
+	}
+
+	err = socketClient.Dial(socket.GetUrl(u.Hostname(), port, c.Token, false), transport.GetDefaultWebsocketTransport())
 	if err != nil {
 		return errors.Wrap(err, "failed to connect")
 	}
-
 	defer socketClient.Close()
 
 	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
@@ -142,67 +163,6 @@ func (c *Client) connect() error {
 
 	go c.runAppStateMonitor()
 
-	err = socketClient.On("preflight", func(h *socket.Channel, args PreflightRequest) {
-		log.Printf("received a preflight event: %#v", args)
-		if err := runPreflight(args.URI); err != nil {
-			log.Printf("error running preflight: %s", err.Error())
-		}
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in prefight handler")
-	}
-
-	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
-		log.Println("received a deploy request")
-		if err := c.ensureResourcesPresent(args); err != nil {
-			log.Printf("error deploying: %s", err.Error())
-		}
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in deploy handler")
-	}
-
-	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
-		log.Println("received a support bundle request")
-		go func() {
-			// This is in a goroutine because if we disconnect and reconnect to the
-			// websocket, we will want to report that it's completed...
-			err := runSupportBundle(args.URI)
-			log.Printf("support bundle run completed with err = %#v", err)
-			if err != nil {
-				log.Printf("error running support bundle: %s", err.Error())
-			}
-		}()
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in support bundle handler")
-	}
-
-	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
-		log.Printf("received an inform event: %#v", args)
-		if err := c.applyAppInformers(args.AppID, args.Informers); err != nil {
-			log.Printf("error running informer: %s", err.Error())
-		}
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in inform handler")
-	}
-
-	err = socketClient.On(socket.OnConnection, func(h *socket.Channel) {
-		hasConnected = true
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in connected handler")
-	}
-
-	err = socketClient.On(socket.OnDisconnection, func(h *socket.Channel, args interface{}) {
-		log.Printf("disconnected %#v", args)
-		isUnexpectedlyDisconnected = true
-	})
-	if err != nil {
-		return errors.Wrap(err, "error in disconnected handler")
-	}
-
 	// wait for a connection for at least 2 seconds
 	time.Sleep(time.Second * 2)
 	if !hasConnected {
@@ -218,6 +178,58 @@ func (c *Client) connect() error {
 
 		time.Sleep(time.Second)
 	}
+}
+
+func (c *Client) registerHandlers(socketClient *socket.Client) error {
+	var err error
+
+	err = socketClient.On("preflight", func(h *socket.Channel, args PreflightRequest) {
+		log.Printf("received a preflight event: %#v", args)
+		if err := runPreflight(args.URI); err != nil {
+			log.Printf("error running preflight: %s", err.Error())
+		}
+	})
+	if err != nil {
+		return errors.Wrap(err, "prefight handler")
+	}
+
+	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
+		log.Println("received a deploy request")
+		if err := c.ensureResourcesPresent(args); err != nil {
+			log.Printf("error deploying: %s", err.Error())
+		}
+	})
+	if err != nil {
+		return errors.Wrap(err, "deploy handler")
+	}
+
+	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
+		log.Println("received a support bundle request")
+		go func() {
+			// This is in a goroutine because if we disconnect and reconnect to the
+			// websocket, we will want to report that it's completed...
+			err := runSupportBundle(args.URI)
+			log.Printf("support bundle run completed with err = %#v", err)
+			if err != nil {
+				log.Printf("error running support bundle: %s", err.Error())
+			}
+		}()
+	})
+	if err != nil {
+		return errors.Wrap(err, "support bundle handler")
+	}
+
+	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
+		log.Printf("received an inform event: %#v", args)
+		if err := c.applyAppInformers(args.AppID, args.Informers); err != nil {
+			log.Printf("error running informer: %s", err.Error())
+		}
+	})
+	if err != nil {
+		return errors.Wrap(err, "inform handler")
+	}
+
+	return nil
 }
 
 func (c *Client) sendResult(applicationManifests ApplicationManifests, isError bool, dryrunStdout []byte, dryrunStderr []byte, applyStdout []byte, applyStderr []byte) error {

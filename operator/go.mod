@@ -7,7 +7,6 @@ require (
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gorilla/websocket v1.4.0
-	github.com/graarh/golang-socketio v0.0.0-20170510162725-2c44953b9b5f
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect

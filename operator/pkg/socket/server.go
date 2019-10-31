@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graarh/golang-socketio/protocol"
-	"github.com/graarh/golang-socketio/transport"
+	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
+	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
 )
 
 const (
