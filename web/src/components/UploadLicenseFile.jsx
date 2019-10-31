@@ -32,6 +32,27 @@ class UploadLicenseFile extends React.Component {
       // When successful, refetch all the user's apps with onUploadSuccess
       onUploadSuccess().then(() => {
 
+        if (data.errorMessage) {
+          const COMMON_ERRORS = {
+            "HTTP 401": "Registry credentials are invalid",
+            "invalid username/password": "Registry credentials are invalid",
+            "no such host": "No such host"
+          };
+          let errorMessage = data.errorMessage;
+
+          Object.entries(COMMON_ERRORS).map(([ errorString, message ]) => {
+            if (data.errorMessage.includes(errorString)) {
+              errorMessage = message;
+            }
+          });
+
+          this.setState({
+            fileUploading: false,
+            errorMessage: `Error: ${errorMessage}`
+          });
+          return;
+        }
+
         if (data.isAirgap) {
           if (data.needsRegistry) {
             history.replace(`/${data.slug}/airgap`);
@@ -75,7 +96,7 @@ class UploadLicenseFile extends React.Component {
       logo,
       fetchingMetadata,
     } = this.props;
-    const { licenseFile, fileUploading } = this.state;
+    const { licenseFile, fileUploading, errorMessage } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
 
     return (
@@ -126,6 +147,11 @@ class UploadLicenseFile extends React.Component {
                 </div>
               }
             </div>
+            {errorMessage && (
+              <div className="u-marginTop--10">
+                <span className="u-fontSize--small u-color--chestnut">{errorMessage}</span>
+              </div>
+            )}
             {hasFile &&
               <div className="u-marginTop--10">
                 <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>

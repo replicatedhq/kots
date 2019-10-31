@@ -79,8 +79,29 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-      const name = parsedLicense.spec.appSlug.replace("-", " ")
-      const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
+      const name = parsedLicense.spec.appSlug.replace("-", " ");
+
+      let kotsApp;
+      let errorMessage;
+      try {
+        kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
+      } catch(error) {
+        errorMessage = error.message;
+      }
+
+      // If there is an error, remove everything and return the error message
+      if (errorMessage) {
+        return {
+          hasPreflight: false,
+          isAirgap: false,
+          needsRegistry: false,
+          slug: "",
+          isConfigurable: false,
+          errorMessage
+        };
+
+      }
+
 
       // Carefully now, peek at registry credentials to see if we need to prompt for them
       let needsRegistry = true;
@@ -102,7 +123,7 @@ export function KotsMutations(stores: Stores) {
         isAirgap: parsedLicense.spec.isAirgapSupported,
         needsRegistry,
         slug: kotsApp.slug,
-        isConfigurable: kotsApp.isAppConfigurable(),
+        isConfigurable: kotsApp.isAppConfigurable()
       }
     },
 

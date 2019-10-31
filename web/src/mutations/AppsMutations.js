@@ -39,6 +39,7 @@ export const uploadKotsLicenseRaw = `
       isAirgap
       needsRegistry
       isConfigurable
+      errorMessage
     }
   }
 `
