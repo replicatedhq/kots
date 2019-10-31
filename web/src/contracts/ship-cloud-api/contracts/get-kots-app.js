@@ -68,7 +68,7 @@ export default () => {
             currentVersion: null,
             lastUpdateCheckAt: Matchers.like("date"),
             // This is undefined because it's coming from the Params.getParams() which aren't set right now
-            bundleCommand: "\n      kubectl krew install support-bundle\n      kubectl support-bundle undefined/api/v1/troubleshoot/kots-app-slug\n    ",
+            bundleCommand: "\n      curl https://krew.sh/support-bundle | bash\n      kubectl support-bundle undefined/api/v1/troubleshoot/kots-app-slug\n    ",
             downstreams: []
           },
         },

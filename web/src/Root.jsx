@@ -304,7 +304,7 @@ class Root extends Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
-                    <ProtectedRoute path="/:slug/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
                     <ProtectedRoute
                       path="/watches"

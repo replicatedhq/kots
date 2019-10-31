@@ -286,7 +286,6 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     }
 
     kotsApp.currentSequence = 0;
-    kotsApp.isConfigurable = await kotsApp.isAppConfigurable();
 
     return kotsApp;
   } finally {

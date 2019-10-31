@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import some from "lodash/some";
 import ContentHeader from "../shared/ContentHeader";
 import ClusterCard from "./ClusterCard";
 import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
