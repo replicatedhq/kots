@@ -20,6 +20,8 @@ spec:
           notNull: true
       - name: uri
         type: text
+      - name: provider
+        type: text
       - name: key_pub
         type: text
       - name: key_priv
