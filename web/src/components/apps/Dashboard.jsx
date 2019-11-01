@@ -58,6 +58,7 @@ class Dashboard extends Component {
     })
       .then(() => {
         this.setState({ savingPromValue: false });
+        this.props.getKotsAppDashboard.refetch();
       })
       .catch(() => {
         this.setState({ savingPromValue: false });
@@ -344,7 +345,9 @@ class Dashboard extends Component {
             <div className="u-marginTop--30 flex flex1">
               {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
                 <div>
-                  <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Edit graphs </button>
+                  <div className="flex flex1 justifyContent--flexEnd"> 
+                    <span className="card-link" onClick={this.toggleConfigureGraphs}> Configure Prometheus Address </span>
+                  </div>
                   <div className="flex-auto flex flexWrap--wrap u-width--full">
                     {this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)}
                   </div>
