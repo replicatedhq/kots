@@ -22,7 +22,6 @@ clean:
 test: deps
 	rm -rf pacts/kotsadm-web-kotsadm-api.json
 	yarn test
-	yarn test:unit
 
 .PHONY: verify_local
 verify_local:
