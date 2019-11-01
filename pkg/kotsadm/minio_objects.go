@@ -166,7 +166,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 						{
 							Image:           "minio/minio:RELEASE.2019-05-14T23-57-45Z",
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "kotsadm-postgres",
+							Name:            "kotsadm-minio",
 							Command: []string{
 								"/bin/sh",
 								"-ce",

@@ -31,6 +31,10 @@ func jwtSecret(namespace string, jwt string) *corev1.Secret {
 }
 
 func pgSecret(namespace string, password string) *corev1.Secret {
+	if password == "" {
+		password = uuid.New().String()
+	}
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

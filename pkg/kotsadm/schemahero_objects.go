@@ -37,8 +37,15 @@ func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 							Value: "/tables",
 						},
 						{
-							Name:  "SCHEMAHERO_URI",
-							Value: fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", deployOptions.PostgresPassword),
+							Name: "SCHEMAHERO_URI",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "kotsadm-postgres",
+									},
+									Key: "uri",
+								},
+							},
 						},
 					},
 				},

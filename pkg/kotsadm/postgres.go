@@ -20,7 +20,7 @@ func getPostgresYAML(namespace string, password string) (map[string][]byte, erro
 	if password == "" {
 		password = uuid.New().String()
 	}
-	if err := s.Encode(postgresStatefulset(namespace, password), &statefulset); err != nil {
+	if err := s.Encode(postgresStatefulset(namespace), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
 	}
 	docs["postgres-statefulset.yaml"] = statefulset.Bytes()
@@ -35,7 +35,11 @@ func getPostgresYAML(namespace string, password string) (map[string][]byte, erro
 }
 
 func ensurePostgres(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensurePostgresStatefulset(deployOptions.Namespace, deployOptions.PostgresPassword, clientset); err != nil {
+	if err := ensurePostgresSecret(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres secret")
+	}
+
+	if err := ensurePostgresStatefulset(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres statefulset")
 	}
 
@@ -46,14 +50,14 @@ func ensurePostgres(deployOptions DeployOptions, clientset *kubernetes.Clientset
 	return nil
 }
 
-func ensurePostgresStatefulset(namespace string, password string, clientset *kubernetes.Clientset) error {
+func ensurePostgresStatefulset(namespace string, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().StatefulSets(namespace).Get("kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(namespace).Create(postgresStatefulset(namespace, password))
+		_, err := clientset.AppsV1().StatefulSets(namespace).Create(postgresStatefulset(namespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}
