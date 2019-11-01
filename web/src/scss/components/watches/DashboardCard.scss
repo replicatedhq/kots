@@ -57,6 +57,25 @@
 }
 
 
+.legends {
+
+  &.legends::-webkit-scrollbar {
+      -webkit-appearance: none;
+  }
+  &.legends::-webkit-scrollbar:vertical {
+      width: 11px;
+  }
+  &.legends::-webkit-scrollbar:horizontal {
+      height: 11px;
+  }
+  &.legends::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 2px solid white;
+    background-color: rgba(0, 0, 0, .5);
+  }
+}
+
+
 .dashboard-app-icon {
   height: 40px;
   width: 40px;

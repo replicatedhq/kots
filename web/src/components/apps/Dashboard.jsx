@@ -3,17 +3,15 @@ import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import PaperIcon from "../shared/PaperIcon";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
-import EditApplicationModal from "../shared/modals/EditApplicationModal";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import DeployModal from "../shared/modals/DeployModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
-import { updateKotsApp, checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
+import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend } from "react-vis";
 
@@ -28,8 +26,6 @@ class Dashboard extends Component {
   state = {
     appName: "",
     iconUri: "",
-    showEditModal: false,
-    editWatchLoading: false,
     currentVersion: {},
     downstreams: [],
     links: [],
@@ -43,42 +39,6 @@ class Dashboard extends Component {
     showConfigureGraphs: false,
     promValue: "",
     savingPromValue: false
-  }
-
-  updateWatchInfo = async e => {
-    e.preventDefault();
-    const { appName, iconUri } = this.state;
-    const { app, updateCallback, updateKotsApp, refetchListApps } = this.props;
-    this.setState({ editWatchLoading: true });
-
-    await updateKotsApp(app.id, appName, iconUri).catch(error => {
-      console.error("[DetailPageApplication]: Error updating App info: ", error);
-      this.setState({
-        editWatchLoading: false
-      });
-    });
-    await refetchListApps();
-    this.setState({
-      editWatchLoading: false,
-      showEditModal: false
-    });
-    if (updateCallback && typeof updateCallback === "function") {
-      updateCallback();
-    }
-  }
-
-  onFormChange = (event) => {
-    const { value, name } = event.target;
-    this.setState({
-      [name]: value
-    });
-  }
-
-  toggleEditModal = () => {
-    const { showEditModal } = this.state;
-    this.setState({
-      showEditModal: !showEditModal
-    });
   }
 
   toggleConfigureGraphs = () => {
@@ -118,13 +78,6 @@ class Dashboard extends Component {
       currentVersion: app.downstreams[0]?.currentVersion,
       downstreams: app.downstreams[0],
       links: app.downstreams[0]?.links
-    });
-  }
-
-  toggleEditModal = () => {
-    const { showEditModal } = this.state;
-    this.setState({
-      showEditModal: !showEditModal
     });
   }
 
@@ -296,10 +249,9 @@ class Dashboard extends Component {
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
         </XYPlot>
-        {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
+        {legendItems ? <DiscreteColorLegend className="legends" height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
-          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
         </div>
       </div>
     );
@@ -351,13 +303,6 @@ class Dashboard extends Component {
                   <div
                     style={{ backgroundImage: `url(${iconUri})` }}
                     className="Dashboard--appIcon u-position--relative">
-                    <PaperIcon
-                      className="u-position--absolute"
-                      height="25px"
-                      width="25px"
-                      iconClass="edit-icon"
-                      onClick={this.toggleEditModal}
-                    />
                   </div>
                 </div>
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold u-marginLeft--20">{appName}</p>
@@ -424,15 +369,6 @@ class Dashboard extends Component {
             </div>
           </div>
         </div>
-        <EditApplicationModal
-          showEditModal={this.state.showEditModal}
-          toggleEditModal={this.toggleEditModal}
-          updateWatchInfo={this.updateWatchInfo}
-          appName={this.state.appName}
-          onFormChange={this.onFormChange}
-          iconUri={this.state.iconUri}
-          editWatchLoading={this.state.editWatchLoading}
-        />
         <DeployModal
           showSkipModal={showSkipModal}
           hideSkipModal={this.hideSkipModal}
@@ -481,11 +417,6 @@ export default compose(
         fetchPolicy: "no-cache"
       };
     }
-  }),
-  graphql(updateKotsApp, {
-    props: ({ mutate }) => ({
-      updateKotsApp: (appId, appName, iconUri) => mutate({ variables: { appId, appName, iconUri } })
-    })
   }),
   graphql(setPrometheusAddress, {
     props: ({ mutate }) => ({
