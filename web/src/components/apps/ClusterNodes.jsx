@@ -208,20 +208,6 @@ export class ClusterNodes extends Component {
     );
   }
 }
-/* 
-
-  
-  
-  {!this.state.generating && this.state.command.length > 0
-    ? (
-      
-    )
-    : <span className="">Click &quot;Worker&quot; or &quot;Master&quot; to generate a command</span>
-  }
-  
-
-
-*/
 
 export default compose(
   withRouter,
