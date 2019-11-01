@@ -22,8 +22,10 @@ class AppConfig extends Component {
     super(props);
 
     this.state = {
+      initialConfigGroups: [],
       configGroups: [],
-      savingConfig: false
+      savingConfig: false,
+      changed: false
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -39,7 +41,8 @@ class AppConfig extends Component {
   componentDidUpdate(lastProps) {
     const { getKotsConfigGroups } = this.props.getKotsConfigGroups;
     if (getKotsConfigGroups && getKotsConfigGroups !== lastProps.getKotsConfigGroups.getKotsConfigGroups) {
-      this.setState({ configGroups: getKotsConfigGroups });
+      const initialConfigGroups = JSON.parse(JSON.stringify(getKotsConfigGroups)); // quick deep copy
+      this.setState({ configGroups: getKotsConfigGroups, initialConfigGroups });
     }
     if (this.props.getKotsApp) {
       const { getKotsApp } = this.props.getKotsApp;
@@ -85,6 +88,21 @@ class AppConfig extends Component {
       });
   }
 
+  isConfigChanged = newGroups => {
+    const { initialConfigGroups } = this.state;
+    for (let g = 0; g < newGroups.length; g++) {
+      const group = newGroups[g];
+      for (let i = 0; i < group.items.length; i++) {
+        const newItem = group.items[i];
+        const oldItem = this.getItemInConfigGroups(initialConfigGroups, newItem.name);
+        if (!oldItem || oldItem.value !== newItem.value) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   getItemInConfigGroups = (configGroups, itemName) => {
     let foundItem;
     map(configGroups, group => {
@@ -123,14 +141,15 @@ class AppConfig extends Component {
           }
         });
       });
-      this.setState({ configGroups: newGroups });
+      const changed = this.isConfigChanged(newGroups);
+      this.setState({ configGroups: newGroups, changed });
     }).catch((error) => {
       console.log(error);
     });
   }
 
   render() {
-    const { configGroups, savingConfig } = this.state;
+    const { configGroups, savingConfig, changed } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -151,7 +170,7 @@ class AppConfig extends Component {
             </div>
           </div>
         </div>
-        <button className="btn secondary green u-marginTop--20" disabled={savingConfig} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
+        <button className="btn secondary green u-marginTop--20" disabled={savingConfig || !changed} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
       </div>
     )
   }
