@@ -205,7 +205,7 @@ class UploadAirgapBundle extends React.Component {
       console.log(error);
       this.setState({
         preparingOnlineInstall: false,
-        onlineInstallErrorMessage: ""
+        onlineInstallErrorMessage: error.message
       });
     }
   }
