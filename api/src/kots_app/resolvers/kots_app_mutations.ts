@@ -146,11 +146,9 @@ export function KotsMutations(stores: Stores) {
       try {
         kotsApp = await kotsFinalizeApp(app, downstream.title, stores);  
       } catch (error) {
-        if (error.message) {
-          return {
-            errorMessage: error.message
-          };
-        }
+        return {
+          errorMessage: error.message
+        };
       }
       
       await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
