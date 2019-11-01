@@ -6,9 +6,14 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { kurl } from "../../queries/KurlQueries";
-import { drainNode, deleteNode } from "../../mutations/KurlMutations"
+import { drainNode, deleteNode, generateWorkerAddNodeCommand } from "../../mutations/KurlMutations"
 
 export class ClusterNodes extends React.Component {
+  state = {
+    generating: false,
+    command: "",
+    expiry: null,
+  }
 
   drainNode = (name) => {
     try {
@@ -26,6 +31,26 @@ export class ClusterNodes extends React.Component {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  generateWorkerAddNodeCommand = (ev) => {
+    ev.preventDefault();
+    this.setState({ generating: true, command: "", expiry: null });
+
+    this.props.generateWorkerAddNodeCommand()
+      .then((resp) => {
+        const data = resp.data.generateWorkerAddNodeCommand;
+        this.setState({ generating: false, command: data.command, expiry: data.expiry });
+      })
+      .catch((error) => {
+        this.setState({ generating: false });
+        console.log(error);
+      });
+  }
+
+  generateMasterAddNodeCommand = (ev) => {
+    ev.preventDefault();
+    this.setState({ generating: false, command: "", expiry: null });
   }
 
   render() {
@@ -47,13 +72,20 @@ export class ClusterNodes extends React.Component {
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
             <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal">Install your node</p>
+            <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">
+              Generate node join command:
+              <span> </span><a href="#" disabled={this.state.generating} onClick={this.generateWorkerAddNodeCommand}>worker</a>
+              <span> </span><a href="#" disabled={this.state.generating} onClick={this.generateMasterAddNodeCommand}>master</a>
+            </p>
             <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5">Run the curl command below to get the install script for your new node.</p>
             <CodeSnippet
               language="bash"
               canCopy={true}
               onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
             >
-              {kurl?.addNodeCommand || ""}
+              { !this.state.generating && this.state.command && this.state.command.length > 0 ?
+                this.state.command.join("\n  ") :
+                "" }
             </CodeSnippet>
             <div className="u-marginTop--40 u-paddingBottom--30">
               <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Your nodes</p>
@@ -87,6 +119,11 @@ export default compose(
   graphql(deleteNode, {
     props: ({ mutate }) => ({
       deleteNode: (name) => mutate({ variables: { name } })
+    })
+  }),
+  graphql(generateWorkerAddNodeCommand, {
+    props: ({ mutate }) => ({
+      generateWorkerAddNodeCommand: () => mutate()
     })
   })
 )(ClusterNodes);

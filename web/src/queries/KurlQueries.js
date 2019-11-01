@@ -3,7 +3,6 @@ import gql from "graphql-tag";
 export const kurlRaw = `
   query kurl {
     kurl {
-      addNodeCommand
       nodes {
         name
         isConnected

@@ -13,7 +13,6 @@ export function KurlQueries(stores: Stores, params: Params) {
 
       if (!params.enableKurl) {
         return {
-          addNodeCommand: "",
           nodes: [],
         };
       }
@@ -89,13 +88,11 @@ export function KurlQueries(stores: Stores, params: Params) {
         });
 
         return {
-          addNodeCommand: "[coming soon]",
           nodes,
         };
       } catch (err) {
         logger.error(err);
         return {
-          addNodeCommand: "[unable to show]",
           nodes: [],
         }
       }
