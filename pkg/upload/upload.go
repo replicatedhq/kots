@@ -15,6 +15,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -25,6 +26,7 @@ type UploadOptions struct {
 	Kubeconfig      string
 	ExistingAppSlug string
 	NewAppName      string
+	RegistryOptions registry.RegistryOptions
 	Endpoint        string
 	Silent          bool
 	updateCursor    string
@@ -160,6 +162,7 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 			"slug":         uploadOptions.ExistingAppSlug,
 			"versionLabel": uploadOptions.versionLabel,
 			"updateCursor": uploadOptions.updateCursor,
+			// Intnetionally not including registry info here.  Updating settings should be its own thing.
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -175,18 +178,22 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 	} else {
 		method = "POST"
 
-		body := map[string]string{
-			"name":         uploadOptions.NewAppName,
-			"versionLabel": uploadOptions.versionLabel,
-			"upstreamURI":  uploadOptions.UpstreamURI,
-			"updateCursor": uploadOptions.updateCursor,
+		metadata := map[string]string{
+			"name":              uploadOptions.NewAppName,
+			"versionLabel":      uploadOptions.versionLabel,
+			"upstreamURI":       uploadOptions.UpstreamURI,
+			"updateCursor":      uploadOptions.updateCursor,
+			"registryEndpoint":  uploadOptions.RegistryOptions.Endpoint,
+			"registryUsername":  uploadOptions.RegistryOptions.Username,
+			"registryPassword":  uploadOptions.RegistryOptions.Password,
+			"registryNamespace": uploadOptions.RegistryOptions.Namespace,
 		}
 
 		if uploadOptions.license != nil {
-			body["license"] = *uploadOptions.license
+			metadata["license"] = *uploadOptions.license
 		}
 
-		b, err := json.Marshal(body)
+		b, err := json.Marshal(metadata)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to marshal json")
 		}

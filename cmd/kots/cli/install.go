@@ -12,6 +12,7 @@ import (
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -41,6 +42,8 @@ func InstallCmd() *cobra.Command {
 
 			fmt.Print(cursor.Hide())
 			defer fmt.Print(cursor.Show())
+
+			log := logger.NewLogger()
 
 			rootDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -94,27 +97,28 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
-			if err != nil {
-				return err
-			}
+			if !v.GetBool("exclude-admin-console") {
+				applicationMetadata, err := pull.PullApplicationMetadata(upstream)
+				if err != nil {
+					return err
+				}
 
-			deployOptions := kotsadm.DeployOptions{
-				Namespace:           namespace,
-				Kubeconfig:          v.GetString("kubeconfig"),
-				IncludeShip:         v.GetBool("include-ship"),
-				IncludeGitHub:       v.GetBool("include-github"),
-				SharedPassword:      v.GetString("shared-password"),
-				ServiceType:         v.GetString("service-type"),
-				NodePort:            v.GetInt32("node-port"),
-				Hostname:            v.GetString("hostname"),
-				ApplicationMetadata: applicationMetadata,
-			}
+				deployOptions := kotsadm.DeployOptions{
+					Namespace:           namespace,
+					Kubeconfig:          v.GetString("kubeconfig"),
+					IncludeShip:         v.GetBool("include-ship"),
+					IncludeGitHub:       v.GetBool("include-github"),
+					SharedPassword:      v.GetString("shared-password"),
+					ServiceType:         v.GetString("service-type"),
+					NodePort:            v.GetInt32("node-port"),
+					Hostname:            v.GetString("hostname"),
+					ApplicationMetadata: applicationMetadata,
+				}
 
-			log := logger.NewLogger()
-			log.ActionWithoutSpinner("Deploying Admin Console")
-			if err := kotsadm.Deploy(deployOptions); err != nil {
-				return err
+				log.ActionWithoutSpinner("Deploying Admin Console")
+				if err := kotsadm.Deploy(deployOptions); err != nil {
+					return err
+				}
 			}
 
 			// upload the kots app to kotsadm
@@ -124,6 +128,19 @@ func InstallCmd() *cobra.Command {
 				NewAppName:  v.GetString("name"),
 				UpstreamURI: upstream,
 				Endpoint:    "http://localhost:3000",
+				RegistryOptions: registry.RegistryOptions{
+					Endpoint:  v.GetString("registry-endpoint"),
+					Namespace: v.GetString("image-namespace"),
+				},
+			}
+
+			if v.GetString("registry-endpoint") != "" {
+				registryUser, registryPass, err := registry.LoadAuthForRegistry(v.GetString("registry-endpoint"))
+				if err != nil {
+					return err
+				}
+				uploadOptions.RegistryOptions.Username = registryUser
+				uploadOptions.RegistryOptions.Password = registryPass
 			}
 
 			if canPull {
@@ -180,6 +197,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
