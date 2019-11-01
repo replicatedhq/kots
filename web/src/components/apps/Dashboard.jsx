@@ -3,10 +3,13 @@ import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import Modal from "react-modal";
 import PaperIcon from "../shared/PaperIcon";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
+import EditApplicationModal from "../shared/modals/EditApplicationModal";
+import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
+import DeployModal from "../shared/modals/DeployModal";
+import DeployWarningModal from "../shared/modals/DeployWarningModal";
 
 import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
@@ -59,15 +62,8 @@ class Dashboard extends Component {
       editWatchLoading: false,
       showEditModal: false
     });
-
     if (updateCallback && typeof updateCallback === "function") {
       updateCallback();
-    }
-  }
-
-  handleEnterPress = (e) => {
-    if (e.charCode === 13) {
-      this.handleDeleteApp();
     }
   }
 
@@ -106,6 +102,13 @@ class Dashboard extends Component {
       .catch(() => {
         this.setState({ savingPromValue: false });
       })
+  }
+
+  onPromValueChange = (e) => {
+    const { value } = e.target;
+    this.setState({
+      promValue: value
+    });
   }
 
   setWatchState = (app) => {
@@ -147,11 +150,9 @@ class Dashboard extends Component {
     if (app) {
       this.setWatchState(app);
     }
-
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
     }
-
     this.props.getKotsAppDashboard.startPolling(2000);
   }
 
@@ -264,7 +265,7 @@ class Dashboard extends Component {
     const legendItems = this.getLegendItems(chart);
     const series = chart.series.map((series, idx) => {
       const data = series.data.map((valuePair) => {
-        return {x: valuePair.timestamp, y: valuePair.value};
+        return { x: valuePair.timestamp, y: valuePair.value };
       });
       return (
         <LineSeries
@@ -281,7 +282,7 @@ class Dashboard extends Component {
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
-        yAxisTickFormat = (v) => `${template({values: v})}`;
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
       } catch (err) {
         console.error("Failed to compile y axis tick template", err);
       }
@@ -295,7 +296,7 @@ class Dashboard extends Component {
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
         </XYPlot>
-        { legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null }
+        {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
           <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
@@ -306,22 +307,22 @@ class Dashboard extends Component {
 
 
   render() {
-    const { 
-      appName, 
-      iconUri, 
-      currentVersion, 
-      downstreams, 
+    const {
+      appName,
+      iconUri,
+      currentVersion,
+      downstreams,
       links,
-      checkingForUpdates, 
-      checkingUpdateText, 
-      errorCheckingUpdate, 
+      checkingForUpdates,
+      checkingUpdateText,
+      errorCheckingUpdate,
       appLicense,
       showDeployWarningModal,
       showSkipModal,
       showConfigureGraphs,
       promValue,
       savingPromValue
-     } = this.state;
+    } = this.state;
 
     const { app } = this.props;
 
@@ -346,19 +347,19 @@ class Dashboard extends Component {
           <div className="flex1 flex-column">
             <div className="flex flex1">
               <div className="flex flex1 alignItems--center">
-              <div className="flex flex-auto">
-                <div
-                  style={{ backgroundImage: `url(${iconUri})` }}
-                  className="Dashboard--appIcon u-position--relative">
-                  <PaperIcon
-                    className="u-position--absolute"
-                    height="25px"
-                    width="25px"
-                    iconClass="edit-icon"
-                    onClick={this.toggleEditModal}
-                  />
+                <div className="flex flex-auto">
+                  <div
+                    style={{ backgroundImage: `url(${iconUri})` }}
+                    className="Dashboard--appIcon u-position--relative">
+                    <PaperIcon
+                      className="u-position--absolute"
+                      height="25px"
+                      width="25px"
+                      iconClass="edit-icon"
+                      onClick={this.toggleEditModal}
+                    />
+                  </div>
                 </div>
-              </div>
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold u-marginLeft--20">{appName}</p>
               </div>
             </div>
@@ -395,9 +396,14 @@ class Dashboard extends Component {
                 appLicense={appLicense}
               />
             </div>
-            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
+            <div className="u-marginTop--30 flex flex1">
               {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
-                this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)
+                <div>
+                  <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Edit graphs </button>
+                  <div className="flex-auto flex flexWrap--wrap u-width--full">
+                    {this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)}
+                  </div>
+                </div>
                 :
                 <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
                   <div className="dashboard-card emptyGraph flex-column flex1 flex">
@@ -418,154 +424,33 @@ class Dashboard extends Component {
             </div>
           </div>
         </div>
-        <Modal
-          isOpen={this.state.showEditModal}
-          onRequestClose={this.toggleEditModal}
-          contentLabel="Yes"
-          ariaHideApp={false}
-          className="Modal SmallSize EditWatchModal">
-          <div className="Modal-body flex-column flex1">
-            <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Edit Application</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">You can edit the name and icon of your application</p>
-            <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Application Name</h3>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This name will be shown throughout this dashboard.</p>
-            <form className="EditWatchForm flex-column" onSubmit={this.updateWatchInfo}>
-              <input
-                type="text"
-                className="Input u-marginBottom--20"
-                placeholder="Type the app name here"
-                value={this.state.appName}
-                onKeyPress={this.handleEnterPress}
-                name="appName"
-                onChange={this.onFormChange}
-              />
-              <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Application Icon</h3>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Provide a link to a URI to use as your app icon.</p>
-              <input
-                type="text"
-                className="Input u-marginBotton--20"
-                placeholder="Enter the link here"
-                value={this.state.iconUri}
-                onKeyPress={this.handleEnterPress}
-                name="iconUri"
-                onChange={this.onFormChange}
-              />
-              <div className="flex justifyContent--flexEnd u-marginTop--20">
-                <button
-                  type="button"
-                  onClick={this.toggleEditModal}
-                  className="btn secondary force-gray u-marginRight--20">
-                  Cancel
-              </button>
-                <button
-                  type="submit"
-                  className="btn secondary green">
-                  {
-                    this.state.editWatchLoading
-                      ? "Saving"
-                      : "Save Application Details"
-                  }
-                </button>
-              </div>
-            </form>
-          </div>
-        </Modal>
-
-        <Modal
-          isOpen={showSkipModal}
-          onRequestClose={this.hideSkipModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Skip preflight checks"
-          ariaHideApp={false}
-          className="Modal SkipModal"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
-              Preflight checks have not finished yet. Are you sure you want to deploy this version?
-            </p>
-            <div className="u-marginTop--10 flex">
-              <button
-                onClick={this.onForceDeployClick}
-                type="button"
-                className="btn green primary">
-                Deploy this version
-              </button>
-              <button type="button" onClick={this.hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          isOpen={showDeployWarningModal}
-          onRequestClose={this.hideDeployWarningModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Skip preflight checks"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
-              Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
-            </p>
-            <div className="u-marginTop--10 flex">
-              <button
-                onClick={this.onForceDeployClick}
-                type="button"
-                className="btn green primary"
-              >
-                Deploy this version
-              </button>
-              <button
-                onClick={this.hideDeployWarningModal}
-                type="button"
-                className="btn secondary u-marginLeft--20"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          isOpen={showConfigureGraphs}
-          onRequestClose={this.toggleConfigureGraphs}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Configure prometheus value"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body flex-column flex1">
-            <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Configure graphs</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">You can set the prometheus value to see the metrics</p>
-            <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Prometheus value</h3>
-            <form className="EditWatchForm flex-column" onSubmit={this.updatePromValue}>
-              <input
-                type="text"
-                className="Input u-marginBottom--20"
-                placeholder="Type the prometheus value here"
-                value={promValue}
-                onChange={(e) => { this.setState({ promValue: e.target.value }) }}
-              />
-              <div className="flex justifyContent--flexEnd u-marginTop--20">
-                <button
-                  type="button"
-                  onClick={this.toggleConfigureGraphs}
-                  className="btn secondary force-gray u-marginRight--20">
-                  Cancel
-              </button>
-                <button
-                  type="submit"
-                  className="btn primary lightBlue">
-                  {
-                    savingPromValue
-                      ? "Saving"
-                      : "Save"
-                  }
-                </button>
-              </div>
-            </form>
-          </div>
-        </Modal>
+        <EditApplicationModal
+          showEditModal={this.state.showEditModal}
+          toggleEditModal={this.toggleEditModal}
+          updateWatchInfo={this.updateWatchInfo}
+          appName={this.state.appName}
+          onFormChange={this.onFormChange}
+          iconUri={this.state.iconUri}
+          editWatchLoading={this.state.editWatchLoading}
+        />
+        <DeployModal
+          showSkipModal={showSkipModal}
+          hideSkipModal={this.hideSkipModal}
+          onForceDeployClick={this.onForceDeployClick}
+        />
+        <DeployWarningModal
+          showDeployWarningModal={showDeployWarningModal}
+          hideDeployWarningModal={this.hideDeployWarningModal}
+          onForceDeployClick={this.onForceDeployClick}
+        />
+        <ConfigureGraphsModal
+          showConfigureGraphs={showConfigureGraphs}
+          toggleConfigureGraphs={this.toggleConfigureGraphs}
+          updatePromValue={this.updatePromValue}
+          promValue={promValue}
+          savingPromValue={savingPromValue}
+          onPromValueChange={this.onPromValueChange}
+        />
       </div>
     );
   }
@@ -587,10 +472,11 @@ export default compose(
   }),
   graphql(getKotsAppDashboard, {
     name: "getKotsAppDashboard",
-    options: ({ match }) => {
+    options: ({ match, cluster }) => {
       return {
         variables: {
-          slug: match.params.slug
+          slug: match.params.slug,
+          clusterId: cluster.id
         },
         fetchPolicy: "no-cache"
       };
