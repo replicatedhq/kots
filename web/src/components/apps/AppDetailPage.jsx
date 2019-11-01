@@ -13,17 +13,15 @@ import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "./Dashboard";
-import DetailPageIntegrations from "../watches/DetailPageIntegrations";
 import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
-import DeploymentClusters from "../watches/DeploymentClusters";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
 import DownstreamWatchVersionDiff from "../watches/DownstreamWatchVersionDiff";
 import PreflightResultPage from "../PreflightResultPage";
-import AppConfig from "../apps/AppConfig";
-import AppLicense from "../apps/AppLicense";
+import AppConfig from "./AppConfig";
+import AppLicense from "./AppLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
@@ -32,6 +30,7 @@ import SupportBundleList from "../troubleshoot/SupportBundleList";
 import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
 import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import AppSettings from "./AppSettings";
+import AppGitops from "./AppGitops";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -311,25 +310,6 @@ class AppDetailPage extends Component {
                         makeCurrentVersion={this.makeCurrentRelease}
                       />}
                     />
-                    <Route exact path="/app/:slug/downstreams" render={() =>
-                      <div className="container">
-                        <DeploymentClusters
-                          appDetailPage={true}
-                          parentWatch={app}
-                          title={app.name}
-                          kotsApp={true}
-                          parentClusterName={app.name}
-                          displayDownloadCommand={this.toggleDisplayDownloadModal}
-                          preparingUpdate={this.state.preparingUpdate}
-                          childWatches={app.downstreams}
-                          handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
-                          handleViewFiles={this.handleViewFiles}
-                          installLatestVersion={this.makeCurrentRelease}
-                          toggleDeleteDeploymentModal={this.toggleDeleteDeploymentModal}
-                        />
-                      </div>
-                    } />
-                    <Route exact path="/app/:slug/integrations" render={() => <DetailPageIntegrations watch={app} />} />
 
                     <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} appNameSpace={this.props.appNameSpace} />} />
 
@@ -384,6 +364,11 @@ class AppDetailPage extends Component {
                     } />
                     <Route exact path="/app/:slug/airgap-settings" render={() =>
                       <AppSettings
+                        app={app}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/gitops" render={() =>
+                      <AppGitops
                         app={app}
                       />
                     } />

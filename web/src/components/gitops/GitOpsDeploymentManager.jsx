@@ -2,7 +2,7 @@ import * as React from "react";
 import Select from "react-select";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import { getKotsApp } from "@src/queries/AppsQueries";
+import { listApps } from "@src/queries/AppsQueries";
 import { setAppGitOps } from "@src/mutations/AppsMutations";
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
@@ -67,7 +67,7 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   completeSetup = async () => {
-    const { getKotsAppQuery } = this.props;
+    const { listAppsQuery } = this.props;
     const {
       selectedService,
       ownerRepo,
@@ -77,7 +77,14 @@ class GitOpsDeploymentManager extends React.Component {
       otherService,
       containType
     } = this.state;
-    const clusterId = getKotsAppQuery.getKotsApp?.downstreams[0]?.cluster?.id;
+
+    const firstApp = listAppsQuery.listApps && listAppsQuery.listApps.kotsApps.length > 0 ? listAppsQuery.listApps.kotsApps[0] : null;
+    if (!firstApp) {
+      console.log("no app");
+      return;
+    }
+
+    const clusterId = firstApp.downstreams[0]?.cluster?.id;
     const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
     const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
     const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
@@ -95,8 +102,8 @@ class GitOpsDeploymentManager extends React.Component {
     }
 
     try {
-      await this.props.setAppGitOps(getKotsAppQuery.getKotsApp.id, clusterId, gitOpsInput);
-      // TODO: get/show deployment token;
+      await this.props.setAppGitOps(firstApp.id, clusterId, gitOpsInput);
+      this.props.history.push(`/app/${firstApp.slug}/gitops`);
     } catch (error) {
       console.log(error);
     }
@@ -427,17 +434,8 @@ class GitOpsDeploymentManager extends React.Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(getKotsApp, {
-    name: "getKotsAppQuery",
-    options: props => {
-      const { slug } = props.match.params;
-      return {
-        fetchPolicy: "no-cache",
-        variables: {
-          slug: slug
-        }
-      }
-    }
+  graphql(listApps, {
+    name: "listAppsQuery",
   }),
   graphql(setAppGitOps, {
     props: ({ mutate }) => ({

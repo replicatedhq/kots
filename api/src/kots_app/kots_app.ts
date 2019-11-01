@@ -63,6 +63,10 @@ export class KotsApp {
 
     return kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
   }
+  public async getDownstreamGitOps(clusterId: string, stores: Stores): Promise<any> {
+      const gitops = await stores.kotsAppStore.getDownstreamGitOps(this.id, clusterId);
+      return gitops;
+  }
   public async getRealizedLinksFromAppSpec(clusterId: string, stores: Stores): Promise<KotsAppLink[]> {
     const activeDownstream = await stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
     if (!activeDownstream) {
@@ -201,7 +205,7 @@ export class KotsApp {
 
   async applyConfigValues(configPath: string, configContent: string, configValuesContent: string): Promise<KotsConfigGroup[]> {
     const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
-  
+
     if (!templatedConfig.spec || !templatedConfig.spec.groups) {
       throw new ReplicatedError("Config groups not found");
     }
@@ -231,7 +235,7 @@ export class KotsApp {
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
-  
+
       const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
       return await this.applyConfigValues(configPath, configContent, configValuesContent);
     } catch(err) {
@@ -243,12 +247,12 @@ export class KotsApp {
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
-  
+
       const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
-  
+
       const parsedConfig = yaml.safeLoad(configContent);
       const parsedConfigValues = yaml.safeLoad(configValuesContent);
-  
+
       const configValues = parsedConfigValues.spec.values;
       const configGroups = parsedConfig.spec.groups;
 
@@ -270,12 +274,12 @@ export class KotsApp {
           }
         });
       });
-  
+
       files.files[configValuesPath] = yaml.safeDump(parsedConfigValues);
-  
+
       const bundlePacker = new TarballPacker();
       const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
-  
+
       if (!createNewVersion) {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
@@ -299,7 +303,7 @@ export class KotsApp {
 
     const configValues = parsedConfigValues.spec.values;
     const configGroups = parsedConfig.spec.groups;
-    
+
     updatedConfigGroups.forEach(group => {
       group.items.forEach(async item => {
         if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
@@ -506,6 +510,7 @@ export class KotsApp {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {
           name: downstream.title,
+          gitops: () => this.getDownstreamGitOps(downstream.id, stores),
           links: () => this.getRealizedLinksFromAppSpec(kotsSchemaCluster.id, stores),
           currentVersion: () => this.getCurrentVersion(downstream.id, stores),
           pastVersions: () => this.getPastVersions(downstream.id, stores),
@@ -603,8 +608,8 @@ export interface KotsDownstreamOutput {
 }
 
 export interface ConfigData {
-  configContent: string, 
-  configPath: string, 
-  configValuesContent: string, 
-  configValuesPath: string 
+  configContent: string,
+  configPath: string,
+  configValuesContent: string,
+  configValuesPath: string
 }

@@ -20,8 +20,8 @@ export class KotsAppStore {
     const v = [
       id,
       uri,
-      privateKey,
       publicKey,
+      privateKey,
     ];
 
     await this.pool.query(q, v);
@@ -55,7 +55,7 @@ export class KotsAppStore {
       clusterId,
     ];
 
-    await this.pool.query(q, v);
+    await this.pool.query(qq, vv);
   }
 
   async listClusterIDsForApp(id: string): Promise<string[]> {
@@ -414,6 +414,38 @@ export class KotsAppStore {
     }
 
     return versionItems;
+  }
+
+  async getDownstreamGitOps(appId: string, clusterId: string): Promise<any> {
+    const q = `select ad.gitops_path, ad.gitops_format, ad.gitops_branch,
+      gr.provider, gr.uri, gr.key_pub from
+      app_downstream ad
+      inner join cluster c on c.id = ad.cluster_id
+      inner join gitops_repo gr on gr.id = c.gitops_repo_id
+      where ad.app_id = $1 and ad.cluster_id = $2`;
+    const v = [
+      appId,
+      clusterId,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rowCount === 0) {
+      return {
+        enabled: false,
+      }
+    }
+
+    const row = result.rows[0];
+    return {
+      enabled: true,
+      provider: row.provider,
+      uri: row.uri,
+      path: row.gitops_path,
+      branch: row.gitops_branch,
+      format: row.gitops_format,
+      deployKey: row.key_pub,
+    }
   }
 
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {

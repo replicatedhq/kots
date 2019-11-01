@@ -13,7 +13,7 @@ class ConfigureGraphsModal extends React.Component {
       savingPromValue,
       onPromValueChange
     } = this.props;
-    
+
     return (
       <Modal
           isOpen={showConfigureGraphs}
@@ -25,7 +25,7 @@ class ConfigureGraphsModal extends React.Component {
         >
           <div className="Modal-body flex-column flex1">
             <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Configure graphs</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To see graphs and metrics, provide the address of your Prometheus installation. This must be resolvable from Admin Console installation </p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To see graphs and metrics, provide the address of your Prometheus installation.<br />This must be resolvable from the Admin Console installation.</p>
             <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Prometheus endpoint</h3>
             <form className="EditWatchForm flex-column" onSubmit={updatePromValue}>
               <input

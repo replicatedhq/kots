@@ -68,6 +68,14 @@ export default [
     }
   },
   {
+    tabName: "gitops",
+    displayName: "GitOps",
+    to: (slug) => `/app/${slug}/gitops`,
+    displayRule: (watch) => {
+      return watch?.downstreams && watch.downstreams[0].gitops?.enabled;
+    }
+  },
+  {
     tabName: "airgap-settings",
     displayName: "Airgap settings",
     to: (slug) => `/app/${slug}/airgap-settings`,

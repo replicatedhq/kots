@@ -185,6 +185,14 @@ export const listAppsRaw = `
             sequence
             deployedAt
           }
+          gitops {
+            enabled
+            provider
+            uri
+            path
+            branch
+            format
+          }
           pendingVersions {
             title
             status
@@ -417,6 +425,15 @@ export const getKotsAppRaw = `
           sequence
           deployedAt
           parentSequence
+        }
+        gitops {
+          enabled
+          provider
+          uri
+          path
+          branch
+          format
+          deployKey
         }
         cluster {
           id
