@@ -29,9 +29,9 @@ export class ClusterNodes extends React.Component {
   }
 
   render() {
-    const { kurl, loading } = this.props.data;
+    const { kurl } = this.props.data;
 
-    if (loading) {
+    if (!kurl) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
