@@ -296,10 +296,9 @@ class Dashboard extends Component {
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
         </XYPlot>
-        {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
+        {legendItems ? <DiscreteColorLegend className="legends" height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
-          <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
         </div>
       </div>
     );
