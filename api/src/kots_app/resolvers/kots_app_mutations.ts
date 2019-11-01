@@ -141,7 +141,16 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-      const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
+      
+      let kotsApp;
+      try {
+        kotsApp = await kotsFinalizeApp(app, downstream.title, stores);  
+      } catch (error) {
+        return {
+          errorMessage: error.message
+        };
+      }
+      
       await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
       return {
         ...kotsApp,
