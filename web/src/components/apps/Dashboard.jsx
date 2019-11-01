@@ -416,7 +416,7 @@ export default compose(
       return {
         variables: {
           slug: match.params.slug,
-          clusterId: cluster.id
+          clusterId: cluster?.id
         },
         fetchPolicy: "no-cache"
       };

@@ -443,7 +443,7 @@ class AppVersionHistory extends Component {
       return null;
     }
 
-    if (data.loading) {
+    if (data?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
