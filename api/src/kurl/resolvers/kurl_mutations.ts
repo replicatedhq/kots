@@ -385,7 +385,7 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
   let data = await readKurlConfigMap();
 
   // if the token expires withing the period, regenerate it
-  const regeneratePreiod = 30 * 60 * 1000; // 30 minutes
+  const regeneratePreiod = 10 * 60 * 1000; // 10 minutes
   const nowUnix = (new Date()).getTime();
   let bootstrapTokenExpiration = Date.parse(data.bootstrap_token_expiration);
   if (isNaN(bootstrapTokenExpiration)) {
@@ -538,17 +538,17 @@ async function runKurlUtilJobAndWait(command: string[]) {
   while (true) {
     try {
       let { body: jobStatus } = await batchV1Client.readNamespacedJobStatus(job.metadata.name, job.metadata.namespace);
-      if (!jobStatus.status) {
-        continue;
-      }
-      if (jobStatus.status.succeeded) {
-        console.log(`Job ${job.metadata.name} creation succeeded`);
-        return;
-      } else if (jobStatus.status.failed) {
-        throw new ReplicatedError("job failed");
+      if (jobStatus.status) {
+        if (jobStatus.status.succeeded) {
+          console.log(`Job ${job.metadata.name} creation succeeded`);
+          return;
+        } else if (jobStatus.status.failed) {
+          throw new ReplicatedError("job failed");
+        }
       }
     } catch( err ) {
-      continue;
+      console.log(`Failed to read job status ${err.response && err.response.body ? err.response.body.message : ""}`);
     }
+    await new Promise(resolve => setTimeout(resolve, 2 * 1000)); // sleep 2 seconds
   }
 }
