@@ -472,10 +472,11 @@ export default compose(
   }),
   graphql(getKotsAppDashboard, {
     name: "getKotsAppDashboard",
-    options: ({ match }) => {
+    options: ({ match, cluster }) => {
       return {
         variables: {
-          slug: match.params.slug
+          slug: match.params.slug,
+          clusterId: cluster.id
         },
         fetchPolicy: "no-cache"
       };
