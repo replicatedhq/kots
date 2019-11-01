@@ -27,6 +27,7 @@ const KotsApp = `
     hasPreflight: Boolean
     isConfigurable: Boolean
     allowRollback: Boolean
+    errorMessage: String
   }
 `;
 

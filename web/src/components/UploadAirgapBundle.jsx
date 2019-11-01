@@ -16,6 +16,12 @@ import Loader from "./shared/Loader";
 import { validateRegistryInfo } from "../queries/UserQueries";
 import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
 
+const COMMON_ERRORS = {
+  "HTTP 401": "Registry credentials are invalid",
+  "invalid username/password": "Registry credentials are invalid",
+  "no such host": "No such host"
+};
+
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
@@ -39,7 +45,12 @@ class UploadAirgapBundle extends React.Component {
   uploadAirgapBundle = async () => {
     const { onUploadSuccess, match, showRegistry } = this.props;
 
-    this.setState({ fileUploading: true, errorMessage: "", showSupportBundleCommand: false });
+    this.setState({ 
+      fileUploading: true, 
+      errorMessage: "", 
+      showSupportBundleCommand: false, 
+      onlineInstallErrorMessage: "" 
+    });
 
     // Reset the airgap upload state
     const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
@@ -152,16 +163,32 @@ class UploadAirgapBundle extends React.Component {
   onDrop = async (files) => {
     this.setState({
       bundleFile: files[0],
+      onlineInstallErrorMessage: ""
     });
   }
 
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
     this.setState({
-      preparingOnlineInstall: true
+      preparingOnlineInstall: true,
+      onlineInstallErrorMessage: ""
     });
     try {
       const resp = await this.props.resumeInstallOnline(slug);
+      if (resp?.data?.resumeInstallOnline?.errorMessage) {
+        let onlineInstallErrorMessage = resp?.data?.resumeInstallOnline?.errorMessage;
+        Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
+          if (onlineInstallErrorMessage.includes(errorString)) {
+            onlineInstallErrorMessage = `Error: ${message}`;
+          }
+        });
+        
+        this.setState({
+          preparingOnlineInstall: false,
+          onlineInstallErrorMessage
+        });
+        return;
+      }
       const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
       const isConfigurable = resp?.data?.resumeInstallOnline?.isConfigurable;
 
@@ -177,7 +204,8 @@ class UploadAirgapBundle extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        preparingOnlineInstall: false
+        preparingOnlineInstall: false,
+        onlineInstallErrorMessage: ""
       });
     }
   }
@@ -189,12 +217,6 @@ class UploadAirgapBundle extends React.Component {
     });
 
     setTimeout(() => {
-      const COMMON_ERRORS = {
-        "HTTP 401": "Registry credentials are invalid",
-        "invalid username/password": "Registry credentials are invalid",
-        "no such host": "No such host"
-      };
-
       Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
         if (errorMessage.includes(errorString)){
           errorMessage = message;
@@ -226,7 +248,8 @@ class UploadAirgapBundle extends React.Component {
       uploadTotal,
       errorMessage,
       registryDetails,
-      preparingOnlineInstall
+      preparingOnlineInstall,
+      onlineInstallErrorMessage
     } = this.state;
 
     const hasFile = bundleFile && !isEmpty(bundleFile);
@@ -343,7 +366,12 @@ class UploadAirgapBundle extends React.Component {
             }
           </div>
         </div>
-        <div className="u-marginTop--20 u-marginBottom--20 u-textAlign--center">
+        {onlineInstallErrorMessage && (
+          <div className="u-fontSize--small u-marginTop--20 u-textAlign--center u-color--chestnut u-fontWeight--medium">
+            {onlineInstallErrorMessage}
+          </div>  
+        )}
+        <div className="u-marginTop--10 u-marginBottom--20 u-textAlign--center">
           {preparingOnlineInstall
             ? <Loader size="40" />
             : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
