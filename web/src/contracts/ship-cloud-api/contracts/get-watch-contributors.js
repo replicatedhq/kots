@@ -65,7 +65,7 @@ const getWatchContributorsInteraction = new Pact.GraphQLInteraction()
         watchContributors: [
           {
             "id": "get-watch-contributors-user",
-            "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (UTC)",
+            "createdAt": "Thu Apr 18 2019 12:34:56 GMT+0000 (Coordinated Universal Time)",
             "githubId": 1235,
             "login": "get-watch-contributors-username",
             "avatar_url": "https://avatars3.githubusercontent.com/u/234567?v=4"

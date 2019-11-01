@@ -78,7 +78,7 @@ export const listImageWatchesInteraction = new Pact.GraphQLInteraction()
           {
             "id": "solo-account-image-watch-1",
             "name": "postgres:10.7,docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee",
-            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (UTC)"),
+            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (Coordinated Universal Time)"),
             "isPrivate": false,
             "versionDetected": "10.7",
             "latestVersion": "11.2.0",
@@ -89,7 +89,7 @@ export const listImageWatchesInteraction = new Pact.GraphQLInteraction()
           {
             "id": "solo-account-image-watch-2",
             "name": "quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64:0.22.0",
-            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (UTC)"),
+            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (Coordinated Universal Time)"),
             "isPrivate": false,
             "versionDetected": "0.22.0",
             "latestVersion": "",
@@ -100,7 +100,7 @@ export const listImageWatchesInteraction = new Pact.GraphQLInteraction()
           {
             "id": "solo-account-image-watch-3",
             "name": "localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
-            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (UTC)"),
+            "lastCheckedOn": Matchers.like("Tue May 07 2019 22:43:05 GMT+0000 (Coordinated Universal Time)"),
             "isPrivate": true,
             "versionDetected": "c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e",
             "latestVersion": "",
