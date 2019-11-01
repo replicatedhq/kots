@@ -317,6 +317,7 @@ class Dashboard extends Component {
                 appStatus={this.props.getKotsAppDashboard.getKotsAppDashboard?.appStatus?.state}
                 url={this.props.match.url}
                 links={links}
+                app={app}
               />
               <DashboardCard
                 cardName={`Version: ${currentVersion?.title ? currentVersion?.title : ""}`}
