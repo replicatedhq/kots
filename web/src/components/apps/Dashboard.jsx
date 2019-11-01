@@ -15,7 +15,7 @@ import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
-import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend } from "react-vis";
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Hint } from "react-vis";
 
 import { getValueFormat } from "@grafana/ui"
 import Handlebars from "handlebars";
@@ -257,6 +257,22 @@ class Dashboard extends Component {
     });
   }
 
+
+  getValue = (chart, value) => {
+    if (chart.tickFormat) {
+      const valueFormatter = getValueFormat(chart.tickFormat);
+      return valueFormatter(value);
+    } else if (chart.tickTemplate) {
+      try {
+        const template = Handlebars.compile(chart.tickTemplate);
+        console.log(template)
+        return `${template({ values: value })}`;
+      } catch (err) {
+        console.error("Failed to compile y axis tick template", err);
+      }
+    }
+  }
+
   renderGraph = (chart) => {
     const axisStyle = {
       title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
@@ -271,6 +287,7 @@ class Dashboard extends Component {
         <LineSeries
           key={idx}
           data={data}
+          onNearestXY={(value) => this.setState({value: value})}
         />
       );
     });
@@ -287,6 +304,7 @@ class Dashboard extends Component {
         console.error("Failed to compile y axis tick template", err);
       }
     }
+
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
         <XYPlot width={460} height={180}>
@@ -295,6 +313,7 @@ class Dashboard extends Component {
           <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
+          {this.state.value && <Hint value={{x: moment.unix(this.state.value.x).format("H:mm"), y: this.getValue(chart, this.state.value.y)}}/>}
         </XYPlot>
         {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
