@@ -72,7 +72,7 @@ export default [
     displayName: "GitOps",
     to: (slug) => `/app/${slug}/gitops`,
     displayRule: (watch) => {
-      return watch.downstreams && watch.downstreams[0].gitops.enabled;
+      return watch?.downstreams && watch.downstreams[0].gitops?.enabled;
     }
   },
   {
