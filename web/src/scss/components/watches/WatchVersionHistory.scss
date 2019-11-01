@@ -139,10 +139,23 @@ $cell-width: 140px;
   }
 }
 
-
-.DownstreamVersionsTable {
+.TableDiff--Wrapper {
+  position: relative;
   width: 95%;
   max-width: 1000px;
+}
+
+.DiffOverlay {
+  width: calc(100% + 2px);
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: white;
+}
+
+.DownstreamVersionsTable {
+  width: 100%;
   table-layout: fixed;
 
   &.full-width {

@@ -1,7 +1,6 @@
-import React, { Fragment } from "react";
+import React from "react";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
 import sortBy from "lodash/sortBy";
 import map from "lodash/map";
 import groupBy from "lodash/groupBy";
@@ -38,7 +37,7 @@ class DownstreamWatchVersionDiff extends React.Component {
     this.props.client.query({
       query: getKotsApplicationTree,
       name: "getKotsApplicationTree",
-      variables: { slug: this.props.match.params.slug, sequence: this.props.match.params.firstSequence },
+      variables: { slug: this.props.slug, sequence: this.props.firstSequence },
       fetchPolicy: "no-cache"
     })
       .then((res) => {
@@ -48,7 +47,7 @@ class DownstreamWatchVersionDiff extends React.Component {
     this.props.client.query({
       query: getKotsApplicationTree,
       name: "getKotsApplicationTree",
-      variables: { slug: this.props.match.params.slug, sequence: this.props.match.params.secondSequence },
+      variables: { slug: this.props.slug, sequence: this.props.secondSequence },
       fetchPolicy: "no-cache"
     })
       .then((res) => {
@@ -74,7 +73,7 @@ class DownstreamWatchVersionDiff extends React.Component {
 
   componentDidUpdate(lastProps, lastState) {
     const { firstApplicationTree, secondApplicationTree, firstSeqFiles, secondSeqFiles } = this.state;
-    const { params } = this.props.match;
+    const { slug, firstSequence, secondSequence } = this.props;
 
     if (firstApplicationTree !== lastState.firstApplicationTree && firstApplicationTree.length > 0) {
       this.setFileTree(firstApplicationTree, true);
@@ -82,24 +81,20 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (secondApplicationTree !== lastState.secondApplicationTree && secondApplicationTree.length > 0) {
       this.setFileTree(secondApplicationTree, false);
     }
-    if (params.slug !== lastProps.match.params.slug) {
+    if (slug !== lastProps.slug) {
       this.fetchKotsApplicationTree();
     }
     if (firstSeqFiles !== lastState.firstSeqFiles && firstSeqFiles) {
-      if (params.firstSequence) {
-        this.allFilesForSequence(firstSeqFiles, params.firstSequence, true);
-      }
+      this.allFilesForSequence(firstSeqFiles, firstSequence, true);
     }
     if (secondSeqFiles !== lastState.secondSeqFiles && secondSeqFiles) {
-      if (params.secondSequence) {
-        this.allFilesForSequence(secondSeqFiles, params.secondSequence, false);
-      }
+      this.allFilesForSequence(secondSeqFiles, secondSequence, false);
     }
   }
 
   componentDidMount() {
     const { firstApplicationTree, secondApplicationTree, firstSeqFiles, secondSeqFiles } = this.state;
-    const { params } = this.props.match;
+    const { slug, firstSequence, secondSequence } = this.props;
 
     if (firstApplicationTree?.length > 0) {
       this.setFileTree(this.state.firstApplicationTree, true);
@@ -107,20 +102,33 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (secondApplicationTree?.length > 0) {
       this.setFileTree(this.state.secondApplicationTree, false);
     }
-    if (params.slug) {
+    if (slug) {
       this.fetchKotsApplicationTree();
     }
-    if (firstSeqFiles && params.firstSequence) {
-      this.allFilesForSequence(firstSeqFiles, params.firstSequence, true);
+    if (firstSeqFiles) {
+      this.allFilesForSequence(firstSeqFiles, firstSequence, true);
     }
-    if (secondSeqFiles && params.secondSequence) {
-      this.allFilesForSequence(secondSeqFiles, params.secondSequence, false);
+    if (secondSeqFiles) {
+      this.allFilesForSequence(secondSeqFiles, secondSequence, false);
+    }
+
+    const url = window.location.pathname;
+    if (!url.includes("/diff")) {
+      window.history.replaceState("", "", `${url}/diff/${firstSequence}/${secondSequence}`);
+    }
+  }
+
+  componentWillUnmount() {
+    const url = window.location.pathname;
+    if (url.includes("/diff")) {
+      const { firstSequence, secondSequence } = this.props;
+      const diffPath = `/diff/${firstSequence}/${secondSequence}`;
+      window.history.replaceState("", "", url.substring(0, url.indexOf(diffPath)));
     }
   }
 
   fetchFiles = (paths, sequence, first) => {
-    const { params } = this.props.match;
-    const slug = params.slug;
+    const { slug } = this.props;
     this.setState({ fileLoading: true, fileLoadErr: false });
     this.props.client.query({
       query: getKotsFiles,
@@ -193,14 +201,14 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   goBack = () => {
-    const { history, app } = this.props;
-    history.push(`/app/${app.slug}/version-history`);
+    if (this.props.onBackClick) {
+      this.props.onBackClick();
+    }
   }
 
   render() {
-
     const { firstSeqFileContents, secondSeqFileContents, fileLoading } = this.state;
-    const { app } = this.props;
+    const { firstSequence, secondSequence } = this.props;
 
     if (fileLoading || size(firstSeqFileContents) === 0 || size(secondSeqFileContents) === 0) {
       return (
@@ -216,44 +224,41 @@ class DownstreamWatchVersionDiff extends React.Component {
     const filesByKey = groupBy(flatMap(changedFiles), "key");
 
     return (
-      <Fragment>
-        <Helmet>
-          <title>{`${app.name} Releases Diff`}</title>
-        </Helmet>
-        <div className="u-padding--20 u-position--relative u-minHeight--full">
-          <div className="u-fontWeight--bold u-color--astral u-cursor--pointer u-marginBottom--15" onClick={this.goBack}>
+      <div className="u-position--relative u-height--full u-width--full">
+        <div className="flex u-marginBottom--15">
+          <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={this.goBack}>
             <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
             Back
           </div>
-          {size(filesByKey) > 0 ?
-            map(filesByKey, (value, key) => {
-              const first = value.find(val => val.sequence === "first");
-              const second = value.find(val => val.sequence === "second");
-              return (
-                <div className="flex-column u-height--half" key={key}>
-                  <DiffEditor
-                    original={first}
-                    value={second}
-                    specKey={key}
-                    options={{
-                      contextMenu: false,
-                      readOnly: true
-                    }}
-                  />
-                </div>
-              );
-            })
-            :
-            <div className="flex flex-auto alignItems--center justifyContent--center">
-              <div className="EmptyWrapper u-width--half u-textAlign--center">
-                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
-              </div>
-            </div>
-          }
+          <span className="u-fontWeight--bold u-marginLeft--20 u-color--tuna">Diffing releases {firstSequence} and {secondSequence}</span>
         </div>
-      </Fragment>
-
+        {size(filesByKey) > 0 ?
+          map(filesByKey, (value, key) => {
+            const first = value.find(val => val.sequence === "first");
+            const second = value.find(val => val.sequence === "second");
+            return (
+              <div className="flex-column u-height--half" key={key}>
+                <DiffEditor
+                  original={first}
+                  value={second}
+                  specKey={key}
+                  options={{
+                    contextMenu: false,
+                    readOnly: true
+                  }}
+                />
+              </div>
+            );
+          })
+          :
+          <div className="flex flex-auto alignItems--center justifyContent--center">
+            <div className="EmptyWrapper u-width--half u-textAlign--center">
+              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
+            </div>
+          </div>
+        }
+      </div>
     );
   }
 }
