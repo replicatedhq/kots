@@ -62,7 +62,6 @@ class Dashboard extends Component {
       editWatchLoading: false,
       showEditModal: false
     });
-
     if (updateCallback && typeof updateCallback === "function") {
       updateCallback();
     }
@@ -151,11 +150,9 @@ class Dashboard extends Component {
     if (app) {
       this.setWatchState(app);
     }
-
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
     }
-
     this.props.getKotsAppDashboard.startPolling(2000);
   }
 
@@ -268,7 +265,7 @@ class Dashboard extends Component {
     const legendItems = this.getLegendItems(chart);
     const series = chart.series.map((series, idx) => {
       const data = series.data.map((valuePair) => {
-        return {x: valuePair.timestamp, y: valuePair.value};
+        return { x: valuePair.timestamp, y: valuePair.value };
       });
       return (
         <LineSeries
@@ -285,7 +282,7 @@ class Dashboard extends Component {
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
-        yAxisTickFormat = (v) => `${template({values: v})}`;
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
       } catch (err) {
         console.error("Failed to compile y axis tick template", err);
       }
@@ -299,7 +296,7 @@ class Dashboard extends Component {
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
         </XYPlot>
-        { legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null }
+        {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
           <p className="u-fontSize--smaller u-lineHeight--normal u-fontWeight--normal u-color--dustyGray">Last updated <span className="u-fontWeight--bold">few seconds ago</span>.</p>
@@ -310,22 +307,22 @@ class Dashboard extends Component {
 
 
   render() {
-    const { 
-      appName, 
-      iconUri, 
-      currentVersion, 
-      downstreams, 
+    const {
+      appName,
+      iconUri,
+      currentVersion,
+      downstreams,
       links,
-      checkingForUpdates, 
-      checkingUpdateText, 
-      errorCheckingUpdate, 
+      checkingForUpdates,
+      checkingUpdateText,
+      errorCheckingUpdate,
       appLicense,
       showDeployWarningModal,
       showSkipModal,
       showConfigureGraphs,
       promValue,
       savingPromValue
-     } = this.state;
+    } = this.state;
 
     const { app } = this.props;
 
@@ -350,19 +347,19 @@ class Dashboard extends Component {
           <div className="flex1 flex-column">
             <div className="flex flex1">
               <div className="flex flex1 alignItems--center">
-              <div className="flex flex-auto">
-                <div
-                  style={{ backgroundImage: `url(${iconUri})` }}
-                  className="Dashboard--appIcon u-position--relative">
-                  <PaperIcon
-                    className="u-position--absolute"
-                    height="25px"
-                    width="25px"
-                    iconClass="edit-icon"
-                    onClick={this.toggleEditModal}
-                  />
+                <div className="flex flex-auto">
+                  <div
+                    style={{ backgroundImage: `url(${iconUri})` }}
+                    className="Dashboard--appIcon u-position--relative">
+                    <PaperIcon
+                      className="u-position--absolute"
+                      height="25px"
+                      width="25px"
+                      iconClass="edit-icon"
+                      onClick={this.toggleEditModal}
+                    />
+                  </div>
                 </div>
-              </div>
                 <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold u-marginLeft--20">{appName}</p>
               </div>
             </div>
@@ -399,9 +396,14 @@ class Dashboard extends Component {
                 appLicense={appLicense}
               />
             </div>
-            <div className="u-marginTop--30 flex-auto flex flexWrap--wrap u-width--full">
+            <div className="u-marginTop--30 flex flex1">
               {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
-                this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)
+                <div>
+                  <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Edit graphs </button>
+                  <div className="flex-auto flex flexWrap--wrap u-width--full">
+                    {this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)}
+                  </div>
+                </div>
                 :
                 <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
                   <div className="dashboard-card emptyGraph flex-column flex1 flex">
@@ -422,7 +424,7 @@ class Dashboard extends Component {
             </div>
           </div>
         </div>
-        <EditApplicationModal 
+        <EditApplicationModal
           showEditModal={this.state.showEditModal}
           toggleEditModal={this.toggleEditModal}
           updateWatchInfo={this.updateWatchInfo}
@@ -431,17 +433,17 @@ class Dashboard extends Component {
           iconUri={this.state.iconUri}
           editWatchLoading={this.state.editWatchLoading}
         />
-        <DeployModal 
+        <DeployModal
           showSkipModal={showSkipModal}
           hideSkipModal={this.hideSkipModal}
           onForceDeployClick={this.onForceDeployClick}
         />
-        <DeployWarningModal 
+        <DeployWarningModal
           showDeployWarningModal={showDeployWarningModal}
           hideDeployWarningModal={this.hideDeployWarningModal}
           onForceDeployClick={this.onForceDeployClick}
         />
-        <ConfigureGraphsModal 
+        <ConfigureGraphsModal
           showConfigureGraphs={showConfigureGraphs}
           toggleConfigureGraphs={this.toggleConfigureGraphs}
           updatePromValue={this.updatePromValue}

@@ -2,6 +2,7 @@ import * as React from "react";
 import Modal from "react-modal";
 
 
+
 class ConfigureGraphsModal extends React.Component {
   render() {
     const {
@@ -12,7 +13,7 @@ class ConfigureGraphsModal extends React.Component {
       savingPromValue,
       onPromValueChange
     } = this.props;
-		
+    
     return (
       <Modal
           isOpen={showConfigureGraphs}
@@ -43,6 +44,7 @@ class ConfigureGraphsModal extends React.Component {
               </button>
                 <button
                   type="submit"
+                  disabled={savingPromValue}
                   className="btn primary lightBlue">
                   {
                     savingPromValue
