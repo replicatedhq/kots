@@ -373,6 +373,10 @@ export interface Command {
   expiry: number;
 }
 
+// master: airgap kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION cert-key=${CERT_KEY} control-plane ${dockerRegistryIP}
+
+// worker: kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION ${dockerRegistryIP}
+
 async function generateWorkerAddNodeCommand(): Promise<Command> {
   const kc = new KubeConfig();
   kc.loadFromDefault();
@@ -404,8 +408,19 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
     bootstrapTokenExpiration = Date.parse(data.bootstrap_token_expiration);
   }
 
+  // data.airgap
+  // data.bootstrap_token
+  // data.ca_hash
+  // data.cert_key
+  // data.docker_registry_ip
+  // data.ha
+  // data.installer_id
+  // data.kubernetes_api_address
+  // data.kurl_url
+  // data.upload_certs_expiration
+
   const command = [
-    `curl -sSL ${data.kurl_url} | sudo bash -s`,
+    `curl -sSL ${data.kurl_url}/${data.installer_id}/join.sh | sudo bash -s`,
     `kubernetes-master-address=${data.kubernetes_api_address}`,
     `kubeadm-token=${data.bootstrap_token}`,
     `kubeadm-token-ca-hash=${data.ca_hash}`,
@@ -413,45 +428,13 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
     `kubernetes-version=${kubernetesVersion}`,
   ];
 
-  console.log("command", command);
-
-  // configMap.data.airgap
-  // configMap.data.bootstrap_token
-  // configMap.data.ca_hash
-  // configMap.data.cert_key
-  // configMap.data.docker_registry_ip
-  // configMap.data.ha
-  // configMap.data.installer_id
-  // configMap.data.kubernetes_api_address
-  // configMap.data.kurl_url
-  // configMap.data.upload_certs_expiration
+  console.log("Generated node join command", command);
 
   return {
     command: command,
     expiry: bootstrapTokenExpiration / 1000,
   };
 }
-
-// master: airgap kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION cert-key=${CERT_KEY} control-plane ${dockerRegistryIP}
-
-// worker: kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION ${dockerRegistryIP}
-
-/*
-kubectl get -n kube-system cm kurl-config -oyaml
-apiVersion: v1
-data:
-  airgap: ""
-  bootstrap_token: xfkgho.vwudgea78sqnn1cm
-  bootstrap_token_expiration: TODO_24_HOURS
-  ca_hash: sha256:991574f72ced37625b0c7b76507bc0b6e5bc2e1bfac3cd05208efafedfe4fcaf
-  cert_key: ""
-  docker_registry_ip: ""
-  ha: ""
-  installer_id: ""
-  kubernetes_api_address: ""
-  kurl_url: ""
-  upload_certs_expiration: TODO_2_HOURS
-*/
 
 async function readKurlConfigMap(): Promise<{ [ key: string]: string }> {
   const kc = new KubeConfig();
@@ -504,12 +487,12 @@ async function runKurlUtilJobAndWait(command: string[]) {
             },
           },
           spec: {
-            // nodeSelector: {"node-role.kubernetes.io/master": ""}, // TODO: this should be an argument
+            // nodeSelector: {"node-role.kubernetes.io/master": ""}, // TODO: this is needed for master join
             restartPolicy: "Never",
             activeDeadlineSeconds: 120,
             containers: [{
               name: "kurl-util-join",
-              image: "replicated/kurl-util:alpha", // TODO: change to latest or 1.0 or something else
+              image: "replicated/kurl-util:latest",
               imagePullPolicy: "IfNotPresent",
               command: command,
               volumeMounts: [{
@@ -549,6 +532,10 @@ async function runKurlUtilJobAndWait(command: string[]) {
     } catch( err ) {
       console.log(`Failed to read job status ${err.response && err.response.body ? err.response.body.message : ""}`);
     }
-    await new Promise(resolve => setTimeout(resolve, 2 * 1000)); // sleep 2 seconds
+    await sleep(2); // sleep 2 seconds
   }
+}
+
+async function sleep(seconds): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }
