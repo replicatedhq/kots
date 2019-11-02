@@ -14,12 +14,13 @@ import { ApplicationSpec } from "./kots_app_spec";
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
-  async createGitOpsRepo(uri: string, privateKey: string, publicKey: string): Promise<any> {
+  async createGitOpsRepo(provider: string, uri: string, privateKey: string, publicKey: string): Promise<any> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const q = `insert into gitops_repo (id, uri, key_pub, key_priv) values ($1, $2, $3, $4)`;
+    const q = `insert into gitops_repo (id, provider, uri, key_pub, key_priv) values ($1, $2, $3, $4, $5)`;
     const v = [
       id,
+      provider,
       uri,
       publicKey,
       privateKey,
@@ -419,7 +420,7 @@ export class KotsAppStore {
 
   async getDownstreamGitOps(appId: string, clusterId: string): Promise<any> {
     const q = `select ad.gitops_path, ad.gitops_format, ad.gitops_branch,
-      gr.provider, gr.uri, gr.key_pub from
+      gr.provider, gr.uri, gr.key_pub, gr.last_error from
       app_downstream ad
       inner join cluster c on c.id = ad.cluster_id
       inner join gitops_repo gr on gr.id = c.gitops_repo_id
@@ -446,6 +447,7 @@ export class KotsAppStore {
       branch: row.gitops_branch,
       format: row.gitops_format,
       deployKey: row.key_pub,
+      isConnected: row.last_error === null,
     }
   }
 

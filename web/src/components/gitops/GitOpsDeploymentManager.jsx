@@ -190,7 +190,7 @@ class GitOpsDeploymentManager extends React.Component {
     this.setState({ containType: e.target.value });
   }
 
-  haneleServiceChange = (selectedService) => {
+  handleServiceChange = (selectedService) => {
     this.setState({ selectedService });
   }
 
@@ -243,7 +243,7 @@ class GitOpsDeploymentManager extends React.Component {
                       getOptionLabel={(service) => this.getLabel(service, service.label)}
                       getOptionValue={(service) => service.label}
                       value={selectedService}
-                      onChange={this.haneleServiceChange}
+                      onChange={this.handleServiceChange}
                       isOptionSelected={(option) => { option.value === selectedService }}
                     />
                   </div>

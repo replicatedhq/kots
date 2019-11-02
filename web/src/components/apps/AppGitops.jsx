@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Helmet from "react-helmet";
 import Select from "react-select";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
+import url from "url";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
 
@@ -37,8 +38,27 @@ const SERVICES = [
 ]
 
 export default class AppGitops extends Component {
-  state = {
-    services: SERVICES,
+  constructor(props) {
+    super(props);
+
+    let gitops = null;
+    let ownerRepo = "";
+    let hostname = "";
+    if (props.app?.downstreams && props.app.downstreams.length > 0) {
+      gitops = props.app.downstreams[0].gitops;
+      const parsed = url.parse(gitops?.uri);
+      ownerRepo = parsed.path.slice(1);  // remove the "/"
+      hostname = parsed.host;
+    }
+
+    this.state = {
+      provider: gitops?.provider,
+      ownerRepo,
+      branch: gitops?.branch,
+      path: gitops?.path,
+      format: gitops?.format,
+      hostname,
+    }
   }
 
   renderIcons = (service) => {
@@ -58,19 +78,34 @@ export default class AppGitops extends Component {
     );
   }
 
+  handleServiceChange = (selectedService) => {
+    this.setState({
+      provider: selectedService.value,
+    });
+  }
+
   render() {
     const { app } = this.props;
     const appTitle = app.name;
-    const { services } = this.state;
 
-    const selectedService = "github";
+    const gitops = app.downstreams[0].gitops;
+
+    console.log(gitops);
+
     const otherService = "";
     const providerError = null;
 
-    const ownerRepo = "";
-    const hostname = "";
-    const path = "";
-    const branch = "";
+    const {
+      ownerRepo,
+      provider,
+      branch,
+      path,
+      hostname,
+    } = this.state;
+
+    const selectedService = SERVICES.find((service) => {
+      return service.value === provider;
+    });
 
     const gitUri = app.downstreams[0].gitops.uri;
     const deployKey = app.downstreams[0].gitops.deployKey;
@@ -106,12 +141,12 @@ export default class AppGitops extends Component {
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
                         placeholder="Select a GitOps service"
-                        options={services}
+                        options={SERVICES}
                         isSearchable={false}
                         getOptionLabel={(service) => this.getLabel(service, service.label)}
                         getOptionValue={(service) => service.label}
                         value={selectedService}
-                        onChange={this.haneleServiceChange}
+                        onChange={this.handleServiceChange}
                         isOptionSelected={(option) => { option.value === selectedService }}
                       />
                     </div>
@@ -157,27 +192,28 @@ export default class AppGitops extends Component {
                   </div>
                 }
               </div>
-              <div className={`GitOpsSettingsConnected inactive u-cursor--pointer u-display--none`}>
+              <div className={`${gitops.isConnected ? "u-display--none" : "u-marginBottom--10"}`}>
+                <button className="btn primary blue" type="button" onClick={() => this.stepFrom("provider", "action")}>Update</button>
+              </div>
+              <div className={`GitOpsSettingsConnected inactive u-cursor--pointer ${gitops.isConnected ? "" : "u-display--none"}`}>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                   <span className="u-marginRight--5 icon checkmark-icon u-verticalAlign--neg2" />Connected and working!
                 </p>
               </div>
-              <div className={`GitOpsSettingsNotConnected inactive u-cursor--pointer u-marginBottom--10`}>
+              <div className={`GitOpsSettingsNotConnected inactive u-cursor--pointer u-marginBottom--10 ${gitops.isConnected ? "u-display--none" : ""}`}>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                   <span className="u-marginRight--5 icon error-small u-verticalAlign--neg2" />Unable to connect to repo
                 </p>
+                <button>Try Again</button>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                   To complete the setup, please add the following <a href="#">deploy key</a> to your repo. To add a deploy
-                  key, <a href={`${gitUri}/settings/keys/new`} target="_blank">click here</a> and use the following key (check the box for write access):
+                  key, <a href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access):
                 </p>
                 <CodeSnippet
                   canCopy={true}
                   onCopyText={<span className="u-color--chateauGreen">Deploy key has been copied to your clipboard</span>}>
                   {deployKey}
                 </CodeSnippet>
-              </div>
-              <div>
-                <button className="btn primary blue" type="button" onClick={() => this.stepFrom("provider", "action")}>Save</button>
               </div>
             </div>
           </div>

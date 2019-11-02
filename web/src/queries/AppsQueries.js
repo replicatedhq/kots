@@ -434,6 +434,7 @@ export const getKotsAppRaw = `
           branch
           format
           deployKey
+          isConnected
         }
         cluster {
           id

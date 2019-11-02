@@ -27,7 +27,7 @@ export function KotsMutations(stores: Stores) {
         },
       });
 
-      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.uri, privateKey, publicKey);
+      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, privateKey, publicKey);
 
       await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
 
@@ -139,16 +139,16 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-      
+
       let kotsApp;
       try {
-        kotsApp = await kotsFinalizeApp(app, downstream.title, stores);  
+        kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
       } catch (error) {
         return {
           errorMessage: error.message
         };
       }
-      
+
       await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
       return {
         ...kotsApp,

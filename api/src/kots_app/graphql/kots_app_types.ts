@@ -40,6 +40,7 @@ const KotsGitOps = `
     branch: String
     format: String
     deployKey: String
+    isConnected: Boolean
   }
 `;
 
