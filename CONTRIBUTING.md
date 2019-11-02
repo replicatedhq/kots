@@ -9,7 +9,7 @@ The recommended configuration to build and run Ship Cluster locally is to run ev
 Required Software:
 - [Skaffold](https://skaffold.dev) 0.29.0 or later
 - [Kustomize](https://kustomize.io) 2.0 or later
-- NodeJS 10.x with yarn
+- NodeJS 10.x with npm
 - Kubernetes (Recommended to run microk8s)
 
 ### Environment
