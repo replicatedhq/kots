@@ -43,6 +43,10 @@ func getMinioYAML(namespace string) (map[string][]byte, error) {
 }
 
 func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure minio secret")
+	}
+
 	if err := ensureMinioConfigMap(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio configmap")
 	}
