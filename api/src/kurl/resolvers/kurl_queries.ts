@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as util from "util";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
 import { Context } from "../../context";
@@ -5,6 +7,8 @@ import * as k8s from "@kubernetes/client-node";
 import _ from "lodash";
 import request from "request-promise";
 import { logger } from "../../server/logger";
+
+const readFile = util.promisify(fs.readFile);
 
 export function KurlQueries(stores: Stores, params: Params) {
   return {
@@ -37,7 +41,11 @@ export function KurlQueries(stores: Stores, params: Params) {
             const nodeIP = address.address;
             const options = {
               method: "GET",
-              uri: `http://${nodeIP}:10255/stats/summary`
+              uri: `https://${nodeIP}:10250/stats/summary`,
+              key: await readFile("/etc/kubernetes/pki/kubelet/client.key"),
+              cert: await readFile("/etc/kubernetes/pki/kubelet/client.crt"),
+              // kubelet server cert is self-sigend (/var/lib/kubelet/pki/kubelet.crt)
+              strictSSL: false,
             };
             const response = await request(options);
             if (response) {
