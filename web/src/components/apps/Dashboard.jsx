@@ -6,10 +6,7 @@ import { graphql, compose, withApollo } from "react-apollo";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
-import DeployModal from "../shared/modals/DeployModal";
-import DeployWarningModal from "../shared/modals/DeployWarningModal";
 
-import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
 import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
@@ -33,9 +30,6 @@ class Dashboard extends Component {
     checkingUpdateText: "Checking for updates",
     errorCheckingUpdate: false,
     appLicense: null,
-    versionToDeploy: null,
-    showDeployWarningModal: false,
-    showSkipModal: false,
     showConfigureGraphs: false,
     promValue: "",
     savingPromValue: false,
@@ -140,55 +134,8 @@ class Dashboard extends Component {
     });
   }
 
-  deployVersion = async (version, force = false) => {
-    const { match, app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
-    if (!clusterSlug) {
-      return;
-    }
-    if (!force) {
-      if (version.status === "pending_preflight") {
-        this.setState({
-          showSkipModal: true,
-          versionToDeploy: version
-        });
-        return;
-      }
-      if (version?.preflightResult && version.status === "pending") {
-        const preflightResults = JSON.parse(version.preflightResult);
-        const preflightState = getPreflightResultState(preflightResults);
-        if (preflightState === "fail") {
-          this.setState({
-            showDeployWarningModal: true,
-            versionToDeploy: version
-          });
-          return;
-        }
-      }
-    }
-    await this.props.makeCurrentVersion(match.params.slug, version.sequence, clusterSlug);
-    if (this.props.updateCallback) {
-      this.props.updateCallback();
-    }
-    this.setState({ versionToDeploy: null });
-  }
-
-  onForceDeployClick = () => {
-    this.setState({ showSkipModal: false, showDeployWarningModal: false });
-    const versionToDeploy = this.state.versionToDeploy;
-    this.deployVersion(versionToDeploy, true);
-  }
-
-  hideSkipModal = () => {
-    this.setState({
-      showSkipModal: false
-    });
-  }
-
-  hideDeployWarningModal = () => {
-    this.setState({
-      showDeployWarningModal: false
-    });
+  redirectToDiff = (currentSequence, pendingSequence) => {
+    this.props.history.push(`${this.props.match.params.slug}/version-history/diff/${currentSequence}/${pendingSequence}`)
   }
 
   onUploadNewVersion = () => {
@@ -317,8 +264,6 @@ class Dashboard extends Component {
       checkingUpdateText,
       errorCheckingUpdate,
       appLicense,
-      showDeployWarningModal,
-      showSkipModal,
       showConfigureGraphs,
       promValue,
       savingPromValue
@@ -380,7 +325,7 @@ class Dashboard extends Component {
                 errorCheckingUpdate={errorCheckingUpdate}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
-                deployVersion={() => this.deployVersion(latestPendingVersion)}
+                redirectToDiff={() => this.redirectToDiff(currentVersion?.sequence, latestPendingVersion.sequence)}
               />
               <DashboardCard
                 cardName="License"
@@ -420,16 +365,6 @@ class Dashboard extends Component {
             </div>
           </div>
         </div>
-        <DeployModal
-          showSkipModal={showSkipModal}
-          hideSkipModal={this.hideSkipModal}
-          onForceDeployClick={this.onForceDeployClick}
-        />
-        <DeployWarningModal
-          showDeployWarningModal={showDeployWarningModal}
-          hideDeployWarningModal={this.hideDeployWarningModal}
-          onForceDeployClick={this.onForceDeployClick}
-        />
         <ConfigureGraphsModal
           showConfigureGraphs={showConfigureGraphs}
           toggleConfigureGraphs={this.toggleConfigureGraphs}

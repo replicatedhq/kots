@@ -101,9 +101,10 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, deployVersion } = this.props;
-    const updatesText = downstreams?.pendingVersions?.length > 0 ? "Updates are ready to be installed." : "No updates available.";
+    const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, redirectToDiff } = this.props;
+    const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
+
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (errorCheckingUpdate) {
@@ -122,7 +123,7 @@ export default class DashboardCard extends React.Component {
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
         {checkingForUpdates
           ? <Loader size="32" className="flex justifyContent--center u-marginTop--10" />
-          : <button className="btn primary lightBlue u-marginTop--10" onClick={isAirgap ? onUploadNewVersion : isUpdateAvailable ? deployVersion : onCheckForUpdates}> {isAirgap ? "Upload new version" : isUpdateAvailable ? "Install update" : "Check for update"} </button>
+          : <button className="btn primary lightBlue u-marginTop--10" onClick={isAirgap ? onUploadNewVersion : isUpdateAvailable ? redirectToDiff : onCheckForUpdates}> {isAirgap ? "Upload new version" : isUpdateAvailable ? "Show Update" : "Check for update"} </button>
         }
         {updateText}
       </div>
