@@ -133,7 +133,7 @@ export class TroubleshootAPI {
     }
   }
 
-  @Post("/analyze/:supportBundleId")
+  @Post("/analyzebundle/:supportBundleId")
   public async performAnalysis(
     @Res() response: Response,
     @Req() request: Request,

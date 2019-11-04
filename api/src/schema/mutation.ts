@@ -25,7 +25,7 @@ type Mutation {
   updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!, createNewVersion: Boolean): Boolean
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
-  setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): Boolean
+  setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch
@@ -49,6 +49,7 @@ type Mutation {
 
   drainNode(name: String): Boolean
   deleteNode(name: String): Boolean
+  generateWorkerAddNodeCommand: Command!
 
   setPrometheusAddress(value: String!): Boolean
   deletePrometheusAddress: Boolean

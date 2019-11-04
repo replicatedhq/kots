@@ -6,12 +6,11 @@ import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
-import { KotsApp } from "../kots_app";
 import * as k8s from "@kubernetes/client-node";
 
 export function KotsMutations(stores: Stores) {
   return {
-    async setAppGitOps(root: any, args: any, context: Context) {
+    async setAppGitOps(root: any, args: any, context: Context): Promise<string> {
       const { appId, clusterId, gitOpsInput } = args;
 
       const app = await context.getApp(appId);
@@ -19,21 +18,20 @@ export function KotsMutations(stores: Stores) {
       const { publicKey, privateKey } = generateKeyPairSync("rsa", {
         modulusLength: 4096,
         publicKeyEncoding: {
-          type: 'spki',
-          format: 'pem'
+          type: "pkcs1",
+          format: "pem",
         },
         privateKeyEncoding: {
-          type: 'pkcs8',
-          format: 'pem',
-          cipher: 'aes-256-cbc',
-          passphrase: 'top secret'
-        }
+          type: "pkcs1",
+          format: "pem",
+        },
       });
 
       const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.uri, privateKey, publicKey);
-      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(appId, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
 
-      return {};
+      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
+
+      return publicKey;
     },
 
     async checkForKotsUpdates(root: any, args: any, context: Context) {
@@ -141,7 +139,16 @@ export function KotsMutations(stores: Stores) {
           downstream = cluster;
         }
       }
-      const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
+      
+      let kotsApp;
+      try {
+        kotsApp = await kotsFinalizeApp(app, downstream.title, stores);  
+      } catch (error) {
+        return {
+          errorMessage: error.message
+        };
+      }
+      
       await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
       return {
         ...kotsApp,

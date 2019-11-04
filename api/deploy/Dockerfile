@@ -27,12 +27,12 @@ RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/v2.0
   mv /tmp/kustomize /usr/local/bin
 
 # Install kots.so
-RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v0.9.14/kots.so_linux_amd64.tar.gz" > /tmp/kots.tar.gz && \
+RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v1.0.0/kots.so_linux_amd64.tar.gz" > /tmp/kots.tar.gz && \
   cd /tmp && tar xzvf kots.tar.gz && \
   mv /tmp/kots.so /lib/kots.so
 
 # Install troubleshoot.so
-RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.10/troubleshoot.so_0.9.10_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
+RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.11/troubleshoot.so_0.9.11_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
   cd /tmp && tar xzvf troubleshoot.tar.gz && \
   mv /tmp/troubleshoot.so /lib/troubleshoot.so
 

@@ -15,3 +15,14 @@ export const deleteNodeRaw = `
 `;
 
 export const deleteNode = gql(deleteNodeRaw);
+
+export const generateWorkerAddNodeCommandRaw = `
+  mutation {
+    generateWorkerAddNodeCommand {
+      command
+      expiry
+    }
+  }
+`;
+
+export const generateWorkerAddNodeCommand = gql(generateWorkerAddNodeCommandRaw);

@@ -65,6 +65,7 @@ export const updateRegistryDetails = gql(updateRegistryDetailsRaw);
 export const resumeInstallOnlineRaw = `
   mutation resumeInstallOnline($slug: String!) {
     resumeInstallOnline(slug: $slug) {
+      errorMessage
       hasPreflight
       slug
       isConfigurable

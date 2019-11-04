@@ -13,18 +13,19 @@ class UploadLicenseFile extends React.Component {
   state = {
     licenseFile: {},
     licenseValue: "",
-    fileUploading: false
+    fileUploading: false,
+    errorMessage: ""
   }
 
   clearFile = () => {
-    this.setState({ licenseFile: {}, licenseValue: "" });
+    this.setState({ licenseFile: {}, licenseValue: "", errorMessage: "" });
   }
 
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
     const { licenseValue } = this.state;
 
-    this.setState({ fileUploading: true });
+    this.setState({ fileUploading: true, errorMessage: "" });
     try {
       const resp = await this.props.uploadKotsLicense(licenseValue);
       const data = resp.data.uploadKotsLicense;
@@ -86,7 +87,8 @@ class UploadLicenseFile extends React.Component {
     const content = await files[0].text();
     this.setState({
       licenseFile: files[0],
-      licenseValue: content
+      licenseValue: content,
+      errorMessage: ""
     });
   }
 

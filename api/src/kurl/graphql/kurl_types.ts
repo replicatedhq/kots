@@ -1,7 +1,6 @@
 const Kurl = `
 type Kurl {
   nodes: [Node]
-  addNodeCommand: String
 }
 `;
 
@@ -34,9 +33,16 @@ type NodeConditions {
 }
 `;
 
+const Command = `
+type Command {
+  command: [String]!
+  expiry: Float!
+}`;
+
 export default [
   Kurl,
   Node,
   CapacityAvailable,
-  NodeConditions
+  NodeConditions,
+  Command,
 ];

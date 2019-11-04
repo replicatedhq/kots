@@ -27,6 +27,19 @@ const KotsApp = `
     hasPreflight: Boolean
     isConfigurable: Boolean
     allowRollback: Boolean
+    errorMessage: String
+  }
+`;
+
+const KotsGitOps = `
+  type KotsGitOps {
+    enabled: Boolean
+    provider: String
+    uri: String
+    path: String
+    branch: String
+    format: String
+    deployKey: String
   }
 `;
 
@@ -45,6 +58,7 @@ const KotsDownstream = `
     pastVersions: [KotsVersion]
     cluster: Cluster
     links: [KotsAppLink]
+    gitops: KotsGitOps
   }
 `;
 
@@ -241,6 +255,7 @@ export default [
   KotsDownstreamOutput,
   ResourceState,
 
+  KotsGitOps,
   KotsGitOpsInput,
 
   AppRegistryDetails,

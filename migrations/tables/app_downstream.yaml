@@ -30,3 +30,5 @@ spec:
         type: text
       - name: gitops_format
         type: text
+      - name: gitops_branch
+        type: text

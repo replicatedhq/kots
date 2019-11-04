@@ -43,7 +43,6 @@ export default class DashboardCard extends React.Component {
     const { selectedAction } = this.state;
     const { appStatus, url, links } = this.props;
 
-
     return (
       <div className="flex-column flex1">
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
@@ -139,13 +138,13 @@ export default class DashboardCard extends React.Component {
       <div>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
-        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> <a href="" target="_blank" rel="noopener noreferrer" className="card-link" > Contact your account rep </a> to update your License. </p>
+        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
       </div>
     )
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app } = this.props;
 
 
     return (
@@ -157,7 +156,9 @@ export default class DashboardCard extends React.Component {
               <p className="flex1 u-fontWeight--bold u-fontSize--largest u-color--tundora u-paddingRight--5 u-marginBottom--5">{cardName}</p>
             </div>
             {application ?
-              <Link to={`${url}/config`} className="card-link"> Configure </Link>
+              app.isConfigurable ?
+              <Link to={`${url}/config`} className="card-link"> Configure </Link> 
+              : null
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
