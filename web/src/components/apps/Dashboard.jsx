@@ -15,7 +15,7 @@ import { getPreflightResultState } from "@src/utilities/utilities";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
 import { updateKotsApp, checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
-import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Hint } from "react-vis";
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
 import { getValueFormat } from "@grafana/ui"
 import Handlebars from "handlebars";
@@ -42,7 +42,9 @@ class Dashboard extends Component {
     showSkipModal: false,
     showConfigureGraphs: false,
     promValue: "",
-    savingPromValue: false
+    savingPromValue: false,
+    activeChart: null,
+    crosshairValues: []
   }
 
   updateWatchInfo = async e => {
@@ -257,19 +259,22 @@ class Dashboard extends Component {
     });
   }
 
-
   getValue = (chart, value) => {
+    let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      return valueFormatter(value);
+      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
-        console.log(template)
-        return `${template({ values: value })}`;
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
+        return yAxisTickFormat(value);
       } catch (err) {
         console.error("Failed to compile y axis tick template", err);
       }
+    } else {
+      return value.toFixed(5);
     }
   }
 
@@ -283,11 +288,15 @@ class Dashboard extends Component {
       const data = series.data.map((valuePair) => {
         return { x: valuePair.timestamp, y: valuePair.value };
       });
+
       return (
         <LineSeries
           key={idx}
           data={data}
-          onNearestXY={(value) => this.setState({value: value})}
+          onNearestX={(value, { index }) => this.setState({
+            crosshairValues: chart.series.map(s => ({ x: moment.unix((s.data[index].timestamp)).format("LLL"), y: this.getValue(chart, s.data[index].value), pod: s.metric[0].value })),
+            activeChart: chart
+          })}
         />
       );
     });
@@ -307,13 +316,25 @@ class Dashboard extends Component {
 
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: []})}>
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
-          {this.state.value && <Hint value={{x: moment.unix(this.state.value.x).format("H:mm"), y: this.getValue(chart, this.state.value.y)}}/>}
+          {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
+            <Crosshair values={this.state.crosshairValues}>
+              <div className="flex flex-column justifyContent--center alignItems--center" style={{ background: "black", width:"250px" }}>
+                <p className="u-fontWeight--bold"> {this.state.crosshairValues[0].x} </p>
+                <br/>
+                {this.state.crosshairValues.map((c ,i)=> {
+                  return (
+                    <p key={i} className="u-fontWeight--normal">{c.pod}: <span className="u-fontWeight--bold u-marginLeft--10">{c.y}</span></p>
+                  )
+                })}
+              </div>
+            </Crosshair>
+          }
         </XYPlot>
         {legendItems ? <DiscreteColorLegend height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
