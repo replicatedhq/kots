@@ -195,7 +195,7 @@ class Dashboard extends Component {
           key={idx}
           data={data}
           onNearestX={(value, { index }) => this.setState({
-            crosshairValues: chart.series.map(s => ({ x: moment.unix((s.data[index].timestamp)).format("LLL"), y: this.getValue(chart, s.data[index].value), pod: s.metric[0].value })),
+            crosshairValues: chart.series.map(s => ({ x: s.data[index].timestamp, y: s.data[index].value, pod: s.metric[0].value })),
             activeChart: chart
           })}
         />
@@ -226,7 +226,7 @@ class Dashboard extends Component {
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
             <Crosshair values={this.state.crosshairValues}>
               <div className="flex flex-column" style={{ background: "black", width:"250px" }}>
-                  <p className="u-fontWeight--bold u-textAlign--center"> {this.state.crosshairValues[0].x} </p>
+                  <p className="u-fontWeight--bold u-textAlign--center"> {moment.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
                 <br/>
                 {this.state.crosshairValues.map((c ,i)=> {
                   return (
@@ -235,7 +235,7 @@ class Dashboard extends Component {
                         <p className="u-fontWeight--normal">{c.pod}:</p>
                       </div>
                       <div className="flex flex1">
-                        <span className="u-fontWeight--bold u-marginLeft--10">{c.y}</span>
+                        <span className="u-fontWeight--bold u-marginLeft--10">{this.getValue(chart, c.y)}</span>
                       </div>
                     </div>
                   )
