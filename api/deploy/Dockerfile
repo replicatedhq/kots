@@ -49,4 +49,9 @@ EXPOSE 3000
 ARG commit=unknown
 ENV COMMIT=${commit}
 
+RUN useradd -c 'Node.js user' -m -d /home/node -s /bin/bash node
+RUN chown -R node.node /src
+USER node
+ENV HOME /home/node
+
 CMD ["node", "/src/build/server/index.js"]
