@@ -141,6 +141,10 @@ export class KotsAPI {
     @Res() response: Response,
     @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
+
+    // Intentionally not processing registry settings here because empty strings don't
+    // necessarily mean existing info should be deleted.
+
     const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
     if (!session || !session.userId) {
       response.status(401);
@@ -197,6 +201,7 @@ export class KotsAPI {
     const metadata = JSON.parse(body.metadata);
 
     const kotsApp = await request.app.locals.stores.kotsAppStore.createKotsApp(metadata.name, metadata.upstreamURI, metadata.license);
+    await request.app.locals.stores.kotsAppStore.updateRegistryDetails(kotsApp.id, metadata.registryEndpoint, metadata.registryUsername, metadata.registryPassword, metadata.registryNamespace);
 
     const params = await Params.getParams();
     const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
