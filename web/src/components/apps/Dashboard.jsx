@@ -278,12 +278,19 @@ class Dashboard extends Component {
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
             <Crosshair values={this.state.crosshairValues}>
-              <div className="flex flex-column justifyContent--center alignItems--center" style={{ background: "black", width:"250px" }}>
-                <p className="u-fontWeight--bold"> {this.state.crosshairValues[0].x} </p>
+              <div className="flex flex-column" style={{ background: "black", width:"250px" }}>
+                  <p className="u-fontWeight--bold u-textAlign--center"> {this.state.crosshairValues[0].x} </p>
                 <br/>
                 {this.state.crosshairValues.map((c ,i)=> {
                   return (
-                    <p key={i} className="u-fontWeight--normal">{c.pod}: <span className="u-fontWeight--bold u-marginLeft--10">{c.y}</span></p>
+                    <div className="flex-auto flex flexWrap--wrap u-padding--5" key={i}>
+                      <div className="flex flex1">
+                        <p className="u-fontWeight--normal">{c.pod}:</p>
+                      </div>
+                      <div className="flex flex1">
+                        <span className="u-fontWeight--bold u-marginLeft--10">{c.y}</span>
+                      </div>
+                    </div>
                   )
                 })}
               </div>
