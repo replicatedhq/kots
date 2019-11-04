@@ -10,6 +10,7 @@ import AnalyzerFileTree from "./AnalyzerFileTree";
 import { isKotsApplication } from "@src/utilities/utilities";
 import { getSupportBundle } from "../../queries/TroubleshootQueries";
 import { updateSupportBundle } from "../../mutations/TroubleshootMutations";
+import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 
 export class SupportBundleAnalysis extends React.Component {
@@ -66,10 +67,11 @@ export class SupportBundleAnalysis extends React.Component {
     }
   }
 
-  downloadBundle = () => {
+  downloadBundle = async (bundle) => {
+    const bundleId = bundle.id;
     const hiddenIFrameID = "hiddenDownloader";
     let iframe = document.getElementById(hiddenIFrameID);
-    const url = this.state.bundle.signedUri;
+    const url = `${window.env.REST_ENDPOINT}/v1/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
     if (iframe === null) {
       iframe = document.createElement("iframe");
       iframe.id = hiddenIFrameID;
@@ -160,7 +162,7 @@ export class SupportBundleAnalysis extends React.Component {
             <div className="flex1 flex-column">
               <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
                 <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
-                  <div className="flex1">
+                  <div className="flex flex-column flex1">
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
                         <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
@@ -174,6 +176,9 @@ export class SupportBundleAnalysis extends React.Component {
                         <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Collected on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
+                    <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                   </div>
                 </div>
               </div>
@@ -197,7 +202,7 @@ export class SupportBundleAnalysis extends React.Component {
                         <AnalyzerFileTree
                           watchSlug={watch.slug}
                           bundle={bundle}
-                          downloadBundle={this.downloadBundle}
+                          downloadBundle={() => this.downloadBundle(bundle)}
                           isKotsApp={isKotsApp}
                         />
                       } />
