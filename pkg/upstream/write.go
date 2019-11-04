@@ -2,10 +2,6 @@ package upstream
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path"
@@ -13,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -154,29 +151,12 @@ func (u *Upstream) GetBaseDir(options WriteOptions) string {
 
 func getEncryptionKey(previousInstallationContent []byte) (string, error) {
 	if previousInstallationContent == nil {
-		key := make([]byte, 24) // 192 bit
-		if _, err := rand.Read(key); err != nil {
-			return "", errors.Wrap(err, "failed to read key")
-		}
-
-		block, err := aes.NewCipher(key)
+		cipher, err := crypto.NewAESCypher()
 		if err != nil {
-			return "", errors.Wrap(err, "failed ro create new cipher")
+			return "", errors.Wrap(err, "failed to create new AES cipher")
 		}
 
-		gcm, err := cipher.NewGCM(block)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to wrap cipher gcm")
-		}
-
-		nonce := make([]byte, gcm.NonceSize())
-		if _, err := rand.Read(nonce); err != nil {
-			return "", errors.Wrap(err, "failed to read nonce")
-		}
-
-		newKey := base64.StdEncoding.EncodeToString(append(key, nonce...))
-
-		return newKey, nil
+		return cipher.ToString(), nil
 	}
 
 	kotsscheme.AddToScheme(scheme.Scheme)

@@ -26,6 +26,7 @@ type DeployOptions struct {
 	S3SecretKey          string
 	JWT                  string
 	PostgresPassword     string
+	APIEncryptionKey     string
 	ServiceType          string
 	NodePort             int32
 	Hostname             string
@@ -301,6 +302,18 @@ func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset
 		password, ok := pgSecret.Data["password"]
 		if ok {
 			deployOptions.PostgresPassword = string(password)
+		}
+	}
+
+	// API encryption key, read from the secret or create new password
+	encyptionSecret, err := getAPIEncryptionSecret(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get postgres secret")
+	}
+	if encyptionSecret != nil {
+		key, ok := encyptionSecret.Data["encryptionKey"]
+		if ok {
+			deployOptions.APIEncryptionKey = string(key)
 		}
 	}
 

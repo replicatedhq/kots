@@ -79,11 +79,17 @@ func findFileAndReadSecret(secretName string, key string, renderDir string, file
 	for _, fi := range files {
 		data, err := ioutil.ReadFile(path.Join(renderDir, "admin-console", fi.Name()))
 		if err != nil {
-			return "", errors.Wrap(err, "failed to read file")
+			// TODO: log errors.Wrap(err, "failed to read file")
+			continue
 		}
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(data, nil, nil)
+		if err != nil {
+			// TODO: log err
+			continue
+		}
+
 		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
 			continue
 		}

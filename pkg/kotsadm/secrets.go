@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,6 +46,19 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	}
 	docs["secret-shared-password.yaml"] = sharedPassword.Bytes()
 
+	if deployOptions.APIEncryptionKey == "" {
+		cipher, err := crypto.NewAESCypher()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create new API encryption key")
+		}
+		deployOptions.APIEncryptionKey = cipher.ToString()
+	}
+	var apiEncryptionBuffer bytes.Buffer
+	if err := s.Encode(apiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), &apiEncryptionBuffer); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal shared password secret")
+	}
+	docs["secret-api-encryption.yaml"] = apiEncryptionBuffer.Bytes()
+
 	var s3 bytes.Buffer
 	if deployOptions.S3SecretKey == "" {
 		deployOptions.S3SecretKey = uuid.New().String()
@@ -76,6 +90,10 @@ func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset
 	}
 
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure s3 secret")
+	}
+
+	if err := ensureAPIEncryptionSecret(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure s3 secret")
 	}
 
@@ -246,4 +264,45 @@ func promptForSharedPassword() (string, error) {
 		return result, nil
 	}
 
+}
+
+func ensureAPIEncryptionSecret(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+	secret, err := getAPIEncryptionSecret(deployOptions.Namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to check for existing postgres secret")
+	}
+
+	if secret != nil {
+		if key, _ := secret.Data["encryptionKey"]; len(key) > 0 {
+			return nil
+		}
+	}
+
+	if deployOptions.APIEncryptionKey == "" {
+		cipher, err := crypto.NewAESCypher()
+		if err != nil {
+			return errors.Wrap(err, "failed to create new AES cipher")
+		}
+		deployOptions.APIEncryptionKey = cipher.ToString()
+	}
+
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(apiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey))
+	if err != nil {
+		return errors.Wrap(err, "failed to create API encryption secret")
+	}
+
+	return nil
+}
+
+func getAPIEncryptionSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
+	apiSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-encryption", metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return nil, errors.Wrap(err, "failed to get postgres secret from cluster")
+	}
+
+	return apiSecret, nil
 }
