@@ -12,11 +12,11 @@ import (
 )
 
 type Monitor struct {
-	clientset        kubernetes.Interface
-	defaultNamespace string
-	appInformersCh   chan appInformer
-	appStatusCh      chan types.AppStatus
-	cancel           context.CancelFunc
+	clientset       kubernetes.Interface
+	targetNamespace string
+	appInformersCh  chan appInformer
+	appStatusCh     chan types.AppStatus
+	cancel          context.CancelFunc
 }
 
 type EventHandler interface {
@@ -30,14 +30,14 @@ type appInformer struct {
 	informers []types.StatusInformer
 }
 
-func NewMonitor(clientset kubernetes.Interface, defaultNamespace string) *Monitor {
+func NewMonitor(clientset kubernetes.Interface, targetNamespace string) *Monitor {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Monitor{
-		clientset:        clientset,
-		defaultNamespace: defaultNamespace,
-		appInformersCh:   make(chan appInformer),
-		appStatusCh:      make(chan types.AppStatus),
-		cancel:           cancel,
+		clientset:       clientset,
+		targetNamespace: targetNamespace,
+		appInformersCh:  make(chan appInformer),
+		appStatusCh:     make(chan types.AppStatus),
+		cancel:          cancel,
 	}
 	go m.run(ctx)
 	return m
@@ -81,7 +81,7 @@ func (m *Monitor) run(ctx context.Context) {
 		case appInformer := <-m.appInformersCh:
 			appMonitor, ok := appMonitors[appInformer.appID]
 			if !ok {
-				appMonitor = NewAppMonitor(m.clientset, m.defaultNamespace, appInformer.appID)
+				appMonitor = NewAppMonitor(m.clientset, m.targetNamespace, appInformer.appID)
 				go func() {
 					for appStatus := range appMonitor.AppStatusChan() {
 						m.appStatusCh <- appStatus
@@ -95,23 +95,23 @@ func (m *Monitor) run(ctx context.Context) {
 }
 
 type AppMonitor struct {
-	clientset        kubernetes.Interface
-	defaultNamespace string
-	appID            string
-	informersCh      chan []types.StatusInformer
-	appStatusCh      chan types.AppStatus
-	cancel           context.CancelFunc
+	clientset       kubernetes.Interface
+	targetNamespace string
+	appID           string
+	informersCh     chan []types.StatusInformer
+	appStatusCh     chan types.AppStatus
+	cancel          context.CancelFunc
 }
 
-func NewAppMonitor(clientset kubernetes.Interface, defaultNamespace, appID string) *AppMonitor {
+func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string) *AppMonitor {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &AppMonitor{
-		appID:            appID,
-		clientset:        clientset,
-		defaultNamespace: defaultNamespace,
-		informersCh:      make(chan []types.StatusInformer),
-		appStatusCh:      make(chan types.AppStatus),
-		cancel:           cancel,
+		appID:           appID,
+		clientset:       clientset,
+		targetNamespace: targetNamespace,
+		informersCh:     make(chan []types.StatusInformer),
+		appStatusCh:     make(chan types.AppStatus),
+		cancel:          cancel,
 	}
 	go m.run(ctx)
 	return m
@@ -156,21 +156,26 @@ func (m *AppMonitor) run(ctx context.Context) {
 }
 
 func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
-	informers = normalizeStatusInformers(informers, m.defaultNamespace)
+	// TODO: informers only work for the target namespace
+	// add support for additional namespaces
+
+	informers = normalizeStatusInformers(informers, m.targetNamespace)
 
 	log.Printf("Running informers: %#v", informers)
 
 	appStatus := types.AppStatus{
 		AppID:          m.appID,
 		ResourceStates: buildResourceStatesFromStatusInformers(informers),
+		UpdatedAt:      time.Now(),
 	}
+	m.appStatusCh <- appStatus // reset last app status
 
 	resourceStateCh := make(chan types.ResourceState)
-	go runDeploymentController(ctx, m.clientset, informers, resourceStateCh)
-	go runIngressController(ctx, m.clientset, informers, resourceStateCh)
-	go runPersistentVolumeClaimController(ctx, m.clientset, informers, resourceStateCh)
-	go runServiceController(ctx, m.clientset, informers, resourceStateCh)
-	go runStatefulSetController(ctx, m.clientset, informers, resourceStateCh)
+	go runDeploymentController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+	go runIngressController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+	go runPersistentVolumeClaimController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+	go runServiceController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+	go runStatefulSetController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
 
 	go func() {
 		defer close(resourceStateCh)

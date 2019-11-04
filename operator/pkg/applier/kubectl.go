@@ -134,18 +134,13 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 	return nil
 }
 
-func (c *Kubectl) Apply(namespace string, yamlDoc []byte, dryRun bool) ([]byte, []byte, error) {
+func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool) ([]byte, []byte, error) {
 	args := []string{
 		"apply",
 	}
 
 	if dryRun {
 		args = append(args, "--dry-run")
-	}
-
-	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
-	if namespace != "." {
-		targetNamespace = namespace
 	}
 
 	if targetNamespace != "" {

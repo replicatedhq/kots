@@ -21,13 +21,16 @@ func init() {
 	registerResourceKindNames(ServiceResourceKind, "services", "svc")
 }
 
-func runServiceController(ctx context.Context, clientset kubernetes.Interface, informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState) {
+func runServiceController(
+	ctx context.Context, clientset kubernetes.Interface, targetNamespace string,
+	informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState,
+) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.CoreV1().Services(corev1.NamespaceAll).List(options)
+			return clientset.CoreV1().Services(targetNamespace).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.CoreV1().Services(corev1.NamespaceAll).Watch(options)
+			return clientset.CoreV1().Services(targetNamespace).Watch(options)
 		},
 	}
 	informer := cache.NewSharedInformer(

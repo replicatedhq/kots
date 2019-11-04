@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"strconv"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/replicatedhq/kotsadm/operator/pkg/socket"
 	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
 	"github.com/replicatedhq/kotsadm/operator/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -56,8 +54,9 @@ type InformRequest struct {
 }
 
 type Client struct {
-	APIEndpoint string
-	Token       string
+	APIEndpoint     string
+	Token           string
+	TargetNamespace string
 
 	appStateMonitor *appstate.Monitor
 }
@@ -144,11 +143,6 @@ func (c *Client) connect() error {
 	}
 	defer socketClient.Close()
 
-	targetNamespace := os.Getenv("DEFAULT_NAMESPACE")
-	if targetNamespace == "" {
-		targetNamespace = corev1.NamespaceDefault
-	}
-
 	restconfig, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get in cluster config")
@@ -158,7 +152,7 @@ func (c *Client) connect() error {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
 
-	c.appStateMonitor = appstate.NewMonitor(clientset, targetNamespace)
+	c.appStateMonitor = appstate.NewMonitor(clientset, c.TargetNamespace)
 	defer c.appStateMonitor.Shutdown()
 
 	go c.runAppStateMonitor()
@@ -401,8 +395,13 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
+	targetNamespace := c.TargetNamespace
+	if applicationManifests.Namespace != "." {
+		targetNamespace = applicationManifests.Namespace
+	}
+
 	log.Println("dry run applying manifests(s)")
-	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, true)
+	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(targetNamespace, decoded, true)
 	if dryRunErr != nil {
 		log.Printf("stdout (dryrun) = %s", drrunStdout)
 		log.Printf("stderr (dryrun) = %s", dryrunStderr)
@@ -413,7 +412,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	var applyErr error
 	if dryRunErr == nil {
 		log.Println("applying manifest(s)")
-		stdout, stderr, err := kubernetesApplier.Apply(applicationManifests.Namespace, decoded, false)
+		stdout, stderr, err := kubernetesApplier.Apply(targetNamespace, decoded, false)
 		if err != nil {
 			log.Printf("stdout (apply) = %s", stderr)
 			log.Printf("stderr (apply) = %s", stderr)

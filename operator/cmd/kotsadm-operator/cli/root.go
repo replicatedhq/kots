@@ -24,8 +24,9 @@ of a gitops pipeline without setting up a full end-to-end gitops delivery proces
 			v := viper.GetViper()
 
 			c := client.Client{
-				APIEndpoint: v.GetString("api-endpoint"),
-				Token:       v.GetString("token"),
+				APIEndpoint:     v.GetString("api-endpoint"),
+				Token:           v.GetString("token"),
+				TargetNamespace: v.GetString("target-namespace"),
 			}
 
 			return c.Run()
@@ -36,10 +37,12 @@ of a gitops pipeline without setting up a full end-to-end gitops delivery proces
 
 	cmd.Flags().String("api-endpoint", "http://kotsadm:8880", "the endpoint of the kotsadm api server to connect to")
 	cmd.Flags().String("token", "", "the token of the cluster")
+	cmd.Flags().String("target-namespace", "", "the namespace to deploy the application to")
 
-	cmd.Flags().String("kueconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use when connecting to the cluster")
+	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use when connecting to the cluster")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
 	return cmd
 }
 

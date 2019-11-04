@@ -22,13 +22,16 @@ func init() {
 	registerResourceKindNames(IngressResourceKind, "ingresses", "ing")
 }
 
-func runIngressController(ctx context.Context, clientset kubernetes.Interface, informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState) {
+func runIngressController(
+	ctx context.Context, clientset kubernetes.Interface, targetNamespace string,
+	informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState,
+) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(corev1.NamespaceAll).List(options)
+			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(corev1.NamespaceAll).Watch(options)
+			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).Watch(options)
 		},
 	}
 	informer := cache.NewSharedInformer(

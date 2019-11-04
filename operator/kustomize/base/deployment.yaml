@@ -28,3 +28,7 @@ spec:
               value: http://kotsadm-api:3000
             - name: KOTSADM_TOKEN
               value: this-is-definitely-not-a-secret
+            - name: KOTSADM_TARGET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
