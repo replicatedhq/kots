@@ -638,7 +638,6 @@ export const getAppLicense = gql`
         value
         label
       }
-      airgapEnabled
     }
   }
 `;

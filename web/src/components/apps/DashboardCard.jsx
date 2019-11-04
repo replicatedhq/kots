@@ -74,9 +74,8 @@ export default class DashboardCard extends React.Component {
         }
         {links?.length > 0 ?
           <div>
-            <p className="u-fontSize--normal u-fontWeight--bold u-color--dustyGray u-marginTop--15"> Actions </p>
             {links?.length > 1 ?
-              <div className="u-marginTop--5">
+              <div className="u-marginTop--15">
                 <Select
                   className="replicated-select-container"
                   classNamePrefix="replicated-select"
@@ -89,7 +88,7 @@ export default class DashboardCard extends React.Component {
                 />
               </div>
               :
-              <div className="u-marginTop--5">
+              <div className="u-marginTop--15">
                 <a href={selectedAction?.uri} target="_blank" rel="noopener noreferrer" className="btn secondary gray"> {selectedAction.title} </a>
               </div>
             }
