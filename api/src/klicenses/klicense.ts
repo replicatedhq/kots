@@ -5,5 +5,4 @@ export class KLicense {
   public expiresAt: string;
   public channelName: string;
   public entitlements?: Array<KEntitlement>;
-  public airgapEnabled?: string;
 }
