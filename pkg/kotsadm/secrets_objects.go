@@ -89,3 +89,21 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 
 	return secret
 }
+
+func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-encryption",
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			"encryptionKey": []byte(key),
+		},
+	}
+
+	return secret
+}
