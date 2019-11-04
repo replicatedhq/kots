@@ -74,7 +74,6 @@ export default class DashboardCard extends React.Component {
         }
         {links?.length > 0 ?
           <div>
-            <p className="u-fontSize--normal u-fontWeight--bold u-color--dustyGray u-marginTop--15"> Actions </p>
             {links?.length > 1 ?
               <div className="u-marginTop--5">
                 <Select
