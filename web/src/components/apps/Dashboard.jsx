@@ -10,7 +10,7 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
 import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
-import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend } from "react-vis";
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
 import { getValueFormat } from "@grafana/ui"
 import Handlebars from "handlebars";
@@ -32,7 +32,9 @@ class Dashboard extends Component {
     appLicense: null,
     showConfigureGraphs: false,
     promValue: "",
-    savingPromValue: false
+    savingPromValue: false,
+    activeChart: null,
+    crosshairValues: []
   }
 
   toggleConfigureGraphs = () => {
@@ -158,6 +160,25 @@ class Dashboard extends Component {
     });
   }
 
+  getValue = (chart, value) => {
+    let yAxisTickFormat = null;
+    if (chart.tickFormat) {
+      const valueFormatter = getValueFormat(chart.tickFormat);
+      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      return yAxisTickFormat(value);
+    } else if (chart.tickTemplate) {
+      try {
+        const template = Handlebars.compile(chart.tickTemplate);
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
+        return yAxisTickFormat(value);
+      } catch (err) {
+        console.error("Failed to compile y axis tick template", err);
+      }
+    } else {
+      return value.toFixed(5);
+    }
+  }
+
   renderGraph = (chart) => {
     const axisStyle = {
       title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
@@ -168,10 +189,15 @@ class Dashboard extends Component {
       const data = series.data.map((valuePair) => {
         return { x: valuePair.timestamp, y: valuePair.value };
       });
+
       return (
         <LineSeries
           key={idx}
           data={data}
+          onNearestX={(value, { index }) => this.setState({
+            crosshairValues: chart.series.map(s => ({ x: s.data[index].timestamp, y: s.data[index].value, pod: s.metric[0].value })),
+            activeChart: chart
+          })}
         />
       );
     });
@@ -188,14 +214,35 @@ class Dashboard extends Component {
         console.error("Failed to compile y axis tick template", err);
       }
     }
+
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: []})}>
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
+          {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
+            <Crosshair values={this.state.crosshairValues}>
+              <div className="flex flex-column" style={{ background: "black", width:"250px" }}>
+                  <p className="u-fontWeight--bold u-textAlign--center"> {moment.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
+                <br/>
+                {this.state.crosshairValues.map((c ,i)=> {
+                  return (
+                    <div className="flex-auto flex flexWrap--wrap u-padding--5" key={i}>
+                      <div className="flex flex1">
+                        <p className="u-fontWeight--normal">{c.pod}:</p>
+                      </div>
+                      <div className="flex flex1">
+                        <span className="u-fontWeight--bold u-marginLeft--10">{this.getValue(chart, c.y)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Crosshair>
+          }
         </XYPlot>
         {legendItems ? <DiscreteColorLegend className="legends" height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
