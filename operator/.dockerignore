@@ -2,7 +2,6 @@
 .vscode/
 .gitignore
 .dockerignore
-
 Dockerfile.skaffold
 kustomize
 .buildkite
