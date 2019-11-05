@@ -5,9 +5,11 @@ import (
 	"os"
 	"path"
 
+	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -20,11 +22,17 @@ type UpstreamSettings struct {
 	JWT                  string
 	PostgresPassword     string
 	APIEncryptionKey     string
+
+	AutoCreateClusterToken string
 }
 
 func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
-		return generateNewAdminConsoleFiles(&UpstreamSettings{SharedPassword: sharedPassword})
+		settings := &UpstreamSettings{
+			SharedPassword:         sharedPassword,
+			AutoCreateClusterToken: uuid.New().String(),
+		}
+		return generateNewAdminConsoleFiles(settings)
 	}
 
 	existingFiles, err := ioutil.ReadDir(path.Join(renderDir, "admin-console"))
@@ -32,7 +40,9 @@ func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]Upstr
 		return nil, errors.Wrap(err, "failed to read existing files")
 	}
 
-	settings := &UpstreamSettings{}
+	settings := &UpstreamSettings{
+		AutoCreateClusterToken: uuid.New().String(),
+	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
 	}
@@ -53,43 +63,57 @@ func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string,
 			continue
 		}
 
-		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-			continue
-		}
-
-		secret := obj.(*corev1.Secret)
-
-		switch secret.Name {
-		case "kotsadm-password":
-			settings.SharedPasswordBcrypt = string(secret.Data["passwordBcrypt"])
-		case "kotsadm-minio":
-			settings.S3AccessKey = string(secret.Data["accesskey"])
-			settings.S3SecretKey = string(secret.Data["secretkey"])
-		case "kotsadm-session":
-			settings.JWT = string(secret.Data["key"])
-		case "kotsadm-postgres":
-			settings.PostgresPassword = string(secret.Data["password"])
-		case "kotsadm-encryption":
-			settings.APIEncryptionKey = string(secret.Data["encryptionKey"])
+		if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
+			loadUpstreamSettingsFromSecret(settings, obj.(*corev1.Secret))
+		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
+			loadUpstreamSettingsFromDeployment(settings, obj.(*appsv1.Deployment))
 		}
 	}
 
 	return nil
 }
 
+func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.Secret) {
+	switch secret.Name {
+	case "kotsadm-password":
+		settings.SharedPasswordBcrypt = string(secret.Data["passwordBcrypt"])
+	case "kotsadm-minio":
+		settings.S3AccessKey = string(secret.Data["accesskey"])
+		settings.S3SecretKey = string(secret.Data["secretkey"])
+	case "kotsadm-session":
+		settings.JWT = string(secret.Data["key"])
+	case "kotsadm-postgres":
+		settings.PostgresPassword = string(secret.Data["password"])
+	case "kotsadm-encryption":
+		settings.APIEncryptionKey = string(secret.Data["encryptionKey"])
+	}
+}
+
+func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *appsv1.Deployment) {
+	for _, c := range deployment.Spec.Template.Spec.Containers {
+		for _, e := range c.Env {
+			switch e.Name {
+			case "AUTO_CREATE_CLUSTER_TOKEN", "KOTSADM_TOKEN":
+				settings.AutoCreateClusterToken = e.Value
+			}
+		}
+	}
+}
+
 func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
 	deployOptions := kotsadm.DeployOptions{
-		Namespace:            "default",
-		SharedPassword:       settings.SharedPassword,
-		SharedPasswordBcrypt: settings.SharedPasswordBcrypt,
-		S3AccessKey:          settings.S3AccessKey,
-		S3SecretKey:          settings.S3SecretKey,
-		JWT:                  settings.JWT,
-		PostgresPassword:     settings.PostgresPassword,
-		APIEncryptionKey:     settings.APIEncryptionKey,
-		Hostname:             "localhost:8800",
+		Namespace:              "default",
+		SharedPassword:         settings.SharedPassword,
+		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,
+		S3AccessKey:            settings.S3AccessKey,
+		S3SecretKey:            settings.S3SecretKey,
+		JWT:                    settings.JWT,
+		PostgresPassword:       settings.PostgresPassword,
+		APIEncryptionKey:       settings.APIEncryptionKey,
+		AutoCreateClusterToken: settings.AutoCreateClusterToken,
+		Hostname:               "localhost:8800",
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

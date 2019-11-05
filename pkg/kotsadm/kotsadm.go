@@ -11,26 +11,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var (
-	autoCreateClusterToken = uuid.New().String()
-)
-
 type DeployOptions struct {
-	Namespace            string
-	Kubeconfig           string
-	IncludeShip          bool
-	IncludeGitHub        bool
-	SharedPassword       string
-	SharedPasswordBcrypt string
-	S3AccessKey          string
-	S3SecretKey          string
-	JWT                  string
-	PostgresPassword     string
-	APIEncryptionKey     string
-	ServiceType          string
-	NodePort             int32
-	Hostname             string
-	ApplicationMetadata  []byte
+	Namespace              string
+	Kubeconfig             string
+	IncludeShip            bool
+	IncludeGitHub          bool
+	SharedPassword         string
+	SharedPasswordBcrypt   string
+	S3AccessKey            string
+	S3SecretKey            string
+	JWT                    string
+	PostgresPassword       string
+	APIEncryptionKey       string
+	AutoCreateClusterToken string
+	ServiceType            string
+	NodePort               int32
+	Hostname               string
+	ApplicationMetadata    []byte
 }
 
 type UpgradeOptions struct {
@@ -86,7 +83,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	}
 
 	// api
-	apiDocs, err := getApiYAML(deployOptions.Namespace)
+	apiDocs, err := getApiYAML(deployOptions.Namespace, deployOptions.AutoCreateClusterToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get api yaml")
 	}
@@ -104,7 +101,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	}
 
 	// operator
-	operatorDocs, err := getOperatorYAML(deployOptions.Namespace)
+	operatorDocs, err := getOperatorYAML(deployOptions.Namespace, deployOptions.AutoCreateClusterToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get operator yaml")
 	}

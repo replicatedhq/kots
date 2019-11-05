@@ -73,7 +73,7 @@ func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func operatorDeployment(namespace string) *appsv1.Deployment {
+func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deployment {
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
