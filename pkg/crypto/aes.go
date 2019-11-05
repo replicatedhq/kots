@@ -45,39 +45,67 @@ func NewAESCypher() (*AESCipher, error) {
 	}, nil
 }
 
-func AESCipherFromString(data string) (*AESCipher, error) {
+func AESCipherFromString(data string) (aesCipher *AESCipher, initErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			initErr = errors.Errorf("cipher init recovered from panic: %v", r)
+		}
+	}()
+
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode string")
+		initErr = errors.Wrap(err, "failed to decode string")
+		return
 	}
 
 	if len(decoded) < keyLength {
-		return nil, errors.Errorf("cipher key is invalid: len=%d, expected %d", len(decoded), keyLength)
+		initErr = errors.Errorf("cipher key is invalid: len=%d, expected %d", len(decoded), keyLength)
+		return
 	}
 
 	key := decoded[:keyLength]
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create cipher from data")
+		initErr = errors.Wrap(err, "failed to create cipher from data")
+		return
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to wrap cipher gcm")
+		initErr = errors.Wrap(err, "failed to wrap cipher gcm")
+		return
 	}
 
 	nonceLen := len(decoded) - keyLength
 	if nonceLen < gcm.NonceSize() {
-		return nil, errors.Errorf("cipher nonce is invalid: len=%d, expected %d", nonceLen, gcm.NonceSize())
+		initErr = errors.Errorf("cipher nonce is invalid: len=%d, expected %d", nonceLen, gcm.NonceSize())
+		return
 	}
 
-	return &AESCipher{
+	aesCipher = &AESCipher{
 		key:    key,
 		cipher: gcm,
 		nonce:  decoded[keyLength:],
-	}, nil
+	}
+
+	return
 }
 
 func (c *AESCipher) ToString() string {
 	return base64.StdEncoding.EncodeToString(append(c.key, c.nonce...))
+}
+
+func (c *AESCipher) Encrypt(in []byte) []byte {
+	return c.cipher.Seal(nil, c.nonce, in, nil)
+}
+
+func (c *AESCipher) Decrypt(in []byte) (result []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("decrypt recovered from panic: %v", r)
+		}
+	}()
+
+	result, err = c.cipher.Open(nil, c.nonce, in, nil)
+	return
 }
