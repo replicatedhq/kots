@@ -31,6 +31,12 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9
 COPY ./bin/kotsadm-operator /kotsadm-operator
 RUN chmod a+x /kotsadm-operator
 
+RUN useradd -c 'kotsadm-operator user' -m -d /home/kotsadm-operator -s /bin/bash -u 1001 kotsadm-operator
+RUN chown -R kotsadm-operator.kotsadm-operator /kotsadm-operator
+RUN chown -R kotsadm-operator.kotsadm-operator /root/.krew
+USER kotsadm-operator
+ENV HOME /home/kotsadm-operator
+
 EXPOSE 3000
 # ARG version=unknown
 # ENV VERSION=${version}

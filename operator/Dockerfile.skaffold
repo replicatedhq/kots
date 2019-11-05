@@ -35,4 +35,11 @@ ADD cmd $PROJECTPATH/cmd
 ADD pkg $PROJECTPATH/pkg
 
 RUN make build
+
+RUN useradd -c 'kotsadm-operator user' -m -d /home/kotsadm-operator -s /bin/bash -u 1001 kotsadm-operator
+RUN chown -R kotsadm-operator.kotsadm-operator ./bin/kotsadm-operator
+RUN chown -R kotsadm-operator.kotsadm-operator /root/.krew
+USER kotsadm-operator
+ENV HOME /home/kotsadm-operator
+
 ENTRYPOINT ["./bin/kotsadm-operator"]

@@ -11,6 +11,8 @@ spec:
       labels:
         app: kotsadm-api
     spec:
+      securityContext:
+        runAsUser: 1001
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

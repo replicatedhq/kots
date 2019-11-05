@@ -49,4 +49,9 @@ EXPOSE 3000
 ARG commit=unknown
 ENV COMMIT=${commit}
 
+RUN useradd -c 'kotsadm-api user' -m -d /home/kotsadm-api -s /bin/bash -u 1001 kotsadm-api
+RUN chown -R kotsadm-api.kotsadm-api /src
+USER kotsadm-api
+ENV HOME /home/kotsadm-api
+
 CMD ["node", "/src/build/server/index.js"]

@@ -11,6 +11,8 @@ spec:
       labels:
         app: kotsadm-web
     spec:
+      securityContext:
+        runAsUser: 1001
       containers:
         - name: kotsadm-web
           image: kotsadm-web
