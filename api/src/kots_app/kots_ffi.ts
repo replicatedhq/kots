@@ -39,6 +39,8 @@ function kots() {
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     TemplateConfig: [GoString, [GoString, GoString, GoString]],
+    EncryptString: [GoString, [GoString, GoString]],
+    DecryptString: [GoString, [GoString, GoString]],
   });
 }
 
@@ -478,4 +480,40 @@ export async function kotsTemplateConfig(configPath: string, configContent: stri
   } catch(err) {
     throw new ReplicatedError(`Failed to parse templated config ${err}`);
   }
+}
+
+export async function kotsEncryptString(cipherString: string, message: string): Promise<string> {
+  const cipherStringParam = new GoString();
+  cipherStringParam["p"] = cipherString;
+  cipherStringParam["n"] = String(cipherString).length;
+
+  const messageParam = new GoString();
+  messageParam["p"] = message;
+  messageParam["n"] = String(message).length;
+
+  const encrypted = kots().EncryptString(cipherStringParam, messageParam);
+
+  if (encrypted["p"] === null) {
+    throw new ReplicatedError("Failed to encrypt string via FFI call");
+  }
+
+  return encrypted["p"];
+}
+
+export async function kotsDecryptString(cipherString: string, message: string): Promise<string> {
+  const cipherStringParam = new GoString();
+  cipherStringParam["p"] = cipherString;
+  cipherStringParam["n"] = String(cipherString).length;
+
+  const messageParam = new GoString();
+  messageParam["p"] = message;
+  messageParam["n"] = String(message).length;
+
+  const decrypted = kots().DecryptString(cipherStringParam, messageParam);
+
+  if (decrypted["p"] === null) {
+    throw new ReplicatedError("Failed to encrypt string via FFI call");
+  }
+
+  return decrypted["p"];
 }

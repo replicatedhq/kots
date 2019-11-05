@@ -561,6 +561,7 @@ export interface KotsAppRegistryDetails {
   registryHostname: string;
   registryUsername: string;
   registryPassword: string;
+  registryPasswordEnc: string;
   namespace: string;
   lastSyncedAt: string;
 }

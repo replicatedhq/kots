@@ -22,6 +22,8 @@ spec:
                 secretKeyRef:
                   name: ship-postgres   # This secret is created in the ship-cluster-db project
                   key: uri
+            - name: API_ENCRYPTION_KEY
+              value: IvWItkB8+ezMisPjSMBknT1PdKjBx7Xc/txZqOP8Y2Oe7+Jy
             - name: INIT_SERVER_URI
               value: "http://init-server:3000"
             - name: WATCH_SERVER_URI

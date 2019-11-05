@@ -6,6 +6,7 @@ export class Params {
   private static instance: Params;
 
   readonly postgresUri: string;
+  readonly apiEncryptionKey: string;
   readonly githubClientId: string;
   readonly githubPrivateKeyFile: string;
   readonly githubPrivateKeyContents: string;
@@ -38,6 +39,7 @@ export class Params {
 
   constructor({
     postgresUri,
+    apiEncryptionKey,
     githubAppInstallURL,
     githubClientId,
     githubPrivateKeyFile,
@@ -69,6 +71,7 @@ export class Params {
     prometheusAddress,
   }) {
     this.postgresUri = postgresUri;
+    this.apiEncryptionKey = apiEncryptionKey;
     this.githubAppInstallURL = githubAppInstallURL;
     this.githubClientId = githubClientId;
     this.githubPrivateKeyFile = githubPrivateKeyFile;
@@ -108,6 +111,7 @@ export class Params {
     const params = await this.loadParams();
     Params.instance = new Params({
       postgresUri: params["POSTGRES_URI"],
+      apiEncryptionKey: params["API_ENCRYPTION_KEY"],
       githubAppInstallURL: params["GITHUB_APP_INSTALL_URL"],
       githubClientId: params["GITHUB_CLIENT_ID"],
       githubClientSecret: params["GITHUB_CLIENT_SECRET"],
@@ -144,6 +148,7 @@ export class Params {
   private static async loadParams(): Promise<{ [key:string]: string; }> {
     const paramLookup: ParamLookup = {
       POSTGRES_URI: "/shipcloud/postgres/uri",
+      API_ENCRYPTION_KEY: "",
       GITHUB_APP_INSTALL_URL: "/shipcloud/github/app_install_url",
       GITHUB_CLIENT_ID: "/shipcloud/github/app_client_id",
       GITHUB_CLIENT_SECRET: "/shipcloud/github/app_client_secret",
