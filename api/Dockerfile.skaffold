@@ -42,9 +42,4 @@ RUN make build
 # COPY ./kots.so /lib/kots.so
 # COPY ./troubleshoot.so /lib/troubleshoot.so
 
-RUN useradd -c 'kotsadm-api user' -m -d /home/kotsadm-api -s /bin/bash -u 1001 kotsadm-api
-RUN chown -R kotsadm-api.kotsadm-api /src
-USER kotsadm-api
-ENV HOME /home/kotsadm-api
-
 ENTRYPOINT ["node", "--no-deprecation", "/src/build/server/index.js"]
