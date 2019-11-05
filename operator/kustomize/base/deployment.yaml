@@ -11,6 +11,8 @@ spec:
       labels:
         app: kotsadm-operator
     spec:
+      securityContext:
+        runAsUser: 1001
       restartPolicy: Always
       containers:
         - name: kotsadm-operator
