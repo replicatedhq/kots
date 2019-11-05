@@ -5,7 +5,6 @@ import (
 
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -21,13 +20,16 @@ func init() {
 	registerResourceKindNames(StatefulSetResourceKind, "statefulsets", "sts")
 }
 
-func runStatefulSetController(ctx context.Context, clientset kubernetes.Interface, informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState) {
+func runStatefulSetController(
+	ctx context.Context, clientset kubernetes.Interface, targetNamespace string,
+	informers []types.StatusInformer, resourceStateCh chan<- types.ResourceState,
+) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.AppsV1().StatefulSets(corev1.NamespaceAll).List(options)
+			return clientset.AppsV1().StatefulSets(targetNamespace).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.AppsV1().StatefulSets(corev1.NamespaceAll).Watch(options)
+			return clientset.AppsV1().StatefulSets(targetNamespace).Watch(options)
 		},
 	}
 	informer := cache.NewSharedInformer(

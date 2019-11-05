@@ -470,7 +470,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
 
   let job: V1Job;
   try {
-    ({ body: job } = await batchV1Client.createNamespacedJob("kube-system", {
+    ({ body: job } = await batchV1Client.createNamespacedJob("default", {
       apiVersion: "batch/v1",
       kind: "Job",
       metadata: {
@@ -488,6 +488,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
           },
           spec: {
             // nodeSelector: {"node-role.kubernetes.io/master": ""}, // TODO: this is needed for master join
+            serviceAccountName: "kotsadm-api",
             restartPolicy: "Never",
             activeDeadlineSeconds: 120,
             containers: [{

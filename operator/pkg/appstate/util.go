@@ -6,11 +6,11 @@ import (
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 )
 
-func normalizeStatusInformers(informers []types.StatusInformer, defaultNamespace string) (next []types.StatusInformer) {
+func normalizeStatusInformers(informers []types.StatusInformer, targetNamespace string) (next []types.StatusInformer) {
 	for _, informer := range informers {
 		informer.Kind = getResourceKindCommonName(informer.Kind)
 		if informer.Namespace == "" {
-			informer.Namespace = defaultNamespace
+			informer.Namespace = targetNamespace
 		}
 		next = append(next, informer)
 	}

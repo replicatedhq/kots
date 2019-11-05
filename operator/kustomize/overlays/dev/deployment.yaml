@@ -8,5 +8,6 @@ spec:
       containers:
         - name: kotsadm-operator
           env:
-            - name: DEFAULT_NAMESPACE
+            - name: KOTSADM_TARGET_NAMESPACE
               value: "test"
+              valueFrom: ~
