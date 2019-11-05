@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getOperatorYAML(namespace string) (map[string][]byte, error) {
+func getOperatorYAML(namespace, autoCreateClusterToken string) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -34,7 +34,7 @@ func getOperatorYAML(namespace string) (map[string][]byte, error) {
 	docs["operator-serviceaccount.yaml"] = serviceAccount.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(operatorDeployment(namespace), &deployment); err != nil {
+	if err := s.Encode(operatorDeployment(namespace, autoCreateClusterToken), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator deployment")
 	}
 	docs["operator-deployment.yaml"] = deployment.Bytes()
@@ -125,7 +125,7 @@ func ensureOperatorDeployment(deployOptions DeployOptions, clientset *kubernetes
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(operatorDeployment(deployOptions.Namespace))
+		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(operatorDeployment(deployOptions.Namespace, deployOptions.AutoCreateClusterToken))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}

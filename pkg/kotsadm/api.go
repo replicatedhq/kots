@@ -15,7 +15,7 @@ import (
 
 var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
 
-func getApiYAML(namespace string) (map[string][]byte, error) {
+func getApiYAML(namespace, autoCreateClusterToken string) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -38,7 +38,7 @@ func getApiYAML(namespace string) (map[string][]byte, error) {
 	docs["api-serviceaccount.yaml"] = serviceAccount.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(apiDeployment(namespace), &deployment); err != nil {
+	if err := s.Encode(apiDeployment(namespace, autoCreateClusterToken), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api deployment")
 	}
 	docs["api-deployment.yaml"] = deployment.Bytes()
@@ -167,7 +167,7 @@ func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(apiDeployment(deployOptions.Namespace))
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(apiDeployment(deployOptions.Namespace, deployOptions.AutoCreateClusterToken))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
