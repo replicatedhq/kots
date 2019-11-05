@@ -1,3 +1,7 @@
 node_modules
 *__jb_tmp__*
 .git
+
+Dockerfile.skaffold
+kustomize
+.buildkite
