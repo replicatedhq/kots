@@ -5,6 +5,7 @@ import { ReplicatedError } from "../server/errors";
 import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
+import { kotsEncryptString, kotsDecryptString } from "./kots_ffi"
 import _ from "lodash";
 import yaml from "js-yaml";
 import { decodeBase64, getPreflightResultState } from '../util/utilities';
@@ -661,7 +662,7 @@ export class KotsAppStore {
   }
 
   async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
-    const q = `select registry_hostname, registry_username, registry_password, namespace, last_registry_sync from app where id = $1`;
+    const q = `select registry_hostname, registry_username, registry_password, registry_password_enc, namespace, last_registry_sync from app where id = $1`;
     const v = [
       appId,
     ];
@@ -669,19 +670,82 @@ export class KotsAppStore {
     if (result.rowCount === 0) {
       throw new ReplicatedError(`Unable to get registry details for app with the ID of ${appId}`);
     }
-    return this.mapAppRegistryDetails(result.rows[0]);
+
+    const regInfo = this.mapAppRegistryDetails(result.rows[0]);
+    await this.migrationEncryptRegistryCredentials(appId, regInfo);
+    await this.decryptRegistryCredentials(appId, regInfo);
+
+    return regInfo
+  }
+
+  async decryptRegistryCredentials(appId: string, regInfo: KotsAppRegistryDetails) {
+    if (!this.params.apiEncryptionKey) {
+      return regInfo;
+    }
+
+    if (regInfo.registryPassword && regInfo.registryPassword.length > 0) {
+      return regInfo;
+    }
+
+    if (!regInfo.registryPasswordEnc || regInfo.registryPasswordEnc.length === 0) {
+      return regInfo
+    }
+
+    regInfo.registryPassword = await kotsDecryptString(this.params.apiEncryptionKey, regInfo.registryPasswordEnc)
+
+    return regInfo
+  }
+
+  async migrationEncryptRegistryCredentials(appId: string, regInfo: KotsAppRegistryDetails) {
+    if (!this.params.apiEncryptionKey) {
+      return regInfo;
+    }
+
+    if (!regInfo.registryPassword || regInfo.registryPassword.length === 0) {
+      return regInfo;
+    }
+
+    if (regInfo.registryPasswordEnc && regInfo.registryPasswordEnc.length > 0) {
+      return regInfo
+    }
+
+    regInfo.registryPasswordEnc = await kotsEncryptString(this.params.apiEncryptionKey, regInfo.registryPassword);
+    const q = `update app set registry_password = NULL, registry_password_enc = $1 where id = $2`;
+    const v = [
+      regInfo.registryPasswordEnc,
+      appId,
+    ];
+    await this.pool.query(q, v);
+
+    return regInfo
   }
 
   async updateRegistryDetails(appId: string, hostname: string, username: string, password: string, namespace: string): Promise<void> {
-    const q = `update app set registry_hostname = $1, registry_username = $2, registry_password = $3, namespace = $4, last_registry_sync = $5 where id = $6`;
-    const v = [
-      hostname,
-      username,
-      password,
-      namespace,
-      new Date(),
-      appId,
-    ];
+    let q: string;
+    let v: any;
+
+    if (this.params.apiEncryptionKey) {
+      const passwordEnc = await kotsEncryptString(this.params.apiEncryptionKey, password);
+      q = `update app set registry_hostname = $1, registry_username = $2, registry_password = NULL, registry_password_enc = $3, namespace = $4, last_registry_sync = $5 where id = $6`;
+      v = [
+        hostname,
+        username,
+        passwordEnc,
+        namespace,
+        new Date(),
+        appId,
+      ];
+    } else {
+      q = `update app set registry_hostname = $1, registry_username = $2, registry_password = $3, namespace = $4, last_registry_sync = $5 where id = $6`;
+      v = [
+        hostname,
+        username,
+        password,
+        namespace,
+        new Date(),
+        appId,
+      ];
+    }
     await this.pool.query(q, v);
   }
 
@@ -1009,6 +1073,7 @@ export class KotsAppStore {
       registryHostname: row.registry_hostname,
       registryUsername: row.registry_username,
       registryPassword: row.registry_password,
+      registryPasswordEnc: row.registry_password_enc,
       namespace: row.namespace,
       lastSyncedAt: row.last_registry_sync,
     };

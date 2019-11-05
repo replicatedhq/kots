@@ -48,6 +48,8 @@ spec:
         type: text
       - name: registry_password
         type: text
+      - name: registry_password_enc
+        type: text
       - name: namespace
         type: text
       - name: last_registry_sync
