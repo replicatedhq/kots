@@ -88,6 +88,12 @@ export default class AppGitops extends Component {
     const { app } = this.props;
     const appTitle = app.name;
 
+    if (length(app.downstreams) === 0) {
+      return (
+        <div />
+      );
+    }
+
     const gitops = app.downstreams[0].gitops;
 
     const otherService = "";
@@ -105,8 +111,8 @@ export default class AppGitops extends Component {
       return service.value === provider;
     });
 
-    const gitUri = app.downstreams[0].gitops.uri;
-    const deployKey = app.downstreams[0].gitops.deployKey;
+    const gitUri = gitops.uri;
+    const deployKey = gitops.deployKey;
 
     if (this.props.app.downstreams.length !== 1) {
       return (
