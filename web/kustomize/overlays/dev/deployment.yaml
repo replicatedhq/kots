@@ -5,6 +5,8 @@ metadata:
 spec:
   template:
     spec:
+      securityContext:
+        runAsUser: 0
       containers:
         - name: kotsadm-web
           ports:
