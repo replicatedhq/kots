@@ -12,9 +12,4 @@ WORKDIR /src
 EXPOSE 8000
 RUN make deps
 
-RUN useradd -c 'kotsadm-web user' -m -d /home/kotsadm-web -s /bin/bash -u 1001 kotsadm-web
-RUN chown -R kotsadm-web.kotsadm-web /src
-USER kotsadm-web
-ENV HOME /home/kotsadm-web
-
 ENTRYPOINT ["make", "serve"]
