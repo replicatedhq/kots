@@ -111,8 +111,8 @@ export default class AppGitops extends Component {
       return service.value === provider;
     });
 
-    const gitUri = gitops.uri;
-    const deployKey = gitops.deployKey;
+    const gitUri = gitops?.uri;
+    const deployKey = gitops?.deployKey;
 
     if (this.props.app.downstreams.length !== 1) {
       return (
