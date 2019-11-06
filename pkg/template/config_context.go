@@ -24,14 +24,12 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templ
 			builtValue, _ := b.String(configItem.Value)
 
 			var built string
-			if builtValue != "" {
+			if v, ok := templateContext[configItem.Name]; ok {
+				built = fmt.Sprintf("%s", v)
+			} else if builtValue != "" {
 				built = builtValue
 			} else {
 				built = builtDefault
-			}
-
-			if v, ok := templateContext[configItem.Name]; ok {
-				built = fmt.Sprintf("%s", v)
 			}
 
 			configCtx.ItemValues[configItem.Name] = built
