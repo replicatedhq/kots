@@ -1,6 +1,6 @@
-import Express from "express";
-import { Controller, Put, Get, Res, Req, HeaderParams, BodyParams } from "@tsed/common";
+import { BodyParams, Controller, Get, HeaderParams, Put, Req, Res } from "@tsed/common";
 import BasicAuth from "basic-auth";
+import Express from "express";
 import _ from "lodash";
 
 interface ErrorResponse {
@@ -86,14 +86,17 @@ export class DeployAPI {
       if (deployedAppSequence > -1) {
         const desiredNamespace = ".";
 
-        const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+        const rendered = await app.render(`${app.currentSequence}`, `overlays/downstreams/${cluster.title}`);
         const b = new Buffer(rendered);
+
+        const kotsAppSpec = await app.getKotsAppSpec(cluster.id, request.app.locals.stores.kotsAppStore);
 
         const applicationManifests = {
           "app_id": app.id,
+          kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
           namespace: desiredNamespace,
           manifests: b.toString("base64"),
-        }
+        };
 
         present.push(applicationManifests);
       }
