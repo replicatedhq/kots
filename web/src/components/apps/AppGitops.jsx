@@ -90,8 +90,6 @@ export default class AppGitops extends Component {
 
     const gitops = app.downstreams[0].gitops;
 
-    console.log(gitops);
-
     const otherService = "";
     const providerError = null;
 
