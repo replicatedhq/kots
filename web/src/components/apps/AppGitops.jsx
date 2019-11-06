@@ -88,7 +88,7 @@ export default class AppGitops extends Component {
     const { app } = this.props;
     const appTitle = app.name;
 
-    if (length(app.downstreams) === 0) {
+    if (!app.downstreams || app.downstreams.length === 0) {
       return (
         <div />
       );
