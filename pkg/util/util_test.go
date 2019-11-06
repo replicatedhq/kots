@@ -80,3 +80,39 @@ func Test_SplitStringOnLen(t *testing.T) {
 		})
 	}
 }
+
+func TestIntPointer(t *testing.T) {
+	tests := []struct {
+		name string
+		x    int
+		want int64
+	}{
+		{
+			name: "zero",
+			x:    0,
+			want: int64(0),
+		},
+		{
+			name: "positive",
+			x:    100,
+			want: int64(100),
+		},
+		{
+			name: "negative",
+			x:    -128,
+			want: int64(-128),
+		},
+		{
+			name: "int max",
+			x:    1<<31 - 1,
+			want: int64(1<<31 - 1),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got := IntPointer(tt.x)
+			req.Equal(tt.want, *got)
+		})
+	}
+}

@@ -7,6 +7,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func operatorRole(namespace string) *rbacv1.Role {
@@ -96,6 +98,9 @@ func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deploy
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: util.IntPointer(1001),
+					},
 					ServiceAccountName: "kotsadm-operator",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{

@@ -8,6 +8,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func apiRole(namespace string) *rbacv1.Role {
@@ -98,6 +100,9 @@ func apiDeployment(namespace, autoCreateClusterToken string) *appsv1.Deployment 
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: util.IntPointer(1001),
+					},
 					ServiceAccountName: "kotsadm-api",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{

@@ -54,3 +54,9 @@ func SplitStringOnLen(str string, maxLength int) ([]string, error) {
 
 	return result, nil
 }
+
+func IntPointer(x int) *int64 {
+	var xout int64
+	xout = int64(x)
+	return &xout
+}
