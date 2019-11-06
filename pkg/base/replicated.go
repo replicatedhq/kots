@@ -96,12 +96,8 @@ func tryGetConfigFromFileContent(content []byte) *kotsv1beta1.Config {
 		return nil
 	}
 
-	if gvk.Group == "kots.io" {
-		if gvk.Version == "v1beta1" {
-			if gvk.Kind == "Config" {
-				return obj.(*kotsv1beta1.Config)
-			}
-		}
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
+		return obj.(*kotsv1beta1.Config)
 	}
 
 	return nil
