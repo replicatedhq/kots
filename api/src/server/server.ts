@@ -46,6 +46,7 @@ import { KurlStore } from "../kurl/kurl_store";
 import { ReplicatedError } from "./errors";
 import { MetricStore } from "../monitoring/metric_store";
 import { ParamsStore } from "../params/params_store";
+import { getS3, ensureBucket } from "../util/s3";
 
 let mount = {};
 let componentsScan = [
@@ -250,8 +251,13 @@ export class Server extends ServerLoader {
     }
   }
 
-  $onReady() {
+  async $onReady() {
     this.expressApp.get("*", (req: Request, res: Response) => res.sendStatus(404));
+
+    logger.info({msg: "Ensuring bucket exists..."});
+    const params = await Params.getParams();
+    await ensureBucket(params, params.shipOutputBucket);
+
     logger.info({msg: "Server started..."});
   }
 

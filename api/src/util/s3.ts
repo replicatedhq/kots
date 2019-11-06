@@ -1,6 +1,7 @@
 import AWS from "aws-sdk";
 import { Params } from "../server/params";
-import { bool } from "aws-sdk/clients/signer";
+import * as Minio from "minio";
+import url from "url";
 
 export function getS3(params: Params): AWS.S3 {
   const s3Params: AWS.S3.ClientConfiguration = {
@@ -22,6 +23,49 @@ export function getS3(params: Params): AWS.S3 {
 
   return new AWS.S3(s3Params);
 };
+
+export async function ensureBucket(params: Params, bucketName: string): Promise<boolean> {
+  const parsedEndpoint = url.parse(params.s3Endpoint);
+  const minioClient = new Minio.Client({
+    endPoint: parsedEndpoint.hostname,
+    port: parseInt(parsedEndpoint.port || "0"),
+    useSSL: false,
+    accessKey: params.s3AccessKeyId,
+    secretKey: params.s3SecretAccessKey,
+  });
+
+  return new Promise((resolve, reject) => {
+    minioClient.makeBucket(params.shipOutputBucket, "us-east-1", function(err) {
+      if (err) {
+        if (err.toString().indexOf("Your previous request to create the named bucket succeeded and you already own it") !== -1) {
+          resolve(true);
+          return;
+        }
+        console.log(err);
+        reject(err);
+        return;
+      }
+
+      resolve(true);
+    });
+  })
+
+  // const s3 = getS3(params);
+
+  // const createParams = {
+  //   Bucket: bucketName,
+  // };
+
+  // return new Promise<boolean>((resolve, reject) => {
+  //   s3.createBucket(createParams, (err, data) => {
+  //     if (err) {
+  //       reject(err);
+  //     }
+
+  //     resolve(true);
+  //   })
+  // });
+}
 
 export async function upload(params: Params, key: string, body: any, bucket: string): Promise<any> {
   const s3 = getS3(params);

@@ -47,6 +47,7 @@
     "jsonwebtoken": "^8.5.1",
     "kubernetes-client": "^7.0.0",
     "lodash": "^4.17.11",
+    "minio": "^7.0.12",
     "mkdirp": "^0.5.1",
     "moment": "^2.24.0",
     "multer": "^1.4.2",
