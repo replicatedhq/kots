@@ -35,7 +35,7 @@ spec:
               name: minio
         - name: MINIO_BROWSER
           value: "on"
-        image: minio/minio:RELEASE.2019-05-14T23-57-45Z
+        image: minio/minio:8445-9573ea5
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3

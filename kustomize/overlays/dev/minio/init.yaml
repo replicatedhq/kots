@@ -24,7 +24,7 @@ spec:
           value: kotsadm-s3
         - name: MINIO_PORT
           value: "4569"
-        image: minio/mc:RELEASE.2019-05-01T23-27-44Z
+        image: minio/mc:RELEASE.2019-10-09T22-54-57Z
         imagePullPolicy: IfNotPresent
         name: minio-mc
         volumeMounts:
