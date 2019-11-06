@@ -49,22 +49,6 @@ export async function ensureBucket(params: Params, bucketName: string): Promise<
       resolve(true);
     });
   })
-
-  // const s3 = getS3(params);
-
-  // const createParams = {
-  //   Bucket: bucketName,
-  // };
-
-  // return new Promise<boolean>((resolve, reject) => {
-  //   s3.createBucket(createParams, (err, data) => {
-  //     if (err) {
-  //       reject(err);
-  //     }
-
-  //     resolve(true);
-  //   })
-  // });
 }
 
 export async function upload(params: Params, key: string, body: any, bucket: string): Promise<any> {
