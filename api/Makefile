@@ -3,11 +3,11 @@ PROJECT_NAME ?= kotsadm-api
 
 .PHONY: deps
 deps:
-	yarn --silent --frozen-lockfile
+	npm i --silent
 
 .PHONY: deps-prod
 deps-prod:
-	yarn --silent --frozen-lockfile --production=true
+	npm i --silent
 
 .PHONY: prebuild
 prebuild:
@@ -20,7 +20,7 @@ lint:
 
 .PHONY: build
 build: prebuild
-	`yarn bin`/tsc --project .
+	`npm bin`/tsc --project .
 
 .PHONY: run
 run:
@@ -48,7 +48,7 @@ test-and-publish: export S3_BUCKET_NAME = ship-pacts
 test-and-publish: export ENABLE_SHIP = 1
 test-and-publish: export ENABLE_KOTS = 1
 test-and-publish:
-	yarn run test:broker
+	npm run test:broker
 
 .PHONY: test
 test: export POSTGRES_URI = postgresql://shipcloud:password@localhost:15432/shipcloud?connect_timeout=10&application_name=ship&sslmode=disable
@@ -66,7 +66,7 @@ test: deps
 	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
 	docker run --rm -d --name kotsadm-fixtures -p 15432:5432 kotsadm/kotsadm-fixtures:local
-	yarn run test:local
+	npm run test:local
 	@-sleep 1
 	docker stop kotsadm-fixtures
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :

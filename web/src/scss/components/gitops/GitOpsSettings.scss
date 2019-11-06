@@ -1,0 +1,32 @@
+.GitOpsSettings--wrapper {
+  .full-width-container {
+    max-width: 90%;
+    width: 100%;
+  }
+}
+
+.GitOpsSettings {
+  max-width: 800px;
+  width: 100%;
+}
+
+
+.GitOpsSettingsConnected {
+  border-radius: 4px;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0,0,0,.16);
+  padding: 40px;
+  margin-bottom: 40px;
+  text-align: center;
+  position: relative;
+}
+
+.GitOpsSettingsNotConnected {
+  border-radius: 4px;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0,0,0,.16);
+  padding: 40px;
+  margin-bottom: 40px;
+  text-align: center;
+  position: relative;
+}

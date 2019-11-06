@@ -38,7 +38,9 @@ export class NavBar extends PureComponent {
       this.props.client.query({ query: userInfo })
         .then((res) => {
           this.setState({ user: res.data.userInfo });
-        }).catch();
+        }).catch(() => {
+          Utilities.logoutUser();
+        });
     }
   }
 

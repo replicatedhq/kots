@@ -2,5 +2,6 @@
 supportbundle.tar.gz
 /go.mod
 /go.sum
-yarn-error.log
+/troubleshoot.so
+/kots.so
 vendor

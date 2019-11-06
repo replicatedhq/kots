@@ -25,7 +25,7 @@ export function UserQueries(stores: Stores) {
           username: "test"
         }
       } else {
-        throw new ReplicatedError(`Unknown session type: ${context.sessionType()}`);
+        throw new ReplicatedError(`Unknown session type`);
       }
     },
 

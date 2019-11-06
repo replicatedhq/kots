@@ -26,4 +26,5 @@ spec:
         type: text
       - name: key_priv
         type: text
-
+      - name: last_error
+        type: text
