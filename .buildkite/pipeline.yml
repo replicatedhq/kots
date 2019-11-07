@@ -8,6 +8,7 @@ steps:
           always-pull: true
           workdir: /repo
           debug: true
+          user: 999
           environment:
             - "uid=999"
           volumes:
