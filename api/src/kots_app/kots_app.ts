@@ -223,7 +223,7 @@ export class KotsApp {
         if (item.type === "password") {
           item.value = this.getPasswordMask();
         } else if (item.name in configValues) {
-          item.value = configValues[item.name];
+          item.value = configValues[item.name].value;
         }
       });
     });
@@ -269,7 +269,15 @@ export class KotsApp {
             if (item.type === "password") {
               configValues[item.name] = cryptr ? cryptr.encrypt(item.value) : item.value;
             } else {
-              configValues[item.name] = item.value;
+              // these are "omitempty" in Go, but TS adds "null" strings in.
+              let configVal = {};
+              if (item.value) {
+                configVal["value"] = item.value;
+              }
+              if (item.default) {
+                configVal["default"] = item.default;
+              }
+              configValues[item.name] = configVal;
             }
           }
         });
@@ -307,7 +315,14 @@ export class KotsApp {
     updatedConfigGroups.forEach(group => {
       group.items.forEach(async item => {
         if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
-          configValues[item.name] = item.value;
+          let configVal = {}
+          if (item.value) {
+            configVal["value"] = item.value;
+          }
+          if (item.default) {
+            configVal["default"] = item.default;
+          }
+          configValues[item.name] = configVal;
         }
       });
     });
