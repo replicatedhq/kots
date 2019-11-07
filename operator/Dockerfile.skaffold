@@ -1,6 +1,4 @@
 FROM golang:1.12 as deps
-RUN go get github.com/sqs/goreturns
-RUN go get -u golang.org/x/lint/golint
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.14.7
