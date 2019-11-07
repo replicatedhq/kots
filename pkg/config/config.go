@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -70,17 +69,19 @@ func marshalConfig(config *kotsv1beta1.Config) (string, error) {
 	return string(marshalled.Bytes()), nil
 }
 
-func applyValuesToConfig(config *kotsv1beta1.Config, values map[string]interface{}) {
+func applyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
 			value, ok := values[i.Name]
 			if ok {
-				config.Spec.Groups[idxG].Items[idxI].Value = fmt.Sprintf("%s", value) // this assumes "value" implements String function
+				config.Spec.Groups[idxG].Items[idxI].Value = value.ValueStr()
+				config.Spec.Groups[idxG].Items[idxI].Default = value.DefaultStr()
 			}
 			for idxC, c := range i.Items {
 				value, ok := values[c.Name]
 				if ok {
-					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = fmt.Sprintf("%s", value) // this assumes "value" implements String function
+					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = value.ValueStr()
+					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = value.DefaultStr()
 				}
 			}
 		}
