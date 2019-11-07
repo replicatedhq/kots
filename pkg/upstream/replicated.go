@@ -60,7 +60,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, existingConfig *kotsv1beta1.ConfigValues) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -104,8 +104,10 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	}
 
 	config := findConfigInRelease(release)
-	if config != nil {
-		configValues, err := createEmptyConfigValues(application.Name, config)
+	if config != nil || existingConfig != nil {
+		// If config existed and was removed from the app,
+		// values will be carried over to the new version anyway.
+		configValues, err := createConfigValues(application.Name, config, existingConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -330,9 +332,29 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config) (*kotsv1beta1.ConfigValues, error) {
-	emptyValues := kotsv1beta1.ConfigValuesSpec{
-		Values: map[string]string{},
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfig *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
+	var newValues kotsv1beta1.ConfigValuesSpec
+	if existingConfig != nil {
+		newValues = kotsv1beta1.ConfigValuesSpec{
+			Values: existingConfig.Spec.Values,
+		}
+	} else {
+		newValues = kotsv1beta1.ConfigValuesSpec{
+			Values: map[string]kotsv1beta1.ConfigValue{},
+		}
+	}
+
+	if config == nil {
+		return &kotsv1beta1.ConfigValues{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "ConfigValues",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: applicationName,
+			},
+			Spec: newValues,
+		}, nil
 	}
 
 	builder := template.Builder{}
@@ -340,13 +362,36 @@ func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config)
 
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
-			if item.Value != "" {
-				rendered, err := builder.RenderTemplate(item.Name, item.Value)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to render config item value")
-				}
+			var foundValue string
+			prevValue, ok := newValues.Values[item.Name]
+			if ok && prevValue.Value != "" {
+				foundValue = prevValue.Value
+			}
 
-				emptyValues.Values[item.Name] = rendered
+			renderedValue, err := builder.RenderTemplate(item.Name, item.Value)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render config item value")
+			}
+
+			renderedDefault, err := builder.RenderTemplate(item.Name, item.Default)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render config item default")
+			}
+
+			if renderedValue == "" && renderedDefault == "" && foundValue == "" {
+				continue
+			}
+
+			if foundValue != "" {
+				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
+					Value:   foundValue,
+					Default: renderedDefault,
+				}
+			} else {
+				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
+					Value:   renderedValue,
+					Default: renderedDefault,
+				}
 			}
 		}
 	}
@@ -359,7 +404,7 @@ func createEmptyConfigValues(applicationName string, config *kotsv1beta1.Config)
 		ObjectMeta: metav1.ObjectMeta{
 			Name: applicationName,
 		},
-		Spec: emptyValues,
+		Spec: newValues,
 	}
 
 	return &configValues, nil

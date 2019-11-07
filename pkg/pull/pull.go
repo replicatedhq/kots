@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -32,6 +33,7 @@ type PullOptions struct {
 	Downstreams         []string
 	LocalPath           string
 	LicenseFile         string
+	ConfigFile          string
 	ExcludeKotsKinds    bool
 	ExcludeAdminConsole bool
 	SharedPassword      string
@@ -122,6 +124,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		fetchOptions.License = license
+	}
+	if pullOptions.ConfigFile != "" {
+		config, err := parseConfigValuesFromFile(pullOptions.ConfigFile)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to parse license from file")
+		}
+		fetchOptions.ConfigValues = config
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -356,6 +365,31 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	}
 
 	return license, nil
+}
+
+func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read config values file")
+	}
+
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode config values file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.New("not config values")
+	}
+
+	config := decoded.(*kotsv1beta1.ConfigValues)
+
+	return config, nil
 }
 
 type registryInfo struct {

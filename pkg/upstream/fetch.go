@@ -14,6 +14,7 @@ type FetchOptions struct {
 	HelmOptions  []string
 	LocalPath    string
 	License      *kotsv1beta1.License
+	ConfigValues *kotsv1beta1.ConfigValues
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
@@ -38,7 +39,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.ConfigValues)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

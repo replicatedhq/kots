@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
@@ -57,7 +57,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 			return
 		}
 
-		expectedLicenseFile := path.Join(tmpRoot, "upstream", "userdata", "license.yaml")
+		expectedLicenseFile := filepath.Join(tmpRoot, "upstream", "userdata", "license.yaml")
 		_, err = os.Stat(expectedLicenseFile)
 		if err != nil {
 			fmt.Printf("failed to find license file in archive\n")
@@ -83,6 +83,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 
 		pullOptions := pull.PullOptions{
 			LicenseFile:         expectedLicenseFile,
+			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
 			RootDir:             tmpRoot,
 			ExcludeKotsKinds:    true,
 			ExcludeAdminConsole: true,
@@ -111,9 +112,9 @@ func UpdateCheck(socket, fromArchivePath string) {
 		}
 
 		paths := []string{
-			path.Join(tmpRoot, "upstream"),
-			path.Join(tmpRoot, "base"),
-			path.Join(tmpRoot, "overlays"),
+			filepath.Join(tmpRoot, "upstream"),
+			filepath.Join(tmpRoot, "base"),
+			filepath.Join(tmpRoot, "overlays"),
 		}
 
 		err = os.Remove(fromArchivePath)
@@ -134,7 +135,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 }
 
 func readCursorFromPath(rootPath string) (string, error) {
-	installationFilePath := path.Join(rootPath, "upstream", "userdata", "installation.yaml")
+	installationFilePath := filepath.Join(rootPath, "upstream", "userdata", "installation.yaml")
 	_, err := os.Stat(installationFilePath)
 	if os.IsNotExist(err) {
 		return "", nil

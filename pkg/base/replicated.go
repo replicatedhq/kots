@@ -20,7 +20,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	}
 
 	// Find the values from the context
-	var templateContext map[string]interface{}
+	var templateContext map[string]template.ItemValue
 	for _, c := range u.Files {
 		if c.Path == "userdata/config.yaml" {
 			ctx, err := UnmarshalConfigValuesContent(c.Content)
@@ -66,7 +66,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	return &base, nil
 }
 
-func UnmarshalConfigValuesContent(content []byte) (map[string]interface{}, error) {
+func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
@@ -80,9 +80,12 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]interface{}, error
 
 	values := obj.(*kotsv1beta1.ConfigValues)
 
-	ctx := map[string]interface{}{}
+	ctx := map[string]template.ItemValue{}
 	for k, v := range values.Spec.Values {
-		ctx[k] = v
+		ctx[k] = template.ItemValue{
+			Value:   v.Value,
+			Default: v.Default,
+		}
 	}
 
 	return ctx, nil
