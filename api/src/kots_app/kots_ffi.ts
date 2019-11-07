@@ -180,6 +180,7 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
   if (parsedLicense.spec.isAirgapSupported) {
     try {
       const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
+      await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, licenseData);
       return kotsApp;
     } catch(e) {
       console.log("no pending airgap install found, creating a new app");
