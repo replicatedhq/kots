@@ -137,24 +137,6 @@ module.exports = function (env) {
         template: HtmlWebpackTemplate,
         title: "Admin Console",
         appMountId: "app",
-        externals: [
-          {
-            "react-dom": {
-              root: "ReactDOM",
-              commonjs2: "react-dom",
-              commonjs: "react-dom",
-              amd: "react-dom"
-            }
-          },
-          {
-            "react": {
-              root: "React",
-              commonjs2: "react",
-              commonjs: "react",
-              amd: "react"
-            }
-          }
-        ],
         scripts: appEnv.WEBPACK_SCRIPTS,
         inject: false,
         window: {

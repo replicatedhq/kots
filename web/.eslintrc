@@ -39,5 +39,10 @@
     "react/jsx-no-target-blank": [1],
     "no-useless-escape": [1],
     "template-curly-spacing": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   }
 }

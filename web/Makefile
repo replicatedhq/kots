@@ -54,18 +54,24 @@ build-local: SHIP_CLOUD_ENV = skaffold
 build-local: webpack_build_local
 
 webpack_build_local:
-	node --max_old_space_size=6144 ./node_modules/webpack/bin/webpack.js --config webpack.config.js --env ${SHIP_CLOUD_ENV} --mode development
+	node \
+		--max_old_space_size=6144 \
+		./node_modules/webpack/bin/webpack.js \
+		--config webpack.config.js \
+		--env ${SHIP_CLOUD_ENV} \
+		--mode development \
+		--compress
 
 .PHONY: webpack_build
 webpack_build: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
 webpack_build:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
 	node \
-	--max_old_space_size=6144 \
-	./node_modules/webpack/bin/webpack.js \
-	--config webpack.config.js \
-	--env ${SHIP_CLOUD_ENV} \
-	--mode production
+		--max_old_space_size=6144 \
+		./node_modules/webpack/bin/webpack.js \
+		--config webpack.config.js \
+		--env ${SHIP_CLOUD_ENV} \
+		--mode production
 
 .PHONY: publish-kotsadm-tag
 publish-kotsadm-tag:
