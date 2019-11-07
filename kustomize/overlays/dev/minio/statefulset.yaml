@@ -64,7 +64,7 @@ spec:
             cpu: 250m
             memory: 256Mi
         volumeMounts:
-          - mountPath: /export
+          - mountPath: /data
             name: miniodata  # this is where the data is stored
       volumes:
       - name: miniodata
