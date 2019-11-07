@@ -112,6 +112,14 @@ func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deploy
 									Name:  "KOTSADM_TOKEN",
 									Value: autoCreateClusterToken,
 								},
+								{
+									Name: "KOTSADM_TARGET_NAMESPACE",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
 							},
 						},
 					},
