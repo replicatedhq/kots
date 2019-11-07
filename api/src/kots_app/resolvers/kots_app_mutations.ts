@@ -5,6 +5,7 @@ import { Context } from "../../context";
 import path from "path";
 import tmp from "tmp";
 import yaml from "js-yaml";
+import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
@@ -15,6 +16,7 @@ import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
+import { logger } from "../../server/logger";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -95,6 +97,33 @@ export function KotsMutations(stores: Stores) {
       }
       downloadUpdates(); // download asyncronously
       return updatesAvailable.length;
+    },
+
+    async testGitOpsConnection(root: any, args: any, context: Context) {
+      const { gitopsId } = args;
+
+      const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
+
+      // TODO: build for other services than just GitHub
+      const uriParts = gitOpsCreds.uri.split("/");
+      const cloneUri = `${uriParts[3]}/${uriParts[4]}`;
+      const localPath = require("path").join(__dirname, "tmp");
+      let cloneOptions = new NodeGit.CloneOptions();
+      cloneOptions.fetchOps = {
+        callbacks: {
+          certificateCheck: () => { return 0; },
+          credentials: () => {
+            return NodeGit.Cred.sshKeyNew(uriParts[3], gitOpsCreds.pubKey, gitOpsCreds.privKey, "");
+          }
+        }
+      }
+      const cloneRepository = await NodeGit.Clone(gitOpsCreds.uri, localPath, cloneOptions).then((repository) => {
+        logger.info({ msg: "repo", repository });  
+      });
+      logger.info({ msg: "cloneRepo", cloneRepository });
+      // set error column appropriately in gitops_repo table
+
+      return true;
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {

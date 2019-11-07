@@ -1,8 +1,10 @@
 import React, { Component } from "react";
+import { graphql, compose, withApollo } from "react-apollo";
 import Helmet from "react-helmet";
 import Select from "react-select";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import url from "url";
+import { testGitOpsConnection } from "../../mutations/AppsMutations";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
 
@@ -37,7 +39,7 @@ const SERVICES = [
   }
 ]
 
-export default class AppGitops extends Component {
+class AppGitops extends Component {
   constructor(props) {
     super(props);
 
@@ -76,6 +78,18 @@ export default class AppGitops extends Component {
         <span style={{ fontSize: 14 }}>{label}</span>
       </div>
     );
+  }
+
+  handleTestConnection = async () => {
+    let gitopsId = "";
+    if (this.props.app?.downstreams && this.props.app.downstreams.length > 0) {
+      gitopsId = this.props.app.downstreams[0].gitops.id; 
+    }
+    try {
+      this.props.testGitOpsConnection(gitopsId)
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   handleServiceChange = (selectedService) => {
@@ -128,10 +142,10 @@ export default class AppGitops extends Component {
         <div className="GitOpsSettings">
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">GitOps Settings</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--40">
+            <p className="u-fontSize--large u-fontWeight--medium u-color--tundora u-lineHeight--medium u-marginTop--40">
               <span className="u-marginRight--5 icon checkmark-icon u-verticalAlign--neg2" />GitOps is enabled for {appTitle}
             </p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--20 u-marginBottom--20">
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
               When GitOps is enabled, all changes to the application (upstream updates, config changes, license updates) will be commited to a git repo instead of deployed directly from the Admin Console.
             </p>
             <div className="GitOpsDeploy--step">
@@ -205,13 +219,15 @@ export default class AppGitops extends Component {
                 </p>
               </div>
               <div className={`GitOpsSettingsNotConnected inactive u-cursor--pointer u-marginBottom--10 ${gitops.isConnected ? "u-display--none" : ""}`}>
-                <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
-                  <span className="u-marginRight--5 icon error-small u-verticalAlign--neg2" />Unable to connect to repo
-                </p>
-                <button>Try Again</button>
-                <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
-                  To complete the setup, please add the following <a href="#">deploy key</a> to your repo. To add a deploy
-                  key, <a href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access):
+                <div className="flex justifyContent--center alignItems--center u-marginBottom--20">
+                  <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
+                    <span className="u-marginRight--5 icon error-small u-verticalAlign--neg2" />Unable to connect to repo
+                  </p>
+                  <button className="btn small secondary u-marginLeft--10" onClick={this.handleTestConnection}>Try Again</button>
+                </div>
+                <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">
+                  To complete the setup, please add the following <a className="replicated-link" href="#">deploy key</a> to your repo. To add a deploy
+                  key, <a className="replicated-link" href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access):
                 </p>
                 <CodeSnippet
                   canCopy={true}
@@ -226,3 +242,12 @@ export default class AppGitops extends Component {
     );
   }
 }
+
+export default compose(
+  withApollo,
+  graphql(testGitOpsConnection, {
+    props: ({ mutate }) => ({
+      testGitOpsConnection: (gitopsId) => mutate({ variables: { gitopsId } })
+    })
+  })
+)(AppGitops);
