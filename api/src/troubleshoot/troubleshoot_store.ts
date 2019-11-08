@@ -7,6 +7,7 @@ import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
 import { parseWatchName } from "../watch";
 import { SupportBundleAnalysis } from "./supportbundle";
+import { Analyzer } from "./analyzer";
 
 export class TroubleshootStore {
   constructor(
@@ -51,6 +52,22 @@ spec:
     }
 
     return collector;
+  }
+
+  public async tryGetAnalyzersForKotsApp(id: string): Promise<Analyzer | void> {
+    const q = `select analyzer_spec from app_version
+      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
+      where app.id = $1`;
+    const v = [id];
+
+    const result = await this.pool.query(q, v);
+
+    let analyzer: Analyzer = new Analyzer();
+    if (result.rowCount === 0) {
+      return;
+    }
+
+    return result.rows[0].analyzer_spec;
   }
 
   public async tryGetCollectorForKotsSlug(slug: string): Promise<Collector | void> {

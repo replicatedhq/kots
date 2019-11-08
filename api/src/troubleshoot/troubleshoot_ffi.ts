@@ -7,6 +7,8 @@ import tmp from "tmp";
 import { Params } from "../server/params";
 import { getS3 } from "../util/s3";
 import fs from "fs";
+import jsYaml from "js-yaml";
+import { injectKotsAnalyzers } from "./analyzer";
 
 const GoString = Struct({
   p: "string",
@@ -19,12 +21,14 @@ function troubleshoot() {
   });
 }
 
-export async function analyzeSupportBundle(supportBundleId: string, stores: Stores): Promise<boolean> {
+export async function analyzeSupportBundle(supportBundleId: string, analyzerSpec: string, stores: Stores): Promise<boolean> {
   // const supportBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
 
   // Download the support bundle to a temp file
   // and pass that into the analyze function
 
+  const parsedSpec = jsYaml.load(analyzerSpec || "{spec: []}");
+  const injectedSpec = await injectKotsAnalyzers(parsedSpec);
   const tmpDir = tmp.dirSync();
   const archive = path.join(tmpDir.name, "support-bundle.tar.gz");
 
@@ -49,8 +53,8 @@ export async function analyzeSupportBundle(supportBundleId: string, stores: Stor
         bundleURLParam["n"] = archive.length;
 
         const analyzersParam = new GoString();
-        analyzersParam["p"] = "";
-        analyzersParam["n"] = "".length;
+        analyzersParam["p"] = jsYaml.dump(injectedSpec);
+        analyzersParam["n"] = jsYaml.dump(injectedSpec).length;
 
         const outputFormatParam = new GoString();
         outputFormatParam["p"] = "json";

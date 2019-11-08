@@ -16,7 +16,8 @@ import {
   extractSupportBundleSpecFromTarball,
   extractAppTitleFromTarball,
   extractAppIconFromTarball,
-  extractKotsAppLicenseFromTarball
+  extractKotsAppLicenseFromTarball,
+  extractAnalyzerSpecFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData, KotsAppStatus } from "../../kots_app";
@@ -210,6 +211,7 @@ export class KotsAPI {
 
     const installationSpec = await extractInstallationSpecFromTarball(buffer);
     const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+    const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
     const appSpec = await extractAppSpecFromTarball(buffer);
     const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
@@ -218,18 +220,19 @@ export class KotsAPI {
     const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
 
     await request.app.locals.stores.kotsAppStore.createMidstreamVersion(
-      kotsApp.id, 
-      0, 
-      installationSpec.versionLabel, 
-      installationSpec.releaseNotes, 
-      installationSpec.cursor, 
-      installationSpec.encryptionKey, 
-      supportBundleSpec, 
-      preflightSpec, 
-      appSpec, 
-      kotsAppSpec, 
-      kotsAppLicense, 
-      appTitle, 
+      kotsApp.id,
+      0,
+      installationSpec.versionLabel,
+      installationSpec.releaseNotes,
+      installationSpec.cursor,
+      installationSpec.encryptionKey,
+      supportBundleSpec,
+      analyzersSpec,
+      preflightSpec,
+      appSpec,
+      kotsAppSpec,
+      kotsAppLicense,
+      appTitle,
       appIcon
     );
 
@@ -469,6 +472,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+  const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
   const appSpec = await extractAppSpecFromTarball(buffer);
   const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
@@ -478,18 +482,19 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
 
   await stores.kotsAppStore.createMidstreamVersion(
-    kotsApp.id, 
-    newSequence, 
-    installationSpec.versionLabel, 
-    installationSpec.releaseNotes, 
-    installationSpec.cursor, 
+    kotsApp.id,
+    newSequence,
+    installationSpec.versionLabel,
+    installationSpec.releaseNotes,
+    installationSpec.cursor,
     installationSpec.encryptionKey,
-    supportBundleSpec, 
-    preflightSpec, 
-    appSpec, 
-    kotsAppSpec, 
+    supportBundleSpec,
+    analyzersSpec,
+    preflightSpec,
+    appSpec,
+    kotsAppSpec,
     kotsAppLicense,
-    appTitle, 
+    appTitle,
     appIcon
   );
 
