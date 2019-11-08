@@ -48,6 +48,9 @@ func postgresStatefulset(namespace string) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						// RunAsUser: util.IntPointer(1001), // TODO: make real user #
+					},
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-postgres",

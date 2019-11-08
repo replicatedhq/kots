@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	executableMode = int32(484)
+	executableMode = int32(511) // hex 777
 )
 
 func getWebYAML(deployOptions DeployOptions) (map[string][]byte, error) {

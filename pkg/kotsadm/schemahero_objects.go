@@ -6,6 +6,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
@@ -21,6 +23,10 @@ func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 			Namespace: deployOptions.Namespace,
 		},
 		Spec: corev1.PodSpec{
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser: util.IntPointer(1001),
+				FSGroup:   util.IntPointer(1001),
+			},
 			RestartPolicy: corev1.RestartPolicyOnFailure,
 			Containers: []corev1.Container{
 				{
