@@ -81,8 +81,7 @@ async function injectNoGvisorAnalyzer(parsedSpec: any): Promise<any> {
         fail: {
           when: "== gvisor",
           message: "The Admin Console does not support using the gvisor runtime",
-        },
-      },{
+        }},{
         pass: {
           message: "A supported container runtime is present on all nodes",
         },
@@ -110,8 +109,7 @@ async function injectOperatorReplicasAnalyzer(parsedSpec: any): Promise<any> {
         pass: {
           when: "= 1",
           message: "Exactly 1 replica of the Admin Console Operator is running and ready",
-        },
-      },{
+        }}, {
         fail: {
           message: "There is not exactly 1 replica of the Admin Console Operator running and ready",
         },
