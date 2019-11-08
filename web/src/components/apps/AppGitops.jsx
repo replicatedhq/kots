@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import Helmet from "react-helmet";
+import Modal from "react-modal";
 import Select from "react-select";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import url from "url";
@@ -60,6 +61,8 @@ class AppGitops extends Component {
       path: gitops?.path,
       format: gitops?.format,
       hostname,
+      testingConnection: false,
+      displayDeployKeyModal: false,
     }
   }
 
@@ -81,13 +84,16 @@ class AppGitops extends Component {
   }
 
   handleTestConnection = async () => {
+    this.setState({ testingConnection: true });
     let gitopsId = "";
     if (this.props.app?.downstreams && this.props.app.downstreams.length > 0) {
       gitopsId = this.props.app.downstreams[0].gitops.id; 
     }
     try {
-      this.props.testGitOpsConnection(gitopsId)
+      await this.props.testGitOpsConnection(gitopsId);
+      this.setState({ testingConnection: false });
     } catch (err) {
+      this.setState({ testingConnection: false });
       console.log(err);
     }
   }
@@ -119,6 +125,8 @@ class AppGitops extends Component {
       branch,
       path,
       hostname,
+      testingConnection,
+      displayDeployKeyModal,
     } = this.state;
 
     const selectedService = SERVICES.find((service) => {
@@ -142,9 +150,14 @@ class AppGitops extends Component {
         <div className="GitOpsSettings">
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">GitOps Settings</h2>
-            <p className="u-fontSize--large u-fontWeight--medium u-color--tundora u-lineHeight--medium u-marginTop--40">
-              <span className="u-marginRight--5 icon checkmark-icon u-verticalAlign--neg2" />GitOps is enabled for {appTitle}
+            <p className="u-fontSize--large u-fontWeight--medium u-color--tundora u-lineHeight--medium u-marginTop--30">
+              <span className={`u-marginRight--5 icon ${gitops.isConnected ? "checkmark-icon" : "exclamationMark--icon"} u-verticalAlign--neg2`} />GitOps is enabled for {appTitle}{!gitops.isConnected && " but does not have permission to commit to your repository"}
             </p>
+            {gitops.enabled && !gitops.isConnected &&
+               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
+               You first need to add the deployment key at the bottom of this page to the GitHub repository you would like to have the commits made.
+             </p>
+            }
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
               When GitOps is enabled, all changes to the application (upstream updates, config changes, license updates) will be commited to a git repo instead of deployed directly from the Admin Console.
             </p>
@@ -200,12 +213,12 @@ class AppGitops extends Component {
                     <div className="flex flex1 flex-column u-marginRight--10">
                       <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Branch</p>
                       <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If no branch is specified, master will be used.</p>
-                      <input type="text" className={`Input`} placeholder="master" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
+                      <input type="text" className={`Input`} placeholder="master" value={branch || ""} onChange={(e) => this.setState({ branch: e.target.value })} />
                     </div>
                     <div className="flex flex1 flex-column u-marginLeft--10">
                       <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Path</p>
                       <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where in your repo should deployment file live?</p>
-                      <input type="text" className={"Input"} placeholder="/my-path" value={path} onChange={(e) => this.setState({ path: e.target.value })} />
+                      <input type="text" className={"Input"} placeholder="/my-path" value={path || ""} onChange={(e) => this.setState({ path: e.target.value })} />
                     </div>
                   </div>
                 }
@@ -213,31 +226,50 @@ class AppGitops extends Component {
               <div className={`${gitops.isConnected ? "u-display--none" : "u-marginBottom--10"}`}>
                 <button className="btn primary blue" type="button" onClick={() => this.stepFrom("provider", "action")}>Update</button>
               </div>
-              <div className={`GitOpsSettingsConnected inactive u-cursor--pointer ${gitops.isConnected ? "" : "u-display--none"}`}>
+              <div className={`GitOpsSettingsConnected inactive ${gitops.isConnected ? "" : "u-display--none"}`}>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                   <span className="u-marginRight--5 icon checkmark-icon u-verticalAlign--neg2" />Connected and working!
                 </p>
               </div>
-              <div className={`GitOpsSettingsNotConnected inactive u-cursor--pointer u-marginBottom--10 ${gitops.isConnected ? "u-display--none" : ""}`}>
+              <div className={`GitOpsSettingsNotConnected inactive u-marginBottom--10 ${gitops.isConnected ? "u-display--none" : ""}`}>
                 <div className="flex justifyContent--center alignItems--center u-marginBottom--20">
                   <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                     <span className="u-marginRight--5 icon error-small u-verticalAlign--neg2" />Unable to connect to repo
                   </p>
-                  <button className="btn small secondary u-marginLeft--10" onClick={this.handleTestConnection}>Try Again</button>
+                  <button className={`btn small secondary u-marginLeft--10 ${testingConnection && "is-disabled"}`} onClick={this.handleTestConnection} disabled={testingConnection}>{testingConnection ? "Testing connection" : "Test connection"}</button>
                 </div>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">
-                  To complete the setup, please add the following <a className="replicated-link" href="#">deploy key</a> to your repo. To add a deploy
-                  key, <a className="replicated-link" href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access):
+                  To complete the setup, please add your <span onClick={() => this.setState({ displayDeployKeyModal: true })} className="replicated-link">deploy key</span> to your repo. To add a deploy
+                  key, <a className="replicated-link" href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access).
                 </p>
-                <CodeSnippet
-                  canCopy={true}
-                  onCopyText={<span className="u-color--chateauGreen">Deploy key has been copied to your clipboard</span>}>
-                  {deployKey}
-                </CodeSnippet>
               </div>
             </div>
           </div>
         </div>
+        {displayDeployKeyModal &&
+          <Modal
+            isOpen={displayDeployKeyModal}
+            onRequestClose={() => this.setState({ displayDeployKeyModal: false })}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Deploy key modal"
+            ariaHideApp={false}
+            className="Modal"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--large u-fontWeight--medium u-color--tundora u-lineHeight--normal u-marginBottom--10">
+                When adding this key, be sure to check the box for write access.
+              </p>
+              <CodeSnippet
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Deploy key has been copied to your clipboard</span>}>
+                {deployKey}
+              </CodeSnippet>
+              <div className="u-marginTop--10 u-textAlign--center">
+                <button onClick={() => this.setState({ displayDeployKeyModal: false })} className="btn primary">Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
