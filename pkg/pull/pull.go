@@ -109,6 +109,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	fetchOptions := upstream.FetchOptions{}
 	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
+	fetchOptions.RootDir = pullOptions.RootDir
+	fetchOptions.UseAppDir = pullOptions.CreateAppDir
 	fetchOptions.LocalPath = pullOptions.LocalPath
 
 	if pullOptions.LicenseFile != "" {

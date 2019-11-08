@@ -60,7 +60,7 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, existingConfig *kotsv1beta1.ConfigValues) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -95,19 +95,33 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 	}
 
 	// Find the config in the upstream and write out default values
-	application := findAppInRelease(release)
-	if application != nil {
-		// NOTE: this currently comes from the application spec and not the channel release meta
-		if release.ReleaseNotes == "" {
-			release.ReleaseNotes = application.Spec.ReleaseNotes
+
+	application := findAppInRelease(release) // this function never returns nil
+
+	// NOTE: this currently comes from the application spec and not the channel release meta
+	if release.ReleaseNotes == "" {
+		release.ReleaseNotes = application.Spec.ReleaseNotes
+	}
+
+	if existingConfigValues == nil {
+		var prevConfigFile string
+		if useAppDir {
+			prevConfigFile = filepath.Join(rootDir, application.Name, "upstream", "userdata", "config.yaml")
+		} else {
+			prevConfigFile = filepath.Join(rootDir, "upstream", "userdata", "config.yaml")
+		}
+		var err error
+		existingConfigValues, err = findConfigValuesInFile(prevConfigFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load existing config values")
 		}
 	}
 
 	config := findConfigInRelease(release)
-	if config != nil || existingConfig != nil {
+	if config != nil || existingConfigValues != nil {
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -332,11 +346,11 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfig *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
 	var newValues kotsv1beta1.ConfigValuesSpec
-	if existingConfig != nil {
+	if existingConfigValues != nil {
 		newValues = kotsv1beta1.ConfigValuesSpec{
-			Values: existingConfig.Spec.Values,
+			Values: existingConfigValues.Spec.Values,
 		}
 	} else {
 		newValues = kotsv1beta1.ConfigValuesSpec{
@@ -408,6 +422,28 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	}
 
 	return &configValues, nil
+}
+
+func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to open file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, nil
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
+		return obj.(*kotsv1beta1.ConfigValues), nil
+	}
+
+	return nil, nil
 }
 
 func findConfigInRelease(release *Release) *kotsv1beta1.Config {

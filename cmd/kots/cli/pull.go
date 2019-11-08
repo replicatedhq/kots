@@ -32,13 +32,12 @@ func PullCmd() *cobra.Command {
 			// strip it if included or else the rewrite images will fail
 
 			pullOptions := pull.PullOptions{
-				HelmRepoURI: v.GetString("repo"),
-				RootDir:     ExpandDir(v.GetString("rootdir")),
-				Namespace:   v.GetString("namespace"),
-				Downstreams: v.GetStringSlice("downstream"),
-				LocalPath:   ExpandDir(v.GetString("local-path")),
-				LicenseFile: ExpandDir(v.GetString("license-file")),
-				// ConfigFile:          TODO: specify existing config file here
+				HelmRepoURI:         v.GetString("repo"),
+				RootDir:             ExpandDir(v.GetString("rootdir")),
+				Namespace:           v.GetString("namespace"),
+				Downstreams:         v.GetStringSlice("downstream"),
+				LocalPath:           ExpandDir(v.GetString("local-path")),
+				LicenseFile:         ExpandDir(v.GetString("license-file")),
 				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
