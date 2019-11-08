@@ -254,7 +254,9 @@ export class Server extends ServerLoader {
   async $onReady() {
     this.expressApp.get("*", (req: Request, res: Response) => res.sendStatus(404));
 
-    if (process.env["S3_BUCKET_NAME"] !== "ship-pacts") {
+    if (process.env["S3_BUCKET_NAME"] === "ship-pacts") {
+      logger.info({msg: "Not creating bucket because the desired name is ship-pacts. Consider using a different bucket name to make this work."});
+    } else {
       logger.info({msg: "Ensuring bucket exists..."});
       const params = await Params.getParams();
       await ensureBucket(params, params.shipOutputBucket);
