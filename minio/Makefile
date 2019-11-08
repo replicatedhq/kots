@@ -8,7 +8,7 @@ publish:
 	docker push ${IMAGE}
 
 .PHONY: publish-latest
-publish-latest: IMAGE_TAG = latest
+publish-latest: IMAGE_TAG = alpha
 publish-latest: publish
 
 .PHONY: publish-release
