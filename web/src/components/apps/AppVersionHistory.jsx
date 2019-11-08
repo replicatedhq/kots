@@ -591,7 +591,7 @@ class AppVersionHistory extends Component {
               <div className="TableDiff--Wrapper flex-column flex1">
                 {/* Downstream version history */}
                 {versionHistory.length &&
-                  <table className="DownstreamVersionsTable u-position--relative">
+                  <table className={classNames("DownstreamVersionsTable u-position--relative", { "u-display--none": showDiffOverlay })}>
                     <thead className="separator">
                       <tr key="header">
                         {selectedDiffReleases && <th width="12px" />}
