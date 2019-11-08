@@ -39,6 +39,8 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsUser: 999 # the default 'postgres' user
       containers:
       - name: postgres
         image: postgres:10.7
