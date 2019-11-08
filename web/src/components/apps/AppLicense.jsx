@@ -11,6 +11,7 @@ import {
 import { graphql, compose, withApollo } from "react-apollo";
 import { getAppLicense, hasLicenseUpdates } from "@src/queries/AppsQueries";
 import { syncAppLicense } from "@src/mutations/AppsMutations";
+import { getFileContent } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
 class AppLicense extends Component {
@@ -47,7 +48,7 @@ class AppLicense extends Component {
   }
 
   onDrop = async (files) => {
-    const content = await files[0].text();
+    const content = await getFileContent(files[0]);
     const airgapLicense = yaml.safeLoad(content);
     const { appLicense } = this.state;
 

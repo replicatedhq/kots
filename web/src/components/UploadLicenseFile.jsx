@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import { uploadKotsLicense } from "../mutations/AppsMutations";
+import { getFileContent } from "../utilities/utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -84,19 +85,7 @@ class UploadLicenseFile extends React.Component {
   }
 
   onDrop = async (files) => {
-    const fileContent = new Promise((resolve, reject) => {
-      let content = "";
-      const reader = new FileReader();
-      reader.onloadend = function(e) {
-        content = e.target.result;
-        resolve(content);
-      };
-      reader.onerror = function(e) {
-        reject(e);
-      };
-      reader.readAsText(files[0]);
-    });
-    const content = await fileContent;
+    const content = await getFileContent(files[0]);
     this.setState({
       licenseFile: files[0],
       licenseValue: content,

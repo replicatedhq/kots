@@ -46,6 +46,27 @@ export function getWatchMetadata(watchMeta) {
 }
 
 /**
+ * Takes a system file and returns its content
+ *
+ * @param {Object} file the system file object
+ * @return {String}
+ */
+export function getFileContent(file) {
+  return new Promise((resolve, reject) => {
+    let content = "";
+    const reader = new FileReader();
+    reader.onloadend = function(e) {
+      content = e.target.result;
+      resolve(content);
+    };
+    reader.onerror = function(e) {
+      reject(e);
+    };
+    reader.readAsText(file);
+  });
+}
+
+/**
  * Retrieves the type of application via a watched app's metadata
  *
  * @param {Object} watch The watched application to check
