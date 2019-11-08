@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func postgresStatefulset(namespace string) *appsv1.StatefulSet {
@@ -49,7 +51,7 @@ func postgresStatefulset(namespace string) *appsv1.StatefulSet {
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
-						// RunAsUser: util.IntPointer(1001), // TODO: make real user #
+						RunAsUser: util.IntPointer(999),
 					},
 					Volumes: []corev1.Volume{
 						{
