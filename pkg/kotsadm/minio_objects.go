@@ -167,7 +167,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           "minio/minio:RELEASE.2019-05-14T23-57-45Z",
+							Image:           "minio/minio:RELEASE.2019-10-12T01-39-57Z",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{
@@ -348,7 +348,7 @@ func minioJob(namespace string) *batchv1.Job {
 									Value: "9000",
 								},
 							},
-							Image:           "minio/mc:RELEASE.2019-07-17T22-13-42Z",
+							Image:           "minio/mc:RELEASE.2019-10-09T22-54-57Z",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio-mc",
 							VolumeMounts: []corev1.VolumeMount{
