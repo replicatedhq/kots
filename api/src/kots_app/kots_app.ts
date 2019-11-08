@@ -206,7 +206,6 @@ export class KotsApp {
   async applyConfigValues(configPath: string, configContent: string, configValuesContent: string): Promise<KotsConfigGroup[]> {
     const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
 
-    console.log("++++templatedConfig", templatedConfig);
     if (!templatedConfig.spec || !templatedConfig.spec.groups) {
       throw new ReplicatedError("Config groups not found");
     }
