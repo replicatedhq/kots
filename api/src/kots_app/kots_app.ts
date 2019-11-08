@@ -449,7 +449,7 @@ export class KotsApp {
 
         extract.on("finish", () => {
           // Run kustomize
-          exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, (err, stdout, stderr) => {
+          exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, { maxBuffer: 1024 * 5000 }, (err, stdout, stderr) => {
             if (err) {
               logger.error({ msg: "err running kustomize", err, stderr })
               reject(err);
