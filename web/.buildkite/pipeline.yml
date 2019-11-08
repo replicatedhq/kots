@@ -20,8 +20,6 @@ steps:
       env:
         GIT_TAG: "${GIT_TAG}"
 
-  - wait
-
   - commands:
       - make -C web deps build-kotsadm
     label: "build-kotsadm"
