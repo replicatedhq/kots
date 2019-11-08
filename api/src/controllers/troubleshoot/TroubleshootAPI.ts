@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { putObject, getS3 } from "../../util/s3";
 import { Session } from "../../session";
+import { Stores } from "../../schema/stores";
 
 interface ErrorResponse {
   error: {};
@@ -96,11 +97,11 @@ export class TroubleshootAPI {
     response.send(200, parsedSpec);
   }
 
-  @Put("/:watchId/:supportBundleId")
+  @Put("/:appId/:supportBundleId")
   public async bundleUpload(
     @Res() response: Response,
     @Req() request: Request,
-    @PathParams("watchId") watchId: string,
+    @PathParams("appId") appId: string,
     @PathParams("supportBundleId") supportBundleId: string,
   ): Promise<any> {
     const bundleFile = request.app.locals.bundleFile;
@@ -123,8 +124,10 @@ export class TroubleshootAPI {
 
       logger.debug({ msg: `creating support bundle record with id ${supportBundleId} via upload callback` });
 
-      await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
-      await performAnalysis(supportBundleId, stores);
+      await stores.troubleshootStore.createSupportBundle(appId, fileInfo.ContentLength, supportBundleId);
+
+      const analyzers = await stores.troubleshootStore.tryGetAnalyzersForKotsApp(appId);
+      await performAnalysis(supportBundleId, analyzers, stores);
 
       analyzedBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
     } finally {
@@ -134,7 +137,7 @@ export class TroubleshootAPI {
   }
 
   @Post("/analyzebundle/:supportBundleId")
-  public async performAnalysis(
+  public async analyzeBundle(
     @Res() response: Response,
     @Req() request: Request,
     @PathParams("supportBundleId") supportBundleId: string,
@@ -148,7 +151,9 @@ export class TroubleshootAPI {
       return;
     }
 
-    await performAnalysis(supportBundleId, stores);
+    const b = await stores.troubleshootStore.getSupportBundle(supportBundleId);
+    const analyzers = await stores.troubleshootStore.tryGetAnalyzersForKotsApp(b.watchId);
+    await performAnalysis(supportBundleId, analyzers, stores);
     const analyzedBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
 
     response.send(200, analyzedBundle);
@@ -176,7 +181,7 @@ export class TroubleshootAPI {
     logger.debug({ msg: `creating support bundle record with id ${supportBundleId} via upload callback` });
 
     await stores.troubleshootStore.createSupportBundle(watchId, fileInfo.ContentLength, supportBundleId);
-    await performAnalysis(supportBundleId, stores);
+    await performAnalysis(supportBundleId, "", stores);
 
     response.send(204, "");
   }
@@ -207,13 +212,13 @@ export class TroubleshootAPI {
   }
 }
 
-async function performAnalysis(supportBundleId, stores) {
+async function performAnalysis(supportBundleId: string, analyzers: string, stores: Stores) {
   await stores.troubleshootStore.markSupportBundleUploaded(supportBundleId);
   const supportBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
   const dirTree = await supportBundle.generateFileTreeIndex();
   await stores.troubleshootStore.assignTreeIndex(supportBundleId, JSON.stringify(dirTree));
-  // Analyze it
-  await analyzeSupportBundle(supportBundleId, stores);
+
+  await analyzeSupportBundle(supportBundleId, analyzers, stores);
 }
 
 async function s3getBundle(bundleId, response) {

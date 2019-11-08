@@ -30,6 +30,8 @@ spec:
         type: text
       - name: preflight_spec
         type: text
+      - name: analyzer_spec
+        type: text
       - name: app_spec
         type: text
       - name: kots_app_spec

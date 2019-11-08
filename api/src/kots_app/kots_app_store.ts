@@ -33,7 +33,6 @@ export class KotsAppStore {
     };
   }
 
-
   async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
     const q = `update app_downstream set
       gitops_branch = $1,
@@ -174,6 +173,7 @@ export class KotsAppStore {
     updateCursor: string,
     encryptionKey: string,
     supportBundleSpec: any,
+    analyzersSpec: any,
     preflightSpec: any,
     appSpec: any,
     kotsAppSpec: any,
@@ -181,8 +181,9 @@ export class KotsAppStore {
     appTitle: string | null,
     appIcon: string | null
   ): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key, supportbundle_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`;
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key,
+        supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`;
     const v = [
       id,
       sequence,
@@ -192,6 +193,7 @@ export class KotsAppStore {
       updateCursor,
       encryptionKey,
       supportBundleSpec,
+      analyzersSpec,
       preflightSpec,
       appSpec,
       kotsAppSpec,

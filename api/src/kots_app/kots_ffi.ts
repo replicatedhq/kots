@@ -17,6 +17,7 @@ import {
   extractAppTitleFromTarball,
   extractAppIconFromTarball,
   extractKotsAppLicenseFromTarball,
+  extractAnalyzerSpecFromTarball,
 } from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
@@ -139,6 +140,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
 
       const installationSpec = await extractInstallationSpecFromTarball(buffer);
       const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+      const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
       const preflightSpec = await extractPreflightSpecFromTarball(buffer);
       const appSpec = await extractAppSpecFromTarball(buffer);
       const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
@@ -147,18 +149,19 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
       const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
 
       await stores.kotsAppStore.createMidstreamVersion(
-        app.id, 
-        newSequence, 
-        installationSpec.versionLabel, 
-        installationSpec.releaseNotes, 
-        installationSpec.cursor, 
+        app.id,
+        newSequence,
+        installationSpec.versionLabel,
+        installationSpec.releaseNotes,
+        installationSpec.cursor,
         installationSpec.encryptionKey,
-        supportBundleSpec, 
-        preflightSpec, 
-        appSpec, 
-        kotsAppSpec, 
+        supportBundleSpec,
+        analyzersSpec,
+        preflightSpec,
+        appSpec,
+        kotsAppSpec,
         kotsAppLicense,
-        appTitle, 
+        appTitle,
         appIcon
       );
 
@@ -244,6 +247,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     const installationSpec = await extractInstallationSpecFromTarball(buffer);
 
     const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+    const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
     const appSpec = await extractAppSpecFromTarball(buffer);
     const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
@@ -253,18 +257,19 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     kotsApp.hasPreflight = !!preflightSpec;
 
     await stores.kotsAppStore.createMidstreamVersion(
-      kotsApp.id, 
-      0, 
-      installationSpec.versionLabel, 
-      installationSpec.releaseNotes, 
-      installationSpec.cursor, 
+      kotsApp.id,
+      0,
+      installationSpec.versionLabel,
+      installationSpec.releaseNotes,
+      installationSpec.cursor,
       installationSpec.encryptionKey,
-      supportBundleSpec, 
-      preflightSpec, 
-      appSpec, 
-      kotsAppSpec, 
+      supportBundleSpec,
+      analyzersSpec,
+      preflightSpec,
+      appSpec,
+      kotsAppSpec,
       kotsAppLicense,
-      appTitle, 
+      appTitle,
       appIcon
     );
 
@@ -357,6 +362,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
 
   const installationSpec = await extractInstallationSpecFromTarball(buffer);
   const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+  const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
   const appSpec = await extractAppSpecFromTarball(buffer);
   const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
@@ -365,18 +371,19 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
 
   await stores.kotsAppStore.createMidstreamVersion(
-    app.id, 
-    0, 
-    installationSpec.versionLabel, 
-    installationSpec.releaseNotes, 
-    installationSpec.cursor, 
+    app.id,
+    0,
+    installationSpec.versionLabel,
+    installationSpec.releaseNotes,
+    installationSpec.cursor,
     installationSpec.encryptionKey,
-    supportBundleSpec, 
-    preflightSpec, 
-    appSpec, 
-    kotsAppSpec, 
+    supportBundleSpec,
+    analyzersSpec,
+    preflightSpec,
+    appSpec,
+    kotsAppSpec,
     kotsAppLicense,
-    appTitle, 
+    appTitle,
     appIcon
   );
 
