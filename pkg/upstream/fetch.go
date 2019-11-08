@@ -9,6 +9,8 @@ import (
 )
 
 type FetchOptions struct {
+	RootDir      string
+	UseAppDir    bool
 	HelmRepoName string
 	HelmRepoURI  string
 	HelmOptions  []string
@@ -39,7 +41,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.ConfigValues)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
