@@ -138,65 +138,84 @@ func UpdateCheck(socket, fromArchivePath string) {
 }
 
 //export GetLatestLicense
-func GetLatestLicense(licenseData string) *C.char {
-	kotsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseData), nil, nil)
-	if err != nil {
-		fmt.Printf("failed to decode license data: %s\n", err.Error())
-		return C.CString("")
-	}
-	license := obj.(*kotsv1beta1.License)
+func GetLatestLicense(socket, licenseData string) {
+	go func() {
+		var ffiResult *FFIResult
 
-	u, err := url.Parse(license.Spec.Endpoint)
-	if err != nil {
-		fmt.Printf("failed to parse endpoint from license: %s\n", err.Error())
-		return C.CString("")
-	}
+		statusClient, err := connectToStatusServer(socket)
+		if err != nil {
+			fmt.Printf("failed to connect to status server: %s\n", err)
+			return
+		}
+		defer func() {
+			statusClient.end(ffiResult)
+		}()
 
-	hostname := u.Hostname()
-	if u.Port() != "" {
-		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-	}
+		kotsscheme.AddToScheme(scheme.Scheme)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(licenseData), nil, nil)
+		if err != nil {
+			fmt.Printf("failed to decode license data: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		license := obj.(*kotsv1beta1.License)
 
-	url := fmt.Sprintf("%s://%s/release/%s/license", u.Scheme, hostname, license.Spec.AppSlug)
+		u, err := url.Parse(license.Spec.Endpoint)
+		if err != nil {
+			fmt.Printf("failed to parse endpoint from license: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Printf("failed to call newrequest: %s\n", err.Error())
-		return C.CString("")
-	}
+		hostname := u.Hostname()
+		if u.Port() != "" {
+			hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+		}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+		url := fmt.Sprintf("%s://%s/release/%s/license", u.Scheme, hostname, license.Spec.AppSlug)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Printf("failed to execute get request: %s\n", err.Error())
-		return C.CString("")
-	}
-	defer resp.Body.Close()
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			fmt.Printf("failed to call newrequest: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	if resp.StatusCode >= 400 {
-		fmt.Printf("unexpected result from get request: %d\n", resp.StatusCode)
-		return C.CString("")
-	}
+		req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("failed to load response")
-		return C.CString("")
-	}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			fmt.Printf("failed to execute get request: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		defer resp.Body.Close()
 
-	obj, _, err = decode(body, nil, nil)
-	if err != nil {
-		fmt.Printf("failed to decode latest license data: %s\n", err.Error())
-		return C.CString("")
-	}
-	latestLicense := obj.(*kotsv1beta1.License)
+		if resp.StatusCode >= 400 {
+			fmt.Printf("unexpected result from get request: %d\n", resp.StatusCode)
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	marshalledLicense := upstream.MustMarshalLicense(latestLicense)
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("failed to load response")
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
-	return C.CString(string(marshalledLicense))
+		obj, _, err = decode(body, nil, nil)
+		if err != nil {
+			fmt.Printf("failed to decode latest license data: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+		latestLicense := obj.(*kotsv1beta1.License)
+
+		marshalledLicense := upstream.MustMarshalLicense(latestLicense)
+		ffiResult = NewFFIResult(1).WithData(string(marshalledLicense))
+	}()
 }
 
 //export VerifyAirgapLicense
@@ -206,13 +225,13 @@ func VerifyAirgapLicense(licenseData string) *C.char {
 	obj, _, err := decode([]byte(licenseData), nil, nil)
 	if err != nil {
 		fmt.Printf("failed to decode license data: %s\n", err.Error())
-		return C.CString("")
+		return nil
 	}
 	license := obj.(*kotsv1beta1.License)
 
 	if err := pull.VerifySignature(license); err != nil {
 		fmt.Printf("failed to verify airgap license signature: %s\n", err.Error())
-		return C.CString("")
+		return nil
 	}
 
 	return C.CString("verified")
