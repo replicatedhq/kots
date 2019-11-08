@@ -7,12 +7,13 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(configPath string, configData string, configValuesData string) (string, error) {
+func TemplateConfig(log *logger.Logger, configPath string, configData string, configValuesData string) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
@@ -34,7 +35,8 @@ func TemplateConfig(configPath string, configData string, configValuesData strin
 	// get template context from config values
 	templateContext, err := base.UnmarshalConfigValuesContent([]byte(configValuesData))
 	if err != nil {
-		return "", errors.Wrap(err, "failed to unmarshal config values")
+		log.Error(err)
+		templateContext = map[string]template.ItemValue{}
 	}
 
 	// add config context

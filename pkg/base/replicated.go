@@ -25,10 +25,11 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 		if c.Path == "userdata/config.yaml" {
 			ctx, err := UnmarshalConfigValuesContent(c.Content)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to unmarshal config values content")
+				renderOptions.Log.Error(err)
+				templateContext = map[string]template.ItemValue{}
+			} else {
+				templateContext = ctx
 			}
-
-			templateContext = ctx
 		}
 	}
 
