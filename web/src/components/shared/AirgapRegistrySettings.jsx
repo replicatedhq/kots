@@ -2,8 +2,8 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Loader from "../shared/Loader";
-import { Utilities } from "../../utilities/utilities";
 import { getAppRegistryDetails } from "@src/queries/AppsQueries";
+import { validateRegistryInfo } from "@src/queries/UserQueries";
 import { updateRegistryDetails } from "@src/mutations/AppsMutations";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
@@ -25,7 +25,10 @@ class AirgapRegistrySettings extends Component {
       username,
       password,
       namespace,
-      lastSync: null
+      lastSync: null,
+      testInProgress: false,
+      testFailed: false,
+      testMessage: "",
     }
   }
 
@@ -48,8 +51,41 @@ class AirgapRegistrySettings extends Component {
   }
 
   testRegistryConnection = () => {
-    // TODO: set last sync and connection uri
-    console.log("implement test");
+    this.setState({
+      testInProgress: true,
+      testMessage: "",
+    });
+
+    this.props.client.query({
+      query: validateRegistryInfo,
+      variables: {
+        endpoint: this.state.hostname,
+        username: this.state.username,
+        password: this.state.password,
+        org: this.state.namespace,
+      }
+    }).then(result => {
+      if (result.data.validateRegistryInfo) {
+        this.setState({
+          testInProgress: false,
+          testMessage: result.data.validateRegistryInfo,
+          testFailed: true,
+        });
+      } else {
+        this.setState({
+          testInProgress: false,
+          testMessage: "Success!",
+          testFailed: false,
+          lastSync: new Date(),
+        });
+      }
+    }).catch(err => {
+      this.setState({
+        testInProgress: false,
+        testMessage: String(err),
+        testFailed: true,
+      });
+    });
   }
 
   handleFormChange = (field, val) => {
@@ -77,7 +113,7 @@ class AirgapRegistrySettings extends Component {
 
   render() {
     const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
-    const { hostname, password, username, namespace, lastSync } = this.state;
+    const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
     if (getKotsAppRegistryQuery?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -87,6 +123,16 @@ class AirgapRegistrySettings extends Component {
     }
 
     const namespaceSubtext = namespaceDescription || "Changing the namespace will rewrite all of your airgap images and push them to your registry."
+
+    let testStatusText = "";
+    if (testInProgress) {
+      testStatusText = "Testing...";
+    } else if (lastSync) {
+      testStatusText = testMessage;
+    } else {
+      // TODO: this will always be displayed when page is refreshed
+      testStatusText = "Connection has not been tested";
+    }
 
     return (
       <div>
@@ -120,7 +166,11 @@ class AirgapRegistrySettings extends Component {
                   </div>
                 }
               </div>
-              <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{lastSync ? `Last connection test on ${Utilities.dateFormat(lastSync, "MMMM D, YYYY")}`: "Connection has not been tested"}</p>
+              {testFailed ?
+                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{testStatusText}</p>
+              :
+                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{testStatusText}</p>
+              }
             </div>
           }
           <div className="flex u-marginBottom--5">
