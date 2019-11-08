@@ -100,3 +100,19 @@ export const setPrometheusAddress = gql`
     setPrometheusAddress(value: $value)
   }
 `;
+
+export const syncAppLicense = gql`
+  mutation syncAppLicense($appSlug: String!, $airgapLicense: String) {
+    syncAppLicense(appSlug: $appSlug, airgapLicense: $airgapLicense) {
+      id
+      expiresAt
+      channelName
+      licenseSequence
+      entitlements {
+        title
+        value
+        label
+      }
+    }
+  }
+`;

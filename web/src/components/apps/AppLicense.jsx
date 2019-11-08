@@ -1,12 +1,16 @@
 import React, { Component } from "react";
 import Helmet from "react-helmet";
+import Dropzone from "react-dropzone";
+import yaml from "js-yaml";
+import classNames from "classnames";
 
 import {
   getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
 import { graphql, compose, withApollo } from "react-apollo";
-import { getAppLicense } from "@src/queries/AppsQueries";
+import { getAppLicense, hasLicenseUpdates } from "@src/queries/AppsQueries";
+import { syncAppLicense } from "@src/mutations/AppsMutations";
 import Loader from "../shared/Loader";
 
 class AppLicense extends Component {
@@ -15,28 +19,127 @@ class AppLicense extends Component {
     super(props);
 
     this.state = {
-      appLicense: null
+      appLicense: null,
+      loading: false,
+      hasUpdates: false,
+      airgapLicense: "",
+      message: "",
+      messageType: "info"
     }
   }
 
   componentDidMount() {
-    const { getAppLicense } = this.props.getAppLicense;
-    if (getAppLicense) {
-      this.setState({ appLicense: getAppLicense });
-    }
+    this.getAppLicense();
   }
 
-  componentDidUpdate(lastProps) {
-    if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
-      const { getAppLicense } = this.props.getAppLicense;
-      if (getAppLicense) {
-        this.setState({ appLicense: getAppLicense });
+  getAppLicense = () => {
+    const { app } = this.props;
+    this.props.client.query({
+      query: getAppLicense,
+      fetchPolicy: "no-cache",
+      variables: {
+        appId: app.id,
       }
+    })
+    .then(response => {
+      this.setState({ appLicense: response.data.getAppLicense });
+    });
+  }
+
+  onDrop = async (files) => {
+    const content = await files[0].text();
+    const airgapLicense = yaml.safeLoad(content);
+    const { appLicense } = this.state;
+
+    if (airgapLicense.spec?.licenseID !== appLicense?.id) {
+      this.setState({
+        message: "Licenses do not match",
+        messageType: "error",
+        hasUpdates: false
+      });
+      return;
     }
+
+    if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
+      this.setState({
+        message: "License is up to date",
+        messageType: "info",
+        hasUpdates: false
+      });
+      return;
+    }
+
+    this.setState({
+      message: "",
+      messageType: "info",
+      airgapLicense: content,
+      hasUpdates: true
+    });
+  }
+
+  checkForUpdates = () => {
+    this.setState({ loading: true, message: "", messageType: "info" });
+
+    const { app } = this.props;
+    this.props.client.query({
+      query: hasLicenseUpdates,
+      fetchPolicy: "no-cache",
+      variables: {
+        appSlug: app.slug,
+      }
+    })
+    .then(response => {
+      const hasUpdates = response.data.hasLicenseUpdates;
+      this.setState({
+        message: !hasUpdates ? "License is up to date" : "",
+        messageType: "info",
+        hasUpdates
+      });
+    })
+    .catch(err => {
+      console.log(err);
+      err.graphQLErrors.map(({ msg }) => {
+        this.setState({ message: msg, messageType: "error" });
+      });
+    })
+    .finally(() => {
+      this.setState({ loading: false });
+    });
+  }
+
+  syncAppLicense = () => {
+    this.setState({ loading: true, message: "", messageType: "info" });
+
+    const { app } = this.props;
+    const { airgapLicense } = this.state;
+    this.props.syncAppLicense(app.slug, app.isAirgap ? airgapLicense : "")
+      .then(response => {
+        this.setState({ 
+          appLicense: response.data.syncAppLicense,
+          hasUpdates: false,
+          airgapLicense: "",
+          message: "License is up to date",
+          messageType: "info",
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({
+            message: msg,
+            messageType: "error",
+            hasUpdates: false,
+            airgapLicense: ""
+          });
+        });
+      })
+      .finally(() => {
+        this.setState({ loading: false });
+      });
   }
 
   render() {
-    const { appLicense } = this.state;
+    const { appLicense, hasUpdates, loading, message, messageType } = this.state;
 
     if (!appLicense) {
       return (
@@ -78,6 +181,33 @@ class AppLicense extends Component {
                 </div>
               );
             })}
+            {hasUpdates ?
+              <div className="flex-column u-marginBottom--20">
+                <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Applying" : "Apply updates"}</button>
+                <div className="flex u-color--orange alignItems--center">
+                  <span className="icon exclamationMark--icon u-marginRight--5" />
+                  Updates available
+                </div>
+              </div>
+              :
+              app.isAirgap ?
+              <Dropzone
+                  className="Dropzone-wrapper"
+                  accept={["application/x-yaml", ".yaml", ".yml"]}
+                  onDropAccepted={this.onDrop}
+                  multiple={false}
+                >
+                <button className="btn secondary green u-marginBottom--10">Upload license</button>
+              </Dropzone> 
+              :
+              <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.checkForUpdates}>{loading ? "Checking" : "Check for updates"}</button>
+            }
+            {message && 
+              <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
+                "u-color--red": messageType === "error",
+                "u-color--tuna": messageType === "info",
+              })}>{message}</p>
+            }
           </div>
         </div>
       </div>
@@ -87,15 +217,9 @@ class AppLicense extends Component {
 
 export default compose(
   withApollo,
-  graphql(getAppLicense, {
-    name: "getAppLicense",
-    options: props => {
-      return {
-        variables: {
-          appId: props.app.id
-        },
-        fetchPolicy: "no-cache"
-      };
-    }
+  graphql(syncAppLicense, {
+    props: ({ mutate }) => ({
+      syncAppLicense: (appSlug, airgapLicense) => mutate({ variables: { appSlug, airgapLicense } })
+    })
   })
 )(AppLicense);

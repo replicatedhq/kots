@@ -301,7 +301,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug" render={() =>
                       <Dashboard
                         app={app}
-                        cluster={app.downstreams[0]?.cluster}
+                        cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
                         refetchListApps={refetchListApps}
                         refetchWatch={this.props.getKotsAppQuery?.refetch}
                         updateCallback={this.refetchGraphQLData}

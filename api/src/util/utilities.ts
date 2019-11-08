@@ -41,6 +41,10 @@ export function getLicenseInfoFromYaml(licenseData): KLicense {
       license.expiresAt = spec.entitlements.expires_at.value;
     }
 
+    if (spec.licenseSequence) {
+      license.licenseSequence = spec.licenseSequence;
+    }
+
     const entitlements: KEntitlement[] = [];
     if (spec.entitlements) {
       const keys = Object.keys(spec.entitlements);

@@ -45,6 +45,7 @@ export const Query = `
     getLatestWatchLicense(licenseId: String!): License
 
     getAppLicense(appId: String!): KLicense
+    hasLicenseUpdates(appSlug: String!): Boolean!
 
     watchContributors(id: String!): [Contributor]
     getWatchVersion(id: String!, sequence: Int): VersionDetail

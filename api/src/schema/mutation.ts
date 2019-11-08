@@ -26,6 +26,7 @@ type Mutation {
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
+  syncAppLicense(appSlug: String!, airgapLicense: String): KLicense
 
   createWatch(stateJSON: String!): Watch
   updateWatch(watchId: String!, watchName: String, iconUri: String): Watch

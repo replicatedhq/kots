@@ -21,7 +21,7 @@ import {
 } from "../util/tar";
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
-import yaml from "js-yaml";
+import yaml, { dump } from "js-yaml";
 import { StatusServer } from "../airgap/status";
 import { getDiffSummary } from "../util/utilities";
 import { ReplicatedError } from "../server/errors";
@@ -42,6 +42,8 @@ function kots() {
     TemplateConfig: [GoString, [GoString, GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
+    GetLatestLicense: [GoString, [GoString, GoString]],
+    VerifyAirgapLicense: [GoString, [GoString]],
   });
 }
 
@@ -479,8 +481,7 @@ export async function kotsTemplateConfig(configPath: string, configContent: stri
 
   const templatedConfig = kots().TemplateConfig(configPathParam, configDataParam, configValuesDataParam);
   if (templatedConfig == "" || templatedConfig["p"] == "") {
-    console.log("failed to template config");
-    return false;
+    throw new ReplicatedError("failed to template config");
   }
 
   try {
@@ -524,4 +525,55 @@ export async function kotsDecryptString(cipherString: string, message: string): 
   }
 
   return decrypted["p"];
+}
+
+export async function getLatestLicense(licenseData: string): Promise<string> {
+  const tmpDir = tmp.dirSync();
+  try {
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const licenseDataParam = new GoString();
+    licenseDataParam["p"] = licenseData;
+    licenseDataParam["n"] = String(licenseData).length;
+
+    kots().GetLatestLicense(socketParam, licenseDataParam);
+
+    let license = "";
+    await statusServer.connection();
+    await statusServer.termination((resolve, reject, obj): boolean => {
+      // Return true if completed
+      if (obj.status === "terminated") {
+        license = obj.data;
+        if (obj.exit_code !== -1) {
+          resolve();
+        } else {
+          reject(new ReplicatedError("failed to get latest license"));
+        }
+        return true;
+      }
+      return false;
+    });
+
+    return license;
+  } finally {
+    tmpDir.removeCallback();
+  }
+}
+
+export async function verifyAirgapLicense(licenseData: string): Promise<boolean> {
+  const licenseDataParam = new GoString();
+  licenseDataParam["p"] = licenseData;
+  licenseDataParam["n"] = String(licenseData).length;
+
+  const license = kots().VerifyAirgapLicense(licenseDataParam);
+  if (license == "" || license["p"] == null) {
+    throw new ReplicatedError("failed to verify airgap license signature");
+  }
+
+  return license["p"] === "verified";
 }

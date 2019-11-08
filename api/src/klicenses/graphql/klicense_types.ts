@@ -11,6 +11,7 @@ type KLicense {
   id: String
   expiresAt: String
   channelName: String
+  licenseSequence: Int
   entitlements: [KEntitlement]
 }`;
 

@@ -634,12 +634,19 @@ export const getAppLicense = gql`
       id
       expiresAt
       channelName
+      licenseSequence
       entitlements {
         title
         value
         label
       }
     }
+  }
+`;
+
+export const hasLicenseUpdates = gql`
+  query hasLicenseUpdates($appSlug: String!) {
+    hasLicenseUpdates(appSlug: $appSlug)
   }
 `;
 
