@@ -283,6 +283,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		SplitMultiDocYAML: true,
 		Namespace:         pullOptions.Namespace,
 		HelmOptions:       pullOptions.HelmOptions,
+		Log:               log,
 	}
 	log.ActionWithSpinner("Creating base")
 	b, err := base.RenderUpstream(u, &renderOptions)

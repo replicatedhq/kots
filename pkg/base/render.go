@@ -2,6 +2,7 @@ package base
 
 import (
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
 )
 
@@ -9,6 +10,7 @@ type RenderOptions struct {
 	SplitMultiDocYAML bool
 	Namespace         string
 	HelmOptions       []string
+	Log               *logger.Logger
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required

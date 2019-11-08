@@ -20,11 +20,14 @@ func NewLogger() *Logger {
 }
 
 func (l *Logger) Silence() {
+	if l == nil {
+		return
+	}
 	l.isSilent = true
 }
 
 func (l *Logger) Initialize() {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -32,7 +35,7 @@ func (l *Logger) Initialize() {
 }
 
 func (l *Logger) Finish() {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -40,7 +43,7 @@ func (l *Logger) Finish() {
 }
 
 func (l *Logger) Info(msg string, args ...interface{}) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -50,7 +53,7 @@ func (l *Logger) Info(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -64,7 +67,7 @@ func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -73,7 +76,7 @@ func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -103,7 +106,7 @@ func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -133,7 +136,7 @@ func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
 }
 
 func (l *Logger) FinishChildSpinner() {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -150,7 +153,7 @@ func (l *Logger) FinishChildSpinner() {
 }
 
 func (l *Logger) FinishSpinner() {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -167,7 +170,7 @@ func (l *Logger) FinishSpinner() {
 }
 
 func (l *Logger) FinishSpinnerWithError() {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
@@ -184,7 +187,7 @@ func (l *Logger) FinishSpinnerWithError() {
 }
 
 func (l *Logger) Error(err error) {
-	if l.isSilent {
+	if l == nil || l.isSilent {
 		return
 	}
 
