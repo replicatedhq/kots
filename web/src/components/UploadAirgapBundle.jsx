@@ -275,7 +275,7 @@ class UploadAirgapBundle extends React.Component {
               <div className="flex">
                 {logo
                 ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
-                : !fetchingMetadata ? <span className="icon ship-login-icon u-marginRight--10" />
+                : !fetchingMetadata ? <span className="icon kots-login-icon u-marginRight--10" />
                 : <span style={{ width: "60px", height: "60px" }} />
                 }
                 <span className="icon airgapBundleIcon" />
