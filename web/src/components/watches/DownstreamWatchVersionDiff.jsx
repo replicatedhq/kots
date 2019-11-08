@@ -212,7 +212,7 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     if (fileLoading || size(firstSeqFileContents) === 0 || size(secondSeqFileContents) === 0) {
       return (
-        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center">
+        <div className="u-height--full u-width--full flex alignItems--center justifyContent--center u-marginTop--15">
           <Loader size="60" />
         </div>
       );
