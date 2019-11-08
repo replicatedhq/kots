@@ -27,7 +27,7 @@ export async function analyzeSupportBundle(supportBundleId: string, analyzerSpec
   // Download the support bundle to a temp file
   // and pass that into the analyze function
 
-  const parsedSpec = jsYaml.load(analyzerSpec || "{spec: []}");
+  const parsedSpec = jsYaml.load(analyzerSpec || "");
   const injectedSpec = await injectKotsAnalyzers(parsedSpec);
   const tmpDir = tmp.dirSync();
   const archive = path.join(tmpDir.name, "support-bundle.tar.gz");
@@ -53,8 +53,8 @@ export async function analyzeSupportBundle(supportBundleId: string, analyzerSpec
         bundleURLParam["n"] = archive.length;
 
         const analyzersParam = new GoString();
-        analyzersParam["p"] = jsYaml.dump(injectedSpec);
-        analyzersParam["n"] = jsYaml.dump(injectedSpec).length;
+        analyzersParam["p"] = injectedSpec ? jsYaml.dump(injectedSpec) : "";
+        analyzersParam["n"] = injectedSpec ? jsYaml.dump(injectedSpec).length : 0;
 
         const outputFormatParam = new GoString();
         outputFormatParam["p"] = "json";
