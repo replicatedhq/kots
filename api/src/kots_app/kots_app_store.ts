@@ -958,6 +958,12 @@ export class KotsAppStore {
     }
   }
 
+  async updateKotsAppLicense(appId: string, license: string): Promise<void> {
+    const q = `update app set license = $1 where id = $2`;
+    const v = [license, appId];
+    await this.pool.query(q, v);
+  }
+
   async updateApp(id: string, appName?: string, iconUri?: string) {
     const pg = await this.pool.connect();
 
