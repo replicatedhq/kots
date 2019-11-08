@@ -3,7 +3,7 @@ import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
-import { kotsTemplateConfig } from "./kots_ffi";
+import { kotsTemplateConfig, kotsEncryptString } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
@@ -19,8 +19,6 @@ import { putObject } from "../util/s3";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 import { ApplicationSpec } from "./kots_app_spec";
-
-const Cryptr = require('cryptr');
 
 export class KotsApp {
   id: string;
@@ -258,17 +256,16 @@ export class KotsApp {
 
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const encryptionKey = await stores.kotsAppStore.getAppEncryptionKey(appId, sequence);
-      let cryptr;
-      if (encryptionKey !== "") {
-        cryptr = new Cryptr(encryptionKey);;
-      }
 
-      updatedConfigGroups.forEach(group => {
-        group.items.forEach(async item => {
+      for (let g = 0; g < updatedConfigGroups.length; g++) {
+        const group = updatedConfigGroups[g];
+        for (let i = 0; i < group.items.length; i++) {
+          const item = group.items[i];
           if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
             if (item.type === "password") {
+              const passwordValue = encryptionKey !== "" ? await kotsEncryptString(encryptionKey, item.value) : item.value;
               const configVal = {
-                value: cryptr ? cryptr.encrypt(item.value) : item.value,
+                value: passwordValue,
               };
               configValues[item.name] = configVal;
             } else {
@@ -283,8 +280,8 @@ export class KotsApp {
               configValues[item.name] = configVal;
             }
           }
-        });
-      });
+        }
+      }
 
       files.files[configValuesPath] = yaml.safeDump(parsedConfigValues);
 

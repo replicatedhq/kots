@@ -31,7 +31,6 @@
     "common-tags": "^1.8.0",
     "concat-stream": "^2.0.0",
     "cors": "^2.8.5",
-    "cryptr": "^4.0.2",
     "date-fns": "^1.29.0",
     "diff": "^4.0.1",
     "etcd3": "^0.2.13",
