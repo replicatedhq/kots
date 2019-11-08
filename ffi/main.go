@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 
@@ -161,19 +160,7 @@ func GetLatestLicense(socket, licenseData string) {
 		}
 		license := obj.(*kotsv1beta1.License)
 
-		u, err := url.Parse(license.Spec.Endpoint)
-		if err != nil {
-			fmt.Printf("failed to parse endpoint from license: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-
-		hostname := u.Hostname()
-		if u.Port() != "" {
-			hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-		}
-
-		url := fmt.Sprintf("%s://%s/release/%s/license", u.Scheme, hostname, license.Spec.AppSlug)
+		url := fmt.Sprintf("%s/release/%s/license", license.Spec.Endpoint, license.Spec.AppSlug)
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
