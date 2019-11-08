@@ -109,7 +109,7 @@ class SecureAdminConsole extends React.Component {
             <div className="flex-column alignItems--center">
               {logo
               ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
-              : !fetchingMetadata ? <span className="icon ship-login-icon" />
+              : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in to {appName}</p>

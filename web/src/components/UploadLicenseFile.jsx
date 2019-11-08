@@ -84,7 +84,19 @@ class UploadLicenseFile extends React.Component {
   }
 
   onDrop = async (files) => {
-    const content = await files[0].text();
+    const fileContent = new Promise((resolve, reject) => {
+      let content = "";
+      const reader = new FileReader();
+      reader.onloadend = function(e) {
+        content = e.target.result;
+        resolve(content);
+      };
+      reader.onerror = function(e) {
+        reject(e);
+      };
+      reader.readAsText(files[0]);
+    });
+    const content = await fileContent;
     this.setState({
       licenseFile: files[0],
       licenseValue: content,
@@ -111,7 +123,7 @@ class UploadLicenseFile extends React.Component {
             <div className="flex-column alignItems--center">
               {logo
               ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
-              : !fetchingMetadata ? <span className="icon ship-login-icon" />
+              : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your license file</p>

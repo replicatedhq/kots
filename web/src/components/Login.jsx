@@ -70,8 +70,8 @@ class Login extends React.Component {
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto" style={scmLeadsStyle}>
           <div className="flex-auto flex-column login-form-wrapper justifyContent--center">
-            <div className="flex">
-              <span className="icon ship-login-icon"></span>
+            <div className="flex-column">
+              <span className="icon kots-login-icon"></span>
               <p className="login-text u-color--tuna u-fontWeight--bold">Log in</p>
             </div>
             {traditionalAuth ?

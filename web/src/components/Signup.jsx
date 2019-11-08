@@ -37,8 +37,8 @@ class Signup extends React.Component {
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper justifyContent--center">
-            <div className="flex">
-              <span className="icon ship-login-icon"></span>
+            <div className="flex-column">
+              <span className="icon kots-login-icon"></span>
               <p className="login-text u-color--tuna u-fontWeight--bold">Sign up</p>
             </div>
             <button type="button" className={`btn auth traditional u-marginTop--20`} onClick={() => this.props.history.push("/login")}>
