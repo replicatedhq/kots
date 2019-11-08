@@ -120,7 +120,7 @@ export async function setKotsCollectorsNamespaces(parsedSpec: any): Promise<any>
   return parsedSpec;
 }
 
-function getCollectorNamespace(): String {
+export function getCollectorNamespace(): String {
   if (process.env["DEV_NAMESPACE"]) {
     return String(process.env["DEV_NAMESPACE"]);
   }
