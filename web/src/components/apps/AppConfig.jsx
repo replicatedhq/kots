@@ -78,12 +78,12 @@ class AppConfig extends Component {
           } else {
             history.replace(`/app/${slug}`);
           }
+        } else {
+          this.setState({ savingConfig: false, changed: false });
         }
       })
       .catch((error) => {
         console.log(error);
-      })
-      .finally(() => {
         this.setState({ savingConfig: false });
       });
   }
