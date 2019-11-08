@@ -90,7 +90,7 @@ func verify(message, signature, publicKeyPEM []byte) error {
 
 func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	// JSON marshaller will sort map keys automatically.
-	fields := map[string]interface{}{
+	fields := map[string]string{
 		"apiVersion":             license.APIVersion,
 		"kind":                   license.Kind,
 		"metadata.name":          license.GetObjectMeta().GetName(),
@@ -102,7 +102,7 @@ func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	}
 
 	if license.Spec.LicenseSequence > 0 {
-		fields["spec.licenseSequence"] = license.Spec.LicenseSequence
+		fields["spec.licenseSequence"] = fmt.Sprintf("%d", license.Spec.LicenseSequence)
 	}
 
 	for k, v := range license.Spec.Entitlements {
