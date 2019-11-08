@@ -28,7 +28,7 @@ type KeySignature struct {
 	GlobalKeyId string `json:"globalKeyId"`
 }
 
-func verifySignature(license *kotsv1beta1.License) error {
+func VerifySignature(license *kotsv1beta1.License) error {
 	signature := &Signature{}
 	if err := json.Unmarshal(license.Spec.Signature, signature); err != nil {
 		// old licenses's signature is a single space character
@@ -90,7 +90,7 @@ func verify(message, signature, publicKeyPEM []byte) error {
 
 func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	// JSON marshaller will sort map keys automatically.
-	fields := map[string]string{
+	fields := map[string]interface{}{
 		"apiVersion":             license.APIVersion,
 		"kind":                   license.Kind,
 		"metadata.name":          license.GetObjectMeta().GetName(),
@@ -99,6 +99,10 @@ func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 		"spec.channelName":       license.Spec.ChannelName,
 		"spec.endpoint":          license.Spec.Endpoint,
 		"spec.isAirgapSupported": fmt.Sprintf("%t", license.Spec.IsAirgapSupported),
+	}
+
+	if license.Spec.LicenseSequence > 0 {
+		fields["spec.licenseSequence"] = license.Spec.LicenseSequence
 	}
 
 	for k, v := range license.Spec.Entitlements {

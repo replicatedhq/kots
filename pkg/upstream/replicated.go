@@ -115,7 +115,7 @@ func downloadReplicated(u *url.URL, localPath string, license *kotsv1beta1.Licen
 
 	// Add the license to the upstream, if one was propvided
 	if license != nil {
-		release.Manifests["userdata/license.yaml"] = mustMarshalLicense(license)
+		release.Manifests["userdata/license.yaml"] = MustMarshalLicense(license)
 	}
 
 	files, err := releaseToFiles(release)
@@ -304,7 +304,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func mustMarshalLicense(license *kotsv1beta1.License) []byte {
+func MustMarshalLicense(license *kotsv1beta1.License) []byte {
 	kotsscheme.AddToScheme(scheme.Scheme)
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)

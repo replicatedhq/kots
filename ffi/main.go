@@ -3,8 +3,11 @@ package main
 import "C"
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
 
@@ -13,6 +16,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -131,6 +135,87 @@ func UpdateCheck(socket, fromArchivePath string) {
 
 		ffiResult = NewFFIResult(1)
 	}()
+}
+
+//export GetLatestLicense
+func GetLatestLicense(licenseData string) *C.char {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseData), nil, nil)
+	if err != nil {
+		fmt.Printf("failed to decode license data: %s\n", err.Error())
+		return C.CString("")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	u, err := url.Parse(license.Spec.Endpoint)
+	if err != nil {
+		fmt.Printf("failed to parse endpoint from license: %s\n", err.Error())
+		return C.CString("")
+	}
+
+	hostname := u.Hostname()
+	if u.Port() != "" {
+		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+	}
+
+	url := fmt.Sprintf("%s://%s/release/%s/license", u.Scheme, hostname, license.Spec.AppSlug)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("failed to call newrequest: %s\n", err.Error())
+		return C.CString("")
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("failed to execute get request: %s\n", err.Error())
+		return C.CString("")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		fmt.Printf("unexpected result from get request: %d\n", resp.StatusCode)
+		return C.CString("")
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("failed to load response")
+		return C.CString("")
+	}
+
+	obj, _, err = decode(body, nil, nil)
+	if err != nil {
+		fmt.Printf("failed to decode latest license data: %s\n", err.Error())
+		return C.CString("")
+	}
+	latestLicense := obj.(*kotsv1beta1.License)
+
+	marshalledLicense := upstream.MustMarshalLicense(latestLicense)
+
+	return C.CString(string(marshalledLicense))
+}
+
+//export VerifyAirgapLicense
+func VerifyAirgapLicense(licenseData string) *C.char {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseData), nil, nil)
+	if err != nil {
+		fmt.Printf("failed to decode license data: %s\n", err.Error())
+		return C.CString("")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	if err := pull.VerifySignature(license); err != nil {
+		fmt.Printf("failed to verify airgap license signature: %s\n", err.Error())
+		return C.CString("")
+	}
+
+	return C.CString("verified")
 }
 
 func readCursorFromPath(rootPath string) (string, error) {
