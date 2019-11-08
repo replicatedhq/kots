@@ -1,15 +1,11 @@
-FROM nginx:1.11.8
+FROM nginx:1.17.5
 ARG version
 ARG nginxconf=deploy/nginx.conf
 
-COPY dist /usr/share/nginx/html
-COPY ${nginxconf} /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx dist /usr/share/nginx/html
+COPY --chown=nginx:nginx ${nginxconf} /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx deploy/root-nginx.conf /etc/nginx/nginx.conf
 
-RUN useradd -c 'kotsadm-web user' -m -d /home/kotsadm-web -s /bin/bash -u 1001 kotsadm-web
-RUN chown -R kotsadm-web.kotsadm-web /usr/share/nginx/html
-RUN chown -R kotsadm-web.kotsadm-web /etc/nginx/conf.d/default.conf
-USER kotsadm-web
-ENV HOME /home/kotsadm-web
+USER nginx
 
 STOPSIGNAL SIGTERM
-
