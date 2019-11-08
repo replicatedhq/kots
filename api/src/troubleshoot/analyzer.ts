@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { getCollectorNamespace } from "./collector";
 
 export class Analyzer {
   public spec: String;
@@ -8,29 +9,112 @@ export class Analyzer {
 export async function injectKotsAnalyzers(parsedSpec: any): Promise<any> {
   let spec = parsedSpec;
 
-  spec = await injectKubernetesVersionAnalyzer(spec);
+  if (!spec) {
+    spec = {
+      apiVersion: "troubleshoot.replicated.com/v1beta1",
+      kind: "Analyzer",
+      metadata: {
+        name: "default-analyzers",
+      },
+      spec: {
+        analyzers: [],
+      },
+    };
+  }
+
   spec = await injectAPIReplicasAnalyzer(spec);
+  spec = await injectOperatorReplicasAnalyzer(spec);
+  spec = await injectNoGvisorAnalyzer(spec);
+
+  spec = await injectIfMissingKubernetesVersionAnalyzer(spec);
+
   return spec;
 }
 
-async function injectKubernetesVersionAnalyzer(parsedSpec: any): Promise<any> {
+async function injectIfMissingKubernetesVersionAnalyzer(parsedSpec: any): Promise<any> {
+  let analyzers = _.get(parsedSpec, "spec.analyzers") as any[];
+  if (!analyzers) {
+    analyzers = [];
+  }
+
+  const currentClusterVersion = _.find(analyzers, (analyzer) => {
+    if (analyzer.clusterVersion) {
+      return true;
+    }
+
+    return false;
+  });
+
+  if (!currentClusterVersion) {
+    const clusterVersion = {
+      clusterVersion: {
+        outcomes: [{
+          fail: {
+            when: "< 1.14.0",
+            message: "The Admin Console requires at least Kubernetes 1.14.0, and recommends 1.16.0",
+          },
+        }, {
+          warn: {
+            when: "< 1.16.0",
+            message: "Your cluster meets the minimum required version of Kubernetes, but we recommend using 1.15.0 or later",
+          },
+        }, {
+          pass: {
+            when: ">= 1.16.0",
+            message: "Your cluster meets the recommended and required versions of Kubernetes",
+          },
+        }],
+      },
+    };
+
+    analyzers.push(clusterVersion);
+    _.set(parsedSpec, "spec.analyzers", analyzers);
+  }
+
+  return parsedSpec;
+}
+
+async function injectNoGvisorAnalyzer(parsedSpec: any): Promise<any> {
   const newAnalyzer = {
-    clusterVersion: {
+    containerRuntime: {
       outcomes: [{
         fail: {
-          when: "< 1.13.0",
-          message: "The Admin Console requires at least Kubernetes 1.13.0, and recommends 1.15.0",
-        },
-        warn: {
-          when: "< 1.15.0",
-          message: "Your cluster meets the minimum required version of Kubernetes, but we recommend using 1.15.0 or later",
-        },
+          when: "== gvisor",
+          message: "The Admin Console does not support using the gvisor runtime",
+        }},{
         pass: {
-          when: ">= 1.15.0",
-          message: "Your cluster meets the recommended and required versions of Kubernetes",
+          message: "A supported container runtime is present on all nodes",
         },
       }],
-    },
+    }
+  };
+
+  let analyzers = _.get(parsedSpec, "spec.analyzers") as any[];
+  if (!analyzers) {
+    analyzers = [];
+  }
+
+  analyzers.push(newAnalyzer);
+  _.set(parsedSpec, "spec.analyzers", analyzers);
+
+  return parsedSpec;
+}
+
+async function injectOperatorReplicasAnalyzer(parsedSpec: any): Promise<any> {
+  const newAnalyzer = {
+    deploymentStatus: {
+      name: "kotsadm-operator",
+      namespace: getCollectorNamespace(),
+      outcomes: [{
+        pass: {
+          when: "= 1",
+          message: "Exactly 1 replica of the Admin Console Operator is running and ready",
+        }}, {
+        fail: {
+          message: "There is not exactly 1 replica of the Admin Console Operator running and ready",
+        },
+      }],
+    }
   };
 
   let analyzers = _.get(parsedSpec, "spec.analyzers") as any[];
@@ -48,7 +132,7 @@ async function injectAPIReplicasAnalyzer(parsedSpec: any): Promise<any> {
   const newAnalyzer = {
     deploymentStatus: {
       name: "kotsadm-api",
-      namespace: "test",
+      namespace: getCollectorNamespace(),
       outcomes: [{
         pass: {
           when: "> 1",

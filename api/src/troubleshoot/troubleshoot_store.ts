@@ -179,7 +179,14 @@ spec:
 
       for (const marshaledInsight of marsheledInsights) {
         const insight = new SupportBundleInsight();
-        insight.key = marshaledInsight.name;
+
+        // key is a not nullable field in gql, but because of the loose coupling of the release
+        // process between vendor analyze specs and kots (we can't control), we need to ensure
+        // that we backfill keys that the analyzer doesn't put in...
+
+        // this should be fixed in future supportbundle ffi functions
+
+        insight.key = marshaledInsight.name || randomstring.generate({ capitalization: "lowercase" });
         insight.severity = marshaledInsight.severity;
         insight.primary = marshaledInsight.insight.primary;
         insight.detail = marshaledInsight.insight.detail;
