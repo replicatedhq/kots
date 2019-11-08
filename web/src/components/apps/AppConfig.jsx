@@ -161,16 +161,16 @@ class AppConfig extends Component {
     }
 
     return (
-      <div className={classNames("flex1 flex-column u-padding--20 justifyContent--flexStart alignItems--center u-overflow--auto", { "justifyContent--center": fromLicenseFlow })}>
-        {fromLicenseFlow && getKotsApp?.getKotsApp && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold">Configure {getKotsApp.getKotsApp.name}</span>}
-        <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
+      <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
+        {fromLicenseFlow && getKotsApp?.getKotsApp && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {getKotsApp.getKotsApp.name}</span>}
+        <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow }, { "u-marginTop--auto": !fromLicenseFlow })}>
           <div className="ConfigInnerWrapper flex1 u-padding--15">
             <div className="flex1">
               <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
             </div>
           </div>
         </div>
-        <button className="btn secondary green u-marginTop--20" disabled={savingConfig || (!changed && !fromLicenseFlow)} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
+        <button className="btn secondary green u-marginTop--20 u-marginBottom--auto" disabled={savingConfig || (!changed && !fromLicenseFlow)} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
       </div>
     )
   }
