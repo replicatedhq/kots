@@ -267,7 +267,10 @@ export class KotsApp {
         group.items.forEach(async item => {
           if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
             if (item.type === "password") {
-              configValues[item.name] = cryptr ? cryptr.encrypt(item.value) : item.value;
+              const configVal = {
+                value: cryptr ? cryptr.encrypt(item.value) : item.value,
+              };
+              configValues[item.name] = configVal;
             } else {
               // these are "omitempty" in Go, but TS adds "null" strings in.
               let configVal = {};
