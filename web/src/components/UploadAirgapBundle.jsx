@@ -5,6 +5,7 @@ import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { resumeInstallOnline } from "../mutations/AppsMutations";
@@ -29,7 +30,9 @@ class UploadAirgapBundle extends React.Component {
     registryDetails: {},
     preparingOnlineInstall: false,
     supportBundleCommand: undefined,
-    showSupportBundleCommand: false
+    showSupportBundleCommand: false,
+    onlineInstallErrorMessage: "",
+    viewOnlineInstallErrorMessage: false
   }
 
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
@@ -175,22 +178,9 @@ class UploadAirgapBundle extends React.Component {
     });
     try {
       const resp = await this.props.resumeInstallOnline(slug);
-      if (resp?.data?.resumeInstallOnline?.errorMessage) {
-        let onlineInstallErrorMessage = resp?.data?.resumeInstallOnline?.errorMessage;
-        Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
-          if (onlineInstallErrorMessage.includes(errorString)) {
-            onlineInstallErrorMessage = `Error: ${message}`;
-          }
-        });
-        
-        this.setState({
-          preparingOnlineInstall: false,
-          onlineInstallErrorMessage
-        });
-        return;
-      }
-      const hasPreflight = resp?.data?.resumeInstallOnline?.hasPreflight;
-      const isConfigurable = resp?.data?.resumeInstallOnline?.isConfigurable;
+      const app = resp?.data?.resumeInstallOnline;
+      const hasPreflight = app?.hasPreflight;
+      const isConfigurable = app?.isConfigurable;
 
       if (isConfigurable) {
         this.props.history.replace(`/${slug}/config`);
@@ -201,11 +191,13 @@ class UploadAirgapBundle extends React.Component {
         this.props.history.replace(`/app/${slug}`);
       }
 
-    } catch (error) {
-      console.log(error);
-      this.setState({
-        preparingOnlineInstall: false,
-        onlineInstallErrorMessage: error.message
+    } catch (err) {
+      console.log(err);
+      err.graphQLErrors.map(({ msg }) => {
+        this.setState({
+          preparingOnlineInstall: false,
+          onlineInstallErrorMessage: msg
+        });
       });
     }
   }
@@ -233,6 +225,12 @@ class UploadAirgapBundle extends React.Component {
     }, 0);
   }
 
+  toggleViewOnlineInstallErrorMessage = () => {
+    this.setState({
+      viewOnlineInstallErrorMessage: !this.state.viewOnlineInstallErrorMessage
+    });
+  }
+
   render() {
     const {
       appName,
@@ -249,7 +247,8 @@ class UploadAirgapBundle extends React.Component {
       errorMessage,
       registryDetails,
       preparingOnlineInstall,
-      onlineInstallErrorMessage
+      onlineInstallErrorMessage,
+      viewOnlineInstallErrorMessage
     } = this.state;
 
     const hasFile = bundleFile && !isEmpty(bundleFile);
@@ -265,7 +264,7 @@ class UploadAirgapBundle extends React.Component {
     }
 
     return (
-      <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
+      <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
         <Helmet>
           <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
@@ -366,17 +365,46 @@ class UploadAirgapBundle extends React.Component {
             }
           </div>
         </div>
-        {onlineInstallErrorMessage && (
-          <div className="u-fontSize--small u-marginTop--20 u-textAlign--center u-color--chestnut u-fontWeight--medium">
-            {onlineInstallErrorMessage}
-          </div>  
-        )}
-        <div className="u-marginTop--10 u-marginBottom--20 u-textAlign--center">
+        <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage })}>
           {preparingOnlineInstall
             ? <Loader size="40" />
             : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
           }
         </div>
+        {onlineInstallErrorMessage && (
+          <div className="u-marginTop--10 u-marginBottom--20">
+            <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
+            <span
+              className="u-fontSize--small u-color--astral u-cursor--pointer u-fontWeight--bold u-textDecoration--underline"
+              onClick={this.toggleViewOnlineInstallErrorMessage}>
+              view more
+            </span>
+          </div>
+        )}
+
+        <Modal
+          isOpen={viewOnlineInstallErrorMessage}
+          onRequestClose={this.toggleViewOnlineInstallErrorMessage}
+          contentLabel="Online install error message"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+              <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
+              <p className="u-fontSize--small u-color--chestnut">{onlineInstallErrorMessage}</p>
+              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
+              <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                >
+                kubectl support-bundle https://kots.io
+              </CodeSnippet>
+            </div>
+            <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewOnlineInstallErrorMessage}>Ok, got it!</button>
+          </div>
+        </Modal>
       </div>
     );
   }

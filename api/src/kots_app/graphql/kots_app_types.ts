@@ -5,7 +5,6 @@ const KotsAppUpload = `
     needsRegistry: Boolean
     slug: String
     isConfigurable: Boolean
-    errorMessage: String
   }
 `;
 
@@ -27,7 +26,6 @@ const KotsApp = `
     hasPreflight: Boolean
     isConfigurable: Boolean
     allowRollback: Boolean
-    errorMessage: String
   }
 `;
 

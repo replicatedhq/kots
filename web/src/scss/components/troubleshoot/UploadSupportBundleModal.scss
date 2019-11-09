@@ -91,3 +91,11 @@
 .UploadLicenseFile--wrapper .FileUpload-wrapper {
   margin-bottom: 0;
 }
+
+.ExpandedError--wrapper {
+  max-width: 350px;
+  padding: 8px;
+  border: 1px solid #DFDFDF;
+  background: #EFEFEF;
+  border-radius: 4px;
+}

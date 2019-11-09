@@ -4,8 +4,10 @@ import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
+import Modal from "react-modal";
 import { uploadKotsLicense } from "../mutations/AppsMutations";
 import { getFileContent } from "../utilities/utilities";
+import CodeSnippet from "./shared/CodeSnippet";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -15,11 +17,12 @@ class UploadLicenseFile extends React.Component {
     licenseFile: {},
     licenseValue: "",
     fileUploading: false,
-    errorMessage: ""
+    errorMessage: "",
+    viewErrorMessage: false
   }
 
   clearFile = () => {
-    this.setState({ licenseFile: {}, licenseValue: "", errorMessage: "" });
+    this.setState({ licenseFile: {}, licenseValue: "", errorMessage: "", viewErrorMessage: false });
   }
 
   uploadLicenseFile = async () => {
@@ -33,28 +36,6 @@ class UploadLicenseFile extends React.Component {
 
       // When successful, refetch all the user's apps with onUploadSuccess
       onUploadSuccess().then(() => {
-
-        if (data.errorMessage) {
-          const COMMON_ERRORS = {
-            "HTTP 401": "Registry credentials are invalid",
-            "invalid username/password": "Registry credentials are invalid",
-            "no such host": "No such host"
-          };
-          let errorMessage = data.errorMessage;
-
-          Object.entries(COMMON_ERRORS).map(([ errorString, message ]) => {
-            if (data.errorMessage.includes(errorString)) {
-              errorMessage = message;
-            }
-          });
-
-          this.setState({
-            fileUploading: false,
-            errorMessage: `Error: ${errorMessage}`
-          });
-          return;
-        }
-
         if (data.isAirgap) {
           if (data.needsRegistry) {
             history.replace(`/${data.slug}/airgap`);
@@ -77,10 +58,11 @@ class UploadLicenseFile extends React.Component {
         // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
         history.replace(`/app/${data.slug}`);
       });
-
     } catch (err) {
-      this.setState({ fileUploading: false });
       console.log(err);
+      err.graphQLErrors.map(({ msg }) => {
+        this.setState({ fileUploading: false, errorMessage: msg });
+      });
     }
   }
 
@@ -93,13 +75,19 @@ class UploadLicenseFile extends React.Component {
     });
   }
 
+  toggleViewErrorMessage = () => {
+    this.setState({
+      viewErrorMessage: !this.state.viewErrorMessage
+    });
+  }
+
   render() {
     const {
       appName,
       logo,
       fetchingMetadata,
     } = this.props;
-    const { licenseFile, fileUploading, errorMessage } = this.state;
+    const { licenseFile, fileUploading, errorMessage, viewErrorMessage } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
 
     return (
@@ -152,7 +140,12 @@ class UploadLicenseFile extends React.Component {
             </div>
             {errorMessage && (
               <div className="u-marginTop--10">
-                <span className="u-fontSize--small u-color--chestnut">{errorMessage}</span>
+                <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
+                <span
+                  className="u-fontSize--small u-color--astral u-cursor--pointer u-fontWeight--bold u-textDecoration--underline"
+                  onClick={this.toggleViewErrorMessage}>
+                  view more
+                </span>
               </div>
             )}
             {hasFile &&
@@ -162,6 +155,30 @@ class UploadLicenseFile extends React.Component {
             }
           </div>
         </div>
+
+        <Modal
+          isOpen={viewErrorMessage}
+          onRequestClose={this.toggleViewErrorMessage}
+          contentLabel="Online install error message"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+              <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
+              <p className="u-fontSize--small u-color--chestnut">{errorMessage}</p>
+              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
+              <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                >
+                kubectl support-bundle https://kots.io
+              </CodeSnippet>
+            </div>
+            <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewErrorMessage}>Ok, got it!</button>
+          </div>
+        </Modal>
       </div>
     );
   }

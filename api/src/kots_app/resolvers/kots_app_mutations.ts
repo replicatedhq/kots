@@ -65,56 +65,46 @@ export function KotsMutations(stores: Stores) {
     },
 
     async uploadKotsLicense(root: any, args: any, context: Context) {
-      context.requireSingleTenantSession();
-
-      const { value } = args;
-      const parsedLicense = yaml.safeLoad(value);
-
-      const clusters = await stores.clusterStore.listAllUsersClusters();
-      let downstream;
-      for (const cluster of clusters) {
-        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
-          downstream = cluster;
-        }
-      }
-      const name = parsedLicense.spec.appSlug.replace("-", " ");
-
-      let kotsApp;
-      let errorMessage;
       try {
-        kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
-      } catch(error) {
-        errorMessage = error.message;
-      }
+        context.requireSingleTenantSession();
 
-      // If there is an error, remove everything and return the error message
-      if (errorMessage) {
+        const { value } = args;
+        const parsedLicense = yaml.safeLoad(value);
+  
+        const clusters = await stores.clusterStore.listAllUsersClusters();
+        let downstream;
+        for (const cluster of clusters) {
+          if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+            downstream = cluster;
+          }
+        }
+        const name = parsedLicense.spec.appSlug.replace("-", " ");
+        const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
+  
+        // Carefully now, peek at registry credentials to see if we need to prompt for them
+        let needsRegistry = true;
+        try {
+          const kc = new k8s.KubeConfig();
+          kc.loadFromDefault();
+          const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+          const res = await k8sApi.readNamespacedSecret("registry-creds", "default");
+          if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
+            needsRegistry = false;
+          }
+  
+        } catch {
+          /* no need to handle, rbac problem or not a path we can read registry */
+        }
+  
         return {
-          errorMessage
-        };
-      }
-
-      // Carefully now, peek at registry credentials to see if we need to prompt for them
-      let needsRegistry = true;
-      try {
-        const kc = new k8s.KubeConfig();
-        kc.loadFromDefault();
-        const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-        const res = await k8sApi.readNamespacedSecret("registry-creds", "default");
-        if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
-          needsRegistry = false;
+          hasPreflight: kotsApp.hasPreflight,
+          isAirgap: parsedLicense.spec.isAirgapSupported,
+          needsRegistry,
+          slug: kotsApp.slug,
+          isConfigurable: kotsApp.isAppConfigurable()
         }
-
-      } catch {
-        /* no need to handle, rbac problem or not a path we can read registry */
-      }
-
-      return {
-        hasPreflight: kotsApp.hasPreflight,
-        isAirgap: parsedLicense.spec.isAirgapSupported,
-        needsRegistry,
-        slug: kotsApp.slug,
-        isConfigurable: kotsApp.isAppConfigurable()
+      } catch(err) {
+        throw new ReplicatedError(err.message);
       }
     },
 
@@ -129,31 +119,26 @@ export function KotsMutations(stores: Stores) {
     },
 
     async resumeInstallOnline(root: any, args: any, context: Context) {
-      const { slug } = args;
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await context.getApp(appId);
-      const clusters = await stores.clusterStore.listAllUsersClusters();
-      let downstream;
-      for (const cluster of clusters) {
-        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
-          downstream = cluster;
-        }
-      }
-
-      let kotsApp;
       try {
-        kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
-      } catch (error) {
+        const { slug } = args;
+        const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+        const app = await context.getApp(appId);
+        const clusters = await stores.clusterStore.listAllUsersClusters();
+        let downstream;
+        for (const cluster of clusters) {
+          if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+            downstream = cluster;
+          }
+        }
+        const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
+        await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
         return {
-          errorMessage: error.message
+          ...kotsApp,
+          isConfigurable: kotsApp.isAppConfigurable()
         };
+      } catch(err) {
+        throw new ReplicatedError(err.message);
       }
-
-      await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-      return {
-        ...kotsApp,
-        isConfigurable: kotsApp.isAppConfigurable()
-      };
     },
 
     async deployKotsVersion(root: any, args: any, context: Context) {
