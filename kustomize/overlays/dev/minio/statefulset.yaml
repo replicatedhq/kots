@@ -17,6 +17,9 @@ spec:
         release: minio
       name: minio
     spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - args:
           - server
@@ -34,8 +37,8 @@ spec:
               name: minio
         - name: MINIO_BROWSER
           value: "on"
-        image: minio/minio:RELEASE.2019-10-12T01-39-57Z
-        imagePullPolicy: IfNotPresent
+        image: kotsadm/minio:alpha
+        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
