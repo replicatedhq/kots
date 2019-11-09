@@ -52,6 +52,7 @@ func postgresStatefulset(namespace string) *appsv1.StatefulSet {
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser: util.IntPointer(999),
+						FSGroup:   util.IntPointer(999),
 					},
 					Volumes: []corev1.Volume{
 						{
