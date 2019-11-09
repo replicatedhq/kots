@@ -9,10 +9,7 @@ import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/socketio";
 import { $log } from "ts-log-debug";
 import { createBugsnagClient } from "./bugsnagClient";
-import { InitProxy } from "../init/proxy";
 import { ShipClusterSchema } from "../schema";
-import { UpdateProxy } from "../update/proxy";
-import { EditProxy } from "../edit/proxy";
 import { logger } from "./logger";
 import { Context } from "../context";
 import { getPostgresPool } from "../util/persistence/db";
@@ -21,22 +18,14 @@ import { UserStore } from "../user/user_store";
 import { Stores } from "../schema/stores";
 import { SessionStore } from "../session";
 import { ClusterStore } from "../cluster";
-import { WatchStore } from "../watch/watch_store";
-import { NotificationStore } from "../notification";
-import { UpdateStore } from "../update/update_store";
 import { UnforkStore } from "../unfork/unfork_store";
-import { InitStore } from "../init/init_store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
-import { WatchDownload } from "../watch/download";
-import { EditStore } from "../edit";
 import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
-import { LicenseStore } from "../license";
 import { KotsLicenseStore } from "../klicenses";
-import { GithubInstallationsStore } from "../github_installation/github_installation_store";
 import { PreflightStore } from "../preflight/preflight_store";
 import { KotsAppStore } from "../kots_app/kots_app_store";
 import { KotsAppStatusStore } from "../kots_app/kots_app_status_store";
@@ -46,34 +35,15 @@ import { KurlStore } from "../kurl/kurl_store";
 import { ReplicatedError } from "./errors";
 import { MetricStore } from "../monitoring/metric_store";
 import { ParamsStore } from "../params/params_store";
-import { getS3, ensureBucket } from "../util/s3";
+import { ensureBucket } from "../util/s3";
 
-let mount = {};
+let mount = {
+  "/": "${rootDir}/../controllers/{*.*s,!(ship)/*.*s}"
+};
 let componentsScan = [
   "${rootDir}/../middlewares/**/*.ts",
+  "${rootDir}/../sockets/kots/*.ts",
 ];
-
-const enableShip = process.env["ENABLE_SHIP"] === "1";
-const enableKots = process.env["ENABLE_KOTS"] === "1";
-if (enableKots && enableShip) {
-  mount = {
-    "/": "${rootDir}/../controllers/**/*.*s",
-  };
-  componentsScan.push("${rootDir}/../sockets/kots/*.ts");
-} else if (enableShip) {
-  mount = {
-    "/": "${rootDir}/../controllers/{*.*s,!(kots)/*.*s}",
-  };
-} else if (enableKots) {
-  mount = {
-    "/": "${rootDir}/../controllers/{*.*s,!(ship)/*.*s}",
-  };
-  componentsScan.push("${rootDir}/../sockets/kots/*.ts");
-} else {
-  mount = {
-    "/": "${rootDir}/../controllers/*.*s",
-  };
-}
 
 @ServerSettings({
   rootDir: path.resolve(__dirname),
@@ -133,40 +103,23 @@ export class Server extends ServerLoader {
       }
     });
 
-    // Place http-proxy-middleware before body-parser
-    // See https://github.com/chimurai/http-proxy-middleware/issues/40#issuecomment-163398924
-    if (process.env["ENABLE_SHIP"]) {
-      this.use("/api/v1/init/:id", InitProxy);
-      this.use("/api/v1/update/:id", UpdateProxy);
-      this.use("/api/v1/edit/:id", EditProxy);
-    }
-
     const bodyParser = require("body-parser");
     this.use(bodyParser.json({ limit: "5mb" }));
 
     const pool = await getPostgresPool();
-    const watchStore = new WatchStore(pool, params);
     const paramsStore = new ParamsStore(pool, params);
     const stores: Stores = {
       sessionStore: new SessionStore(pool, params),
       userStore: new UserStore(pool),
       githubNonceStore: new GithubNonceStore(pool),
       clusterStore: new ClusterStore(pool, params),
-      watchStore: watchStore,
-      notificationStore: new NotificationStore(pool),
-      updateStore: new UpdateStore(pool, params),
       unforkStore: new UnforkStore(pool, params),
-      initStore: new InitStore(pool, params),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool, params),
-      watchDownload: new WatchDownload(watchStore),
-      editStore: new EditStore(pool, params),
       pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
       troubleshootStore: new TroubleshootStore(pool, params),
-      licenseStore: new LicenseStore(pool, params),
       kotsLicenseStore: new KotsLicenseStore(pool, params),
-      githubInstall: new GithubInstallationsStore(pool),
       preflightStore: new PreflightStore(pool),
       kotsAppStore: new KotsAppStore(pool, params),
       kotsAppStatusStore: new KotsAppStatusStore(pool, params),
@@ -190,7 +143,7 @@ export class Server extends ServerLoader {
       logger.debug({msg: "not creating local cluster"});
     }
 
-    if(process.env["SHARED_PASSWORD_BCRYPT"]) {
+    if (process.env["SHARED_PASSWORD_BCRYPT"]) {
       logger.info({msg: "ensuring that shared admin console password is provisioned"});
       await stores.userStore.createAdminConsolePassword(process.env["SHARED_PASSWORD_BCRYPT"]!);
     }

@@ -155,12 +155,6 @@ export const getWatch = gql`
         slug
         createdOn
         lastUpdated
-        gitOpsRef {
-          owner
-          repo
-          branch
-          path
-        }
         shipOpsRef {
           token
         }
@@ -225,12 +219,6 @@ export const getWatch = gql`
           slug
           createdOn
           lastUpdated
-          gitOpsRef {
-            owner
-            repo
-            branch
-            path
-          }
           shipOpsRef {
             token
           }
@@ -263,12 +251,6 @@ export const getWatchById = gql`
         slug
         createdOn
         lastUpdated
-        gitOpsRef {
-          owner
-          repo
-          branch
-          path
-        }
         shipOpsRef {
           token
         }
@@ -370,12 +352,6 @@ export const getWatchById = gql`
           slug
           createdOn
           lastUpdated
-          gitOpsRef {
-            owner
-            repo
-            branch
-            path
-          }
           shipOpsRef {
             token
           }
@@ -398,12 +374,6 @@ export const getParentWatchRaw = `
         slug
         createdOn
         lastUpdated
-        gitOpsRef {
-          owner
-          repo
-          branch
-          path
-        }
         shipOpsRef {
           token
         }
@@ -505,12 +475,6 @@ export const getParentWatchRaw = `
           slug
           createdOn
           lastUpdated
-          gitOpsRef {
-            owner
-            repo
-            branch
-            path
-          }
           shipOpsRef {
             token
           }

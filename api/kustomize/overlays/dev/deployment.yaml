@@ -26,10 +26,6 @@ spec:
                   key: uri
             - name: API_ENCRYPTION_KEY
               value: IvWItkB8+ezMisPjSMBknT1PdKjBx7Xc/txZqOP8Y2Oe7+Jy
-            - name: INIT_SERVER_URI
-              value: "http://init-server:3000"
-            - name: WATCH_SERVER_URI
-              value: "http://watch-server:3000"
             - name: PINO_LOG_PRETTY
               value: "1"
             - name: S3_BUCKET_NAME
@@ -73,12 +69,10 @@ spec:
               value: "microk8s"
             - name: AUTO_CREATE_CLUSTER_TOKEN
               value: this-is-definitely-not-a-secret
-            - name: ENABLE_SHIP
-              value: "1"
-            - name: ENABLE_KOTS
-              value: "1"
             - name: ENABLE_KURL
               value: "1"
+            - name: SHARED_PASSWORD_BCRYPT
+              value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
           volumeMounts:
             - name: github-app-private-key
               mountPath: /keys/github

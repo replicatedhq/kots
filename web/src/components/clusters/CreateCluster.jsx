@@ -6,7 +6,6 @@ import omit from "lodash/omit";
 
 import { createShipOpsCluster } from "../../mutations/ClusterMutations";
 import ShipClusterSuccess from "./ShipClusterSuccess";
-import ConfigureGitHubCluster from "../shared/ConfigureGitHubCluster";
 import "../../scss/components/clusters/CreateCluster.scss";
 
 export class CreateCluster extends Component {
@@ -176,16 +175,7 @@ export class CreateCluster extends Component {
                 handleCreationSuccessClick={this.handleCreationSuccessClick}
               />
               :
-              <div className="CreateCluster--wrapper flex-auto">
-                <div className="flex1 flex-column">
-                  <ConfigureGitHubCluster
-                    clusterTitle={this.state.title}
-                    hideRootPath={true}
-                    integrationToManage={null}
-                    handleCreationSuccessClick={this.handleCreationSuccessClick}
-                  />
-                </div>
-              </div>
+              null
             :
             <div className="CreateCluster--wrapper flex-auto">
               <div className="flex1 flex-column">

@@ -168,8 +168,7 @@ class Root extends Component {
       throw error;
     });
 
-    const allWatches = apps.data.listApps.watches.concat(
-      apps.data.listApps.kotsApps,
+    const allWatches = apps.data.listApps.kotsApps.concat(
       apps.data.listApps.pendingUnforks,
     );
 

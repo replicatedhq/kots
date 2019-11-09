@@ -45,8 +45,6 @@ test-and-publish: export S3_ACCESS_KEY_ID = S3RVER
 test-and-publish: export S3_SECRET_ACCESS_KEY = S3RVER
 test-and-publish: export S3_BUCKET_ENDPOINT = true
 test-and-publish: export S3_BUCKET_NAME = ship-pacts
-test-and-publish: export ENABLE_SHIP = 1
-test-and-publish: export ENABLE_KOTS = 1
 test-and-publish:
 	npm run test:broker
 
@@ -60,8 +58,6 @@ test: export S3_ACCESS_KEY_ID = S3RVER
 test: export S3_SECRET_ACCESS_KEY = S3RVER
 test: export S3_BUCKET_ENDPOINT = true
 test: export S3_BUCKET_NAME = ship-pacts
-test: export ENABLE_SHIP = 1
-test: export ENABLE_KOTS = 1
 test: deps
 	@-docker stop kotsadm-fixtures > /dev/null 2>&1 || :
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
