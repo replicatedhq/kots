@@ -76,13 +76,13 @@ steps:
       env:
         GIT_TAG: "${BUILDKITE_TAG}"
 
-  - label: "publish-minio"
-    commands:
-      - make -C minio publish-latest
-    branches: "master"
+  # - label: "publish-minio"
+  #   commands:
+  #     - make -C minio publish-latest
+    # branches: "master"
 
-  - label: "release-minio"
-    env:
-      GIT_TAG: "${BUILDKITE_TAG}"
-    commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C minio publish-release; fi
+  # - label: "release-minio"
+  #   env:
+  #     GIT_TAG: "${BUILDKITE_TAG}"
+  #   commands:
+  #     - if [ ! -z "$GIT_TAG" ]; then make -C minio publish-release; fi
