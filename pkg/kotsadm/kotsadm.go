@@ -179,6 +179,10 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to get namespace")
 	}
 
+	if deployOptions.AutoCreateClusterToken == "" {
+		deployOptions.AutoCreateClusterToken = uuid.New().String()
+	}
+
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
 	}
