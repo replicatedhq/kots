@@ -66,6 +66,8 @@ func (c *Kubectl) SupportBundle(collectorURI string) error {
 	stderrCh := make(chan []byte)
 	stopCh := make(chan bool)
 
+	cmd.Dir = "/tmp"
+
 	stdout := [][]byte{}
 	stderr := [][]byte{}
 
