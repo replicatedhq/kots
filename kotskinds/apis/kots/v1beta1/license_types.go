@@ -94,6 +94,7 @@ type EntitlementField struct {
 	Title       string           `json:"title,omitempty"`
 	Description string           `json:"description,omitempty"`
 	Value       EntitlementValue `json:"value,omitempty"`
+	Hidden      bool             `json:"hidden,omitempty"`
 }
 
 // LicenseSpec defines the desired state of LicenseSpec
