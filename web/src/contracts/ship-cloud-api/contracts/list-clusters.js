@@ -20,13 +20,11 @@ export default () => {
     expect(result.data.listClusters[0].id).to.equal("solo-account-cluster-1");
     expect(result.data.listClusters[0].title).to.equal("Solo Cluster");
     expect(result.data.listClusters[0].slug).to.equal("solo-cluster");
-    expect(result.data.listClusters[0].gitOpsRef).to.be.null;
     expect(result.data.listClusters[0].shipOpsRef).to.deep.equal({"token": "solo-account-cluster-token"});
 
     expect(result.data.listClusters[1].id).to.equal("solo-account-cluster-2");
     expect(result.data.listClusters[1].title).to.equal("Solo GitHub Cluster");
     expect(result.data.listClusters[1].slug).to.equal("solo-cluster-2");
-    expect(result.data.listClusters[1].gitOpsRef).to.deep.equal({"owner": "lonely-github-dev", "repo": "gitops-deploy", "branch": "master"});
     expect(result.data.listClusters[1].shipOpsRef).to.be.null;
 
     global.provider.verify().then(() => done());
@@ -61,7 +59,6 @@ const listClustersInteraction = new Pact.GraphQLInteraction()
             "totalApplicationCount": 1,
             "createdOn": Matchers.like("2019-04-10 12:34:56.789"),
             "lastUpdated": Matchers.like("2019-04-11 01:23:45.567"),
-            "gitOpsRef": null,
             "shipOpsRef": {
               "token": "solo-account-cluster-token",
             },
@@ -73,11 +70,6 @@ const listClustersInteraction = new Pact.GraphQLInteraction()
             "totalApplicationCount": 0,
             "createdOn": Matchers.like("2019-04-10 12:34:56.789"),
             "lastUpdated": Matchers.like("2019-04-11 01:23:45.567"),
-            "gitOpsRef": {
-              "owner": "lonely-github-dev",
-              "repo": "gitops-deploy",
-              "branch": "master"
-            },
             "shipOpsRef": null,
           }
         ]
