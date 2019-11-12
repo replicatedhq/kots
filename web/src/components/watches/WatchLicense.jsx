@@ -69,8 +69,8 @@ class WatchLicense extends Component {
       })
       .catch(err => {
         console.log(err);
-        err.graphQLErrors.map(({ message }) => {
-          this.setState({ syncingError: message });
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({ syncingError: msg });
         });
       })
       .finally(() => {

@@ -143,11 +143,11 @@ class DownstreamWatchVersionDiff extends React.Component {
         this.setState({ fileLoading: false });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ message }) => {
+        err.graphQLErrors.map(({ msg }) => {
           this.setState({
             fileLoading: false,
             fileLoadErr: true,
-            fileLoadErrMessage: message,
+            fileLoadErrMessage: msg,
           });
         });
       })
