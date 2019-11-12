@@ -33,7 +33,7 @@ export class TroubleshootAPI {
     // the injected collector has a different namespace in dev environment,
     // so the order of these calls matters.
     parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-    parsedSpec = await injectKotsCollectors(parsedSpec);
+    parsedSpec = await injectKotsCollectors(parsedSpec, "");
 
     response.send(200, parsedSpec);
   }
@@ -60,9 +60,12 @@ export class TroubleshootAPI {
     }
 
     let appOrWatchId;
+    let licenseData = "";
 
     try {
       appOrWatchId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
+      const app = await request.app.locals.stores.kotsAppStore.getApp(appOrWatchId);
+      licenseData = app.license;
     } catch {
       appOrWatchId = await request.app.locals.stores.watchStore.getIdFromSlug(slug);
     }
@@ -83,7 +86,7 @@ export class TroubleshootAPI {
       // the injected collector has a different namespace in dev environment,
       // so the order of these calls matters.
       parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-      parsedSpec = await injectKotsCollectors(parsedSpec);
+      parsedSpec = await injectKotsCollectors(parsedSpec, licenseData);
     }
     parsedSpec.spec.afterCollection = [
       {
