@@ -6,9 +6,10 @@ export class Collector {
   public spec: String;
 }
 
-export async function injectKotsCollectors(parsedSpec: any): Promise<any> {
+export async function injectKotsCollectors(parsedSpec: any, licenseData: string): Promise<any> {
   let spec = parsedSpec;
   spec = await injectDBCollector(spec);
+  spec = await injectLicenseCollector(spec, licenseData);
   spec = await injectAPICollector(spec);
   return spec;
 }
@@ -52,6 +53,30 @@ async function injectDBCollector(parsedSpec: any): Promise<any> {
   }
 
   collectors.push(pgDumpCollector);
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+async function injectLicenseCollector(parsedSpec: any, licenseData: string): Promise<any> {
+  if (!licenseData) {
+    return parsedSpec;
+  }
+
+  const licenseCollector = {
+    data: {
+      collectorName: "license.yaml",
+      name: "admin_console",
+      data: licenseData,
+    },
+  };
+
+  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
+  if (!collectors) {
+    collectors = [];
+  }
+
+  collectors.push(licenseCollector);
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
