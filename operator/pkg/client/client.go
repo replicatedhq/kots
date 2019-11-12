@@ -405,6 +405,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	if dryRunErr != nil {
 		log.Printf("stdout (dryrun) = %s", drrunStdout)
 		log.Printf("stderr (dryrun) = %s", dryrunStderr)
+		log.Printf("error: %s", dryRunErr.Error())
 	}
 
 	var applyStdout []byte
@@ -416,6 +417,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		if err != nil {
 			log.Printf("stdout (apply) = %s", stderr)
 			log.Printf("stderr (apply) = %s", stderr)
+			log.Printf("error: %s", err.Error())
 		}
 
 		applyStdout = stdout
