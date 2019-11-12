@@ -53,3 +53,4 @@ resources:
 - ./pending_support_bundle.yaml
 - ./app_status.yaml
 - ./gitops_repo.yaml
+- ./app_config_cache.yaml

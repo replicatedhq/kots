@@ -147,7 +147,7 @@ export class KotsApp {
     return null;
   }
 
-  private async getConfigData(files: FilesAsString): Promise<ConfigData> {
+  private async getConfigDataFromFiles(files: FilesAsString): Promise<ConfigData> {
     let configContent: string = "",
         configPath: string = "",
         configValuesContent: string = "",
@@ -229,12 +229,15 @@ export class KotsApp {
     return configGroups;
   }
 
-  async getConfigGroups(sequence: string): Promise<KotsConfigGroup[]> {
+  async getAppConfigGroups(stores: Stores, appId: string, sequence: string): Promise<KotsConfigGroup[]> {
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
 
-      const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
+      const configData = await this.getConfigDataFromFiles(files);
+      await stores.kotsAppStore.updateAppConfigCache(appId, sequence, configData);
+
+      const { configPath, configContent, configValuesContent } = configData;
       return await this.applyConfigValues(configPath, configContent, configValuesContent);
     } catch(err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
@@ -246,7 +249,7 @@ export class KotsApp {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
 
-      const { configContent, configValuesContent, configValuesPath } = await this.getConfigData(files);
+      const { configContent, configValuesContent, configValuesPath } = await this.getConfigDataFromFiles(files);
 
       const parsedConfig = yaml.safeLoad(configContent);
       const parsedConfigValues = yaml.safeLoad(configValuesContent);
@@ -300,21 +303,19 @@ export class KotsApp {
     }
   }
 
-  async getConfigForGroups(sequence: string, updatedConfigGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
-    const paths: string[] = await this.getFilesPaths(sequence);
-    const files: FilesAsString = await this.getFiles(sequence, paths);
-
-    const { configPath, configContent, configValuesContent } = await this.getConfigData(files);
+  async templateConfigGroups(stores: Stores, appId: string, sequence: string, configGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
+    const configData = await stores.kotsAppStore.getAppConfigCache(appId, sequence);
+    const { configPath, configContent, configValuesContent } = configData;
 
     const parsedConfig = yaml.safeLoad(configContent);
     const parsedConfigValues = yaml.safeLoad(configValuesContent);
 
-    const configValues = parsedConfigValues.spec.values;
-    const configGroups = parsedConfig.spec.groups;
+    const specConfigValues = parsedConfigValues.spec.values;
+    const specConfigGroups = parsedConfig.spec.groups;
 
-    updatedConfigGroups.forEach(group => {
+    configGroups.forEach(group => {
       group.items.forEach(async item => {
-        if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
+        if (this.shouldUpdateConfigValues(specConfigGroups, specConfigValues, item)) {
           let configVal = {}
           if (item.value) {
             configVal["value"] = item.value;
@@ -322,7 +323,7 @@ export class KotsApp {
           if (item.default) {
             configVal["default"] = item.default;
           }
-          configValues[item.name] = configVal;
+          specConfigValues[item.name] = configVal;
         }
       });
     });
@@ -475,7 +476,7 @@ export class KotsApp {
     }
     const paths: string[] = await this.getFilesPaths(sequence);
     const files: FilesAsString = await this.getFiles(sequence, paths);
-    const { configPath } = await this.getConfigData(files);
+    const { configPath } = await this.getConfigDataFromFiles(files);
     return configPath !== "";
   }
 
@@ -624,8 +625,8 @@ export interface KotsDownstreamOutput {
 }
 
 export interface ConfigData {
-  configContent: string,
-  configPath: string,
-  configValuesContent: string,
-  configValuesPath: string
+  configContent: string;
+  configPath: string;
+  configValuesContent: string;
+  configValuesPath: string;
 }

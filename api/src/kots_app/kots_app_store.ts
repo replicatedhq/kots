@@ -1,6 +1,6 @@
 import pg from "pg";
 import { Params } from "../server/params";
-import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsDownstreamOutput } from "./";
+import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsDownstreamOutput, ConfigData } from "./";
 import { ReplicatedError } from "../server/errors";
 import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
@@ -596,6 +596,52 @@ export class KotsAppStore {
 
     const result = await this.pool.query(q, v);
     return result.rows[0].app_spec;
+  }
+
+  async updateAppConfigCache(appId: string, sequence: string, configData: ConfigData) {
+    const q = `
+      INSERT INTO app_config_cache VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      ON CONFLICT(app_id, sequence) DO UPDATE SET 
+      config_path = EXCLUDED.config_path, 
+      config_content = EXCLUDED.config_content, 
+      config_values_path = EXCLUDED.config_values_path, 
+      config_values_content = EXCLUDED.config_values_content,
+      updated_at = EXCLUDED.updated_at
+    `;
+    const v = [
+      appId,
+      sequence,
+      configData.configPath,
+      configData.configContent,
+      configData.configValuesPath,
+      configData.configValuesContent,
+      new Date()
+    ];
+    await this.pool.query(q, v);
+  }
+
+  async getAppConfigCache(appId: string, sequence: string): Promise<ConfigData> {
+    const q = `select config_path, config_content, config_values_path, config_values_content from app_config_cache where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      throw new ReplicatedError(`No config cache for app with ad  ${appId}`);
+    }
+
+    const row = result.rows[0]
+    const configData: ConfigData = {
+      configPath: row.config_path,
+      configContent: row.config_content,
+      configValuesPath: row.config_values_path,
+      configValuesContent: row.config_values_content
+    }
+
+    return configData;
   }
 
   async getAppEncryptionKey(appId: string, sequence: string): Promise<string> {

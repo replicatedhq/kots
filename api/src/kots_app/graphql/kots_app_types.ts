@@ -242,7 +242,7 @@ type KotsAppDashboard {
   metrics: [MetricChart]
   prometheusAddress: String
 }
-`
+`;
 
 export default [
   KotsAppUpload,
