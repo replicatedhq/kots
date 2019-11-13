@@ -1,6 +1,7 @@
 package upstream
 
 import (
+	"io"
 	"os"
 	"path"
 
@@ -16,6 +17,7 @@ type WriteUpstreamImageOptions struct {
 	AppSlug        string
 	SourceRegistry registry.RegistryOptions
 	Log            *logger.Logger
+	ReportWriter   io.Writer
 }
 
 func (u *Upstream) WriteUpstreamImages(options WriteUpstreamImageOptions) error {
@@ -33,7 +35,7 @@ func (u *Upstream) WriteUpstreamImages(options WriteUpstreamImageOptions) error 
 		}
 	}
 
-	if err := image.SaveImages(options.SourceRegistry, options.AppSlug, options.Log, imagesDir, upstreamDir); err != nil {
+	if err := image.SaveImages(options.SourceRegistry, options.AppSlug, options.Log, options.ReportWriter, imagesDir, upstreamDir); err != nil {
 		return errors.Wrap(err, "failed to save images")
 	}
 

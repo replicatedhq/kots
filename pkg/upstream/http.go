@@ -5,5 +5,5 @@ import (
 )
 
 func downloadHttp(httpURI string) (*Upstream, error) {
-	return nil, errors.New("not implemented")
+	return nil, errors.New("downloadHttp not implemented")
 }

@@ -33,7 +33,7 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 		return getUpdatesHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return getUpdatesReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.CurrentCursor)
+		return getUpdatesReplicated(u, fetchOptions.LocalPath, fetchOptions.CurrentCursor, fetchOptions.License, fetchOptions.CurrentCursor)
 	}
 	if u.Scheme == "git" {
 		// return getUpdatesGit(upstreamURI)

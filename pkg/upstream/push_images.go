@@ -26,11 +26,6 @@ type PushUpstreamImageOptions struct {
 }
 
 func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
-	rootDir := options.RootDir
-	if options.CreateAppDir {
-		rootDir = path.Join(rootDir, u.Name)
-	}
-
 	formatDirs, err := ioutil.ReadDir(options.ImagesDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read images dir")
