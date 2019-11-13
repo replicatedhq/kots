@@ -41,8 +41,8 @@ export default class DiffEditor extends React.Component {
                   width="100%"
                   height="100%"
                   language="yaml"
-                  original={original && original.content}
-                  value={value && value.content}
+                  original={original?.content || ""}
+                  value={value?.content || ""}
                   onChange={this.onEditorValuesLoaded}
                   options={{
                     enableSplitViewResizing: true,

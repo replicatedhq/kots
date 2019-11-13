@@ -236,9 +236,11 @@ class DownstreamWatchVersionDiff extends React.Component {
           map(filesByKey, (value, key) => {
             const first = value.find(val => val.sequence === "first");
             const second = value.find(val => val.sequence === "second");
-            const maxNumOfLines = Math.max(first.content.split("\n").length, second.content.split("\n").length);
+            const firstNumOfLines = first?.content ? first?.content?.split("\n").length : 0;
+            const secondNumOfLines = second?.content ? second?.content?.split("\n").length : 0;
+            const maxNumOfLines = Math.max(firstNumOfLines, secondNumOfLines);
             return (
-              <div className="flex-column" key={key} style={{ height: maxNumOfLines * 23 }}>
+              <div className="DiffEditor flex-column" key={key} style={{ height: maxNumOfLines * 23 }}>
                 <DiffEditor
                   original={first}
                   value={second}
