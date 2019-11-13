@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { generateKeyPairSync } from "crypto";
+import sshpk from "sshpk";
 import { Context } from "../../context";
 import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
@@ -7,6 +8,8 @@ import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
 import * as k8s from "@kubernetes/client-node";
+import { kotsEncryptString } from "../kots_ffi"
+import { Params } from "../../server/params";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -27,7 +30,14 @@ export function KotsMutations(stores: Stores) {
         },
       });
 
-      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, privateKey, publicKey);
+      const params = await Params.getParams();
+      const parsedPublic = sshpk.parseKey(publicKey, "pem");
+      const sshPublishKey = parsedPublic.toString("ssh");
+
+      const parsedPrivate = sshpk.parseKey(privateKey, "pem");
+      const sshPrivateKey = parsedPrivate.toString("ssh");
+      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, sshPrivateKey);
+      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
 
       await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
 
@@ -70,7 +80,7 @@ export function KotsMutations(stores: Stores) {
 
         const { value } = args;
         const parsedLicense = yaml.safeLoad(value);
-  
+
         const clusters = await stores.clusterStore.listAllUsersClusters();
         let downstream;
         for (const cluster of clusters) {
@@ -80,7 +90,7 @@ export function KotsMutations(stores: Stores) {
         }
         const name = parsedLicense.spec.appSlug.replace("-", " ");
         const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
-  
+
         // Carefully now, peek at registry credentials to see if we need to prompt for them
         let needsRegistry = true;
         try {
@@ -91,11 +101,11 @@ export function KotsMutations(stores: Stores) {
           if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
             needsRegistry = false;
           }
-  
+
         } catch {
           /* no need to handle, rbac problem or not a path we can read registry */
         }
-  
+
         return {
           hasPreflight: kotsApp.hasPreflight,
           isAirgap: parsedLicense.spec.isAirgapSupported,
