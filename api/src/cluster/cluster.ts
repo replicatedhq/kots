@@ -6,7 +6,6 @@ export class Cluster {
   slug: string;
   lastUpdated?: Date;
   createdOn: Date;
-  gitOpsRef?: GitOpsRef;
   shipOpsRef?: ShipOpsRef;
 
   public async getCurrentVersionOnCluster(appId: string, stores: Stores) {
@@ -19,13 +18,6 @@ export class Cluster {
       currentVersion: () => this.getCurrentVersionOnCluster(appId, stores)
     }
   }
-}
-
-export interface GitOpsRef {
-  owner: string;
-  repo: string;
-  branch: string;
-  path: string;
 }
 
 export interface ShipOpsRef {

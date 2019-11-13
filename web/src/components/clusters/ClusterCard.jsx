@@ -23,8 +23,7 @@ export default class ClusterCard extends React.Component {
 
   render() {
     const { item, handleManageClick, toggleDeleteClusterModal } = this.props;
-    const type = item.gitOpsRef ? "git" : "ship";
-    const gitPath = item.gitOpsRef ? `${item.gitOpsRef.owner}/${item.gitOpsRef.repo}/${item.gitOpsRef.branch}` : "";
+    const type = "ship";
     const upToDate = true;
     return (
       <div className="deployed-cluster flex-column flex1">

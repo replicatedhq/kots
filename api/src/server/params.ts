@@ -32,8 +32,6 @@ export class Params {
   readonly apiAdvertiseEndpoint: string;
   readonly graphqlPremEndpoint: string;
   readonly segmentioAnalyticsKey: string;
-  readonly enableShip: boolean;
-  readonly enableKots: boolean;
   readonly enableKurl: boolean;
   readonly prometheusAddress: string;
 
@@ -65,8 +63,6 @@ export class Params {
     apiAdvertiseEndpoint,
     graphqlPremEndpoint,
     segmentioAnalyticsKey,
-    enableShip,
-    enableKots,
     enableKurl,
     prometheusAddress,
   }) {
@@ -97,8 +93,6 @@ export class Params {
     this.apiAdvertiseEndpoint = apiAdvertiseEndpoint;
     this.graphqlPremEndpoint = graphqlPremEndpoint;
     this.segmentioAnalyticsKey = segmentioAnalyticsKey;
-    this.enableShip = enableShip;
-    this.enableKots = enableKots;
     this.enableKurl = enableKurl;
     this.prometheusAddress = prometheusAddress;
   }
@@ -137,8 +131,6 @@ export class Params {
       apiAdvertiseEndpoint: process.env["SHIP_API_ADVERTISE_ENDPOINT"],
       graphqlPremEndpoint: params["GRAPHQL_PREM_ENDPOINT"],
       segmentioAnalyticsKey: params["SEGMENTIO_ANALYTICS_WRITE_KEY"],
-      enableShip: process.env["ENABLE_SHIP"] === "1",
-      enableKots: process.env["ENABLE_KOTS"] === "1",
       enableKurl: process.env["ENABLE_KURL"] === "1",
       prometheusAddress: process.env["PROMETHEUS_ADDRESS"],
     });
@@ -174,8 +166,6 @@ export class Params {
       SHIP_API_ADVERTISE_ENDPOINT: "",
       GRAPHQL_PREM_ENDPOINT: "/graphql/prem_endpoint",
       SEGMENTIO_ANALYTICS_WRITE_KEY: "/shipcloud/segmentio/analytics_write_key",
-      ENABLE_SHIP: "",
-      ENABLE_KOTS: "",
       ENABLE_KURL: "",
     }
     return await lookupParams(paramLookup);

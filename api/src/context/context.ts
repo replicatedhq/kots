@@ -6,9 +6,7 @@ import { isAfter } from "date-fns";
 import { Cluster } from "../cluster";
 import _ from "lodash";
 import { Stores } from "../schema/stores";
-import { Watch } from "../watch";
 import slugify from "slugify";
-import { Notification } from "../generated/types";
 import { KotsApp } from "../kots_app";
 
 export class Context {
@@ -89,26 +87,6 @@ export class Context {
     return cluster;
   }
 
-  public async findWatch(slug: string): Promise<Watch> {
-    const watch = await this.stores.watchStore.findUserWatch(this.session.userId, { slug });
-
-    if (!watch) {
-      throw new ReplicatedError("Watch not found");
-    }
-
-    return watch;
-  }
-
-  public async getWatch(id: string): Promise<Watch> {
-    const watch = await this.stores.watchStore.findUserWatch(this.session.userId, { id });
-
-    if (!watch) {
-      throw new ReplicatedError("Watch not found");
-    }
-
-    return watch;
-  }
-
   public async getApp(id: string): Promise<KotsApp> {
     const app = await this.stores.kotsAppStore.getApp(id);
 
@@ -117,15 +95,5 @@ export class Context {
     }
 
     return app;
-  }
-
-  public async getNotification(id: string): Promise<Notification> {
-    const notification = await this.stores.notificationStore.findUserNotification(this.session.userId, id);
-
-    if (!notification) {
-      throw new ReplicatedError("Notification not found");
-    }
-
-    return notification;
   }
 }
