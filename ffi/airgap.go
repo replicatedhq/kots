@@ -14,10 +14,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 //export PullFromAirgap
@@ -50,15 +47,12 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 			return
 		}
 
-		kotsscheme.AddToScheme(scheme.Scheme)
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseData), nil, nil)
+		license, err := loadLicense(licenseData)
 		if err != nil {
-			fmt.Printf("failed to decode license data: %s\n", err.Error())
+			fmt.Printf("failed to load license: %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
-		license := obj.(*kotsv1beta1.License)
 
 		licenseFile, err := ioutil.TempFile("", "kots")
 		if err != nil {

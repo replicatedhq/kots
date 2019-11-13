@@ -12,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
@@ -34,6 +33,7 @@ type PullOptions struct {
 	LocalPath           string
 	LicenseFile         string
 	ConfigFile          string
+	UpdateCursor        string
 	ExcludeKotsKinds    bool
 	ExcludeAdminConsole bool
 	SharedPassword      string
@@ -112,6 +112,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	fetchOptions.RootDir = pullOptions.RootDir
 	fetchOptions.UseAppDir = pullOptions.CreateAppDir
 	fetchOptions.LocalPath = pullOptions.LocalPath
+	fetchOptions.CurrentCursor = pullOptions.UpdateCursor
 
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
@@ -351,7 +352,6 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
 
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	decoded, gvk, err := decode(contents, nil, nil)
 	if err != nil {
@@ -379,7 +379,6 @@ func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 		return nil, errors.Wrap(err, "failed to read config values file")
 	}
 
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	decoded, gvk, err := decode(contents, nil, nil)
 	if err != nil {

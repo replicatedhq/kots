@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -159,7 +158,6 @@ func getEncryptionKey(previousInstallationContent []byte) (string, error) {
 		return cipher.ToString(), nil
 	}
 
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	prevObj, _, err := decode(previousInstallationContent, nil, nil)
@@ -172,7 +170,6 @@ func getEncryptionKey(previousInstallationContent []byte) (string, error) {
 }
 
 func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]byte, error) {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	prevObj, _, err := decode(previousValues, nil, nil)
@@ -205,8 +202,6 @@ func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]by
 }
 
 func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
-	kotsscheme.AddToScheme(scheme.Scheme)
-
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer

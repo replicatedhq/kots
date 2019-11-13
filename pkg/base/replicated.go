@@ -3,7 +3,6 @@ package base
 import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -68,7 +67,6 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 }
 
 func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
@@ -93,7 +91,6 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 }
 
 func tryGetConfigFromFileContent(content []byte) *kotsv1beta1.Config {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
