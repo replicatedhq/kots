@@ -143,6 +143,10 @@ export function KotsQueries(stores: Stores) {
       return await stores.kotsAppStore.getAirgapInstallStatus();
     },
 
+    async getImageRewriteStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, status: string}> {
+      return await stores.kotsAppStore.getImageRewriteStatus();
+    },
+
     async getKotsDownstreamOutput(root: any, args: any, context: Context): Promise<KotsDownstreamOutput> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.appSlug);
       const app = await context.getApp(appId);

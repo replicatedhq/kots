@@ -74,6 +74,21 @@ export class KotsAppStore {
     return clusterIds;
   }
 
+  async listDownstreamsForApp(appId: string): Promise<string[]> {
+    const q = `select downstream_name from app_downstream where app_id = $1`;
+    const v = [
+      appId,
+    ];
+
+    const result = await this.pool.query(q, v);
+    const downstreams: string[] = [];
+    for (const row of result.rows) {
+      downstreams.push(row.downstream_name);
+    }
+
+    return downstreams;
+  }
+
   async listAppsForCluster(clusterId: string): Promise<KotsApp[]> {
     const q = `select app_id from app_downstream where cluster_id = $1`;
     const v = [
@@ -1097,11 +1112,39 @@ export class KotsAppStore {
     };
   }
 
+  async getImageRewriteStatus(): Promise<{ currentMessage: string, status: string }> {
+    const q = `SELECT status, current_message from image_rewrite_status LIMIT 1`;
+    const result = await this.pool.query(q);
+
+    if (result.rows.length !== 1) {
+      return {
+        currentMessage: "",
+        status: "", 
+      };
+    }
+    return {
+      currentMessage: result.rows[0].current_message,
+      status: result.rows[0].status,
+    };
+  }
+
   async setAirgapInstallStatus(msg: string): Promise<void> {
     const q = `insert into airgap_install_status (id, updated_at, current_message) values ($1, $2, $3)
     on conflict(id) do update set current_message = EXCLUDED.current_message`;
     const v = [0, new Date(), msg];
     await this.pool.query(q, v);
+  }
+
+  async setImageRewriteStatus(msg: string, status: string): Promise<void> {
+    const q = `insert into image_rewrite_status (id, updated_at, current_message, status) values ($1, $2, $3, $4)
+    on conflict(id) do update set current_message = EXCLUDED.current_message, status = EXCLUDED.status`;
+    const v = [0, new Date(), msg, status];
+    await this.pool.query(q, v);
+  }
+
+  async clearImageRewriteStatus(): Promise<void> {
+    const q = `delete from image_rewrite_status`;
+    await this.pool.query(q, []);
   }
 
   async updateAirgapInstallLiveness(): Promise<void> {
