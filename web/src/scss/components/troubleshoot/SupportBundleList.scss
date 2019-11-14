@@ -84,3 +84,16 @@
     }
   }
 }
+
+.CommunityLicenseBundle--wrapper {
+  max-height: 94px;
+  height: 94px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
+  transition: box-shadow .2s;
+  border: 1px solid #F7B500;
+  background-color: #FFF9E8;
+  border-radius: 4px;
+  margin-bottom: 36px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
