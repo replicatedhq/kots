@@ -25,6 +25,7 @@ export class SupportBundle {
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;
+  kotsLicenseType: string;
 
   async generateFileTreeIndex() {
     const supportBundleIndexJsonPath = "index.json";

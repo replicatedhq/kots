@@ -139,11 +139,13 @@ spec:
         supportbundle_analysis.created_at AS analysis_created_at,
         watch.slug as watch_slug,
         watch.title as watch_title,
-        app.name as kots_app_title
+        app.name as kots_app_title,
+        app_version.kots_license as kots_license
       from supportbundle
         left join watch on supportbundle.watch_id = watch.id
         left join app_downstream on supportbundle.watch_id = app_downstream.app_id
         left join app on supportbundle.watch_id = app.id
+        left join app_version on supportbundle.watch_id = app_version.app_id
         left join supportbundle_analysis on supportbundle.id = supportbundle_analysis.supportbundle_id
       where supportbundle.id = $1`;
     const v = [id];
@@ -151,6 +153,8 @@ spec:
     if (result.rows.length === 0) {
       throw new ReplicatedError(`Support Bundle ${id} not found`);
     }
+
+    let kotsLicenseType = "community"
 
     const row = result.rows[0];
     const supportBundle = new SupportBundle();
@@ -165,6 +169,7 @@ spec:
     supportBundle.createdAt = row.created_at;
     supportBundle.uploadedAt = row.uploaded_at;
     supportBundle.isArchived = row.is_archived;
+    supportBundle.kotsLicenseType = kotsLicenseType;
 
     if (row.analysis_insights) {
       const insights: SupportBundleInsight[] = [];

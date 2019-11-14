@@ -188,7 +188,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <span className="icon communityIcon"></span>
                   </div>
                   <div className="flex1 flex-column u-marginLeft--10">
-                    <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by ? under a Community license type. </p>
+                    <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
                     <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
                   </div>
                   <div className="flex justifyContent--flexEnd"> 
