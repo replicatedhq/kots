@@ -102,11 +102,8 @@ interface Update {
 export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string): Promise<Update[]> {
   // We need to include the last archive because if there is an update, the ffi function will update it
   const tmpDir = tmp.dirSync();
-  const archive = path.join(tmpDir.name, "archive.tar.gz");
 
   try {
-    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
-
     const statusServer = new StatusServer();
     await statusServer.start(tmpDir.name);
 
@@ -114,9 +111,9 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
     socketParam["p"] = statusServer.socketFilename;
     socketParam["n"] = statusServer.socketFilename.length;
 
-    const archiveParam = new GoString();
-    archiveParam["p"] = archive;
-    archiveParam["n"] = archive.length;
+    const licenseDataParam = new GoString();
+    licenseDataParam["p"] = app.license;
+    licenseDataParam["n"] = String(app.license).length;
 
     const currentCursorParam = new GoString();
     currentCursorParam["p"] = currentCursor ? currentCursor : "";
@@ -124,7 +121,7 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
 
     console.log(`Check for updates current cursor = ${currentCursor}`);
 
-    kots().ListUpdates(socketParam, archiveParam, currentCursorParam);
+    kots().ListUpdates(socketParam, licenseDataParam, currentCursorParam);
 
     await statusServer.connection();
     const update: Update[] = await statusServer.termination((resolve, reject, obj): boolean => {
