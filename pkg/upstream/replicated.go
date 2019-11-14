@@ -100,7 +100,7 @@ func peekReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, 
 
 	updates := []Update{}
 	for _, pendingRelease := range pendingReleases {
-		updates = append(updates, Update{Cursor: strconv.Itoa(pendingRelease.ReleaseSequence)})
+		updates = append(updates, Update{Cursor: strconv.Itoa(pendingRelease.ChannelSequence)})
 	}
 	return updates, nil
 }
