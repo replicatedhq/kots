@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 
@@ -24,8 +23,8 @@ type InnerSignature struct {
 }
 
 type OuterSignature struct {
-	LicenseData    string `json:"licenseData"`
-	InnerSignature string `json:"innerSignature"`
+	LicenseData    []byte `json:"licenseData"`
+	InnerSignature []byte `json:"innerSignature"`
 }
 
 type KeySignature struct {
@@ -34,25 +33,15 @@ type KeySignature struct {
 }
 
 func VerifySignature(license *kotsv1beta1.License) error {
-	decodedOuterSignature, err := base64.StdEncoding.DecodeString(license.Spec.Signature)
-	if err != nil {
-		return errors.New("failed to decode license signature")
-	}
-
 	outerSignature := &OuterSignature{}
-	if err := json.Unmarshal(decodedOuterSignature, outerSignature); err != nil {
+	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
 		return errors.Wrap(err, "failed to unmarshal license outer signature")
 	}
 
-	decodedInnerSignature, err := base64.StdEncoding.DecodeString(outerSignature.InnerSignature)
-	if err != nil {
-		return errors.New("failed to decode license signature")
-	}
-
 	innerSignature := &InnerSignature{}
-	if err := json.Unmarshal(decodedInnerSignature, innerSignature); err != nil {
+	if err := json.Unmarshal(outerSignature.InnerSignature, innerSignature); err != nil {
 		// old licenses's signature is a single space character
-		if len(decodedInnerSignature) == 0 || len(decodedInnerSignature) == 1 {
+		if len(outerSignature.InnerSignature) == 0 || len(outerSignature.InnerSignature) == 1 {
 			return ErrSignatureMissing
 		}
 		return errors.Wrap(err, "failed to unmarshal license inner signature")
@@ -72,12 +61,7 @@ func VerifySignature(license *kotsv1beta1.License) error {
 		return errors.Wrap(err, "failed to verify key signature")
 	}
 
-	licenseMessage, err := base64.StdEncoding.DecodeString(outerSignature.LicenseData)
-	if err != nil {
-		return errors.New("failed to decode license data from outer signature")
-	}
-
-	if err := verify(licenseMessage, innerSignature.LicenseSignature, []byte(innerSignature.PublicKey)); err != nil {
+	if err := verify(outerSignature.LicenseData, innerSignature.LicenseSignature, []byte(innerSignature.PublicKey)); err != nil {
 		return errors.Wrap(err, "failed to verify license signature")
 	}
 
