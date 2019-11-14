@@ -119,8 +119,8 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
     archiveParam["n"] = archive.length;
 
     const currentCursorParam = new GoString();
-    currentCursorParam["p"] = currentCursor;
-    currentCursorParam["n"] = currentCursor.length;
+    currentCursorParam["p"] = currentCursor ? currentCursor : "";
+    currentCursorParam["n"] = currentCursor ? currentCursor.length : 0;
 
     console.log(`Check for updates current cursor = ${currentCursor}`);
 
@@ -280,6 +280,8 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   const appTitle = await extractAppTitleFromTarball(buffer);
   const appIcon = await extractAppIconFromTarball(buffer);
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+
+  console.log(`Save new version ${app.id}:${newSequence}, cursor=${installationSpec.cursor}`);
 
   await stores.kotsAppStore.createMidstreamVersion(
     app.id,
