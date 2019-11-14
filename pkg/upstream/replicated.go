@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,13 +14,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	imagedocker "github.com/containers/image/docker"
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -27,7 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
@@ -60,7 +61,51 @@ type Release struct {
 	Manifests    map[string][]byte
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues) (*Upstream, error) {
+type ChannelRelease struct {
+	ChannelSequence int    `json:"channelSequence"`
+	ReleaseSequence int    `json:"releaseSequence"`
+	VersionLabel    string `json:"versionLabel"`
+	CreatedAt       string `json:"createdAt"`
+}
+
+func peekReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, channelSequence string) ([]Update, error) {
+	if localPath != "" {
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		return []Update{{Cursor: parsedLocalRelease.UpdateCursor}}, nil
+	}
+
+	// A license file is required to be set for this to succeed
+	if license == nil {
+		return nil, errors.New("No license was provided")
+	}
+
+	replicatedUpstream, err := parseReplicatedURL(u)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse replicated upstream")
+	}
+
+	remoteLicense, err := getSuccessfulHeadResponse(replicatedUpstream, license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get successful head response")
+	}
+
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, channelSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list replicated app releases")
+	}
+
+	updates := []Update{}
+	for _, pendingRelease := range pendingReleases {
+		updates = append(updates, Update{Cursor: strconv.Itoa(pendingRelease.ChannelSequence)})
+	}
+	return updates, nil
+}
+
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor string) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -70,6 +115,9 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		}
 
 		release = parsedLocalRelease
+		if updateCursor != "" && release.UpdateCursor != updateCursor {
+			return nil, errors.Wrap(err, "release in local path does not match update cursor")
+		}
 	} else {
 		// A license file is required to be set for this to succeed
 		if license == nil {
@@ -81,12 +129,12 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
 
-		license, err := getSuccessfulHeadResponse(replicatedUpstream, license)
+		remoteLicense, err := getSuccessfulHeadResponse(replicatedUpstream, license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
-		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license)
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, remoteLicense, updateCursor)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
@@ -152,7 +200,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 	return upstream, nil
 }
 
-func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.License) (*http.Request, error) {
+func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.License, channelSequence string) (*http.Request, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -163,9 +211,10 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
 	}
 
-	url := fmt.Sprintf("%s://%s/release/%s", u.Scheme, hostname, license.Spec.AppSlug)
+	url := fmt.Sprintf("%s://%s/release/%s?channelSequence=%s", u.Scheme, hostname, license.Spec.AppSlug, channelSequence)
 
 	if r.Channel != nil {
+		// NOTE: I don't believe this is used
 		url = fmt.Sprintf("%s/%s", url, *r.Channel)
 	}
 
@@ -202,7 +251,7 @@ func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 }
 
 func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
-	headReq, err := replicatedUpstream.getRequest("HEAD", license)
+	headReq, err := replicatedUpstream.getRequest("HEAD", license, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
@@ -259,8 +308,8 @@ func readReplicatedAppFromLocalPath(localPath string) (*Release, error) {
 	return &release, nil
 }
 
-func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*Release, error) {
-	getReq, err := replicatedUpstream.getRequest("GET", license)
+func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, channelSequence string) (*Release, error) {
+	getReq, err := replicatedUpstream.getRequest("GET", license, channelSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
@@ -274,7 +323,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
 	}
 
-	updateCursor := getResp.Header.Get("X-Replicated-Sequence")
+	updateCursor := getResp.Header.Get("X-Replicated-ChannelSequence")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 
 	gzf, err := gzip.NewReader(getResp.Body)
@@ -320,10 +369,53 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func MustMarshalLicense(license *kotsv1beta1.License) []byte {
-	kotsscheme.AddToScheme(scheme.Scheme)
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, channelSequence string) ([]ChannelRelease, error) {
+	u, err := url.Parse(license.Spec.Endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse endpoint from license")
+	}
 
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	hostname := u.Hostname()
+	if u.Port() != "" {
+		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+	}
+
+	url := fmt.Sprintf("%s://%s/release/%s/pending?channelSequence=%s", u.Scheme, hostname, license.Spec.AppSlug, channelSequence)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to call newrequest")
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute get request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var channelReleases struct {
+		ChannelReleases []ChannelRelease `json:"channelReleases"`
+	}
+	if err := json.Unmarshal(body, &channelReleases); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal response")
+	}
+
+	return channelReleases.ChannelReleases, nil
+}
+
+func MustMarshalLicense(license *kotsv1beta1.License) []byte {
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(license, &b); err != nil {
@@ -334,9 +426,7 @@ func MustMarshalLicense(license *kotsv1beta1.License) []byte {
 }
 
 func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
-	kotsscheme.AddToScheme(scheme.Scheme)
-
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(configValues, &b); err != nil {
@@ -447,7 +537,6 @@ func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) 
 }
 
 func findConfigInRelease(release *Release) *kotsv1beta1.Config {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(content, nil, nil)
@@ -468,7 +557,6 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 }
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(content, nil, nil)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -21,7 +20,6 @@ func TemplateConfig(log *logger.Logger, configPath string, configData string, co
 	// 4. put new config yaml through templating engine
 	// This process will re-order items and discard comments, so it should not be saved.
 
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(configData), nil, nil)
 	if err != nil {
