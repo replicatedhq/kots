@@ -6,7 +6,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 )
 
-type PeekOptions struct {
+type GetUpdatesOptions struct {
 	HelmRepoURI   string
 	Namespace     string
 	LocalPath     string
@@ -15,24 +15,24 @@ type PeekOptions struct {
 	Silent        bool
 }
 
-// Peek will retrieve all later versions of the application specified in upstreamURI
-// using the options specified in peekOptions. It returns a list of versions.
-func Peek(upstreamURI string, peekOptions PeekOptions) ([]upstream.Update, error) {
+// GetUpdates will retrieve all later versions of the application specified in upstreamURI
+// using the options specified in getUpdatesOptions. It returns a list of versions.
+func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstream.Update, error) {
 	log := logger.NewLogger()
 
-	if peekOptions.Silent {
+	if getUpdatesOptions.Silent {
 		log.Silence()
 	}
 
 	log.Initialize()
 
 	fetchOptions := upstream.FetchOptions{}
-	fetchOptions.HelmRepoURI = peekOptions.HelmRepoURI
-	fetchOptions.LocalPath = peekOptions.LocalPath
-	fetchOptions.CurrentCursor = peekOptions.CurrentCursor
+	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
+	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
+	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 
-	if peekOptions.LicenseFile != "" {
-		license, err := parseLicenseFromFile(peekOptions.LicenseFile)
+	if getUpdatesOptions.LicenseFile != "" {
+		license, err := parseLicenseFromFile(getUpdatesOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == ErrSignatureInvalid {
 				return nil, ErrSignatureInvalid
@@ -47,7 +47,7 @@ func Peek(upstreamURI string, peekOptions PeekOptions) ([]upstream.Update, error
 	}
 
 	log.ActionWithSpinner("Listing releases")
-	v, err := upstream.PeekUpstream(upstreamURI, &fetchOptions)
+	v, err := upstream.GetUpdatesUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to fetch upstream")

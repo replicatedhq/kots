@@ -24,7 +24,7 @@ import (
 	"k8s.io/helm/pkg/repo"
 )
 
-func peekHelm(u *url.URL, repoURI string) ([]Update, error) {
+func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
 	repoName, chartName, _, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")

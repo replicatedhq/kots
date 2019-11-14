@@ -68,7 +68,7 @@ type ChannelRelease struct {
 	CreatedAt       string `json:"createdAt"`
 }
 
-func peekReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, channelSequence string) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, channelSequence string) ([]Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath)
 		if err != nil {
