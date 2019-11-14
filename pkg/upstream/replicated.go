@@ -98,7 +98,7 @@ func peekReplicated(u *url.URL, localPath string, license *kotsv1beta1.License, 
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
 
-	var updates []Update
+	updates := []Update{}
 	for _, pendingRelease := range pendingReleases {
 		updates = append(updates, Update{Cursor: strconv.Itoa(pendingRelease.ReleaseSequence)})
 	}

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/upstream"
 )
 
 //export ListUpdates
@@ -58,6 +59,9 @@ func ListUpdates(socket, fromArchivePath, currentCursor string) {
 			fmt.Printf("failed to peek upstream: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
+		}
+		if updates == nil {
+			updates = []upstream.Update{}
 		}
 
 		b, err := json.Marshal(updates)
