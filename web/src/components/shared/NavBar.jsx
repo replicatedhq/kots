@@ -100,6 +100,7 @@ export class NavBar extends PureComponent {
                         : !fetchingMetadata ? <span className="logo icon clickable" />
                         : <span style={{ width: "30px", height: "30px" }} />
                       }
+                      <span className="flag flex"> <span className="flagText">Community Edition</span> </span>
                     </Link>
                   </div>
                 </div>
