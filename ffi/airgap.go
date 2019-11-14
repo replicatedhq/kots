@@ -54,19 +54,13 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 			return
 		}
 
-		licenseFile, err := ioutil.TempFile("", "kots")
+		licenseFile, err := writeLicenseFileFromLicenseData(licenseData)
 		if err != nil {
-			fmt.Printf("failed to create temp file: %s\n", err)
+			fmt.Printf("failed to write license file: %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
-		defer os.Remove(licenseFile.Name())
-
-		if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
-			fmt.Printf("failed to write license to temp file: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
+		defer os.Remove(licenseFile)
 
 		// pull to a tmp dir
 		tmpRoot, err := ioutil.TempDir("", "kots")
@@ -80,7 +74,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		pullOptions := pull.PullOptions{
 			Downstreams:         []string{downstream},
 			LocalPath:           releaseDir,
-			LicenseFile:         licenseFile.Name(),
+			LicenseFile:         licenseFile,
 			ExcludeKotsKinds:    true,
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,

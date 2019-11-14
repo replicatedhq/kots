@@ -5,16 +5,14 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upstream"
 )
 
 //export ListUpdates
-func ListUpdates(socket, fromArchivePath, currentCursor string) {
+func ListUpdates(socket, licenseData, currentCursor string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -27,30 +25,23 @@ func ListUpdates(socket, fromArchivePath, currentCursor string) {
 			statusClient.end(ffiResult)
 		}()
 
-		tmpRoot, err := ioutil.TempDir("", "kots")
-		if err != nil {
-			fmt.Printf("failed to create temp path: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-		defer os.RemoveAll(tmpRoot)
-
-		if _, err := extractArchive(tmpRoot, fromArchivePath); err != nil {
-			fmt.Printf("failed to extract archive: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-
-		expectedLicenseFile := filepath.Join(tmpRoot, "upstream", "userdata", "license.yaml")
-		license, err := loadLicenseFromPath(expectedLicenseFile)
+		license, err := loadLicense(licenseData)
 		if err != nil {
 			fmt.Printf("failed to load license: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
+			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
 
+		licenseFile, err := writeLicenseFileFromLicenseData(licenseData)
+		if err != nil {
+			fmt.Printf("failed to write license file: %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
+		defer os.Remove(licenseFile)
+
 		getUpdatesOptions := pull.GetUpdatesOptions{
-			LicenseFile:   expectedLicenseFile,
+			LicenseFile:   licenseFile,
 			CurrentCursor: currentCursor,
 		}
 
