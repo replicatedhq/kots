@@ -76,12 +76,11 @@ export default [
     }
   },
   {
-    tabName: "airgap-settings",
-    displayName: "Airgap settings",
-    to: (slug) => `/app/${slug}/airgap-settings`,
-    displayRule: watch => {
-      // watch.isAirgap is already typed as a Boolean from GraphQL
-      return watch.isAirgap;
+    tabName: "registry-settings",
+    displayName: "Registry settings",
+    to: (slug) => `/app/${slug}/registry-settings`,
+    displayRule: () => {
+      return true;
     }
   },
   // {

@@ -257,7 +257,6 @@ export const getKotsDownstreamHistoryRaw = `
 `;
 
 export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);
-
 export const getAppRegistryDetailsRaw = `
   query getAppRegistryDetails($slug: String!) {
     getAppRegistryDetails(slug: $slug) {
@@ -308,6 +307,17 @@ export const getAirgapInstallStatusRaw = `
 `;
 
 export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);
+
+export const getImageRewriteStatusRaw = `
+  query getImageRewriteStatus {
+    getImageRewriteStatus {
+      currentMessage
+      status
+    }
+  }
+`;
+
+export const getImageRewriteStatus = gql(getImageRewriteStatusRaw);
 
 export const getAppConfigGroups = gql`
   query getAppConfigGroups($slug: String!, $sequence: Int!) {

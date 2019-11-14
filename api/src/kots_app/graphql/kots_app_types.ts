@@ -128,6 +128,13 @@ const AirgapInstallStatus = `
   }
 `;
 
+const ImageRewriteStatus = `
+  type ImageRewriteStatus {
+    status: String
+    currentMessage: String
+  }
+`;
+
 const KotsConfigChildItem = `
   type KotsConfigChildItem {
     name: String
@@ -261,6 +268,7 @@ export default [
   AppRegistryDetails,
   KotsAppRegistryDetails,
   AirgapInstallStatus,
+  ImageRewriteStatus,
 
   KotsConfigChildItem,
   KotsConfigChildItemInput,

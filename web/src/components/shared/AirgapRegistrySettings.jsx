@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Loader from "../shared/Loader";
-import { getAppRegistryDetails } from "@src/queries/AppsQueries";
+import { getAppRegistryDetails, getImageRewriteStatus } from "../../queries/AppsQueries";
 import { validateRegistryInfo } from "@src/queries/UserQueries";
 import { updateRegistryDetails } from "@src/mutations/AppsMutations";
 
@@ -25,11 +25,24 @@ class AirgapRegistrySettings extends Component {
       username,
       password,
       namespace,
+
       lastSync: null,
       testInProgress: false,
       testFailed: false,
       testMessage: "",
+
+      updateInterval: undefined,
+      rewriteStatus: "",
+      rewriteMessage: "",
     }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.state.updateInterval);
+  }
+
+  componentDidMount = () => {
+    this.triggerStatusUpdates();
   }
 
   onSubmit = async () => {
@@ -45,6 +58,10 @@ class AirgapRegistrySettings extends Component {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
       await this.props.getKotsAppRegistryQuery.refetch();
 
+      const interval = setInterval(this.updateStatus.bind(this), 1000);
+      this.setState({
+        updateInterval: interval,
+      });
     } catch (error) {
       console.log(error);
     }
@@ -111,9 +128,56 @@ class AirgapRegistrySettings extends Component {
     }
   }
 
+  triggerStatusUpdates = () => {
+    const pr = this.props.client.query({
+      query: getImageRewriteStatus,
+      variables: {},
+      fetchPolicy: "no-cache",
+    }).then((res) => {
+      this.setState({
+        rewriteStatus: res.data.getImageRewriteStatus.status,
+        rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
+      });
+      if (res.data.getImageRewriteStatus.status === "running") {
+        const interval = setInterval(this.updateStatus.bind(this), 1000);
+        this.setState({
+          updateInterval: interval,
+        });
+      }
+    }).catch((err) => {
+      console.log("failed to get rewrite status", err);
+    });
+
+    Promise.all([pr]);
+  }
+
+  updateStatus = () => {
+    const pr = this.props.client.query({
+      query: getImageRewriteStatus,
+      fetchPolicy: "no-cache",
+    }).then((res) => {
+      this.setState({
+        rewriteStatus: res.data.getImageRewriteStatus.status,
+        rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
+      });
+      if (res.data.getImageRewriteStatus.status !== "running") {
+        clearInterval(this.state.updateInterval);
+        this.setState({
+          updateInterval: undefined,
+        });
+      }
+    }).catch((err) => {
+      console.log("failed to get rewrite status", err);
+    });
+
+    Promise.all([pr]);
+  }
+
   render() {
     const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
     const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
+    const { rewriteMessage, rewriteStatus } = this.state;
+
     if (getKotsAppRegistryQuery?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -133,6 +197,10 @@ class AirgapRegistrySettings extends Component {
       // TODO: this will always be displayed when page is refreshed
       testStatusText = "Connection has not been tested";
     }
+
+    const disableSubmitButton = rewriteStatus === "running";
+    const showProgress = rewriteStatus === "running";
+    const showStatusError = rewriteStatus === "failed";
 
     return (
       <div>
@@ -182,8 +250,23 @@ class AirgapRegistrySettings extends Component {
           </div>
         </form>
         {hideCta ? null :
-          <div className="u-marginTop--20">
-            <button className="btn primary" onClick={this.onSubmit}>Save changes</button>
+          <div>          
+            { showProgress ?
+              <div className="u-marginTop--20">
+                <Loader size="30" />
+                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{rewriteMessage}</p>
+              </div>
+            :
+              null
+            }
+            { showStatusError ?
+              <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{rewriteMessage}</p>
+            :
+              null
+            }
+            <div className="u-marginTop--20">
+              <button className="btn primary" disabled={disableSubmitButton} onClick={this.onSubmit}>Save changes</button>
+            </div>
           </div>
         }
       </div>
