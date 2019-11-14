@@ -37,6 +37,8 @@ function kots() {
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString]],
     PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString]],
+    ListUpdates: ["void", [GoString, GoString, GoString]],
+    UpdateDownload: ["void", [GoString, GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     TemplateConfig: [GoString, [GoString, GoString, GoString]],
@@ -91,10 +93,127 @@ export async function kotsAppGetBranding(): Promise<string> {
   }
 }
 
+interface Update {
+  cursor: string;
+}
+
+export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string): Promise<Update[]> {
+  // We need to include the last archive because if there is an update, the ffi function will update it
+  const tmpDir = tmp.dirSync();
+  const archive = path.join(tmpDir.name, "archive.tar.gz");
+
+  try {
+    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
+
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const archiveParam = new GoString();
+    archiveParam["p"] = archive;
+    archiveParam["n"] = archive.length;
+
+    const currentCursorParam = new GoString();
+    currentCursorParam["p"] = currentCursor;
+    currentCursorParam["n"] = currentCursor.length;
+
+    console.log(`Check for updates current cursor = ${currentCursor}`)
+
+    kots().ListUpdates(socketParam, archiveParam, currentCursorParam);
+
+    await statusServer.connection();
+    const update: Update[] = await statusServer.termination((resolve, reject, obj): boolean => {
+      if (obj.status === "terminated") {
+        if (obj.exit_code === 0) {
+          resolve(JSON.parse(obj.data) as Update[]);
+        } else {
+          reject(new Error(`process failed: ${obj.display_message}`));
+        }
+        return true;
+      }
+      return false;
+    });
+    if (update) {
+      console.log(`Check for updates got updates ${JSON.stringify(update)}`)
+      return update;
+    }
+    return [];
+  } finally {
+    tmpDir.removeCallback();
+  }
+}
+
+export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: KotsApp, stores: Stores): Promise<void> {
+  updatesAvailable.forEach(async kotsAppRelease => {
+    // do not await...
+    try {
+      await kotsAppDownloadUpdate(kotsAppRelease.cursor, app, stores);
+    } catch (err) {
+      console.error(`Dailed to download release ${kotsAppRelease.cursor}: ${err}`);
+    }
+  });
+}
+
+export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
+  // We need to include the last archive because if there is an update, the ffi function will update it
+  const tmpDir = tmp.dirSync();
+  const archive = path.join(tmpDir.name, "archive.tar.gz");
+
+  try {
+    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
+
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const archiveParam = new GoString();
+    archiveParam["p"] = archive;
+    archiveParam["n"] = archive.length;
+
+    const cursorParam = new GoString();
+    cursorParam["p"] = cursor;
+    cursorParam["n"] = cursor.length;
+
+    kots().UpdateDownload(socketParam, archiveParam, cursorParam);
+    await statusServer.connection();
+    const isUpdateAvailable: number = await statusServer.termination((resolve, reject, obj): boolean => {
+      if (obj.status === "terminated") {
+        if (obj.exit_code !== -1) {
+          resolve(obj.exit_code);
+        } else {
+          reject(new Error(`process failed: ${obj.display_message}`));
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (isUpdateAvailable < 0) {
+      console.log("error downloading update")
+      return false;
+    }
+
+    if (isUpdateAvailable > 0) {
+      await saveUpdateVersion(archive, app, stores);
+    }
+
+    return isUpdateAvailable > 0;
+  } finally {
+    tmpDir.removeCallback();
+  }
+}
+
 export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
   // We need to include the last archive because if there is an update, the ffi function will update it
   const tmpDir = tmp.dirSync();
   const archive = path.join(tmpDir.name, "archive.tar.gz");
+
   try {
     fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
 
@@ -133,50 +252,54 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
     }
 
     if (isUpdateAvailable > 0) {
-      // if there was an update available, expect that the new archive is in the smae place as the one we pased in
-      const params = await Params.getParams();
-      const buffer = fs.readFileSync(archive);
-      const newSequence = app.currentSequence! + 1;
-      const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
-      await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
-
-      const installationSpec = await extractInstallationSpecFromTarball(buffer);
-      const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
-      const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
-      const preflightSpec = await extractPreflightSpecFromTarball(buffer);
-      const appSpec = await extractAppSpecFromTarball(buffer);
-      const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
-      const appTitle = await extractAppTitleFromTarball(buffer);
-      const appIcon = await extractAppIconFromTarball(buffer);
-      const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
-
-      await stores.kotsAppStore.createMidstreamVersion(
-        app.id,
-        newSequence,
-        installationSpec.versionLabel,
-        installationSpec.releaseNotes,
-        installationSpec.cursor,
-        installationSpec.encryptionKey,
-        supportBundleSpec,
-        analyzersSpec,
-        preflightSpec,
-        appSpec,
-        kotsAppSpec,
-        kotsAppLicense,
-        appTitle,
-        appIcon
-      );
-
-      const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
-      for (const clusterId of clusterIds) {
-        const diffSummary = await getDiffSummary(app);
-        await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
-      }
+      await saveUpdateVersion(archive, app, stores);
     }
 
     return isUpdateAvailable > 0;
   } finally {
     tmpDir.removeCallback();
+  }
+}
+
+async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) {
+  // if there was an update available, expect that the new archive is in the smae place as the one we pased in
+  const params = await Params.getParams();
+  const buffer = fs.readFileSync(archive);
+  const newSequence = app.currentSequence! + 1;
+  const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
+  await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
+
+  const installationSpec = await extractInstallationSpecFromTarball(buffer);
+  const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+  const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
+  const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+  const appSpec = await extractAppSpecFromTarball(buffer);
+  const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
+  const appTitle = await extractAppTitleFromTarball(buffer);
+  const appIcon = await extractAppIconFromTarball(buffer);
+  const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+
+  await stores.kotsAppStore.createMidstreamVersion(
+    app.id,
+    newSequence,
+    installationSpec.versionLabel,
+    installationSpec.releaseNotes,
+    installationSpec.cursor,
+    installationSpec.encryptionKey,
+    supportBundleSpec,
+    analyzersSpec,
+    preflightSpec,
+    appSpec,
+    kotsAppSpec,
+    kotsAppLicense,
+    appTitle,
+    appIcon
+  );
+
+  const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
+  for (const clusterId of clusterIds) {
+    const diffSummary = await getDiffSummary(app);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
   }
 }
 

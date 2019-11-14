@@ -6,7 +6,7 @@ import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdate } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsAppDownloadUpdates } from "../kots_ffi";
 import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
@@ -44,15 +44,18 @@ export function KotsMutations(stores: Stores) {
       return publicKey;
     },
 
-    async checkForKotsUpdates(root: any, args: any, context: Context) {
+    async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
       const { appId } = args;
 
       const app = await context.getApp(appId);
-      const midstreamUpdateCursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
+      const cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
 
-      const updateAvailable = await kotsAppCheckForUpdate(midstreamUpdateCursor, app, stores);
+      const updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
 
-      return updateAvailable;
+      // do not await...
+      kotsAppDownloadUpdates(updatesAvailable, app, stores);
+
+      return updatesAvailable.length;
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {

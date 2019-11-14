@@ -35,7 +35,9 @@ WORKDIR /src
 RUN npm i --silent
 
 WORKDIR /src
-ADD . /src
+ADD ./Makefile /src/
+ADD ./tsconfig.json /src/
+ADD ./src /src/src
 
 RUN make build
 

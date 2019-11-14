@@ -666,12 +666,16 @@ export class KotsAppStore {
   }
 
   async getMidstreamUpdateCursor(appId: string): Promise<string> {
-    const q = `select update_cursor from app_version where app_id = $1 and sequence = (select current_sequence from app where id = $1)`;
+    const q = `select update_cursor from app_version where app_id = $1 order by update_cursor desc limit 1`;
     const v = [
       appId,
     ];
 
     const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      return "";
+    }
 
     return result.rows[0].update_cursor;
   }
