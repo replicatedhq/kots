@@ -665,8 +665,23 @@ export class KotsAppStore {
     return rows[0].encryption_key;
   }
 
+  async getMaxSequence(appId: string): Promise<number> {
+    const q = `select max(sequence) as sequence from app_version where app_id = $1`;
+    const v = [
+      appId,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      return 0;
+    }
+
+    return parseInt(result.rows[0].sequence);
+  }
+
   async getMidstreamUpdateCursor(appId: string): Promise<string> {
-    const q = `select update_cursor from app_version where app_id = $1 order by update_cursor desc limit 1`;
+    const q = `select update_cursor from app_version where app_id = $1 order by sequence desc limit 1`;
     const v = [
       appId,
     ];

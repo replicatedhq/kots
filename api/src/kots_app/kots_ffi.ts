@@ -120,7 +120,7 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
     currentCursorParam["p"] = currentCursor;
     currentCursorParam["n"] = currentCursor.length;
 
-    console.log(`Check for updates current cursor = ${currentCursor}`)
+    console.log(`Check for updates current cursor = ${currentCursor}`);
 
     kots().ListUpdates(socketParam, archiveParam, currentCursorParam);
 
@@ -137,7 +137,7 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
       return false;
     });
     if (update) {
-      console.log(`Check for updates got updates ${JSON.stringify(update)}`)
+      console.log(`Check for updates got updates ${JSON.stringify(update)}`);
       return update;
     }
     return [];
@@ -147,14 +147,14 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
 }
 
 export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: KotsApp, stores: Stores): Promise<void> {
-  updatesAvailable.forEach(async kotsAppRelease => {
-    // do not await...
+  for (let i = 0; i < updatesAvailable.length; i++) {
+    const update = updatesAvailable[i];
     try {
-      await kotsAppDownloadUpdate(kotsAppRelease.cursor, app, stores);
+      await kotsAppDownloadUpdate(update.cursor, app, stores);
     } catch (err) {
-      console.error(`Dailed to download release ${kotsAppRelease.cursor}: ${err}`);
+      console.error(`Failed to download release ${update.cursor}: ${err}`);
     }
-  });
+  }
 }
 
 export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
@@ -265,7 +265,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   // if there was an update available, expect that the new archive is in the smae place as the one we pased in
   const params = await Params.getParams();
   const buffer = fs.readFileSync(archive);
-  const newSequence = app.currentSequence! + 1;
+  const newSequence = (await stores.kotsAppStore.getMaxSequence(app.id)) + 1;
   const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
