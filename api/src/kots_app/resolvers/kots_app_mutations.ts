@@ -2,11 +2,14 @@ import _ from "lodash";
 import { generateKeyPairSync } from "crypto";
 import sshpk from "sshpk";
 import { Context } from "../../context";
+import path from "path";
+import tmp from "tmp";
 import yaml from "js-yaml";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsAppDownloadUpdates } from "../kots_ffi";
+import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteImagesInVersion, kotsAppDownloadUpdates } from "../kots_ffi";
+import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
@@ -124,10 +127,44 @@ export function KotsMutations(stores: Stores) {
     async updateRegistryDetails(root: any, args: any, context: Context) {
       context.requireSingleTenantSession();
 
+      await stores.kotsAppStore.clearImageRewriteStatus();
+
       const { appSlug, hostname, username, password, namespace } = args.registryDetails;
       const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
-      // TODO: encrypt password before setting it to the DB
-      await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
+
+      const downstreams = await stores.kotsAppStore.listDownstreamsForApp(appId);
+
+      const currentSettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
+      if (currentSettings.registryHostname === hostname && currentSettings.namespace === namespace) {
+        await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
+        return true;
+      }
+
+      const updateFunc = async function(): Promise<void> {
+        if (downstreams.length > 0) {
+          const tmpDir = tmp.dirSync();
+          try {
+            const newVersionArchive = path.join(tmpDir.name, "archive.tar.gz");
+            const app = await stores.kotsAppStore.getApp(appId);
+            const registryInfo: KotsAppRegistryDetails = {
+              registryHostname: hostname,
+              registryUsername: username,
+              registryPassword: password,
+              registryPasswordEnc: "",
+              lastSyncedAt: "",
+              namespace: namespace,
+            }
+            await kotsRewriteImagesInVersion(app, downstreams, registryInfo, newVersionArchive, stores);
+          } finally {
+            tmpDir.removeCallback();
+          }
+        }
+        await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
+      };
+
+      await stores.kotsAppStore.setImageRewriteStatus("Updating registry settings", "running");
+      updateFunc();
+
       return true;
     },
 

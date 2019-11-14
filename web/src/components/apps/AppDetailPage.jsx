@@ -355,7 +355,7 @@ class AppDetailPage extends Component {
                         app={app}
                       />
                     } />
-                    <Route exact path="/app/:slug/airgap-settings" render={() =>
+                    <Route exact path="/app/:slug/registry-settings" render={() =>
                       <AppSettings
                         app={app}
                       />
