@@ -37,19 +37,13 @@ func PullFromLicense(socket string, licenseData string, downstream string, outpu
 			return
 		}
 
-		licenseFile, err := ioutil.TempFile("", "kots")
+		licenseFile, err := writeLicenseFileFromLicenseData(licenseData)
 		if err != nil {
-			fmt.Printf("failed to create temp file: %s\n", err)
+			fmt.Printf("failed to write license file: %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
-		defer os.Remove(licenseFile.Name())
-
-		if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
-			fmt.Printf("failed to write license to temp file: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
+		defer os.Remove(licenseFile)
 
 		// pull to a tmp dir
 		tmpRoot, err := ioutil.TempDir("", "kots")
@@ -62,7 +56,7 @@ func PullFromLicense(socket string, licenseData string, downstream string, outpu
 
 		pullOptions := pull.PullOptions{
 			Downstreams:         []string{downstream},
-			LicenseFile:         licenseFile.Name(),
+			LicenseFile:         licenseFile,
 			ExcludeKotsKinds:    true,
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,
