@@ -105,9 +105,6 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.AppSlug != innerLicense.Spec.AppSlug {
 		return errors.New("\"appSlug\" field has changed")
 	}
-	if outerLicense.Spec.Endpoint != innerLicense.Spec.Endpoint {
-		return errors.New("\"endpoint\" field has changed")
-	}
 	if outerLicense.Spec.ChannelName != innerLicense.Spec.ChannelName {
 		return errors.New("\"channelName\" field has changed")
 	}
