@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -203,6 +204,30 @@ func VerifyAirgapLicense(licenseData string) *C.char {
 
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
+}
+
+func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read config values file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode config values file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.New("not config values")
+	}
+
+	config := decoded.(*kotsv1beta1.ConfigValues)
+
+	return config, nil
 }
 
 func main() {}

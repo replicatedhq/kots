@@ -5,9 +5,9 @@ import (
 )
 
 func readFilesFromPath(filepath string) (*Upstream, error) {
-	return nil, errors.New("not implemented")
+	return nil, errors.New("readFilesFromPath not implemented")
 }
 
 func readFilesFromURI(upstreamURI string) (*Upstream, error) {
-	return nil, errors.New("not implemented")
+	return nil, errors.New("readFilesFromURI not implemented")
 }

@@ -42,7 +42,7 @@ type RegistryAuth struct {
 	Password string
 }
 
-func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, upstreamDir string) error {
+func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imagesDir string, upstreamDir string) error {
 	savedImages := make(map[string]bool)
 
 	err := filepath.Walk(upstreamDir,
@@ -60,7 +60,7 @@ func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logge
 				return err
 			}
 
-			err = saveImagesToFiles(srcRegistry, appSlug, log, imagesDir, contents, savedImages)
+			err = saveImagesToFiles(srcRegistry, appSlug, log, imagesDir, reportWriter, contents, savedImages)
 			if err != nil {
 				return errors.Wrap(err, "failed to extract images")
 			}
@@ -162,7 +162,7 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, fileData []byte, savedImages map[string]bool) error {
+func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, reportWriter io.Writer, fileData []byte, savedImages map[string]bool) error {
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {
 			if _, saved := savedImages[image]; saved {
@@ -170,7 +170,7 @@ func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log
 			}
 
 			log.ChildActionWithSpinner("Pulling image %s", image)
-			err := saveOneImage(srcRegistry, imagesDir, image, appSlug)
+			err := saveOneImage(srcRegistry, imagesDir, image, appSlug, reportWriter)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrap(err, "failed to save image")
@@ -209,7 +209,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image string, appSlug string) error {
+func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image string, appSlug string, reportWriter io.Writer) error {
 	imageRef, err := imageRefImage(image)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse image ref")
@@ -267,7 +267,7 @@ func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
-		ReportWriter:          nil,
+		ReportWriter:          reportWriter,
 		SourceCtx:             sourceCtx,
 		DestinationCtx:        nil,
 		ForceManifestMIMEType: "",

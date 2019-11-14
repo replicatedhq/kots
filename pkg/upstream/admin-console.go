@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"runtime/debug"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
@@ -148,6 +150,8 @@ func promptForSharedPassword() (string, error) {
 		Success: "{{ . | bold }} ",
 	}
 
+	debug.PrintStack()
+	time.Sleep(60 * time.Minute)
 	prompt := promptui.Prompt{
 		Label:     "Enter a new password to be used for the Admin Console:",
 		Templates: templates,
