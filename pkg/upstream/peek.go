@@ -11,8 +11,8 @@ type Update struct {
 	Cursor string `json:"cursor"`
 }
 
-func PeekUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
-	versions, err := peekUpstream(upstreamURI, fetchOptions)
+func GetUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
+	versions, err := getUpdatesUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
 	}
@@ -20,7 +20,7 @@ func PeekUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, err
 	return versions, nil
 }
 
-func peekUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
+func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
@@ -30,17 +30,17 @@ func peekUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, err
 		return nil, errors.Wrap(err, "parse request uri failed")
 	}
 	if u.Scheme == "helm" {
-		return peekHelm(u, fetchOptions.HelmRepoURI)
+		return getUpdatesHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return peekReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.CurrentCursor)
+		return getUpdatesReplicated(u, fetchOptions.LocalPath, fetchOptions.License, fetchOptions.CurrentCursor)
 	}
 	if u.Scheme == "git" {
-		// return peekGit(upstreamURI)
+		// return getUpdatesGit(upstreamURI)
 		// TODO
 	}
 	if u.Scheme == "http" || u.Scheme == "https" {
-		// return peekHttp(upstreamURI)
+		// return getUpdatesHttp(upstreamURI)
 		// TODO
 	}
 

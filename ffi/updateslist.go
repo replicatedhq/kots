@@ -49,14 +49,14 @@ func ListUpdates(socket, fromArchivePath, currentCursor string) {
 			return
 		}
 
-		peekOptions := pull.PeekOptions{
+		getUpdatesOptions := pull.GetUpdatesOptions{
 			LicenseFile:   expectedLicenseFile,
 			CurrentCursor: currentCursor,
 		}
 
-		updates, err := pull.Peek(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), peekOptions)
+		updates, err := pull.GetUpdates(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), getUpdatesOptions)
 		if err != nil {
-			fmt.Printf("failed to peek upstream: %s\n", err.Error())
+			fmt.Printf("failed to get updates for upstream: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
