@@ -1,4 +1,3 @@
-import GitHubApi from "@octokit/rest";
 import { addWeeks } from "date-fns";
 import jwt from "jsonwebtoken";
 import randomstring from "randomstring";
@@ -22,21 +21,12 @@ export type InstallationMap = {
 export class SessionStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
 
-  createInstallationMap(installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[]): InstallationMap {
-    return installations.reduce((installationAcctMap: InstallationMap, { id, account }) => {
-      const lowerLogin = account.login.toLowerCase();
-      installationAcctMap[lowerLogin] = id;
-
-      return installationAcctMap;
-    }, {});
-  }
-
   /**
    * Creates a signed JWT for authenticaion
    * @param userId - string of user_id from the database
    * @param isSingleTenant - true if the user is coming from secure admin console. See user_mutations.ts#loginToAdminConsole
    */
-  async createPasswordSession(userId: string, isSingleTenant: boolean = false): Promise<string> {
+  async createPasswordSession(userId: string): Promise<string> {
     const sessionId = randomstring.generate({ capitalization: "lowercase" });
     const currentUtcDate = new Date(Date.now()).toUTCString();
     const expirationDate = addWeeks(currentUtcDate, 2);
@@ -55,77 +45,10 @@ export class SessionStore {
       {
         type: "ship",
         sessionId,
-        isSingleTenant
+        isSingleTenant: true,
       },
       this.params.sessionKey
     );
-  }
-
-  async createGithubSession(userId: string, github: GitHubApi, token: string): Promise<string> {
-    const { data: installationData } = await github.apps.listInstallationsForAuthenticatedUser({});
-    const { installations } = installationData as {
-      total_count: number;
-      installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[];
-    };
-
-    const installationMap = this.createInstallationMap(installations);
-
-    const sessionId = randomstring.generate({ capitalization: "lowercase" });
-    const currentUtcDate = new Date(Date.now()).toUTCString();
-    const expirationDate = addWeeks(currentUtcDate, 2);
-
-    const q = `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`;
-    const v = [
-      sessionId,
-      userId,
-      JSON.stringify(installationMap),
-      expirationDate
-    ];
-
-    await this.pool.query(q, v);
-
-    return jwt.sign(
-      {
-        type: "github",
-        token,
-        sessionId,
-      },
-      this.params.sessionKey,
-    );
-  }
-
-  async refreshGithubTokenMetadata(token: string, sessionId: string): Promise<void> {
-    const github = new GitHubApi();
-    github.authenticate({
-      type: "token",
-      token,
-    });
-    const { data: installationData } = await github.apps.listInstallationsForAuthenticatedUser({});
-    const { installations } = installationData as {
-      total_count: number;
-      installations: GitHubApi.AppsListInstallationsForAuthenticatedUserResponseInstallationsItem[];
-    };
-
-    const updatedInstallationMap = this.createInstallationMap(installations);
-
-    const q = `update session set metadata = $1 where id = $2`;
-    const v = [updatedInstallationMap, sessionId];
-    await this.pool.query(q, v);
-  }
-
-  public async getGithubSession(sessionId: string): Promise<Session> {
-    const q = `select id, user_id, metadata, expire_at from session where id = $1`;
-    const v = [sessionId];
-
-    const result = await this.pool.query(q, v);
-
-    const session: Session = new Session();
-    session.sessionId = result.rows[0].id;
-    session.userId = result.rows[0].user_id;
-    session.metadata = result.rows[0].metadata;
-    session.expiresAt = result.rows[0].expire_at;
-
-    return session;
   }
 
   public async deleteSession(sessionId: string): Promise<void> {
@@ -135,20 +58,29 @@ export class SessionStore {
     await this.pool.query(q, v);
   }
 
+  public async getSession(id: string): Promise<Session> {
+    const q = `select id, user_id, expire_at from session where id = $1`;
+    const v = [id];
+
+    const result = await this.pool.query(q, v);
+
+    const session: Session = new Session();
+    session.sessionId = result.rows[0].id;
+    session.userId = result.rows[0].user_id;
+    session.expiresAt = result.rows[0].expire_at;
+
+    return session;
+  }
+
   public async decode(token: string): Promise<Session | any> {
     //tslint:disable-next-line possible-timing-attack
     if (token.length > 0 && token !== "null") {
       try {
         const decoded: any = jwt.verify(token, this.params.sessionKey);
 
-        if (decoded.type === "github") {
-          await this.refreshGithubTokenMetadata(decoded.token, decoded.sessionId);
-        }
-
-        const session = await this.getGithubSession(decoded.sessionId);
+        const session = await this.getSession(decoded.sessionId);
         return {
           scmToken: decoded.token,
-          metadata: JSON.parse(session.metadata),
           expiration: session.expiresAt,
           userId: session.userId,
           sessionId: session.sessionId,

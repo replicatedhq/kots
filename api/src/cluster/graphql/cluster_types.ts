@@ -5,30 +5,12 @@ type Cluster {
   slug: String
   lastUpdated: String
   createdOn: String
-  gitOpsRef: GitOpsRef
   shipOpsRef: ShipOpsRef
   watchCounts: WatchCounts
   totalApplicationCount: Int
   enabled: Boolean
   currentVersion: KotsVersion
 }
-`;
-
-const GitOpsRef = `
-  type GitOpsRef {
-    owner: String!
-    repo: String!
-    branch: String
-    path: String
-  }
-`;
-
-const GitOpsRefInput = `
-  input GitOpsRefInput {
-    owner: String!
-    repo: String!
-    branch: String
-  }
 `;
 
 const ShipOpsRef = `
@@ -46,8 +28,6 @@ const WatchCounts = `
 
 export default [
   Cluster,
-  GitOpsRef,
-  GitOpsRefInput,
   ShipOpsRef,
   WatchCounts,
 ];

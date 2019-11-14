@@ -13,11 +13,6 @@ export function ClusterQueries(stores: Stores) {
 
       return result;
     },
-
-    async getGitHubInstallationId(root: any, args: any, context: Context) {
-      const gitSession = await stores.sessionStore.getGithubSession(context.session.sessionId);
-      return gitSession.metadata;
-    }
   }
 }
 

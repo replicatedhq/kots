@@ -19,7 +19,7 @@ module.exports = {
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return process.env.SHIP_CLUSTER_BUILD_VERSION;
   }()),
-  AVAILABLE_LOGIN_TYPES: ["github"],
+  AVAILABLE_LOGIN_TYPES: [],
   WEBPACK_SCRIPTS: [
     "https://unpkg.com/react@16/umd/react.production.min.js",
     "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js",

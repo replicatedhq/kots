@@ -8,11 +8,6 @@ export const listClustersRaw = `
       slug
       createdOn
       lastUpdated
-      gitOpsRef {
-        owner
-        repo
-        branch
-      }
       shipOpsRef {
         token
       }

@@ -5,7 +5,6 @@ import { Params } from "../server/params";
 import { getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
 import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
-import { parseWatchName } from "../watch";
 import { SupportBundleAnalysis } from "./supportbundle";
 import { Analyzer } from "./analyzer";
 
@@ -207,7 +206,7 @@ spec:
     }
 
     supportBundle.watchSlug = row.watch_slug;
-    supportBundle.watchName = parseWatchName(row.watch_title || row.kots_app_title);
+    supportBundle.watchName = row.kots_app_title;
 
     return supportBundle;
   }

@@ -287,15 +287,9 @@ export function getLineChanges(lineChangesArr) {
     } else {
       if (modifiedEndLineNumber > modifiedStartLineNumber || originalEndLineNumber === 0) {
         addedLines += (modifiedEndLineNumber - modifiedStartLineNumber) + 1;
-        if (originalEndLineNumber === originalStartLineNumber) {
-          removedLines++;
-        }
       }
       if (originalEndLineNumber > originalStartLineNumber || modifiedEndLineNumber === 0) {
         removedLines += (originalEndLineNumber - originalStartLineNumber) + 1;
-        if (modifiedEndLineNumber === modifiedStartLineNumber) {
-          addedLines++;
-        }
       }
     }
   });

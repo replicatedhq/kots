@@ -25,25 +25,9 @@ export function TroubleshootQueries(stores: Stores) {
     },
 
     async listSupportBundles(root: any, { watchSlug }, context: Context) {
-
-      let watch;
-      try {
-        watch = await context.findWatch(watchSlug);
-      } catch (error) {
-        if (error.message.toLowerCase().includes("watch not found")) {
-          watch = {};
-          watch.id = await stores.kotsAppStore.getIdFromSlug(watchSlug);
-        } else {
-          throw error;
-        }
-      }
-      let supportBundles = await stores.troubleshootStore.listSupportBundles(watch.id);
-
-      const watchIds = await stores.watchStore.listChildWatchIds(watch.id);
-      for (const watchId of watchIds) {
-        const childBundles = await stores.troubleshootStore.listSupportBundles(watchId);
-        supportBundles = supportBundles.concat(childBundles);
-      }
+      const appId = await stores.kotsAppStore.getIdFromSlug(watchSlug);
+      const app = await context.getApp(appId);
+      let supportBundles = await stores.troubleshootStore.listSupportBundles(app.id);
 
       return _.map(supportBundles, async (supportBundle) => {
         return supportBundle.toSchema();
@@ -61,7 +45,7 @@ export function TroubleshootQueries(stores: Stores) {
 
       return supportBundle.toSchema();
     },
-    
+
     async supportBundleFiles(root, { bundleId, fileNames }, context: Context, { }): Promise<any> {
       const bundle = await stores.troubleshootStore.getSupportBundle(bundleId);
       const files = await bundle.getFiles(bundle, fileNames);
@@ -77,9 +61,9 @@ export function TroubleshootQueries(stores: Stores) {
         return await stores.troubleshootStore.getSupportBundleCommand();
       }
 
-      const watchId = await stores.watchStore.getIdFromSlug(watchSlug);
-      const watch = await context.getWatch(watchId);
-      const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(watch.slug);
+      const appId = await stores.kotsAppStore.getIdFromSlug(watchSlug);
+      const app = await context.getApp(appId);
+      const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(app.slug);
       return bundleCommand;
     },
   };

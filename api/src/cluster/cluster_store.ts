@@ -512,7 +512,7 @@ spec:
     return manifests;
   }
 
-  async updateCluster(userId: string, clusterId: string, clusterName: string, gitOpsRef: any): Promise<boolean> {
+  async updateCluster(userId: string, clusterId: string, clusterName: string): Promise<boolean> {
     const slugProposal = `${slugify(clusterName, { lower: true })}`;
     const clusters = await this.listClusters(userId);
     const existingSlugs = clusters.map(cluster => cluster.slug);
@@ -534,12 +534,6 @@ spec:
     const q = `update cluster set title = $1, slug = $2, updated_at = $3 where id = $4`;
     const v = [clusterName, finalSlug, new Date(), clusterId];
     await this.pool.query(q, v);
-
-    if (gitOpsRef) {
-      const q = `update cluster_github set owner = $1, repo = $2, branch = $3 where cluster_id = $4`;
-      const v = [gitOpsRef.owner, gitOpsRef.repo, gitOpsRef.branch, clusterId];
-      await this.pool.query(q, v);
-    }
 
     return true;
   }
@@ -580,12 +574,6 @@ spec:
         v = [userId, clusterId];
         await pg.query(q, v);
 
-        if (cluster.gitOpsRef) {
-          const q = `delete from cluster_github where cluster_id = $1`;
-          const v = [clusterId];
-          await pg.query(q, v);
-        }
-
         await pg.query("commit");
       } catch (err) {
         await pg.query("rollback");
@@ -599,28 +587,19 @@ spec:
   }
 
   private mapCluster(row: any): Cluster {
-    let gitOpsRef, shipOpsRef: any = null
+    let shipOpsRef: any = null
     if (row.token) {
       shipOpsRef = {
         token: row.token
       }
     }
-    if (row.cluster_type === "gitops") {
-      gitOpsRef = {
-        owner: row.owner,
-        repo: row.repo,
-        branch: row.branch,
-        path: row.github_path || "",
-        installationId: row.installation_id,
-      }
-    }
+
     const c = new Cluster();
     c.id = row.id;
     c.title = row.title;
     c.slug = row.slug;
     c.createdOn = row.created_at;
     c.lastUpdated = row.updated_at;
-    c.gitOpsRef = gitOpsRef;
     c.shipOpsRef = shipOpsRef;
     return c;
   }
