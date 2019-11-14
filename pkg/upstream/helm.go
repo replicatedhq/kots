@@ -24,18 +24,10 @@ import (
 	"k8s.io/helm/pkg/repo"
 )
 
-func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
-	repoName, chartName, chartVersion, err := parseHelmURL(u)
+func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
+	repoName, chartName, _, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
-	}
-
-	if repoURI == "" {
-		repoURI = getKnownHelmRepoURI(repoName)
-	}
-
-	if repoURI == "" {
-		return nil, errors.New("unknown helm repo uri, try passing the repo uri")
 	}
 
 	helmHome, err := ioutil.TempDir("", "kots")
@@ -43,58 +35,38 @@ func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
 		return nil, errors.Wrap(err, "failed to create temporary helm home")
 	}
 	defer os.RemoveAll(helmHome)
-	if err := os.MkdirAll(filepath.Join(helmHome, "repository"), 0755); err != nil {
-		return nil, errors.Wrap(err, "failed to make directory for helm home")
-	}
-	reposFile := filepath.Join(helmHome, "repository", "repositories.yaml")
 
-	repoIndexFile, err := ioutil.TempFile("", "index")
+	i, err := helmLoadRepositoriesIndex(helmHome, repoName, repoURI)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temporary index file")
-	}
-	defer os.Remove(repoIndexFile.Name())
-
-	cacheIndexFile, err := ioutil.TempFile("", "cache")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create cache index file")
-	}
-	defer os.Remove(cacheIndexFile.Name())
-
-	repoYAML := `apiVersion: v1
-generated: "2019-05-29T14:31:58.906598702Z"
-repositories: []`
-	if err := ioutil.WriteFile(reposFile, []byte(repoYAML), 0644); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to load helm repositories")
 	}
 
-	c := repo.Entry{
-		Name:  repoName,
-		Cache: repoIndexFile.Name(),
-		URL:   repoURI,
-	}
-	r, err := repo.NewChartRepository(&c, getter.All(environment.EnvSettings{}))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create chart repository")
-	}
-	if err := r.DownloadIndexFile(cacheIndexFile.Name()); err != nil {
-		return nil, errors.Wrap(err, "failed to download index file")
-	}
-
-	rf, err := repo.LoadRepositoriesFile(reposFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load repositories file")
-	}
-	rf.Update(&c)
-
-	i := search.NewIndex()
-	for _, re := range rf.Repositories {
-		n := re.Name
-		ind, err := repo.LoadIndexFile(repoIndexFile.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load index file")
+	var updates []Update
+	for _, result := range i.All() {
+		if result.Chart.GetName() != chartName {
+			continue
 		}
 
-		i.AddRepo(n, ind, true)
+		updates = append(updates, Update{Cursor: result.Chart.GetVersion()})
+	}
+	return updates, nil
+}
+
+func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
+	repoName, chartName, chartVersion, err := parseHelmURL(u)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse helm uri")
+	}
+
+	helmHome, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temporary helm home")
+	}
+	defer os.RemoveAll(helmHome)
+
+	i, err := helmLoadRepositoriesIndex(helmHome, repoName, repoURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load helm repositories")
 	}
 
 	if chartVersion == "" {
@@ -166,6 +138,72 @@ repositories: []`
 	}
 
 	return nil, errors.New("chart version not found")
+}
+
+func helmLoadRepositoriesIndex(helmHome, repoName, repoURI string) (*search.Index, error) {
+	if repoURI == "" {
+		repoURI = getKnownHelmRepoURI(repoName)
+	}
+
+	if repoURI == "" {
+		return nil, errors.New("unknown helm repo uri, try passing the repo uri")
+	}
+
+	if err := os.MkdirAll(filepath.Join(helmHome, "repository"), 0755); err != nil {
+		return nil, errors.Wrap(err, "failed to make directory for helm home")
+	}
+	reposFile := filepath.Join(helmHome, "repository", "repositories.yaml")
+
+	repoIndexFile, err := ioutil.TempFile("", "index")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temporary index file")
+	}
+	defer os.Remove(repoIndexFile.Name())
+
+	cacheIndexFile, err := ioutil.TempFile("", "cache")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create cache index file")
+	}
+	defer os.Remove(cacheIndexFile.Name())
+
+	repoYAML := `apiVersion: v1
+generated: "2019-05-29T14:31:58.906598702Z"
+repositories: []`
+	if err := ioutil.WriteFile(reposFile, []byte(repoYAML), 0644); err != nil {
+		return nil, err
+	}
+
+	c := repo.Entry{
+		Name:  repoName,
+		Cache: repoIndexFile.Name(),
+		URL:   repoURI,
+	}
+	r, err := repo.NewChartRepository(&c, getter.All(environment.EnvSettings{}))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create chart repository")
+	}
+	if err := r.DownloadIndexFile(cacheIndexFile.Name()); err != nil {
+		return nil, errors.Wrap(err, "failed to download index file")
+	}
+
+	rf, err := repo.LoadRepositoriesFile(reposFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load repositories file")
+	}
+	rf.Update(&c)
+
+	i := search.NewIndex()
+	for _, re := range rf.Repositories {
+		n := re.Name
+		ind, err := repo.LoadIndexFile(repoIndexFile.Name())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load index file")
+		}
+
+		i.AddRepo(n, ind, true)
+	}
+
+	return i, nil
 }
 
 func parseHelmURL(u *url.URL) (string, string, string, error) {

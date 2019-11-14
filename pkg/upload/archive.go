@@ -9,7 +9,6 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -58,7 +57,6 @@ func findUpdateCursor(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to read update installation file")
 	}
 
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(installationData), nil, nil)
 	if err != nil {

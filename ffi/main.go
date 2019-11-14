@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -41,19 +40,15 @@ func UpdateCheck(socket, fromArchivePath string) {
 		}
 		defer os.RemoveAll(tmpRoot)
 
-		// extract the current archive to this root
-		tarGz := archiver.TarGz{
-			Tar: &archiver.Tar{
-				ImplicitTopLevelFolder: false,
-			},
-		}
-		if err := tarGz.Unarchive(fromArchivePath, tmpRoot); err != nil {
-			fmt.Printf("failed to unarchive: %s\n", err.Error())
+		tarGz, err := extractArchive(tmpRoot, fromArchivePath)
+		if err != nil {
+			fmt.Printf("failed to extract archive: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
-		beforeCursor, err := readCursorFromPath(tmpRoot)
+		installationFilePath := filepath.Join(tmpRoot, "upstream", "userdata", "installation.yaml")
+		beforeCursor, err := readCursorFromPath(installationFilePath)
 		if err != nil {
 			fmt.Printf("failed to read cursor file: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
@@ -61,28 +56,12 @@ func UpdateCheck(socket, fromArchivePath string) {
 		}
 
 		expectedLicenseFile := filepath.Join(tmpRoot, "upstream", "userdata", "license.yaml")
-		_, err = os.Stat(expectedLicenseFile)
+		license, err := loadLicenseFromPath(expectedLicenseFile)
 		if err != nil {
-			fmt.Printf("failed to find license file in archive\n")
+			fmt.Printf("failed to load license: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
-		licenseData, err := ioutil.ReadFile(expectedLicenseFile)
-		if err != nil {
-			fmt.Printf("failed to read license file: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-
-		kotsscheme.AddToScheme(scheme.Scheme)
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseData), nil, nil)
-		if err != nil {
-			fmt.Printf("failed to decode license data: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-		license := obj.(*kotsv1beta1.License)
 
 		pullOptions := pull.PullOptions{
 			LicenseFile:         expectedLicenseFile,
@@ -99,7 +78,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 			return
 		}
 
-		afterCursor, err := readCursorFromPath(tmpRoot)
+		afterCursor, err := readCursorFromPath(installationFilePath)
 		if err != nil {
 			fmt.Printf("failed to read cursor file after update: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
@@ -151,7 +130,6 @@ func GetLatestLicense(socket, licenseData string) {
 			statusClient.end(ffiResult)
 		}()
 
-		kotsscheme.AddToScheme(scheme.Scheme)
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, _, err := decode([]byte(licenseData), nil, nil)
 		if err != nil {
@@ -208,7 +186,6 @@ func GetLatestLicense(socket, licenseData string) {
 
 //export VerifyAirgapLicense
 func VerifyAirgapLicense(licenseData string) *C.char {
-	kotsscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(licenseData), nil, nil)
 	if err != nil {
@@ -225,30 +202,32 @@ func VerifyAirgapLicense(licenseData string) *C.char {
 	return C.CString("verified")
 }
 
-func readCursorFromPath(rootPath string) (string, error) {
-	installationFilePath := filepath.Join(rootPath, "upstream", "userdata", "installation.yaml")
-	_, err := os.Stat(installationFilePath)
-	if os.IsNotExist(err) {
-		return "", nil
-	}
-	if err != nil {
-		return "", errors.Wrap(err, "failed to open file")
-	}
-
-	installationData, err := ioutil.ReadFile(installationFilePath)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read update installation file")
-	}
-
+func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(installationData), nil, nil)
+}
+
+func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
+	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to devode installation data")
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read config values file")
 	}
 
-	installation := obj.(*kotsv1beta1.Installation)
-	return installation.Spec.UpdateCursor, nil
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode config values file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.New("not config values")
+	}
+
+	config := decoded.(*kotsv1beta1.ConfigValues)
+
+	return config, nil
 }
 
 func main() {}

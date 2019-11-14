@@ -15,9 +15,11 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UploadOptions struct {
@@ -32,6 +34,10 @@ type UploadOptions struct {
 	updateCursor    string
 	license         *string
 	versionLabel    string
+}
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
 }
 
 // Upload will upload the application version at path

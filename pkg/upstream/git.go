@@ -5,5 +5,5 @@ import (
 )
 
 func downloadGit(gitURI string) (*Upstream, error) {
-	return nil, errors.New("not implemented")
+	return nil, errors.New("downloadGit not implemented")
 }
