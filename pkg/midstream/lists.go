@@ -5,22 +5,22 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
 )
 
-func findNewImages(new []image.Image, existing []image.Image) []image.Image {
-	newImages := make([]image.Image, 0)
+func removeExistingImages(new []image.Image, existing []image.Image) []image.Image {
+	filteredImages := make([]image.Image, 0)
 	names := make(map[string]bool)
 
-	for _, e := range existing {
-		names[e.Name] = true
+	for _, n := range new {
+		names[n.Name] = true
 	}
 
-	for _, n := range new {
-		if _, exists := names[n.Name]; !exists {
-			names[n.Name] = true
-			newImages = append(newImages, n)
+	for _, e := range existing {
+		if _, exists := names[e.Name]; !exists {
+			names[e.Name] = true
+			filteredImages = append(filteredImages, e)
 		}
 	}
 
-	return newImages
+	return filteredImages
 }
 
 func findNewPatches(new []kustomizetypes.PatchStrategicMerge, existing []kustomizetypes.PatchStrategicMerge) []kustomizetypes.PatchStrategicMerge {

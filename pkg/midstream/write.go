@@ -76,8 +76,8 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 		return
 	}
 
-	newImages := findNewImages(m.Kustomization.Images, existing.Images)
-	m.Kustomization.Images = append(existing.Images, newImages...)
+	filteredImages := removeExistingImages(m.Kustomization.Images, existing.Images)
+	m.Kustomization.Images = append(m.Kustomization.Images, filteredImages...)
 
 	newPatches := findNewPatches(m.Kustomization.PatchesStrategicMerge, existing.PatchesStrategicMerge)
 	m.Kustomization.PatchesStrategicMerge = append(existing.PatchesStrategicMerge, newPatches...)
