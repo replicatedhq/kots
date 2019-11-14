@@ -4,9 +4,9 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -17,10 +17,15 @@ var (
 	ErrSignatureMissing = errors.New("license signature is missing")
 )
 
-type Signature struct {
+type InnerSignature struct {
 	LicenseSignature []byte `json:"licenseSignature"`
 	PublicKey        string `json:"publicKey"`
 	KeySignature     []byte `json:"keySignature"`
+}
+
+type OuterSignature struct {
+	LicenseData    string `json:"licenseData"`
+	InnerSignature string `json:"innerSignature"`
 }
 
 type KeySignature struct {
@@ -29,17 +34,32 @@ type KeySignature struct {
 }
 
 func VerifySignature(license *kotsv1beta1.License) error {
-	signature := &Signature{}
-	if err := json.Unmarshal(license.Spec.Signature, signature); err != nil {
+	decodedOuterSignature, err := base64.StdEncoding.DecodeString(license.Spec.Signature)
+	if err != nil {
+		return errors.New("failed to decode license signature")
+	}
+
+	outerSignature := &OuterSignature{}
+	if err := json.Unmarshal(decodedOuterSignature, outerSignature); err != nil {
+		return errors.Wrap(err, "failed to unmarshal license outer signature")
+	}
+
+	decodedInnerSignature, err := base64.StdEncoding.DecodeString(outerSignature.InnerSignature)
+	if err != nil {
+		return errors.New("failed to decode license signature")
+	}
+
+	innerSignature := &InnerSignature{}
+	if err := json.Unmarshal(decodedInnerSignature, innerSignature); err != nil {
 		// old licenses's signature is a single space character
-		if len(license.Spec.Signature) == 0 || len(license.Spec.Signature) == 1 {
+		if len(decodedInnerSignature) == 0 || len(decodedInnerSignature) == 1 {
 			return ErrSignatureMissing
 		}
-		return errors.Wrap(err, "failed to unmarshal license signature")
+		return errors.Wrap(err, "failed to unmarshal license inner signature")
 	}
 
 	keySignature := &KeySignature{}
-	if err := json.Unmarshal(signature.KeySignature, keySignature); err != nil {
+	if err := json.Unmarshal(innerSignature.KeySignature, keySignature); err != nil {
 		return errors.Wrap(err, "failed to unmarshal key signature")
 	}
 
@@ -48,16 +68,16 @@ func VerifySignature(license *kotsv1beta1.License) error {
 		return errors.New("unknown global key")
 	}
 
-	if err := verify([]byte(signature.PublicKey), keySignature.Signature, globalKeyPEM); err != nil {
+	if err := verify([]byte(innerSignature.PublicKey), keySignature.Signature, globalKeyPEM); err != nil {
 		return errors.Wrap(err, "failed to verify key signature")
 	}
 
-	licenseMessage, err := getMessageFromLicense(license)
+	licenseMessage, err := base64.StdEncoding.DecodeString(outerSignature.LicenseData)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert license to message")
+		return errors.New("failed to decode license data from outer signature")
 	}
 
-	if err := verify(licenseMessage, signature.LicenseSignature, []byte(signature.PublicKey)); err != nil {
+	if err := verify(licenseMessage, innerSignature.LicenseSignature, []byte(innerSignature.PublicKey)); err != nil {
 		return errors.Wrap(err, "failed to verify license signature")
 	}
 
@@ -86,43 +106,4 @@ func verify(message, signature, publicKeyPEM []byte) error {
 	}
 
 	return nil
-}
-
-func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
-	// JSON marshaller will sort map keys automatically.
-	fields := map[string]string{
-		"apiVersion":             license.APIVersion,
-		"kind":                   license.Kind,
-		"metadata.name":          license.GetObjectMeta().GetName(),
-		"spec.licenseID":         license.Spec.LicenseID,
-		"spec.appSlug":           license.Spec.AppSlug,
-		"spec.channelName":       license.Spec.ChannelName,
-		"spec.endpoint":          license.Spec.Endpoint,
-		"spec.isAirgapSupported": fmt.Sprintf("%t", license.Spec.IsAirgapSupported),
-	}
-
-	if license.Spec.LicenseSequence > 0 {
-		fields["spec.licenseSequence"] = fmt.Sprintf("%d", license.Spec.LicenseSequence)
-	}
-
-	for k, v := range license.Spec.Entitlements {
-		key := fmt.Sprintf("spec.entitlements.%s", k)
-		val := map[string]string{
-			"title":       v.Title,
-			"description": v.Description,
-			"value":       fmt.Sprintf("%v", v.Value.Value()),
-		}
-		valStr, err := json.Marshal(val)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to marshal entitlement value: %s", k)
-		}
-		fields[key] = string(valStr)
-	}
-
-	message, err := json.Marshal(fields)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal message JSON")
-	}
-
-	return message, err
 }

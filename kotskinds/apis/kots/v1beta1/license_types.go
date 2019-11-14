@@ -99,7 +99,7 @@ type EntitlementField struct {
 
 // LicenseSpec defines the desired state of LicenseSpec
 type LicenseSpec struct {
-	Signature         []byte                      `json:"signature"`
+	Signature         string                      `json:"signature"`
 	AppSlug           string                      `json:"appSlug"`
 	Endpoint          string                      `json:"endpoint,omitempty"`
 	ChannelName       string                      `json:"channelName,omitempty"`
