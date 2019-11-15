@@ -55,8 +55,7 @@ export function KotsMutations(stores: Stores) {
 
       const updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
 
-      // do not await...
-      kotsAppDownloadUpdates(updatesAvailable, app, stores);
+      await kotsAppDownloadUpdates(updatesAvailable, app, stores);
 
       return updatesAvailable.length;
     },
