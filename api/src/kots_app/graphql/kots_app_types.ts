@@ -26,6 +26,7 @@ const KotsApp = `
     hasPreflight: Boolean
     isConfigurable: Boolean
     allowRollback: Boolean
+    kubectlVersion: String
   }
 `;
 

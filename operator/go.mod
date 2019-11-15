@@ -3,6 +3,7 @@ module github.com/replicatedhq/kotsadm/operator
 go 1.12
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect

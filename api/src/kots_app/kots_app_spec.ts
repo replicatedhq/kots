@@ -6,6 +6,7 @@ export interface ApplicationSpec {
   allowRollback?: boolean;
   statusInformers?: StatusInformer[];
   graphs?: MetricGraph[];
+  kubectlVersion?: string;
 }
 
 export interface ApplicationPort {

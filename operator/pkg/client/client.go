@@ -28,9 +28,10 @@ var (
 )
 
 type ApplicationManifests struct {
-	AppID     string `json:"app_id"`
-	Namespace string `json:"namespace"`
-	Manifests string `json:"manifests"`
+	AppID          string `json:"app_id"`
+	KubectlVersion string `json:"kubectl_version"`
+	Namespace      string `json:"namespace"`
+	Manifests      string `json:"manifests"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server
@@ -369,7 +370,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	// TODO sort, order matters
 	// TODO should we split multi-doc to retry on failed?
 
-	kubectl, err := exec.LookPath("kubectl")
+	kubectl, err := util.FindKubectlVersion(applicationManifests.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
