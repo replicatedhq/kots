@@ -118,6 +118,9 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.LicenseID != innerLicense.Spec.LicenseID {
 		return errors.New("\"licenseID\" field has changed")
 	}
+	if outerLicense.Spec.LicenseType != innerLicense.Spec.LicenseType {
+		return errors.New("\"LicenseType\" field has changed")
+	}
 	if outerLicense.Spec.IsAirgapSupported != innerLicense.Spec.IsAirgapSupported {
 		return errors.New("\"isAirgapSupported\" field has changed")
 	}

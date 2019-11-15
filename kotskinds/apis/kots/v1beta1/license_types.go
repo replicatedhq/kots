@@ -105,6 +105,7 @@ type LicenseSpec struct {
 	ChannelName       string                      `json:"channelName,omitempty"`
 	LicenseSequence   int64                       `json:"licenseSequence,omitempty"`
 	LicenseID         string                      `json:"licenseID"`
+	LicenseType       string                      `json:"licenseType,omitempty"`
 	IsAirgapSupported bool                        `json:"isAirgapSupported,omitempty"`
 	Entitlements      map[string]EntitlementField `json:"entitlements,omitempty"`
 }
