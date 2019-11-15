@@ -1,6 +1,7 @@
 import pg from "pg";
 import randomstring from "randomstring";
 import _ from "lodash";
+import * as yaml from "js-yaml";
 import { Params } from "../server/params";
 import { getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
@@ -154,10 +155,17 @@ spec:
       throw new ReplicatedError(`Support Bundle ${id} not found`);
     }
 
-    let kotsLicenseType = "community"
-
     const row = result.rows[0];
     const supportBundle = new SupportBundle();
+
+    let kotsLicenseType = "community";
+
+    // UNCOMMENT WHEN LICENSE TYPE IS PART OF THE LICENSE
+    // const license = row.kots_license;
+    // const doc = yaml.safeLoad(license.toString());
+    // if (doc.apiVersion === "kots.io/v1beta1" && doc.kind === "License") {
+    //   kotsLicenseType = doc.spec.licenseType;
+    // }
 
     supportBundle.id = row.id;
     supportBundle.slug = row.slug;

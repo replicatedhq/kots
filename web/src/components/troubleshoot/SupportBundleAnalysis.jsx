@@ -182,20 +182,21 @@ export class SupportBundleAnalysis extends React.Component {
                   </div>
                 </div>
               </div>
-              <div className="flex">
-                <div className="CommunityLicenseBundle--wrapper flex flex1 alignItems--center">
-                  <div className="flex flex-auto">
-                    <span className="icon communityIcon"></span>
+              {bundle.kotsLicenseType === "community" &&
+                <div className="flex">
+                  <div className="CommunityLicenseBundle--wrapper flex flex1 alignItems--center">
+                    <div className="flex flex-auto">
+                      <span className="icon communityIcon"></span>
+                    </div>
+                    <div className="flex1 flex-column u-marginLeft--10">
+                      <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
+                      <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
+                    </div>
+                    <div className="flex justifyContent--flexEnd">
+                      <button className="btn secondary lightBlue"> Learn more about Community Licenses </button>
+                    </div>
                   </div>
-                  <div className="flex1 flex-column u-marginLeft--10">
-                    <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
-                    <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
-                  </div>
-                  <div className="flex justifyContent--flexEnd"> 
-                    <button className="btn secondary lightBlue"> Learn more about Community Licenses </button>
-                  </div>
-                </div>
-              </div>
+                </div>}
               <div className="flex-column flex1">
                 <div className="customer-actions-wrapper flex1 flex-column">
                   <div className="flex action-tab-bar">
