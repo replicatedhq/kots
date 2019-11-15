@@ -39,7 +39,7 @@ function kots() {
     PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString]],
     ListUpdates: ["void", [GoString, GoString, GoString]],
-    UpdateDownload: ["void", [GoString, GoString, GoString]],
+    UpdateDownload: ["void", [GoString, GoString, GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     RewriteImagesInVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
@@ -146,17 +146,18 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
 }
 
 export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: KotsApp, stores: Stores): Promise<void> {
+  const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
   for (let i = 0; i < updatesAvailable.length; i++) {
     const update = updatesAvailable[i];
     try {
-      await kotsAppDownloadUpdate(update.cursor, app, stores);
+      await kotsAppDownloadUpdate(update.cursor, app, registryInfo, stores);
     } catch (err) {
       console.error(`Failed to download release ${update.cursor}: ${err}`);
     }
   }
 }
 
-export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
+export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, registryInfo: KotsAppRegistryDetails, stores: Stores): Promise<boolean> {
   // We need to include the last archive because if there is an update, the ffi function will update it
   const tmpDir = tmp.dirSync();
   const archive = path.join(tmpDir.name, "archive.tar.gz");
@@ -179,7 +180,12 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, stores
     cursorParam["p"] = cursor;
     cursorParam["n"] = cursor.length;
 
-    kots().UpdateDownload(socketParam, archiveParam, cursorParam);
+    const registryJson = JSON.stringify(registryInfo)
+    const registryJsonParam = new GoString();
+    registryJsonParam["p"] = registryJson;
+    registryJsonParam["n"] = registryJson.length;
+
+    kots().UpdateDownload(socketParam, archiveParam, registryJsonParam, cursorParam);
     await statusServer.connection();
     const isUpdateAvailable: number = await statusServer.termination((resolve, reject, obj): boolean => {
       if (obj.status === "terminated") {
