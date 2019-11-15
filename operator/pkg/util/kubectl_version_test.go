@@ -11,24 +11,39 @@ func Test_matchKnownVersion(t *testing.T) {
 		want       string
 	}{
 		{
-			name:       "16",
-			userString: "16",
-			want:       "v1.16.1",
+			name:       "1",
+			userString: "1",
+			want:       "",
 		},
 		{
 			name:       "notexist",
-			userString: "1.11",
-			want:       "1.11",
+			userString: "1.11.5",
+			want:       "",
 		},
 		{
-			name:       "1.16",
-			userString: "1.16",
+			name:       "1.16.1",
+			userString: "1.16.1",
 			want:       "v1.16.1",
 		},
 		{
 			name:       "1.14.x",
 			userString: "1.14.x",
 			want:       "v1.14.7",
+		},
+		{
+			name:       "<1.15.0",
+			userString: "<1.15.0",
+			want:       "v1.14.7",
+		},
+		{
+			name:       ">1.15.0 <1.17.0",
+			userString: ">1.15.0 <1.17.0",
+			want:       "v1.16.1",
+		},
+		{
+			name:       "<1.17.0",
+			userString: "<1.17.0",
+			want:       "v1.16.1",
 		},
 	}
 	for _, tt := range tests {

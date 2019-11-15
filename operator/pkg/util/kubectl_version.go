@@ -4,32 +4,33 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-	"strings"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 )
 
-var knownKubectlVersions = []string{
-	"v1.14.7",
-	"v1.16.1",
+var knownKubectlVersions = []semver.Version{
+	semver.MustParse("1.16.1"),
+	semver.MustParse("1.14.7"),
 }
 
-// finds a known version that 'matches' the provided userstring
-// for instance, 14.x matches v1.14.7, and 1.16 matches v1.16.1
+// finds a known version that matches the provided range
 func matchKnownVersion(userString string) string {
-	// strip trailing 'x'
-	userString = strings.TrimSuffix(userString, "x")
-	userString = strings.TrimSuffix(userString, "X")
+	parsedRange, err := semver.ParseRange(userString)
+	if err != nil {
+		log.Printf("unable to parse range %s: %s", userString, err)
+		return ""
+	}
 
 	// loop through list of known versions and check for matches
 	for _, knownVersion := range knownKubectlVersions {
-		if strings.Contains(knownVersion, userString) {
-			return knownVersion
+		if parsedRange(knownVersion) {
+			return "v" + knownVersion.String()
 		}
 	}
 
-	// otherwise return the raw string
-	return userString
+	// otherwise return the empty string
+	return ""
 }
 
 func FindKubectlVersion(userString string) (string, error) {
@@ -40,13 +41,16 @@ func FindKubectlVersion(userString string) (string, error) {
 
 	// then maybe override it with custom kubectl version
 	if userString != "" && userString != "latest" {
+		// matchKnownVersion only returns a string on success
 		actualVersion := matchKnownVersion(userString)
+		if actualVersion == "" {
+			log.Printf("unable to find kubectl version matching %s, using default of 'latest'", userString)
+			return kubectl, nil
+		}
 
 		customKubectl, err := exec.LookPath(fmt.Sprintf("kubectl-%s", actualVersion))
 		if err != nil {
-			log.Printf("unable to find custom kubectl version %s in path: %s", actualVersion, err.Error())
-		} else if customKubectl == "" {
-			log.Printf("unable to find custom kubectl version %s in path, found empty string", actualVersion)
+			log.Printf("unable to find custom kubectl version %s in path: %s, using default of 'latest'", actualVersion, err.Error())
 		} else {
 			log.Printf("using custom kubectl version %s at %s", actualVersion, customKubectl)
 			kubectl = customKubectl
