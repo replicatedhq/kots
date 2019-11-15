@@ -333,6 +333,7 @@ class Dashboard extends Component {
                 license={true}
                 url={this.props.match.url}
                 appLicense={appLicense}
+                communityLicense={true}
               />
             </div>
             <div className="u-marginTop--30 flex flex1">
