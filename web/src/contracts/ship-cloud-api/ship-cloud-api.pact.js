@@ -3,14 +3,7 @@
 */
 import listClusters from "./contracts/list-clusters";
 import createShipCluster from "./contracts/create-ship-cluster";
-import createGitOpsCluster from "./contracts/create-gitops-cluster";
-import createMidstreamWatch from "./contracts/create-midstream-watch";
-import createInitSession from "./contracts/create-init-session";
-import getWatchVersion from "./contracts/get-watch-version";
-import updateWatch from "./contracts/update-watch";
-import duplicateSlugCheck from "./contracts/duplicate-slug-check";
 import getKotsAppCheck from "./contracts/get-kots-app";
-import getWatchContributors from "./contracts/get-watch-contributors";
 import getKotsPreflightResult from "./contracts/get-kots-preflight-result";
 import getLatestKotsPreflightResult from "./contracts/get-latest-kots-preflight-result";
 import deployKotsVersion from "./contracts/deploy-kots-version";
@@ -24,11 +17,6 @@ describe("ShipAPI GraphQL Pact", () => {
 
   describe("solo-account:listClusters", () => listClusters() );
   describe("solo-account:createShipCluster", () => createShipCluster() );
-  describe("solo-account:createGitOpsCluster", () => createGitOpsCluster() );
-  describe("solo-account:createMidstreamWatch", () => createMidstreamWatch() );
-  describe("solo-account:createInitSession", () => createInitSession() );
-  describe("solo-account:getWatchVersion", () => getWatchVersion() );
-  describe("duplicate-slug-check", () => duplicateSlugCheck() );
 
   describe("get-kots-app", () => getKotsAppCheck());
   describe("get-kots-preflight-result", () => getKotsPreflightResult());
@@ -38,8 +26,5 @@ describe("ShipAPI GraphQL Pact", () => {
   describe("kots-downstream-history-with-notes", () => kotsDownstreamHistoryWithNotes());
   describe("kots-downstream-history-no-notes", () => kotsDownstreamHistoryNoNotes());
   describe("kots-downstream-history-different-sequences", () => kotsDownstreamHistoryDifferentSequences());
-  describe("single-user:updateWatch", () => updateWatch() );
-
-  describe("get-watch-contributors", () => getWatchContributors() );
 
 });
