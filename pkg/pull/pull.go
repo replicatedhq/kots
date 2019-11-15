@@ -359,11 +359,12 @@ func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	}
 
 	license := decoded.(*kotsv1beta1.License)
-	if err := VerifySignature(license); err != nil {
+	verifiedLicense, err := VerifySignature(license)
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to verify signature")
 	}
 
-	return license, nil
+	return verifiedLicense, nil
 }
 
 func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
