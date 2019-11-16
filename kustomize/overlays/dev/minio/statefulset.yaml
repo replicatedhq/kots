@@ -17,6 +17,9 @@ spec:
         release: minio
       name: minio
     spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
       - args:
           - server
@@ -34,8 +37,8 @@ spec:
               name: minio
         - name: MINIO_BROWSER
           value: "on"
-        image: minio/minio:RELEASE.2019-10-12T01-39-57Z
-        imagePullPolicy: IfNotPresent
+        image: kotsadm/minio:alpha
+        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -66,6 +69,23 @@ spec:
         volumeMounts:
           - mountPath: /data
             name: miniodata  # this is where the data is stored
+      initContainers:
+      - command:
+        - chown
+        args:
+        - "-R"
+        - "1001:1001"
+        - /data
+        image: kotsadm/minio:alpha
+        imagePullPolicy: Always
+        name: minio-chown
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /data
+          name: miniodata  # this is where the data is stored
       volumes:
       - name: miniodata
         persistentVolumeClaim:
