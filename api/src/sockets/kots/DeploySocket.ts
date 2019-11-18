@@ -8,6 +8,7 @@ import { ClusterStore } from "../../cluster";
 import { PreflightStore } from "../../preflight/preflight_store";
 import _ from "lodash";
 import { TroubleshootStore } from "../../troubleshoot";
+import {logger} from "../../server/logger";
 
 const DefaultReadyState = [{kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", state: State.Ready}];
 
@@ -123,11 +124,15 @@ export class KotsDeploySocketService {
             const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
             const b = new Buffer(rendered);
 
+            const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+
             const args = {
               app_id: app.id,
+              kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
               namespace: desiredNamespace,
               manifests: b.toString("base64"),
-            }
+            };
+
             this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
             clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
 

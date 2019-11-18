@@ -112,7 +112,7 @@ class SecureAdminConsole extends React.Component {
               : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in to {appName}</p>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
             </div>
             <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Enter the password to access the {appName} admin console.

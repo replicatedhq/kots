@@ -54,6 +54,7 @@ export const Query = `
     getLatestKotsPreflightResult: PreflightResult
 
     getAirgapInstallStatus: AirgapInstallStatus
+    getImageRewriteStatus: ImageRewriteStatus
 
     kurl: Kurl
 

@@ -53,7 +53,7 @@ export class StatusServer {
     });
   }
 
-  async termination(handler: Function): Promise<void> {
+  async termination(handler: Function): Promise<any> {
     const statusServer = this;
     return new Promise((resolve, reject) => {
       statusServer.server.on('end', function() {

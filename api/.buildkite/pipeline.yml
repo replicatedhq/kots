@@ -27,9 +27,9 @@ steps:
 
   - label: alpha
     commands:
-      - make -C api build-alpha publish-alpha
+      - make -C api build-alpha
     branches: "master"
 
   - label: release
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C api build-release publish-release; fi
+      - if [ ! -z "$GIT_TAG" ]; then make -C api build-release; fi

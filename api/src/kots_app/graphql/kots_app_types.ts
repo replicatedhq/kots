@@ -26,6 +26,7 @@ const KotsApp = `
     hasPreflight: Boolean
     isConfigurable: Boolean
     allowRollback: Boolean
+    kubectlVersion: String
   }
 `;
 
@@ -123,6 +124,13 @@ const KotsAppRegistryDetails = `
 const AirgapInstallStatus = `
   type AirgapInstallStatus {
     installStatus: String
+    currentMessage: String
+  }
+`;
+
+const ImageRewriteStatus = `
+  type ImageRewriteStatus {
+    status: String
     currentMessage: String
   }
 `;
@@ -260,6 +268,7 @@ export default [
   AppRegistryDetails,
   KotsAppRegistryDetails,
   AirgapInstallStatus,
+  ImageRewriteStatus,
 
   KotsConfigChildItem,
   KotsConfigChildItemInput,

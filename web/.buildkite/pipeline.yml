@@ -8,6 +8,11 @@ steps:
           environment:
             - PACT_BROKER_USERNAME
             - PACT_BROKER_PASSWORD
+    retry:
+      automatic:
+      # this command exiting with status 2 typically means that the yarn package failed to download
+      - exit_status: 2
+        limit: 5
 
   - wait
 
@@ -32,6 +37,11 @@ steps:
             - GIT_TAG
     artifact_paths:
       - "web/dist/**/*"
+    retry:
+      automatic:
+      # this command exiting with status 2 typically means that the yarn package failed to download
+      - exit_status: 2
+        limit: 5
 
   - commands:
       - make -C web deps build-replicated-staging
@@ -44,6 +54,11 @@ steps:
             - BUILDKITE_COMMIT
     artifact_paths:
       - "web/dist/**/*"
+    retry:
+      automatic:
+      # this command exiting with status 2 typically means that the yarn package failed to download
+      - exit_status: 2
+        limit: 5
 
   - commands:
       - make -C web deps build-replicated-production
@@ -57,6 +72,11 @@ steps:
             - GIT_TAG
     artifact_paths:
       - "web/dist/**/*"
+    retry:
+      automatic:
+      # this command exiting with status 2 typically means that the yarn package failed to download
+      - exit_status: 2
+        limit: 5
 
   - wait
 
