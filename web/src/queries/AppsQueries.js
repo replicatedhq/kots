@@ -381,12 +381,6 @@ export const getAppLicense = gql`
   }
 `;
 
-export const hasLicenseUpdates = gql`
-  query hasLicenseUpdates($appSlug: String!) {
-    hasLicenseUpdates(appSlug: $appSlug)
-  }
-`;
-
 export const templateConfigGroups = gql`
   query templateConfigGroups($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
     templateConfigGroups(slug: $slug, sequence: $sequence, configGroups: $configGroups) {

@@ -25,13 +25,21 @@ export function KotsLicenseMutations(stores: Stores) {
         if (!app.isAirgap) {
           throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is not airgap enabled`);
         }
-        const verified = await verifyAirgapLicense(airgapLicense)
-        if (!verified) {
-          throw new ReplicatedError("Failed to verify airgap license signature");
-        }
-        latestLicense = airgapLicense;
+        latestLicense = await verifyAirgapLicense(airgapLicense)
       } else {
         latestLicense = await getLatestLicense(license);
+      }
+
+      try {
+        // check if any updates are available
+        const currentLicenseSequence = yaml.safeLoad(license).spec.licenseSequence;
+        const latestLicenseSequence = yaml.safeLoad(latestLicense).spec.licenseSequence;
+        if (currentLicenseSequence === latestLicenseSequence) {
+          // no changes detected, return current license
+          return getLicenseInfoFromYaml(license);
+        }
+      } catch(err) {
+        throw new ReplicatedError(`Failed to parse license: ${err}`)
       }
       
       const paths: string[] = await app.getFilesPaths(`${app.currentSequence!}`);

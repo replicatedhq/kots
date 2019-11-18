@@ -29,7 +29,6 @@ export const Query = `
     getHelmChart(id: String!): HelmChart
 
     getAppLicense(appId: String!): KLicense
-    hasLicenseUpdates(appSlug: String!): Boolean!
 
     getApplicationTree(slug: String!, sequence: Int!): String
     getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String

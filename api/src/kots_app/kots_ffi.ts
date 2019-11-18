@@ -819,7 +819,7 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
   }
 }
 
-export async function verifyAirgapLicense(licenseData: string): Promise<boolean> {
+export async function verifyAirgapLicense(licenseData: string): Promise<string> {
   const licenseDataParam = new GoString();
   licenseDataParam["p"] = licenseData;
   licenseDataParam["n"] = String(licenseData).length;
@@ -829,7 +829,7 @@ export async function verifyAirgapLicense(licenseData: string): Promise<boolean>
     throw new ReplicatedError("failed to verify airgap license signature");
   }
 
-  return license["p"] === "verified";
+  return license["p"];
 }
 
 export function getK8sNamespace(): String {
