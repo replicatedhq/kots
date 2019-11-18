@@ -41,6 +41,7 @@ spec:
     spec:
       securityContext:
         runAsUser: 999 # the default 'postgres' user
+        fsGroup: 999
       containers:
       - name: postgres
         image: postgres:10.7

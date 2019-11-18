@@ -2,5 +2,7 @@ bases:
   - ../../base
 resources:
   - ./nodeport.yaml
+  - ./cluster-rbac.yaml
+  - ./join-job-rbac.yaml
 patchesStrategicMerge:
   - ./deployment.yaml

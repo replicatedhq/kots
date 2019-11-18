@@ -27,6 +27,7 @@ type Mutation {
   drainNode(name: String): Boolean
   deleteNode(name: String): Boolean
   generateWorkerAddNodeCommand: Command!
+  generateMasterAddNodeCommand: Command!
 
   setPrometheusAddress(value: String!): Boolean
   deletePrometheusAddress: Boolean

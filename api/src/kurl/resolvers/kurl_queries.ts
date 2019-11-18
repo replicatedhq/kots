@@ -7,6 +7,7 @@ import * as k8s from "@kubernetes/client-node";
 import _ from "lodash";
 import request from "request-promise";
 import { logger } from "../../server/logger";
+import { readKurlConfigMap } from "./readKurlConfigMap";
 
 const readFile = util.promisify(fs.readFile);
 
@@ -18,6 +19,7 @@ export function KurlQueries(stores: Stores, params: Params) {
       if (!params.enableKurl) {
         return {
           nodes: [],
+          ha: false,
         };
       }
 
@@ -95,13 +97,17 @@ export function KurlQueries(stores: Stores, params: Params) {
           };
         });
 
+        const data = await readKurlConfigMap();
+
         return {
           nodes,
+          ha: !!data.ha,
         };
       } catch (err) {
         logger.error(err);
         return {
           nodes: [],
+          ha: false,
         }
       }
     }

@@ -77,3 +77,10 @@ spec:
             - name: github-app-private-key
               mountPath: /keys/github
               readOnly: true
+            - name: kubelet-client-cert
+              mountPath: /etc/kubernetes/pki/kubelet
+      volumes:
+        - name: kubelet-client-cert
+          secret:
+            secretName: kubelet-client-cert
+            optional: true

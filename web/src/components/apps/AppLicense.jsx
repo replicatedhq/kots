@@ -9,7 +9,7 @@ import {
 } from "@src/utilities/utilities";
 
 import { graphql, compose, withApollo } from "react-apollo";
-import { getAppLicense, hasLicenseUpdates } from "@src/queries/AppsQueries";
+import { getAppLicense } from "@src/queries/AppsQueries";
 import { syncAppLicense } from "@src/mutations/AppsMutations";
 import { getFileContent } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -24,8 +24,6 @@ class AppLicense extends Component {
     this.state = {
       appLicense: null,
       loading: false,
-      hasUpdates: false,
-      airgapLicense: "",
       message: "",
       messageType: "info"
     }
@@ -57,71 +55,43 @@ class AppLicense extends Component {
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
       this.setState({
         message: "Licenses do not match",
-        messageType: "error",
-        hasUpdates: false
+        messageType: "error"
       });
       return;
     }
 
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
       this.setState({
-        message: "License is up to date",
-        messageType: "info",
-        hasUpdates: false
+        message: "License is already up to date",
+        messageType: "info"
       });
       return;
     }
 
-    this.setState({
-      message: "",
-      messageType: "info",
-      airgapLicense: content,
-      hasUpdates: true
-    });
+    this.syncAppLicense(content);
   }
 
-  checkForUpdates = () => {
+  syncAppLicense = (airgapLicense = "") => {
     this.setState({ loading: true, message: "", messageType: "info" });
 
     const { app } = this.props;
-    this.props.client.query({
-      query: hasLicenseUpdates,
-      fetchPolicy: "no-cache",
-      variables: {
-        appSlug: app.slug,
-      }
-    })
-      .then(response => {
-        const hasUpdates = response.data.hasLicenseUpdates;
-        this.setState({
-          message: !hasUpdates ? "License is up to date" : "",
-          messageType: "info",
-          hasUpdates
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ message: msg, messageType: "error" });
-        });
-      })
-      .finally(() => {
-        this.setState({ loading: false });
-      });
-  }
-
-  syncAppLicense = () => {
-    this.setState({ loading: true, message: "", messageType: "info" });
-
-    const { app } = this.props;
-    const { airgapLicense } = this.state;
     this.props.syncAppLicense(app.slug, app.isAirgap ? airgapLicense : "")
       .then(response => {
-        this.setState({
-          appLicense: response.data.syncAppLicense,
-          hasUpdates: false,
-          airgapLicense: "",
-          message: "License is up to date",
+        const latestLicense = response.data.syncAppLicense;
+        const currentLicense = this.state.appLicense;
+
+        let message;
+        if (latestLicense.licenseSequence === currentLicense.licenseSequence) {
+          message = "License is already up to date"
+        } else if (app.isAirgap) {
+          message = "License uploaded successfully"
+        } else {
+          message = "License synced successfully"
+        }
+
+        this.setState({ 
+          appLicense: latestLicense,
+          message,
           messageType: "info",
         });
       })
@@ -130,9 +100,7 @@ class AppLicense extends Component {
         err.graphQLErrors.map(({ msg }) => {
           this.setState({
             message: msg,
-            messageType: "error",
-            hasUpdates: false,
-            airgapLicense: ""
+            messageType: "error"
           });
         });
       })
@@ -142,7 +110,7 @@ class AppLicense extends Component {
   }
 
   render() {
-    const { appLicense, hasUpdates, loading, message, messageType } = this.state;
+    const { appLicense, loading, message, messageType } = this.state;
 
     if (!appLicense) {
       return (
@@ -195,26 +163,17 @@ class AppLicense extends Component {
                 </div>
               );
             })}
-            {hasUpdates ?
-              <div className="flex-column u-marginBottom--20">
-                <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Applying" : "Apply updates"}</button>
-                <div className="flex u-color--orange alignItems--center">
-                  <span className="icon exclamationMark--icon u-marginRight--5" />
-                  Updates available
-                </div>
-              </div>
-              :
-              app.isAirgap ?
-                <Dropzone
+            {app.isAirgap ?
+              <Dropzone
                   className="Dropzone-wrapper"
                   accept={["application/x-yaml", ".yaml", ".yml"]}
                   onDropAccepted={this.onDrop}
                   multiple={false}
                 >
-                  <button className="btn secondary green u-marginBottom--10">Upload license</button>
-                </Dropzone>
-                :
-                <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.checkForUpdates}>{loading ? "Checking" : "Check for updates"}</button>
+                <button className="btn secondary green u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+              </Dropzone> 
+              :
+              <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
             }
             {message &&
               <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {

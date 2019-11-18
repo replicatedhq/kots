@@ -1,0 +1,59 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kurl-config
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - kurl-config
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kurl-config
+  namespace: kube-system
+subjects:
+- kind: ServiceAccount
+  name: kotsadm-api
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kurl-config
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: join-job-manager
+rules:
+- apiGroups:
+  - "batch"
+  resources:
+  - jobs
+  verbs:
+  - create
+- apiGroups:
+  - "batch"
+  resources:
+  - jobs/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: join-job-manager
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: kotsadm-api
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: join-job-manager
