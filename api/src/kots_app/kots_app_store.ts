@@ -975,17 +975,17 @@ export class KotsAppStore {
 
     const result = await this.pool.query(q, v);
     if (result.rowCount == 0) {
-      throw new ReplicatedError("not found");
+      throw new ReplicatedError("License type not found");
     }
 
     const row = result.rows[0];
-    const spec: string = row.kots_license;
-    if (!spec) {
+    const license: string = row.kots_license;
+    if (!license) {
       return "";
     }
 
     try {
-      const licenseType = yaml.safeLoad(spec).spec.licenseType;
+      const licenseType = yaml.safeLoad(license).spec.licenseType;
       return licenseType;
     } catch (err) {
       console.log(err);
