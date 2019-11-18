@@ -100,7 +100,10 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor string, li
 
 	updates := []Update{}
 	for _, pendingRelease := range pendingReleases {
-		updates = append(updates, Update{Cursor: strconv.Itoa(pendingRelease.ChannelSequence)})
+		updates = append(updates, Update{
+			Cursor:       strconv.Itoa(pendingRelease.ChannelSequence),
+			VersionLabel: pendingRelease.VersionLabel,
+		})
 	}
 	return updates, nil
 }

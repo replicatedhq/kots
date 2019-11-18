@@ -77,6 +77,7 @@ func UpdateDownload(socket, fromArchivePath, registryJson, cursor string) {
 			ExcludeKotsKinds:    true,
 			ExcludeAdminConsole: true,
 			CreateAppDir:        false,
+			ReportWriter:        statusClient.getOutputWriter(),
 		}
 
 		if registryInfo.Host != "" {

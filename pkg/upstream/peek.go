@@ -8,7 +8,8 @@ import (
 )
 
 type Update struct {
-	Cursor string `json:"cursor"`
+	Cursor       string `json:"cursor"`
+	VersionLabel string `json:"versionLabel"`
 }
 
 func GetUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
