@@ -30,7 +30,7 @@ type SupportBundle {
 
   watchSlug: String!
   watchName: String!
-  kotsLicenseType: String!
+  kotsLicenseType: String
 }`;
 
 const SupportBundleAnalysis = `

@@ -8,11 +8,11 @@ import slugify from "slugify";
 import { kotsEncryptString, kotsDecryptString } from "./kots_ffi"
 import _ from "lodash";
 import yaml from "js-yaml";
-import { decodeBase64, getPreflightResultState } from '../util/utilities';
+import { decodeBase64, getPreflightResultState, getLicenseType } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
 
 export class KotsAppStore {
-  constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
+  constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 
   async createGitOpsRepo(provider: string, uri: string, privateKey: string, publicKey: string): Promise<any> {
     const id = randomstring.generate({ capitalization: "lowercase" });
@@ -220,7 +220,7 @@ export class KotsAppStore {
     let name;
     if (!appTitle) {
       const qqq = `select slug from app where id = $1`;
-      const vvv = [ id ];
+      const vvv = [id];
 
       const result = await this.pool.query(qqq, vvv);
       name = result.rows[0].slug;
@@ -716,7 +716,7 @@ export class KotsAppStore {
       appId,
       sequence
     ];
-    const result = await this.pool.query(q,v);
+    const result = await this.pool.query(q, v);
     const row = result.rows[0];
 
     return row && row.release_notes;
@@ -724,12 +724,12 @@ export class KotsAppStore {
 
   async deployVersion(appId: string, sequence: number, clusterId: string): Promise<void> {
     const q = `update app_downstream set current_sequence = $1 where app_id = $2 and cluster_id = $3`;
-      const v = [
-        sequence,
-        appId,
-        clusterId,
-      ];
-      await this.pool.query(q, v);
+    const v = [
+      sequence,
+      appId,
+      clusterId,
+    ];
+    await this.pool.query(q, v);
 
     const qq = `UPDATE app_downstream_version
         SET status = 'deployed', applied_at = $4
@@ -875,7 +875,7 @@ export class KotsAppStore {
       appId
     ];
 
-    await this.pool.query(q,v);
+    await this.pool.query(q, v);
   }
 
   async setKotsAirgapAppInstalled(appId: string) {
@@ -937,6 +937,7 @@ export class KotsAppStore {
       throw new ReplicatedError("not found");
     }
     const row = result.rows[0];
+
     const current_sequence = row.current_sequence;
     const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
 
@@ -963,6 +964,33 @@ export class KotsAppStore {
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     return kotsApp;
+  }
+
+  async getKotsAppLicenseType(appId: string, sequence: number): Promise<string> {
+    const q = `select kots_license from app_version where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+    if (result.rowCount == 0) {
+      throw new ReplicatedError("not found");
+    }
+
+    const row = result.rows[0];
+    const spec: string = row.kots_license;
+    if (!spec) {
+      return "";
+    }
+
+    try {
+      const licenseType = yaml.safeLoad(spec).spec.licenseType;
+      return licenseType;
+    } catch (err) {
+      console.log(err);
+      return "";
+    }
   }
 
   async getIdFromSlug(slug: string): Promise<string> {
@@ -1110,7 +1138,7 @@ export class KotsAppStore {
     return signed;
   }
 
-  async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string}> {
+  async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
 
@@ -1134,7 +1162,7 @@ export class KotsAppStore {
     if (result.rows.length !== 1) {
       return {
         currentMessage: "",
-        status: "", 
+        status: "",
       };
     }
     return {
