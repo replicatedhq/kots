@@ -194,12 +194,15 @@ func VerifyAirgapLicense(licenseData string) *C.char {
 	}
 	license := obj.(*kotsv1beta1.License)
 
-	if _, err := pull.VerifySignature(license); err != nil {
+	verifiedLicense, err := pull.VerifySignature(license)
+	if err != nil {
 		fmt.Printf("failed to verify airgap license signature: %s\n", err.Error())
 		return nil
 	}
 
-	return C.CString("verified")
+	marshalledLicense := upstream.MustMarshalLicense(verifiedLicense)
+
+	return C.CString(string(marshalledLicense))
 }
 
 func init() {
