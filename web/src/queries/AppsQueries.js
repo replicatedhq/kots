@@ -304,8 +304,17 @@ export const getImageRewriteStatusRaw = `
     }
   }
 `;
-
 export const getImageRewriteStatus = gql(getImageRewriteStatusRaw);
+
+export const getUpdateDownloadStatusRaw = `
+  query getUpdateDownloadStatus {
+    getUpdateDownloadStatus {
+      currentMessage
+      status
+    }
+  }
+`;
+export const getUpdateDownloadStatus = gql(getUpdateDownloadStatusRaw);
 
 export const getAppConfigGroups = gql`
   query getAppConfigGroups($slug: String!, $sequence: Int!) {

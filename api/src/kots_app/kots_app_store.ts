@@ -1144,59 +1144,24 @@ export class KotsAppStore {
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
-
-    const qq = `SELECT current_message from airgap_install_status LIMIT 1`;
-    const messageQueryResult = await this.pool.query(qq);
-
     if (result.rows.length !== 1) {
       throw new Error("Could not find any kots app in getAirgapInstallStatus()");
     }
-    const currentMessage = (messageQueryResult.rows[0] && messageQueryResult.rows[0].current_message) || "";
+
+    const taskStatus = await this.getApiTaskStatus("image-rewrite");
+
     return {
       installStatus: result.rows[0].install_state,
-      currentMessage
+      currentMessage: taskStatus.currentMessage,
     };
   }
 
-  async getImageRewriteStatus(): Promise<{ currentMessage: string, status: string }> {
-    const q = `SELECT status, current_message from image_rewrite_status LIMIT 1`;
-    const result = await this.pool.query(q);
-
-    if (result.rows.length !== 1) {
-      return {
-        currentMessage: "",
-        status: "",
-      };
-    }
-    return {
-      currentMessage: result.rows[0].current_message,
-      status: result.rows[0].status,
-    };
-  }
-
-  async setAirgapInstallStatus(msg: string): Promise<void> {
-    const q = `insert into airgap_install_status (id, updated_at, current_message) values ($1, $2, $3)
-    on conflict(id) do update set current_message = EXCLUDED.current_message`;
-    const v = [0, new Date(), msg];
-    await this.pool.query(q, v);
-  }
-
-  async setImageRewriteStatus(msg: string, status: string): Promise<void> {
-    const q = `insert into image_rewrite_status (id, updated_at, current_message, status) values ($1, $2, $3, $4)
-    on conflict(id) do update set current_message = EXCLUDED.current_message, status = EXCLUDED.status`;
-    const v = [0, new Date(), msg, status];
-    await this.pool.query(q, v);
-  }
-
-  async clearImageRewriteStatus(): Promise<void> {
-    const q = `delete from image_rewrite_status`;
-    await this.pool.query(q, []);
+  async setAirgapInstallStatus(msg: string, status: string): Promise<void> {
+    await this.setApiTaskStatus("airgap-install", msg, status);
   }
 
   async updateAirgapInstallLiveness(): Promise<void> {
-    const q = `update airgap_install_status set updated_at = $1 where id = $2`;
-    const v = [new Date(), 0];
-    await this.pool.query(q, v);
+    await this.updateApiTaskStatusLiveness("airgap-install");
   }
 
   async setAirgapInstallFailed(appId: string): Promise<void> {
@@ -1205,13 +1170,79 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async setAirgapInstallInProgress(appId: string): Promise<void> {
+  async resetAirgapInstallInProgress(appId: string): Promise<void> {
     const q = `update app set install_state = 'airgap_upload_in_progress' where id = $1`;
     const v = [appId];
     await this.pool.query(q, v);
 
-    const qq = `delete from airgap_install_status`;
-    await this.pool.query(qq);
+    await this.clearApiTaskStatus("airgap-install");
+  }
+
+  async getImageRewriteStatus(): Promise<{ currentMessage: string, status: string }> {
+    return this.getApiTaskStatus("image-rewrite");
+  }
+
+  async setImageRewriteStatus(msg: string, status: string): Promise<void> {
+    await this.setApiTaskStatus("image-rewrite", msg, status);
+  }
+
+  async clearImageRewriteStatus(): Promise<void> {
+    await this.clearApiTaskStatus("image-rewrite");
+  }
+
+  async updateImageRewriteStatusLiveness(): Promise<void> {
+    await this.updateApiTaskStatusLiveness("image-rewrite");
+  }
+
+  async getUpdateDownloadStatus(): Promise<{ currentMessage: string, status: string }> {
+    return this.getApiTaskStatus("update-download");
+  }
+
+  async setUpdateDownloadStatus(msg: string, status: string): Promise<void> {
+    await this.setApiTaskStatus("update-download", msg, status);
+  }
+
+  async clearUpdateDownloadStatus(): Promise<void> {
+    await this.clearApiTaskStatus("update-download");
+  }
+
+  async updateUpdateDownloadStatusLiveness(): Promise<void> {
+    await this.updateApiTaskStatusLiveness("update-download");
+  }
+
+  async setApiTaskStatus(id: string, msg: string, status: string): Promise<void> {
+    const q = `insert into api_task_status (id, updated_at, current_message, status) values ($1, $2, $3, $4)
+    on conflict(id) do update set current_message = EXCLUDED.current_message, status = EXCLUDED.status`;
+    const v = [id, new Date(), msg, status];
+    await this.pool.query(q, v);
+  }
+
+  async getApiTaskStatus(id: string): Promise<{ currentMessage: string, status: string }> {
+    // status older than <N> seconds is considered stale as it should be updated once per second
+    const q = `select status, current_message from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`;
+    const result = await this.pool.query(q, [id, new Date()]);
+
+    if (result.rows.length !== 1) {
+      return {
+        currentMessage: "",
+        status: "", 
+      };
+    }
+    return {
+      currentMessage: result.rows[0].current_message,
+      status: result.rows[0].status,
+    };
+  }
+
+  async clearApiTaskStatus(id: string): Promise<void> {
+    const q = `delete from api_task_status where id = $1`;
+    await this.pool.query(q, [id]);
+  }
+
+  async updateApiTaskStatusLiveness(id: string): Promise<void> {
+    const q = `update api_task_status set updated_at = $1 where id = $2`;
+    const v = [new Date(), id];
+    await this.pool.query(q, v);
   }
 
   private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {

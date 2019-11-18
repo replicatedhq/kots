@@ -9,10 +9,12 @@ import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteImagesInVersion, kotsAppDownloadUpdates } from "../kots_ffi";
+import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
+import { Repeater } from "../../util/repeater";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -53,10 +55,45 @@ export function KotsMutations(stores: Stores) {
       const app = await context.getApp(appId);
       const cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
 
-      const updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+      const updateStatus = await stores.kotsAppStore.getUpdateDownloadStatus();
+      if (updateStatus.status === "running") {
+        return 0;
+      }
 
-      await kotsAppDownloadUpdates(updatesAvailable, app, stores);
+      const liveness = new Repeater(() => {
+        return new Promise((resolve) => {
+          stores.kotsAppStore.updateUpdateDownloadStatusLiveness().finally(() => {
+            resolve();
+          })
+        });
+      }, 1000);
 
+      var updatesAvailable: Update[];
+      try {
+        await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
+
+        liveness.start();
+
+        updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+      } catch(err) {
+        liveness.stop();
+        await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
+        throw err;
+      }
+
+      let downloadUpdates = async function() {
+        try {
+          await kotsAppDownloadUpdates(updatesAvailable, app, stores);
+  
+          await stores.kotsAppStore.clearUpdateDownloadStatus();  
+        } catch(err) {
+          await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
+          throw err;
+        } finally {
+          liveness.stop();
+        }
+      }
+      downloadUpdates(); // download asyncronously
       return updatesAvailable.length;
     },
 
@@ -139,30 +176,44 @@ export function KotsMutations(stores: Stores) {
         return true;
       }
 
+      await stores.kotsAppStore.setImageRewriteStatus("Updating registry settings", "running");
+
+      const liveness = new Repeater(() => {
+        return new Promise((resolve) => {
+          stores.kotsAppStore.updateImageRewriteStatusLiveness().finally(() => {
+            resolve();
+          })
+        });
+      }, 1000);
+      liveness.start();
+
       const updateFunc = async function(): Promise<void> {
-        if (downstreams.length > 0) {
-          const tmpDir = tmp.dirSync();
-          try {
-            const newVersionArchive = path.join(tmpDir.name, "archive.tar.gz");
-            const app = await stores.kotsAppStore.getApp(appId);
-            const registryInfo: KotsAppRegistryDetails = {
-              registryHostname: hostname,
-              registryUsername: username,
-              registryPassword: password,
-              registryPasswordEnc: "",
-              lastSyncedAt: "",
-              namespace: namespace,
+        try {
+          if (downstreams.length > 0) {
+            const tmpDir = tmp.dirSync();
+            try {
+              const newVersionArchive = path.join(tmpDir.name, "archive.tar.gz");
+              const app = await stores.kotsAppStore.getApp(appId);
+              const registryInfo: KotsAppRegistryDetails = {
+                registryHostname: hostname,
+                registryUsername: username,
+                registryPassword: password,
+                registryPasswordEnc: "",
+                lastSyncedAt: "",
+                namespace: namespace,
+              }
+              await kotsRewriteImagesInVersion(app, downstreams, registryInfo, newVersionArchive, stores);
+            } finally {
+              tmpDir.removeCallback();
             }
-            await kotsRewriteImagesInVersion(app, downstreams, registryInfo, newVersionArchive, stores);
-          } finally {
-            tmpDir.removeCallback();
           }
+        } finally {
+          liveness.stop();
         }
         await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
       };
 
-      await stores.kotsAppStore.setImageRewriteStatus("Updating registry settings", "running");
-      updateFunc();
+      updateFunc(); // rewrite images asyncronously
 
       return true;
     },
