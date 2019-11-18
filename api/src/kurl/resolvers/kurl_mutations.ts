@@ -1,5 +1,4 @@
 import { inspect } from "util";
-import http from "http";
 import fs from "fs";
 import * as _ from "lodash";
 import { Stores } from "../../schema/stores";
@@ -20,7 +19,6 @@ import {
   V1Job,
   V1PodSpec,
   V1Container,
-  V1ConfigMap,
   VersionApi,
   V1JobSpec,
 } from "@kubernetes/client-node";
@@ -28,6 +26,7 @@ import { logger } from "../../server/logger";
 import { IncomingMessage } from "http";
 import { Etcd3 } from "etcd3";
 import * as yaml from "js-yaml";
+import { readKurlConfigMap } from "./readKurlConfigMap";
 
 export function KurlMutations(stores: Stores, params: Params) {
   return {
@@ -48,8 +47,12 @@ export function KurlMutations(stores: Stores, params: Params) {
     },
 
     async generateWorkerAddNodeCommand(root: any, args: any, context: Context): Promise<Command> {
-      return await generateWorkerAddNodeCommand();
+      return await generateAddNodeCommand(false);
     },
+
+    async generateMasterAddNodeCommand(root: any, args: any, context: Context): Promise<Command> {
+      return await generateAddNodeCommand(true);
+    }
   }
 }
 
@@ -377,7 +380,7 @@ export interface Command {
 
 // worker: kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION ${dockerRegistryIP}
 
-async function generateWorkerAddNodeCommand(): Promise<Command> {
+async function generateAddNodeCommand(master: boolean): Promise<Command> {
   const kc = new KubeConfig();
   kc.loadFromDefault();
 
@@ -388,18 +391,36 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
 
   let data = await readKurlConfigMap();
 
+  const flags: Array<string> = [];
   // if the token expires withing the period, regenerate it
-  const regeneratePreiod = 10 * 60 * 1000; // 10 minutes
+  const regeneratePeriod = 10 * 60 * 1000; // 10 minutes
   const nowUnix = (new Date()).getTime();
+
   let bootstrapTokenExpiration = Date.parse(data.bootstrap_token_expiration);
   if (isNaN(bootstrapTokenExpiration)) {
     console.log(`Failed to parse bootstrap_token_expiration ${data.bootstrap_token_expiration}`);
     bootstrapTokenExpiration = 0;
   }
-  if (nowUnix + regeneratePreiod > bootstrapTokenExpiration) {
+  if (nowUnix + regeneratePeriod > bootstrapTokenExpiration) {
     console.log(`Bootstrap token expired ${new Date(bootstrapTokenExpiration)}, regenerating`);
+    flags.push("--bootstrap-token");
+  }
+
+  if (master) {
+    let certsExpiration = Date.parse(data.upload_certs_expiration);
+    if (isNaN(certsExpiration)) {
+      console.log(`Failed to parse upload_certs_expiration ${data.upload_certs_expiration}`);
+      certsExpiration = 0;
+    }
+    if (nowUnix + regeneratePeriod > certsExpiration) {
+      console.log(`Certs secret expired ${new Date(certsExpiration)}, uploading`);
+      flags.push("--upload-certs");
+    }
+  }
+
+  if (flags.length) {
     try {
-      await runKurlUtilJobAndWait(["/usr/local/bin/join"]);
+      await runKurlUtilJobAndWait(["/usr/local/bin/join"].concat(flags));
       data = await readKurlConfigMap();
     } catch (err) {
       console.log(err);
@@ -420,7 +441,7 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
   // data.upload_certs_expiration
 
   const command = [
-    `curl -sSL ${data.kurl_url}/${data.installer_id}/join.sh | sudo bash -s`,
+    data.airgap ? "cat join.sh | sudo bash -s airgap" : `curl -sSL ${data.kurl_url}/${data.installer_id}/join.sh | sudo bash -s`,
     `kubernetes-master-address=${data.kubernetes_api_address}`,
     `kubeadm-token=${data.bootstrap_token}`,
     `kubeadm-token-ca-hash=${data.ca_hash}`,
@@ -428,38 +449,17 @@ async function generateWorkerAddNodeCommand(): Promise<Command> {
     `kubernetes-version=${kubernetesVersion}`,
   ];
 
+  if (master) {
+    command.push(`cert-key=${data.cert_key}`);
+    command.push("control-plane");
+  }
+
   console.log("Generated node join command", command);
 
   return {
     command: command,
     expiry: bootstrapTokenExpiration / 1000,
   };
-}
-
-async function readKurlConfigMap(): Promise<{ [ key: string]: string }> {
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-
-  const coreV1Client: CoreV1Api = kc.makeApiClient(CoreV1Api);
-
-  let response: http.IncomingMessage;
-  let configMap: V1ConfigMap;
-
-  try {
-    ({ response, body: configMap } = await coreV1Client.readNamespacedConfigMap("kurl-config", "kube-system"));
-  } catch (err) {
-    throw new ReplicatedError(`Failed to read config map ${err.response && err.response.body ? err.response.body.message : ""}`);
-  }
-
-  if (response.statusCode !== 200 || !configMap) {
-    throw new ReplicatedError(`Config map not found`);
-  }
-
-  if (!configMap.data) {
-    throw new ReplicatedError("Config map data not found");
-  }
-
-  return configMap.data;
 }
 
 async function runKurlUtilJobAndWait(command: string[]) {
@@ -488,7 +488,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
           },
           spec: {
             // nodeSelector: {"node-role.kubernetes.io/master": ""}, // TODO: this is needed for master join
-            serviceAccountName: "kotsadm-api",
+            serviceAccountName: "kurl-join",
             restartPolicy: "Never",
             activeDeadlineSeconds: 120,
             containers: [{
@@ -519,7 +519,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
     throw new ReplicatedError("Job creation failed");
   }
 
-  while (true) {
+  for (let i = 0; i < 60; i++) {
     try {
       let { body: jobStatus } = await batchV1Client.readNamespacedJobStatus(job.metadata.name, job.metadata.namespace);
       if (jobStatus.status) {
@@ -535,6 +535,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
     }
     await sleep(2); // sleep 2 seconds
   }
+  throw new ReplicatedError("Timed out waiting for job to complete");
 }
 
 async function sleep(seconds): Promise<void> {

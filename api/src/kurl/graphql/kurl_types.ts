@@ -1,6 +1,7 @@
 const Kurl = `
 type Kurl {
   nodes: [Node]
+  ha: Boolean
 }
 `;
 

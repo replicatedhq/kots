@@ -25,4 +25,14 @@ export const generateWorkerAddNodeCommandRaw = `
   }
 `;
 
+export const generateMasterAddNodeCommandRaw = `
+  mutation {
+    generateMasterAddNodeCommand {
+      command
+      expiry
+    }
+  }
+`;
+
 export const generateWorkerAddNodeCommand = gql(generateWorkerAddNodeCommandRaw);
+export const generateMasterAddNodeCommand = gql(generateMasterAddNodeCommandRaw);
