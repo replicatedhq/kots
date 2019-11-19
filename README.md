@@ -1,6 +1,16 @@
 # Kotsadm
 
-Kotsadm is a locally-installable application that manages [Helm Charts](https://helm.sh) and other Kubernetes applications in a workflow that's built for day-2 operations.
+Kotsadm is an installable admin console for managing KOTS applications. Kotsadm provides a nextgen admin experience for any KOTS application, designed to meet the needs of a wide spectrum of enterprise IT admins, from a “click-to-deploy” model to “automated day 2 operations”.
+
+Once deployed, Kotsadm gives administrators the ability to get an application configured and deployed using step-through configuration, automated preflight checks and one-click updates. 
+
+## Kots
+
+Kots is a kubectl plugin to help manage Kubernetes Off-The-Shelf software. For more information on Kots see https://kots.io/.
+
+## Installing
+
+For more information on installing Kotsadm locally see https://kots.io/kotsadm/installing/installing-a-kots-app/.
 
 ## Contributing
 
