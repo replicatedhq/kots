@@ -3,6 +3,7 @@ package base
 import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -12,7 +13,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	// Find the config for the config groups
 	var config *kotsv1beta1.Config
 	for _, upstreamFile := range u.Files {
-		maybeConfig := tryGetConfigFromFileContent(upstreamFile.Content)
+		maybeConfig := tryGetConfigFromFileContent(upstreamFile.Content, renderOptions.Log)
 		if maybeConfig != nil {
 			config = maybeConfig
 		}
@@ -48,7 +49,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	for _, upstreamFile := range u.Files {
 		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to render template")
+			return nil, errors.Wrap(err, "failed to render file template")
 		}
 
 		baseFile := BaseFile{
@@ -90,10 +91,11 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	return ctx, nil
 }
 
-func tryGetConfigFromFileContent(content []byte) *kotsv1beta1.Config {
+func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta1.Config {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
+		log.Info("Failed to parse file while looking for config: %v", err)
 		return nil
 	}
 
