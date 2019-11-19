@@ -7,7 +7,7 @@ export default [
   {
     tabName: "app",
     displayName: "Application",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}`,
+    to: (slug) => `/app/${slug}`,
     displayRule: watch => {
       return isHelmChart(watch) || !watch.cluster;
     }
@@ -15,7 +15,7 @@ export default [
   {
     tabName: "version-history",
     displayName: "Version history",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/version-history`,
+    to: (slug) => `/app/${slug}/version-history`,
     hasBadge: watch => {
       let downstreamPendingLengths = [];
       watch.watches?.map((w) => {
@@ -30,7 +30,7 @@ export default [
   {
     tabName: "config",
     displayName: "Config",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/config`,
+    to: (slug) => `/app/${slug}/config`,
     displayRule: watch => {
       return watch.isConfigurable || getApplicationType(watch) === "replicated.app";
     }
@@ -38,12 +38,12 @@ export default [
   {
     tabName: "troubleshoot",
     displayName: "Troubleshoot",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/troubleshoot`,
+    to: (slug) => `/app/${slug}/troubleshoot`,
   },
   {
     tabName: "license",
     displayName: "License",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/license`,
+    to: (slug) => `/app/${slug}/license`,
     displayRule: watch => {
       return watch?.upstreamUri?.startsWith("replicated://") || getApplicationType(watch) === "replicated.app";
     }
@@ -51,7 +51,7 @@ export default [
   {
     tabName: "state",
     displayName: "State JSON",
-    to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/state`,
+    to: (slug) => `/app/${slug}/state`,
     displayRule: watch => {
       if (isHelmChart(watch) || watch.name) {
         return false;
@@ -62,7 +62,7 @@ export default [
   {
     tabName: "tree",
     displayName: "View files",
-    to: (slug, isKots, sequence) => `/app/${slug}/tree/${isKots ? sequence : ""}`,
+    to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
     displayRule: watch => {
       return Boolean(watch.name);
     }
@@ -86,6 +86,6 @@ export default [
   // {
   //   tabName: "integrations",
   //   displayName: "Integrations",
-  //   to: (slug, isKots) => `/${isKots ? "app" : "watch"}/${slug}/integrations`
+  //   to: (slug) => `/app/${slug}/integrations`
   // }
 ];

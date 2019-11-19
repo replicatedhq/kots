@@ -2,7 +2,6 @@
   describe
 */
 import listClusters from "./contracts/list-clusters";
-import createShipCluster from "./contracts/create-ship-cluster";
 import getKotsAppCheck from "./contracts/get-kots-app";
 import getKotsPreflightResult from "./contracts/get-kots-preflight-result";
 import getLatestKotsPreflightResult from "./contracts/get-latest-kots-preflight-result";
@@ -11,12 +10,10 @@ import getKotsDownstreamHistory from "./contracts/get-kots-downstream-history";
 import kotsDownstreamHistoryWithNotes from "./contracts/kots-downstream-history-with-notes";
 import kotsDownstreamHistoryNoNotes from "./contracts/kots-downstream-history-no-notes";
 import kotsDownstreamHistoryDifferentSequences from "./contracts/kots-downstream-history-different-sequences";
-// import getWatchVersionGitOps from "./contracts/get-watch-version-gitops-cluster";
 
 describe("ShipAPI GraphQL Pact", () => {
 
   describe("solo-account:listClusters", () => listClusters() );
-  describe("solo-account:createShipCluster", () => createShipCluster() );
 
   describe("get-kots-app", () => getKotsAppCheck());
   describe("get-kots-preflight-result", () => getKotsPreflightResult());

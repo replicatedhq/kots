@@ -12,7 +12,6 @@ module.exports = {
   SECURE_ADMIN_CONSOLE: true,
   DISABLE_KOTS: false,
   AVAILABLE_LOGIN_TYPES: [],
-  NO_APPS_REDIRECT: "/upload-license",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
     return String(Date.now());
   }()),

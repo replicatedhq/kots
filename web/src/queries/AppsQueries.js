@@ -22,18 +22,6 @@ export const getKotsMetadata = gql(getKotsMetadataRaw);
 export const listAppsRaw = `
   query listApps {
     listApps {
-      pendingUnforks {
-        id
-        clusterId
-        helmName
-        namespace
-        version
-        firstDeployedAt
-        lastDeployedAt
-        isDeleted
-        chartVersion
-        appVersion
-      }
       kotsApps {
         id
         name

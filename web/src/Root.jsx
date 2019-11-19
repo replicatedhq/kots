@@ -10,23 +10,11 @@ import Signup from "./components/Signup";
 import GitHubAuth from "./components/github_auth/GitHubAuth";
 import GitHubInstall from "./components/github_install/GitHubInstall";
 import GitOps from "././components/clusters/GitOps";
-import CreateCluster from "./components/clusters/CreateCluster";
-import VersionHistory from "./components/watches/VersionHistory";
-import DiffShipReleases from "./components/watches/DiffShipReleases";
-import DiffGitHubReleases from "./components/watches/DiffGitHubReleases";
-import StateFileViewer from "./components/state/StateFileViewer";
 import PreflightResultPage from "./components/PreflightResultPage";
-import PreflightCheckPage from "./components/PreflightCheckPage";
 import AppConfig from "./components/apps/AppConfig";
-import Ship from "./components/Ship";
-import ShipInitPre from "./components/ShipInitPre";
-import ShipUnfork from "./components/ShipUnfork";
-import ShipInitCompleted from "./components/ShipInitCompleted";
-import WatchDetailPage from "./components/watches/WatchDetailPage";
 import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
 import ClusterScope from "./components/clusterscope/ClusterScope";
-import DownstreamTree from "./components/tree/ApplicationTree";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
@@ -150,16 +138,6 @@ class Root extends Component {
     this.setState({ initSessionId: "" });
   }
 
-  handleInitCompletion = (history) =>
-    () => {
-      history.push("/watch/init/complete");
-    }
-
-  handleUpdateCompletion = history => () => {
-    history.push("/watches");
-    this.handleActiveInitSessionCompleted();
-  }
-
   refetchListApps = async () => {
     const apps = await GraphQLClient.query({
       query: listApps,
@@ -168,16 +146,12 @@ class Root extends Component {
       throw error;
     });
 
-    const allWatches = apps.data.listApps.kotsApps.concat(
-      apps.data.listApps.pendingUnforks,
-    );
-
     this.setState({
-      listApps: allWatches,
+      listApps: apps.data.listApps.kotsApps,
       rootDidInitialWatchFetch: true
     });
 
-    return allWatches;
+    return apps.data.listApps.kotsApps;
   }
 
   fetchKotsAppMetadata = async () => {
@@ -235,9 +209,9 @@ class Root extends Component {
 
     if (Utilities.isLoggedIn()) {
       this.refetchListApps().then(listApps => {
-        if (listApps.length > 0 && window.location.pathname === "/watches") {
+        if (listApps.length > 0 && window.location.pathname === "/apps") {
           const { slug } = listApps[0];
-          history.replace(`/watch/${slug}`);
+          history.replace(`/app/${slug}`);
         }
       });
     }
@@ -254,7 +228,6 @@ class Root extends Component {
 
   render() {
     const {
-      initSessionId,
       themeState,
       listApps,
       rootDidInitialWatchFetch,
@@ -281,7 +254,7 @@ class Root extends Component {
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
-                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/watches" : "/login"} />} />
+                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/login"} />} />
                     <Route exact path="/crashz" render={() => {
                       const Crashz = () => {
                         throw new Error("Crashz!");
@@ -302,23 +275,7 @@ class Root extends Component {
                     <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute path="/preflight/:owner/:name/:downstream" component={PreflightCheckPage}/>
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute path="/cluster/create" render={(props) => <CreateCluster {...props} />} />
-                    <ProtectedRoute
-                      path="/watches"
-                      render={
-                        props => (
-                          <WatchDetailPage
-                            {...props}
-                            rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listApps={listApps}
-                            refetchListApps={this.refetchListApps}
-                            onActiveInitSession={this.handleActiveInitSession}
-                          />
-                        )
-                      }
-                    />
                     <ProtectedRoute
                       path="/apps"
                       render={
@@ -331,44 +288,6 @@ class Root extends Component {
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
                             appName={this.state.selectedAppName}
-                          />
-                        )
-                      }
-                    />
-                    <ProtectedRoute path="/watch/:owner/:slug/history/compare/:org/:repo/:branch/:rootPath/:firstSeqNumber/:secondSeqNumber" component={DiffGitHubReleases} />
-                    <ProtectedRoute path="/watch/:owner/:slug/history/compare/:firstSeqNumber/:secondSeqNumber" component={DiffShipReleases} />
-                    <ProtectedRoute path="/watch/:owner/:slug/history" component={VersionHistory} />
-                    <ProtectedRoute path="/watch/:owner/:slug/tree/:sequence" render={props => <DownstreamTree {...props} />} />
-                    <ProtectedRoute path="/watch/create/init" render={(props) => <ShipInitPre {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                    <ProtectedRoute path="/watch/create/unfork" render={(props) => <ShipUnfork {...props} onActiveInitSession={this.handleActiveInitSession} />} />
-                    <ProtectedRoute path="/watch/create/state" component={() =>
-                      <StateFileViewer
-                        isNew={true}
-                        headerText="Add your application's state.json file"
-                        subText={<span>Paste in the state.json that was generated by Replicated Ship. If you need help finding your state.json file or you have not initialized your app using Replicated Ship, <a href="https://ship.replicated.com/docs/ship-init/storing-state/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our docs.</a></span>}
-                      />
-                    } />
-                    <ProtectedRoute
-                      path="/watch/init/complete"
-                      render={
-                        (props) => <ShipInitCompleted
-                          {...props}
-                          refetchListApps={this.refetchListApps}
-                          initSessionId={initSessionId}
-                          onActiveInitSessionCompleted={this.handleActiveInitSessionCompleted}
-                        />
-                      }
-                    />
-                    <ProtectedRoute
-                      path="/watch/:owner/:slug/:tab?"
-                      render={
-                        props => (
-                          <WatchDetailPage
-                            {...props}
-                            rootDidInitialWatchFetch={rootDidInitialWatchFetch}
-                            listApps={listApps}
-                            refetchListApps={this.refetchListApps}
-                            onActiveInitSession={this.handleActiveInitSession}
                           />
                         )
                       }
@@ -387,39 +306,6 @@ class Root extends Component {
                             appName={this.state.selectedAppName}
                           />
                         )
-                      }
-                    />
-                    <ProtectedRoute
-                      path="/ship/init"
-                      render={
-                        (props) => <Ship
-                          {...props}
-                          rootURL={window.env.SHIPINIT_ENDPOINT}
-                          initSessionId={initSessionId}
-                          onCompletion={this.handleInitCompletion(props.history)}
-                        />
-                      }
-                    />
-                    <ProtectedRoute
-                      path="/ship/update"
-                      render={
-                        (props) => <Ship
-                          {...props}
-                          rootURL={window.env.SHIPUPDATE_ENDPOINT}
-                          initSessionId={initSessionId}
-                          onCompletion={this.handleUpdateCompletion(props.history)}
-                        />
-                      }
-                    />
-                    <ProtectedRoute
-                      path="/ship/edit"
-                      render={
-                        (props) => <Ship
-                          {...props}
-                          rootURL={window.env.SHIPEDIT_ENDPOINT}
-                          initSessionId={initSessionId}
-                          onCompletion={this.handleUpdateCompletion(props.history)}
-                        />
                       }
                     />
                     <Route component={NotFound} />

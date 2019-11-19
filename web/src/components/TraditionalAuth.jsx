@@ -42,7 +42,7 @@ class TraditionalAuth extends React.Component {
       if (Utilities.localStorageEnabled()) {
         window.localStorage.setItem("token", res.data.login.token);
         onLoginSuccess().then(() => {
-          this.props.history.push("/watches");
+          this.props.history.push("/apps");
         });
       } else {
         this.props.history.push("/unsupported");
@@ -70,7 +70,7 @@ class TraditionalAuth extends React.Component {
       this.setState({ authLoading: false });
       if (Utilities.localStorageEnabled()) {
         window.localStorage.setItem("token", res.data.signup.token);
-        this.props.history.push("/watches");
+        this.props.history.push("/apps");
       } else {
         this.props.history.push("/unsupported");
       }

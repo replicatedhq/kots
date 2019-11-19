@@ -29,8 +29,8 @@ class SupportBundleRow extends React.Component {
   }
 
   handleBundleClick = (bundle) => {
-    const { appType, watchSlug } = this.props;
-    this.props.history.push(`/${appType === "watch" ? "watch" : "app"}/${watchSlug}/troubleshoot/analyze/${bundle.slug}`)
+    const { watchSlug } = this.props;
+    this.props.history.push(`/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`)
   }
 
   downloadBundle = async (bundle) => {

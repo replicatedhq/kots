@@ -7,7 +7,6 @@ import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
-import { isKotsApplication } from "@src/utilities/utilities";
 import { getSupportBundle } from "../../queries/TroubleshootQueries";
 import { updateSupportBundle } from "../../mutations/TroubleshootMutations";
 import { Utilities } from "../../utilities/utilities";
@@ -131,7 +130,6 @@ export class SupportBundleAnalysis extends React.Component {
   render() {
     const { watch, getSupportBundle } = this.props;
     const bundle = getSupportBundle?.getSupportBundle;
-    const isKotsApp = isKotsApplication(watch);
 
     if (getSupportBundle.loading) {
       return (
@@ -141,19 +139,8 @@ export class SupportBundleAnalysis extends React.Component {
       )
     }
 
-    let insightsUrl;
-    if (isKotsApp) {
-      insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
-    } else {
-      insightsUrl = `/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug`;
-    }
-
-    let fileTreeUrl;
-    if (isKotsApp) {
-      fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
-    } else {
-      fileTreeUrl = `/watch/:owner/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
-    }
+    const insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
+    const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
 
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
@@ -200,8 +187,8 @@ export class SupportBundleAnalysis extends React.Component {
               <div className="flex-column flex1">
                 <div className="customer-actions-wrapper flex1 flex-column">
                   <div className="flex action-tab-bar">
-                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
-                    <Link to={`/${isKotsApp ? "app" : "watch"}/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
+                    <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
+                    <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
                   </div>
                   <div className="flex-column flex1 action-content">
                     <Switch>
@@ -218,7 +205,6 @@ export class SupportBundleAnalysis extends React.Component {
                           watchSlug={watch.slug}
                           bundle={bundle}
                           downloadBundle={() => this.downloadBundle(bundle)}
-                          isKotsApp={isKotsApp}
                         />
                       } />
                     </Switch>

@@ -76,55 +76,6 @@
       }
     },
     {
-      "description": "a mutation to create a ship cluster for solo dev",
-      "request": {
-        "method": "POST",
-        "path": "/graphql",
-        "headers": {
-          "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NDYzMDQ0MDAwMDAsInRva2VuIjoibm90LWNoZWNrZWQiLCJzZXNzaW9uSWQiOiJzb2xvLWFjY291bnQtc2Vzc2lvbi0xIn0.pC3xMQDD5zseVcOVzypZkC9ZyngBoT_nLymZTbJTHdA",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "operationName": "createShipOpsCluster",
-          "query": "\n  mutation createShipOpsCluster($title: String!) {\n    createShipOpsCluster(title: $title) {\n      id\n      slug\n      shipOpsRef {\n        token\n      }\n    }\n  }\n",
-          "variables": {
-            "title": "FooBarBaz Cluster"
-          }
-        },
-        "matchingRules": {
-          "$.body.query": {
-            "match": "regex",
-            "regex": "\\s*mutation\\s*createShipOpsCluster\\(\\$title:\\s*String!\\)\\s*\\{\\s*createShipOpsCluster\\(title:\\s*\\$title\\)\\s*\\{\\s*id\\s*slug\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*\\}\\s*\\}\\s*"
-          }
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "data": {
-            "createShipOpsCluster": {
-              "id": "generated",
-              "slug": "foobarbaz-cluster",
-              "shipOpsRef": {
-                "token": "generated"
-              }
-            }
-          }
-        },
-        "matchingRules": {
-          "$.body.data.createShipOpsCluster.id": {
-            "match": "type"
-          },
-          "$.body.data.createShipOpsCluster.shipOpsRef.token": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
       "description": "A query to get a kots app",
       "request": {
         "method": "POST",
@@ -542,7 +493,7 @@
           }
         }
       }
-    },
+    }
   ],
   "metadata": {
     "pactSpecification": {

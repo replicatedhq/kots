@@ -1,49 +1,11 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
-import pick from "lodash/pick";
-import find from "lodash/find";
-import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
 import jwt from "jsonwebtoken";
 import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
-
-/**
- *
- * @param {Object} - gitOpsRef - Object from GraphQL DB
- * @return {String} - "git" if a github deployment, otherwise "ship"
- */
-export function getClusterType(gitOpsRef) {
-  return gitOpsRef
-    ? "git"
-    : "ship";
-}
-
-/**
- * @param {Object} params - React Router History params object
- * @return {String} - slug of watch
- */
-export function getCurrentWatch(params) {
-  return params?.slug?.params?.slug;
-}
-
-/**
- * Takes a watched app object and returns its parsed metadata
- *
- * @param {String} watchMeta Metadata from watched app to parse
- * @return {Object}
- */
-export function getWatchMetadata(watchMeta) {
-  try {
-    if (!watchMeta) return {};
-    return JSON.parse(watchMeta);
-  } catch (error) {
-    console.error(error);
-    return { error };
-  }
-}
 
 /**
  * Takes a system file and returns its content
@@ -82,121 +44,6 @@ export function getApplicationType(watch) {
   } catch (error) {
     console.error(error);
     return "Error fetching applicationType";
-  }
-}
-
-/**
- * Checks if current license is out of date (sync)
- *
- * @param {Object} currentWatchLicense The watched application current license
- * @param {Object} latestWatchLicense The watched application latest license from vendor
- * @return {Boolean}
- */
-export function isLicenseOutOfDate(currentWatchLicense, latestWatchLicense) {
-  try {
-    if (
-      currentWatchLicense.id !== latestWatchLicense.id ||
-      currentWatchLicense.channel !== latestWatchLicense.channel ||
-      currentWatchLicense.type !== latestWatchLicense.type ||
-      getLicenseExpiryDate(currentWatchLicense) !== getLicenseExpiryDate(latestWatchLicense)
-    ) {
-      return true;
-    }
-
-    // check for entitlements
-    if (latestWatchLicense.entitlements && currentWatchLicense.entitlements) {
-      if (latestWatchLicense.entitlements.length !== currentWatchLicense.entitlements.length) {
-        return true;
-      }
-      for (let i = 0; i < latestWatchLicense.entitlements.length; i++) {
-        const entitlement = latestWatchLicense.entitlements[i];
-        const currentEntitlement = find(currentWatchLicense.entitlements, ["key", entitlement.key]);
-        if (!currentEntitlement || currentEntitlement.value !== entitlement.value) {
-          return true
-        }
-      }
-    }
-
-    return false;
-  } catch (error) {
-    console.error(error);
-    return true;
-  }
-}
-
-/**
- * Constructs the watch license from app's watch
- *
- * @param {String} watch The watched application to check
- * @return {String} watch license
- */
-export function getWatchLicenseFromState(watch) {
-  try {
-    if (!watch) return {};
-
-    const state = JSON.parse(watch.stateJSON);
-    if (!state) return {};
-
-    const appMeta = getWatchMetadata(watch.metadata);
-
-    let channel = "";
-    if (state?.v1?.upstreamContents?.appRelease?.channelName) {
-      channel = state.v1.upstreamContents.appRelease.channelName;
-    }
-
-    let entitlements = [];
-    if (watch.entitlements) {
-      entitlements = watch.entitlements;
-    }
-
-    if (appMeta?.license?.expiresAt === "0001-01-01T00:00:00Z") {
-      appMeta.license.expiresAt = null;
-    }
-
-    const license = {
-      ...appMeta.license,
-      channel,
-      entitlements
-    };
-    return license;
-  } catch (error) {
-    console.error(error);
-    return {};
-  }
-}
-
-/**
- *
- * @param {String} -
- * @return {String} -
- */
-export function getReadableLicenseType(type) {
-  let readableType = "Development";
-  if (type === "prod") {
-    readableType = "Production"
-  } else if (type === "trial") {
-    readableType = "Trial"
-  }
-  return readableType;
-}
-
-/**
- * Retrieves the channel name the release is assigned to from app's stateJSON
- *
- * @param {String} watch The watched application to check
- * @return {String} name of the channel
- */
-export function getAssignedReleaseChannel(stateJSON) {
-  try {
-    if (!stateJSON) return "";
-    const state = JSON.parse(stateJSON);
-    if (state?.v1?.upstreamContents?.appRelease) {
-      return state.v1.upstreamContents.appRelease.channelName;
-    }
-    return "Unknown";
-  } catch (error) {
-    console.error(error);
-    return "Unknown";
   }
 }
 
@@ -307,6 +154,7 @@ export function getLineChanges(lineChangesArr) {
 export function isHelmChart(watch) {
   return Boolean(watch.helmName);
 }
+
 /**
  * @return {boolean} - true if user is using admin console/shared password
  */
@@ -318,14 +166,6 @@ export function isSingleTenant() {
   const decodedToken = jwt.decode(token);
 
   return !!decodedToken.isSingleTenant;
-}
-
-/**
- * @param {Watch} watch - watch to determine type
- * @return {Boolean}
- */
-export function isKotsApplication(watch) {
-  return Boolean(watch.name);
 }
 
 /**
@@ -421,26 +261,6 @@ export const Utilities = {
         return "Bitbucket";
       default:
         return "GitHub";
-    }
-  },
-
-  trimLeadingSlash(string) {
-    if (string) {
-      return `/${string.replace(/^\/+/g, "")}`;
-    } else {
-      return "";
-    }
-  },
-
-  getNotificationType(item) {
-    const keys = pick(item, ["email", "webhook", "pullRequest"]);
-    const filteredKeys = filter(keys, (o) => o);
-    if (filteredKeys[0] && filteredKeys[0].recipientAddress) {
-      return "email";
-    } else if (filteredKeys[0] && filteredKeys[0].uri) {
-      return "webhook";
-    } else {
-      return "github";
     }
   },
 

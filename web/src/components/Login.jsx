@@ -40,7 +40,7 @@ class Login extends React.Component {
         const decodedNext = decodeURI(next);
         this.props.history.push(decodedNext);
       } else {
-        this.props.history.push("/watches");
+        this.props.history.push("/apps");
       }
     }
   }

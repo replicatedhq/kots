@@ -5,7 +5,6 @@ import { Link, withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
-import { userFeatures } from "@src/queries/WatchQueries";
 import { listClusters } from "@src/queries/ClusterQueries";
 import { userInfo } from "@src/queries/UserQueries";
 import { getKotsLicenseType } from "@src/queries/AppsQueries";
@@ -96,7 +95,7 @@ export class NavBar extends PureComponent {
   }
 
   handleAddNewApplication = () => {
-    this.props.history.push(window.env.NO_APPS_REDIRECT);
+    this.props.history.push("/upload-license");
   }
 
   redirectToDashboard = () => {
@@ -163,7 +162,7 @@ export class NavBar extends PureComponent {
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
                   <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
-                    <Link className="btn secondary green rounded" to={window.env.NO_APPS_REDIRECT}>
+                    <Link className="btn secondary green rounded" to="/upload-license">
                       Add a new application
                     </Link>
                   </div>
@@ -193,8 +192,4 @@ export default compose(
       logout: () => mutate()
     })
   }),
-  graphql(userFeatures, {
-    name: "userFeaturesQuery",
-    skip: !Utilities.isLoggedIn()
-  })
 )(NavBar);

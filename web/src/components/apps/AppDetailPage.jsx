@@ -8,16 +8,13 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
-import WatchSidebarItem from "@src/components/watches/WatchSidebarItem";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "./Dashboard";
-import AddClusterModal from "../shared/modals/AddClusterModal";
 import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
-import DownstreamWatchVersionHistory from "../watches/DownstreamWatchVersionHistory";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "./AppConfig";
 import AppLicense from "./AppLicense";
@@ -40,7 +37,6 @@ class AppDetailPage extends Component {
       preparingUpdate: "",
       clusterParentSlug: "",
       selectedWatchName: "",
-      clusterToRemove: {},
       watchToEdit: {},
       existingDeploymentClusters: [],
       displayDownloadCommandModal: false
@@ -53,9 +49,8 @@ class AppDetailPage extends Component {
     }
   }
 
-  componentDidUpdate(lastProps) {
-    const { getThemeState, setThemeState, match, listApps, history, getKotsAppQuery } = this.props;
-    const { search } = this.props.location;
+  componentDidUpdate() {
+    const { getThemeState, setThemeState, match, listApps, history } = this.props;
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listApps?.find(w => w.slug === slug);
 
@@ -68,14 +63,6 @@ class AppDetailPage extends Component {
           ...rest,
           navbarLogo: currentWatch.watchIcon
         });
-      }
-    }
-
-    if (getKotsAppQuery.getKotsApp && getKotsAppQuery.getKotsApp !== lastProps.getKotsAppQuery.getKotsApp) {
-      const URLParams = new URLSearchParams(search);
-      if (URLParams.get("add")) {
-        this.handleAddNewClusterClick(getKotsAppQuery.getKotsApp);
-        history.replace(this.props.location.pathname); // remove query param so refreshing the page doesn't trigger the modal again.
       }
     }
 
@@ -97,17 +84,6 @@ class AppDetailPage extends Component {
     })
   }
 
-  addClusterToApp = async (clusterId) => {
-    const app = this.props.getKotsAppQuery.getKotsApp;
-    try {
-      await this.props.createKotsDownstream(app.id, clusterId);
-      await this.props.listDownstreamsForAppQuery.refetch();
-      this.closeAddClusterModal();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   toggleDisplayDownloadModal = () => {
     this.setState({ displayDownloadCommandModal: !this.state.displayDownloadCommandModal });
   }
@@ -122,51 +98,6 @@ class AppDetailPage extends Component {
     const { slug } = this.props.match.params;
     const currentSequence = this.props.getKotsAppQuery?.getKotsApp?.currentSequence;
     this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
-  }
-
-  handleAddNewClusterClick = (app) => {
-    const downstreams = this.props.listDownstreamsForAppQuery.listDownstreamsForApp;
-    const existingIds = downstreams ? downstreams.map(d => d.id) : [];
-    this.setState({
-      addNewClusterModal: true,
-      clusterParentSlug: app.slug,
-      selectedAppName: app.name,
-      existingDeploymentClusters: existingIds
-    });
-  }
-
-  toggleDeleteDeploymentModal = (cluster) => {
-    const name = this.props.getKotsAppQuery?.getKotsApp?.name;
-    this.setState({
-      clusterToRemove: cluster,
-      selectedWatchName: name,
-      displayRemoveClusterModal: !this.state.displayRemoveClusterModal
-    });
-  }
-
-  onDeleteDeployment = async () => {
-    const { clusterToRemove } = this.state;
-    const { slug } = this.props.match.params;
-    try {
-      await this.props.deleteKotsDownstream(slug, clusterToRemove.id);
-      await this.props.listDownstreamsForAppQuery.refetch();
-      this.setState({
-        clusterToRemove: {},
-        selectedWatchName: "",
-        displayRemoveClusterModal: false
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  closeAddClusterModal = () => {
-    this.setState({
-      addNewClusterModal: false,
-      clusterParentSlug: "",
-      selectedAppName: "",
-      existingDeploymentClusters: []
-    })
   }
 
   /**
@@ -193,7 +124,7 @@ class AppDetailPage extends Component {
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
     } else {
-      history.replace(window.env.NO_APPS_REDIRECT);
+      history.replace("/upload-license");
     }
   }
 
@@ -216,9 +147,6 @@ class AppDetailPage extends Component {
       appName
     } = this.props;
     const {
-      displayRemoveClusterModal,
-      addNewClusterModal,
-      clusterToRemove,
       displayDownloadCommandModal
     } = this.state;
 
@@ -262,19 +190,6 @@ class AppDetailPage extends Component {
                       })}
                       app={item} />
                   );
-                } else if (item.slug) {
-                  const slugFromRoute = `${match.params.owner}/${match.params.slug}`;
-                  sidebarItemNode = (
-                    <WatchSidebarItem
-                      key={idx}
-                      className={classNames({
-                        selected: (
-                          item.slug === slugFromRoute &&
-                          match.params.owner !== "helm"
-                        )
-                      })}
-                      watch={item} />
-                  );
                 } else if (item.helmName) {
                   sidebarItemNode = (
                     <HelmChartSidebarItem
@@ -316,16 +231,8 @@ class AppDetailPage extends Component {
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
-                        handleAddNewCluster={() => this.handleAddNewClusterClick(app)}
                         makeCurrentVersion={this.makeCurrentRelease}
                         updateCallback={this.refetchGraphQLData}
-                      />
-                    } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history" render={() =>
-                      <DownstreamWatchVersionHistory
-                        watch={app}
-                        makeCurrentVersion={this.makeCurrentRelease}
-                        refreshAppData={refreshAppData}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
@@ -372,47 +279,6 @@ class AppDetailPage extends Component {
             }
           </div>
         </SidebarLayout>
-        {addNewClusterModal &&
-          <Modal
-            isOpen={addNewClusterModal}
-            onRequestClose={this.closeAddClusterModal}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Add cluster modal"
-            ariaHideApp={false}
-            className="AddNewClusterModal--wrapper Modal"
-          >
-            <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Add {this.state.selectedWatchName} to a new downstream</h2>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Select one of your existing downstreams to deploy to.</p>
-              <AddClusterModal
-                onAddCluster={this.addClusterToApp}
-                watch={app}
-                onRequestClose={this.closeAddClusterModal}
-                createDownstreamForCluster={this.createDownstreamForCluster}
-                existingDeploymentClusters={this.state.existingDeploymentClusters}
-              />
-            </div>
-          </Modal>
-        }
-        {displayRemoveClusterModal &&
-          <Modal
-            isOpen={displayRemoveClusterModal}
-            onRequestClose={() => this.toggleDeleteDeploymentModal({}, "")}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Add cluster modal"
-            ariaHideApp={false}
-            className="RemoveClusterFromWatchModal--wrapper Modal"
-          >
-            <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Remove {this.state.selectedWatchName} from {clusterToRemove.title}</h2>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">This application will no longer be deployed to {clusterToRemove.title}.</p>
-              <div className="u-marginTop--10 flex">
-                <button onClick={() => this.toggleDeleteDeploymentModal({}, "")} className="btn secondary u-marginRight--10">Cancel</button>
-                <button onClick={this.onDeleteDeployment} className="btn green primary">Delete deployment</button>
-              </div>
-            </div>
-          </Modal>
-        }
         {displayDownloadCommandModal &&
           <Modal
             isOpen={displayDownloadCommandModal}

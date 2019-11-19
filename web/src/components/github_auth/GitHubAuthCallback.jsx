@@ -26,7 +26,7 @@ class GitHubAuthCallback extends React.Component {
         } else {
           return this.props.history.push("/unsupported");
         }
-        this.props.history.push("/watches");
+        this.props.history.push("/apps");
       })
       .catch();
   }
