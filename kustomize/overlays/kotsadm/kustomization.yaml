@@ -2,5 +2,4 @@ bases:
   - ../../base
   - ../../../web/kustomize/overlays/kotsadm
   - ../../../api/kustomize/overlays/kotsadm
-  - ../../../worker/kustomize/overlays/kotsadm
   - ../../../migrations/kustomize/overlays/kotsadm

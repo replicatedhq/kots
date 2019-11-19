@@ -595,6 +595,9 @@ export class KotsAppStore {
     ];
 
     const result = await this.pool.query(q, v);
+    if (!result.rows.length) {
+      return undefined;
+    }
     const spec: string = result.rows[0].kots_app_spec;
     if (!spec) {
       return undefined;

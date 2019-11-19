@@ -16,7 +16,7 @@ import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "./params";
 import { UserStore } from "../user/user_store";
 import { Stores } from "../schema/stores";
-import { SessionStore } from "../session";
+import { SessionStore, Session } from "../session";
 import { ClusterStore } from "../cluster";
 import { UnforkStore } from "../unfork/unfork_store";
 import { FeatureStore } from "../feature/feature_store";
@@ -157,14 +157,34 @@ export class Server extends ServerLoader {
       next();
     };
 
+    const requireContextGraphql = async (req: Request, res: Response, next: NextFunction) => {
+      const anonymousOperations = [
+        "ping",
+        "loginToAdminConsole",
+        "logout",
+      ];
+
+      if (anonymousOperations.includes(req.body.operationName)) {
+        next();
+        return;
+      }
+
+      if (res.locals.context.requireValidSession()) {
+        res.status(403).end();
+        return;
+      }
+      next();
+    };
+
     this.expressApp.locals.stores = stores;
 
     this.use("/api/v1/download/:watchId", setContext);
     this.use("/api/v1/download/:watchId", (request: Request, response: Response, next: NextFunction) => {
-      next(response.locals.context.hasValidSession());
+      next(response.locals.context.requireValidSession());
     });
 
     this.use("/graphql", setContext);
+    this.use("/graphql", requireContextGraphql);
     this.use("/graphql", graphqlExpress(async (req: Request, res: Response): Promise<any> => {
       const shipClusterSchema: ShipClusterSchema = new ShipClusterSchema();
 
@@ -216,9 +236,5 @@ export class Server extends ServerLoader {
     }
 
     logger.info({msg: "Server started..."});
-  }
-
-  $onServerInitError(err: Error) {
-    logger.error({msg: err.message, err});
   }
 }

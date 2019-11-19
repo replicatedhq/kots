@@ -49,15 +49,6 @@ steps:
       env:
         GIT_TAG: "${BUILDKITE_TAG}"
 
-  - trigger: "kotsadm-worker"
-    async: false
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "${BUILDKITE_COMMIT}"
-      branch: "${BUILDKITE_BRANCH}"
-      env:
-        GIT_TAG: "${BUILDKITE_TAG}"
-
   - trigger: "kotsadm-web"
     async: false
     build:
