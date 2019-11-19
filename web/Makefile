@@ -41,14 +41,6 @@ serve: deps
 build-kotsadm: SHIP_CLOUD_ENV = enterprise
 build-kotsadm: webpack_build
 
-.PHONY: build-replicated-staging
-build-replicated-staging: SHIP_CLOUD_ENV = staging
-build-replicated-staging: webpack_build
-
-.PHONY: build-replicated-production
-build-replicated-production: SHIP_CLOUD_ENV = production
-build-replicated-production: webpack_build
-
 .PHONY: build-local
 build-local: SHIP_CLOUD_ENV = skaffold
 build-local: webpack_build_local
@@ -82,44 +74,3 @@ publish-kotsadm-tag:
 publish-kotsadm-alpha:
 	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:alpha .
 	docker push kotsadm/kotsadm-web:alpha
-
-.PHONY: publish-replicated-staging
-publish-replicated-staging:
-	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:alpha .
-	docker push replicated/kotsadm-web:alpha
-
-.PHONY: release-replicated-staging
-release-replicated-staging: IMAGE = replicated/kotsadm-web:alpha
-release-replicated-staging: OVERLAY = staging
-release-replicated-staging: GITOPS_OWNER = replicatedcom
-release-replicated-staging: GITOPS_REPO = gitops-deploy
-release-replicated-staging: GITOPS_BRANCH = master
-release-replicated-staging: gitops
-
-.PHONY: publish-replicated-production
-publish-replicated-production:
-	docker build --build-arg=nginxconf=deploy/nginx.conf -f deploy/Dockerfile -t replicated/kotsadm-web:${GIT_TAG} .
-	docker push replicated/kotsadm-web:${GIT_TAG}
-
-.PHONY: release-replicated-production
-release-replicated-production: IMAGE = replicated/kotsadm-web:${GIT_TAG}
-release-replicated-production: OVERLAY = production
-release-replicated-production: GITOPS_OWNER = replicatedcom
-release-replicated-production: GITOPS_REPO = gitops-deploy
-release-replicated-production: GITOPS_BRANCH = release
-#release-replicated-production: gitops
-
-gitops:
-	cd kustomize/overlays/$(OVERLAY); sed -i -- 's/GIT_SHA_PLACEHOLDER/'$${BUILDKITE_COMMIT:0:7}'/g' *.yaml
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/kotsadm-web=${IMAGE}
-
-	rm -rf deploy/$(OVERLAY)/work
-	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
-	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web
-
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web/kotsadm-web.yaml
-
-	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/kotsadm-web; \
-	  git add . ;\
-	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITOPS_BRANCH)
