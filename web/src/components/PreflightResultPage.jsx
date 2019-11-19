@@ -80,7 +80,7 @@ class PreflightResultPage extends Component {
     }
 
     return (
-      <div className="flex-column flex1">
+      <div className="flex-column flex1 container">
         <Helmet>
           <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
@@ -114,7 +114,7 @@ class PreflightResultPage extends Component {
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
-              className="btn primary u-marginRight--30 u-marginBottom--15"
+              className="btn primary u-marginBottom--15"
               onClick={() => this.deployKotsDownstream(false)}
             >
               Continue
@@ -124,7 +124,7 @@ class PreflightResultPage extends Component {
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
-              className="btn primary u-marginRight--30 u-marginBottom--15"
+              className="btn primary u-marginBottom--15"
               onClick={this.showSkipModal}
             >
               Skip
