@@ -32,6 +32,10 @@ export class Context {
     return this.session.scmToken;
   }
 
+  public getUserId(): string {
+    return this.session.userId;
+  }
+
   public requireSingleTenantSession() {
     if (!this.session) {
       throw new ReplicatedError("Unauthorized");
@@ -40,13 +44,20 @@ export class Context {
     return true;
   }
 
-  public hasValidSession(): ReplicatedError | null {
-    if (this.getGitHubToken().length === 0) {
-      return new ReplicatedError("Unauthorized");
+  public requireValidSession(): ReplicatedError | null {
+    if (this.sessionType() === "github") {
+      if (this.getGitHubToken().length === 0) {
+        return new ReplicatedError("Unauthorized");
+      }
+    } else {
+      // ship
+      if (this.getUserId() === "") {
+        return new ReplicatedError("Unauthorized");
+      }
     }
 
     const currentTime = new Date(Date.now()).toUTCString();
-    if (isAfter(currentTime, this.session.expiresAt)) {
+    if (!this.session.expiresAt || isAfter(currentTime, this.session.expiresAt)) {
       return new ReplicatedError("Expired session");
     }
 
@@ -54,7 +65,7 @@ export class Context {
   }
 
   public async getUsername(): Promise<string> {
-    const shipUser = await this.stores.userStore.getUser(this.session.userId);
+    const shipUser = await this.stores.userStore.getUser(this.getUserId());
     if (shipUser.githubUser) {
       return shipUser.githubUser.login;
     } else if (shipUser.shipUser) {
