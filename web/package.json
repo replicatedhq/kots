@@ -110,7 +110,7 @@
     "@bugsnag/plugin-react": "^6.2.0",
     "@grafana/ui": "^6.4.3",
     "@maji/react-prism": "^1.0.1",
-    "@replicatedhq/ship-init": "1.6.12",
+    "@replicatedhq/ship-init": "1.6.13",
     "apollo-cache-inmemory": "^1.5.1",
     "apollo-client": "^2.5.1",
     "apollo-link": "^1.2.11",
