@@ -43,41 +43,6 @@ steps:
       - exit_status: 2
         limit: 5
 
-  - commands:
-      - make -C web deps build-replicated-staging
-    label: "build-replicated-staging"
-    plugins:
-      - docker#v3.0.1:
-          image: replicated/gitops-builder:buildkite
-          workdir: /repo/web
-          environment:
-            - BUILDKITE_COMMIT
-    artifact_paths:
-      - "web/dist/**/*"
-    retry:
-      automatic:
-      # this command exiting with status 2 typically means that the yarn package failed to download
-      - exit_status: 2
-        limit: 5
-
-  - commands:
-      - make -C web deps build-replicated-production
-    label: "build-replicated-production"
-    plugins:
-      - docker#v3.0.1:
-          image: replicated/gitops-builder:buildkite
-          workdir: /repo/web
-          environment:
-            - BUILDKITE_COMMIT
-            - GIT_TAG
-    artifact_paths:
-      - "web/dist/**/*"
-    retry:
-      automatic:
-      # this command exiting with status 2 typically means that the yarn package failed to download
-      - exit_status: 2
-        limit: 5
-
   - wait
 
   - label: publish-kotsadm-alpha
@@ -95,19 +60,4 @@ steps:
         mkdir -p web/dist;
         buildkite-agent artifact download web/dist/* . --step build-kotsadm
         make -C web publish-kotsadm-tag;
-      fi
-
-  - label: publish-replicated-staging
-    branches: "master"
-    command: |
-      mkdir -p web/dist;
-      buildkite-agent artifact download web/dist/* . --step build-replicated-staging && \
-      make -C web publish-replicated-staging release-replicated-staging;
-
-  - label: publish-replicated-production
-    command: |
-      if [ ! -z "$GIT_TAG" ]; then \
-        mkdir -p web/dist;
-        buildkite-agent artifact download web/dist/* . --step build-replicated-production && \
-        make -C web publish-replicated-production release-replicated-production;
       fi
