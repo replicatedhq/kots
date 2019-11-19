@@ -415,7 +415,6 @@ class AppVersionHistory extends Component {
   render() {
     const {
       app,
-      handleAddNewCluster,
       data,
       match
     } = this.props;
@@ -509,28 +508,6 @@ class AppVersionHistory extends Component {
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
-              {/* When no downstreams exit */}
-              {!downstream &&
-                <div className="flex-column flex1 u-marginBottom--30">
-                  <div className="EmptyState--wrapper flex-column flex1">
-                    <div className="EmptyState flex-column flex1 alignItems--center justifyContent--center">
-                      <div className="flex alignItems--center justifyContent--center">
-                        <span className="icon ship-complete-icon-gh"></span>
-                        <span className="deployment-or-text">OR</span>
-                        <span className="icon ship-medium-size"></span>
-                      </div>
-                      <div className="u-textAlign--center u-marginTop--10">
-                        <p className="u-fontSize--largest u-color--tuna u-lineHeight--medium u-fontWeight--bold u-marginBottom--10">No active downstreams</p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">{app.name} has no downstream deployment clusters yet. {app.name} must be deployed to a cluster to get version histories.</p>
-                      </div>
-                      <div className="u-marginTop--20">
-                        <button className="btn secondary" onClick={handleAddNewCluster}>Add a deployment cluster</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-
               {/* Active downstream */}
               {currentDownstreamVersion &&
                 <fieldset className={`DeployedDownstreamVersion ${currentDownstreamVersion.status}`}>
