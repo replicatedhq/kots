@@ -6,14 +6,6 @@ import { Params } from "../server/params";
 import pg from "pg";
 import { Session } from "./session";
 
-const invalidSession = {
-  auth: "",
-  expiration: new Date(Date.now()),
-  userId: "",
-  sessionId: "",
-  type: "",
-};
-
 export type InstallationMap = {
   [key: string]: number;
 };
@@ -65,6 +57,7 @@ export class SessionStore {
     const result = await this.pool.query(q, v);
 
     const session: Session = new Session();
+    session.type = "ship";
     session.sessionId = result.rows[0].id;
     session.userId = result.rows[0].user_id;
     session.expiresAt = result.rows[0].expire_at;
@@ -72,25 +65,19 @@ export class SessionStore {
     return session;
   }
 
-  public async decode(token: string): Promise<Session | any> {
+  public async decode(token: string): Promise<Session> {
     //tslint:disable-next-line possible-timing-attack
     if (token.length > 0 && token !== "null") {
       try {
         const decoded: any = jwt.verify(token, this.params.sessionKey);
 
         const session = await this.getSession(decoded.sessionId);
-        return {
-          scmToken: decoded.token,
-          expiration: session.expiresAt,
-          userId: session.userId,
-          sessionId: session.sessionId,
-          type: decoded.type,
-        };
+        return session;
       } catch (e) {
         // Errors here negligible as they are from jwts not passing verification
       }
     }
 
-    return invalidSession;
+    return new Session();
   }
 }
