@@ -45,6 +45,10 @@ export function getLicenseInfoFromYaml(licenseData): KLicense {
       license.licenseSequence = spec.licenseSequence;
     }
 
+    if (spec.licenseType) {
+      license.licenseType = spec.licenseType;
+    }
+
     const entitlements: KEntitlement[] = [];
     if (spec.entitlements) {
       const keys = Object.keys(spec.entitlements);
@@ -121,4 +125,13 @@ export async function getDiffSummary(app: KotsApp): Promise<string> {
     linesAdded,
     linesRemoved
   });
+}
+
+export function getLicenseType(license: string): string {
+  const doc = yaml.safeLoad(license.toString());
+  if (doc.spec && doc.spec.licenseType) {
+    return doc.spec.licenseType;
+  } else {
+    return "";
+  }
 }

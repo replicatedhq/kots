@@ -5,5 +5,6 @@ export class KLicense {
   public expiresAt: string;
   public channelName: string;
   public licenseSequence?: number;
+  public licenseType?: string;
   public entitlements?: Array<KEntitlement>;
 }

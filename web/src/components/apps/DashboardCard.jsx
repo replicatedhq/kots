@@ -133,9 +133,9 @@ export default class DashboardCard extends React.Component {
     const { appLicense } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
 
-
     return (
       <div>
+        {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
@@ -144,11 +144,11 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense } = this.props;
 
 
     return (
-      <div className="dashboard-card flex-column flex1 flex">
+      <div className={`${appLicense?.licenseType === "community" ? "community-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
         <div className="flex u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 justifyContent--center">

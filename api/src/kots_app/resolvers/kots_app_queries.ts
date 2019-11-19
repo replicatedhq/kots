@@ -46,6 +46,13 @@ export function KotsQueries(stores: Stores) {
       return app.toSchema(downstreams, stores);
     },
 
+    async getKotsLicenseType(root: any, args: any): Promise<string> {
+      const { slug } = args;
+      const id = await stores.kotsAppStore.getIdFromSlug(slug);
+      const sequence = await stores.kotsAppStore.getMaxSequence(id);
+      return await stores.kotsAppStore.getKotsAppLicenseType(id, sequence);
+    },
+
     async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
       const { slug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);

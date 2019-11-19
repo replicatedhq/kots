@@ -118,6 +118,7 @@ export const getSupportBundleRaw = `
       createdAt
       uploadedAt
       isArchived
+      kotsLicenseType
       analysis {
         id
         error

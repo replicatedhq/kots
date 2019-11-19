@@ -25,6 +25,7 @@ export class SupportBundle {
   analysis: SupportBundleAnalysis;
   watchSlug: string;
   watchName: string;
+  kotsLicenseType?: string;
 
   async generateFileTreeIndex() {
     const supportBundleIndexJsonPath = "index.json";
@@ -128,6 +129,7 @@ export class SupportBundle {
       createdAt: this.createdAt ? this.createdAt.toISOString() : undefined,
       uploadedAt: this.uploadedAt ? this.uploadedAt.toISOString() : undefined,
       isArchived: this.isArchived,
+      kotsLicenseType: this.kotsLicenseType,
       analysis: this.analysis ? this.analysis.toSchema() : undefined
     };
   }

@@ -8,6 +8,7 @@ import { Utilities } from "@src/utilities/utilities";
 import { userFeatures } from "@src/queries/WatchQueries";
 import { listClusters } from "@src/queries/ClusterQueries";
 import { userInfo } from "@src/queries/UserQueries";
+import { getKotsLicenseType } from "@src/queries/AppsQueries";
 import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
 
@@ -16,7 +17,9 @@ import "@src/scss/components/shared/NavBar.scss";
 export class NavBar extends PureComponent {
   constructor() {
     super();
-    this.state = {}
+    this.state = {
+      licenseType: ""
+    }
   }
 
   static propTypes = {
@@ -33,7 +36,7 @@ export class NavBar extends PureComponent {
     Utilities.logoutUser();
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(lastProps) {
     if (Utilities.isLoggedIn() && !this.state.user) {
       this.props.client.query({ query: userInfo })
         .then((res) => {
@@ -42,14 +45,38 @@ export class NavBar extends PureComponent {
           Utilities.logoutUser();
         });
     }
+    if (this.props.location.pathname !== lastProps.location.pathname) {
+      this.getKotsLicenseType();
+    }
   }
 
   componentDidMount() {
     if (Utilities.isLoggedIn()) {
+      this.getKotsLicenseType();
       this.props.client.query({ query: userInfo })
         .then((res) => {
           this.setState({ user: res.data.userInfo });
         }).catch();
+    }
+  }
+
+  getKotsLicenseType = () => {
+    const { location } = this.props;
+    const pathname = location.pathname.split("/");
+    if (pathname.length >= 2) {
+      this.props.client.query({
+        query: getKotsLicenseType,
+        fetchPolicy: "no-cache",
+        variables: {
+          slug: pathname[2],
+        }
+      })
+        .then(response => {
+          this.setState({ licenseType: response.data.getKotsLicenseType });
+        })
+        .catch((err) => {
+          console.log(err);
+        })
     }
   }
 
@@ -81,7 +108,7 @@ export class NavBar extends PureComponent {
 
   render() {
     const { className, logo, fetchingMetadata, isKurlEnabled } = this.props;
-    const { user } = this.state;
+    const { user, licenseType } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
     return (
@@ -98,8 +125,9 @@ export class NavBar extends PureComponent {
                       {logo
                         ? <span className="watch-logo clickable" style={{ backgroundImage: `url(${logo})` }} />
                         : !fetchingMetadata ? <span className="logo icon clickable" />
-                        : <span style={{ width: "30px", height: "30px" }} />
+                          : <span style={{ width: "30px", height: "30px" }} />
                       }
+                      {licenseType === "community" && <span className="flag flex"> <span className="flagText">Community Edition</span> </span>}
                     </Link>
                   </div>
                 </div>
@@ -129,7 +157,7 @@ export class NavBar extends PureComponent {
                       </div>
                     }
                   </div>
-                  )
+                )
                 }
               </div>
               {Utilities.isLoggedIn() ?
@@ -146,7 +174,7 @@ export class NavBar extends PureComponent {
                     <div className="flex-column flex-auto justifyContent--center u-marginLeft--10">
                       <Avatar imageUrl={this.state.user && this.state.user.avatarUrl} />
                     </div>
-                  : null}
+                    : null}
                 </div>
                 : null}
             </div>

@@ -14,6 +14,8 @@ import { syncAppLicense } from "@src/mutations/AppsMutations";
 import { getFileContent } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
+import "@src/scss/components/apps/AppLicense.scss";
+
 class AppLicense extends Component {
 
   constructor(props) {
@@ -40,9 +42,9 @@ class AppLicense extends Component {
         appId: app.id,
       }
     })
-    .then(response => {
-      this.setState({ appLicense: response.data.getAppLicense });
-    });
+      .then(response => {
+        this.setState({ appLicense: response.data.getAppLicense });
+      });
   }
 
   onDrop = async (files) => {
@@ -119,14 +121,25 @@ class AppLicense extends Component {
     }
 
     const { app } = this.props;
-
     const expiresAt = getLicenseExpiryDate(appLicense);
 
+
     return (
-      <div className="flex justifyContent--center">
+      <div className="flex flex-column justifyContent--center alignItems--center">
         <Helmet>
           <title>{`${app.name} License`}</title>
         </Helmet>
+        {appLicense?.licenseType === "community" &&
+          <div className="CommunityLicense--wrapper u-marginTop--30 flex flex1 alignItems--center">
+            <div className="flex flex-auto">
+              <span className="icon communityIcon"></span>
+            </div>
+            <div className="flex1 flex-column u-marginLeft--10">
+              <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> You are running a Community Edition of {app.name} </p>
+              <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> To change your license, please contact your account representative. </p>
+            </div>
+          </div>
+        }
         <div className="LicenseDetails--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
           <div className="flex u-marginBottom--20 u-paddingBottom--5 u-marginTop--20 alignItems--center">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">License details</p>
@@ -136,7 +149,7 @@ class AppLicense extends Component {
               <p className="u-marginRight--10">Expires:</p>
               <p className="u-fontWeight--bold u-color--tuna">{expiresAt}</p>
             </div>
-            {appLicense.channelName && 
+            {appLicense.channelName &&
               <div className="flex u-marginBottom--20">
                 <p className="u-marginRight--10">Channel:</p>
                 <p className="u-fontWeight--bold u-color--tuna">{appLicense.channelName}</p>
@@ -162,7 +175,7 @@ class AppLicense extends Component {
               :
               <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
             }
-            {message && 
+            {message &&
               <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
                 "u-color--red": messageType === "error",
                 "u-color--tuna": messageType === "info",
