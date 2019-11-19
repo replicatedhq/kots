@@ -1,8 +1,0 @@
-bases:
-- ../../base
-
-patchesStrategicMerge:
-- ./deployment-init.yaml
-- ./deployment-update.yaml
-- ./deployment-watch.yaml
-- ./deployment-edit.yaml
