@@ -36,7 +36,7 @@ func (b *Builder) Bool(text string, defaultVal bool) (bool, error) {
 
 	value, err := b.RenderTemplate(text, text)
 	if err != nil {
-		return defaultVal, errors.Wrap(err, "failed to render template")
+		return defaultVal, errors.Wrap(err, "failed to render bool template")
 	}
 
 	// If the template didn't parse (turns into an empty string), then we should
@@ -61,7 +61,7 @@ func (b *Builder) Int(text string, defaultVal int64) (int64, error) {
 
 	value, err := b.RenderTemplate(text, text)
 	if err != nil {
-		return defaultVal, errors.Wrap(err, "failed to render template")
+		return defaultVal, errors.Wrap(err, "failed to render int template")
 	}
 
 	// If the template didn't parse (turns into an empty string), then we should
@@ -86,7 +86,7 @@ func (b *Builder) Uint(text string, defaultVal uint64) (uint64, error) {
 
 	value, err := b.RenderTemplate(text, text)
 	if err != nil {
-		return defaultVal, errors.Wrap(err, "failed to render template")
+		return defaultVal, errors.Wrap(err, "failed to render uint template")
 	}
 
 	// If the template didn't parse (turns into an empty string), then we should
@@ -111,7 +111,7 @@ func (b *Builder) Float64(text string, defaultVal float64) (float64, error) {
 
 	value, err := b.RenderTemplate(text, text)
 	if err != nil {
-		return defaultVal, errors.Wrap(err, "failed to render template")
+		return defaultVal, errors.Wrap(err, "failed to render float template")
 	}
 
 	// If the template didn't parse (turns into an empty string), then we should

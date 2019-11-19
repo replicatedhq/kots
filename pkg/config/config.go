@@ -53,7 +53,7 @@ func TemplateConfig(log *logger.Logger, configPath string, configData string, co
 
 	rendered, err := builder.RenderTemplate(configPath, configDocWithData)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to render template")
+		return "", errors.Wrap(err, "failed to render config template")
 	}
 
 	return rendered, nil
