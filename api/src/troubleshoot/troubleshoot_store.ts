@@ -23,37 +23,6 @@ metadata:
 spec:
   collectors: []`
 
-  public async getPreferedWatchCollector(watchId: string): Promise<Collector> {
-    const q = `select release_collector, updated_collector, release_collector_updated_at, updated_collector_updated_at, use_updated_collector
-    from watch_troubleshoot_collector where watch_id = $1`;
-    const v = [watchId];
-
-    const result = await this.pool.query(q, v);
-    if (result.rowCount === 0) {
-      return this.getDefaultCollector();
-    }
-
-    const row = result.rows[0];
-
-    let useUpdatedCollector = false;
-    if (row.use_updated_collector) {
-      useUpdatedCollector = true;
-    }
-
-    if (row.updated_collector_updated_at) {
-      useUpdatedCollector = new Date(row.updated_collector_updated_at) > new Date(row.release_collector_updated_at);
-    };
-
-    let collector: Collector = new Collector();
-    if (useUpdatedCollector) {
-      collector.spec = row.updated_collector;
-    } else {
-      collector.spec = row.release_collector;
-    }
-
-    return collector;
-  }
-
   public async tryGetAnalyzersForKotsApp(id: string): Promise<Analyzer | void> {
     const q = `select analyzer_spec from app_version
       inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
@@ -84,23 +53,6 @@ spec:
     }
 
     return result.rows[0].supportbundle_spec;
-  }
-
-  public async tryGetCollectorForWatchSlug(slug: string): Promise<Collector| void> {
-    const q = `select c.release_collector
-    from watch w inner join watch_troubleshoot_collector c ON w.id = c.watch_id
-    where w.slug = $1`;
-
-    const v = [slug];
-
-    const result = await this.pool.query(q, v);
-
-    let collector: Collector = new Collector();
-    if (result.rowCount === 0) {
-      return;
-    }
-
-    return result.rows[0].release_collector;
   }
 
   public async setAnalysisResult(supportBundleId: string, insights: string): Promise<void> {
@@ -276,9 +228,9 @@ spec:
     return result.rows.length !== 0;
   }
 
-  public async listSupportBundles(watchId: string): Promise<SupportBundle[]> {
+  public async listSupportBundles(appOrWatchId: string): Promise<SupportBundle[]> {
     const q = `select id from supportbundle where watch_id = $1 order by created_at`;
-    const v = [watchId];
+    const v = [appOrWatchId];
     const result = await this.pool.query(q, v);
     const supportBundles: SupportBundle[] = [];
     for (const row of result.rows) {
@@ -301,7 +253,7 @@ spec:
     return supportBundle;
   }
 
-  public async createSupportBundle(watchId: string, size: number, id?: string): Promise<SupportBundle> {
+  public async createSupportBundle(appOrWatchId: string, size: number, id?: string): Promise<SupportBundle> {
     if (!id) {
       id = randomstring.generate({ capitalization: "lowercase" });
     }
@@ -312,7 +264,7 @@ spec:
     let v = [
       id,
       id, // TODO: slug
-      watchId,
+      appOrWatchId,
       size,
       status,
       createdAt,

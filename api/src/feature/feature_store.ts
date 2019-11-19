@@ -20,20 +20,6 @@ export class FeatureStore {
     return features;
   }
 
-  async listWatchFeatures(watchId: string): Promise<Feature[]> {
-    const q = `select f.id from feature f inner join watch_feature wf on wf.feature_id = f.id where wf.watch_id = $1`;
-    const v = [watchId];
-
-    const { rows }: { rows: any[] } = await this.pool.query(q, v);
-    const features: Feature[] = [];
-    for (const row of rows) {
-      const result = this.mapFeature(row);
-      features.push(result);
-    }
-
-    return features;
-  }
-
   private mapFeature(row: any): any {
     return {
       id: row.id,

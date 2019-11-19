@@ -1,11 +1,9 @@
 import { SessionStore } from "../session/session_store";
 import { UserStore } from "../user";
 import { ClusterStore } from "../cluster";
-import { UnforkStore } from "../unfork/unfork_store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
-import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { KotsLicenseStore } from "../klicenses";
@@ -21,8 +19,6 @@ export interface Stores {
   userStore: UserStore;
   githubNonceStore: GithubNonceStore;
   clusterStore: ClusterStore;
-  unforkStore: UnforkStore;
-  pendingStore: PendingStore;
   featureStore: FeatureStore;
   healthzStore: HealthzStore;
   helmChartStore: HelmChartStore;

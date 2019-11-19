@@ -4,7 +4,6 @@ type Mutation {
   loginToAdminConsole(password: String!): AdminSignupInfo
   logout: String
 
-  createShipOpsCluster(title: String!): Cluster
   updateCluster(clusterId: String!, clusterName: String!): Cluster
   deleteCluster(clusterId: String!): Boolean
 

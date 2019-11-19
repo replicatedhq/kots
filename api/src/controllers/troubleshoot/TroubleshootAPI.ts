@@ -45,19 +45,8 @@ export class TroubleshootAPI {
     @PathParams("slug") slug: string,
     @QueryParams("incluster") inCluster: string,
   ): Promise<any | ErrorResponse> {
-    let collector = TroubleshootStore.defaultSpec;
-    let isKotsSpec = true;
-
-    const kotsCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForKotsSlug(slug);
-    if (kotsCollector) {
-      collector = kotsCollector;
-    } else {
-      const watchCollector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForWatchSlug(slug);
-      if (watchCollector) {
-        isKotsSpec = false;
-        collector = watchCollector;
-      }
-    }
+    const collector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForKotsSlug(slug);
+    const isKotsSpec = true;
 
     let appOrWatchId;
     let licenseData = "";

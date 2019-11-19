@@ -124,21 +124,12 @@ export class ClusterStore {
     return this.getCluster(result.rows[0].id);
   }
 
-  async getGitOpsCluster(clusterId: string, watchId?: string): Promise<Cluster> {
-    const fields = ["id", "title", "slug", "created_at", "updated_at", "cluster_type", "owner", "repo", "branch", "installation_id"]
-    if (watchId) {
-      fields.push("wc.github_path");
-    }
-
-    const q = `select ${fields} from cluster
-      inner join
-        cluster_github on cluster_id = id
-      ${watchId ? " left outer join watch_cluster as wc on wc.cluster_id = id where wc.cluster_id = $1 and watch_id = $2" : " where id = $1"}`;
-
+  async getGitOpsCluster(clusterId: string): Promise<Cluster> {
+    const q = `select id, title, slug, created_at, updated_at, cluster_type, owner, repo, branch, installation_id
+      from cluster
+      inner join cluster_github on cluster_id = id
+      where id = $1`;
     let v = [clusterId];
-    if (watchId) {
-      v.push(watchId);
-    }
 
     const result = await this.pool.query(q, v);
 
@@ -222,24 +213,6 @@ export class ClusterStore {
     }
 
     return clusters;
-  }
-
-  async getForWatch(watchId: string): Promise<Cluster | void> {
-    const q = `select cluster_id, cluster_type from watch_cluster inner join cluster on cluster_id = id where watch_id = $1`;
-    const v = [watchId];
-
-    const result  = await this.pool.query(q, v);
-    if (result.rows.length === 0) {
-      return;
-    }
-    let cluster: Cluster;
-    if (result.rows[0].cluster_type === "gitops") {
-      cluster = await this.getGitOpsCluster(result.rows[0].cluster_id, watchId);
-    } else {
-      cluster = await this.getShipOpsCluster(result.rows[0].cluster_id);
-    }
-
-    return cluster;
   }
 
   async getCluster(id: string): Promise<Cluster> {

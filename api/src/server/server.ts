@@ -16,13 +16,11 @@ import { getPostgresPool } from "../util/persistence/db";
 import { Params } from "./params";
 import { UserStore } from "../user/user_store";
 import { Stores } from "../schema/stores";
-import { SessionStore, Session } from "../session";
+import { SessionStore } from "../session";
 import { ClusterStore } from "../cluster";
-import { UnforkStore } from "../unfork/unfork_store";
 import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
-import { PendingStore } from "../pending";
 import { HelmChartStore } from "../helmchart";
 import { TroubleshootStore } from "../troubleshoot";
 import { KotsLicenseStore } from "../klicenses";
@@ -113,10 +111,8 @@ export class Server extends ServerLoader {
       userStore: new UserStore(pool),
       githubNonceStore: new GithubNonceStore(pool),
       clusterStore: new ClusterStore(pool, params),
-      unforkStore: new UnforkStore(pool, params),
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool, params),
-      pendingStore: new PendingStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
       troubleshootStore: new TroubleshootStore(pool, params),
       kotsLicenseStore: new KotsLicenseStore(pool, params),

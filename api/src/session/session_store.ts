@@ -5,6 +5,7 @@ import randomstring from "randomstring";
 import { Params } from "../server/params";
 import pg from "pg";
 import { Session } from "./session";
+import { ReplicatedError } from "../server/errors";
 
 export type InstallationMap = {
   [key: string]: number;
@@ -57,6 +58,11 @@ export class SessionStore {
     const result = await this.pool.query(q, v);
 
     const session: Session = new Session();
+
+    if (!result.rows.length) {
+      throw new ReplicatedError(`Session not found with ID ${id}`);
+    }
+
     session.type = "ship";
     session.sessionId = result.rows[0].id;
     session.userId = result.rows[0].user_id;

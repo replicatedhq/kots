@@ -31,7 +31,6 @@ export const Query = `
 
     getAppLicense(appId: String!): KLicense
 
-    getApplicationTree(slug: String!, sequence: Int!): String
     getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
 
     getKotsApplicationTree(slug: String!, sequence: Int!): String
@@ -42,14 +41,12 @@ export const Query = `
 
     validateRegistryInfo(endpoint: String, username: String, password: String, org: String): String!
 
-    watchCollectors(watchId: String!): TroubleshootCollectSpec
     listKotsSupportBundles(kotsSlug: String!): [SupportBundle]
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
     supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
     getSupportBundleCommand(watchSlug: String): String
 
-    listPreflightResults(watchId: String, slug: String): [PreflightResult]
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult
     getLatestKotsPreflightResult: PreflightResult
 

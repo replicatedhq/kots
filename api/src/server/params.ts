@@ -15,15 +15,10 @@ export class Params {
   readonly githubAppInstallURL: string;
   readonly bugsnagKey: string;
   readonly sessionKey: string;
-  readonly shipInitBaseURL: string;
-  readonly shipUpdateBaseURL: string;
-  readonly shipEditBaseURL: string;
-  readonly shipWatchBaseURL: string;
   readonly shipOutputBucket: string;
   readonly airgapBucket: string;
   readonly sigsciRpcAddress: string;
   readonly shipApiEndpoint: string;
-  readonly skipDeployToWorker: string;
   readonly objectStoreInDatabase: string;
   readonly s3Endpoint: string;
   readonly s3AccessKeyId: string;
@@ -46,15 +41,10 @@ export class Params {
     githubIntegrationID,
     bugsnagKey,
     sessionKey,
-    shipInitBaseURL,
-    shipUpdateBaseURL,
-    shipEditBaseURL,
-    shipWatchBaseURL,
     shipOutputBucket,
     airgapBucket,
     sigsciRpcAddress,
     shipApiEndpoint,
-    skipDeployToWorker,
     objectStoreInDatabase,
     s3Endpoint,
     s3AccessKeyId,
@@ -76,15 +66,10 @@ export class Params {
     this.githubIntegrationID = githubIntegrationID;
     this.bugsnagKey = bugsnagKey;
     this.sessionKey = sessionKey;
-    this.shipInitBaseURL = shipInitBaseURL;
-    this.shipUpdateBaseURL = shipUpdateBaseURL;
-    this.shipEditBaseURL = shipEditBaseURL;
-    this.shipWatchBaseURL = shipWatchBaseURL;
     this.shipOutputBucket = shipOutputBucket;
     this.airgapBucket = airgapBucket;
     this.sigsciRpcAddress = sigsciRpcAddress;
     this.shipApiEndpoint = shipApiEndpoint;
-    this.skipDeployToWorker = skipDeployToWorker;
     this.objectStoreInDatabase = objectStoreInDatabase;
     this.s3Endpoint = s3Endpoint;
     this.s3AccessKeyId = s3AccessKeyId;
@@ -112,17 +97,12 @@ export class Params {
       githubIntegrationID: params["GITHUB_INTEGRATION_ID"],
       githubPrivateKeyFile: params["GITHUB_PRIVATE_KEY_FILE"],
       githubPrivateKeyContents: params["GITHUB_PRIVATE_KEY_CONTENTS"],
-      shipInitBaseURL: params["INIT_SERVER_URI"] || "http://init-server:3000",
-      shipWatchBaseURL: params["WATCH_SERVER_URI"] || "http://watch-server:3000",
-      shipUpdateBaseURL: params["UPDATE_SERVER_URI"] || "http://update-server:3000",
-      shipEditBaseURL: params["EDIT_BASE_URI"] || "http://edit-server:3000",
       bugsnagKey: params["BUGSNAG_KEY"],
       sessionKey: params["SESSION_KEY"],
       shipOutputBucket: params["S3_BUCKET_NAME"],
       airgapBucket: params["AIRGAP_BUNDLE_S3_BUCKET"],
       sigsciRpcAddress: params["SIGSCI_RPC_ADDRESS"],
       shipApiEndpoint: process.env["SHIP_API_ENDPOINT"],
-      skipDeployToWorker: process.env["SKIP_DEPLOY_TO_WORKER"],
       objectStoreInDatabase: process.env["OBJECT_STORE_IN_DATABASE"],
       s3Endpoint: process.env["S3_ENDPOINT"],
       s3AccessKeyId: params["S3_ACCESS_KEY_ID"],
@@ -148,7 +128,6 @@ export class Params {
       GITHUB_PRIVATE_KEY_FILE: "/shipcloud/github/app_private_key_file",
       GITHUB_PRIVATE_KEY_CONTENTS: "/shipcloud/github/app_private_key",
       INIT_SERVER_URI: "/shipcloud/initserver/baseURL",
-      WATCH_SERVER_URI: "/shipcloud/watchserver/baseURL",
       UPDATE_SERVER_URI: "/shipcloud/updateserver/baseURL",
       EDIT_BASE_URI: "/shipcloud/editserver/baseURL",
       BUGSNAG_KEY: "/shipcloud/bugsnag/key",
@@ -157,7 +136,6 @@ export class Params {
       AIRGAP_BUNDLE_S3_BUCKET: "/shipcloud/airgap_bucket_name",
       SIGSCI_RPC_ADDRESS: "/shipcloud/sigsci_rpc_address",
       SHIP_API_ENDPOINT: "",
-      SKIP_DEPLOY_TO_WORKER: "",
       OBJECT_STORE_IN_DATABASE: "",
       S3_ENDPOINT: "",
       S3_ACCESS_KEY_ID: "/shipcloud/s3/access_key_id",

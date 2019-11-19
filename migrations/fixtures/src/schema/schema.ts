@@ -64,9 +64,12 @@ export class Schema {
     const metadata = {};
     metadata[user.username] = user.github_id;
 
+    var expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 1); // 1 day in the future
+
     for (const session of user.sessions) {
       statements.push(
-        escape(`insert into session (id, user_id, metadata, expire_at) values (%L, %L, %L, %L)`, session, user.id, JSON.stringify(metadata), new Date().toISOString())
+        escape(`insert into session (id, user_id, metadata, expire_at) values (%L, %L, %L, %L)`, session, user.id, JSON.stringify(metadata), expiresAt.toISOString())
       );
     }
 

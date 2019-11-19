@@ -79,36 +79,3 @@ build-release: build_and_push
 build_and_push:
 	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" .
 	docker push ${IMAGE}
-
-.PHONY: publish-release
-publish-release: IMAGE_TAG = ${GIT_TAG}
-publish-release: OVERLAY = production
-publish-release: GITOPS_OWNER = replicatedcom
-publish-release: GITOPS_REPO = gitops-deploy
-publish-release: GITOPS_BRANCH = release
-publish-release: GITOPS_FILENAME = kotsadm-api
-#publish-release: build_and_publish
-
-.PHONY: publish-alpha
-publish-alpha: IMAGE_TAG = alpha
-publish-alpha: OVERLAY = staging
-publish-alpha: GITOPS_OWNER = replicatedcom
-publish-alpha: GITOPS_REPO = gitops-deploy
-publish-alpha: GITOPS_BRANCH = master
-publish-alpha: GITOPS_FILENAME = kotsadm-api
-publish-alpha: build_and_publish
-
-build_and_publish:
-	cd kustomize/overlays/$(OVERLAY); sed -i -- 's/GIT_SHA_PLACEHOLDER/'$${BUILDKITE_COMMIT:0:7}'/g' *.yaml
-	cd kustomize/overlays/$(OVERLAY); kustomize edit set image kotsadm/${PROJECT_NAME}=kotsadm/${PROJECT_NAME}:${IMAGE_TAG}
-
-	rm -rf deploy/$(OVERLAY)/work
-	mkdir -p deploy/$(OVERLAY)/work; cd deploy/$(OVERLAY)/work; git clone --single-branch -b $(GITOPS_BRANCH) git@github.com:$(GITOPS_OWNER)/$(GITOPS_REPO)
-	mkdir -p deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}
-
-	kustomize build kustomize/overlays/$(OVERLAY) > deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}/${GITOPS_FILENAME}.yaml
-
-	cd deploy/$(OVERLAY)/work/$(GITOPS_REPO)/${PROJECT_NAME}; \
-	  git add . ;\
-	  git commit --allow-empty -m "$${BUILDKITE_BUILD_URL}"; \
-          git push origin $(GITOPS_BRANCH)

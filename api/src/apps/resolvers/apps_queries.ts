@@ -1,5 +1,4 @@
 import _ from "lodash";
-import { HelmChart } from "../../helmchart";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
@@ -18,11 +17,5 @@ export function AppsQueries(stores: Stores) {
 
       return result;
     },
-
-    // async searchApps(root: any, args: any, context: Context): Promise<Watch[]> {
-    //   const watches = await stores.watchStore.searchWatches(context.session.userId, args.watchName);
-    //   return watches.map(watch => watch.toSchema(root, stores, context));
-    // },
-
   }
 }

@@ -5,16 +5,6 @@ import { ReplicatedError } from "../../server/errors";
 
 export function TroubleshootQueries(stores: Stores) {
   return {
-    async watchCollectors(root: any, { watchId }, context: Context) {
-      // watchCollectors is called by the support bundle container, and is not authenticated
-      const collector = await stores.troubleshootStore.getPreferedWatchCollector(watchId);
-
-      return {
-        spec: collector.spec,
-        hydrated: collector.spec,
-      };
-    },
-
     async listKotsSupportBundles(root: any, { kotsSlug }, context: Context) {
       const kotsAppId = await stores.kotsAppStore.getIdFromSlug(kotsSlug);
 
@@ -36,8 +26,7 @@ export function TroubleshootQueries(stores: Stores) {
 
     async getSupportBundle(root: any, { watchSlug }, context: Context) {
       const supportBundle = await stores.troubleshootStore.getSupportBundle(watchSlug);
-      // TODO: Write some method that triest to fetch an app or watch.
-      // let watch = await context.getWatch(supportBundle.watchId);
+      // TODO: Write some method that triest to fetch an app.
       // let app = await stores.kotsAppStore.getIdFromSlug(watchSlug);
       if (!supportBundle) {
         throw new ReplicatedError("not found");

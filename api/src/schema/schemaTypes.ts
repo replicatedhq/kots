@@ -1,8 +1,6 @@
 import User from "../user/graphql/user_types";
 import Cluster from "../cluster/graphql/cluster_types";
-import Unfork from "../unfork/graphql/unfork_types";
 import Feature from "../feature/graphql/feature_types";
-import Pending from "../pending/graphql/pending_types";
 import HelmChart from "../helmchart/graphql/helmchart_types";
 import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
 import KLicense from "../klicenses/graphql/klicense_types";
@@ -33,8 +31,6 @@ export const ShipClusterSchemaTypes = [
   ...Metric,
   ...Cluster,
   ...Feature,
-  ...Unfork,
-  ...Pending,
   ...HelmChart,
   ...Troubleshoot,
   ...KLicense,
