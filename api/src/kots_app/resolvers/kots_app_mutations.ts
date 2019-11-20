@@ -106,21 +106,21 @@ export function KotsMutations(stores: Stores) {
 
       // TODO: build for other services than just GitHub
       const uriParts = gitOpsCreds.uri.split("/");
+      const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
       const localPath = path.join(__dirname, "tmp");
-      let cloneOptions = new NodeGit.CloneOptions();
-      cloneOptions.fetchOps = {
-        callbacks: {
-          certificateCheck: () => { return 0; },
-          credentials: () => {
-            return NodeGit.Cred.sshKeyNew(uriParts[3], gitOpsCreds.pubKey, gitOpsCreds.privKey, "");
+      const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
+      const cloneOptions = {
+        fetchOpts: {
+          callbacks: {
+            certificateCheck: () => { return 0; },
+            credentials: () => {
+              return creds;
+            }
           }
-        }
-      }
-      const cloneRepository = await NodeGit.Clone(gitOpsCreds.uri, localPath, cloneOptions).then((repository) => {
-        const repoIsBare = repository.isBare();
-        logger.info({ msg: "repo is bare", repoIsBare });  
-      });
-      logger.info({ msg: "cloneRepo", cloneRepository });
+        },
+      };
+      const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+      logger.info({ msg: repo });
       // set error column appropriately in gitops_repo table
 
       return true;
