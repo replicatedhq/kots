@@ -106,6 +106,7 @@ export const syncAppLicense = gql`
       expiresAt
       channelName
       licenseSequence
+      licenseType
       entitlements {
         title
         value
