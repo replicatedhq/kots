@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { kotsEncryptString, kotsDecryptString } from "./kots_ffi"
 import _ from "lodash";
 import yaml from "js-yaml";
-import { decodeBase64, getPreflightResultState, getLicenseType } from '../util/utilities';
+import { decodeBase64, getPreflightResultState } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
 
 export class KotsAppStore {

@@ -128,9 +128,13 @@ export async function getDiffSummary(app: KotsApp): Promise<string> {
 }
 
 export function getLicenseType(license: string): string {
-  const doc = yaml.safeLoad(license.toString());
-  if (doc.spec && doc.spec.licenseType) {
-    return doc.spec.licenseType;
+  if (license) {
+    const doc = yaml.safeLoad(license.toString());
+    if (doc.spec && doc.spec.licenseType) {
+      return doc.spec.licenseType;
+    } else {
+      return "";
+    }
   } else {
     return "";
   }

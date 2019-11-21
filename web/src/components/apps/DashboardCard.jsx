@@ -5,6 +5,7 @@ import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 import dayjs from "dayjs";
+import size from "lodash/size";
 
 import Loader from "../shared/Loader";
 
@@ -94,7 +95,7 @@ export default class DashboardCard extends React.Component {
             }
           </div>
           : null
-          }
+        }
       </div>
     )
   }
@@ -135,10 +136,18 @@ export default class DashboardCard extends React.Component {
 
     return (
       <div>
-        {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
-        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
+        {size(appLicense) > 0 ?
+          <div>
+            {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
+            <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
+          </div>
+          :
+          <div>
+            <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+          </div>
+        }
       </div>
     )
   }
@@ -148,22 +157,24 @@ export default class DashboardCard extends React.Component {
 
 
     return (
-      <div className={`${appLicense?.licenseType === "community" ? "community-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
+      <div className={`${appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
         <div className="flex u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 justifyContent--center">
-            <div className="flex justifyContent--spaceBetween">
-              <p className="flex1 u-fontWeight--bold u-fontSize--largest u-color--tundora u-paddingRight--5 u-marginBottom--5">{cardName}</p>
+            <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 && "u-marginTop--10"}`}>
+              <p className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
               app.isConfigurable ?
-              <Link to={`${url}/config`} className="card-link"> Configure </Link> 
-              : null
+                <Link to={`${url}/config`} className="card-link"> Configure </Link>
+                : null
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
                 :
+              size(appLicense) > 0 ?
                 <Link to={`${url}/license`} className="card-link"> View license details </Link>
+                : null
             }
             <div className="u-marginTop--15">
               <div className="flex flex1">
