@@ -6,7 +6,7 @@ import {
 } from "@kubernetes/client-node";
 import { ReplicatedError } from "../../server/errors";
 
-export async function readKurlConfigMap(): Promise<{ [ key: string]: string }> {
+export async function readKurlConfigMap(): Promise<{ [ key: string ]: string }> {
   const kc = new KubeConfig();
   kc.loadFromDefault();
 
@@ -18,7 +18,10 @@ export async function readKurlConfigMap(): Promise<{ [ key: string]: string }> {
   try {
     ({ response, body: configMap } = await coreV1Client.readNamespacedConfigMap("kurl-config", "kube-system"));
   } catch (err) {
-    throw new ReplicatedError(`Failed to read config map ${err.response && err.response.body ? err.response.body.message : ""}`);
+    if (err.response && err.response.body && err.response.body.code === 404) {
+      throw new ReplicatedError(`Config map not found`);
+    }
+    throw new ReplicatedError(`Failed to read ConfigMap kurl-config ${err.response && err.response.body ? err.response.body.message : ""}`);
   }
 
   if (response.statusCode !== 200 || !configMap) {

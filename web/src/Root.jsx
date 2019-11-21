@@ -250,7 +250,11 @@ class Root extends Component {
           }}>
             <Router history={history}>
               <div className="flex-column flex1">
-                <NavBar logo={themeState.navbarLogo || this.state.appLogo} refetchListApps={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} isKurlEnabled={this.state.isKurlEnabled} />
+                <NavBar
+                  logo={themeState.navbarLogo || this.state.appLogo}
+                  refetchListApps={this.refetchListApps}
+                  fetchingMetadata={this.state.fetchingMetadata}
+                  isKurlEnabled={this.state.isKurlEnabled} />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 

@@ -24,27 +24,39 @@ export default function NodeRow(props) {
             {node?.kubeletVersion}
           </p>
           <p className={classNames("flex1 u-fontSize--small u-fontWeight--medium u-color--tuna u-marginRight--10", {
-            "u-color--orange": getPercentageStatus(node?.cpu?.available, node?.cpu?.capacity) === "warning",
-            "u-color--red": getPercentageStatus(node?.cpu?.available, node?.cpu?.capacity) === "danger",
+            "u-color--orange": node?.cpu?.available !== -1 && getPercentageStatus(node?.cpu?.available, node?.cpu?.capacity) === "warning",
+            "u-color--red": node?.cpu?.available !== -1 && getPercentageStatus(node?.cpu?.available, node?.cpu?.capacity) === "danger",
           })}>
             <span className={"icon analysis-os_cpu"} />
-            {`${node?.cpu?.available?.toFixed(1)} / ${node?.cpu?.capacity} ${node?.cpu?.available === "1" ? "core available" : "cores available"}`}
+            {
+              node?.cpu?.available === -1 ?
+              `${node?.cpu?.capacity} ${node?.cpu?.available === "1" ? "core" : "cores"}` :
+              `${node?.cpu?.available?.toFixed(1)} / ${node?.cpu?.capacity} ${node?.cpu?.available === "1" ? "core available" : "cores available"}`
+            }
           </p>
           <p className={classNames("flex1 u-fontSize--small u-fontWeight--medium u-color--tuna", {
-            "u-color--orange": getPercentageStatus(node?.memory?.available, node?.memory?.capacity) === "warning",
-            "u-color--red": getPercentageStatus(node?.memory?.available, node?.memory?.capacity) === "danger",
+            "u-color--orange": node?.memory?.available !== -1 && getPercentageStatus(node?.memory?.available, node?.memory?.capacity) === "warning",
+            "u-color--red": node?.memory?.available !== -1 && getPercentageStatus(node?.memory?.available, node?.memory?.capacity) === "danger",
           })}>
             <span className={"icon analysis-os_memory"} />
-            {`${node?.memory?.available?.toFixed(1)} / ${node?.memory?.capacity?.toFixed(1)} GB available`}
+            {
+              node?.memory?.available === -1 ?
+              `${node?.memory?.capacity?.toFixed(1)} GB` :
+              `${node?.memory?.available?.toFixed(1)} / ${node?.memory?.capacity?.toFixed(1)} GB available`
+            }
           </p>
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--10 NodeRow--items">
           <p className={classNames("flex1 u-fontSize--small u-fontWeight--medium u-color--tuna u-marginRight--10", {
-            "u-color--orange": getPercentageStatus(node?.pods?.available, node?.pods?.capacity) === "warning",
-            "u-color--red": getPercentageStatus(node?.pods?.available, node?.pods?.capacity) === "danger",
+            "u-color--orange": node?.pods?.available !== -1 && getPercentageStatus(node?.pods?.available, node?.pods?.capacity) === "warning",
+            "u-color--red": node?.pods?.available !== -1 && getPercentageStatus(node?.pods?.available, node?.pods?.capacity) === "danger",
           })}>
             <span className={classNames("icon kubernetesLogoSmall")} />
-            {`${node?.pods?.available} / ${node?.pods?.capacity} pods available`}
+            {
+              node?.pods?.available === -1 ?
+               `${node?.pods?.capacity} pods` :
+              `${node?.pods?.available} / ${node?.pods?.capacity} pods available`
+            }
           </p>
           <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna u-marginRight--10">
             <span className={classNames("icon", {
@@ -72,9 +84,13 @@ export default function NodeRow(props) {
           <p className="u-color--dustyGray u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.hostname}</span></p>
         </div>
       </div>
-      <div className="flex-auto flex-column justifyContent--center">
-        <button onClick={() => node?.isConnected ? props.drainNode(node?.name) : props.deleteNode(node?.name) } className="btn secondary red">{node?.isConnected ? "Drain node" : "Delete node"}</button>
-      </div>
+      {
+        props.drainNode ?
+        <div className="flex-auto flex-column justifyContent--center">
+          <button onClick={() => node?.isConnected ? props.drainNode(node?.name) : props.deleteNode(node?.name) } className="btn secondary red">{node?.isConnected ? "Drain node" : "Delete node"}</button>
+        </div>
+        : null
+      }
     </div>
   )
 
