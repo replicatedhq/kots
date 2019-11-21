@@ -13,7 +13,7 @@ import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRe
 import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
-import { kotsEncryptString } from "../kots_ffi"
+import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { logger } from "../../server/logger";
@@ -86,8 +86,8 @@ export function KotsMutations(stores: Stores) {
       let downloadUpdates = async function() {
         try {
           await kotsAppDownloadUpdates(updatesAvailable, app, stores);
-  
-          await stores.kotsAppStore.clearUpdateDownloadStatus();  
+
+          await stores.kotsAppStore.clearUpdateDownloadStatus();
         } catch(err) {
           await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
           throw err;
@@ -107,8 +107,12 @@ export function KotsMutations(stores: Stores) {
       // TODO: build for other services than just GitHub
       const uriParts = gitOpsCreds.uri.split("/");
       const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
-      const localPath = path.join(__dirname, "tmp");
-      const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
+      const localPath = tmp.dirSync().name;
+
+      const params = await Params.getParams();
+      const decryptedPrivateKey = await kotsDecryptString(params.apiEncryptionKey, gitOpsCreds.privKey);
+
+      const creds = await NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, decryptedPrivateKey, "")
       const cloneOptions = {
         fetchOpts: {
           callbacks: {
@@ -119,6 +123,7 @@ export function KotsMutations(stores: Stores) {
           }
         },
       };
+
       const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
       logger.info({ msg: repo });
       // set error column appropriately in gitops_repo table
