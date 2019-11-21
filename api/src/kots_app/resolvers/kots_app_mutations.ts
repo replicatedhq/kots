@@ -3,6 +3,7 @@ import { generateKeyPairSync } from "crypto";
 import sshpk from "sshpk";
 import { Context } from "../../context";
 import path from "path";
+import fse from "fs-extra";
 import tmp from "tmp";
 import yaml from "js-yaml";
 import NodeGit from "nodegit";
@@ -103,24 +104,25 @@ export function KotsMutations(stores: Stores) {
       const { gitopsId } = args;
 
       const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
-
-      // TODO: build for other services than just GitHub
-      const uriParts = gitOpsCreds.uri.split("/");
-      const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
       const localPath = path.join(__dirname, "tmp");
-      const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
-      const cloneOptions = {
-        fetchOpts: {
-          callbacks: {
-            certificateCheck: () => { return 0; },
-            credentials: () => {
-              return creds;
+      // TODO: build for other services than just GitHub
+      fse.remove(localPath).then(async() => {
+        const uriParts = gitOpsCreds.uri.split("/");
+        const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
+        const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
+        const cloneOptions = {
+          fetchOpts: {
+            callbacks: {
+              certificateCheck: () => { return 0; },
+              credentials: () => {
+                return creds;
+              }
             }
-          }
-        },
-      };
-      const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
-      logger.info({ msg: repo });
+          },
+        };
+        const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+        logger.info({ msg: repo });
+      });
       // set error column appropriately in gitops_repo table
 
       return true;

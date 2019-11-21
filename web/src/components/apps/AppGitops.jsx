@@ -253,7 +253,7 @@ class AppGitops extends Component {
             shouldReturnFocusAfterClose={false}
             contentLabel="Deploy key modal"
             ariaHideApp={false}
-            className="Modal"
+            className="Modal LargeSize"
           >
             <div className="Modal-body">
               <p className="u-fontSize--large u-fontWeight--medium u-color--tundora u-lineHeight--normal u-marginBottom--10">
