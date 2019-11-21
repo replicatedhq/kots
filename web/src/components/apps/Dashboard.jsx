@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
+import size from "lodash/size";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
@@ -86,9 +87,13 @@ class Dashboard extends Component {
     }
 
     if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
-      const { getAppLicense } = this.props.getAppLicense;
-      if (getAppLicense) {
-        this.setState({ appLicense: getAppLicense });
+      if (this.props.getAppLicense?.getAppLicense === null) {
+        this.setState({ appLicense: {} });
+      } else {  
+        const { getAppLicense } = this.props.getAppLicense;
+        if (getAppLicense) {
+          this.setState({ appLicense: getAppLicense });
+        }
       }
     }
   }
@@ -329,7 +334,7 @@ class Dashboard extends Component {
               />
               <DashboardCard
                 cardName="License"
-                cardIcon="licenseIcon"
+                cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
                 license={true}
                 url={this.props.match.url}
                 appLicense={appLicense}
@@ -388,7 +393,8 @@ export default compose(
         variables: {
           appId: app.id
         },
-        fetchPolicy: "no-cache"
+        fetchPolicy: "no-cache",
+        errorPolicy: "ignore"
       };
     }
   }),
