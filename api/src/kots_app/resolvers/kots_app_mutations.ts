@@ -14,7 +14,7 @@ import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRe
 import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
-import { kotsEncryptString } from "../kots_ffi"
+import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { logger } from "../../server/logger";
@@ -87,8 +87,8 @@ export function KotsMutations(stores: Stores) {
       let downloadUpdates = async function() {
         try {
           await kotsAppDownloadUpdates(updatesAvailable, app, stores);
-  
-          await stores.kotsAppStore.clearUpdateDownloadStatus();  
+
+          await stores.kotsAppStore.clearUpdateDownloadStatus();
         } catch(err) {
           await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
           throw err;
@@ -104,25 +104,29 @@ export function KotsMutations(stores: Stores) {
       const { gitopsId } = args;
 
       const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
-      const localPath = path.join(__dirname, "tmp");
+
       // TODO: build for other services than just GitHub
-      fse.remove(localPath).then(async() => {
-        const uriParts = gitOpsCreds.uri.split("/");
-        const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
-        const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
-        const cloneOptions = {
-          fetchOpts: {
-            callbacks: {
-              certificateCheck: () => { return 0; },
-              credentials: () => {
-                return creds;
-              }
+      const uriParts = gitOpsCreds.uri.split("/");
+      const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
+      const localPath = tmp.dirSync().name;
+
+      const params = await Params.getParams();
+      const decryptedPrivateKey = await kotsDecryptString(params.apiEncryptionKey, gitOpsCreds.privKey);
+
+      const creds = await NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, decryptedPrivateKey, "")
+      const cloneOptions = {
+        fetchOpts: {
+          callbacks: {
+            certificateCheck: () => { return 0; },
+            credentials: () => {
+              return creds;
             }
-          },
-        };
-        const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
-        logger.info({ msg: repo });
-      });
+          }
+        },
+      };
+
+      const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+      logger.info({ msg: repo });
       // set error column appropriately in gitops_repo table
 
       return true;
