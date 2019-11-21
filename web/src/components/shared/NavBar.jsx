@@ -62,7 +62,7 @@ export class NavBar extends PureComponent {
   getKotsLicenseType = () => {
     const { location } = this.props;
     const pathname = location.pathname.split("/");
-    if (pathname.length >= 2) {
+    if (pathname.length >= 3) {
       this.props.client.query({
         query: getKotsLicenseType,
         fetchPolicy: "no-cache",
