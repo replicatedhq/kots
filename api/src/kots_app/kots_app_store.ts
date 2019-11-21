@@ -17,13 +17,14 @@ export class KotsAppStore {
   async createGitOpsRepo(provider: string, uri: string, privateKey: string, publicKey: string): Promise<any> {
     const id = randomstring.generate({ capitalization: "lowercase" });
 
-    const q = `insert into gitops_repo (id, provider, uri, key_pub, key_priv) values ($1, $2, $3, $4, $5)`;
+    const q = `insert into gitops_repo (id, provider, uri, key_pub, key_priv, last_error) values ($1, $2, $3, $4, $5, $6)`;
     const v = [
       id,
       provider,
       uri,
       publicKey,
       privateKey,
+      'never tried'
     ];
 
     await this.pool.query(q, v);
@@ -32,6 +33,25 @@ export class KotsAppStore {
       id,
     };
   }
+
+  async getGitOpsCreds(id: string): Promise<any> {
+    const q = `select uri, key_pub, key_priv from gitops_repo where id = $1`;
+    const v = [id];
+
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`A GitOps integration for id ${id} was not found`);
+    }
+
+    const row = result.rows[0];
+    return {
+      uri: row.uri,
+      pubKey: row.key_pub,
+      privKey: row.key_priv,
+    };
+
+  }
+
 
   async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
     const q = `update app_downstream set
@@ -437,7 +457,7 @@ export class KotsAppStore {
 
   async getDownstreamGitOps(appId: string, clusterId: string): Promise<any> {
     const q = `select ad.gitops_path, ad.gitops_format, ad.gitops_branch,
-      gr.provider, gr.uri, gr.key_pub, gr.last_error from
+      gr.provider, gr.id, gr.uri, gr.key_pub, gr.last_error from
       app_downstream ad
       inner join cluster c on c.id = ad.cluster_id
       inner join gitops_repo gr on gr.id = c.gitops_repo_id
@@ -464,6 +484,7 @@ export class KotsAppStore {
       branch: row.gitops_branch,
       format: row.gitops_format,
       deployKey: row.key_pub,
+      id: row.id,
       isConnected: row.last_error === null,
     }
   }

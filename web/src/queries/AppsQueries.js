@@ -48,6 +48,7 @@ export const listAppsRaw = `
             deployedAt
           }
           gitops {
+            id
             enabled
             provider
             uri
@@ -152,6 +153,7 @@ export const getKotsAppRaw = `
           parentSequence
         }
         gitops {
+          id
           enabled
           provider
           uri

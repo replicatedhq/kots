@@ -32,6 +32,7 @@ const KotsApp = `
 
 const KotsGitOps = `
   type KotsGitOps {
+    id: String
     enabled: Boolean
     provider: String
     uri: String
