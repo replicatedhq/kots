@@ -29,7 +29,7 @@ kubectl apply -k ./elasticsearch/overlays/midstream
 ```
 
 ### `kots upload`
-The `upload` command will upload a directory with an upstream, base and overlays directory to a kotsdm server.
+The `upload` command will upload a directory with an upstream, base and overlays directory to a kotsadm server.
 
 ```
 kubectl kots upload ~/elasticsearch
