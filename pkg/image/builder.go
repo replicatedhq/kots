@@ -388,9 +388,16 @@ func isPrivateImage(image string) (bool, error) {
 		return false, nil
 	}
 
+	// manifest was downloaded, but no matching architecture found in manifest.
+	// still, not a private image
+	if strings.Contains(err.Error(), "no image found in manifest list for architecture") {
+		return false, nil
+	}
+
 	if !isUnauthorized(err) {
 		return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
 	}
+
 	return true, nil
 }
 
