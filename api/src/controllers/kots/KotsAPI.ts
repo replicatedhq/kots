@@ -33,6 +33,7 @@ import { getDiffSummary } from "../../util/utilities";
 import yaml from "js-yaml";
 import * as k8s from "@kubernetes/client-node";
 import { decodeBase64 } from "../../util/utilities";
+import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 
 interface CreateAppBody {
@@ -316,20 +317,25 @@ export class KotsAPI {
       password = body.password;
     }
 
+    const liveness = new Repeater(() => {
+      return new Promise((resolve) => {
+        request.app.locals.stores.kotsAppStore.updateAirgapInstallLiveness().finally(() => {
+          resolve();
+        })
+      });
+    }, 1000);
+
     const dstDir = tmp.dirSync();
     var appSlug: string;
     let hasPreflight: Boolean;
     let isConfigurable: Boolean;
-    var liveness: any;
     try {
       await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallInProgress(app.id);
+      await request.app.locals.stores.kotsAppStore.resetAirgapInstallInProgress(app.id);
 
-      liveness = setInterval(() => {
-        Promise.all([request.app.locals.stores.kotsAppStore.updateAirgapInstallLiveness()]);
-      }, 1000);
+      liveness.start();
 
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...");
+      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...", "running");
       await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
 
       await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
@@ -363,7 +369,7 @@ export class KotsAPI {
 
       const tmpDstDir = tmp.dirSync();
       try {
-        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing app package...");
+        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing app package...", "running");
 
         const out = path.join(tmpDstDir.name, "archive.tar.gz");
 
@@ -374,7 +380,7 @@ export class KotsAPI {
         await statusServer.termination((resolve, reject, obj): boolean => {
           // Return true if completed
           if (obj.status === "running") {
-            Promise.all([request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message)]);
+            request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message, "running");
             return false;
           } else if (obj.status === "terminated") {
             if (obj.exit_code === 0) {
@@ -387,7 +393,7 @@ export class KotsAPI {
           return false;
         });
 
-        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Creating app...");
+        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Creating app...", "running");
         const appProps = await kotsAppFromAirgapData(out, app, request.app.locals.stores);
         hasPreflight = appProps.hasPreflight;
         isConfigurable = appProps.isConfigurable;
@@ -396,14 +402,16 @@ export class KotsAPI {
       }
 
       appSlug = app.slug;
+      await request.app.locals.stores.kotsAppStore.clearAirgapInstallInProgress();
+
     } catch(err) {
 
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err));
+      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err), "failed");
       await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
       throw(err);
 
     } finally {
-      clearInterval(liveness);
+      liveness.stop();
       dstDir.removeCallback();
     }
 
@@ -431,7 +439,7 @@ export class KotsAPI {
     const slug = request.params.slug;
 
     const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
-    await request.app.locals.stores.kotsAppStore.setAirgapInstallInProgress(appId);
+    await request.app.locals.stores.kotsAppStore.resetAirgapInstallInProgress(appId);
     response.send(200);
   }
 

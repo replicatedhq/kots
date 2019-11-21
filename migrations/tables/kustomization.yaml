@@ -1,4 +1,5 @@
 resources:
+- ./api_task_status.yaml
 - ./session.yaml
 - ./ship_user.yaml
 - ./user_watch.yaml
@@ -34,7 +35,6 @@ resources:
 - ./ship_init_pending_user.yaml
 - ./helm_chart_source.yaml
 - ./helm_chart.yaml
-- ./image_rewrite_status.yaml
 - ./watch_troubleshoot_collector.yaml
 - ./watch_troubleshoot_analyzer.yaml
 - ./supportbundle.yaml
@@ -49,7 +49,6 @@ resources:
 - ./user_app.yaml
 - ./app_downstream.yaml
 - ./app_downstream_version.yaml
-- ./airgap_upload_status.yaml
 - ./app_downstream_output.yaml
 - ./pending_support_bundle.yaml
 - ./app_status.yaml

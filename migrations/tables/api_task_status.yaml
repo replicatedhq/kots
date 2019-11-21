@@ -3,17 +3,17 @@ kind: Table
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: image-rewrite-status
+  name: api-task-status
 spec:
   database: kotsadm-postgres
-  name: image_rewrite_status
+  name: api_task_status
   schema:
     postgres:
       primaryKey:
       - id
       columns:
       - name: id
-        type: integer
+        type: text
         constraints:
           notNull: true
       - name: updated_at

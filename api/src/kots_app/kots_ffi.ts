@@ -95,8 +95,9 @@ export async function kotsAppGetBranding(): Promise<string> {
   }
 }
 
-interface Update {
+export interface Update {
   cursor: string;
+  versionLabel: string;
 }
 
 export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string): Promise<Update[]> {
@@ -150,6 +151,7 @@ export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: Ko
   for (let i = 0; i < updatesAvailable.length; i++) {
     const update = updatesAvailable[i];
     try {
+      await stores.kotsAppStore.setUpdateDownloadStatus(`Downloading release ${update.versionLabel}`, "running");
       await kotsAppDownloadUpdate(update.cursor, app, registryInfo, stores);
     } catch (err) {
       console.error(`Failed to download release ${update.cursor}: ${err}`);
@@ -188,6 +190,10 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, regist
     kots().UpdateDownload(socketParam, archiveParam, registryJsonParam, cursorParam);
     await statusServer.connection();
     const isUpdateAvailable: number = await statusServer.termination((resolve, reject, obj): boolean => {
+      if (obj.status === "running") {
+        stores.kotsAppStore.setUpdateDownloadStatus(obj.display_message, "running");
+        return false;
+      }
       if (obj.status === "terminated") {
         if (obj.exit_code !== -1) {
           resolve(obj.exit_code);
@@ -751,7 +757,7 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
     await statusServer.termination((resolve, reject, obj): boolean => {
       // Return true if completed
       if (obj.status === "running") {
-        Promise.all([stores.kotsAppStore.setImageRewriteStatus(obj.display_message, "running")]);
+        stores.kotsAppStore.setImageRewriteStatus(obj.display_message, "running");
         return false;
       }
       if (obj.status === "terminated") {

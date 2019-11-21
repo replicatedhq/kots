@@ -52,6 +52,7 @@ export const Query = `
 
     getAirgapInstallStatus: AirgapInstallStatus
     getImageRewriteStatus: ImageRewriteStatus
+    getUpdateDownloadStatus: UpdateDownloadStatus
 
     kurl: Kurl
 

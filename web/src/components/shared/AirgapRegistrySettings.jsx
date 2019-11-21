@@ -5,6 +5,7 @@ import Loader from "../shared/Loader";
 import { getAppRegistryDetails, getImageRewriteStatus } from "../../queries/AppsQueries";
 import { validateRegistryInfo } from "@src/queries/UserQueries";
 import { updateRegistryDetails } from "@src/mutations/AppsMutations";
+import { Repeater } from "../../utilities/repeater";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -31,14 +32,14 @@ class AirgapRegistrySettings extends Component {
       testFailed: false,
       testMessage: "",
 
-      updateInterval: undefined,
+      updateChecker: new Repeater(),
       rewriteStatus: "",
       rewriteMessage: "",
     }
   }
 
   componentWillUnmount() {
-    clearInterval(this.state.updateInterval);
+    this.state.updateChecker.stop();
   }
 
   componentDidMount = () => {
@@ -58,10 +59,7 @@ class AirgapRegistrySettings extends Component {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
       await this.props.getKotsAppRegistryQuery.refetch();
 
-      const interval = setInterval(this.updateStatus.bind(this), 1000);
-      this.setState({
-        updateInterval: interval,
-      });
+      this.state.updateChecker.start(this.updateStatus, 1000);
     } catch (error) {
       console.log(error);
     }
@@ -129,7 +127,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   triggerStatusUpdates = () => {
-    const pr = this.props.client.query({
+    this.props.client.query({
       query: getImageRewriteStatus,
       variables: {},
       fetchPolicy: "no-cache",
@@ -138,39 +136,38 @@ class AirgapRegistrySettings extends Component {
         rewriteStatus: res.data.getImageRewriteStatus.status,
         rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
       });
-      if (res.data.getImageRewriteStatus.status === "running") {
-        const interval = setInterval(this.updateStatus.bind(this), 1000);
-        this.setState({
-          updateInterval: interval,
-        });
+      if (res.data.getImageRewriteStatus.status !== "running") {
+        return;
       }
+      this.state.updateChecker.start(this.updateStatus, 1000);
     }).catch((err) => {
       console.log("failed to get rewrite status", err);
     });
-
-    Promise.all([pr]);
   }
 
   updateStatus = () => {
-    const pr = this.props.client.query({
-      query: getImageRewriteStatus,
-      fetchPolicy: "no-cache",
-    }).then((res) => {
-      this.setState({
-        rewriteStatus: res.data.getImageRewriteStatus.status,
-        rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
-      });
-      if (res.data.getImageRewriteStatus.status !== "running") {
-        clearInterval(this.state.updateInterval);
-        this.setState({
-          updateInterval: undefined,
-        });
-      }
-    }).catch((err) => {
-      console.log("failed to get rewrite status", err);
-    });
+    return new Promise((resolve, reject) => {
+      this.props.client.query({
+        query: getImageRewriteStatus,
+        fetchPolicy: "no-cache",
+      }).then((res) => {
 
-    Promise.all([pr]);
+        this.setState({
+          rewriteStatus: res.data.getImageRewriteStatus.status,
+          rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
+        });
+
+        if (res.data.getImageRewriteStatus.status !== "running") {
+          this.state.updateChecker.stop();
+        }
+
+        resolve();
+
+      }).catch((err) => {
+        console.log("failed to get rewrite status", err);
+        reject();
+      })
+    });
   }
 
   render() {

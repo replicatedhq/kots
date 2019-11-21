@@ -15,10 +15,10 @@ import Loader from "../shared/Loader";
 import Tooltip from "../shared/Tooltip";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
-import { Utilities, hasPendingPreflight, getPreflightResultState } from "@src/utilities/utilities";
-
-import { getKotsDownstreamHistory, getKotsDownstreamOutput } from "../../queries/AppsQueries";
+import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { checkForKotsUpdates } from "../../mutations/AppsMutations";
+import { Utilities, hasPendingPreflight, getPreflightResultState } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
@@ -41,10 +41,13 @@ class AppVersionHistory extends Component {
     errorCheckingUpdate: false,
     showDiffOverlay: false,
     firstSequence: 0,
-    secondSequence: 0
+    secondSequence: 0,
+    updateChecker: new Repeater()
   }
 
   componentDidMount() {
+    this.triggerStatusUpdates();
+
     const url = window.location.pathname;
     if (url.includes("/diff")) {
       const { params } = this.props.match;
@@ -54,6 +57,10 @@ class AppVersionHistory extends Component {
         this.setState({ showDiffOverlay: true, firstSequence, secondSequence });
       }
     }
+  }
+
+  componentWillUnmount() {
+    this.state.updateChecker.stop();
   }
 
   showReleaseNotes = () => {
@@ -322,14 +329,65 @@ class AppVersionHistory extends Component {
     this.props.history.push(`/${this.props.match.params.slug}/airgap`);
   }
 
+  triggerStatusUpdates = () => {
+    this.props.client.query({
+      query: getUpdateDownloadStatus,
+      variables: {},
+      fetchPolicy: "no-cache",
+    }).then((res) => {
+      this.setState({
+        checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
+      });
+      if (res.data.getUpdateDownloadStatus.status !== "running") {
+        return;
+      }
+      this.state.updateChecker.start(this.updateStatus, 1000);
+      this.setState({
+        checkingForUpdates: true,
+      });
+    }).catch((err) => {
+      console.log("failed to get rewrite status", err);
+    });
+  }
+
+  updateStatus = () => {
+    return new Promise((resolve, reject) => {
+      this.props.client.query({
+        query: getUpdateDownloadStatus,
+        fetchPolicy: "no-cache",
+      }).then((res) => {
+
+        this.setState({
+          checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
+        });
+
+        if (res.data.getUpdateDownloadStatus.status !== "running") {
+
+          this.state.updateChecker.stop();
+          this.setState({
+            checkingForUpdates: false,
+            checkingUpdateText: "Checking for updates"
+          });
+
+          if (this.props.updateCallback) {
+            this.props.updateCallback();
+          }
+          this.props.data.refetch();
+        }
+
+        resolve();
+
+      }).catch((err) => {
+        console.log("failed to get rewrite status", err);
+        reject();
+      });
+    });
+  }
+
   onCheckForUpdates = async () => {
     const { client, app } = this.props;
 
     this.setState({ checkingForUpdates: true });
-
-    this.loadingTextTimer = setTimeout(() => {
-      this.setState({ checkingUpdateText: "Almost there, hold tight..." });
-    }, 10000);
 
     await client.mutate({
       mutation: checkForKotsUpdates,
@@ -339,15 +397,7 @@ class AppVersionHistory extends Component {
     }).catch(() => {
       this.setState({ errorCheckingUpdate: true });
     }).finally(() => {
-      clearTimeout(this.loadingTextTimer);
-      this.setState({
-        checkingForUpdates: false,
-        checkingUpdateText: "Checking for updates"
-      });
-      if (this.props.updateCallback) {
-        this.props.updateCallback();
-      }
-      this.props.data.refetch();
+      this.state.updateChecker.start(this.updateStatus, 1000);
     });
   }
 
@@ -442,6 +492,11 @@ class AppVersionHistory extends Component {
       return null;
     }
 
+    let checkingUpdateTextShort = checkingUpdateText;
+    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
+      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
+    }
+
     if (data?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -454,7 +509,7 @@ class AppVersionHistory extends Component {
     if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateText}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (!app.lastUpdateCheck) {
       updateText = null;
     }
