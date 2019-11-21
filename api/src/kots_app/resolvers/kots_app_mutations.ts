@@ -41,9 +41,7 @@ export function KotsMutations(stores: Stores) {
       const parsedPublic = sshpk.parseKey(publicKey, "pem");
       const sshPublishKey = parsedPublic.toString("ssh");
 
-      const parsedPrivate = sshpk.parseKey(privateKey, "pem");
-      const sshPrivateKey = parsedPrivate.toString("ssh");
-      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, sshPrivateKey);
+      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
       const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
 
       await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
