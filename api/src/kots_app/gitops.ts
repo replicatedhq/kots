@@ -38,7 +38,7 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
 
     // TODO support -f and -k kubectl options
     if (downstreamGitOps.format === "single") {
-      await createGitCommit(gitOpsCreds, downstreamGitOps.branch, tree);
+      await createGitCommit(gitOpsCreds, downstreamGitOps.branch, tree, currentVersion.releaseNotes || `Initial commit of ${app.name}`);
     } else {
       throw new Error("unsupported gitops format");
     }
@@ -55,11 +55,11 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
     });
 
     // TODO support -f and -k kubectl options
-    await createGitCommit(gitOpsCreds, "master", tree);
+    await createGitCommit(gitOpsCreds, "master", tree, pendingVersion.releaseNotes || `Updating ${app.name} to version ${pendingVersion.sequence}`);
   }
 }
 
-export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[]): Promise<any> {
+export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[], commitMessage: string): Promise<any> {
   const localPath = tmp.dirSync().name;
 
   const params = await Params.getParams();
@@ -80,6 +80,8 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
   try {
     await NodeGit.Clone(gitOpsCreds.cloneUri, localPath, cloneOptions);
     const repo = await NodeGit.Repository.open(localPath);
+
+    await NodeGit.Checkout.tree(repo, branch, []);
 
     const index = await repo.refreshIndex();
 
@@ -103,7 +105,7 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
     const parent = await repo.getCommit(head);
 
     const signature = NodeGit.Signature.now("KOTS Admin Console", "help@replicated.com");
-    await repo.createCommit("HEAD", signature, signature, "commit goes here", oid, [parent]);
+    await repo.createCommit("HEAD", signature, signature, commitMessage, oid, [parent]);
 
     const remote = await repo.getRemote("origin");
     const pushOptions = {
@@ -114,6 +116,15 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
         }
       }
     };
+
+    try {
+      await NodeGit.Branch.lookup(repo, branch, NodeGit.Branch.BRANCH.REMOTE);
+    } catch (err) {
+      if (err.errno === -3) {
+        // remote branch not found
+        await NodeGit.Branch.create(repo, branch, parent, false);
+      }
+    }
 
     await remote.push([`refs/heads/${branch}:refs/heads/${branch}`], pushOptions);
   } catch (err) {
