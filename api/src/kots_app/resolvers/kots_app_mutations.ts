@@ -3,7 +3,6 @@ import { generateKeyPairSync } from "crypto";
 import sshpk from "sshpk";
 import { Context } from "../../context";
 import path from "path";
-import fse from "fs-extra";
 import tmp from "tmp";
 import yaml from "js-yaml";
 import NodeGit from "nodegit";
@@ -14,10 +13,11 @@ import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRe
 import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
-import { kotsEncryptString } from "../kots_ffi"
+import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { logger } from "../../server/logger";
+import { sendInitialGitCommitsForAppDownstream } from "../gitops";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -42,9 +42,7 @@ export function KotsMutations(stores: Stores) {
       const parsedPublic = sshpk.parseKey(publicKey, "pem");
       const sshPublishKey = parsedPublic.toString("ssh");
 
-      const parsedPrivate = sshpk.parseKey(privateKey, "pem");
-      const sshPrivateKey = parsedPrivate.toString("ssh");
-      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, sshPrivateKey);
+      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
       const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
 
       await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
@@ -87,8 +85,8 @@ export function KotsMutations(stores: Stores) {
       let downloadUpdates = async function() {
         try {
           await kotsAppDownloadUpdates(updatesAvailable, app, stores);
-  
-          await stores.kotsAppStore.clearUpdateDownloadStatus();  
+
+          await stores.kotsAppStore.clearUpdateDownloadStatus();
         } catch(err) {
           await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
           throw err;
@@ -101,31 +99,54 @@ export function KotsMutations(stores: Stores) {
     },
 
     async testGitOpsConnection(root: any, args: any, context: Context) {
-      const { gitopsId } = args;
+      const { appId, clusterId } = args;
 
-      const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
-      const localPath = path.join(__dirname, "tmp");
-      // TODO: build for other services than just GitHub
-      fse.remove(localPath).then(async() => {
-        const uriParts = gitOpsCreds.uri.split("/");
-        const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
-        const creds = NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, gitOpsCreds.privKey, "")
-        const cloneOptions = {
-          fetchOpts: {
-            callbacks: {
-              certificateCheck: () => { return 0; },
-              credentials: () => {
-                return creds;
-              }
+      const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(appId, clusterId);
+
+      const uriParts = gitOpsCreds.uri.split("/");
+      const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
+      const localPath = tmp.dirSync().name;
+
+      const params = await Params.getParams();
+      const decryptedPrivateKey = await kotsDecryptString(params.apiEncryptionKey, gitOpsCreds.privKey);
+
+      const cloneOptions = {
+        fetchOpts: {
+          callbacks: {
+            certificateCheck: () => { return 0; },
+            credentials: async (url, username) => {
+              const creds = await NodeGit.Cred.sshKeyMemoryNew(username, gitOpsCreds.pubKey, decryptedPrivateKey, "")
+              return creds;
             }
-          },
-        };
-        const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
-        logger.info({ msg: repo });
-      });
-      // set error column appropriately in gitops_repo table
+          }
+        },
+      };
 
-      return true;
+      try {
+        await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+        NodeGit.Repository.openBare(localPath);
+        // TODO check if we have write access!
+
+        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, "");
+        // Send current and pending versions to git
+        // We need a persistent, durable queue for this to handle the api container
+        // being rescheduled during this long-running operation
+
+        const clusterIDs = await stores.kotsAppStore.listClusterIDsForApp(appId);
+        if (clusterIDs.length === 0) {
+          throw new Error("no clusters to transition for application");
+        }
+        sendInitialGitCommitsForAppDownstream(stores.kotsAppStore, stores.clusterStore, appId, clusterIDs[0]);
+
+        return true;
+      } catch (err) {
+        console.log(err);
+        const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
+        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, gitOpsError);
+        return false;
+      } finally {
+        // TODO delete
+      }
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {

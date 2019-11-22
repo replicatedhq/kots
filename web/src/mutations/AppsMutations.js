@@ -116,8 +116,8 @@ export const syncAppLicense = gql`
   }
 `;
 export const testGitOpsConnectionRaw = `
-  mutation testGitOpsConnection($gitopsId: String!) {
-    testGitOpsConnection(gitopsId: $gitopsId)
+  mutation testGitOpsConnection($appId: String!, $clusterId: String!) {
+    testGitOpsConnection(appId: $appId, clusterId: $clusterId)
   }
 `;
 
