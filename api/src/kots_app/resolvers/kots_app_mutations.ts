@@ -128,6 +128,7 @@ export function KotsMutations(stores: Stores) {
         // TODO check if we have write access!
 
         await stores.kotsAppStore.setGitOpsError(gitopsId, "");
+
         return true;
       } catch (err) {
         const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
