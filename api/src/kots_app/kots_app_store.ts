@@ -44,17 +44,24 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async getGitOpsCreds(id: string): Promise<any> {
-    const q = `select uri, key_pub, key_priv from gitops_repo where id = $1`;
-    const v = [id];
+  async getGitOpsCreds(appId: string, clusterId: string): Promise<any> {
+    const q = `select g.id, g.uri, g.key_pub, g.key_priv from gitops_repo g
+inner join cluster c on c.gitops_repo_id = g.id
+inner join app_downstream ad on ad.cluster_id = c.id
+where ad.app_id = $1 and ad.cluster_id = $2`;
+    const v = [
+      appId,
+      clusterId,
+    ];
 
     const result = await this.pool.query(q, v);
     if (result.rowCount === 0) {
-      throw new ReplicatedError(`A GitOps integration for id ${id} was not found`);
+      throw new ReplicatedError(`A GitOps integration for app ${appId} and cluster ${clusterId} was not found`);
     }
 
     const row = result.rows[0];
     return {
+      id: row.id,
       uri: row.uri,
       pubKey: row.key_pub,
       privKey: row.key_priv,
@@ -64,13 +71,13 @@ export class KotsAppStore {
 
 
   async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
-    const q = `update app_downstream set
+    let q = `update app_downstream set
       gitops_branch = $1,
       gitops_path = $2,
       gitops_format = $3
       where app_id = $4 and cluster_id = $5`;
 
-    const v = [
+    let v = [
       branch,
       path,
       format,
@@ -80,13 +87,13 @@ export class KotsAppStore {
 
     await this.pool.query(q, v);
 
-    const qq = `update cluster set gitops_repo_id = $1 where id = $2`;
-    const vv = [
+    q = `update cluster set gitops_repo_id = $1 where id = $2`;
+    v = [
       gitOpsRepoId,
       clusterId,
     ];
 
-    await this.pool.query(qq, vv);
+    await this.pool.query(q, v);
   }
 
   async listClusterIDsForApp(id: string): Promise<string[]> {
@@ -274,8 +281,8 @@ export class KotsAppStore {
 
     try {
       await pg.query("begin");
-      const q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
-      const v = [
+      let q = `select max(sequence) as last_sequence from app_downstream_version where app_id = $1 and cluster_id = $2`;
+      let v: any[] = [
         id,
         clusterId,
       ];
@@ -283,22 +290,21 @@ export class KotsAppStore {
 
       const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
-      const qq = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
-
-      const vv = [
+      q = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
+      v = [
         id,
-        parentSequence
+        parentSequence,
       ];
 
-      const preflightSpecQueryResults = await pg.query(qq, vv);
+      const preflightSpecQueryResults = await pg.query(q, v);
 
       const preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
 
       if (preflightSpec) {
         status = "pending_preflight";
       }
-      const qqq = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
-      const vvv = [
+      q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
+      v = [
         id,
         clusterId,
         newSequence,
@@ -309,7 +315,7 @@ export class KotsAppStore {
         source,
         diffSummary
       ];
-      await pg.query(qqq, vvv);
+      await pg.query(q, v);
       await pg.query("commit");
 
     } catch (error) {
@@ -413,26 +419,11 @@ export class KotsAppStore {
       sequence = -1;
     }
 
-    q =
-      `SELECT
-         created_at,
-         version_label,
-         status,
-         sequence,
-         parent_sequence,
-         applied_at,
-         source,
-         diff_summary,
-         preflight_result,
-         preflight_result_created_at
-        FROM
-          app_downstream_version
-        WHERE
-          app_id = $1 AND
-          cluster_id = $3 AND
-          sequence > $2
-        ORDER BY
-          sequence DESC`;
+    q = `select created_at, version_label, status, sequence, parent_sequence,
+applied_at, source, diff_summary, preflight_result, preflight_result_created_at
+from app_downstream_version
+where app_id = $1 and cluster_id = $3 and sequence > $2
+order by sequence desc`;
 
     v = [
       appId,
@@ -515,31 +506,14 @@ export class KotsAppStore {
       return;
     }
 
-    q =
-      `SELECT
-         adv.created_at,
-         adv.version_label,
-         adv.status,
-         adv.sequence,
-         adv.parent_sequence,
-         adv.applied_at,
-         adv.source,
-         adv.diff_summary,
-         adv.preflight_result,
-         adv.preflight_result_created_at,
-         ado.is_error AS has_error
-        FROM
-          app_downstream_version AS adv
-        LEFT JOIN
-          app_downstream_output AS ado
-        ON
-          adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
-        WHERE
-          adv.app_id = $1 AND
-          adv.cluster_id = $3 AND
-          adv.sequence = $2
-        ORDER BY
-          adv.sequence DESC`;
+    q = `select adv.created_at, adv.version_label, adv.status, adv.sequence,
+adv.parent_sequence, adv.applied_at, adv.source, adv.diff_summary, adv.preflight_result,
+adv.preflight_result_created_at, ado.is_error AS has_error
+from app_downstream_version as adv
+left join app_downstream_output as ado
+on adv.app_id = ado.app_id and adv.cluster_id = ado.cluster_id and adv.sequence = ado.downstream_sequence
+where adv.app_id = $1 and adv.cluster_id = $3 and adv.sequence = $2
+order by adv.sequence desc`;
 
     v = [
       appId,

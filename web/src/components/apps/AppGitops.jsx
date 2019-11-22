@@ -85,12 +85,14 @@ class AppGitops extends Component {
 
   handleTestConnection = async () => {
     this.setState({ testingConnection: true });
-    let gitopsId = "";
+    const appId = this.props.app?.id;
+    let clusterId;
     if (this.props.app?.downstreams && this.props.app.downstreams.length > 0) {
-      gitopsId = this.props.app.downstreams[0].gitops.id; 
+      clusterId = this.props.app.downstreams[0].cluster.id;
     }
+
     try {
-      await this.props.testGitOpsConnection(gitopsId);
+      await this.props.testGitOpsConnection(appId, clusterId);
       this.setState({ testingConnection: false });
     } catch (err) {
       this.setState({ testingConnection: false });
@@ -279,7 +281,7 @@ export default compose(
   withApollo,
   graphql(testGitOpsConnection, {
     props: ({ mutate }) => ({
-      testGitOpsConnection: (gitopsId) => mutate({ variables: { gitopsId } })
+      testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
     })
   })
 )(AppGitops);

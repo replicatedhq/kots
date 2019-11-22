@@ -17,6 +17,7 @@ import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { logger } from "../../server/logger";
+import { sendInitialGitCommitsForAppDownstream } from "../gitops";
 
 export function KotsMutations(stores: Stores) {
   return {
@@ -98,9 +99,9 @@ export function KotsMutations(stores: Stores) {
     },
 
     async testGitOpsConnection(root: any, args: any, context: Context) {
-      const { gitopsId } = args;
+      const { appId, clusterId } = args;
 
-      const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
+      const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(appId, clusterId);
 
       const uriParts = gitOpsCreds.uri.split("/");
       const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
@@ -127,12 +128,22 @@ export function KotsMutations(stores: Stores) {
 
         // TODO check if we have write access!
 
-        await stores.kotsAppStore.setGitOpsError(gitopsId, "");
+        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, "");
+
+        // Send current and pending versions to git
+        // We need a persistent, durable queue for this to handle the api container
+        // being rescheduled during this long-running operation
+
+        const cluasterIDs = await stores.kotsAppStore.listClusterIDsForApp(appId);
+        if (cluasterIDs.length === 0) {
+          throw new Error("no clusters to transition for application");
+        }
+        sendInitialGitCommitsForAppDownstream(stores.kotsAppStore, appId, cluasterIDs[0]);
 
         return true;
       } catch (err) {
         const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
-        await stores.kotsAppStore.setGitOpsError(gitopsId, gitOpsError);
+        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, gitOpsError);
         return false;
       }
     },

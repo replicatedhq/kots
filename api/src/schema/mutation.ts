@@ -22,7 +22,7 @@ type Mutation {
 
   setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
   syncAppLicense(appSlug: String!, airgapLicense: String): KLicense
-  testGitOpsConnection(gitopsId: String!): Boolean
+  testGitOpsConnection(appId: String!, clusterId: String!): Boolean
 
   drainNode(name: String): Boolean
   deleteNode(name: String): Boolean
