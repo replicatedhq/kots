@@ -84,7 +84,7 @@ class PreflightResultPage extends Component {
         <Helmet>
           <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <div className="flex1 u-overflow--auto">
+        <div className="flex1 flex u-overflow--auto">
           <div className="PreflightChecks--wrapper flex u-paddingTop--30 u-overflow--hidden">
             <div className="u-minWidth--full u-minHeight--full">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">

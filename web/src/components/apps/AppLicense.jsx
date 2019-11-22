@@ -3,6 +3,7 @@ import Helmet from "react-helmet";
 import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
 import classNames from "classnames";
+import size from "lodash/size";
 
 import {
   getLicenseExpiryDate,
@@ -38,12 +39,17 @@ class AppLicense extends Component {
     this.props.client.query({
       query: getAppLicense,
       fetchPolicy: "no-cache",
+      errorPolicy: "ignore",
       variables: {
         appId: app.id,
       }
     })
       .then(response => {
-        this.setState({ appLicense: response.data.getAppLicense });
+        if (response.data.getAppLicense === null) {
+          this.setState({ appLicense: {} });
+        } else {
+          this.setState({ appLicense: response.data.getAppLicense });
+        }
       });
   }
 
@@ -140,49 +146,55 @@ class AppLicense extends Component {
             </div>
           </div>
         }
-        <div className="LicenseDetails--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
-          <div className="flex u-marginBottom--20 u-paddingBottom--5 u-marginTop--20 alignItems--center">
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">License details</p>
-          </div>
-          <div className="u-color--tundora u-fontSize--normal u-fontWeight--medium">
-            <div className="flex u-marginBottom--20">
-              <p className="u-marginRight--10">Expires:</p>
-              <p className="u-fontWeight--bold u-color--tuna">{expiresAt}</p>
+        {size(appLicense) > 0 ?
+          <div className="LicenseDetails--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
+            <div className="flex u-marginBottom--20 u-paddingBottom--5 u-marginTop--20 alignItems--center">
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">License details</p>
             </div>
-            {appLicense.channelName &&
+            <div className="u-color--tundora u-fontSize--normal u-fontWeight--medium">
               <div className="flex u-marginBottom--20">
-                <p className="u-marginRight--10">Channel:</p>
-                <p className="u-fontWeight--bold u-color--tuna">{appLicense.channelName}</p>
+                <p className="u-marginRight--10">Expires:</p>
+                <p className="u-fontWeight--bold u-color--tuna">{expiresAt}</p>
               </div>
-            }
-            {appLicense.entitlements?.map(entitlement => {
-              return (
-                <div key={entitlement.label} className="flex u-marginBottom--20">
-                  <p className="u-marginRight--10">{entitlement.title}</p>
-                  <p className="u-fontWeight--bold u-color--tuna">{entitlement.value}</p>
+              {appLicense.channelName &&
+                <div className="flex u-marginBottom--20">
+                  <p className="u-marginRight--10">Channel:</p>
+                  <p className="u-fontWeight--bold u-color--tuna">{appLicense.channelName}</p>
                 </div>
-              );
-            })}
-            {app.isAirgap ?
-              <Dropzone
-                  className="Dropzone-wrapper"
-                  accept={["application/x-yaml", ".yaml", ".yml"]}
-                  onDropAccepted={this.onDrop}
-                  multiple={false}
-                >
-                <button className="btn secondary green u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
-              </Dropzone> 
-              :
-              <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
-            }
-            {message &&
-              <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
-                "u-color--red": messageType === "error",
-                "u-color--tuna": messageType === "info",
-              })}>{message}</p>
-            }
+              }
+              {appLicense.entitlements?.map(entitlement => {
+                return (
+                  <div key={entitlement.label} className="flex u-marginBottom--20">
+                    <p className="u-marginRight--10">{entitlement.title}</p>
+                    <p className="u-fontWeight--bold u-color--tuna">{entitlement.value}</p>
+                  </div>
+                );
+              })}
+              {app.isAirgap ?
+                <Dropzone
+                    className="Dropzone-wrapper"
+                    accept={["application/x-yaml", ".yaml", ".yml"]}
+                    onDropAccepted={this.onDrop}
+                    multiple={false}
+                  >
+                  <button className="btn secondary green u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+                </Dropzone> 
+                :
+                <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
+              }
+              {message &&
+                <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
+                  "u-color--red": messageType === "error",
+                  "u-color--tuna": messageType === "info",
+                })}>{message}</p>
+              }
+            </div>
           </div>
-        </div>
+          :
+          <div> 
+            <p className="u-fontSize--large u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+          </div>
+        }
       </div>
     );
   }
