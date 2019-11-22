@@ -49,8 +49,6 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
 }
 
 export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[]): Promise<any> {
-  const uriParts = gitOpsCreds.uri.split("/");
-  const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
   const localPath = tmp.dirSync().name;
 
   const params = await Params.getParams();
@@ -69,7 +67,7 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
   };
 
   try {
-    await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+    await NodeGit.Clone(gitOpsCreds.cloneUri, localPath, cloneOptions);
     const repo = await NodeGit.Repository.open(localPath);
 
     const index = await repo.refreshIndex();
