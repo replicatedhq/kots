@@ -34,6 +34,16 @@ export class KotsAppStore {
     };
   }
 
+  async setGitOpsError(id: string, err: any): Promise<void> {
+    const q = `update gitops_repo set last_error = $1 where id = $2`;
+    const v = [
+      err.length > 0 ? err : null,
+      id,
+    ];
+
+    await this.pool.query(q, v);
+  }
+
   async getGitOpsCreds(id: string): Promise<any> {
     const q = `select uri, key_pub, key_priv from gitops_repo where id = $1`;
     const v = [id];
@@ -639,11 +649,11 @@ export class KotsAppStore {
 
   async updateAppConfigCache(appId: string, sequence: string, configData: ConfigData) {
     const q = `
-      INSERT INTO app_config_cache VALUES ($1, $2, $3, $4, $5, $6, $7) 
-      ON CONFLICT(app_id, sequence) DO UPDATE SET 
-      config_path = EXCLUDED.config_path, 
-      config_content = EXCLUDED.config_content, 
-      config_values_path = EXCLUDED.config_values_path, 
+      INSERT INTO app_config_cache VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT(app_id, sequence) DO UPDATE SET
+      config_path = EXCLUDED.config_path,
+      config_content = EXCLUDED.config_content,
+      config_values_path = EXCLUDED.config_values_path,
       config_values_content = EXCLUDED.config_values_content,
       updated_at = EXCLUDED.updated_at
     `;
@@ -1246,7 +1256,7 @@ export class KotsAppStore {
     if (result.rows.length !== 1) {
       return {
         currentMessage: "",
-        status: "", 
+        status: "",
       };
     }
     return {

@@ -102,7 +102,6 @@ export function KotsMutations(stores: Stores) {
 
       const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(gitopsId);
 
-      // TODO: build for other services than just GitHub
       const uriParts = gitOpsCreds.uri.split("/");
       const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
       const localPath = tmp.dirSync().name;
@@ -122,11 +121,19 @@ export function KotsMutations(stores: Stores) {
         },
       };
 
-      const repo = await NodeGit.Clone(cloneUri, localPath, cloneOptions);
-      logger.info({ msg: repo });
-      // set error column appropriately in gitops_repo table
+      try {
+        await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+        NodeGit.Repository.openBare(localPath);
 
-      return true;
+        // TODO check if we have write access!
+
+        await stores.kotsAppStore.setGitOpsError(gitopsId, "");
+        return true;
+      } catch (err) {
+        const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
+        await stores.kotsAppStore.setGitOpsError(gitopsId, gitOpsError);
+        return false;
+      }
     },
 
     async createKotsDownstream(root: any, args: any, context: Context) {
