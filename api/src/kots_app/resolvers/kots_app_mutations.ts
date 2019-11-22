@@ -110,12 +110,12 @@ export function KotsMutations(stores: Stores) {
       const params = await Params.getParams();
       const decryptedPrivateKey = await kotsDecryptString(params.apiEncryptionKey, gitOpsCreds.privKey);
 
-      const creds = await NodeGit.Cred.sshKeyMemoryNew("git", gitOpsCreds.pubKey, decryptedPrivateKey, "")
       const cloneOptions = {
         fetchOpts: {
           callbacks: {
             certificateCheck: () => { return 0; },
-            credentials: () => {
+            credentials: async (url, username) => {
+              const creds = await NodeGit.Cred.sshKeyMemoryNew(username, gitOpsCreds.pubKey, decryptedPrivateKey, "")
               return creds;
             }
           }
