@@ -125,26 +125,27 @@ export function KotsMutations(stores: Stores) {
       try {
         await NodeGit.Clone(cloneUri, localPath, cloneOptions);
         NodeGit.Repository.openBare(localPath);
-
         // TODO check if we have write access!
 
         await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, "");
-
         // Send current and pending versions to git
         // We need a persistent, durable queue for this to handle the api container
         // being rescheduled during this long-running operation
 
-        const cluasterIDs = await stores.kotsAppStore.listClusterIDsForApp(appId);
-        if (cluasterIDs.length === 0) {
+        const clusterIDs = await stores.kotsAppStore.listClusterIDsForApp(appId);
+        if (clusterIDs.length === 0) {
           throw new Error("no clusters to transition for application");
         }
-        sendInitialGitCommitsForAppDownstream(stores.kotsAppStore, appId, cluasterIDs[0]);
+        sendInitialGitCommitsForAppDownstream(stores.kotsAppStore, stores.clusterStore, appId, clusterIDs[0]);
 
         return true;
       } catch (err) {
+        console.log(err);
         const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
         await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, gitOpsError);
         return false;
+      } finally {
+        // TODO delete
       }
     },
 

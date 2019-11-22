@@ -38,6 +38,7 @@ export class DeployAPI {
       },
     };
 
+    // TODO: what is this next line used for?
     const apps = await request.app.locals.stores.kotsAppStore.listAppsForCluster(cluster.id);
 
     // sequence really should be passed down to operator and returned from it
