@@ -34,7 +34,7 @@ export class KotsAppStore {
     };
   }
 
-  async updateGitOpsRepo(id: string, provider: string, uri: string, privateKey: string, publicKey: string): Promise<any> {
+  async updateGitOpsRepo(id: string, provider: string, uri: string, privateKey: string, publicKey: string): Promise<void> {
     const q = `update gitops_repo set provider = $1, uri = $2, key_pub = $3, key_priv = $4, last_error = $5 where id = $6`;
     const v = [
       provider,
