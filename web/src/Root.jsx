@@ -4,6 +4,7 @@ import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
+import Modal from "react-modal";
 import ConnectionTerminated from "./ConnectionTerminated";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
@@ -316,7 +317,16 @@ class Root extends Component {
           </ThemeContext.Provider>
         </ApolloProvider>
         {connectionTerminated &&
-          <ConnectionTerminated gqlClient={GraphQLClient} connectionTerminated={this.state.connectionTerminated} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
+          <Modal
+            isOpen={connectionTerminated}
+            onRequestClose={undefined}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Connection terminated modal"
+            ariaHideApp={false}
+            className="ConnectionTerminated--wrapper Modal DefaultSize"
+          >
+            <ConnectionTerminated gqlClient={GraphQLClient} connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
+          </Modal>
         }
       </div>
     );
