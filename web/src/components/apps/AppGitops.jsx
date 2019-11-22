@@ -5,7 +5,7 @@ import Modal from "react-modal";
 import Select from "react-select";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import url from "url";
-import { testGitOpsConnection } from "../../mutations/AppsMutations";
+import { testGitOpsConnection, updateAppGitOps } from "../../mutations/AppsMutations";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
 
@@ -106,6 +106,47 @@ class AppGitops extends Component {
     });
   }
 
+  handleUpdate = async () => {
+    const {
+      provider,
+      ownerRepo,
+      branch,
+      path,
+      actionPath,
+      otherService,
+      format,
+      hostname
+    } = this.state;
+
+    const gitops = this.props.app.downstreams[0].gitops;
+
+    const clusterId = this.props.app.downstreams[0]?.cluster?.id;
+    // const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
+    // const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
+    // const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+
+    let gitOpsInput = new Object();
+    gitOpsInput.provider = provider;
+    gitOpsInput.owner = ownerRepo;
+    gitOpsInput.branch = branch || "master";
+    gitOpsInput.path = path;
+    gitOpsInput.format = format;
+    gitOpsInput.action = actionPath;
+    if (provider === "gitlab_enterprise" || provider === "github_enterprise") {
+      gitOpsInput.hostname = hostname;
+    }
+    if (provider === "other") {
+      gitOpsInput.otherServiceName = otherService;
+    }
+
+    try {
+      await this.props.updateAppGitOps(gitops.id, clusterId, gitOpsInput);
+      // TODO refresh data
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   render() {
     const { app } = this.props;
     const appTitle = app.name;
@@ -135,8 +176,16 @@ class AppGitops extends Component {
       return service.value === provider;
     });
 
+    const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
+    // const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
+
     const gitUri = gitops?.uri;
     const deployKey = gitops?.deployKey;
+
+    let addKeyUri = `${gitUri}/settings/keys/new`;
+    if (isGitlab) {
+      addKeyUri = `${gitUri}/-/settings/repository`;
+    }
 
     if (this.props.app.downstreams.length !== 1) {
       return (
@@ -200,7 +249,7 @@ class AppGitops extends Component {
                     </div>
                   }
                 </div>
-                {selectedService?.value === "github_enterprise" &&
+                {selectedService?.value === "github_enterprise" || selectedService?.value === "gitlab_enterprise" ?
                   <div className="flex flex1 u-marginBottom--20">
                     <div className="flex flex1 flex-column u-marginRight--10">
                       <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
@@ -209,7 +258,7 @@ class AppGitops extends Component {
                     </div>
                     <div className="flex flex1 flex-column u-marginLeft--10" />
                   </div>
-                }
+                : null}
                 {selectedService?.value !== "other" &&
                   <div className="flex flex1">
                     <div className="flex flex1 flex-column u-marginRight--10">
@@ -226,7 +275,7 @@ class AppGitops extends Component {
                 }
               </div>
               <div className={`${gitops.isConnected ? "u-display--none" : "u-marginBottom--10"}`}>
-                <button className="btn primary blue" type="button" onClick={() => this.stepFrom("provider", "action")}>Update</button>
+                <button className="btn primary blue" type="button" onClick={this.handleUpdate}>Update</button>
               </div>
               <div className={`GitOpsSettingsConnected inactive ${gitops.isConnected ? "" : "u-display--none"}`}>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
@@ -242,7 +291,7 @@ class AppGitops extends Component {
                 </div>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">
                   To complete the setup, please add your <span onClick={() => this.setState({ displayDeployKeyModal: true })} className="replicated-link">deploy key</span> to your repo. To add a deploy
-                  key, <a className="replicated-link" href={`${gitUri}/settings/keys/new`} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access).
+                  key, <a className="replicated-link" href={addKeyUri} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access).
                 </p>
               </div>
             </div>
@@ -283,5 +332,10 @@ export default compose(
     props: ({ mutate }) => ({
       testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
     })
-  })
+  }),
+  graphql(updateAppGitOps, {
+    props: ({ mutate }) => ({
+      updateAppGitOps: (gitopsId, clusterId, gitOpsInput) => mutate({ variables: { gitopsId, clusterId, gitOpsInput } })
+    })
+  }),
 )(AppGitops);

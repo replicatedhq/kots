@@ -93,6 +93,14 @@ export const setAppGitOpsRaw = `
 
 export const setAppGitOps = gql(setAppGitOpsRaw);
 
+export const updateAppGitOpsRaw = `
+  mutation updateAppGitOps($gitopsId: String!, $clusterId: String!, $gitOpsInput: KotsGitOpsInput!) {
+    updateAppGitOps(gitopsId: $gitopsId, clusterId: $clusterId, gitOpsInput: $gitOpsInput)
+  }
+`;
+
+export const updateAppGitOps = gql(updateAppGitOpsRaw);
+
 export const setPrometheusAddress = gql`
   mutation setPrometheusAddress($value: String!) {
     setPrometheusAddress(value: $value)
@@ -120,5 +128,6 @@ export const testGitOpsConnectionRaw = `
     testGitOpsConnection(appId: $appId, clusterId: $clusterId)
   }
 `;
+
 
 export const testGitOpsConnection = gql(testGitOpsConnectionRaw);
