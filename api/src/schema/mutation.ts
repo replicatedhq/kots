@@ -21,7 +21,7 @@ type Mutation {
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
-  updateAppGitOps(gitopsId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
+  updateAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String
   syncAppLicense(appSlug: String!, airgapLicense: String): KLicense
   testGitOpsConnection(appId: String!, clusterId: String!): Boolean
 

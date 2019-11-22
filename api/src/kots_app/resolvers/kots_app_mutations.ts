@@ -51,33 +51,35 @@ export function KotsMutations(stores: Stores) {
     },
 
     async updateAppGitOps(root: any, args: any, context: Context): Promise<string> {
-      // const { gitopsId, clusterId, gitOpsInput } = args;
+      const { appId, clusterId, gitOpsInput } = args;
 
-      // const app = await context.getApp(appId);
+      const integrationToUpdate = await stores.kotsAppStore.getGitOpsCreds(appId, clusterId);
 
-      // ONLY DO THIS IF PROVIDER CHANGED
-      // const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-      //   modulusLength: 4096,
-      //   publicKeyEncoding: {
-      //     type: "pkcs1",
-      //     format: "pem",
-      //   },
-      //   privateKeyEncoding: {
-      //     type: "pkcs1",
-      //     format: "pem",
-      //   },
-      // });
+      let sshPublishKey = integrationToUpdate.keyPub;
+      let encryptedPrivateKey = integrationToUpdate.keyPriv;
+      if (integrationToUpdate.provider !== gitOpsInput.provider) {
+        const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+          modulusLength: 4096,
+          publicKeyEncoding: {
+            type: "pkcs1",
+            format: "pem",
+          },
+          privateKeyEncoding: {
+            type: "pkcs1",
+            format: "pem",
+          },
+        });
+        const params = await Params.getParams();
+        const parsedPublic = sshpk.parseKey(publicKey, "pem");
+        sshPublishKey = parsedPublic.toString("ssh");
+        encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
+      }
+      
+      await stores.kotsAppStore.updateGitOpsRepo(integrationToUpdate.id, gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
 
-      // const params = await Params.getParams();
-      // const parsedPublic = sshpk.parseKey(publicKey, "pem");
-      // const sshPublishKey = parsedPublic.toString("ssh");
+      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(appId, clusterId, integrationToUpdate.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
 
-      // const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
-      // const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, "", "");
-
-      // await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(gitopsId, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
-
-      return "";
+      return sshPublishKey;
     },
 
     async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {

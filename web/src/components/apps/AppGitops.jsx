@@ -63,6 +63,7 @@ class AppGitops extends Component {
       hostname,
       testingConnection: false,
       displayDeployKeyModal: false,
+      updatingIntegration: false
     }
   }
 
@@ -94,6 +95,7 @@ class AppGitops extends Component {
     try {
       await this.props.testGitOpsConnection(appId, clusterId);
       this.setState({ testingConnection: false });
+      this.props.refetch();
     } catch (err) {
       this.setState({ testingConnection: false });
       console.log(err);
@@ -118,15 +120,14 @@ class AppGitops extends Component {
       hostname
     } = this.state;
 
-    const gitops = this.props.app.downstreams[0].gitops;
-
     const clusterId = this.props.app.downstreams[0]?.cluster?.id;
-    // const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
-    // const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
-    // const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+    const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
+    const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
+    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
 
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
+    gitOpsInput.uri = `https://${serviceUri}/${ownerRepo}`;
     gitOpsInput.owner = ownerRepo;
     gitOpsInput.branch = branch || "master";
     gitOpsInput.path = path;
@@ -140,10 +141,13 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.updateAppGitOps(gitops.id, clusterId, gitOpsInput);
-      // TODO refresh data
+      this.setState({ updatingIntegration: true });
+      await this.props.updateAppGitOps(this.props.app.id, clusterId, gitOpsInput);
+      await this.props.refetch();
+      this.setState({ updatingIntegration: false });
     } catch (error) {
       console.log(error);
+      this.setState({ updatingIntegration: false });
     }
   }
 
@@ -274,9 +278,6 @@ class AppGitops extends Component {
                   </div>
                 }
               </div>
-              <div className={`${gitops.isConnected ? "u-display--none" : "u-marginBottom--10"}`}>
-                <button className="btn primary blue" type="button" onClick={this.handleUpdate}>Update</button>
-              </div>
               <div className={`GitOpsSettingsConnected inactive ${gitops.isConnected ? "" : "u-display--none"}`}>
                 <p className="u-fontSize--large u-color--tundora u-fontWeight--medium u-lineHeight--normal">
                   <span className="u-marginRight--5 icon checkmark-icon u-verticalAlign--neg2" />Connected and working!
@@ -293,6 +294,9 @@ class AppGitops extends Component {
                   To complete the setup, please add your <span onClick={() => this.setState({ displayDeployKeyModal: true })} className="replicated-link">deploy key</span> to your repo. To add a deploy
                   key, <a className="replicated-link" href={addKeyUri} target="_blank" rel="noopener noreferrer">click here</a> and use the following key (check the box for write access).
                 </p>
+              </div>
+              <div className="u-marginBottom--10">
+                <button className="btn primary blue" type="button" onClick={this.handleUpdate} disabled={this.state.updatingIntegration}>{this.state.updatingIntegration ? "Updating" : "Update"}</button>
               </div>
             </div>
           </div>
@@ -335,7 +339,7 @@ export default compose(
   }),
   graphql(updateAppGitOps, {
     props: ({ mutate }) => ({
-      updateAppGitOps: (gitopsId, clusterId, gitOpsInput) => mutate({ variables: { gitopsId, clusterId, gitOpsInput } })
+      updateAppGitOps: (appId, clusterId, gitOpsInput) => mutate({ variables: { appId, clusterId, gitOpsInput } })
     })
   }),
 )(AppGitops);

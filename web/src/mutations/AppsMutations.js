@@ -94,8 +94,8 @@ export const setAppGitOpsRaw = `
 export const setAppGitOps = gql(setAppGitOpsRaw);
 
 export const updateAppGitOpsRaw = `
-  mutation updateAppGitOps($gitopsId: String!, $clusterId: String!, $gitOpsInput: KotsGitOpsInput!) {
-    updateAppGitOps(gitopsId: $gitopsId, clusterId: $clusterId, gitOpsInput: $gitOpsInput)
+  mutation updateAppGitOps($appId: String!, $clusterId: String!, $gitOpsInput: KotsGitOpsInput!) {
+    updateAppGitOps(appId: $appId, clusterId: $clusterId, gitOpsInput: $gitOpsInput)
   }
 `;
 

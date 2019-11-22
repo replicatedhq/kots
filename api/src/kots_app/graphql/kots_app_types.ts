@@ -38,6 +38,7 @@ const KotsGitOps = `
     uri: String
     path: String
     branch: String
+    hostname: String
     format: String
     deployKey: String
     isConnected: Boolean
@@ -69,6 +70,7 @@ const KotsGitOpsInput = `
     uri: String
     owner: String
     branch: String
+    hostname: String
     path: String
     format: String
     action: String
