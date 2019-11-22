@@ -18,8 +18,7 @@ export class ClusterNodes extends Component {
     command: "",
     expiry: null,
     displayAddNode: false,
-    selectedNodeType: "worker" // Change when master node script is enabled
-    
+    selectedNodeType: "worker", // Change when master node script is enabled
   }
 
   drainNode = (name) => {
@@ -111,106 +110,111 @@ export class ClusterNodes extends Component {
               <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Your nodes</p>
               <div className="flex1 u-overflow--auto">
                 {kurl?.nodes && kurl?.nodes.map((node, i) => (
-                  <NodeRow key={i} node={node} drainNode={this.drainNode} deleteNode={this.deleteNode} />
+                  <NodeRow
+                    key={i}
+                    node={node}
+                    drainNode={kurl?.isKurlEnabled ? this.drainNode : null}
+                    deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null} />
                 ))}
               </div>
             </div>
-            {!displayAddNode
-              ? (
-                <div className="flex justifyContent--center alignItems--center">
-                  <button className="btn primary" onClick={this.onAddNodeClick}>Add a node</button>
-                </div>
-              )
-              : (
-                <div className="flex-column">
-                  <div>
-                    <p className="u-width--full u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
-                      Add a Node
-                    </p>
+            {kurl?.isKurlEnabled ?
+              !displayAddNode
+                ? (
+                  <div className="flex justifyContent--center alignItems--center">
+                    <button className="btn primary" onClick={this.onAddNodeClick}>Add a node</button>
                   </div>
-                  <div className="flex justifyContent--center alignItems--center u-marginTop--15">
-                    <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                      "is-active": this.state.selectedNodeType === "master"
-                    })}>
-                      <input
-                        id="masterNode"
-                        className="u-cursor--pointer hidden-input"
-                        type="radio"
-                        name="nodeType"
-                        value="master"
-                        disabled={!kurl?.ha}
-                        checked={this.state.selectedNodeType === "master"}
-                        onChange={this.onSelectNodeType}
-                      />
-                      <label 
-                        htmlFor="masterNode"
-                        className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                        <div className="flex-auto">
-                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
-                        </div>
-                        <div className="flex1">
-                          <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Master Node</p>
-                          <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
-                        </div>
-                      </label>
+                )
+                : (
+                  <div className="flex-column">
+                    <div>
+                      <p className="u-width--full u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
+                        Add a Node
+                      </p>
                     </div>
-                    <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                      "is-active": this.state.selectedNodeType === "worker"
-                    })}>
-                      <input
-                        id="workerNode"
-                        className="u-cursor--pointer hidden-input"
-                        type="radio"
-                        name="nodeType"
-                        value="worker"
-                        checked={this.state.selectedNodeType === "worker"}
-                        onChange={this.onSelectNodeType}
-                      />
-                      <label htmlFor="workerNode" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                        <div className="flex-auto">
-                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
-                        </div>
-                        <div className="flex1">
-                          <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Worker Node</p>
-                          <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
-                        </div>
-                      </label>
-                    </div>  
-                  </div>
-                  {this.state.generating && (
-                    <div className="flex u-width--full justifyContent--center">
-                      <Loader size={60} />
-                    </div>
-                  )}
-                  {!this.state.generating && this.state.command.length > 0 
-                    ? (
-                      <Fragment>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
-                          Run this command on the node you wish to join the cluster
-                        </p>
-                        <CodeSnippet
-                          language="bash"
-                          canCopy={true}
-                          onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-                        >
-                          {[this.state.command.join(" \\\n  ")]}
-                        </CodeSnippet>
-                        {this.state.expiry && (
-                          <div className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-color--tuna">
-                            {`Expires on ${moment.unix(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
+                    <div className="flex justifyContent--center alignItems--center u-marginTop--15">
+                      <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
+                        "is-active": this.state.selectedNodeType === "master"
+                      })}>
+                        <input
+                          id="masterNode"
+                          className="u-cursor--pointer hidden-input"
+                          type="radio"
+                          name="nodeType"
+                          value="master"
+                          disabled={!kurl?.ha}
+                          checked={this.state.selectedNodeType === "master"}
+                          onChange={this.onSelectNodeType}
+                        />
+                        <label 
+                          htmlFor="masterNode"
+                          className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                          <div className="flex-auto">
+                            <span className="icon clickable commitOptionIcon u-marginRight--10" />
                           </div>
-                        )}
-                      </Fragment>
-                    )
-                    : (
-                      <Fragment>
-                        This feature is not yet available
-                      </Fragment>
-                    )
-                  }
-                </div>
-              )
-            }
+                          <div className="flex1">
+                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Master Node</p>
+                            <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
+                          </div>
+                        </label>
+                      </div>
+                      <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
+                        "is-active": this.state.selectedNodeType === "worker"
+                      })}>
+                        <input
+                          id="workerNode"
+                          className="u-cursor--pointer hidden-input"
+                          type="radio"
+                          name="nodeType"
+                          value="worker"
+                          checked={this.state.selectedNodeType === "worker"}
+                          onChange={this.onSelectNodeType}
+                        />
+                        <label htmlFor="workerNode" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                          <div className="flex-auto">
+                            <span className="icon clickable commitOptionIcon u-marginRight--10" />
+                          </div>
+                          <div className="flex1">
+                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Worker Node</p>
+                            <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
+                          </div>
+                        </label>
+                      </div>  
+                    </div>
+                    {this.state.generating && (
+                      <div className="flex u-width--full justifyContent--center">
+                        <Loader size={60} />
+                      </div>
+                    )}
+                    {!this.state.generating && this.state.command.length > 0 
+                      ? (
+                        <Fragment>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
+                            Run this command on the node you wish to join the cluster
+                          </p>
+                          <CodeSnippet
+                            language="bash"
+                            canCopy={true}
+                            onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                          >
+                            {[this.state.command.join(" \\\n  ")]}
+                          </CodeSnippet>
+                          {this.state.expiry && (
+                            <div className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-color--tuna">
+                              {`Expires on ${moment.unix(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
+                            </div>
+                          )}
+                        </Fragment>
+                      )
+                      : (
+                        <Fragment>
+                          This feature is not yet available
+                        </Fragment>
+                      )
+                    }
+                  </div>
+                )
+            : null}
           </div>
         </div>
       </div>

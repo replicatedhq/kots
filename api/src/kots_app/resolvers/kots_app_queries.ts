@@ -7,8 +7,9 @@ import { Cluster } from "../../cluster";
 import { kotsAppGetBranding } from "../kots_ffi";
 import yaml from "js-yaml";
 import { logger } from "../../server/logger";
+import { Params } from "../../server/params";
 
-export function KotsQueries(stores: Stores) {
+export function KotsQueries(stores: Stores, params: Params) {
   return {
     async getKotsMetadata(): Promise<KotsAppMetadata|null> {
       try {
@@ -20,7 +21,7 @@ export function KotsQueries(stores: Stores) {
           name: parsedBranding.spec.title,
           iconUri: parsedBranding.spec.icon,
           namespace: namespace,
-          isKurlEnabled: process.env["ENABLE_KURL"] === "1",
+          isKurlEnabled: params.enableKurl,
         };
       } catch (err) {
         console.log(err);
