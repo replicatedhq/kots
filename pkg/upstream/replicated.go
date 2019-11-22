@@ -441,8 +441,16 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 }
 
 func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
+	templateContextValues := make(map[string]template.ItemValue)
+
 	var newValues kotsv1beta1.ConfigValuesSpec
 	if existingConfigValues != nil {
+		for k, v := range existingConfigValues.Spec.Values {
+			templateContextValues[k] = template.ItemValue{
+				Value:   v.Value,
+				Default: v.Default,
+			}
+		}
 		newValues = kotsv1beta1.ConfigValuesSpec{
 			Values: existingConfigValues.Spec.Values,
 		}
@@ -467,6 +475,12 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
+
+	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create config context")
+	}
+	builder.AddCtx(configCtx)
 
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
