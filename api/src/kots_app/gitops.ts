@@ -81,6 +81,8 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
     await NodeGit.Clone(gitOpsCreds.cloneUri, localPath, cloneOptions);
     const repo = await NodeGit.Repository.open(localPath);
 
+    await NodeGit.Checkout.tree(repo, branch, []);
+
     const index = await repo.refreshIndex();
 
     let output = localPath;
@@ -114,6 +116,15 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
         }
       }
     };
+
+    try {
+      await NodeGit.Branch.lookup(repo, branch, NodeGit.Branch.BRANCH.REMOTE);
+    } catch (err) {
+      if (err.errno === -3) {
+        // remote branch not found
+        await NodeGit.Branch.create(repo, branch, parent, false);
+      }
+    }
 
     await remote.push([`refs/heads/${branch}:refs/heads/${branch}`], pushOptions);
   } catch (err) {
