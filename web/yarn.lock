@@ -11825,14 +11825,6 @@ react-color@2.17.0:
     reactcss "^1.2.0"
     tinycolor2 "^1.4.1"
 
-react-countdown-now@^2.1.2:
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/react-countdown-now/-/react-countdown-now-2.1.2.tgz#b93d153fbb7a8d359beb32ecbf1de29d15f026c7"
-  integrity sha512-BgRnsxV2vnvyJAefDBigTX+ngX6eGd2xl6DIFdZPIZkbx0mzxlMEeoEQG01JyeHDjqaXFUpIonIbx1yYyaMwzg==
-  dependencies:
-    lodash.isequal "^4.5.0"
-    prop-types "^15.7.2"
-
 react-custom-scrollbars@4.2.1:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/react-custom-scrollbars/-/react-custom-scrollbars-4.2.1.tgz#830fd9502927e97e8a78c2086813899b2a8b66db"
