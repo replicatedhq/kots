@@ -16,6 +16,7 @@ interface commitTree {
 export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAppStore, clusterStore: ClusterStore, appId: string, clusterId: string): Promise<any> {
   const app = await kotsAppStore.getApp(appId);
   const cluster = await clusterStore.getCluster(clusterId);
+  const downstreamGitOps = await kotsAppStore.getDownstreamGitOps(appId, clusterId);
 
   const gitOpsCreds = await kotsAppStore.getGitOpsCreds(appId, clusterId);
 
@@ -24,13 +25,23 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
     const rendered = await app.render(`${currentVersion.parentSequence}`, `overlays/downstreams/${cluster.title}`);
 
     const tree: commitTree[] = [];
+    let filename = "";
+    if (downstreamGitOps.path) {
+      filename = path.join(downstreamGitOps.path, `${app.slug}.yaml`).substr(1);  // remove the leading /
+    } else {
+      filename = `${app.slug}.yaml`;
+    }
     tree.push({
-      filename: "rendered.yaml",
+      filename,
       contents: rendered,
     });
 
     // TODO support -f and -k kubectl options
-    await createGitCommit(gitOpsCreds, "master", tree);
+    if (downstreamGitOps.format === "single") {
+      await createGitCommit(gitOpsCreds, downstreamGitOps.branch, tree);
+    } else {
+      throw new Error("unsupported gitops format");
+    }
   }
 
   const pendingVersions = await kotsAppStore.listPendingVersions(appId, clusterId);
@@ -39,7 +50,7 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
 
     const tree: commitTree[] = [];
     tree.push({
-      filename: "rendered.yaml",
+      filename: `${app.slug}.yaml`,
       contents: rendered,
     });
 
@@ -49,8 +60,6 @@ export async function sendInitialGitCommitsForAppDownstream(kotsAppStore: KotsAp
 }
 
 export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[]): Promise<any> {
-  const uriParts = gitOpsCreds.uri.split("/");
-  const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
   const localPath = tmp.dirSync().name;
 
   const params = await Params.getParams();
@@ -69,7 +78,7 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
   };
 
   try {
-    await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+    await NodeGit.Clone(gitOpsCreds.cloneUri, localPath, cloneOptions);
     const repo = await NodeGit.Repository.open(localPath);
 
     const index = await repo.refreshIndex();

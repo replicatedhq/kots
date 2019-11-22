@@ -102,9 +102,6 @@ export function KotsMutations(stores: Stores) {
       const { appId, clusterId } = args;
 
       const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(appId, clusterId);
-
-      const uriParts = gitOpsCreds.uri.split("/");
-      const cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
       const localPath = tmp.dirSync().name;
 
       const params = await Params.getParams();
@@ -123,7 +120,7 @@ export function KotsMutations(stores: Stores) {
       };
 
       try {
-        await NodeGit.Clone(cloneUri, localPath, cloneOptions);
+        await NodeGit.Clone(gitOpsCreds.cloneUri, localPath, cloneOptions);
         NodeGit.Repository.openBare(localPath);
         // TODO check if we have write access!
 

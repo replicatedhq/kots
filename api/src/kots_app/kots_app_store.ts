@@ -45,7 +45,7 @@ export class KotsAppStore {
   }
 
   async getGitOpsCreds(appId: string, clusterId: string): Promise<any> {
-    const q = `select g.id, g.uri, g.key_pub, g.key_priv from gitops_repo g
+    const q = `select g.id, g.uri, g.key_pub, g.key_priv, g.provider from gitops_repo g
 inner join cluster c on c.gitops_repo_id = g.id
 inner join app_downstream ad on ad.cluster_id = c.id
 where ad.app_id = $1 and ad.cluster_id = $2`;
@@ -60,13 +60,27 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
     }
 
     const row = result.rows[0];
+
+    let cloneUri = row.uri;  // this is unlikely to work because we only support ssh auth later.  hmmm
+    const uriParts = row.uri.split("/");
+
+    switch (row.provider) {
+      case "github":
+        cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
+        break;
+      case "gitlab":
+        cloneUri = `git@gitlab.com:${uriParts[3]}/${uriParts[4]}.git`;
+        break;
+    }
+
     return {
       id: row.id,
       uri: row.uri,
       pubKey: row.key_pub,
       privKey: row.key_priv,
+      provider: row.provider,
+      cloneUri,
     };
-
   }
 
 
