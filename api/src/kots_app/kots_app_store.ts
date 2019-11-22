@@ -61,7 +61,7 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
 
     const row = result.rows[0];
 
-    let cloneUri = "";
+    let cloneUri = row.uri;  // this is unlikely to work because we only support ssh auth later.  hmmm
     const uriParts = row.uri.split("/");
 
     switch (row.provider) {
