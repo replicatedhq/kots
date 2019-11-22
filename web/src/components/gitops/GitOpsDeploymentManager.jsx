@@ -73,6 +73,7 @@ class GitOpsDeploymentManager extends React.Component {
       ownerRepo,
       branch,
       path,
+      hostname,
       actionPath,
       otherService,
       containType
@@ -97,6 +98,9 @@ class GitOpsDeploymentManager extends React.Component {
     gitOpsInput.path = path;
     gitOpsInput.format = containType;
     gitOpsInput.action = actionPath;
+    if (selectedService.value === "gitlab_enterprise" || selectedService.value === "github_enterprise") {
+      gitOpsInput.hostname = hostname;
+    }
     if (selectedService.value === "other") {
       gitOpsInput.otherServiceName = otherService;
     }
@@ -264,7 +268,7 @@ class GitOpsDeploymentManager extends React.Component {
                   </div>
                 }
               </div>
-              {selectedService?.value === "github_enterprise" &&
+              {selectedService?.value === "github_enterprise" || selectedService?.value === "gitlab_enterprise" ?
                 <div className="flex flex1 u-marginBottom--20">
                   <div className="flex flex1 flex-column u-marginRight--10">
                     <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname</p>
@@ -273,7 +277,7 @@ class GitOpsDeploymentManager extends React.Component {
                   </div>
                   <div className="flex flex1 flex-column u-marginLeft--10" />
                 </div>
-              }
+              : null}
               {selectedService?.value !== "other" &&
                 <div className="flex flex1">
                   <div className="flex flex1 flex-column u-marginRight--10">
@@ -374,7 +378,7 @@ class GitOpsDeploymentManager extends React.Component {
                   </div>
                 </div>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginLeft--10">
-                  <div className={`BoxedCheckbox flex1 flex ${this.state.containType === "fullFiles" ? "is-active" : ""}`}>
+                  <div className={`BoxedCheckbox flex1 flex ${this.state.containType === "fullFiles" ? "is-active" : ""} is-disabled`}>
                     <input
                       type="radio"
                       className="u-cursor--pointer hidden-input"
@@ -382,6 +386,7 @@ class GitOpsDeploymentManager extends React.Component {
                       checked={this.state.containType === "fullFiles"}
                       defaultValue="fullFiles"
                       onChange={(e) => { this.onFileContainChange(e) }}
+                      disabled={true}
                     />
                     <label htmlFor="fullFilesOption" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex-auto">
@@ -389,7 +394,7 @@ class GitOpsDeploymentManager extends React.Component {
                       </div>
                       <div className="flex1">
                         <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Full Kustomizable Output</p>
-                        <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Apply using <span className="inline-code no-bg">kubectl apply -k</span></p>
+                        <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Coming soon</p>
                       </div>
                     </label>
                   </div>

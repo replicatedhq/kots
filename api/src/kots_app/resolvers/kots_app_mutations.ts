@@ -50,6 +50,36 @@ export function KotsMutations(stores: Stores) {
       return publicKey;
     },
 
+    async updateAppGitOps(root: any, args: any, context: Context): Promise<string> {
+      // const { gitopsId, clusterId, gitOpsInput } = args;
+
+      // const app = await context.getApp(appId);
+
+      // ONLY DO THIS IF PROVIDER CHANGED
+      // const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+      //   modulusLength: 4096,
+      //   publicKeyEncoding: {
+      //     type: "pkcs1",
+      //     format: "pem",
+      //   },
+      //   privateKeyEncoding: {
+      //     type: "pkcs1",
+      //     format: "pem",
+      //   },
+      // });
+
+      // const params = await Params.getParams();
+      // const parsedPublic = sshpk.parseKey(publicKey, "pem");
+      // const sshPublishKey = parsedPublic.toString("ssh");
+
+      // const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
+      // const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, "", "");
+
+      // await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(gitopsId, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
+
+      return "";
+    },
+
     async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
       const { appId } = args;
 
