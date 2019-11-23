@@ -133,10 +133,35 @@ class AppVersionHistory extends Component {
   renderVersionAction = version => {
     const { app } = this.props;
     const downstream = app.downstreams[0];
+
+    if (downstream.gitops?.enabled) {
+      return (
+        <button
+            className="btn primary green"
+            onClick={() => this.viewCommit(version)}
+          >
+          View
+        </button>
+      );
+    }
+
+    if (downstream.currentVersion?.sequence == undefined) {
+      // no current version found
+      return (
+        <button
+            className="btn primary green"
+            onClick={() => this.deployVersion(version)}
+          >
+          Deploy
+        </button>
+      );
+    }
+
     const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
     const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
     const showActions = !isPastVersion || app.allowRollback;
+
     return (
       <div>
         {showActions &&
@@ -222,6 +247,10 @@ class AppVersionHistory extends Component {
         ))}
       </div>
     );
+  }
+
+  viewCommit = version => {
+    console.log(version);
   }
 
   deployVersion = async (version, force = false) => {
