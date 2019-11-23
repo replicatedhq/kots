@@ -175,6 +175,17 @@ func apiDeployment(namespace, autoCreateClusterToken string) *appsv1.Deployment 
 									Value: "kotsadm",
 								},
 								{
+									Name: "API_ENCRYPTION_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-encryption",
+											},
+											Key: "encryptionKey",
+										},
+									},
+								},
+								{
 									Name: "S3_ACCESS_KEY_ID",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
