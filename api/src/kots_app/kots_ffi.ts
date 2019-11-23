@@ -315,8 +315,11 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
     const diffSummary = await getDiffSummary(app);
     await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
 
-    const commitMessage = `Updates to the upstream of ${app.name}`;
-    await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+    const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
+    if (downstreamGitops.enabled) {
+      const commitMessage = `Updates to the upstream of ${app.name}`;
+      await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+    }
   }
 }
 
@@ -819,8 +822,11 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
       const diffSummary = await getDiffSummary(app);
       await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
 
-      const commitMessage = `Updates to the upstream of ${app.name}`;
-      await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+      const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
+      if (downstreamGitops.enabled) {
+        const commitMessage = `Updates to the upstream of ${app.name}`;
+        await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+      }
     }
 
     await stores.kotsAppStore.clearImageRewriteStatus();

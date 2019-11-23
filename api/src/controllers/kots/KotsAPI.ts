@@ -515,8 +515,11 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     const diffSummary = await getDiffSummary(kotsApp);
     await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary);
 
-    const commitMessage = `${source} for ${kotsApp.name}`;
-    await createGitCommitForVersion(stores, kotsApp.id, clusterId, newSequence, commitMessage);
+    const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(kotsApp.id, clusterId);
+    if (downstreamGitops.enabled) {
+      const commitMessage = `${source} for ${kotsApp.name}`;
+      await createGitCommitForVersion(stores, kotsApp.id, clusterId, newSequence, commitMessage);
+    }
   }
 
   return {
