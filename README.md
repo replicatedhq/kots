@@ -3,36 +3,43 @@
 ## CLI
 
 ### `kots install`
-The `install` command is the recommended way to learn kots. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated apps.
+The `install` command is the recommended way to learn KOTS. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated KOTS apps.
 
-To try it, just choose a helm chart ([Elasticsearch](https://github.com/elastic/helm-charts/tree/master/elasticsearch)) and run the following command:
-
+Try installing the Replicated sample app ([Sentry Pro Example](https://github.com/replicatedhq/kots-sentry/)) by first installing KOTS on your workstation
 ```
-kubectl kots install helm://elastic/elasticsearch --repo https://helm.elastic.co --namespace elasticsearch
-```
-
-After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. You can connect to this using kubectl port-forward, or set up an ingress/load balancer of your own.
-
-```
-kubectl admin-console --namespace elasticsearch
+curl https://kots.io/install | bash
 ```
 
-And now visit http://localhost:8800 to set the Elasticsearch Admin Console.
+and running the following command:
+```
+kubectl kots install sentry-pro
+```
+
+Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
+
+Visit http://localhost:8800 to access the Admin Console, enter the password.
+
+Download the [sample license](https://kots.io/sample-license) for Sentry Pro & upload it to the console. You'll then be presented with configuration settings, preflight checks and other application options.
+
+If you terminate your terminal session, the port-forward will also terminate. To access the admin console again, just run:
+```
+kubectl kots admin-console --namespace sentry-pro
+```
 
 
 ### `kots pull`
 The `pull` command will create a local directory set up so you can create Kustomize-friendly patches and then use kubectl to deploy to a cluster yourself. The pull command will not add the admin console to a cluster or install anything in your cluster.
 
 ```
-kubectl kots pull helm://elastic/elasticsearch --namespace elasticsearch
-kubectl apply -k ./elasticsearch/overlays/midstream
+kubectl kots pull sentry-pro --namespace sentry-pro
+kubectl apply -k ./sentry-pro/overlays/midstream
 ```
 
 ### `kots upload`
 The `upload` command will upload a directory with an upstream, base and overlays directory to a kotsadm server.
 
 ```
-kubectl kots upload ~/elasticsearch
+kubectl kots upload ~/sentry-pro
 ```
 
 ### `kots download`
