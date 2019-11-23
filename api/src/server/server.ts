@@ -158,6 +158,7 @@ export class Server extends ServerLoader {
         "ping",
         "loginToAdminConsole",
         "logout",
+        "getKotsMetadata",
       ];
 
       if (anonymousOperations.includes(req.body.operationName)) {
