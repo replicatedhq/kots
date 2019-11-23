@@ -1,11 +1,15 @@
 package kotsadm
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func minioStatefulset(namespace string) *appsv1.StatefulSet {
@@ -52,7 +56,8 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &corev1.PodSecurityContext{
-						// RunAsUser: util.IntPointer(1001), // TODO: make real user #
+						RunAsUser: util.IntPointer(1001),
+						FSGroup:   util.IntPointer(1001),
 					},
 					Volumes: []corev1.Volume{
 						{
@@ -72,13 +77,13 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           "minio/minio:RELEASE.2019-10-12T01-39-57Z",
+							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{
 								"/bin/sh",
 								"-ce",
-								"/usr/bin/docker-entrypoint.sh minio -C /root/.minio/ server /export",
+								"/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export",
 							},
 							Ports: []corev1.ContainerPort{
 								{
@@ -93,7 +98,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 								},
 								{
 									Name:      "minio-config-dir",
-									MountPath: "/root/.minio/",
+									MountPath: "/home/minio/.minio/",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -150,6 +155,28 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 										Port:   intstr.FromString("service"),
 										Scheme: corev1.URISchemeHTTP,
 									},
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "kotsadm-minio",
+							Command: []string{
+								"/bin/sh",
+								"-ce",
+								"chown -R minio:minio /export && chown -R minio:minio /home/minio/.minio",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "kotsadm-minio",
+									MountPath: "/export",
+								},
+								{
+									Name:      "minio-config-dir",
+									MountPath: "/home/minio/.minio/",
 								},
 							},
 						},
