@@ -35,17 +35,26 @@ export class KotsAppStore {
   }
 
   async updateGitOpsRepo(id: string, provider: string, uri: string, privateKey: string, publicKey: string): Promise<void> {
-    const q = `update gitops_repo set provider = $1, uri = $2, key_pub = $3, key_priv = $4, last_error = $5 where id = $6`;
-    const v = [
+    let q = `update gitops_repo set provider = $1, uri = $2, last_error = $3 where id = $4`;
+    let v = [
       provider,
       uri,
-      publicKey,
-      privateKey,
       'never tried',
       id,
     ];
 
     await this.pool.query(q, v);
+
+    if (privateKey && publicKey) {
+      q = `update gitops_repo set key_pub = $1, key_priv = $2 where id = $3`;
+      v = [
+        publicKey,
+        privateKey,
+        id,
+      ];
+
+      await this.pool.query(q, v);
+    }
   }
 
   async setGitOpsError(id: string, err: any): Promise<void> {
