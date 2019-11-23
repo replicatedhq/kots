@@ -35,6 +35,7 @@ import * as k8s from "@kubernetes/client-node";
 import { decodeBase64 } from "../../util/utilities";
 import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
+import { createGitCommitForVersion } from "../../kots_app/gitops";
 
 interface CreateAppBody {
   metadata: string;
@@ -513,6 +514,9 @@ export async function uploadUpdate(stores, slug, buffer, source) {
       : "pending";
     const diffSummary = await getDiffSummary(kotsApp);
     await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary);
+
+    const commitMessage = `${source} for ${kotsApp.name}`;
+    await createGitCommitForVersion(stores, kotsApp.id, clusterId, newSequence, commitMessage);
   }
 
   return {

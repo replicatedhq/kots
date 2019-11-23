@@ -165,7 +165,7 @@ export function KotsMutations(stores: Stores) {
         if (clusterIDs.length === 0) {
           throw new Error("no clusters to transition for application");
         }
-        sendInitialGitCommitsForAppDownstream(stores.kotsAppStore, stores.clusterStore, appId, clusterIDs[0]);
+        sendInitialGitCommitsForAppDownstream(stores, appId, clusterIDs[0]);
 
         return true;
       } catch (err) {

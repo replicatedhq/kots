@@ -26,6 +26,7 @@ import yaml, { dump } from "js-yaml";
 import { StatusServer } from "../airgap/status";
 import { getDiffSummary } from "../util/utilities";
 import { ReplicatedError } from "../server/errors";
+import { createGitCommitForVersion } from "./gitops";
 
 const GoString = Struct({
   p: "string",
@@ -313,6 +314,9 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   for (const clusterId of clusterIds) {
     const diffSummary = await getDiffSummary(app);
     await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
+
+    const commitMessage = `Updates to the upstream of ${app.name}`;
+    await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
   }
 }
 
@@ -814,6 +818,9 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
     for (const clusterId of clusterIds) {
       const diffSummary = await getDiffSummary(app);
       await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
+
+      const commitMessage = `Updates to the upstream of ${app.name}`;
+      await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
     }
 
     await stores.kotsAppStore.clearImageRewriteStatus();
