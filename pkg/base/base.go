@@ -1,7 +1,9 @@
 package base
 
 import (
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"gopkg.in/yaml.v2"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type Base struct {
@@ -16,6 +18,10 @@ type BaseFile struct {
 type OverlySimpleGVK struct {
 	APIVersion string `yaml:"apiVersion"`
 	Kind       string `yaml:"kind"`
+}
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
 }
 
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
