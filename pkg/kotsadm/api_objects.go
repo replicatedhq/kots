@@ -29,6 +29,12 @@ func apiRole(namespace string) *rbacv1.Role {
 				ResourceNames: []string{"kotsadm-application-metadata"},
 				Verbs:         metav1.Verbs{"get", "delete"},
 			},
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"secrets"},
+				ResourceNames: []string{"kotsadm-encryption"},
+				Verbs:         metav1.Verbs{"get"},
+			},
 		},
 	}
 
