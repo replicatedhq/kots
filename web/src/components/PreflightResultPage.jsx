@@ -10,6 +10,7 @@ import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 import { getPreflightResultState } from "../utilities/utilities";
+import "../scss/components/PreflightCheckPage.scss";
 
 class PreflightResultPage extends Component {
   state = {
