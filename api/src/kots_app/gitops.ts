@@ -22,10 +22,11 @@ export async function sendInitialGitCommitsForAppDownstream(stores: Stores, appI
   if (currentVersion) {
     const rendered = await app.render(`${currentVersion.parentSequence}`, `overlays/downstreams/${cluster.title}`);
 
+
     const tree: commitTree[] = [];
     let filename = "";
     if (downstreamGitOps.path) {
-      filename = path.join(downstreamGitOps.path, `${app.slug}.yaml`).substr(1);  // remove the leading /
+      filename = path.join(downstreamGitOps.path, `${app.slug}.yaml`).replace(/^\//g, '');  // remove the leading /
     } else {
       filename = `${app.slug}.yaml`;
     }
@@ -57,9 +58,16 @@ export async function createGitCommitForVersion(stores: Stores, appId: string, c
 
   const rendered = await app.render(`${parentSequence}`, `overlays/downstreams/${cluster.title}`);
 
+  let filename = "";
+  if (downstreamGitOps.path) {
+    filename = path.join(downstreamGitOps.path, `${app.slug}.yaml`).replace(/^\//g, '');  // remove the leading /
+  } else {
+    filename = `${app.slug}.yaml`;
+  }
+
   const tree: commitTree[] = [];
   tree.push({
-    filename: `${app.slug}.yaml`,
+    filename,
     contents: rendered,
   });
 
@@ -112,7 +120,7 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
       }
     });
     await repo.mergeBranches(branch, `origin/${branch}`);
-    
+
     // add files
     const index = await repo.refreshIndex();
     let output = localPath;
@@ -143,7 +151,7 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
         }
       }
     };
-    
+
     // push
     await remote.push([`refs/heads/${branch}:refs/heads/${branch}`], pushOptions);
   } catch (err) {
