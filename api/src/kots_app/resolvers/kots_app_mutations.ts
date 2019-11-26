@@ -16,7 +16,6 @@ import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
-import { logger } from "../../server/logger";
 import { sendInitialGitCommitsForAppDownstream } from "../gitops";
 
 export function KotsMutations(stores: Stores) {
