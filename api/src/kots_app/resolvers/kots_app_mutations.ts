@@ -197,11 +197,11 @@ export function KotsMutations(stores: Stores) {
     },
 
     async uploadKotsLicense(root: any, args: any, context: Context) {
+      const { value } = args;
+      const parsedLicense = yaml.safeLoad(value);
+
       try {
         context.requireSingleTenantSession();
-
-        const { value } = args;
-        const parsedLicense = yaml.safeLoad(value);
 
         const clusters = await stores.clusterStore.listAllUsersClusters();
         let downstream;
@@ -228,14 +228,20 @@ export function KotsMutations(stores: Stores) {
           /* no need to handle, rbac problem or not a path we can read registry */
         }
 
-        return {
-          hasPreflight: kotsApp.hasPreflight,
-          isAirgap: parsedLicense.spec.isAirgapSupported,
-          needsRegistry,
-          slug: kotsApp.slug,
-          isConfigurable: kotsApp.isAppConfigurable()
+        if (kotsApp) {
+          return {
+            hasPreflight: kotsApp.hasPreflight,
+            isAirgap: parsedLicense.spec.isAirgapSupported,
+            needsRegistry,
+            slug: kotsApp.slug,
+            isConfigurable: kotsApp.isAppConfigurable()
+          }
+        }
+        else {
+          throw new ReplicatedError("Uploaded license file is invalid");
         }
       } catch(err) {
+        await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
         throw new ReplicatedError(err.message);
       }
     },

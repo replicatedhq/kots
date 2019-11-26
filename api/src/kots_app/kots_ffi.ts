@@ -166,7 +166,7 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, regist
   const archive = path.join(tmpDir.name, "archive.tar.gz");
 
   try {
-    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
+    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
 
     const statusServer = new StatusServer();
     await statusServer.start(tmpDir.name);
@@ -227,7 +227,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
   const archive = path.join(tmpDir.name, "archive.tar.gz");
 
   try {
-    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
+    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
 
     let isUpdateAvailable = -1;
 
@@ -325,25 +325,26 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   }
 }
 
-export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp> {
+export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | undefined> {
   const parsedLicense = yaml.safeLoad(licenseData);
-  if (parsedLicense.spec.isAirgapSupported) {
-    try {
-      const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
-      await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, licenseData);
+  if (parsedLicense.apiVersion === "kots.io/v1beta1" && parsedLicense.kind === "License") {
+    if (parsedLicense.spec.isAirgapSupported) {
+      try {
+        const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
+        await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, licenseData);
+        return kotsApp;
+      } catch (e) {
+        console.log("no pending airgap install found, creating a new app");
+      }
+
+      const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
       return kotsApp;
-    } catch(e) {
-      console.log("no pending airgap install found, creating a new app");
     }
 
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
+    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
+    await kotsFinalizeApp(kotsApp, downstreamName, stores);
     return kotsApp;
   }
-
-  const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
-  await kotsFinalizeApp(kotsApp, downstreamName, stores);
-
-  return kotsApp;
 }
 
 export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, stores: Stores) {
@@ -628,7 +629,7 @@ export async function kotsTemplateConfig(configPath: string, configContent: stri
 
   try {
     return yaml.safeLoad(templatedConfig["p"]);
-  } catch(err) {
+  } catch (err) {
     throw new ReplicatedError(`Failed to parse templated config ${err}`);
   }
 }
@@ -716,8 +717,8 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
     await statusServer.start(tmpDir.name);
 
     const archive = path.join(tmpDir.name, "archive.tar.gz");
-    fs.writeFileSync(archive, await app.getArchive(""+(app.currentSequence!)));
-  
+    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
+
     const socketParam = new GoString();
     socketParam["p"] = statusServer.socketFilename;
     socketParam["n"] = statusServer.socketFilename.length;

@@ -36,8 +36,8 @@ class UploadLicenseFile extends React.Component {
 
       // When successful, refetch all the user's apps with onUploadSuccess
       onUploadSuccess().then(() => {
-        if (data.isAirgap) {
-          if (data.needsRegistry) {
+        if (data?.isAirgap) {
+          if (data?.needsRegistry) {
             history.replace(`/${data.slug}/airgap`);
           } else {
             history.replace(`/${data.slug}/airgap-bundle`);
@@ -45,18 +45,20 @@ class UploadLicenseFile extends React.Component {
           return;
         }
 
-        if (data.isConfigurable) {
+        if (data?.isConfigurable) {
           history.replace(`/${data.slug}/config`);
           return;
         }
 
-        if (data.hasPreflight) {
+        if (data?.hasPreflight) {
           history.replace("/preflight");
           return;
         }
 
         // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
-        history.replace(`/app/${data.slug}`);
+        if (data) {
+          history.replace(`/app/${data.slug}`);
+        }
       });
     } catch (err) {
       console.log(err);

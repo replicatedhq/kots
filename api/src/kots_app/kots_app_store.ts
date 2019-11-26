@@ -772,6 +772,18 @@ order by adv.sequence desc`;
     return row && row.release_notes;
   }
 
+  async updateFailedInstallState(appSlug: string): Promise<Boolean> {
+    const q = `update app set install_state = $1 where slug = $2`;
+    const v = ["failed", appSlug];
+
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`No app with the slug of ${appSlug} was found`);
+    }
+
+    return true;
+  }
+
   async deployVersion(appId: string, sequence: number, clusterId: string): Promise<void> {
     const q = `update app_downstream set current_sequence = $1 where app_id = $2 and cluster_id = $3`;
     const v = [
@@ -982,7 +994,7 @@ order by adv.sequence desc`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
-
+    
     if (result.rowCount == 0) {
       throw new ReplicatedError("not found");
     }
