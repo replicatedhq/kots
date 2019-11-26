@@ -5,10 +5,3 @@ steps:
 
   - commands:
       - if [ ! -z "$GIT_TAG" ]; then make -C migrations schema-release; fi
-
-  - commands:
-      - make -C migrations publish-alpha
-    branches: "master"
-
-  - commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C migrations publish-release; fi
