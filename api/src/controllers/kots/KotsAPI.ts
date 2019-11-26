@@ -20,7 +20,7 @@ import {
   extractAnalyzerSpecFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
-import { KotsApp, kotsAppFromLicenseData, KotsAppStatus } from "../../kots_app";
+import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
 import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import {

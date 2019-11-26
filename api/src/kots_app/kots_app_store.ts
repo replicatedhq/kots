@@ -94,6 +94,9 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
       case "gitlab":
         cloneUri = `git@gitlab.com:${uriParts[3]}/${uriParts[4]}.git`;
         break;
+      case "bitbucket":
+        cloneUri = `git@bitbucket.org:${uriParts[3]}/${uriParts[4]}.git`;
+        break;
     }
 
     return {

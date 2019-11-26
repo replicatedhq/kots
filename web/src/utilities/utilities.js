@@ -208,6 +208,28 @@ export function formatByteSize(bytes) {
   }
 }
 
+export function getGitProviderDiffUrl(repoUri, provider, oldCommitHash, newCommitHash) {
+  switch (provider) {
+    case "github" || "gitlab":
+      return `${repoUri}/compare/${oldCommitHash}...${newCommitHash}`;
+    case "bitbucket":
+      return `${repoUri}/branches/compare/${newCommitHash}..${oldCommitHash}#diff`;
+    default:
+      return `${repoUri}/compare/${oldCommitHash}...${newCommitHash}`;
+  }
+}
+
+export function getCommitHashFromUrl(commitUrl) {
+  if (!commitUrl) {
+    return "";
+  }
+  const uriParts = commitUrl.split("/");
+  if (!uriParts.length) {
+    return "";
+  }
+  return uriParts[uriParts.length - 1];
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
