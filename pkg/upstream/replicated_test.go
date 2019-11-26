@@ -263,3 +263,53 @@ func Test_createConfigValues(t *testing.T) {
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
 }
+
+func Test_getRequest(t *testing.T) {
+	beta := "beta"
+	unstable := "unstable"
+	tests := []struct {
+		endpoint        string
+		appSlug         string
+		channel         *string
+		channelSequence string
+		expectedURL     string
+	}{
+		{
+			endpoint:        "https://replicated-app",
+			appSlug:         "sluggy1",
+			channel:         nil,
+			channelSequence: "",
+			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=",
+		},
+		{
+			endpoint:        "http://localhost:30016",
+			appSlug:         "sluggy2",
+			channel:         &beta,
+			channelSequence: "",
+			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=",
+		},
+		{
+			endpoint:        "https://replicated-app",
+			appSlug:         "sluggy3",
+			channel:         &unstable,
+			channelSequence: "10",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10",
+		},
+	}
+
+	req := require.New(t)
+	for _, test := range tests {
+		license := &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				Endpoint: test.endpoint,
+				AppSlug:  test.appSlug,
+			},
+		}
+		r := &ReplicatedUpstream{
+			Channel: test.channel,
+		}
+		request, err := r.getRequest("GET", license, test.channelSequence)
+		req.NoError(err)
+		assert.Equal(t, test.expectedURL, request.URL.String())
+	}
+}
