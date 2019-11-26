@@ -215,12 +215,11 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
 	}
 
-	url := fmt.Sprintf("%s://%s/release/%s?channelSequence=%s", u.Scheme, hostname, license.Spec.AppSlug, channelSequence)
-
+	urlPath := path.Join(hostname, "release", license.Spec.AppSlug)
 	if r.Channel != nil {
-		// NOTE: I don't believe this is used
-		url = fmt.Sprintf("%s/%s", url, *r.Channel)
+		urlPath = path.Join(urlPath, *r.Channel)
 	}
+	url := fmt.Sprintf("%s://%s?channelSequence=%s", u.Scheme, urlPath, channelSequence)
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
