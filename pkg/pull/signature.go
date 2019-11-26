@@ -76,6 +76,7 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 		return nil, errors.Wrap(err, "failed to verify license data")
 	}
 
+	verifiedLicense.Spec.Endpoint = license.Spec.Endpoint
 	verifiedLicense.Spec.Signature = license.Spec.Signature
 
 	return verifiedLicense, nil
