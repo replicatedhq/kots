@@ -7,6 +7,7 @@ import { kotsDecryptString } from "./kots_ffi";
 import NodeGit from "nodegit";
 import { Stores } from "../schema/stores";
 import { ReplicatedError } from "../server/errors";
+import { getGitProviderCommitUrl } from "../util/utilities";
 
 interface commitTree {
   filename: string;
@@ -33,7 +34,7 @@ export async function sendInitialGitCommitsForAppDownstream(stores: Stores, appI
   }
 }
 
-export async function createGitCommitForVersion(stores: Stores, appId: string, clusterId: string, parentSequence: number, commitMessage: string): Promise<any> {
+export async function createGitCommitForVersion(stores: Stores, appId: string, clusterId: string, parentSequence: number, commitMessage: string): Promise<string> {
   const app = await stores.kotsAppStore.getApp(appId);
   const cluster = await stores.clusterStore.getCluster(clusterId);
   const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(app.id, cluster.id);
@@ -55,10 +56,10 @@ export async function createGitCommitForVersion(stores: Stores, appId: string, c
   });
 
   // TODO support -f and -k kubectl options
-  await createGitCommit(gitOpsCreds, downstreamGitOps.branch, tree, commitMessage);
+  return await createGitCommit(gitOpsCreds, downstreamGitOps.branch, tree, commitMessage);
 }
 
-export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[], commitMessage: string): Promise<any> {
+export async function createGitCommit(gitOpsCreds: any, branch: string, tree: commitTree[], commitMessage: string): Promise<string> {
   const localPath = tmp.dirSync().name;
   const params = await Params.getParams();
   const decryptedPrivateKey = await kotsDecryptString(params.apiEncryptionKey, gitOpsCreds.privKey);
@@ -128,11 +129,13 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
 
     // commit
     const signature = NodeGit.Signature.now("KOTS Admin Console", "help@replicated.com");
-    await repo.createCommit("HEAD", signature, signature, commitMessage, oid, [parent]);
+    const commitHash = await repo.createCommit("HEAD", signature, signature, commitMessage, oid, [parent]);
 
     // push
     const remote = await repo.getRemote("origin");
     await remote.push([`refs/heads/${branch}:refs/heads/${branch}`], options);
+
+    return getGitProviderCommitUrl(gitOpsCreds.uri, commitHash, gitOpsCreds.provider);
   } catch (err) {
     throw new ReplicatedError(`Failed to create git commit ${err}`)
   }

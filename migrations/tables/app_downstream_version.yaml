@@ -39,3 +39,5 @@ spec:
         type: text
       - name: preflight_result_created_at
         type: timestamp without time zone
+      - name: git_commit_url
+        type: text

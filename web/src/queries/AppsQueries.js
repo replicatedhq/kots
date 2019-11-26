@@ -192,7 +192,6 @@ export const getKotsApplicationTreeRaw = `
     getKotsApplicationTree(slug: $slug, sequence: $sequence)
   }
 `;
-
 export const getKotsApplicationTree = gql(getKotsApplicationTreeRaw);
 
 export const getKotsFilesRaw = `
@@ -200,7 +199,6 @@ export const getKotsFilesRaw = `
     getKotsFiles(slug: $slug, sequence: $sequence, fileNames: $fileNames)
   }
 `;
-
 export const getKotsFiles = gql(getKotsFilesRaw);
 
 export const listDownstreamsForAppRaw = `
@@ -242,11 +240,12 @@ export const getKotsDownstreamHistoryRaw = `
       diffSummary
       preflightResult
       preflightResultCreatedAt
+      commitUrl
     }
   }
 `;
-
 export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);
+
 export const getAppRegistryDetailsRaw = `
   query getAppRegistryDetails($slug: String!) {
     getAppRegistryDetails(slug: $slug) {
@@ -258,7 +257,6 @@ export const getAppRegistryDetailsRaw = `
     }
   }
 `;
-
 export const getAppRegistryDetails = gql(getAppRegistryDetailsRaw);
 
 export const getKotsPreflightResultRaw = `
@@ -271,7 +269,6 @@ export const getKotsPreflightResultRaw = `
     }
   }
 `;
-
 export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
 
 export const getLatestKotsPreflightResultRaw = `
@@ -284,7 +281,6 @@ export const getLatestKotsPreflightResultRaw = `
     }
   }
 `;
-
 export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);
 
 export const getAirgapInstallStatusRaw = `
@@ -295,7 +291,6 @@ export const getAirgapInstallStatusRaw = `
     }
   }
 `;
-
 export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);
 
 export const getImageRewriteStatusRaw = `

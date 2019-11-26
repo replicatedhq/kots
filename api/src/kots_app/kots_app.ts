@@ -556,6 +556,7 @@ export interface KotsVersion {
   hasError?: boolean;
   source?: string;
   diffSummary?: string;
+  commitUrl?: string;
 }
 
 export interface KotsAppMetadata {

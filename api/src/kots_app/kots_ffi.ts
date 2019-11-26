@@ -312,14 +312,16 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
   for (const clusterId of clusterIds) {
-    const diffSummary = await getDiffSummary(app);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
-
     const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
+
+    let commitUrl = "";
     if (downstreamGitops.enabled) {
       const commitMessage = `Updates to the upstream of ${app.name}`;
-      await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+      commitUrl = await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
     }
+
+    const diffSummary = await getDiffSummary(app);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary, commitUrl);
   }
 }
 
@@ -432,10 +434,9 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       const downstreamState = kotsApp.hasPreflight
         ? "pending_preflight"
         : "deployed";
-      const diffSummary = await getDiffSummary(kotsApp);
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", diffSummary);
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "");
     }
 
     kotsApp.currentSequence = 0;
@@ -543,10 +544,8 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
       continue;
     }
 
-    const diffSummary = await getDiffSummary(app);
-
     await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", diffSummary);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", "", "");
   }
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
@@ -819,14 +818,16 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
 
     const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
     for (const clusterId of clusterIds) {
-      const diffSummary = await getDiffSummary(app);
-      await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary);
-
       const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
+
+      let commitUrl = "";
       if (downstreamGitops.enabled) {
         const commitMessage = `Updates to the upstream of ${app.name}`;
-        await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+        commitUrl = await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
       }
+
+      const diffSummary = await getDiffSummary(app);
+      await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary, commitUrl);
     }
 
     await stores.kotsAppStore.clearImageRewriteStatus();

@@ -91,6 +91,7 @@ const KotsVersion = `
     diffSummary: String
     preflightResult: String
     preflightResultCreatedAt: String
+    commitUrl: String
     hasError: Boolean
   }
 `;

@@ -313,7 +313,7 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string, source: string, diffSummary: string): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string, source: string, diffSummary: string, commitUrl: string): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -340,7 +340,7 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
       if (preflightSpec) {
         status = "pending_preflight";
       }
-      q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
+      q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
       v = [
         id,
         clusterId,
@@ -350,7 +350,8 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
         versionLabel,
         status,
         source,
-        diffSummary
+        diffSummary,
+        commitUrl
       ];
       await pg.query(q, v);
       await pg.query("commit");
@@ -393,6 +394,7 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
          adv.diff_summary,
          adv.preflight_result,
          adv.preflight_result_created_at,
+         adv.git_commit_url,
          ado.is_error AS has_error
         FROM
           app_downstream_version AS adv
@@ -430,7 +432,8 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
         diffSummary: row.diff_summary,
         releaseNotes: releaseNotes || "",
         preflightResult: row.preflight_result,
-        preflightResultCreatedAt: row.preflight_result_created_at
+        preflightResultCreatedAt: row.preflight_result_created_at,
+        commitUrl: row.git_commit_url || ""
       };
       versionItems.push(versionItem);
     }
@@ -457,7 +460,7 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
     }
 
     q = `select created_at, version_label, status, sequence, parent_sequence,
-applied_at, source, diff_summary, preflight_result, preflight_result_created_at
+applied_at, source, diff_summary, preflight_result, preflight_result_created_at, git_commit_url
 from app_downstream_version
 where app_id = $1 and cluster_id = $3 and sequence > $2
 order by sequence desc`;
@@ -485,7 +488,8 @@ order by sequence desc`;
         diffSummary: row.diff_summary,
         releaseNotes: releaseNotes || "",
         preflightResult: row.preflight_result,
-        preflightResultCreatedAt: row.preflight_result_created_at
+        preflightResultCreatedAt: row.preflight_result_created_at,
+        commitUrl: row.git_commit_url || ""
       };
       versionItems.push(versionItem);
     }
@@ -545,7 +549,7 @@ order by sequence desc`;
 
     q = `select adv.created_at, adv.version_label, adv.status, adv.sequence,
 adv.parent_sequence, adv.applied_at, adv.source, adv.diff_summary, adv.preflight_result,
-adv.preflight_result_created_at, ado.is_error AS has_error
+adv.preflight_result_created_at, adv.git_commit_url, ado.is_error AS has_error
 from app_downstream_version as adv
 left join app_downstream_output as ado
 on adv.app_id = ado.app_id and adv.cluster_id = ado.cluster_id and adv.sequence = ado.downstream_sequence
@@ -578,7 +582,8 @@ order by adv.sequence desc`;
       diffSummary: row.diff_summary,
       releaseNotes: releaseNotes || "",
       preflightResult: row.preflight_result,
-      preflightResultCreatedAt: row.preflight_result_created_at
+      preflightResultCreatedAt: row.preflight_result_created_at,
+      commitUrl: row.git_commit_url || ""
     };
 
     return versionItem;

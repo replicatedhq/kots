@@ -138,7 +138,7 @@ class AppVersionHistory extends Component {
       return (
         <button
             className="btn primary green"
-            onClick={() => this.viewCommit(version)}
+            onClick={() => version.commitUrl && window.open(version.commitUrl, '_blank')}
           >
           View
         </button>
@@ -247,10 +247,6 @@ class AppVersionHistory extends Component {
         ))}
       </div>
     );
-  }
-
-  viewCommit = version => {
-    console.log(version);
   }
 
   deployVersion = async (version, force = false) => {
