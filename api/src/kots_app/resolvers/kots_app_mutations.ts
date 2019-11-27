@@ -197,11 +197,11 @@ export function KotsMutations(stores: Stores) {
     },
 
     async uploadKotsLicense(root: any, args: any, context: Context) {
+      const { value } = args;
+      const parsedLicense = yaml.safeLoad(value);
+
       try {
         context.requireSingleTenantSession();
-
-        const { value } = args;
-        const parsedLicense = yaml.safeLoad(value);
 
         const clusters = await stores.clusterStore.listAllUsersClusters();
         let downstream;
@@ -236,6 +236,7 @@ export function KotsMutations(stores: Stores) {
           isConfigurable: kotsApp.isAppConfigurable()
         }
       } catch(err) {
+        await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
         throw new ReplicatedError(err.message);
       }
     },

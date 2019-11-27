@@ -52,6 +52,7 @@ interface CreateAppMetadata {
 interface UploadLicenseBody {
   name: string;
   license: string;
+  appSlug: string;
 }
 
 interface UpdateAppBody {
@@ -164,6 +165,7 @@ export class KotsAPI {
 
     const kotsApp = await kotsAppFromLicenseData(body.license, body.name, downstream.title, request.app.locals.stores);
     if (!kotsApp) {
+      await request.app.locals.stores.kotsAppStore.updateFailedInstallState(body.appSlug);
       response.status(500);
       return {
         error: "failed to create app",
