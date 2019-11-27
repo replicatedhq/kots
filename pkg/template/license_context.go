@@ -1,6 +1,7 @@
 package template
 
 import (
+	"fmt"
 	"text/template"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -17,10 +18,10 @@ func (ctx LicenseCtx) FuncMap() template.FuncMap {
 	}
 }
 
-func (ctx LicenseCtx) licenseFieldValue(name string) interface{} {
+func (ctx LicenseCtx) licenseFieldValue(name string) string {
 	for key, entitlement := range ctx.License.Spec.Entitlements {
 		if key == name {
-			return entitlement.Value.Value()
+			return fmt.Sprintf("%s", entitlement.Value.Value())
 		}
 	}
 	return ""
