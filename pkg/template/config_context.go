@@ -50,6 +50,9 @@ type ItemValue struct {
 }
 
 func (i ItemValue) HasValue() bool {
+	if v, ok := i.Value.(string); ok {
+		return v != ""
+	}
 	return i.Value != nil
 }
 
@@ -61,6 +64,9 @@ func (i ItemValue) ValueStr() string {
 }
 
 func (i ItemValue) HasDefault() bool {
+	if v, ok := i.Default.(string); ok {
+		return v != ""
+	}
 	return i.Default != nil
 }
 
