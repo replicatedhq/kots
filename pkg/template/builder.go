@@ -143,8 +143,8 @@ func (b *Builder) BuildFuncMap() template.FuncMap {
 	return funcMap
 }
 
-func (b *Builder) GetTemplate(name, text string) (*template.Template, error) {
-	tmpl, err := template.New(name).Delims("{{repl ", "}}").Funcs(b.BuildFuncMap()).Parse(text)
+func (b *Builder) GetTemplate(name, text string, rdelim, ldelim string) (*template.Template, error) {
+	tmpl, err := template.New(name).Delims(rdelim, ldelim).Funcs(b.BuildFuncMap()).Parse(text)
 	if err != nil {
 		return nil, err
 	}
@@ -153,15 +153,27 @@ func (b *Builder) GetTemplate(name, text string) (*template.Template, error) {
 }
 
 func (b *Builder) RenderTemplate(name string, text string) (string, error) {
-	tmpl, err := b.GetTemplate(name, text)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get template")
+	delims := []struct {
+		rdelim string
+		ldelim string
+	}{
+		{"{{repl", "}}"},
+		{"repl{{", "}}"},
 	}
 
-	var contents bytes.Buffer
-	if err := tmpl.Execute(&contents, nil); err != nil {
-		return "", errors.Wrap(err, "failed to execute template")
+	curText := text
+	for _, d := range delims {
+		tmpl, err := b.GetTemplate(name, curText, d.rdelim, d.ldelim)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get template")
+		}
+
+		var contents bytes.Buffer
+		if err := tmpl.Execute(&contents, nil); err != nil {
+			return "", errors.Wrap(err, "failed to execute template")
+		}
+		curText = contents.String()
 	}
 
-	return contents.String(), nil
+	return curText, nil
 }

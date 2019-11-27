@@ -110,7 +110,7 @@ func TestBuildStrings(t *testing.T) {
 		},
 		strcase{
 			Name:     "Test ToUpper",
-			Template: `{{repl ToUpper "ABcd87-()"}}`,
+			Template: `repl{{ (ToUpper "ABcd87-()") }}`,
 			Expected: "ABCD87-()",
 		},
 		strcase{
@@ -125,7 +125,7 @@ func TestBuildStrings(t *testing.T) {
 		},
 		strcase{
 			Name:     "Test UrlEncode",
-			Template: `{{repl UrlEncode "?some url unsafe=%value"}}`,
+			Template: `repl{{ UrlEncode "?some url unsafe=%value"}}`,
 			Expected: "%3Fsome+url+unsafe%3D%25value",
 		},
 		strcase{
@@ -180,7 +180,7 @@ func TestBuildStrings(t *testing.T) {
 		},
 		uintcase{
 			Name:     "Test ParseUint",
-			Template: `{{repl ParseUint "15"}}`,
+			Template: `repl{{ ParseUint "15"}}`,
 			Expected: 15,
 		},
 		floatcase{
