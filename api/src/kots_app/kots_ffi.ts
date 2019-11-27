@@ -325,7 +325,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   }
 }
 
-export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp | undefined> {
+export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp> {
   const parsedLicense = yaml.safeLoad(licenseData);
   if (parsedLicense.apiVersion === "kots.io/v1beta1" && parsedLicense.kind === "License") {
     if (parsedLicense.spec.isAirgapSupported) {
@@ -344,6 +344,8 @@ export async function kotsAppFromLicenseData(licenseData: string, name: string, 
     const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
     await kotsFinalizeApp(kotsApp, downstreamName, stores);
     return kotsApp;
+  } else {
+    throw new ReplicatedError("Uploaded license file is invalid")
   }
 }
 

@@ -228,17 +228,12 @@ export function KotsMutations(stores: Stores) {
           /* no need to handle, rbac problem or not a path we can read registry */
         }
 
-        if (kotsApp) {
-          return {
-            hasPreflight: kotsApp.hasPreflight,
-            isAirgap: parsedLicense.spec.isAirgapSupported,
-            needsRegistry,
-            slug: kotsApp.slug,
-            isConfigurable: kotsApp.isAppConfigurable()
-          }
-        }
-        else {
-          throw new ReplicatedError("Uploaded license file is invalid");
+        return {
+          hasPreflight: kotsApp.hasPreflight,
+          isAirgap: parsedLicense.spec.isAirgapSupported,
+          needsRegistry,
+          slug: kotsApp.slug,
+          isConfigurable: kotsApp.isAppConfigurable()
         }
       } catch(err) {
         await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);

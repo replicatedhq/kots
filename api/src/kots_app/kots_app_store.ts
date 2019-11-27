@@ -1069,6 +1069,17 @@ order by adv.sequence desc`;
     return result.rows[0].id;
   }
 
+  async checkIsLicenseFailing(slug: string): Promise<boolean> {
+    const q = "select count(*) as count from app where slug = $1 and install_state = $2";
+    const v = [slug, "failed"];
+
+    const result = await this.pool.query(q, v);
+    if (result.rowCount === 0) {
+      throw new ReplicatedError(`Unable to find app for slug ${slug}`);
+    }
+    return parseInt(result.rows[0].count) > 0;
+  }
+
   async createKotsApp(name: string, upstreamURI: string, license: string, airgapEnabled: boolean, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
@@ -1089,6 +1100,11 @@ order by adv.sequence desc`;
       const vv = [
         slugProposal,
       ];
+
+      const isLicenseFailing = await this.checkIsLicenseFailing(slugProposal);
+      if (isLicenseFailing) {
+        throw new ReplicatedError("Already uploaded invalid license");
+      }
 
       const rr = await this.pool.query(qq, vv);
       if (parseInt(rr.rows[0].count) === 0) {
