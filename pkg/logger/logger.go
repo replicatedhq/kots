@@ -13,6 +13,7 @@ type Logger struct {
 	spinnerMsg    string
 	spinnerArgs   []interface{}
 	isSilent      bool
+	isVerbose     bool
 }
 
 func NewLogger() *Logger {
@@ -24,6 +25,13 @@ func (l *Logger) Silence() {
 		return
 	}
 	l.isSilent = true
+}
+
+func (l *Logger) Verbose() {
+	if l == nil {
+		return
+	}
+	l.isVerbose = true
 }
 
 func (l *Logger) Initialize() {
@@ -42,8 +50,18 @@ func (l *Logger) Finish() {
 	fmt.Println("")
 }
 
-func (l *Logger) Info(msg string, args ...interface{}) {
+func (l *Logger) Debug(msg string, args ...interface{}) {
 	if l == nil || l.isSilent {
+		return
+	}
+
+	fmt.Printf("    ")
+	fmt.Println(fmt.Sprintf(msg, args...))
+	fmt.Println("")
+}
+
+func (l *Logger) Info(msg string, args ...interface{}) {
+	if l == nil || l.isSilent || !l.isVerbose {
 		return
 	}
 

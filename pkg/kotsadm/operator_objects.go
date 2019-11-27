@@ -11,11 +11,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func operatorRole(namespace string) *rbacv1.Role {
-	role := &rbacv1.Role{
+func operatorRole(namespace string) *rbacv1.ClusterRole {
+	clusterRole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "Role",
+			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-role",
@@ -30,14 +30,14 @@ func operatorRole(namespace string) *rbacv1.Role {
 		},
 	}
 
-	return role
+	return clusterRole
 }
 
-func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
-	roleBinding := &rbacv1.RoleBinding{
+func operatorRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "RoleBinding",
+			Kind:       "CluserRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-rolebinding",
@@ -52,12 +52,12 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
+			Kind:     "ClusterRole",
 			Name:     "kotsadm-operator-role",
 		},
 	}
 
-	return roleBinding
+	return clusterRoleBinding
 }
 
 func operatorServiceAccount(namespace string) *corev1.ServiceAccount {

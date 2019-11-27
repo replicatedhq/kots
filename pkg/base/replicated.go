@@ -95,7 +95,7 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		log.Info("Failed to parse file while looking for config: %v", err)
+		log.Debug("Failed to parse file while looking for config: %v", err)
 		return nil
 	}
 
