@@ -77,7 +77,7 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error
 			return errors.Wrap(err, "failed to get role")
 		}
 
-		_, err := clientset.RbacV1().Roles(namespace).Create(operatorRole(namespace))
+		_, err := clientset.RbacV1().ClusterRoles().Create(operatorRole(namespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create role")
 		}
@@ -93,7 +93,7 @@ func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset
 			return errors.Wrap(err, "failed to get rolebinding")
 		}
 
-		_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorRoleBinding(namespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
 		}

@@ -2,6 +2,7 @@ package base
 
 import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -22,6 +23,7 @@ type OverlySimpleGVK struct {
 
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
