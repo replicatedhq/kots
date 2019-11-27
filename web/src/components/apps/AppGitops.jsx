@@ -123,7 +123,7 @@ class AppGitops extends Component {
     const clusterId = this.props.app.downstreams[0]?.cluster?.id;
     const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
     const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
-    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
 
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
@@ -181,7 +181,7 @@ class AppGitops extends Component {
     });
 
     const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
-    // const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
+    const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
 
     const gitUri = gitops?.uri;
     const deployKey = gitops?.deployKey;
@@ -189,6 +189,9 @@ class AppGitops extends Component {
     let addKeyUri = `${gitUri}/settings/keys/new`;
     if (isGitlab) {
       addKeyUri = `${gitUri}/-/settings/repository`;
+    } else if (isBitbucket) {
+      const owner = ownerRepo.split("/").length && ownerRepo.split("/")[0];
+      addKeyUri = `https://bitbucket.org/account/user/${owner}/ssh-keys/`;
     }
 
     if (this.props.app.downstreams.length !== 1) {

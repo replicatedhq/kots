@@ -88,7 +88,7 @@ class GitOpsDeploymentManager extends React.Component {
     const clusterId = firstApp.downstreams[0]?.cluster?.id;
     const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
     const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
-    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+    const serviceUri = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
 
     let gitOpsInput = new Object();
     gitOpsInput.provider = selectedService.value;
@@ -212,7 +212,7 @@ class GitOpsDeploymentManager extends React.Component {
 
     const isGitlab = selectedService?.value === "gitlab" || selectedService?.value === "gitlab_enterprise";
     const isBitbucket = selectedService?.value === "bitbucket" || selectedService?.value === "bitbucket_server";
-    const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.com" : "github.com";
+    const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
 
     switch (step.step) {
       case "setup":
