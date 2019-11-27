@@ -33,6 +33,17 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 		}
 	}
 
+	// Find the license
+	var license *kotsv1beta1.License
+	for _, c := range u.Files {
+		if c.Path == "userdata/license.yaml" {
+			maybeLicense := UnmarshalLicenseContent(c.Content, renderOptions.Log)
+			if maybeLicense != nil {
+				license = maybeLicense
+			}
+		}
+	}
+
 	baseFiles := []BaseFile{}
 
 	builder := template.Builder{}
@@ -44,6 +55,13 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 			return nil, errors.Wrap(err, "failed to create config context")
 		}
 		builder.AddCtx(configCtx)
+	}
+
+	if license != nil {
+		licenseCtx := template.LicenseCtx{
+			License: license,
+		}
+		builder.AddCtx(licenseCtx)
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -65,6 +83,21 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	}
 
 	return &base, nil
+}
+
+func UnmarshalLicenseContent(content []byte, log *logger.Logger) *kotsv1beta1.License {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		log.Info("Failed to parse file while looking for license: %v", err)
+		return nil
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
+		return obj.(*kotsv1beta1.License)
+	}
+
+	return nil
 }
 
 func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
