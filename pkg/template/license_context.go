@@ -21,7 +21,7 @@ func (ctx LicenseCtx) FuncMap() template.FuncMap {
 func (ctx LicenseCtx) licenseFieldValue(name string) string {
 	for key, entitlement := range ctx.License.Spec.Entitlements {
 		if key == name {
-			return fmt.Sprintf("%s", entitlement.Value.Value())
+			return fmt.Sprintf("%v", entitlement.Value.Value())
 		}
 	}
 	return ""
