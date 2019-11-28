@@ -30,6 +30,7 @@ type RewriteOptions struct {
 	License           *kotsv1beta1.License
 	ConfigValues      *kotsv1beta1.ConfigValues
 	ReportWriter      io.Writer
+	CopyImages        bool
 	RegistryEndpoint  string
 	RegistryUsername  string
 	RegistryPassword  string
@@ -78,52 +79,54 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	var images []image.Image
 	var objects []*k8sdoc.Doc
 
-	// Rewrite all images
-	writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
-		RootDir:      rewriteOptions.RootDir,
-		CreateAppDir: rewriteOptions.CreateAppDir,
-		ReportWriter: rewriteOptions.ReportWriter,
-		Log:          log,
-		SourceRegistry: registry.RegistryOptions{
-			Endpoint:      replicatedRegistryInfo.Registry,
-			ProxyEndpoint: replicatedRegistryInfo.Proxy,
-		},
-	}
-	if fetchOptions.License != nil {
-		writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
-		writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
-		writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
-	}
-	if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
-		return errors.Wrap(err, "failed to write upstream images")
-	}
+	if rewriteOptions.CopyImages {
+		writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
+			RootDir:      rewriteOptions.RootDir,
+			CreateAppDir: rewriteOptions.CreateAppDir,
+			ReportWriter: rewriteOptions.ReportWriter,
+			Log:          log,
+			SourceRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+		}
+		if fetchOptions.License != nil {
+			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
+			writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
+			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
+		}
+		if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
+			return errors.Wrap(err, "failed to write upstream images")
+		}
 
-	// If the request includes a rewrite image options host name, then also
-	// push the images
-	pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
-		RootDir:      rewriteOptions.RootDir,
-		ImagesDir:    imagesDirFromOptions(u, rewriteOptions),
-		CreateAppDir: rewriteOptions.CreateAppDir,
-		Log:          log,
-		ReplicatedRegistry: registry.RegistryOptions{
-			Endpoint:      replicatedRegistryInfo.Registry,
-			ProxyEndpoint: replicatedRegistryInfo.Proxy,
-		},
-		ReportWriter: rewriteOptions.ReportWriter,
-		DestinationRegistry: registry.RegistryOptions{
-			Endpoint:  rewriteOptions.RegistryEndpoint,
-			Namespace: rewriteOptions.RegistryNamespace,
-			Username:  rewriteOptions.RegistryUsername,
-			Password:  rewriteOptions.RegistryPassword,
-		},
-	}
-	if fetchOptions.License != nil {
-		pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
-		pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
-	}
-	rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to push upstream images")
+		// If the request includes a rewrite image options host name, then also
+		// push the images
+		pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
+			RootDir:      rewriteOptions.RootDir,
+			ImagesDir:    imagesDirFromOptions(u, rewriteOptions),
+			CreateAppDir: rewriteOptions.CreateAppDir,
+			Log:          log,
+			ReplicatedRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			ReportWriter: rewriteOptions.ReportWriter,
+			DestinationRegistry: registry.RegistryOptions{
+				Endpoint:  rewriteOptions.RegistryEndpoint,
+				Namespace: rewriteOptions.RegistryNamespace,
+				Username:  rewriteOptions.RegistryUsername,
+				Password:  rewriteOptions.RegistryPassword,
+			},
+		}
+		if fetchOptions.License != nil {
+			pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
+			pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
+		}
+		rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to push upstream images")
+		}
+		images = rewrittenImages
 	}
 
 	findObjectsOptions := upstream.FindObjectsWithImagesOptions{
@@ -155,7 +158,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "create pull secret")
 	}
-	images = rewrittenImages
 	objects = affectedObjects
 
 	renderOptions := base.RenderOptions{
