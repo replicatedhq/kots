@@ -4,12 +4,14 @@ import sshpk from "sshpk";
 import { Context } from "../../context";
 import path from "path";
 import tmp from "tmp";
+import fs from "fs";
 import yaml from "js-yaml";
 import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteImagesInVersion, kotsAppDownloadUpdates } from "../kots_ffi";
+import { uploadUpdate } from "../../controllers/kots/KotsAPI";
+import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteVersion, kotsAppDownloadUpdates } from "../kots_ffi";
 import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
@@ -273,8 +275,12 @@ export function KotsMutations(stores: Stores) {
           if (downstreams.length > 0) {
             const tmpDir = tmp.dirSync();
             try {
-              const newVersionArchive = path.join(tmpDir.name, "archive.tar.gz");
+              const outputArchive = path.join(tmpDir.name, "output.tar.gz");
               const app = await stores.kotsAppStore.getApp(appId);
+
+              const inputArchive = path.join(tmpDir.name, "input.tar.gz");
+              fs.writeFileSync(inputArchive, await app.getArchive(""+(app.currentSequence!)));
+
               const registryInfo: KotsAppRegistryDetails = {
                 registryHostname: hostname,
                 registryUsername: username,
@@ -283,7 +289,15 @@ export function KotsMutations(stores: Stores) {
                 lastSyncedAt: "",
                 namespace: namespace,
               }
-              await kotsRewriteImagesInVersion(app, downstreams, registryInfo, newVersionArchive, stores);
+              await kotsRewriteVersion(inputArchive, downstreams, registryInfo, true, outputArchive, stores);
+
+              await stores.kotsAppStore.setImageRewriteStatus("Generating new version", "running");
+
+              const tarGzBuffer = fs.readFileSync(outputArchive);
+              await uploadUpdate(stores, app.slug, tarGzBuffer, "Registry Change")
+
+              await stores.kotsAppStore.clearImageRewriteStatus();
+
             } finally {
               tmpDir.removeCallback();
             }
