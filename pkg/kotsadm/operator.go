@@ -71,7 +71,7 @@ func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error
 }
 
 func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().Roles(namespace).Get("kotsadm-operator-role", metav1.GetOptions{})
+	_, err := clientset.RbacV1().ClusterRoles().Get("kotsadm-operator-role", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get role")
@@ -87,7 +87,7 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error
 }
 
 func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().RoleBindings(namespace).Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
+	_, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get rolebinding")
