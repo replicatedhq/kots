@@ -33,6 +33,8 @@ const GoString = Struct({
   n: "longlong"
 });
 
+const GoBool = "bool";
+
 function kots() {
   return ffi.Library("/lib/kots.so", {
     TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
@@ -43,7 +45,7 @@ function kots() {
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
-    RewriteImagesInVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
+    RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool]],
     TemplateConfig: [GoString, [GoString, GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
@@ -710,16 +712,13 @@ export async function getLatestLicense(licenseData: string): Promise<string> {
   }
 }
 
-export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: string[], registryInfo: KotsAppRegistryDetails, outputFile: string, stores: Stores): Promise<string> {
+export async function kotsRewriteVersion(archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores): Promise<string> {
   const tmpDir = tmp.dirSync();
   try {
     const k8sNamespace = getK8sNamespace();
 
     const statusServer = new StatusServer();
     await statusServer.start(tmpDir.name);
-
-    const archive = path.join(tmpDir.name, "archive.tar.gz");
-    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
 
     const socketParam = new GoString();
     socketParam["p"] = statusServer.socketFilename;
@@ -742,23 +741,12 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
     k8sNamespaceParam["p"] = k8sNamespace;
     k8sNamespaceParam["n"] = k8sNamespace.length;
 
-    const registryParam = new GoString();
-    registryParam["p"] = registryInfo.registryHostname;
-    registryParam["n"] = registryInfo.registryHostname.length;
+    const registryJson = JSON.stringify(registryInfo)
+    const registryJsonParam = new GoString();
+    registryJsonParam["p"] = registryJson;
+    registryJsonParam["n"] = registryJson.length;
 
-    const usernamedParam = new GoString();
-    usernamedParam["p"] = registryInfo.registryUsername;
-    usernamedParam["n"] = registryInfo.registryUsername.length;
-
-    const passwordParam = new GoString();
-    passwordParam["p"] = registryInfo.registryPassword;
-    passwordParam["n"] = registryInfo.registryPassword.length;
-
-    const namespaceParam = new GoString();
-    namespaceParam["p"] = registryInfo.namespace;
-    namespaceParam["n"] = registryInfo.namespace.length;
-
-    kots().RewriteImagesInVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryParam, usernamedParam, passwordParam, namespaceParam);
+    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages);
 
     let errrorMessage = "";
 
@@ -784,61 +772,10 @@ export async function kotsRewriteImagesInVersion(app: KotsApp, downstreams: stri
       throw new ReplicatedError(errrorMessage);
     }
 
-    await stores.kotsAppStore.setImageRewriteStatus("Generating new version", "running");
-
-    const params = await Params.getParams();
-    const buffer = fs.readFileSync(outputFile);
-    const newSequence = app.currentSequence! + 1;
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, `${newSequence}.tar.gz`);
-    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
-
-    const installationSpec = await extractInstallationSpecFromTarball(buffer);
-    const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
-    const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
-    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
-    const appSpec = await extractAppSpecFromTarball(buffer);
-    const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
-    const appTitle = await extractAppTitleFromTarball(buffer);
-    const appIcon = await extractAppIconFromTarball(buffer);
-    const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
-
-    await stores.kotsAppStore.createMidstreamVersion(
-      app.id,
-      newSequence,
-      installationSpec.versionLabel,
-      installationSpec.releaseNotes,
-      installationSpec.cursor,
-      installationSpec.encryptionKey,
-      supportBundleSpec,
-      analyzersSpec,
-      preflightSpec,
-      appSpec,
-      kotsAppSpec,
-      kotsAppLicense,
-      appTitle,
-      appIcon
-    );
-
-    const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
-    for (const clusterId of clusterIds) {
-      const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
-
-      let commitUrl = "";
-      if (downstreamGitops.enabled) {
-        const commitMessage = `Updates to the upstream of ${app.name}`;
-        commitUrl = await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
-      }
-
-      const diffSummary = await getDiffSummary(app);
-      await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary, commitUrl);
-    }
-
-    await stores.kotsAppStore.clearImageRewriteStatus();
-
     return "";
 
   } finally {
-    // tmpDir.removeCallback();
+    tmpDir.removeCallback();
   }
 }
 

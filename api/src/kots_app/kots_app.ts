@@ -3,7 +3,7 @@ import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
-import { kotsTemplateConfig, kotsEncryptString } from "./kots_ffi";
+import { kotsTemplateConfig, kotsEncryptString, kotsRewriteVersion } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
@@ -245,6 +245,7 @@ export class KotsApp {
   }
 
   async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[], createNewVersion: boolean): Promise<void> {
+    const tmpDir = tmp.dirSync();
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
@@ -259,6 +260,8 @@ export class KotsApp {
 
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const encryptionKey = await stores.kotsAppStore.getAppEncryptionKey(appId, sequence);
+
+      const downstreams = await stores.kotsAppStore.listDownstreamsForApp(appId);
 
       for (let g = 0; g < updatedConfigGroups.length; g++) {
         const group = updatedConfigGroups[g];
@@ -289,17 +292,28 @@ export class KotsApp {
       files.files[configValuesPath] = yaml.safeDump(parsedConfigValues);
 
       const bundlePacker = new TarballPacker();
-      const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
+      const inputTgzBuffer: Buffer = await bundlePacker.packFiles(files);
 
+      const inputArchive = path.join(tmpDir.name, "input.tar.gz");
+      const outputArchive = path.join(tmpDir.name, "output.tar.gz");
+
+      fs.writeFileSync(inputArchive, inputTgzBuffer);
+
+      const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
+      await kotsRewriteVersion(inputArchive, downstreams, registrySettings, false, outputArchive, stores);
+
+      const outputTgzBuffer = fs.readFileSync(outputArchive);
       if (!createNewVersion) {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
-        await putObject(params, objectStorePath, tarGzBuffer, params.shipOutputBucket);
+        await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
       } else {
-        await uploadUpdate(stores, slug, tarGzBuffer, "Config Change");
+        await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }
     } catch(err) {
       throw new ReplicatedError(`Error while updating app config ${err}`);
+    } finally {
+      tmpDir.removeCallback();
     }
   }
 
