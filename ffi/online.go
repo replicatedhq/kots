@@ -92,8 +92,8 @@ func PullFromLicense(socket string, licenseData string, downstream string, outpu
 	}()
 }
 
-//export RewriteImagesInVersion
-func RewriteImagesInVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registry, username, password, namespace string) {
+//export RewriteVersion
+func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages bool) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -105,6 +105,18 @@ func RewriteImagesInVersion(socket, fromArchivePath, outputFile, downstreamsStr,
 		defer func() {
 			statusClient.end(ffiResult)
 		}()
+
+		registryInfo := struct {
+			Host      string `json:"registryHostname"`
+			Username  string `json:"registryUsername"`
+			Password  string `json:"registryPassword"`
+			Namespace string `json:"namespace"`
+		}{}
+		if err := json.Unmarshal([]byte(registryJson), &registryInfo); err != nil {
+			fmt.Printf("failed to unmarshal registry info: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
 
 		donwstreams := []string{}
 		err = json.Unmarshal([]byte(downstreamsStr), &donwstreams)
@@ -186,10 +198,11 @@ func RewriteImagesInVersion(socket, fromArchivePath, outputFile, downstreamsStr,
 			ConfigValues:      configValues,
 			K8sNamespace:      k8sNamespace,
 			ReportWriter:      statusClient.getOutputWriter(),
-			RegistryEndpoint:  registry,
-			RegistryUsername:  username,
-			RegistryPassword:  password,
-			RegistryNamespace: namespace,
+			CopyImages:        copyImages,
+			RegistryEndpoint:  registryInfo.Host,
+			RegistryUsername:  registryInfo.Username,
+			RegistryPassword:  registryInfo.Password,
+			RegistryNamespace: registryInfo.Namespace,
 		}
 
 		if err := rewrite.Rewrite(options); err != nil {
