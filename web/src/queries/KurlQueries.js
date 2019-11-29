@@ -4,6 +4,7 @@ export const kurlRaw = `
   query kurl {
     kurl {
       ha
+      isKurlEnabled
       nodes {
         name
         isConnected
