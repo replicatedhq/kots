@@ -12,5 +12,5 @@ publish-latest: IMAGE_TAG = alpha
 publish-latest: publish
 
 .PHONY: publish-release
-publish-release: IMAGE_TAG = ${GIT_TAG}
+publish-release: IMAGE_TAG = ${BUILDKITE_TAG}
 publish-release: publish
