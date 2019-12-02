@@ -163,7 +163,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 						{
 							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "kotsadm-minio",
+							Name:            "kotsadm-minio-init",
 							Command: []string{
 								"/bin/sh",
 								"-ce",
