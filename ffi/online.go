@@ -148,7 +148,7 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 		}
 
 		installationFilePath := filepath.Join(tmpRoot, "upstream", "userdata", "installation.yaml")
-		beforeCursor, err := readCursorFromPath(installationFilePath)
+		installation, err := loadInstallationFromPath(installationFilePath)
 		if err != nil {
 			fmt.Printf("failed to read cursor file: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
@@ -189,7 +189,7 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 			RootDir:           tmpRoot,
 			UpstreamURI:       fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
 			UpstreamPath:      filepath.Join(tmpRoot, "upstream"),
-			LocalCursor:       beforeCursor,
+			Installation:      installation,
 			Downstreams:       donwstreams,
 			Silent:            true,
 			CreateAppDir:      false,

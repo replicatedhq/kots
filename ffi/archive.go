@@ -25,25 +25,31 @@ func extractArchive(rootPath, fromArchivePath string) (*archiver.TarGz, error) {
 }
 
 func readCursorFromPath(installationFilePath string) (string, error) {
-	_, err := os.Stat(installationFilePath)
-	if os.IsNotExist(err) {
-		return "", nil
-	}
+	installation, err := loadInstallationFromPath(installationFilePath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to open file")
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to read installation file")
 	}
+	return installation.Spec.UpdateCursor, nil
+}
 
+func loadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
 	installationData, err := ioutil.ReadFile(installationFilePath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read update installation file")
+		return nil, errors.Wrap(err, "failed to read installation file")
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(installationData), nil, nil)
+	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to devode installation data")
+		return nil, errors.Wrap(err, "failed to devode installation data")
 	}
 
-	installation := obj.(*kotsv1beta1.Installation)
-	return installation.Spec.UpdateCursor, nil
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.Installation), nil
 }

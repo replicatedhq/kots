@@ -9,15 +9,16 @@ import (
 )
 
 type FetchOptions struct {
-	RootDir       string
-	UseAppDir     bool
-	HelmRepoName  string
-	HelmRepoURI   string
-	HelmOptions   []string
-	LocalPath     string
-	License       *kotsv1beta1.License
-	ConfigValues  *kotsv1beta1.ConfigValues
-	CurrentCursor string
+	RootDir             string
+	UseAppDir           bool
+	HelmRepoName        string
+	HelmRepoURI         string
+	HelmOptions         []string
+	LocalPath           string
+	License             *kotsv1beta1.License
+	ConfigValues        *kotsv1beta1.ConfigValues
+	CurrentCursor       string
+	CurrentVersionLabel string
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
@@ -42,7 +43,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, fetchOptions.CurrentVersionLabel)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
