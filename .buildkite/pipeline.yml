@@ -76,10 +76,8 @@ steps:
       queue: root-docker
 
   - label: "release-minio"
-    env:
-      GIT_TAG: "${BUILDKITE_TAG}"
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C minio publish-release; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make -C minio publish-release; fi
     agents:
       root-docker: "true"
       queue: root-docker
