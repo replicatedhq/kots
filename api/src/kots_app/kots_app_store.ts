@@ -247,7 +247,10 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
   }
 
   async createDownstream(appId: string, downstreamName: string, clusterId: string): Promise<void> {
-    const q = `insert into app_downstream (app_id, downstream_name, cluster_id) values ($1, $2, $3)`;
+    const q = `insert into app_downstream (app_id, downstream_name, cluster_id)
+    values ($1, $2, $3)
+    ON CONFLICT(app_id, cluster_id) DO UPDATE SET
+    downstream_name = EXCLUDED.downstream_name`;
     const v = [
       appId,
       downstreamName,
@@ -275,7 +278,19 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
   ): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key,
         supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`;
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      ON CONFLICT(app_id, sequence) DO UPDATE SET
+      created_at = EXCLUDED.created_at,
+      version_label = EXCLUDED.version_label,
+      release_notes = EXCLUDED.release_notes,
+      update_cursor = EXCLUDED.update_cursor,
+      encryption_key = EXCLUDED.encryption_key,
+      supportbundle_spec = EXCLUDED.supportbundle_spec,
+      analyzer_spec = EXCLUDED.analyzer_spec,
+      preflight_spec = EXCLUDED.preflight_spec,
+      app_spec = EXCLUDED.app_spec,
+      kots_app_spec = EXCLUDED.kots_app_spec,
+      kots_license = EXCLUDED.kots_license`;
     const v = [
       id,
       sequence,
@@ -1069,17 +1084,6 @@ order by adv.sequence desc`;
     return result.rows[0].id;
   }
 
-  async checkIsLicenseFailing(slug: string): Promise<boolean> {
-    const q = "select count(*) as count from app where slug = $1 and install_state = $2";
-    const v = [slug, "failed"];
-
-    const result = await this.pool.query(q, v);
-    if (result.rowCount === 0) {
-      throw new ReplicatedError(`Unable to find app for slug ${slug}`);
-    }
-    return parseInt(result.rows[0].count) > 0;
-  }
-
   async createKotsApp(name: string, upstreamURI: string, license: string, airgapEnabled: boolean, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
@@ -1100,11 +1104,6 @@ order by adv.sequence desc`;
       const vv = [
         slugProposal,
       ];
-
-      const isLicenseFailing = await this.checkIsLicenseFailing(slugProposal);
-      if (isLicenseFailing) {
-        throw new ReplicatedError("Already uploaded invalid license");
-      }
 
       const rr = await this.pool.query(qq, vv);
       if (parseInt(rr.rows[0].count) === 0) {
@@ -1226,12 +1225,16 @@ order by adv.sequence desc`;
       throw new Error("Could not find any kots app in getAirgapInstallStatus()");
     }
 
-    const taskStatus = await this.getApiTaskStatus("image-rewrite");
+    const taskStatus = await this.getApiTaskStatus("airgap-install");
 
     return {
       installStatus: result.rows[0].install_state,
       currentMessage: taskStatus.currentMessage,
     };
+  }
+
+  async clearAirgapInstallInProgress(): Promise<void> {
+    await this.clearApiTaskStatus("airgap-install");
   }
 
   async setAirgapInstallStatus(msg: string, status: string): Promise<void> {
