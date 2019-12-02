@@ -21,12 +21,12 @@ type RewriteOptions struct {
 	RootDir           string
 	UpstreamURI       string
 	UpstreamPath      string
-	LocalCursor       string
 	Downstreams       []string
 	K8sNamespace      string
 	Silent            bool
 	CreateAppDir      bool
 	ExcludeKotsKinds  bool
+	Installation      *kotsv1beta1.Installation
 	License           *kotsv1beta1.License
 	ConfigValues      *kotsv1beta1.ConfigValues
 	ReportWriter      io.Writer
@@ -47,10 +47,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.Initialize()
 
 	fetchOptions := &upstream.FetchOptions{
-		RootDir:       rewriteOptions.RootDir,
-		LocalPath:     rewriteOptions.UpstreamPath,
-		CurrentCursor: rewriteOptions.LocalCursor,
-		License:       rewriteOptions.License,
+		RootDir:             rewriteOptions.RootDir,
+		LocalPath:           rewriteOptions.UpstreamPath,
+		CurrentCursor:       rewriteOptions.Installation.Spec.UpdateCursor,
+		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
+		License:             rewriteOptions.License,
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

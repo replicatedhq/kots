@@ -68,14 +68,14 @@ type ChannelRelease struct {
 	CreatedAt       string `json:"createdAt"`
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor string, license *kotsv1beta1.License, channelSequence string) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor, versionLabel string, license *kotsv1beta1.License, channelSequence string) ([]Update, error) {
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, versionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []Update{{Cursor: parsedLocalRelease.UpdateCursor}}, nil
+		return []Update{{Cursor: parsedLocalRelease.UpdateCursor, VersionLabel: versionLabel}}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -108,15 +108,14 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor string, li
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
-		parsedLocalRelease.UpdateCursor = updateCursor
 
 		release = parsedLocalRelease
 		if updateCursor != "" && release.UpdateCursor != updateCursor {
@@ -275,10 +274,11 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 	return license, nil
 }
 
-func readReplicatedAppFromLocalPath(localPath, localCursor string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath, localCursor, versionLabel string) (*Release, error) {
 	release := Release{
 		Manifests:    make(map[string][]byte),
 		UpdateCursor: localCursor,
+		VersionLabel: versionLabel,
 	}
 
 	err := filepath.Walk(localPath,
