@@ -49,7 +49,7 @@ type ApplicationSpec struct {
 	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
 	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
 	AllowRollback    bool              `json:"allowRollback,omitempty"`
-	StatusInformers  []StatusInformer  `json:"statusInformers,omitempty"`
+	StatusInformers  []string          `json:"statusInformers,omitempty"`
 	Graphs           []MetricGraph     `json:"graphs,omitempty"`
 	KubectlVersion   string            `json:"kubectlVersion,omitempty"`
 }
@@ -59,12 +59,6 @@ type ApplicationPort struct {
 	ServicePort    int    `json:"servicePort"`
 	LocalPort      int    `json:"localPort,omitempty"`
 	ApplicationURL string `json:"applicationUrl,omitempty"`
-}
-
-type StatusInformer struct {
-	Kind      string `json:"kind"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
 }
 
 type MetricGraph struct {
