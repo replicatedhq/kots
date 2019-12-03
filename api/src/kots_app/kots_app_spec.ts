@@ -4,7 +4,7 @@ export interface ApplicationSpec {
   ports?: ApplicationPort[];
   releaseNotes?: string;
   allowRollback?: boolean;
-  statusInformers?: StatusInformer[];
+  statusInformers?: string[];
   graphs?: MetricGraph[];
   kubectlVersion?: string;
 }
@@ -14,12 +14,6 @@ export interface ApplicationPort {
   servicePort: number;
   localPort?: number;
   applicationUrl?: string;
-}
-
-export interface StatusInformer {
-  kind: string;
-  name: string;
-  namespace?: string;
 }
 
 export interface MetricGraph {

@@ -2,6 +2,7 @@ package appstate
 
 import (
 	"context"
+	"time"
 
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,9 @@ func runServiceController(
 	informer := cache.NewSharedInformer(
 		listwatch,
 		&corev1.Service{},
-		0, //Skip resync,
+		// NOTE: services rely on endpoint status as well so unless we add additional
+		// informers, we have to resync more frequently.
+		10*time.Second,
 	)
 
 	eventHandler := NewServiceEventHandler(
