@@ -2,9 +2,9 @@ package appstate
 
 import (
 	"context"
+	"time"
 
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
-	corev1 "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,7 +37,9 @@ func runIngressController(
 	informer := cache.NewSharedInformer(
 		listwatch,
 		&extensions.Ingress{},
-		0, //Skip resync,
+		// NOTE: ingresses rely on endpoint and service status as well so unless we add
+		// additional informers, we have to resync more frequently.
+		10*time.Second,
 	)
 
 	eventHandler := NewIngressEventHandler(
@@ -86,11 +88,6 @@ func (h *ingressEventHandler) ObjectDeleted(obj interface{}) {
 		return
 	}
 	h.resourceStateCh <- makeIngressResourceState(r, types.StateMissing)
-}
-
-func (h *ingressEventHandler) getEndpoints(namespace, name string) *corev1.Endpoints {
-	endpoints, _ := h.clientset.CoreV1().Endpoints(namespace).Get(name, metav1.GetOptions{})
-	return endpoints
 }
 
 func (h *ingressEventHandler) cast(obj interface{}) *extensions.Ingress {

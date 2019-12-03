@@ -2,6 +2,7 @@ package appstate
 
 import (
 	"context"
+	"time"
 
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +36,7 @@ func runPersistentVolumeClaimController(
 	informer := cache.NewSharedInformer(
 		listwatch,
 		&corev1.PersistentVolumeClaim{},
-		0, //Skip resync,
+		time.Minute,
 	)
 
 	eventHandler := NewPersistentVolumeClaimEventHandler(
