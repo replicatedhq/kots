@@ -11,6 +11,14 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+type RoleScope string
+
+const (
+	None      = ""
+	Cluster   = "cluster"
+	Namespace = "namespace"
+)
+
 func getOperatorYAML(namespace, autoCreateClusterToken string) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -55,11 +63,12 @@ func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset
 }
 
 func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureOperatorRole(namespace, clientset); err != nil {
+	scope, err := ensureOperatorRole(namespace, clientset)
+	if err != nil {
 		return errors.Wrap(err, "failed to ensure operator role")
 	}
 
-	if err := ensureOperatorRoleBinding(namespace, clientset); err != nil {
+	if err := ensureOperatorRoleBinding(scope, namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator role binding")
 	}
 
@@ -70,36 +79,43 @@ func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error
 	return nil
 }
 
-func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().ClusterRoles().Get("kotsadm-operator-role", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get role")
-		}
+func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) (RoleScope, error) {
+	// we'd like to create a cluster scope role, but will settle for namespace scope...
 
-		_, err := clientset.RbacV1().ClusterRoles().Create(operatorRole(namespace))
-		if err != nil {
-			return errors.Wrap(err, "failed to create role")
-		}
+	_, err := clientset.RbacV1().ClusterRoles().Create(operatorClusterRole(namespace))
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return Cluster, nil
+	}
+	if !kuberneteserrors.IsForbidden(err) {
+		return None, errors.Wrap(err, "failed to create cluster role")
 	}
 
-	return nil
+	_, err = clientset.RbacV1().Roles(namespace).Create(operatorRole(namespace))
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return Namespace, nil
+	}
+
+	return None, errors.Wrap(err, "failed to create role")
 }
 
-func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get rolebinding")
+func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kubernetes.Clientset) error {
+	if scope == Cluster {
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(namespace))
+		if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "failed to create cluster rolebinding")
 		}
-
-		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorRoleBinding(namespace))
-		if err != nil {
-			return errors.Wrap(err, "failed to create rolebinding")
-		}
+		return nil
 	}
 
-	return nil
+	if scope == Namespace {
+		_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
+		if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "failed to create rolebinding")
+		}
+		return nil
+	}
+
+	return errors.Errorf("failed to create rolebinding for scope %q", scope)
 }
 
 func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {

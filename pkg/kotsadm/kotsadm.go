@@ -157,27 +157,26 @@ func Deploy(deployOptions DeployOptions) error {
 
 	log := logger.NewLogger()
 
-	namespace, err := clientset.CoreV1().Namespaces().Get(deployOptions.Namespace, metav1.GetOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		namespace = &corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: deployOptions.Namespace,
-			},
-		}
-
-		log.ChildActionWithSpinner("Creating namespace")
-		_, err := clientset.CoreV1().Namespaces().Create(namespace)
-		if err != nil {
-			return errors.Wrap(err, "failed to create namespace")
-		}
-		log.FinishChildSpinner()
-	} else if err != nil {
-		return errors.Wrap(err, "failed to get namespace")
+	namespace := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: deployOptions.Namespace,
+		},
 	}
+
+	log.ChildActionWithSpinner("Creating namespace")
+	_, err = clientset.CoreV1().Namespaces().Create(namespace)
+	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+		// Can't create namespace, but this might be a role restriction and namespace might already exist.
+		_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(metav1.ListOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to verify access to namespace")
+		}
+	}
+	log.FinishChildSpinner()
 
 	if deployOptions.AutoCreateClusterToken == "" {
 		deployOptions.AutoCreateClusterToken = uuid.New().String()
