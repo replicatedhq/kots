@@ -182,8 +182,8 @@ export class AnalyzerInsights extends React.Component {
                               <span className={`icon analysis tile-icon`}></span>
                           }
                         </div>
-                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium"}>{tile.detail}</p>
-                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold u-marginTop--5" : "u-color--tuna u-fontSize--normal u-fontWeight--bold u-marginTop--5"}>{tile.primary}</p>
+                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold" : "u-color--tuna u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
+                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
                       </div>
                     </div>
                   ))}
