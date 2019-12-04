@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func operatorRole(namespace string) *rbacv1.ClusterRole {
+func operatorClusterRole(namespace string) *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -33,7 +33,7 @@ func operatorRole(namespace string) *rbacv1.ClusterRole {
 	return clusterRole
 }
 
-func operatorRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
+func operatorClusterRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -58,6 +58,55 @@ func operatorRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
 	}
 
 	return clusterRoleBinding
+}
+
+func operatorRole(namespace string) *rbacv1.Role {
+	role := &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-operator-role",
+			Namespace: namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     metav1.Verbs{"*"},
+			},
+		},
+	}
+
+	return role
+}
+
+func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
+	roleBinding := &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-operator-rolebinding",
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "kotsadm-operator",
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     "kotsadm-operator-role",
+		},
+	}
+
+	return roleBinding
 }
 
 func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
