@@ -17,6 +17,7 @@ type FetchOptions struct {
 	LocalPath           string
 	License             *kotsv1beta1.License
 	ConfigValues        *kotsv1beta1.ConfigValues
+	Airgap              *kotsv1beta1.Airgap
 	CurrentCursor       string
 	CurrentVersionLabel string
 }
@@ -43,7 +44,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, fetchOptions.CurrentVersionLabel)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, pickVersionLabel(fetchOptions))
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
@@ -53,4 +54,11 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)
+}
+
+func pickVersionLabel(fetchOptions *FetchOptions) string {
+	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.VersionLabel != "" {
+		return fetchOptions.Airgap.Spec.VersionLabel
+	}
+	return fetchOptions.CurrentVersionLabel
 }

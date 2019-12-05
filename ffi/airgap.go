@@ -75,6 +75,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 			Downstreams:         []string{downstream},
 			LocalPath:           releaseDir,
 			LicenseFile:         licenseFile,
+			AirgapRoot:          airgapDir,
 			ExcludeKotsKinds:    true,
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,
