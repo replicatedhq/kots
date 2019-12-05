@@ -3,9 +3,9 @@ package cli
 import (
 	"os"
 	"os/signal"
-	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -29,12 +29,12 @@ func AdminConsoleCmd() *cobra.Command {
 
 			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"), time.Second*5)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to wait for web")
 			}
 
 			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to port forward")
 			}
 			defer close(stopCh)
 
@@ -52,7 +52,7 @@ func AdminConsoleCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 
 	cmd.AddCommand(AdminConsoleUpgradeCmd())

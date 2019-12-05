@@ -2,7 +2,7 @@ package cli
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -11,7 +11,7 @@ func ExpandDir(input string) string {
 		return input
 	}
 
-	return path.Join(homeDir(), input[1:])
+	return filepath.Join(homeDir(), input[1:])
 }
 
 func homeDir() string {
@@ -19,4 +19,11 @@ func homeDir() string {
 		return h
 	}
 	return os.Getenv("USERPROFILE")
+}
+
+func defaultKubeConfig() string {
+	if len(os.Getenv("KUBECONFIG")) > 0 {
+		return os.Getenv("KUBECONFIG")
+	}
+	return filepath.Join(homeDir(), ".kube", "config")
 }

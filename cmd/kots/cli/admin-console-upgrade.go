@@ -1,8 +1,7 @@
 package cli
 
 import (
-	"path/filepath"
-
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -30,7 +29,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			log := logger.NewLogger()
 			log.ActionWithoutSpinner("Upgrading Admin Console")
 			if err := kotsadm.Upgrade(upgradeOptions); err != nil {
-				return err
+				return errors.Wrap(err, "failed to upgrade")
 			}
 
 			log.ActionWithoutSpinner("")
@@ -42,7 +41,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 
 	return cmd
