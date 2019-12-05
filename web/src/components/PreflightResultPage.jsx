@@ -115,7 +115,7 @@ class PreflightResultPage extends Component {
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
-              className="btn primary u-marginBottom--15"
+              className="btn primary blue u-marginBottom--15"
               onClick={() => this.deployKotsDownstream(false)}
             >
               Continue
@@ -125,7 +125,7 @@ class PreflightResultPage extends Component {
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
-              className="btn primary u-marginBottom--15"
+              className="btn primary blue u-marginBottom--15"
               onClick={this.showSkipModal}
             >
               Skip
