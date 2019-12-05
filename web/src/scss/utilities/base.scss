@@ -112,6 +112,20 @@ code {
   }
 }
 
+.PreflightMessageRow {
+  h2 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  p {
+    font-size: 14px; 
+    font-weight: 500;
+  }
+  ul {
+    display: block;
+  }
+}
+
 /*
 Apply this class to any icon using main_spritesheet. From there
 all you need to do is supply a `width: [value]` `height: [value]`
