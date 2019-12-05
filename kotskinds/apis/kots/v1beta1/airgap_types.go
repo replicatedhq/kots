@@ -20,40 +20,39 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// InstallationSpec defines the desired state of InstallationSpec
-type InstallationSpec struct {
-	UpdateCursor  string `json:"updateCursor,omitempty"`
-	VersionLabel  string `json:"versionLabel,omitempty"`
-	ReleaseNotes  string `json:"releaseNotes,omitempty"`
-	EncryptionKey string `json:"encryptionKey,omitempty"`
+// AirgapSpec defines the desired state of AirgapSpec
+type AirgapSpec struct {
+	VersionLabel string `json:"versionLabel,omitempty"`
+	ReleaseNotes string `json:"releaseNotes,omitempty"`
+	Signature    []byte `json:"signature,omitempty"`
 }
 
-// InstallationStatus defines the observed state of Installation
-type InstallationStatus struct {
+// AirgapStatus defines the observed state of Airgap
+type AirgapStatus struct {
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// Installation is the Schema for the installation API
+// Airgap is the Schema for the airgap API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type Installation struct {
+type Airgap struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InstallationSpec   `json:"spec,omitempty"`
-	Status InstallationStatus `json:"status,omitempty"`
+	Spec   AirgapSpec   `json:"spec,omitempty"`
+	Status AirgapStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// InstallationList contains a list of Installations
-type InstallationList struct {
+// AirgapList contains a list of Airgaps
+type AirgapList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Installation `json:"items"`
+	Items           []Airgap `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Installation{}, &InstallationList{})
+	SchemeBuilder.Register(&Airgap{}, &AirgapList{})
 }

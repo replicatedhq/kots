@@ -27,6 +27,10 @@ type FakeKotsV1beta1 struct {
 	*testing.Fake
 }
 
+func (c *FakeKotsV1beta1) Airgaps(namespace string) v1beta1.AirgapInterface {
+	return &FakeAirgaps{c, namespace}
+}
+
 func (c *FakeKotsV1beta1) Applications(namespace string) v1beta1.ApplicationInterface {
 	return &FakeApplications{c, namespace}
 }

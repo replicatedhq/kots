@@ -17,6 +17,8 @@ limitations under the License.
 
 package v1beta1
 
+type AirgapExpansion interface{}
+
 type ApplicationExpansion interface{}
 
 type ConfigExpansion interface{}
