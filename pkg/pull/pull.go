@@ -176,9 +176,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
 				writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
-			if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
+
+			if pullOptions.RewriteImageOptions.Host != "" {
+				writeUpstreamImageOptions.DestRegistry = registry.RegistryOptions{
+					Endpoint:  pullOptions.RewriteImageOptions.Host,
+					Namespace: pullOptions.RewriteImageOptions.Namespace,
+					Username:  pullOptions.RewriteImageOptions.Username,
+					Password:  pullOptions.RewriteImageOptions.Password,
+				}
+			}
+
+			newImages, err := u.CopyUpstreamImages(writeUpstreamImageOptions)
+			if err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
 			}
+			images = newImages
 		}
 
 		// If the request includes a rewrite image options host name, then also
@@ -205,9 +217,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
 				pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
-			rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
-			if err != nil {
-				return "", errors.Wrap(err, "failed to push upstream images")
+
+			// only run the TagAndPushImagesFromFiles code if the "copy directly" code hasn't already run
+			var rewrittenImages []image.Image
+			if images == nil {
+				rewrittenImages, err = u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
+				if err != nil {
+					return "", errors.Wrap(err, "failed to push upstream images")
+				}
 			}
 
 			findObjectsOptions := upstream.FindObjectsWithImagesOptions{
@@ -238,7 +255,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			if err != nil {
 				return "", errors.Wrap(err, "create pull secret")
 			}
-			images = rewrittenImages
+
+			if rewrittenImages != nil {
+				images = rewrittenImages
+			}
 			objects = affectedObjects
 		}
 	} else if fetchOptions.License != nil {

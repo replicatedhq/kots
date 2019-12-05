@@ -74,3 +74,52 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		})
 	}
 }
+
+func TestDestImageName(t *testing.T) {
+	registryOps := registry.RegistryOptions{
+		Endpoint:  "localhost:5000",
+		Namespace: "somebigbank",
+	}
+
+	type args struct {
+		registry registry.RegistryOptions
+		srcImage string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "ECR style image",
+			args: args{
+				registry: registryOps,
+				srcImage: "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo:v0.0.1",
+			},
+			want: fmt.Sprintf("%s/%s/myrepo:v0.0.1", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "Quay image with tag",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian:0.1",
+			},
+			want: fmt.Sprintf("%s/%s/debian:0.1", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
+			name: "Quay image with digest",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian@sha256:mytestdigest",
+			},
+			want: fmt.Sprintf("%s/%s/debian@sha256:mytestdigest", registryOps.Endpoint, registryOps.Namespace),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DestImageName(tt.args.registry, tt.args.srcImage); got != tt.want {
+				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

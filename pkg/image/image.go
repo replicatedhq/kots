@@ -3,6 +3,7 @@ package image
 import (
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -42,4 +43,57 @@ func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (k
 	image.NewName = path.Join(newImageNameParts...)
 
 	return image, nil
+}
+
+func DestImageName(registry registry.RegistryOptions, srcImage string) string {
+	imageParts := strings.Split(srcImage, "/")
+	lastPart := imageParts[len(imageParts)-1] // last part
+
+	image := fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
+
+	return image
+}
+
+func buildImageAlts(destRegistry registry.RegistryOptions, image string) ([]kustomizeimage.Image, error) {
+	imgParts := strings.Split(image, "/")
+	if len(imgParts) == 1 {
+		imgParts = append([]string{"docker.io", "library"}, imgParts...)
+	}
+	imageInfo, err := ImageInfoFromFile(destRegistry, imgParts)
+	if err != nil {
+		return nil, errors.Wrapf(err, "info from %s", image)
+	}
+
+	newName := DestImageName(destRegistry, image)
+
+	var newImages []kustomizeimage.Image
+	firstImage := kustomizeimage.Image{
+		Name:    image,
+		NewName: newName,
+		NewTag:  imageInfo.NewTag,
+		Digest:  imageInfo.Digest,
+	}
+	newImages = append(newImages, firstImage)
+
+	if strings.HasPrefix(image, "docker.io/library/") {
+		image = strings.TrimPrefix(image, "docker.io/library/")
+		newImages = append(newImages, kustomizeimage.Image{
+			Name:    image,
+			NewName: newName,
+			NewTag:  imageInfo.NewTag,
+			Digest:  imageInfo.Digest,
+		})
+	}
+
+	if strings.HasSuffix(image, ":latest") {
+		image = strings.TrimSuffix(image, ":latest")
+		newImages = append(newImages, kustomizeimage.Image{
+			Name:    image,
+			NewName: newName,
+			NewTag:  imageInfo.NewTag,
+			Digest:  imageInfo.Digest,
+		})
+	}
+
+	return newImages, nil
 }
