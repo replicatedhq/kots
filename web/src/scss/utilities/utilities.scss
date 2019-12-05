@@ -92,6 +92,13 @@
 .u-borderBottom--gray { border-bottom: 1px solid #DFDFDF; }
 .u-borderLeft--gray { border-left: 1px solid #DFDFDF; }
 
+.u-border--gray.darker,
+.u-borderTop--gray.darker,
+.u-borderRight--gray.darker,
+.u-borderBottom--gray.darker,
+.u-borderLeft--gray.darker {
+  border-color: #C4C7CA;
+}
 /* Filter classes */
 
 .u-filter--grayscale { filter: grayscale(100%); }

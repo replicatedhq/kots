@@ -1,5 +1,26 @@
 $cell-width: 140px;
 
+.VersionHistoryDeploymentRow {
+  padding: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #C4C7CA;
+  border-top: none;
+  border-right: none;
+  border-left: none;
+
+  &.active-deploy-row {
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-color: #44bb66;
+
+    &.failed {
+      border-color: #BC4752;
+    }
+  }
+  
+}
+
 .upstream-version-box-wrapper {
   background-color: #F5F8FC;
   border-radius: 4px;

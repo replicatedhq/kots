@@ -100,10 +100,10 @@ class AppVersionHistory extends Component {
 
   renderVersionSequence = version => {
     return (
-      <div className="flex flex-column">
+      <div className="flex">
         {version.sequence}
         {version.releaseNotes &&
-          <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}>Release notes</span>
+          <span className="replicated-link u-marginLeft--5" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}>Release notes</span>
         }
       </div>
     );
@@ -115,8 +115,7 @@ class AppVersionHistory extends Component {
     const diffSummary = this.getVersionDiffSummary(version);
     return (
       <div>
-        {version.source}
-        {diffSummary && (
+        {diffSummary ? (
           diffSummary.filesChanged > 0 ?
             <div
               className="DiffSummary u-cursor--pointer"
@@ -138,7 +137,7 @@ class AppVersionHistory extends Component {
             <div className="DiffSummary">
               <span className="files">No changes</span>
             </div>
-        )}
+        ) : <span>&nbsp;</span>}
       </div>
     );
   }
@@ -221,7 +220,7 @@ class AppVersionHistory extends Component {
     }
     const clusterSlug = downstream.cluster?.slug;
     return (
-      <div className="flex flex-column">
+      <div className="flex alignItems--center" style={{ position: "relative", top: "-2px" }}>
         <div className="flex alignItems--center">
           <div
             data-tip={`${version.title}-${version.sequence}`}
@@ -248,12 +247,10 @@ class AppVersionHistory extends Component {
             <Loader size="20" />
           </span>
           : app.hasPreflight && version.status === "pending" &&
-          <Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`}>
-            <span className="link" style={{ fontSize: 12 }}>View preflights</span>
-          </Link>
+          <Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>
         }
         {version.status === "failed" &&
-          <span className="link" style={{ fontSize: 12, marginTop: 2 }} onClick={() => this.handleViewLogs(version)}>View logs</span>
+          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version)}>View logs</span>
         }
       </div>
     );
@@ -630,45 +627,74 @@ class AppVersionHistory extends Component {
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
-              {/* Active downstream */}
+              {/* 
+                Active downstream 
+                 TODO: Edit config button
+              */}
               {!gitopsEnabled && currentDownstreamVersion &&
-                <fieldset className={`DeployedDownstreamVersion ${currentDownstreamVersion.status}`}>
-                  <legend className="u-marginLeft--20 u-color--tuna u-fontWeight--bold u-paddingLeft--5 u-paddingRight--5">
-                    Deployed Version{currentDownstreamVersion.status === "failed" && " (Failed)"}
-                  </legend>
-                  <table className="DownstreamVersionsTable full-width">
-                    <thead>
-                      <tr key="header">
-                        <th>Environment</th>
-                        <th>Received</th>
-                        <th>Upstream</th>
-                        <th width={gitopsEnabled ? "" : "11%"}>Sequence</th>
-                        <th width="17%">Source</th>
-                        <th>Deployed</th>
-                        <th>Logs</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>{changeCase.title(downstream.name)}</td>
-                        <td>
-                          {moment(currentDownstreamVersion.createdOn).format("MM/DD/YY")}<br />
-                          <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.createdOn).format("hh:mm a")}</span>
-                        </td>
-                        <td>{currentDownstreamVersion.title}</td>
-                        <td width={gitopsEnabled ? "" : "11%"}>{this.renderVersionSequence(currentDownstreamVersion)}</td>
-                        <td width="17%">{currentDownstreamVersion.source}</td>
-                        <td>
-                          {moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY")}<br />
-                          <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.deployedAt).format("hh:mm a")}</span>
-                        </td>
-                        <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
-                        <td>{app.isConfigurable && <Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link>}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </fieldset>
+                <div className="TableDiff--Wrapper u-marginBottom--30">
+                  <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10 u-lineHeight--normal">Deployed version</p>
+                  <div className={`VersionHistoryDeploymentRow active-deploy-row ${currentDownstreamVersion.status} flex flex-auto`}>
+                    <div className="flex-column flex1">
+                      <div>
+                        <p className="u-fontSize--normal u-color--dustyGray">Environment: <span className="u-fontWeight--bold u-color--tuna">{changeCase.title(downstream.name)}</span></p>
+                        <p className="u-fontSize--small u-marginTop--5 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(currentDownstreamVersion.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
+                      </div>
+                      <div className="flex flex1 u-marginTop--15">
+                        <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.title}</span></p>
+                        <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className="u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(currentDownstreamVersion)}</span></div>
+                      </div>
+                    </div>
+                    <div className="flex-column flex1">
+                      <div>
+                        <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.source}</span></p>
+                        <div className="u-fontSize--small u-marginTop--5 u-color--dustyGray">{this.renderSourceAndDiff(currentDownstreamVersion)}</div>
+                      </div>
+                      <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15">Status:<span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(currentDownstreamVersion) : this.renderVersionStatus(currentDownstreamVersion)}</span></div>
+                    </div>
+                    <div className="flex-column flex-auto alignItems--flexEnd">
+                      <button className="btn secondary" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View deploy logs</button>
+                      <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15">Deployed: <span className="u-fontWeight--bold u-color--tuna">{moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY @ hh:mm a")}</span></p>
+                    </div>
+                  </div>
+                </div>
+                // <fieldset className={`DeployedDownstreamVersion ${currentDownstreamVersion.status}`}>
+                //   <legend className="u-marginLeft--20 u-color--tuna u-fontWeight--bold u-paddingLeft--5 u-paddingRight--5">
+                //     Deployed Version{currentDownstreamVersion.status === "failed" && " (Failed)"}
+                //   </legend>
+                //   <table className="DownstreamVersionsTable full-width">
+                //     <thead>
+                //       <tr key="header">
+                //         <th>Environment</th>
+                //         <th>Received</th>
+                //         <th>Upstream</th>
+                //         <th width={gitopsEnabled ? "" : "11%"}>Sequence</th>
+                //         <th width="17%">Source</th>
+                //         <th>Deployed</th>
+                //         <th>Logs</th>
+                //         <th />
+                //       </tr>
+                //     </thead>
+                //     <tbody>
+                //       <tr>
+                //         <td>{changeCase.title(downstream.name)}</td>
+                //         <td>
+                //           {moment(currentDownstreamVersion.createdOn).format("MM/DD/YY")}<br />
+                //           <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.createdOn).format("hh:mm a")}</span>
+                //         </td>
+                //         <td>{currentDownstreamVersion.title}</td>
+                //         <td width={gitopsEnabled ? "" : "11%"}>{this.renderVersionSequence(currentDownstreamVersion)}</td>
+                //         <td width="17%">{currentDownstreamVersion.source}</td>
+                //         <td>
+                //           {moment(currentDownstreamVersion.deployedAt).format("MM/DD/YY")}<br />
+                //           <span className="u-fontSize--small u-marginLeft--5">{moment(currentDownstreamVersion.deployedAt).format("hh:mm a")}</span>
+                //         </td>
+                //         <td><button className="btn secondary u-marginRight--20" onClick={() => this.handleViewLogs(currentDownstreamVersion)}>View</button></td>
+                //         <td>{app.isConfigurable && <Link className="link" to={`/app/${match.params.slug}/config`}>Edit config</Link>}</td>
+                //       </tr>
+                //     </tbody>
+                //   </table>
+                // </fieldset>
               }
 
               {/* Diffing releases */}
@@ -696,8 +722,39 @@ class AppVersionHistory extends Component {
               }
 
               <div className="TableDiff--Wrapper flex-column flex1">
+                <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10 u-lineHeight--normal u-borderBottom--gray darker">All versions</p>
                 {/* Downstream version history */}
-                {versionHistory.length &&
+                {versionHistory.length && versionHistory.map((version) => {
+                  // const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
+                  return (
+                    <div className={`VersionHistoryDeploymentRow ${version.status} flex flex-auto`} key={version.sequence}>
+                      <div className="flex-column flex1">
+                        <div>
+                          <p className="u-fontSize--normal u-color--dustyGray">Environment: <span className="u-fontWeight--bold u-color--tuna">{changeCase.title(downstream.name)}</span></p>
+                          <p className="u-fontSize--small u-marginTop--5 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
+                        </div>
+                        <div className="flex flex1 u-marginTop--15">
+                          <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.title}</span></p>
+                          <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className="u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(version)}</span></div>
+                        </div>
+                      </div>
+                      <div className="flex-column flex1">
+                        <div>
+                          <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{version.source}</span></p>
+                          <div className="u-fontSize--small u-marginTop--5 u-color--dustyGray">{this.renderSourceAndDiff(version)}</div>
+                        </div>
+                        <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
+                      </div>
+                      <div className="flex-column flex-auto alignItems--flexEnd">
+                        <div>
+                          {this.renderVersionAction(version)}
+                        </div>
+                        <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15">Deployed: <span className="u-fontWeight--bold u-color--tuna">{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY @ hh:mm a") : "N/A"}</span></p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* {versionHistory.length &&
                   <table className={classNames("DownstreamVersionsTable u-position--relative", { "u-display--none": showDiffOverlay })}>
                     <thead className="separator">
                       <tr key="header">
@@ -748,7 +805,7 @@ class AppVersionHistory extends Component {
                       })}
                     </tbody>
                   </table>
-                }
+                } */}
 
                 {/* Diff overlay */}
                 {showDiffOverlay &&
