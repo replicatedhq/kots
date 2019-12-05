@@ -26,6 +26,7 @@ import (
 
 type KotsV1beta1Interface interface {
 	RESTClient() rest.Interface
+	AirgapsGetter
 	ApplicationsGetter
 	ConfigsGetter
 	ConfigValuesesGetter
@@ -36,6 +37,10 @@ type KotsV1beta1Interface interface {
 // KotsV1beta1Client is used to interact with features provided by the kots.io group.
 type KotsV1beta1Client struct {
 	restClient rest.Interface
+}
+
+func (c *KotsV1beta1Client) Airgaps(namespace string) AirgapInterface {
+	return newAirgaps(c, namespace)
 }
 
 func (c *KotsV1beta1Client) Applications(namespace string) ApplicationInterface {
