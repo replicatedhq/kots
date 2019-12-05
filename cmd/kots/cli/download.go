@@ -2,7 +2,6 @@ package cli
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/download"
@@ -51,7 +50,7 @@ func DownloadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace to download from")
 	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")

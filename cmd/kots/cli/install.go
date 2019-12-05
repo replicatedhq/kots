@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
@@ -47,7 +46,7 @@ func InstallCmd() *cobra.Command {
 
 			rootDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to create temp dir")
 			}
 			defer os.RemoveAll(rootDir)
 
@@ -57,7 +56,7 @@ func InstallCmd() *cobra.Command {
 			if namespace == "" {
 				enteredNamespace, err := promptForNamespace(upstream)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to prompt for namespace")
 				}
 
 				namespace = enteredNamespace
@@ -88,19 +87,19 @@ func InstallCmd() *cobra.Command {
 
 			canPull, err := pull.CanPullUpstream(upstream, pullOptions)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to check upstream")
 			}
 
 			if canPull {
 				if _, err := pull.Pull(upstream, pullOptions); err != nil {
-					return err
+					return errors.Wrap(err, "failed to pull app")
 				}
 			}
 
 			if !v.GetBool("exclude-admin-console") {
 				applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to pull app metadata")
 				}
 
 				deployOptions := kotsadm.DeployOptions{
@@ -117,7 +116,7 @@ func InstallCmd() *cobra.Command {
 
 				log.ActionWithoutSpinner("Deploying Admin Console")
 				if err := kotsadm.Deploy(deployOptions); err != nil {
-					return err
+					return errors.Wrap(err, "failed to deploy")
 				}
 			}
 
@@ -137,7 +136,7 @@ func InstallCmd() *cobra.Command {
 			if v.GetString("registry-endpoint") != "" {
 				registryUser, registryPass, err := registry.LoadAuthForRegistry(v.GetString("registry-endpoint"))
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to load registry auth info")
 				}
 				uploadOptions.RegistryOptions.Username = registryUser
 				uploadOptions.RegistryOptions.Password = registryPass
@@ -158,12 +157,12 @@ func InstallCmd() *cobra.Command {
 			// port forward
 			podName, err := k8sutil.WaitForWeb(namespace, time.Minute*3)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to wait for web")
 			}
 
 			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to forward port")
 			}
 			defer close(stopCh)
 
@@ -186,7 +185,7 @@ func InstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")

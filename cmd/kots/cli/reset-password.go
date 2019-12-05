@@ -2,7 +2,6 @@ package cli
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -44,23 +43,23 @@ func ResetPasswordCmd() *cobra.Command {
 
 			bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 10)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to create encrypt password")
 			}
 
 			cfg, err := config.GetConfig()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to load config")
 			}
 
 			clientset, err := kubernetes.NewForConfig(cfg)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to create k8s client")
 			}
 
 			existingSecret, err := clientset.CoreV1().Secrets(args[0]).Get("kotsadm-password", metav1.GetOptions{})
 			if err != nil {
 				if !kuberneteserrors.IsNotFound(err) {
-					return err
+					return errors.Wrap(err, "failed to lookup secret")
 				}
 
 				newSecret := &corev1.Secret{
@@ -79,14 +78,14 @@ func ResetPasswordCmd() *cobra.Command {
 
 				_, err := clientset.CoreV1().Secrets(args[0]).Create(newSecret)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to create secret")
 				}
 			} else {
 				existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
 
 				_, err := clientset.CoreV1().Secrets(args[0]).Update(existingSecret)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "failed to update secret")
 				}
 			}
 
@@ -95,7 +94,7 @@ func ResetPasswordCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 
 	return cmd
 }

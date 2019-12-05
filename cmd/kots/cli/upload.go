@@ -2,7 +2,6 @@ package cli
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/upload"
@@ -44,7 +43,7 @@ func UploadCmd() *cobra.Command {
 
 			stopCh, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to port forward")
 			}
 			defer close(stopCh)
 
@@ -56,7 +55,7 @@ func UploadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", filepath.Join(homeDir(), ".kube", "config"), "the kubeconfig to use")
+	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace to upload to")
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
