@@ -34,7 +34,7 @@ class PreflightResultPage extends Component {
       await this.props.deployKotsVersion(preflightResultData.appSlug, sequence, preflightResultData.clusterSlug);
 
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
   }
@@ -86,8 +86,13 @@ class PreflightResultPage extends Component {
           <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
         <div className="flex1 flex u-overflow--auto">
-          <div className="PreflightChecks--wrapper flex u-paddingTop--30 u-overflow--hidden">
-            <div className="u-minWidth--full u-minHeight--full">
+          <div className="PreflightChecks--wrapper flex flex-column u-paddingTop--30 u-overflow--hidden">
+            {this.props.history.location.pathname.includes("version-history") &&
+            <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={() => this.props.history.goBack()}>
+              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+                Back
+            </div>}
+            <div className="u-minWidth--full u-minHeight--full u-marginTop--20">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
@@ -122,16 +127,16 @@ class PreflightResultPage extends Component {
             </button>
           </div>
         ) : (
-          <div className="flex-auto flex justifyContent--flexEnd">
-            <button
-              type="button"
-              className="btn primary blue u-marginBottom--15"
-              onClick={this.showSkipModal}
-            >
-              Skip
+            <div className="flex-auto flex justifyContent--flexEnd">
+              <button
+                type="button"
+                className="btn primary blue u-marginBottom--15"
+                onClick={this.showSkipModal}
+              >
+                Skip
             </button>
-          </div>
-        )}
+            </div>
+          )}
 
         <Modal
           isOpen={showSkipModal}
