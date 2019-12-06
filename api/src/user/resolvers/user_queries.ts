@@ -29,7 +29,13 @@ export function UserQueries(stores: Stores) {
       }
     },
 
-    async validateRegistryInfo(root: any, {endpoint, username, password, org}: any, context: Context): Promise<String> {
+    async validateRegistryInfo(root: any, {slug, endpoint, username, password, org}: any, context: Context): Promise<String> {
+      if (password === stores.kotsAppStore.getPasswordMask()) {
+        const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+        const details = await stores.kotsAppStore.getAppRegistryDetails(appId);
+        password = details.registryPassword;
+      }
+
       const errorText = await kotsTestRegistryCredentials(endpoint, username, password, org);
       return errorText;
     },

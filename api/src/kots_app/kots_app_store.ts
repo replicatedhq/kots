@@ -825,7 +825,7 @@ order by adv.sequence desc`;
     await this.pool.query(qq, vv);
   }
 
-  async getAppRegistryDetails(appId: string): Promise<KotsAppRegistryDetails> {
+  async getAppRegistryDetails(appId: string, maskPassword?: boolean): Promise<KotsAppRegistryDetails> {
     const q = `select registry_hostname, registry_username, registry_password, registry_password_enc, namespace, last_registry_sync from app where id = $1`;
     const v = [
       appId,
@@ -839,7 +839,15 @@ order by adv.sequence desc`;
     await this.migrationEncryptRegistryCredentials(appId, regInfo);
     await this.decryptRegistryCredentials(appId, regInfo);
 
+    if (maskPassword) {
+      regInfo.registryPassword = this.getPasswordMask();
+    }
+
     return regInfo
+  }
+
+  getPasswordMask(): string {
+    return "***HIDDEN***";
   }
 
   async decryptRegistryCredentials(appId: string, regInfo: KotsAppRegistryDetails) {
@@ -888,7 +896,16 @@ order by adv.sequence desc`;
     let q: string;
     let v: any;
 
-    if (this.params.apiEncryptionKey) {
+    if (password === this.getPasswordMask()) {
+      q = `update app set registry_hostname = $1, registry_username = $2, registry_password = NULL, namespace = $3, last_registry_sync = $4 where id = $5`;
+      v = [
+        hostname,
+        username,
+        namespace,
+        new Date(),
+        appId,
+      ];
+    } else if (this.params.apiEncryptionKey) {
       const passwordEnc = await kotsEncryptString(this.params.apiEncryptionKey, password);
       q = `update app set registry_hostname = $1, registry_username = $2, registry_password = NULL, registry_password_enc = $3, namespace = $4, last_registry_sync = $5 where id = $6`;
       v = [

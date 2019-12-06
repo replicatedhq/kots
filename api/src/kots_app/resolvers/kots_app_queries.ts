@@ -110,7 +110,7 @@ export function KotsQueries(stores: Stores, params: Params) {
     async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails | {}> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await context.getApp(appId);
-      const details = await stores.kotsAppStore.getAppRegistryDetails(app.id);
+      const details = await stores.kotsAppStore.getAppRegistryDetails(app.id, true);
       if (!details.registryHostname) {
         return {}
       }

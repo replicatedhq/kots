@@ -39,7 +39,7 @@ export const Query = `
     getKotsDownstreamOutput(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsDownstreamOutput
     templateConfigGroups(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): [KotsConfigGroup]
 
-    validateRegistryInfo(endpoint: String, username: String, password: String, org: String): String!
+    validateRegistryInfo(slug: String, endpoint: String, username: String, password: String, org: String): String!
 
     listKotsSupportBundles(kotsSlug: String!): [SupportBundle]
     listSupportBundles(watchSlug: String!): [SupportBundle]

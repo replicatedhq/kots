@@ -66,6 +66,7 @@ class UploadAirgapBundle extends React.Component {
     });
 
     if (showRegistry) {
+      const { slug } = this.props.match.params;
       if (isEmpty(this.state.registryDetails.hostname)) {
         this.setState({
           fileUploading: false,
@@ -78,6 +79,7 @@ class UploadAirgapBundle extends React.Component {
       const validated = await this.props.client.query({
         query: validateRegistryInfo,
         variables: {
+          slug: slug,
           endpoint: this.state.registryDetails.hostname,
           username: this.state.registryDetails.username,
           password: this.state.registryDetails.password,
