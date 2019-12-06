@@ -71,9 +71,11 @@ class AirgapRegistrySettings extends Component {
       testMessage: "",
     });
 
+    const { slug } = this.props.app;
     this.props.client.query({
       query: validateRegistryInfo,
       variables: {
+        slug: slug,
         endpoint: this.state.hostname,
         username: this.state.username,
         password: this.state.password,
