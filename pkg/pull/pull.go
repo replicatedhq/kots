@@ -28,6 +28,7 @@ type PullOptions struct {
 	Downstreams         []string
 	LocalPath           string
 	LicenseFile         string
+	AirgapRoot          string
 	ConfigFile          string
 	UpdateCursor        string
 	ExcludeKotsKinds    bool
@@ -130,6 +131,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 		fetchOptions.ConfigValues = config
+	}
+	if pullOptions.AirgapRoot != "" {
+		airgap, err := findAirgapMetaInDir(pullOptions.AirgapRoot)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to parse license from file")
+		}
+		fetchOptions.Airgap = airgap
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -409,6 +417,44 @@ func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 	config := decoded.(*kotsv1beta1.ConfigValues)
 
 	return config, nil
+}
+
+func findAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
+	files, err := ioutil.ReadDir(root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read airgap directory content")
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		contents, err := ioutil.ReadFile(filepath.Join(root, file.Name()))
+		if err != nil {
+			// TODO: log
+			continue
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		decoded, gvk, err := decode(contents, nil, nil)
+		if err != nil {
+			// TODO: log
+			continue
+		}
+
+		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Airgap" {
+			continue
+		}
+
+		airgap := decoded.(*kotsv1beta1.Airgap)
+		return airgap, nil
+	}
+
+	return nil, nil
 }
 
 func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) string {
