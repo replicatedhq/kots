@@ -62,9 +62,9 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 				return err
 			}
 
-			newImagesSubset, err := cooyImagesBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, savedImages)
+			newImagesSubset, err := copyImagesBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, savedImages)
 			if err != nil {
-				return errors.Wrap(err, "failed to extract images")
+				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
 
 			newImages = append(newImages, newImagesSubset...)
@@ -165,7 +165,7 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func cooyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, savedImages map[string]bool) ([]kustomizeimage.Image, error) {
+func copyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, savedImages map[string]bool) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {
@@ -177,7 +177,7 @@ func cooyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOpti
 			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter)
 			if err != nil {
 				log.FinishChildSpinner()
-				return errors.Wrap(err, "failed to transfer image")
+				return errors.Wrapf(err, "failed to transfer image %s", image)
 			}
 
 			if newImage != nil {
@@ -231,7 +231,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 
 	isPrivate, err := isPrivateImage(image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if image is private: %s", image)
+		return nil, errors.Wrap(err, "failed to check if image is private")
 	}
 
 	sourceImage := image
@@ -242,7 +242,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		}
 		rewritten, err := rewritePrivateImage(srcRegistry, image, appSlug)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to rewrite private image %s", image)
+			return nil, errors.Wrap(err, "failed to rewrite private image")
 		}
 
 		sourceImage = rewritten
@@ -260,9 +260,9 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		Password: destRegistry.Password,
 	}
 
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", DestImageName(destRegistry, image)))
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", DestRef(destRegistry, image)))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse dest image name %s", DestImageName(destRegistry, image))
+		return nil, errors.Wrapf(err, "failed to parse dest image name %s", DestRef(destRegistry, image))
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{

@@ -6,7 +6,9 @@ import (
 
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 func Test_ImageNameFromNameParts(t *testing.T) {
@@ -75,7 +77,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	}
 }
 
-func TestDestImageName(t *testing.T) {
+func TestDestRef(t *testing.T) {
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -117,8 +119,184 @@ func TestDestImageName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := DestImageName(tt.args.registry, tt.args.srcImage); got != tt.want {
+			if got := DestRef(tt.args.registry, tt.args.srcImage); got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_buildImageAlts(t *testing.T) {
+	tests := []struct {
+		name         string
+		destRegistry registry.RegistryOptions
+		image        string
+		want         []kustomizeimage.Image
+	}{
+		{
+			name: "naked image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "redis",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "latest",
+					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "naked tagged image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "redis:v1",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "naked contentAddressableSha image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somesmallcorp",
+			},
+			image: "redis@sha256:mytestdigest",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "redis",
+					NewName: "localhost:5000/somesmallcorp/redis",
+					NewTag:  "",
+					Digest:  "mytestdigest",
+				},
+			},
+		},
+		{
+			name: "tagged image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "library/redis:v1",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "quay.io tagged image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "quay.io/library/redis:v1",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "quay.io/library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "ported registry tagged image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "example.com:5000/library/redis:v1",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "example.com:5000/library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "ported registry untagged image",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "example.com:5000/library/redis",
+			want: []kustomizeimage.Image{
+				{
+					Name:    "example.com:5000/library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "latest",
+					Digest:  "",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got, err := buildImageAlts(tt.destRegistry, tt.image)
+			req.NoError(err)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_stripImageTag(t *testing.T) {
+	tests := []struct {
+		name  string
+		image string
+		want  string
+	}{
+		{
+			name:  "untagged image",
+			image: "myimage",
+			want:  "myimage",
+		},
+		{
+			name:  "untagged image on ported registry",
+			image: "example.com:5000/myimage",
+			want:  "example.com:5000/myimage",
+		},
+		{
+			name:  "tagged image",
+			image: "myimage:abc",
+			want:  "myimage",
+		},
+		{
+			name:  "tagged image on ported registry",
+			image: "example.com:5000/myimage:abc",
+			want:  "example.com:5000/myimage",
+		},
+		{
+			name:  "digest image",
+			image: "myimage@sha256:abc",
+			want:  "myimage",
+		},
+		{
+			name:  "digest image on ported registry",
+			image: "example.com:5000/myimage@sha256:abc",
+			want:  "example.com:5000/myimage",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stripImageTag(tt.image); got != tt.want {
+				t.Errorf("stripImageTag() = %v, want %v", got, tt.want)
 			}
 		})
 	}
