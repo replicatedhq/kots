@@ -1,5 +1,43 @@
 $cell-width: 140px;
 
+.VersionHistoryDeploymentRow {
+  padding: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #C4C7CA;
+  border-top: none;
+  border-right: none;
+  border-left: none;
+
+  &.active-deploy-row {
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-color: #44bb66;
+
+    &.failed {
+      border-color: #BC4752;
+    }
+  }
+
+  .DiffSummary {
+    font-size: 12px;
+    margin-top: 5px;
+  
+    .files {
+      color: #9B9B9B;
+    }
+  
+    .lines-added {
+      color: #44bb66;
+    }
+  
+    .lines-removed {
+      color: #BC4752;
+    }
+  }
+  
+}
+
 .upstream-version-box-wrapper {
   background-color: #F5F8FC;
   border-radius: 4px;
@@ -148,106 +186,31 @@ $cell-width: 140px;
 .DiffOverlay {
   width: calc(100% + 2px);
   background: white;
-}
-
-.DownstreamVersionsTable {
-  width: 100%;
-  table-layout: fixed;
-
-  &.full-width {
-    width: 100%;
-  }
-
-  thead {
-    width: 100%;
-
-    &.separator {
-      border-bottom: 1px black solid;
-    }
-
-    tr {
-      width: 100%;
-
-      th {
-        color: black;
-        padding: 12px;
-        font-weight: bold;
-        text-align: left;
-      }
-    }
-  }
-
-  tbody {
-    width: 100%;
-
-    tr {
-      width: 100%;
-  
-      td {
-        color: black;
-        padding: 12px;
-        vertical-align: middle;
-
-        .DiffSummary {
-          font-size: 12px;
-          margin-top: 4px;
-        
-          .files {
-            color: black;
-          }
-        
-          .lines-added {
-            color: green;
-          }
-        
-          .lines-removed {
-            color: red;
-          }
-        }
-      }
-
-      .link {
-        font-size: 14px;
-        text-decoration: underline;
-        color: #4471B5;
-        cursor: pointer;
-      }
-    }
-  }
-}
-
-.DeployedDownstreamVersion {
-  width: 95%;
-  max-width: 1000px;
-  border: 1px #44bb66 solid;
-  border-radius: 8px;
-  margin-bottom: 42px;
-  margin-top: 12px;
-
-  &.failed {
-    border: 1px red solid;
-  }
+  position: absolute;
 }
 
 .overlay {
+  user-select: none;
   cursor: pointer;
+  a, button {
+    pointer-events: none;
+  }
 }
 
 .overlay.selected {
   background: rgba(51, 122, 183, .1);
-  border: solid 1px #337AB7;
 }
 
 .checkbox {
   align-self: center;
   width: 16px;
   height: 16px;
-  border: solid 1px #337AB7;
+  border: solid 1px #326DE6;
   border-radius: 3px;
 }
 
 .checkbox.checked {
-  background-color: #337AB7;
+  background-color: #326DE6;
   background-image: url("../../../images/main_spritesheet.svg");
   background-position: 1px -431px;
 }
