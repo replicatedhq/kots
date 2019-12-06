@@ -3,7 +3,7 @@ import classNames from "classnames";
 export default class Loader extends React.Component {
 
   static defaultProps = {
-    color: "#44bb66"
+    color: "#326DE6"
   }
 
   render() {
