@@ -79,6 +79,12 @@ export const updateAppConfig = gql`
   }
 `;
 
+export const updateDownstreamsStatus = gql`
+  mutation updateDownstreamsStatus($slug: String!, $sequence: Int!, $status: String!) {
+    updateDownstreamsStatus(slug: $slug, sequence: $sequence, status: $status)
+  }
+`;
+
 export const updateKotsApp = gql`
   mutation updateKotsApp($appId: String!, $appName: String, $iconUri: String) {
     updateKotsApp(appId: $appId, appName: $appName, iconUri: $iconUri)

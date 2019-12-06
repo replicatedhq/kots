@@ -407,6 +407,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     const appIcon = await extractAppIconFromTarball(buffer);
     const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
     kotsApp.hasPreflight = !!preflightSpec;
+    kotsApp.currentSequence = 0;
 
     await stores.kotsAppStore.createMidstreamVersion(
       kotsApp.id,
@@ -424,9 +425,11 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       appTitle,
       appIcon
     );
-
+    
+    const isAppConfigurable = await kotsApp.isAppConfigurable();
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
+
     for (const downstream of downstreams) {
       const cluster = _.find(clusters, (c: Cluster) => {
         return c.title === downstream;
@@ -436,15 +439,15 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         continue;
       }
 
-      const downstreamState = kotsApp.hasPreflight
-        ? "pending_preflight"
-        : "deployed";
+      const downstreamState = isAppConfigurable
+        ? "pending_config"
+        : kotsApp.hasPreflight
+          ? "pending_preflight"
+          : "deployed";
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
       await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "");
     }
-
-    kotsApp.currentSequence = 0;
 
     return kotsApp;
   } finally {

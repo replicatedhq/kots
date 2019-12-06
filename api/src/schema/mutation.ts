@@ -18,6 +18,7 @@ type Mutation {
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
   resumeInstallOnline(slug: String!): KotsApp
   updateAppConfig(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!, createNewVersion: Boolean): Boolean
+  updateDownstreamsStatus(slug: String!, sequence: Int!, status: String!): Boolean
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   setAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): String

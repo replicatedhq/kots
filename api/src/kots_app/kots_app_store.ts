@@ -181,6 +181,20 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
     return apps;
   }
 
+  async updateDownstreamsStatus(appId: string, sequence: number, status: string): Promise<void> {
+    const q = `
+      update app_downstream_version
+      set status = $3
+      where app_id = $1 and sequence = $2
+    `;
+    const v = [
+      appId,
+      sequence,
+      status,
+    ];
+    await this.pool.query(q, v);
+  }
+
   async updateDownstreamDeployStatus(appId: string, clusterId: string, sequence: number, isError: boolean, output: any): Promise<any> {
     let q = `select is_error from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`;
     let v = [
@@ -342,22 +356,8 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
         clusterId,
       ];
       const result = await pg.query(q, v);
-
       const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
-
-      q = `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`;
-      v = [
-        id,
-        parentSequence,
-      ];
-
-      const preflightSpecQueryResults = await pg.query(q, v);
-
-      const preflightSpec = preflightSpecQueryResults.rows[0].preflight_spec;
-
-      if (preflightSpec) {
-        status = "pending_preflight";
-      }
+      
       q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
       v = [
         id,
@@ -1224,7 +1224,6 @@ order by adv.sequence desc`;
       const results = JSON.parse(JSON.stringify(preflightResult));
       const preflightState = getPreflightResultState(results);
       if (preflightState === "pass") {
-        // deployVersion sets status to "deployed"
         await this.deployVersion(appId, sequence, clusterId);
       }
     }

@@ -9,7 +9,7 @@ import map from "lodash/map";
 
 import Loader from "../shared/Loader";
 import { getAppConfigGroups, getKotsApp, templateConfigGroups } from "../../queries/AppsQueries";
-import { updateAppConfig } from "../../mutations/AppsMutations";
+import { updateAppConfig, updateDownstreamsStatus } from "../../mutations/AppsMutations";
 
 import "../../scss/components/watches/WatchConfig.scss";
 
@@ -71,40 +71,36 @@ class AppConfig extends Component {
     return app.slug;
   }
 
-  handleSave = () => {
+  handleSave = async () => {
     this.setState({ savingConfig: true });
 
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    this.props.client.mutate({
-      mutation: updateAppConfig,
-      variables: {
-        slug: slug,
-        sequence: sequence,
-        configGroups: this.state.configGroups,
-        createNewVersion: !fromLicenseFlow
-      },
-    })
-      .then(() => {
-        if (this.props.refreshAppData) {
-          this.props.refreshAppData();
-        }
-        if (fromLicenseFlow) {
-          if (getKotsApp?.getKotsApp?.hasPreflight) {
-            history.replace("/preflight");
-          } else {
-            history.replace(`/app/${slug}`);
-          }
+    try {
+      await this.props.updateAppConfig(slug, sequence, this.state.configGroups, !fromLicenseFlow);
+
+      if (this.props.refreshAppData) {
+        this.props.refreshAppData();
+      }
+
+      if (fromLicenseFlow) {
+        const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
+        const status = hasPreflight ? "pending_preflight" : "deployed";
+        await this.props.updateDownstreamsStatus(slug, sequence, status);
+        if (hasPreflight) {
+          history.replace("/preflight");
         } else {
-          this.setState({ savingConfig: false, changed: false });
+          history.replace(`/app/${slug}`);
         }
-      })
-      .catch((error) => {
+      } else {
+        this.setState({ savingConfig: false, changed: false });
+      }
+    } catch(error) {
         console.log(error);
         this.setState({ savingConfig: false });
-      });
+    }
   }
 
   isConfigChanged = newGroups => {
@@ -230,5 +226,15 @@ export default withRouter(compose(
         fetchPolicy: "no-cache"
       }
     }
+  }),
+  graphql(updateAppConfig, {
+    props: ({ mutate }) => ({
+      updateAppConfig: (slug, sequence, configGroups, createNewVersion) => mutate({ variables: { slug, sequence, configGroups, createNewVersion } })
+    })
+  }),
+  graphql(updateDownstreamsStatus, {
+    props: ({ mutate }) => ({
+      updateDownstreamsStatus: (slug, sequence, status) => mutate({ variables: { slug, sequence, status } })
+    })
   }),
 )(AppConfig));
