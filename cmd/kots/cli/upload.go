@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,6 +28,8 @@ func UploadCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			log := logger.NewLogger()
+
 			sourceDir := homeDir()
 			if len(args) > 0 {
 				sourceDir = ExpandDir(args[0])
@@ -41,11 +44,22 @@ func UploadCmd() *cobra.Command {
 				Endpoint:        "http://localhost:3000",
 			}
 
-			stopCh, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
+			stopCh, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
 			defer close(stopCh)
+
+			go func() {
+				select {
+				case err := <-errChan:
+					if err != nil {
+						log.Error(err)
+						os.Exit(-1)
+					}
+				case <-stopCh:
+				}
+			}()
 
 			if err := upload.Upload(sourceDir, uploadOptions); err != nil {
 				return errors.Cause(err)

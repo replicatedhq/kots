@@ -32,11 +32,23 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to wait for web")
 			}
 
-			stopCh, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true)
+			stopCh, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true)
+
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
 			defer close(stopCh)
+
+			go func() {
+				select {
+				case err := <-errChan:
+					if err != nil {
+						log.Error(err)
+						os.Exit(-1)
+					}
+				case <-stopCh:
+				}
+			}()
 
 			log.ActionWithoutSpinner("Press Ctrl+C to exit")
 			log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")

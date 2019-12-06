@@ -45,12 +45,22 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	}
 
 	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(uploadLicenseOptions.Kubeconfig, 3000, 3000, uploadLicenseOptions.Namespace, podName, false)
+	stopCh, errChan, err := k8sutil.PortForward(uploadLicenseOptions.Kubeconfig, 3000, 3000, uploadLicenseOptions.Namespace, podName, false)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
 	defer close(stopCh)
+
+	go func() {
+		select {
+		case err := <-errChan:
+			if err != nil {
+				log.Error(err)
+			}
+		case <-stopCh:
+		}
+	}()
 
 	// upload using http to the pod directly
 	req, err := createUploadLicenseRequest(license, uploadLicenseOptions, "http://localhost:3000/api/v1/kots/license")

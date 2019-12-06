@@ -34,12 +34,22 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	}
 
 	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(downloadOptions.Kubeconfig, 3000, 3000, downloadOptions.Namespace, podName, false)
+	stopCh, errChan, err := k8sutil.PortForward(downloadOptions.Kubeconfig, 3000, 3000, downloadOptions.Namespace, podName, false)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
 	defer close(stopCh)
+
+	go func() {
+		select {
+		case err := <-errChan:
+			if err != nil {
+				log.Error(err)
+			}
+		case <-stopCh:
+		}
+	}()
 
 	resp, err := http.Get(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug))
 	if err != nil {

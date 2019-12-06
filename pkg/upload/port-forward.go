@@ -9,19 +9,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func StartPortForward(namespace string, kubeconfig string) (chan struct{}, error) {
+func StartPortForward(namespace string, kubeconfig string) (chan struct{}, chan error, error) {
 	podName, err := findKotsadm(namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find kotsadm pod")
+		return nil, nil, errors.Wrap(err, "failed to find kotsadm pod")
 	}
 
 	// set up port forwarding to get to it
-	stopCh, err := k8sutil.PortForward(kubeconfig, 3000, 3000, namespace, podName, false)
+	stopCh, errChan, err := k8sutil.PortForward(kubeconfig, 3000, 3000, namespace, podName, false)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to start port forwarding")
+		return nil, nil, errors.Wrap(err, "failed to start port forwarding")
 	}
 
-	return stopCh, nil
+	return stopCh, errChan, nil
 }
 
 func findKotsadm(namespace string) (string, error) {
