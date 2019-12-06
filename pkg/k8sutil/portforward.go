@@ -49,20 +49,20 @@ func IsPortAvailable(port int) bool {
 	return true
 }
 
-func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool) (chan struct{}, chan error, error) {
+func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}) (<-chan error, error) {
 	if !IsPortAvailable(localPort) {
-		return nil, nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
+		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
 
 	// port forward
 	config, err := clientcmd.BuildConfigFromFlags("", kubeContext)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
@@ -70,7 +70,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 	u, err := url.Parse(config.Host)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if u.Scheme == "http" || u.Scheme == "https" {
@@ -86,7 +86,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 
 	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	errChan := make(chan error, 2) // 2 go routines are writing to this channel
@@ -120,7 +120,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	start := time.Now()
 	for {
 		if forwardErr != nil {
-			return nil, nil, forwardErr
+			return nil, forwardErr
 		}
 
 		response, err := quickClient.Get(fmt.Sprintf("http://localhost:%d", localPort))
@@ -131,7 +131,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 			if err == nil {
 				err = errors.Errorf("service responded with status %s", response.Status)
 			}
-			return nil, nil, err
+			return nil, err
 		}
 
 		time.Sleep(time.Millisecond * 100)
@@ -222,7 +222,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 		}()
 	}
 
-	return stopChan, errChan, nil
+	return errChan, nil
 }
 
 func ServiceForward(kubeContext string, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {

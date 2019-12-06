@@ -143,7 +143,10 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if canPull {
-				stopCh, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
+				stopCh := make(chan struct{})
+				defer close(stopCh)
+
+				errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh)
 				if err != nil {
 					return err
 				}
@@ -171,11 +174,13 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to wait for web")
 			}
 
-			stopCh, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true)
+			stopCh := make(chan struct{})
+			defer close(stopCh)
+
+			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true, stopCh)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}
-			defer close(stopCh)
 
 			go func() {
 				select {

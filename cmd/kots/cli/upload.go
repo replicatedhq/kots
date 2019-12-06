@@ -44,11 +44,13 @@ func UploadCmd() *cobra.Command {
 				Endpoint:        "http://localhost:3000",
 			}
 
-			stopCh, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig)
+			stopCh := make(chan struct{})
+			defer close(stopCh)
+
+			errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
-			defer close(stopCh)
 
 			go func() {
 				select {

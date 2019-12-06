@@ -32,12 +32,13 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to wait for web")
 			}
 
-			stopCh, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true)
+			stopCh := make(chan struct{})
+			defer close(stopCh)
 
+			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true, stopCh)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
-			defer close(stopCh)
 
 			go func() {
 				select {
