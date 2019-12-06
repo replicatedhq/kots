@@ -1,0 +1,47 @@
+.kotsadm-illustration-wrapper {
+  margin-top: 40px;
+  margin-bottom: 30px;
+}
+#movement-orb-gray {
+  animation: grayOrbStraight 1.2s infinite;
+}
+#movement-orb-blue {
+  animation: darkBlueOrbAngleUp 1.2s infinite;
+}
+#movement-orb-green {
+  animation: greenOrbAngleDown 1.2s infinite;
+}
+#movement-orb-blue-straight {
+  animation: blueOrbStraight 1.2s infinite;
+}
+#movement-orb-blue-angle-down {
+  animation: blueOrbAngleDown 1.2s infinite;
+}
+#movement-orb-blue-angle-up {
+  animation: blueOrbAngleUp 1.2s infinite;
+}
+
+@keyframes blueOrbStraight {
+  0%   { transform: translate(26px, 15px); }
+  100% { transform: translate(42px, 15px); }
+}
+@keyframes grayOrbStraight {
+  0%   { transform: translate(112px, 62px); }
+  100% { transform: translate(124px, 62px); }
+}
+@keyframes darkBlueOrbAngleUp {
+  0%   { transform: translate(116.5px, 98px) rotate(-38deg); }
+  100% { transform: translate(126.5px, 91px) rotate(-38deg); }
+}
+@keyframes greenOrbAngleDown {
+  0%   { transform: translate(126.5px, 27px) rotate(38deg); }
+  100% { transform: translate(136.5px, 34px) rotate(38deg); }
+}
+@keyframes blueOrbAngleDown {
+  0%   { transform: translate(4px, 34px) rotate(47deg); }
+  100% { transform: translate(14px, 44px) rotate(47deg); }
+}
+@keyframes blueOrbAngleUp {
+  0%   { transform: translate(162px, 68px) rotate(-47deg); }
+  100% { transform: translate(172px, 58px) rotate(-47deg); }
+}

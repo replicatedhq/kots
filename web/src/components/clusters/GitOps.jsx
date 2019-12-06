@@ -15,14 +15,8 @@ export class GitOps extends React.Component {
     history: PropTypes.object.isRequired,
   };
 
-  state = {
-
-  }
-
   render() {
     const { listClustersQuery } = this.props;
-
-    const hasGitopsClusters = false; // TODO: fix this
 
     if (this.props.listClustersQuery.loading) {
       return (
@@ -32,21 +26,19 @@ export class GitOps extends React.Component {
       )
     }
 
+    const hasClusters = listClustersQuery.listClusters?.length && listClustersQuery.listClusters[0];
+
     return (
       <div className="ClusterDashboard--wrapper container flex-column flex1 u-overflow--auto">
         <Helmet>
           <title>GitOps deployments</title>
         </Helmet>
         <div className="flex-column flex1">
-          {listClustersQuery ?
-            !hasGitopsClusters ?
-              <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
-                <GitOpsDeploymentManager
-                  appName={this.props.appName}
-                />
-              </div>
-            : null
-          : null}
+          {hasClusters && 
+            <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
+              <GitOpsDeploymentManager appName={this.props.appName} />
+            </div>
+          }
         </div>
       </div>
     );

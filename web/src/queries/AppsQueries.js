@@ -48,13 +48,15 @@ export const listAppsRaw = `
             deployedAt
           }
           gitops {
-            id
             enabled
             provider
             uri
+            hostname
             path
             branch
             format
+            action
+            isConnected
           }
           pendingVersions {
             title
@@ -153,13 +155,14 @@ export const getKotsAppRaw = `
           parentSequence
         }
         gitops {
-          id
           enabled
           provider
           uri
+          hostname
           path
           branch
           format
+          action
           deployKey
           isConnected
         }
@@ -443,10 +446,21 @@ export const getPrometheusAddress = gql`
   query getPrometheusAddress {
     getPrometheusAddress
   }
-`
+`;
 
 export const getKotsLicenseType = gql`
   query getKotsLicenseType($slug: String!) {
     getKotsLicenseType(slug: $slug)
   }
-`
+`;
+
+export const getGitOpsRepo = gql`
+  query getGitOpsRepo {
+    getGitOpsRepo {
+      enabled
+      uri
+      provider
+      hostname
+    }
+  }
+`;

@@ -45,6 +45,4 @@ spec:
         constraints:
           notNull: true
         default: "false"
-      - name: gitops_repo_id
-        type: text
 

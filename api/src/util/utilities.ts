@@ -6,13 +6,17 @@ import { ReplicatedError } from "../server/errors";
 
 const jsdiff = require('diff');
 
-export function decodeBase64(data: string): string {
+export function base64Decode(data: string): string {
   if (!data) {
     return "";
   }
   const buffer = new Buffer(data, 'base64');
   return buffer.toString("ascii");
 }
+
+export function base64Encode(value: string): string {
+  return Buffer.from(value).toString("base64");
+};
 
 export function getPreflightResultState(preflightResults): string {
   const results = preflightResults.results;

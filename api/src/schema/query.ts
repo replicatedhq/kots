@@ -16,6 +16,7 @@ export const Query = `
 
     getKotsMetadata: KotsAppMetadata
     listApps: Apps
+    getGitOpsRepo: KotsGitOps
     getKotsApp(slug: String!): KotsApp
     getKotsAppDashboard(slug: String!, clusterId: String): KotsAppDashboard
     getKotsLicenseType(slug: String!): String

@@ -270,6 +270,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/gitops" render={() =>
                       <AppGitops
                         app={app}
+                        history={this.props.history}
                         refetch={() => this.props.getKotsAppQuery.refetch()}
                       />
                     } />

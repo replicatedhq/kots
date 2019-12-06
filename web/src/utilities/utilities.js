@@ -71,6 +71,31 @@ export function sortAnalyzers(bundleInsight) {
   })
 }
 
+export function getServiceSite(provider) {
+  const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
+  const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
+  const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
+  return serviceSite;
+}
+
+export function getAddKeyUri(gitUri, provider, ownerRepo) {
+  const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
+  const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
+
+  let addKeyUri = `${gitUri}/settings/keys/new`;
+  if (isGitlab) {
+    addKeyUri = `${gitUri}/-/settings/repository`;
+  } else if (isBitbucket) {
+    const owner = ownerRepo.split("/").length && ownerRepo.split("/")[0];
+    addKeyUri = `https://bitbucket.org/account/user/${owner}/ssh-keys/`;
+  }
+  return addKeyUri;
+}
+
+export function requiresHostname(provider) {
+  return provider === "gitlab_enterprise" || provider === "github_enterprise" || provider === "bitbucket_server";
+}
+
 /**
  * @param {Number} numerator
  * @param {Number} denominator

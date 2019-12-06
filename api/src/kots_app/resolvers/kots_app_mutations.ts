@@ -1,6 +1,4 @@
 import _ from "lodash";
-import { generateKeyPairSync } from "crypto";
-import sshpk from "sshpk";
 import { Context } from "../../context";
 import path from "path";
 import tmp from "tmp";
@@ -15,72 +13,28 @@ import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRe
 import { Update } from "../kots_ffi";
 import { KotsAppRegistryDetails } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
-import { kotsEncryptString, kotsDecryptString } from "../kots_ffi"
+import { kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { sendInitialGitCommitsForAppDownstream } from "../gitops";
 
 export function KotsMutations(stores: Stores) {
   return {
-    async setAppGitOps(root: any, args: any, context: Context): Promise<string> {
+    async updateAppGitOps(root: any, args: any, context: Context): Promise<boolean> {
       const { appId, clusterId, gitOpsInput } = args;
-
       const app = await context.getApp(appId);
-
-      const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-        modulusLength: 4096,
-        publicKeyEncoding: {
-          type: "pkcs1",
-          format: "pem",
-        },
-        privateKeyEncoding: {
-          type: "pkcs1",
-          format: "pem",
-        },
-      });
-
-      const params = await Params.getParams();
-      const parsedPublic = sshpk.parseKey(publicKey, "pem");
-      const sshPublishKey = parsedPublic.toString("ssh");
-
-      const encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
-      const gitopsRepo = await stores.kotsAppStore.createGitOpsRepo(gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
-
-      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(app.id, clusterId, gitopsRepo.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
-
-      return publicKey;
+      await stores.kotsAppStore.setDownstreamGitOps(app.id, clusterId, gitOpsInput.uri, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format, gitOpsInput.action);
+      return true;
     },
 
-    async updateAppGitOps(root: any, args: any, context: Context): Promise<string> {
-      const { appId, clusterId, gitOpsInput } = args;
-
-      const integrationToUpdate = await stores.kotsAppStore.getGitOpsCreds(appId, clusterId);
-
-      let sshPublishKey = integrationToUpdate.keyPub;
-      let encryptedPrivateKey = integrationToUpdate.keyPriv;
-      if (integrationToUpdate.provider !== gitOpsInput.provider) {
-        const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-          modulusLength: 4096,
-          publicKeyEncoding: {
-            type: "pkcs1",
-            format: "pem",
-          },
-          privateKeyEncoding: {
-            type: "pkcs1",
-            format: "pem",
-          },
-        });
-        const params = await Params.getParams();
-        const parsedPublic = sshpk.parseKey(publicKey, "pem");
-        sshPublishKey = parsedPublic.toString("ssh");
-        encryptedPrivateKey = await kotsEncryptString(params.apiEncryptionKey, privateKey);
+    async disableAppGitops(root: any, args: any, context: Context): Promise<boolean> {
+      const { appId, clusterId } = args;
+      const app = await context.getApp(appId);
+      const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
+      if (downstreamGitops.enabled) {
+        await stores.kotsAppStore.disableDownstreamGitOps(appId, clusterId);
       }
-      
-      await stores.kotsAppStore.updateGitOpsRepo(integrationToUpdate.id, gitOpsInput.provider, gitOpsInput.uri, encryptedPrivateKey, sshPublishKey);
-
-      await stores.kotsAppStore.setAppDownstreamGitOpsConfiguration(appId, clusterId, integrationToUpdate.id, gitOpsInput.branch, gitOpsInput.path, gitOpsInput.format);
-
-      return sshPublishKey;
+      return true;
     },
 
     async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
@@ -157,7 +111,7 @@ export function KotsMutations(stores: Stores) {
         NodeGit.Repository.openBare(localPath);
         // TODO check if we have write access!
 
-        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, "");
+        await stores.kotsAppStore.setGitOpsError(appId, clusterId, "");
         // Send current and pending versions to git
         // We need a persistent, durable queue for this to handle the api container
         // being rescheduled during this long-running operation
@@ -171,11 +125,9 @@ export function KotsMutations(stores: Stores) {
         return true;
       } catch (err) {
         console.log(err);
-        const gitOpsError = err.errno ? err.errno : "Unknown error connecting to repo";
-        await stores.kotsAppStore.setGitOpsError(gitOpsCreds.id, gitOpsError);
+        const gitOpsError = err.errno ? `Error code ${err.errno}` : "Unknown error connecting to repo";
+        await stores.kotsAppStore.setGitOpsError(appId, clusterId, gitOpsError);
         return false;
-      } finally {
-        // TODO delete
       }
     },
 

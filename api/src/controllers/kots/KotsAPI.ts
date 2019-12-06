@@ -32,7 +32,7 @@ import { Session } from "../../session";
 import { getDiffSummary } from "../../util/utilities";
 import yaml from "js-yaml";
 import * as k8s from "@kubernetes/client-node";
-import { decodeBase64 } from "../../util/utilities";
+import { base64Decode } from "../../util/utilities";
 import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 import { createGitCommitForVersion } from "../../kots_app/gitops";
@@ -297,7 +297,7 @@ export class KotsAPI {
         needsRegistry = false;
 
         // parse the dockerconfig secret
-        const parsed = JSON.parse(decodeBase64(res.body.data[".dockerconfigjson"]));
+        const parsed = JSON.parse(base64Decode(res.body.data[".dockerconfigjson"]));
         const auths = parsed.auths;
         for (const hostname in auths) {
           const config = auths[hostname];

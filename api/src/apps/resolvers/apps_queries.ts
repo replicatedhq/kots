@@ -1,8 +1,6 @@
 import _ from "lodash";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
-import { Params } from "../../server/params";
-import { ReplicatedError } from "../../server/errors";
 
 export function AppsQueries(stores: Stores) {
   return {
@@ -16,6 +14,10 @@ export function AppsQueries(stores: Stores) {
       result.pendingUnforks = [];
 
       return result;
+    },
+
+    async getGitOpsRepo(root: any, args: any, context: Context) {
+      return await stores.kotsAppStore.getGitOpsRepo();
     },
   }
 }

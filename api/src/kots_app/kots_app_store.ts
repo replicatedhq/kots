@@ -5,89 +5,259 @@ import { ReplicatedError } from "../server/errors";
 import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
+import * as k8s from "@kubernetes/client-node";
 import { kotsEncryptString, kotsDecryptString } from "./kots_ffi"
 import _ from "lodash";
 import yaml from "js-yaml";
-import { decodeBase64, getPreflightResultState } from '../util/utilities';
+import { base64Decode, getPreflightResultState, base64Encode } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
 
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 
-  async createGitOpsRepo(provider: string, uri: string, privateKey: string, publicKey: string): Promise<any> {
-    const id = randomstring.generate({ capitalization: "lowercase" });
+  async getGitOpsRepo(): Promise<any> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-    const q = `insert into gitops_repo (id, provider, uri, key_pub, key_priv, last_error) values ($1, $2, $3, $4, $5, $6)`;
-    const v = [
-      id,
-      provider,
-      uri,
-      publicKey,
-      privateKey,
-      'never tried'
-    ];
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const secretName = "kotsadm-gitops";
+      const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
+      const data = secret.body.data!;
 
-    await this.pool.query(q, v);
+      // use index 0 for now, since we don't support multiple providers yet
+      const provider = base64Decode(data["provider.0.type"]);
+      const uri = base64Decode(data["provider.0.repoUri"]);
+      const hostnameKey = "provider.0.hostname";
+      const hostname = hostnameKey in data ? { hostname: base64Decode(data[hostnameKey]) } : {};
 
-    return {
-      id,
-    };
-  }
-
-  async updateGitOpsRepo(id: string, provider: string, uri: string, privateKey: string, publicKey: string): Promise<void> {
-    let q = `update gitops_repo set provider = $1, uri = $2, last_error = $3 where id = $4`;
-    let v = [
-      provider,
-      uri,
-      'never tried',
-      id,
-    ];
-
-    await this.pool.query(q, v);
-
-    if (privateKey && publicKey) {
-      q = `update gitops_repo set key_pub = $1, key_priv = $2 where id = $3`;
-      v = [
-        publicKey,
-        privateKey,
-        id,
-      ];
-
-      await this.pool.query(q, v);
+      return {
+        enabled: true,
+        uri,
+        provider,
+        ...hostname
+      };
+    } catch(err) {
+      return {
+        enabled: false
+      };
     }
   }
 
-  async setGitOpsError(id: string, err: any): Promise<void> {
-    const q = `update gitops_repo set last_error = $1 where id = $2`;
-    const v = [
-      err.length > 0 ? err : null,
-      id,
-    ];
+  async createGitOpsRepo(provider: string, uri: string, hostname: string, privateKey: string, publicKey: string): Promise<void> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-    await this.pool.query(q, v);
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const secretName = "kotsadm-gitops";
+      let secretExists = false;
+      let data: { [key: string]: string } = {};
+
+      try {
+        // read secret data (if exists)
+        const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
+        data = secret.body.data || {};
+        secretExists = true;
+      } catch(err) {
+        // secret does not exist yet
+      }
+
+      const keys = Object.keys(data); // key example: "provider.0.type"
+
+      let index = -1;
+      for (const key of keys) {
+        const value = base64Decode(data[key]);
+        if (value === uri) {
+          index = parseInt(key.charAt(9));
+          break;
+        }
+      }
+
+      if (index === -1) {
+        const indices = _.map(keys, key => parseInt(key.charAt(9)));
+        if (indices.length) {
+          index = Math.max(...indices) + 1;
+        } else {
+          index = 0;
+        }
+      }
+
+      data[`provider.${index}.type`] = base64Encode(provider);
+      data[`provider.${index}.repoUri`] = base64Encode(uri);
+      data[`provider.${index}.publicKey`] = base64Encode(publicKey);
+      data[`provider.${index}.privateKey`] = base64Encode(privateKey);
+
+      const hostnameKey = `provider.${index}.hostname`;
+      if (hostnameKey in data) {
+        delete data[hostnameKey];
+      }
+
+      if (hostname) {
+        data[hostnameKey] = base64Encode(hostname);
+      }
+
+      const secretObj: k8s.V1Secret = {
+        apiVersion: "v1",
+        kind: "Secret",
+        metadata: {
+          name: secretName,
+        },
+        data: data
+      }
+
+      if (!secretExists) {
+        await k8sApi.createNamespacedSecret(namespace, secretObj);
+      } else {
+        await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
+      }
+    } catch(err) {
+      throw new ReplicatedError(`Failed to create gitops secret ${err.response || err}`)
+    }
+  }
+
+  async updateGitOpsRepo(uriToUpdate: string, newUri: string, hostname: string): Promise<void> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const secretName = "kotsadm-gitops";
+      const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
+      const data = secret.body.data;
+
+      if (!data) {
+        throw new ReplicatedError("Failed to update gitops secret, no secret data found");
+      }
+
+      for (const key of Object.keys(data)) {
+        const value = base64Decode(data[key]);
+        const isSingleApp = uriToUpdate !== "";
+        if (!isSingleApp || value === uriToUpdate) {
+          const index = key.charAt(9);
+          if (isSingleApp) {
+            data[`provider.${index}.repoUri`] = base64Encode(newUri);
+          }
+          const hostnameKey = `provider.${index}.hostname`;
+          if (hostnameKey in data) {
+            delete data[hostnameKey];
+          }
+          if (hostname) {
+            data[hostnameKey] = base64Encode(hostname);
+          }
+        }
+      }
+
+      const secretObj: k8s.V1Secret = {
+        apiVersion: "v1",
+        kind: "Secret",
+        metadata: {
+          name: secretName,
+        },
+        data: data
+      }
+
+      await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
+    } catch(err) {
+      throw new ReplicatedError(`Error updating gitops secret: ${err.response || err}`);
+    }
+  }
+
+  async setGitOpsError(appId: string, clusterId: string, err: any): Promise<void> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const configMapName = "kotsadm-gitops";
+      const configmap = await k8sApi.readNamespacedConfigMap(configMapName, namespace);
+      const configMapData = configmap.body.data!;
+
+      const downstreamData = JSON.parse(base64Decode(configMapData[`${appId}-${clusterId}`]));
+      downstreamData.lastError = err;
+      
+      configMapData[`${appId}-${clusterId}`] = base64Encode(JSON.stringify(downstreamData));
+
+      const configMapObj: k8s.V1Secret = {
+        apiVersion: "v1",
+        kind: "ConfigMap",
+        metadata: {
+          name: configMapName,
+        },
+        data: configMapData
+      }
+
+      await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
+    } catch(err) {
+      throw new ReplicatedError(`Failed to set gitops error ${err.response || err}`)
+    }
+  }
+
+  async resetGitOpsData(): Promise<void> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+      const namespace = process.env["POD_NAMESPACE"]!;
+
+      try {
+        const secretName = "kotsadm-gitops";
+        await k8sApi.deleteNamespacedSecret(secretName, namespace);
+      } catch(err) {
+        // secret does not exist
+      }
+
+      try {
+        const configMapName = "kotsadm-gitops";
+        await k8sApi.deleteNamespacedConfigMap(configMapName, namespace);
+      } catch(err) {
+        // config map does not exist
+      }
+    } catch(err) {
+      throw new ReplicatedError(`Failed to reset gitops data, ${err.response || err}`);
+    }
+  }
+
+  async disableDownstreamGitOps(appId: string, clusterId: string): Promise<void> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const configMapName = "kotsadm-gitops";
+      const configmap = await k8sApi.readNamespacedConfigMap(configMapName, namespace);
+      const configMapData = configmap.body.data!;
+
+      delete configMapData[`${appId}-${clusterId}`];
+
+      const configMapObj: k8s.V1Secret = {
+        apiVersion: "v1",
+        kind: "ConfigMap",
+        metadata: {
+          name: configMapName,
+        },
+        data: configMapData
+      }
+
+      await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
+    } catch(err) {
+      throw new ReplicatedError(`Failed to disable gitops for app with id ${appId}, ${err.response || err}`)
+    }
   }
 
   async getGitOpsCreds(appId: string, clusterId: string): Promise<any> {
-    const q = `select g.id, g.uri, g.key_pub, g.key_priv, g.provider from gitops_repo g
-inner join cluster c on c.gitops_repo_id = g.id
-inner join app_downstream ad on ad.cluster_id = c.id
-where ad.app_id = $1 and ad.cluster_id = $2`;
-    const v = [
-      appId,
-      clusterId,
-    ];
+    const { repoUri, provider, privateKey, publicKey } = await this.getGitopsInfo(appId, clusterId);
 
-    const result = await this.pool.query(q, v);
-    if (result.rowCount === 0) {
-      throw new ReplicatedError(`A GitOps integration for app ${appId} and cluster ${clusterId} was not found`);
-    }
+    let cloneUri = repoUri;  // this is unlikely to work because we only support ssh auth later.  hmmm
+    const uriParts = repoUri.split("/");
 
-    const row = result.rows[0];
-
-    let cloneUri = row.uri;  // this is unlikely to work because we only support ssh auth later.  hmmm
-    const uriParts = row.uri.split("/");
-
-    switch (row.provider) {
+    switch (provider) {
       case "github":
         cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
         break;
@@ -100,40 +270,59 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
     }
 
     return {
-      id: row.id,
-      uri: row.uri,
-      pubKey: row.key_pub,
-      privKey: row.key_priv,
-      provider: row.provider,
+      uri: repoUri,
+      pubKey: publicKey,
+      privKey: privateKey,
+      provider: provider,
       cloneUri,
     };
   }
 
+  async setDownstreamGitOps(appId: string, clusterId: string, repoUri: string, branch: string, path: string, format: string, action: string): Promise<any> {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-  async setAppDownstreamGitOpsConfiguration(appId: string, clusterId: string, gitOpsRepoId: string, branch: string, path: string, format: string): Promise<any> {
-    let q = `update app_downstream set
-      gitops_branch = $1,
-      gitops_path = $2,
-      gitops_format = $3
-      where app_id = $4 and cluster_id = $5`;
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const configMapName = "kotsadm-gitops";
+      let data: { [key: string]: string } = {};
+      let configMapExists = false;
 
-    let v = [
-      branch,
-      path,
-      format,
-      appId,
-      clusterId,
-    ];
+      try {
+        // read config map data (if exists)
+        const configmap = await k8sApi.readNamespacedConfigMap(configMapName, namespace);
+        data = configmap.body.data || {};
+        configMapExists = true;
+      } catch(err) {
+        // configmap does not exist yet
+      }
 
-    await this.pool.query(q, v);
+      data[`${appId}-${clusterId}`] = base64Encode(JSON.stringify({
+        repoUri: repoUri,
+        branch: branch,
+        path: path,
+        format: format,
+        action: action
+      }));
 
-    q = `update cluster set gitops_repo_id = $1 where id = $2`;
-    v = [
-      gitOpsRepoId,
-      clusterId,
-    ];
+      const configMapObj: k8s.V1Secret = {
+        apiVersion: "v1",
+        kind: "ConfigMap",
+        metadata: {
+          name: configMapName,
+        },
+        data: data
+      }
 
-    await this.pool.query(q, v);
+      if (!configMapExists) {
+        await k8sApi.createNamespacedConfigMap(namespace, configMapObj);
+      } else {
+        await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
+      }
+    } catch(err) {
+      throw new ReplicatedError(`Failed to create gitops configmap ${err.response || err}`);
+    }
   }
 
   async listClusterIDsForApp(id: string): Promise<string[]> {
@@ -253,10 +442,10 @@ where ad.app_id = $1 and ad.cluster_id = $2`;
 
     const row = result.rows[0];
     return {
-      dryrunStdout: decodeBase64(row.dryrun_stdout),
-      dryrunStderr: decodeBase64(row.dryrun_stderr),
-      applyStdout: decodeBase64(row.apply_stdout),
-      applyStderr: decodeBase64(row.apply_stderr)
+      dryrunStdout: base64Decode(row.dryrun_stdout),
+      dryrunStderr: base64Decode(row.dryrun_stderr),
+      applyStdout: base64Decode(row.apply_stdout),
+      applyStderr: base64Decode(row.apply_stderr)
     };
   }
 
@@ -515,37 +704,82 @@ order by sequence desc`;
     return versionItems;
   }
 
-  async getDownstreamGitOps(appId: string, clusterId: string): Promise<any> {
-    const q = `select ad.gitops_path, ad.gitops_format, ad.gitops_branch,
-      gr.provider, gr.id, gr.uri, gr.key_pub, gr.last_error from
-      app_downstream ad
-      inner join cluster c on c.id = ad.cluster_id
-      inner join gitops_repo gr on gr.id = c.gitops_repo_id
-      where ad.app_id = $1 and ad.cluster_id = $2`;
-    const v = [
-      appId,
-      clusterId,
-    ];
+  async getGitopsInfo(appId: string, clusterId: string) {
+    try {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromDefault();
+      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-    const result = await this.pool.query(q, v);
+      const namespace = process.env["POD_NAMESPACE"]!;
 
-    if (result.rowCount === 0) {
-      return {
-        enabled: false,
+      const secretName = "kotsadm-gitops";
+      const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
+      const secretData = secret.body.data!;
+
+      const configMapName = "kotsadm-gitops";
+      const configmap = await k8sApi.readNamespacedConfigMap(configMapName, namespace);
+
+      const appClusterKey = `${appId}-${clusterId}`;
+      if (!(appClusterKey in configmap.body.data!)) {
+        throw new ReplicatedError(`No gitops data found for app with id ${appId} and cluster with id ${clusterId}`);
       }
-    }
 
-    const row = result.rows[0];
-    return {
-      enabled: true,
-      provider: row.provider,
-      uri: row.uri,
-      path: row.gitops_path,
-      branch: row.gitops_branch,
-      format: row.gitops_format,
-      deployKey: row.key_pub,
-      id: row.id,
-      isConnected: row.last_error === null,
+      const base64Data = configmap.body.data![appClusterKey];
+      const configMapData = JSON.parse(base64Decode(base64Data));
+      
+      let provider = "", publicKey = "", privateKey = "", hostname;
+      for (const key of Object.keys(secretData)) {
+        const value = base64Decode(secretData[key]);
+        if (value === configMapData.repoUri) {
+          const index = key.charAt(9);
+          provider = base64Decode(secretData[`provider.${index}.type`]);
+          publicKey = base64Decode(secretData[`provider.${index}.publicKey`]);
+          privateKey = base64Decode(secretData[`provider.${index}.privateKey`]);
+
+          const hostnameKey = `provider.${index}.hostname`;
+          if (hostnameKey in secretData) {
+            hostname = base64Decode(secretData[hostnameKey]);
+          }
+          break;
+        }
+      }
+
+      return {
+        provider: provider,
+        repoUri: configMapData.repoUri,
+        hostname: hostname,
+        path: configMapData.path,
+        branch: configMapData.branch,
+        format: configMapData.format,
+        action: configMapData.action,
+        publicKey: publicKey,
+        privateKey: privateKey,
+        lastError: configMapData.lastError
+      }
+    } catch(err) {
+      throw new ReplicatedError(`Failed to get gitops info ${err.response || err}`);
+    }
+  }
+
+  async getDownstreamGitOps(appId: string, clusterId: string): Promise<any> {
+    try {
+      const gitopsInfo = await this.getGitopsInfo(appId, clusterId);
+      return {
+        enabled: true,
+        provider: gitopsInfo.provider,
+        uri: gitopsInfo.repoUri,
+        hostname: gitopsInfo.hostname,
+        path: gitopsInfo.path,
+        branch: gitopsInfo.branch,
+        format: gitopsInfo.format,
+        action: gitopsInfo.action,
+        deployKey: gitopsInfo.publicKey,
+        isConnected: gitopsInfo.lastError === "",
+      }
+    } catch(err) {
+      return {
+        enabled: false
+      };
     }
   }
 
