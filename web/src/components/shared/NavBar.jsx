@@ -14,11 +14,13 @@ import Avatar from "../shared/Avatar";
 import "@src/scss/components/shared/NavBar.scss";
 
 export class NavBar extends PureComponent {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
+
     this.state = {
-      licenseType: ""
-    }
+      licenseType: "",
+      selectedTab: ""
+    };
   }
 
   static propTypes = {
@@ -44,7 +46,10 @@ export class NavBar extends PureComponent {
           Utilities.logoutUser();
         });
     }
-    if (this.props.location.pathname !== lastProps.location.pathname) {
+
+    const { pathname } = this.props.location;
+    if (pathname !== lastProps.location.pathname) {
+      this.setSelectedTab();
       this.getKotsLicenseType();
     }
   }
@@ -57,6 +62,20 @@ export class NavBar extends PureComponent {
           this.setState({ user: res.data.userInfo });
         }).catch();
     }
+    this.setSelectedTab();
+  }
+
+  setSelectedTab = () => {
+    const { pathname } = this.props.location;
+    let selectedTab = "";
+    if (pathname === "/gitops") {
+      selectedTab = "gitops";
+    } else if (pathname === "/cluster/manage") {
+      selectedTab = "cluster_management";
+    } else if (pathname.startsWith("/app")) {
+      selectedTab = "dashboard"
+    }
+    this.setState({ selectedTab });
   }
 
   getKotsLicenseType = () => {
@@ -79,7 +98,7 @@ export class NavBar extends PureComponent {
     }
   }
 
-  handleGoToClusters = () => {
+  handleGoToGitOps = () => {
     if (this.props.location.pathname === "/gitops") {
       this.props.client.query({
         query: listClusters,
@@ -107,7 +126,7 @@ export class NavBar extends PureComponent {
 
   render() {
     const { className, logo, fetchingMetadata, isKurlEnabled } = this.props;
-    const { user, licenseType } = this.state;
+    const { user, licenseType, selectedTab } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
     return (
@@ -132,22 +151,22 @@ export class NavBar extends PureComponent {
                 </div>
                 {Utilities.isLoggedIn() && (
                   <div className="flex flex-auto left-items">
-                    <div className="NavItem u-position--relative flex">
+                    <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "dashboard" })}>
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.redirectToDashboard}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Dashboard</span>
                         </span>
                       </span>
                     </div>
-                    <div className="NavItem u-position--relative flex">
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusters}>
+                    <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "gitops" })}>
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToGitOps}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>GitOps</span>
                         </span>
                       </span>
                     </div>
                     {isKurlEnabled &&
-                      <div className="NavItem u-position--relative flex ${clustersEnabled">
+                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "cluster_management" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusterManagement}>
                           <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                             <span>Cluster Management</span>

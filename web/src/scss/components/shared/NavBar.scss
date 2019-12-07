@@ -66,6 +66,10 @@
   transition: color .15s;
   user-select: none;
 
+  &.is-active {
+    border-bottom: 2px solid #337AB7;
+  }
+
   &:hover {
     color: #323232;
     text-decoration: none;
