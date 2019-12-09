@@ -79,6 +79,7 @@ require (
 	k8s.io/code-generator v0.0.0-20181117043124-c2090bec4d9b // indirect
 	k8s.io/helm v2.14.3+incompatible
 	sigs.k8s.io/controller-runtime v0.2.0-beta.2
+	sigs.k8s.io/controller-tools v0.2.0-beta.2 // indirect
 	sigs.k8s.io/kustomize/v3 v3.1.0
 	sigs.k8s.io/yaml v1.1.0
 )
