@@ -5,6 +5,7 @@ import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
+import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
@@ -221,6 +222,11 @@ class Root extends Component {
     clearInterval(this.interval);
   }
 
+  isGitOpsSupported = () => {
+    const apps = this.state.listApps;
+    return !!find(apps, app => app.isGitOpsSupported);
+  }
+
   render() {
     const {
       themeState,
@@ -248,7 +254,9 @@ class Root extends Component {
                   logo={themeState.navbarLogo || this.state.appLogo}
                   refetchListApps={this.refetchListApps}
                   fetchingMetadata={this.state.fetchingMetadata}
-                  isKurlEnabled={this.state.isKurlEnabled} />
+                  isKurlEnabled={this.state.isKurlEnabled}
+                  isGitOpsSupported={this.isGitOpsSupported()}
+                />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
@@ -275,23 +283,7 @@ class Root extends Component {
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute
-                      path="/apps"
-                      render={
-                        props => (
-                          <AppDetailPage
-                            {...props}
-                            rootDidInitialAppFetch={rootDidInitialWatchFetch}
-                            listApps={listApps}
-                            refetchListApps={this.refetchListApps}
-                            onActiveInitSession={this.handleActiveInitSession}
-                            appNameSpace={this.state.appNameSpace}
-                            appName={this.state.selectedAppName}
-                          />
-                        )
-                      }
-                    />
-                    <ProtectedRoute
-                      path="/app/:slug/:tab?"
+                      path={["/apps", "/app/:slug/:tab?"]}
                       render={
                         props => (
                           <AppDetailPage

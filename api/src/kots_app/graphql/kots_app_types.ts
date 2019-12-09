@@ -25,6 +25,7 @@ const KotsApp = `
     currentVersion: KotsVersion
     hasPreflight: Boolean
     isConfigurable: Boolean
+    isGitOpsSupported: Boolean
     allowRollback: Boolean
     kubectlVersion: String
   }

@@ -262,6 +262,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/license" render={() =>
                       <AppLicense
                         app={app}
+                        syncCallback={this.refetchGraphQLData}
                       />
                     } />
                     <Route exact path="/app/:slug/registry-settings" render={() =>

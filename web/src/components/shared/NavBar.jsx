@@ -125,7 +125,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, logo, fetchingMetadata, isKurlEnabled } = this.props;
+    const { className, logo, fetchingMetadata, isKurlEnabled, isGitOpsSupported } = this.props;
     const { user, licenseType, selectedTab } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
@@ -158,13 +158,15 @@ export class NavBar extends PureComponent {
                         </span>
                       </span>
                     </div>
-                    <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "gitops" })}>
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToGitOps}>
-                        <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>GitOps</span>
+                    {isGitOpsSupported &&
+                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "gitops" })}>
+                        <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToGitOps}>
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                            <span>GitOps</span>
+                          </span>
                         </span>
-                      </span>
-                    </div>
+                      </div>
+                    }
                     {isKurlEnabled &&
                       <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "cluster_management" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusterManagement}>

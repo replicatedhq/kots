@@ -483,6 +483,11 @@ export class KotsApp {
     }
   }
 
+  public async isGitOpsSupported(stores: Stores): Promise<boolean> {
+    const sequence = this.currentSequence || 0;
+    return await stores.kotsAppStore.isGitOpsSupported(this.id, sequence);
+  }
+  
   public async isAppConfigurable(): Promise<boolean> {
     const sequence = Number.isInteger(this.currentSequence!) ? `${this.currentSequence}` : "";
     if (sequence === "") {
@@ -534,6 +539,7 @@ export class KotsApp {
     return {
       ...this,
       isConfigurable: () => this.isAppConfigurable(),
+      isGitOpsSupported: () => this.isGitOpsSupported(stores),
       allowRollback: () => this.isAllowRollback(stores),
       currentVersion: () => this.getCurrentAppVersion(stores),
       downstreams: _.map(downstreams, (downstream) => {

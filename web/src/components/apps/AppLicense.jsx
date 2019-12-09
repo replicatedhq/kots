@@ -100,6 +100,10 @@ class AppLicense extends Component {
           message,
           messageType: "info",
         });
+
+        if (this.props.syncCallback) {
+          this.props.syncCallback();
+        }
       })
       .catch(err => {
         console.log(err);

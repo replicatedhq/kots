@@ -30,6 +30,7 @@ export const listAppsRaw = `
         updatedAt
         slug
         currentSequence
+        isGitOpsSupported
         currentVersion {
           title
           status
@@ -111,6 +112,7 @@ export const getKotsAppRaw = `
       hasPreflight
       isAirgap
       isConfigurable
+      isGitOpsSupported
       allowRollback
       currentVersion {
         title
