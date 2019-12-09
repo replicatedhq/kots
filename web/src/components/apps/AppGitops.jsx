@@ -148,7 +148,10 @@ class AppGitops extends Component {
       }
       await this.props.updateAppGitOps(app.id, clusterId, gitOpsInput);
       await this.props.refetch();
-      await this.handleTestConnection();
+      
+      if (newUri !== oldUri || gitops?.branch !== branch) {
+        await this.handleTestConnection();
+      }
 
       this.setState({ showGitOpsSettings: false, ownerRepo });
     } catch(err) {

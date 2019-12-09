@@ -67,11 +67,12 @@ export class KotsAppStore {
 
       const keys = Object.keys(data); // key example: "provider.0.type"
 
-      let index = -1;
+      let index = -1, repoExists = false;
       for (const key of keys) {
         const value = base64Decode(data[key]);
         if (value === uri) {
           index = parseInt(key.charAt(9));
+          repoExists = true;
           break;
         }
       }
@@ -87,8 +88,11 @@ export class KotsAppStore {
 
       data[`provider.${index}.type`] = base64Encode(provider);
       data[`provider.${index}.repoUri`] = base64Encode(uri);
-      data[`provider.${index}.publicKey`] = base64Encode(publicKey);
-      data[`provider.${index}.privateKey`] = base64Encode(privateKey);
+
+      if (!repoExists) {
+        data[`provider.${index}.publicKey`] = base64Encode(publicKey);
+        data[`provider.${index}.privateKey`] = base64Encode(privateKey);
+      }
 
       const hostnameKey = `provider.${index}.hostname`;
       if (hostnameKey in data) {
@@ -298,12 +302,27 @@ export class KotsAppStore {
         // configmap does not exist yet
       }
 
-      data[`${appId}-${clusterId}`] = base64Encode(JSON.stringify({
+      const key = `${appId}-${clusterId}`;
+      
+      let lastError = {};
+      if (key in data) {
+        const parsedData = JSON.parse(base64Decode(data[key]));
+        const oldUri = parsedData.repoUri;
+        const oldBranch = parsedData.branch;
+        if (oldBranch !== branch || oldUri !== repoUri) {
+          lastError = {}; // reset last error
+        } else {
+          lastError = { lastError: parsedData.lastError }; // keep last error
+        }
+      }
+
+      data[key] = base64Encode(JSON.stringify({
         repoUri: repoUri,
         branch: branch,
         path: path,
         format: format,
-        action: action
+        action: action,
+        ...lastError
       }));
 
       const configMapObj: k8s.V1Secret = {
