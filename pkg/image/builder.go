@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -174,7 +175,7 @@ func copyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOpti
 			}
 
 			log.ChildActionWithSpinner("Transferring image %s", image)
-			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter)
+			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrapf(err, "failed to transfer image %s", image)
@@ -217,7 +218,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer) ([]kustomizeimage.Image, error) {
+func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.Logger) ([]kustomizeimage.Image, error) {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read default policy")
@@ -274,7 +275,51 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		ForceManifestMIMEType: "",
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to copy image")
+		log.Error(errors.Wrap(err, "failed to copy image directly"))
+		// direct image copy failed
+		// attempt to download image to a temp directory, and then upload it from there
+		// this implicitly causes an image format conversion
+
+		// make a temp directory
+		tempDir := os.TempDir()
+		stat, dirErr := os.Stat(tempDir)
+		if dirErr != nil || !stat.IsDir() {
+			return nil, errors.Wrapf(err, "temp directory %s not created", tempDir)
+		}
+		defer os.RemoveAll(tempDir)
+
+		destPath := path.Join(tempDir, "temp-archive-image")
+		destStr := fmt.Sprintf("docker-archive:%s", destPath)
+		localRef, err := alltransports.ParseImageName(destStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse local image name: %s", destStr)
+		}
+
+		// copy image from remote to local
+		_, err = copy.Image(context.Background(), policyContext, localRef, srcRef, &copy.Options{
+			RemoveSignatures:      true,
+			SignBy:                "",
+			ReportWriter:          reportWriter,
+			SourceCtx:             sourceCtx,
+			DestinationCtx:        nil,
+			ForceManifestMIMEType: "",
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to download image")
+		}
+
+		// copy image from local to remote
+		_, err = copy.Image(context.Background(), policyContext, destRef, localRef, &copy.Options{
+			RemoveSignatures:      true,
+			SignBy:                "",
+			ReportWriter:          reportWriter,
+			SourceCtx:             nil,
+			DestinationCtx:        destCtx,
+			ForceManifestMIMEType: "",
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to push image")
+		}
 	}
 
 	return buildImageAlts(destRegistry, image)
