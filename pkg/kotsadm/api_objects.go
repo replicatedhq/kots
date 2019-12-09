@@ -22,18 +22,29 @@ func apiRole(namespace string) *rbacv1.Role {
 			Name:      "kotsadm-api-role",
 			Namespace: namespace,
 		},
+		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{""},
 				Resources:     []string{"configmaps"},
-				ResourceNames: []string{"kotsadm-application-metadata"},
-				Verbs:         metav1.Verbs{"get", "delete"},
+				ResourceNames: []string{"kotsadm-application-metadata", "kotsadm-gitops"},
+				Verbs:         metav1.Verbs{"get", "delete", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     metav1.Verbs{"create"},
 			},
 			{
 				APIGroups:     []string{""},
 				Resources:     []string{"secrets"},
-				ResourceNames: []string{"kotsadm-encryption"},
-				Verbs:         metav1.Verbs{"get"},
+				ResourceNames: []string{"kotsadm-encryption", "kotsadm-gitops"},
+				Verbs:         metav1.Verbs{"get", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     metav1.Verbs{"create"},
 			},
 		},
 	}
