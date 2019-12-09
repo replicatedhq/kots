@@ -107,6 +107,7 @@ type LicenseSpec struct {
 	LicenseID         string                      `json:"licenseID"`
 	LicenseType       string                      `json:"licenseType,omitempty"`
 	IsAirgapSupported bool                        `json:"isAirgapSupported,omitempty"`
+	IsGitOpsSupported bool                        `json:"isGitOpsSupported,omitempty"`
 	Entitlements      map[string]EntitlementField `json:"entitlements,omitempty"`
 }
 
