@@ -123,7 +123,10 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 		return errors.New("\"LicenseType\" field has changed")
 	}
 	if outerLicense.Spec.IsAirgapSupported != innerLicense.Spec.IsAirgapSupported {
-		return errors.New("\"isAirgapSupported\" field has changed")
+		return errors.New("\"IsAirgapSupported\" field has changed")
+	}
+	if outerLicense.Spec.IsGitOpsSupported != innerLicense.Spec.IsGitOpsSupported {
+		return errors.New("\"IsGitOpsSupported\" field has changed")
 	}
 
 	// Check entitlements
