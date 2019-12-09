@@ -158,7 +158,9 @@ class AppDetailPage extends Component {
 
     const app = getKotsAppQuery?.getKotsApp;
     const refreshAppData = getKotsAppQuery.refetch;
-    const loading = getKotsAppQuery?.loading || !rootDidInitialAppFetch;
+
+    // if there is app, don't render a loader to avoid flickering
+    const loading = (getKotsAppQuery?.loading || !rootDidInitialAppFetch) && !app;
 
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
