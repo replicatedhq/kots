@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
+	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 var imagePolicy = []byte(`{
@@ -42,8 +43,9 @@ type RegistryAuth struct {
 	Password string
 }
 
-func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imagesDir string, upstreamDir string) error {
+func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string) ([]kustomizeimage.Image, error) {
 	savedImages := make(map[string]bool)
+	newImages := []kustomizeimage.Image{}
 
 	err := filepath.Walk(upstreamDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -60,19 +62,20 @@ func SaveImages(srcRegistry registry.RegistryOptions, appSlug string, log *logge
 				return err
 			}
 
-			err = saveImagesToFiles(srcRegistry, appSlug, log, imagesDir, reportWriter, contents, savedImages)
+			newImagesSubset, err := copyImagesBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, savedImages)
 			if err != nil {
-				return errors.Wrap(err, "failed to extract images")
+				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
 
+			newImages = append(newImages, newImagesSubset...)
 			return nil
 		})
 
 	if err != nil {
-		return errors.Wrap(err, "failed to walk upstream dir")
+		return nil, errors.Wrap(err, "failed to walk upstream dir")
 	}
 
-	return nil
+	return newImages, nil
 }
 
 func GetPrivateImages(upstreamDir string) ([]string, []*k8sdoc.Doc, error) {
@@ -162,18 +165,23 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, imagesDir string, reportWriter io.Writer, fileData []byte, savedImages map[string]bool) error {
+func copyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, savedImages map[string]bool) ([]kustomizeimage.Image, error) {
+	newImages := []kustomizeimage.Image{}
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {
 			if _, saved := savedImages[image]; saved {
 				continue
 			}
 
-			log.ChildActionWithSpinner("Pulling image %s", image)
-			err := saveOneImage(srcRegistry, imagesDir, image, appSlug, reportWriter)
+			log.ChildActionWithSpinner("Transferring image %s", image)
+			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter)
 			if err != nil {
 				log.FinishChildSpinner()
-				return errors.Wrap(err, "failed to save image")
+				return errors.Wrapf(err, "failed to transfer image %s", image)
+			}
+
+			if newImage != nil {
+				newImages = append(newImages, newImage...)
 			}
 
 			log.FinishChildSpinner()
@@ -183,7 +191,7 @@ func saveImagesToFiles(srcRegistry registry.RegistryOptions, appSlug string, log
 		return nil
 	})
 
-	return err
+	return newImages, err
 }
 
 type processImagesFunc func([]string, *k8sdoc.Doc) error
@@ -209,41 +217,21 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image string, appSlug string, reportWriter io.Writer) error {
-	imageRef, err := imageRefImage(image)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse image ref")
-	}
-
-	imageFormat := "docker-archive"
-	pathInBundle := imageRef.pathInBundle(imageFormat)
-	archiveName := filepath.Join(imagesDir, pathInBundle)
-	destDir := filepath.Dir(archiveName)
-
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return errors.Wrap(err, "failed to create destination dir")
-	}
-
+func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer) ([]kustomizeimage.Image, error) {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
-		return errors.Wrap(err, "failed to read default policy")
+		return nil, errors.Wrap(err, "failed to read default policy")
 	}
 	policyContext, err := signature.NewPolicyContext(policy)
 	if err != nil {
-		return errors.Wrap(err, "failed to create policy")
-	}
-
-	destStr := fmt.Sprintf("%s:%s", imageFormat, archiveName)
-	destRef, err := alltransports.ParseImageName(destStr)
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse local image name: %s", destStr)
+		return nil, errors.Wrap(err, "failed to create policy")
 	}
 
 	sourceCtx := &types.SystemContext{}
 
 	isPrivate, err := isPrivateImage(image)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check if image is private: %s", image)
+		return nil, errors.Wrap(err, "failed to check if image is private")
 	}
 
 	sourceImage := image
@@ -254,14 +242,27 @@ func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image 
 		}
 		rewritten, err := rewritePrivateImage(srcRegistry, image, appSlug)
 		if err != nil {
-			return errors.Wrapf(err, "failed to rewrite private image %s", image)
+			return nil, errors.Wrap(err, "failed to rewrite private image")
 		}
 
 		sourceImage = rewritten
 	}
 	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", sourceImage))
 	if err != nil {
-		return errors.Wrap(err, "failed to parse source image name")
+		return nil, errors.Wrapf(err, "failed to parse source image name %s", sourceImage)
+	}
+
+	destCtx := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+	}
+	destCtx.DockerAuthConfig = &types.DockerAuthConfig{
+		Username: destRegistry.Username,
+		Password: destRegistry.Password,
+	}
+
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", DestRef(destRegistry, image)))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse dest image name %s", DestRef(destRegistry, image))
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
@@ -269,14 +270,14 @@ func saveOneImage(srcRegistry registry.RegistryOptions, imagesDir string, image 
 		SignBy:                "",
 		ReportWriter:          reportWriter,
 		SourceCtx:             sourceCtx,
-		DestinationCtx:        nil,
+		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to copy image")
+		return nil, errors.Wrap(err, "failed to copy image")
 	}
 
-	return nil
+	return buildImageAlts(destRegistry, image)
 }
 
 func imageRefImage(image string) (*ImageRef, error) {
