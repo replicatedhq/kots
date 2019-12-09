@@ -2,13 +2,13 @@ package upstream
 
 import (
 	"io"
+	"os"
 	"path"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 type WriteUpstreamImageOptions struct {
@@ -16,22 +16,28 @@ type WriteUpstreamImageOptions struct {
 	CreateAppDir   bool
 	AppSlug        string
 	SourceRegistry registry.RegistryOptions
-	DestRegistry   registry.RegistryOptions
 	Log            *logger.Logger
 	ReportWriter   io.Writer
 }
 
-func (u *Upstream) CopyUpstreamImages(options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
+func (u *Upstream) WriteUpstreamImages(options WriteUpstreamImageOptions) error {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)
 	}
 	upstreamDir := path.Join(rootDir, "upstream")
+	imagesDir := path.Join(rootDir, "images")
 
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to save images")
+	_, err := os.Stat(imagesDir)
+	if err == nil {
+		if err := os.RemoveAll(imagesDir); err != nil {
+			return errors.Wrap(err, "failed to remove existing images")
+		}
 	}
 
-	return newImages, nil
+	if err := image.SaveImages(options.SourceRegistry, options.AppSlug, options.Log, options.ReportWriter, imagesDir, upstreamDir); err != nil {
+		return errors.Wrap(err, "failed to save images")
+	}
+
+	return nil
 }
