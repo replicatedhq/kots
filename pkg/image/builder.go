@@ -281,9 +281,8 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		// this implicitly causes an image format conversion
 
 		// make a temp directory
-		tempDir := os.TempDir()
-		stat, dirErr := os.Stat(tempDir)
-		if dirErr != nil || !stat.IsDir() {
+		tempDir, err := ioutil.TempDir("", "temp-image-pull")
+		if err != nil {
 			return nil, errors.Wrapf(err, "temp directory %s not created", tempDir)
 		}
 		defer os.RemoveAll(tempDir)
