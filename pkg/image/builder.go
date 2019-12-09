@@ -255,14 +255,29 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 	destCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
-	destCtx.DockerAuthConfig = &types.DockerAuthConfig{
-		Username: destRegistry.Username,
-		Password: destRegistry.Password,
-	}
 
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", DestRef(destRegistry, image)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse dest image name %s", DestRef(destRegistry, image))
+	}
+
+	if destRegistry.Username != "" && destRegistry.Password != "" {
+		registryHost := reference.Domain(destRef.DockerReference())
+		if registry.IsECREndpoint(registryHost) {
+			login, err := registry.GetECRLogin(registryHost, destRegistry.Username, destRegistry.Password)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get ECR login")
+			}
+			destCtx.DockerAuthConfig = &types.DockerAuthConfig{
+				Username: login.Username,
+				Password: login.Password,
+			}
+		} else {
+			destCtx.DockerAuthConfig = &types.DockerAuthConfig{
+				Username: destRegistry.Username,
+				Password: destRegistry.Password,
+			}
+		}
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
