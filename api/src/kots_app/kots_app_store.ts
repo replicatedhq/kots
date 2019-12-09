@@ -118,7 +118,8 @@ export class KotsAppStore {
         await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
       }
     } catch(err) {
-      throw new ReplicatedError(`Failed to create gitops secret ${err.response || err}`)
+      const msg = _.get(err, "response.body.message");
+      throw new ReplicatedError(`Failed to create gitops secret ${msg || String(err)}`);
     }
   }
 
@@ -340,7 +341,8 @@ export class KotsAppStore {
         await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
       }
     } catch(err) {
-      throw new ReplicatedError(`Failed to create gitops configmap ${err.response || err}`);
+      const msg = _.get(err, "response.body.message");
+      throw new ReplicatedError(`Failed to create gitops configmap ${msg || String(err)}`);
     }
   }
 
