@@ -14,6 +14,7 @@ import (
 type DeployOptions struct {
 	Namespace              string
 	Kubeconfig             string
+	Context                string
 	IncludeShip            bool
 	IncludeGitHub          bool
 	SharedPassword         string
