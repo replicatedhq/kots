@@ -177,13 +177,19 @@ class Root extends Component {
     }
   }
 
-  ping = async () => {
+  ping = async (tries = 0) => {
     await GraphQLClient.query({
       query: ping,
       fetchPolicy: "no-cache"
     }).then(() => {
       this.setState({ connectionTerminated: false });
     }).catch(() => {
+      if (tries < 2) {
+        setTimeout(() => {
+          this.ping(tries + 1);
+        }, 1000);
+        return;
+      }
       this.setState({ connectionTerminated: true });
     });
   }
@@ -210,11 +216,13 @@ class Root extends Component {
   }
 
   componentDidUpdate = async (lastProps, lastState) => {
-    if (this.state.connectionTerminated !== lastState.connectionTerminated && this.state.connectionTerminated) {
-      clearInterval(this.interval);
-    }
-    if (this.state.connectionTerminated !== lastState.connectionTerminated && !this.state.connectionTerminated) {
-      this.interval = setInterval(async () => await this.ping(), 10000);
+    if (this.state.connectionTerminated !== lastState.connectionTerminated) {
+      if (this.interval) {
+        clearInterval(this.interval);
+      }
+      if (!this.state.connectionTerminated) {
+        this.interval = setInterval(async () => await this.ping(), 10000);
+      }
     }
   }
 
