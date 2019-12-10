@@ -79,7 +79,7 @@ export class KotsAPI {
     }
     const app = apps[0];
 
-    if (!app.currentSequence) {
+    if (_.isUndefined(app.currentSequence)) {
       return [];
     }
 
