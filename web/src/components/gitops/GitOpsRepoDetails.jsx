@@ -107,6 +107,18 @@ class GitOpsRepoDetails extends React.Component {
     }
   }
 
+  allowUpdate = () => {
+    const {
+      ownerRepo,
+      branch,
+      path,
+      action,
+      format
+    } = this.state;
+
+    return ownerRepo !== this.props.ownerRepo || branch !== this.props.branch || path !== this.props.path || action !== this.props.action || format !== this.props.format;
+  }
+
   render() {
     const {
       appName,
@@ -258,7 +270,7 @@ class GitOpsRepoDetails extends React.Component {
 
             <div className="flex">
               {this.props.showCancelBtn && <button className="btn secondary dustyGray u-marginRight--10" type="button" onClick={this.props.onCancel}>Cancel</button>}
-              <button className={`btn primary blue ${finishingSetup && "is-disabled"}`} type="button" onClick={this.onFinishSetup}>{finishingSetup ? "Finishing setup" : "Finish GitOps setup"}</button>
+              <button className={`btn primary blue ${(finishingSetup || !this.allowUpdate()) && "is-disabled"}`} type="button" onClick={this.onFinishSetup}>{finishingSetup ? "Finishing setup" : "Finish GitOps setup"}</button>
             </div>
           </div>
       </div>
