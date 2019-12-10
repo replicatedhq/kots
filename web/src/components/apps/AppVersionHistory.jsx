@@ -575,7 +575,8 @@ class AppVersionHistory extends Component {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
     }
 
-    if (data?.loading) {
+    // only render loader if there is no app yet to avoid flickering
+    if (data?.loading && !app) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
