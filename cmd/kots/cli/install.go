@@ -105,6 +105,7 @@ func InstallCmd() *cobra.Command {
 				deployOptions := kotsadm.DeployOptions{
 					Namespace:           namespace,
 					Kubeconfig:          v.GetString("kubeconfig"),
+					Context:             v.GetString("context"),
 					IncludeShip:         v.GetBool("include-ship"),
 					IncludeGitHub:       v.GetBool("include-github"),
 					SharedPassword:      v.GetString("shared-password"),

@@ -4,6 +4,8 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -51,7 +53,10 @@ func getOperatorYAML(namespace, autoCreateClusterToken string) (map[string][]byt
 }
 
 func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureOperatorRBAC(deployOptions.Namespace, clientset); err != nil {
+	// TODO: log this error on debug level
+	rules, _ := k8sutil.GetCurrentRules(deployOptions.Kubeconfig, deployOptions.Context, clientset)
+
+	if err := ensureOperatorRBAC(deployOptions.Namespace, clientset, rules); err != nil {
 		return errors.Wrap(err, "failed to ensure operator rbac")
 	}
 
@@ -62,8 +67,8 @@ func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset
 	return nil
 }
 
-func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error {
-	scope, err := ensureOperatorRole(namespace, clientset)
+func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset, rules []rbacv1.PolicyRule) error {
+	scope, err := ensureOperatorRole(namespace, clientset, rules)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure operator role")
 	}
@@ -79,7 +84,7 @@ func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset) error
 	return nil
 }
 
-func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) (RoleScope, error) {
+func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset, rules []rbacv1.PolicyRule) (RoleScope, error) {
 	// we'd like to create a cluster scope role, but will settle for namespace scope...
 
 	_, err := clientset.RbacV1().ClusterRoles().Create(operatorClusterRole(namespace))
@@ -90,12 +95,25 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) (Role
 		return None, errors.Wrap(err, "failed to create cluster role")
 	}
 
-	_, err = clientset.RbacV1().Roles(namespace).Create(operatorRole(namespace))
+	role := operatorRole(namespace)
+
+	_, err = clientset.RbacV1().Roles(namespace).Create(role)
 	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
 		return Namespace, nil
 	}
 
-	return None, errors.Wrap(err, "failed to create role")
+	// if forbidden, try a more restrictive version
+	if !kuberneteserrors.IsForbidden(err) {
+		return None, errors.Wrap(err, "failed to create role")
+	}
+
+	role.Rules = rules
+	_, err = clientset.RbacV1().Roles(namespace).Create(role)
+	if err != nil {
+		return None, errors.Wrap(err, "failed to create restricted role")
+	}
+
+	return Namespace, nil
 }
 
 func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kubernetes.Clientset) error {
