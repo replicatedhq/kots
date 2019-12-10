@@ -90,29 +90,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
-		}
-		if fetchOptions.License != nil {
-			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
-			writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
-			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
-		}
-		if err := u.WriteUpstreamImages(writeUpstreamImageOptions); err != nil {
-			return errors.Wrap(err, "failed to write upstream images")
-		}
-
-		// If the request includes a rewrite image options host name, then also
-		// push the images
-		pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
-			RootDir:      rewriteOptions.RootDir,
-			ImagesDir:    imagesDirFromOptions(u, rewriteOptions),
-			CreateAppDir: rewriteOptions.CreateAppDir,
-			Log:          log,
-			ReplicatedRegistry: registry.RegistryOptions{
-				Endpoint:      replicatedRegistryInfo.Registry,
-				ProxyEndpoint: replicatedRegistryInfo.Proxy,
-			},
-			ReportWriter: rewriteOptions.ReportWriter,
-			DestinationRegistry: registry.RegistryOptions{
+			DestRegistry: registry.RegistryOptions{
 				Endpoint:  rewriteOptions.RegistryEndpoint,
 				Namespace: rewriteOptions.RegistryNamespace,
 				Username:  rewriteOptions.RegistryUsername,
@@ -120,14 +98,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			},
 		}
 		if fetchOptions.License != nil {
-			pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
-			pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
+			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
+			writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
+			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
-		rewrittenImages, err := u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
+
+		newImages, err := u.CopyUpstreamImages(writeUpstreamImageOptions)
 		if err != nil {
-			return errors.Wrap(err, "failed to push upstream images")
+			return errors.Wrap(err, "failed to write upstream images")
 		}
-		images = rewrittenImages
+		images = newImages
 	}
 
 	findObjectsOptions := upstream.FindObjectsWithImagesOptions{
