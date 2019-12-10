@@ -277,8 +277,8 @@ class Root extends Component {
 
                     }}/>
                     <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} appName={this.state.selectedAppName} />) } />
-                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} appName={this.state.selectedAppName} /> }/>
-                    <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} />} />
+                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchListApps={this.refetchListApps} /> }/>
+                    <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
                     <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />

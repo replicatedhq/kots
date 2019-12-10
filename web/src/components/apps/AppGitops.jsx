@@ -108,11 +108,11 @@ class AppGitops extends Component {
   finishGitOpsSetup = async repoDetails => {
     const {
       ownerRepo,
-      branch = "master",
-      path = "",
-      otherService = "",
-      action = "commit",
-      format = "single"
+      branch,
+      path,
+      otherService,
+      action,
+      format
     } = repoDetails;
 
     const { app } = this.props;

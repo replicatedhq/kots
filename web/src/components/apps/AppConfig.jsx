@@ -92,14 +92,17 @@ class AppConfig extends Component {
         if (hasPreflight) {
           history.replace("/preflight");
         } else {
+          if (this.props.refetchListApps) {
+            await this.props.refetchListApps();
+          }
           history.replace(`/app/${slug}`);
         }
       } else {
         this.setState({ savingConfig: false, changed: false });
       }
     } catch(error) {
-        console.log(error);
-        this.setState({ savingConfig: false });
+      console.log(error);
+      this.setState({ savingConfig: false });
     }
   }
 

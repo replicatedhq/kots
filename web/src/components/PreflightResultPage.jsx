@@ -18,6 +18,12 @@ class PreflightResultPage extends Component {
     showWarningModal: false
   }
 
+  async componentWillUnmount() {
+    if (this.props.fromLicenseFlow && this.props.refetchListApps) {
+      await this.props.refetchListApps();
+    }
+  }
+
   deployKotsDownstream = async (force = false) => {
     try {
       const { data, history, match } = this.props;
