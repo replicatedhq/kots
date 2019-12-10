@@ -275,7 +275,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		ForceManifestMIMEType: "",
 	})
 	if err != nil {
-		log.Error(errors.Wrap(err, "failed to copy image directly"))
+		log.Info("failed to copy image directly with error %q, attempting fallback transfer method", err.Error())
 		// direct image copy failed
 		// attempt to download image to a temp directory, and then upload it from there
 		// this implicitly causes an image format conversion
