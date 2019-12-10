@@ -15,6 +15,9 @@ func GetCurrentRules(kubeconfig, context string, clientset *kubernetes.Clientset
 	rawConfig, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfig},
 		&clientcmd.ConfigOverrides{ClusterInfo: api.Cluster{Server: masterURL}}).RawConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get raw config")
+	}
 
 	if context == "" {
 		context = rawConfig.CurrentContext
