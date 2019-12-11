@@ -359,8 +359,9 @@ class GitOpsDeploymentManager extends React.Component {
             </div>
             <div>
               <button
-                className={`btn primary blue ${finishingSetup && "is-disabled"}`}
+                className="btn primary blue"
                 type="button"
+                disabled={finishingSetup}
                 onClick={this.updateSettings}
               >
                 {finishingSetup
@@ -461,7 +462,7 @@ class GitOpsDeploymentManager extends React.Component {
               {this.renderHostName(selectedService?.value, hostname, providerError)}
             </div>
             {dataChanged &&
-              <button className={`btn secondary u-marginBottom--30 ${finishingSetup ? "is-disabled" : "lightBlue"}`} onClick={this.updateSettings}>
+              <button className="btn secondary u-marginBottom--30" disabled={finishingSetup} onClick={this.updateSettings}>
                 {finishingSetup ? "Updating" : "Update"}
               </button>
             }

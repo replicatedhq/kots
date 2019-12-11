@@ -463,7 +463,8 @@ class AppVersionHistory extends Component {
         <div className="flex">
           <button className="btn secondary gray small u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
           <button
-            className={classNames("btn primary small blue", { "is-disabled u-pointerEvents--none": checkedReleasesToDiff.length !== 2 || showDiffOverlay })}
+            className="btn primary small blue"
+            disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}
             onClick={() => {
               if (gitopsEnabled) {
                 const { firstHash, secondHash } = this.getDiffCommitHashes();

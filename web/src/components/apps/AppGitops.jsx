@@ -272,7 +272,7 @@ class AppGitops extends Component {
                   When an update is available for {appTitle}, the Admin Console will commit the fully<br/>rendered and deployable YAML to {gitops?.path ? `${gitops?.path}/rendered.yaml` : `the root of ${ownerRepo}/${gitops?.branch}`} in the {gitops?.branch} branch of<br/>the {ownerRepo} repo on {gitops?.provider}.
                 </p>
                 <div className="flex justifyContent--center">
-                  <button className={`btn secondary u-marginRight--10 ${disablingGitOps ? "is-disabled" : "red"}`} onClick={this.disableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
+                  <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.disableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
                   <button className="btn secondary lightBlue" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
               </div>
@@ -301,7 +301,7 @@ class AppGitops extends Component {
 
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
-                    <button className={`btn secondary u-marginRight--10 ${testingConnection ? "is-disabled" : "lightBlue"}`} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
+                    <button className="btn secondary lightBlue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
                     <button className="btn primary blue" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
                   </div>
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
