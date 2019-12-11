@@ -328,13 +328,13 @@ export const getAppConfigGroups = gql`
         name
         type
         title
-        helpText
+        help_text
         recommended
         default
         value
-        multiValue
-        readOnly
-        writeOnce
+        multi_value
+        readonly
+        write_once
         when
         multiple
         hidden
@@ -391,13 +391,13 @@ export const templateConfigGroups = gql`
         name
         type
         title
-        helpText
+        help_text
         recommended
         default
         value
-        multiValue
-        readOnly
-        writeOnce
+        multi_value
+        readonly
+        write_once
         when
         multiple
         hidden

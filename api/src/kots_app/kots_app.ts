@@ -615,13 +615,13 @@ export interface KotsConfigItem {
   name: string;
   type: string;
   title: string;
-  helpText: string;
+  help_text: string;
   recommended: boolean;
   default: string;
   value: string;
-  multiValue: [string];
-  readOnly: boolean;
-  writeOnce: boolean;
+  multi_value: [string];
+  readonly: boolean;
+  write_once: boolean;
   when: string;
   multiple: boolean;
   hidden: boolean;
