@@ -182,6 +182,19 @@ class AppGitops extends Component {
     this.setState({ showGitOpsSettings: false });
   }
 
+  getProviderIconClassName = provider => {
+    switch (provider) {
+      case "github":
+        return "github-icon";
+      case "gitlab":
+        return "gitlab-icon";
+      case "bitbucket":
+        return "bitbucket-icon";
+      default:
+        return "github-icon";
+    }
+  }
+
   render() {
     const { app } = this.props;
     const appTitle = app.name;
@@ -249,7 +262,7 @@ class AppGitops extends Component {
                 ? <span className="icon connectionEstablished u-marginLeft--10" />
                 : <span className="icon onlyNoConnectionIcon u-marginLeft--10" />
               }
-              <span className="icon github-icon u-marginLeft--10" />
+              <span className={`icon ${this.getProviderIconClassName(gitops?.provider)} u-marginLeft--10`} />
             </div>
 
             {gitopsIsConnected ?
