@@ -62,34 +62,11 @@ func (c *Kubectl) SupportBundle(collectorURI string) error {
 
 	cmd := c.supportBundleCommand(args...)
 	cmd.Env = os.Environ()
-	stdoutCh := make(chan []byte)
-	stderrCh := make(chan []byte)
-	stopCh := make(chan bool)
-
 	cmd.Dir = "/tmp"
 
-	stdout := [][]byte{}
-	stderr := [][]byte{}
-
-	defer func() {
-		stopCh <- true
-	}()
-
-	go func() {
-		for {
-			select {
-			case o := <-stdoutCh:
-				stdout = append(stdout, o)
-			case e := <-stderrCh:
-				stderr = append(stderr, e)
-			case <-stopCh:
-				return
-			}
-		}
-	}()
-
-	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		log.Printf("error running kubectl support-bundle: \n stderr %s\n stdout %s", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+	stdout, stderr, err := Run(cmd)
+	if err != nil {
+		log.Printf("error running kubectl support-bundle: \n stderr %s\n stdout %s", stderr, stdout)
 		return errors.Wrap(err, "failed to run kubectl support-bundle")
 	}
 
@@ -104,32 +81,10 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 
 	cmd := c.preflightCommand(args...)
 	cmd.Env = os.Environ()
-	stdoutCh := make(chan []byte)
-	stderrCh := make(chan []byte)
-	stopCh := make(chan bool)
 
-	stdout := [][]byte{}
-	stderr := [][]byte{}
-
-	defer func() {
-		stopCh <- true
-	}()
-
-	go func() {
-		for {
-			select {
-			case o := <-stdoutCh:
-				stdout = append(stdout, o)
-			case e := <-stderrCh:
-				stderr = append(stderr, e)
-			case <-stopCh:
-				return
-			}
-		}
-	}()
-
-	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		log.Printf("error running kubectl preflight: \n stderr %s\n stdout %s", bytes.Join(stderr, []byte("\n")), bytes.Join(stdout, []byte("\n")))
+	stdout, stderr, err := Run(cmd)
+	if err != nil {
+		log.Printf("error running kubectl preflight: \n stderr %s\n stdout %s", stderr, stdout)
 		return errors.Wrap(err, "failed to run kubectl preflight")
 	}
 
@@ -160,35 +115,8 @@ func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool) ([]
 	cmd := c.kubectlCommand(args...)
 	cmd.Stdin = bytes.NewReader(yamlDoc)
 
-	stdoutCh := make(chan []byte)
-	stderrCh := make(chan []byte)
-	stopCh := make(chan bool)
-
-	stdout := [][]byte{}
-	stderr := [][]byte{}
-
-	defer func() {
-		stopCh <- true
-	}()
-
-	go func() {
-		for {
-			select {
-			case o := <-stdoutCh:
-				stdout = append(stdout, o)
-			case e := <-stderrCh:
-				stderr = append(stderr, e)
-			case <-stopCh:
-				return
-			}
-		}
-	}()
-
-	if err := Run(cmd, &stdoutCh, &stderrCh); err != nil {
-		return bytes.Join(stdout, []byte("\n")), bytes.Join(stderr, []byte("\n")), errors.Wrap(err, "failed to run kubectl apply")
-	}
-
-	return bytes.Join(stdout, []byte("\n")), bytes.Join(stderr, []byte("\n")), nil
+	stdout, stderr, err := Run(cmd)
+	return stdout, stderr, errors.Wrap(err, "failed to run kubectl apply")
 }
 
 func (c *Kubectl) kubectlCommand(args ...string) *exec.Cmd {

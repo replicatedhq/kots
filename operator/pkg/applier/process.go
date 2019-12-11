@@ -1,43 +1,33 @@
 package applier
 
 import (
-	"bufio"
+	"io/ioutil"
 	"os/exec"
 
 	"github.com/pkg/errors"
 )
 
-func Run(cmd *exec.Cmd, stdoutChan *chan []byte, stderrChan *chan []byte) error {
+func Run(cmd *exec.Cmd) ([]byte, []byte, error) {
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create stdout reader")
+		return nil, nil, errors.Wrapf(err, "failed to create stdout reader")
 	}
+	defer stdoutReader.Close()
+
 	stderrReader, err := cmd.StderrPipe()
 	if err != nil {
-		return errors.Wrapf(err, "failed to create stderr reader")
+		return nil, nil, errors.Wrapf(err, "failed to create stderr reader")
 	}
+	defer stderrReader.Close()
 
 	err = cmd.Start()
 	if err != nil {
-		return errors.Wrap(err, "failed to start commmand")
+		return nil, nil, errors.Wrap(err, "failed to start commmand")
 	}
 
-	if stdoutChan != nil {
-		stdoutScanner := bufio.NewScanner(stdoutReader)
-		stdoutScanner.Split(bufio.ScanLines)
-		for stdoutScanner.Scan() {
-			*stdoutChan <- stdoutScanner.Bytes()
-		}
-	}
-
-	if stderrChan != nil {
-		stderrScanner := bufio.NewScanner(stderrReader)
-		stderrScanner.Split(bufio.ScanLines)
-		for stderrScanner.Scan() {
-			*stderrChan <- stderrScanner.Bytes()
-		}
-	}
+	stdout, _ := ioutil.ReadAll(stdoutReader)
+	stderr, _ := ioutil.ReadAll(stderrReader)
 
 	err = cmd.Wait()
-	return err
+	return stdout, stderr, err
 }
