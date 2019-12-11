@@ -13,7 +13,7 @@ import (
 )
 
 //export UpdateDownload
-func UpdateDownload(socket, fromArchivePath, registryJson, cursor string) {
+func UpdateDownload(socket, fromArchivePath, namespace, registryJson, cursor string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -71,6 +71,7 @@ func UpdateDownload(socket, fromArchivePath, registryJson, cursor string) {
 
 		pullOptions := pull.PullOptions{
 			LicenseFile:         expectedLicenseFile,
+			Namespace:           namespace,
 			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
 			UpdateCursor:        cursor,
 			RootDir:             tmpRoot,

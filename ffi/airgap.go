@@ -18,7 +18,7 @@ import (
 )
 
 //export PullFromAirgap
-func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, registryHost, registryNamespace, username, password string) {
+func PullFromAirgap(socket, licenseData, airgapDir, downstream, namespace, outputFile, registryHost, registryNamespace, username, password string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -74,6 +74,7 @@ func PullFromAirgap(socket, licenseData, airgapDir, downstream, outputFile, regi
 		pullOptions := pull.PullOptions{
 			Downstreams:         []string{downstream},
 			LocalPath:           releaseDir,
+			Namespace:           namespace,
 			LicenseFile:         licenseFile,
 			AirgapRoot:          airgapDir,
 			ExcludeKotsKinds:    true,

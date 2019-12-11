@@ -13,6 +13,7 @@ import (
 
 // GenerateTest will create a new replicated app fixture for integration tests
 func GenerateTest(name string, rawArchivePath string) error {
+	namespace := "test_ns"
 	integrationLicenseData := fmt.Sprintf(`apiVersion: kots.io/v1beta1
 kind: License
 metadata:
@@ -29,7 +30,7 @@ spec:
 		return errors.Wrap(err, "failed to generate replicated app archive")
 	}
 
-	expectedFilesystem, err := generateExpectedFilesystem(rawArchivePath)
+	expectedFilesystem, err := generateExpectedFilesystem(namespace, rawArchivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate expected filesystem")
 	}
@@ -103,7 +104,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 // generateExpectedFilesystem uses kots to simularae a pull from a local source
 // and then creates a tar from what the output is. because of this, it's expected
 // that kots is working as expected when creating a new test
-func generateExpectedFilesystem(rawArchivePath string) ([]byte, error) {
+func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error) {
 	tmpRootDir, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
@@ -113,6 +114,7 @@ func generateExpectedFilesystem(rawArchivePath string) ([]byte, error) {
 	pullOptions := pull.PullOptions{
 		RootDir:             tmpRootDir,
 		LocalPath:           rawArchivePath,
+		Namespace: namespace,
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
