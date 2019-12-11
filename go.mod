@@ -6,8 +6,8 @@ require (
 	github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774 // indirect
 	github.com/DataDog/zstd v1.4.0 // indirect
 	github.com/Masterminds/semver v1.4.2
-	github.com/Masterminds/semver/v3 v3.0.1
-	github.com/Masterminds/sprig v2.20.0+incompatible
+	github.com/Masterminds/semver/v3 v3.0.2
+	github.com/Masterminds/sprig/v3 v3.0.1
 	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/Microsoft/hcsshim v0.8.6 // indirect
 	github.com/VividCortex/ewma v1.1.1 // indirect
@@ -61,7 +61,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
 	golang.org/x/sys v0.0.0-20190801041406-cbf593c0f2f3 // indirect
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect
 	gopkg.in/yaml.v2 v2.2.2

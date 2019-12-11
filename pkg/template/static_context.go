@@ -21,7 +21,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	certUtil "k8s.io/client-go/util/cert"
