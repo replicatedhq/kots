@@ -58,3 +58,15 @@ yw==
 	req.NoError(err, "kubeSeal should not return an error with a valid cert")
 	req.NotEmpty(sealed, "should return a non empty encrypted secret")
 }
+
+func TestSprigRandom(t *testing.T) {
+	req := require.New(t)
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+
+	randAlphaNum, err := builder.String("{{repl randAlphaNum 50}}")
+
+	req.NoError(err)
+	req.Len(randAlphaNum, 50)
+}
