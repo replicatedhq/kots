@@ -21,6 +21,7 @@ type replicatedPullTest struct {
 const endpoint = "http://localhost:3000"
 
 func Test_PullReplicated(t *testing.T) {
+	namespace := "test_ns"
 	tests := []replicatedPullTest{}
 
 	testDirs, err := ioutil.ReadDir("tests")
@@ -60,6 +61,7 @@ func Test_PullReplicated(t *testing.T) {
 			pullOptions := pull.PullOptions{
 				RootDir:             actualDir,
 				LicenseFile:         path.Join(test.testDir, "license.yaml"),
+				Namespace: namespace,
 				ExcludeAdminConsole: true,
 				ExcludeKotsKinds:    true,
 				Silent:              true,

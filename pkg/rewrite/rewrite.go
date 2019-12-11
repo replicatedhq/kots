@@ -120,25 +120,38 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to find objects with images")
 	}
 
-	registryUser := rewriteOptions.RegistryUsername
-	registryPass := rewriteOptions.RegistryPassword
-	if registryUser == "" {
-		// this will only work when envoked from CLI
-		registryUser, registryPass, err = registry.LoadAuthForRegistry(rewriteOptions.RegistryEndpoint)
+	if rewriteOptions.RegistryEndpoint != "" {
+		registryUser := rewriteOptions.RegistryUsername
+		registryPass := rewriteOptions.RegistryPassword
+		if registryUser == "" {
+			// this will only work when envoked from CLI where `docker login` command has been executed
+			registryUser, registryPass, err = registry.LoadAuthForRegistry(rewriteOptions.RegistryEndpoint)
+			if err != nil {
+				return errors.Wrapf(err, "failed to load registry auth for %q", rewriteOptions.RegistryEndpoint)
+			}
+		}
+		pullSecret, err = registry.PullSecretForRegistries(
+			[]string{rewriteOptions.RegistryEndpoint},
+			registryUser,
+			registryPass,
+			rewriteOptions.K8sNamespace,
+		)
 		if err != nil {
-			return errors.Wrapf(err, "failed to load registry auth for %q", rewriteOptions.RegistryEndpoint)
+			return errors.Wrap(err, "failed to create private registry pull secret")
+		}
+	} else {
+		replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
+		pullSecret, err = registry.PullSecretForRegistries(
+			replicatedRegistryInfo.ToSlice(),
+			rewriteOptions.License.Spec.LicenseID,
+			rewriteOptions.License.Spec.LicenseID,
+			rewriteOptions.K8sNamespace,
+		)
+		if err != nil {
+			return errors.Wrap(err, "failed to create Replicated registry pull secret")
 		}
 	}
 
-	pullSecret, err = registry.PullSecretForRegistries(
-		[]string{rewriteOptions.RegistryEndpoint},
-		registryUser,
-		registryPass,
-		rewriteOptions.K8sNamespace,
-	)
-	if err != nil {
-		return errors.Wrap(err, "create pull secret")
-	}
 	objects = affectedObjects
 
 	renderOptions := base.RenderOptions{

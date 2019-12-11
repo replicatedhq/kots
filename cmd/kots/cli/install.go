@@ -166,7 +166,6 @@ func InstallCmd() *cobra.Command {
 				if err := upload.Upload(rootDir, uploadOptions); err != nil {
 					return err
 				}
-				close(stopCh)
 			}
 
 			// port forward

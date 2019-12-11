@@ -17,7 +17,7 @@ import (
 )
 
 //export PullFromLicense
-func PullFromLicense(socket string, licenseData string, downstream string, outputFile string) {
+func PullFromLicense(socket string, licenseData string, downstream string, namespace string, outputFile string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -57,6 +57,7 @@ func PullFromLicense(socket string, licenseData string, downstream string, outpu
 		pullOptions := pull.PullOptions{
 			Downstreams:         []string{downstream},
 			LicenseFile:         licenseFile,
+			Namespace:           namespace,
 			ExcludeKotsKinds:    true,
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,

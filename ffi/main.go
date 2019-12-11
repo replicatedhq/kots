@@ -19,7 +19,7 @@ import (
 )
 
 //export UpdateCheck
-func UpdateCheck(socket, fromArchivePath string) {
+func UpdateCheck(socket, fromArchivePath, namespace string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -65,6 +65,7 @@ func UpdateCheck(socket, fromArchivePath string) {
 
 		pullOptions := pull.PullOptions{
 			LicenseFile:         expectedLicenseFile,
+			Namespace:           namespace,
 			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
 			RootDir:             tmpRoot,
 			ExcludeKotsKinds:    true,
