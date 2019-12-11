@@ -181,10 +181,10 @@ class AppLicense extends Component {
                     onDropAccepted={this.onDrop}
                     multiple={false}
                   >
-                  <button className="btn secondary green u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+                  <button className="btn secondary blue u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
                 </Dropzone> 
                 :
-                <button className="btn secondary green u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
+                <button className="btn secondary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
               }
               {message &&
                 <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {

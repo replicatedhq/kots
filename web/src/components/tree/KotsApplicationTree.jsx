@@ -239,7 +239,7 @@ class KotsApplicationTree extends React.Component {
                 </div>
               </div>
               <div className="u-marginTop--30 flex">
-                <button onClick={this.toggleInstructionsModal} className="btn green primary">Ok, got it!</button>
+                <button onClick={this.toggleInstructionsModal} className="btn blue primary">Ok, got it!</button>
               </div>
             </div>
           </Modal>

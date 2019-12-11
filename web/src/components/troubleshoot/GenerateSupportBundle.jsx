@@ -172,7 +172,7 @@ class GenerateSupportBundle extends React.Component {
                 </div>
               :
                 <div>
-                  <button className="btn primary u-marginTop--20" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle} </button>
+                  <button className="btn primary blue u-marginTop--20" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle} </button>
                 </div>
               }
               {showRunCommand ?

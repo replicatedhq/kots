@@ -27,7 +27,7 @@ class DeployModal extends React.Component {
           <button
             onClick={onForceDeployClick}
             type="button"
-            className="btn green primary">
+            className="btn blue primary">
             Deploy this version
           </button>
           <button type="button" onClick={hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>

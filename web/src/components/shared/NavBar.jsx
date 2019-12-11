@@ -183,7 +183,7 @@ export class NavBar extends PureComponent {
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
                   <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
-                    <Link className="btn secondary green rounded" to="/upload-license">
+                    <Link className="btn secondary blue rounded" to="/upload-license">
                       Add a new application
                     </Link>
                   </div>

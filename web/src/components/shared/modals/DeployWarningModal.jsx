@@ -27,7 +27,7 @@ class DeployWarningModal extends React.Component {
           <button
             onClick={onForceDeployClick}
             type="button"
-            className="btn green primary"
+            className="btn blue primary"
           >
             Deploy this version
           </button>

@@ -305,7 +305,7 @@ class AppDetailPage extends Component {
                 {`kubectl kots download <namespace>`}
               </CodeSnippet>
               <div className="u-marginTop--10 flex">
-                <button onClick={this.toggleDisplayDownloadModal} className="btn green primary">Ok, got it!</button>
+                <button onClick={this.toggleDisplayDownloadModal} className="btn blue primary">Ok, got it!</button>
               </div>
             </div>
           </Modal>

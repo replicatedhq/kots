@@ -157,7 +157,7 @@ class PreflightResultPage extends Component {
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {preflightResultData?.appSlug} dashboard? </p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <Link to={`/app/${preflightResultData?.appSlug}`}>
-                <button type="button" className="btn green primary">Go to Dashboard</button>
+                <button type="button" className="btn blue primary">Go to Dashboard</button>
               </Link>
             </div>
           </div>
@@ -176,7 +176,7 @@ class PreflightResultPage extends Component {
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Preflight is showing some issues, are you sure you want to continue?</p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <button type="button" className="btn secondary" onClick={this.hideWarningModal}>Cancel</button>
-              <button type="button" className="btn green primary u-marginLeft--10" onClick={() => this.deployKotsDownstream(true)}>
+              <button type="button" className="btn blue primary u-marginLeft--10" onClick={() => this.deployKotsDownstream(true)}>
                 Deploy and continue
               </button>
             </div>

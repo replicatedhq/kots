@@ -230,7 +230,7 @@ export class SupportBundleAnalysis extends React.Component {
               <span className="u-fontSize--large u-fontWeight--normal u-color--dustyGray u-lineHeight--more">By sharing this bundle, Replicated will be able to view analyzers and inspect all files. Only this bundle will be visible, no other bundles will be seen by our team.</span>
               <div className="flex justifyContent--flexEnd u-marginTop--30">
                 <button className="btn secondary flex-auto u-marginRight--10" onClick={() => { this.toggleConfirmShareModal() }}>Cancel</button>
-                <button className="btn secondary green flex-auto" disabled={this.state.shareBundleLoading} onClick={() => this.shareBundle()}>{this.state.shareBundleLoading ? "Sharing" : "Share bundle"}</button>
+                <button className="btn secondary blue flex-auto" disabled={this.state.shareBundleLoading} onClick={() => this.shareBundle()}>{this.state.shareBundleLoading ? "Sharing" : "Share bundle"}</button>
               </div>
             </div>
           </Modal>
