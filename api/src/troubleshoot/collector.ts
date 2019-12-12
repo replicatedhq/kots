@@ -9,8 +9,9 @@ export class Collector {
 export async function injectKotsCollectors(parsedSpec: any, licenseData: string): Promise<any> {
   let spec = parsedSpec;
   spec = await injectDBCollector(spec);
-  spec = await injectLicenseCollector(spec, licenseData);
-  spec = await injectAPICollector(spec);
+  spec = injectLicenseCollector(spec, licenseData);
+  spec = injectAPICollector(spec);
+  spec = injectOperatorCollector(spec);
   return spec;
 }
 
@@ -25,17 +26,14 @@ async function injectDBCollector(parsedSpec: any): Promise<any> {
       selector: [`app=${pgConfig.host}`],
       containerName: pgConfig.host,
       namespace: process.env["POD_NAMESPACE"],
-      name: "admin_console",
+      name: "kots/admin_console",
       command: ["pg_dump"],
       args: ["-U", pgConfig.user],
       timeout: "10s",
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
+  let collectors = _.get(parsedSpec, "spec.collectors", []) as any[];
 
   let nameCounter = 1;
   for (let i = 0; i < collectors.length; i++) {
@@ -58,45 +56,65 @@ async function injectDBCollector(parsedSpec: any): Promise<any> {
   return parsedSpec;
 }
 
-async function injectLicenseCollector(parsedSpec: any, licenseData: string): Promise<any> {
+function injectLicenseCollector(parsedSpec: any, licenseData: string): any {
   if (!licenseData) {
     return parsedSpec;
   }
 
-  const licenseCollector = {
+  const newCollector = {
     data: {
       collectorName: "license.yaml",
-      name: "admin_console",
+      name: "kots/admin_console",
       data: licenseData,
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
-
-  collectors.push(licenseCollector);
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
 }
 
-async function injectAPICollector(parsedSpec: any): Promise<any> {
-  let collectorNameBase = "kotsadm-api";
+function injectAPICollector(parsedSpec: any): any {
   const newCollector = {
     logs: {
-      collectorName: collectorNameBase,
+      collectorName: "kotsadm-api",
       selector: ["app=kotsadm-api"],
       namespace: process.env["POD_NAMESPACE"],
-      name: "admin_console",
+      name: "kots/admin_console",
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectOperatorCollector(parsedSpec: any): any {
+  const newCollector = {
+    logs: {
+      collectorName: "kotsadm-operator",
+      selector: ["app=kotsadm-operator"],
+      namespace: process.env["POD_NAMESPACE"],
+      name: "kots/admin_console",
+    },
+  };
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
 
   collectors.push(newCollector);
   _.set(parsedSpec, "spec.collectors", collectors);
