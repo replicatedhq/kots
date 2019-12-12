@@ -22,7 +22,8 @@ type Template struct {
 }
 
 type PodSpec struct {
-	Containers       []Container       `yaml:"containers,omitempty"` // don't write empty array into patches
+	Containers       []Container       `yaml:"containers,omitempty"`     // don't write empty array into patches
+	InitContainers   []Container       `yaml:"initContainers,omitempty"` // don't write empty array into patches
 	ImagePullSecrets []ImagePullSecret `yaml:"imagePullSecrets"`
 }
 
