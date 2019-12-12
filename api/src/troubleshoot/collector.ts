@@ -12,6 +12,7 @@ export async function injectKotsCollectors(parsedSpec: any, licenseData: string)
   spec = injectLicenseCollector(spec, licenseData);
   spec = injectAPICollector(spec);
   spec = injectOperatorCollector(spec);
+  spec = injectRookCollectors(spec);
   return spec;
 }
 
@@ -116,7 +117,32 @@ function injectOperatorCollector(parsedSpec: any): any {
   return parsedSpec;
 }
 
-  collectors.push(newCollector);
+function injectRookCollectors(parsedSpec: any): any {
+  const names: string[] = [
+    "rook-ceph-agent",
+    "rook-ceph-mgr",
+    "rook-ceph-mon",
+    "rook-ceph-operator",
+    "rook-ceph-osd",
+    "rook-ceph-osd-prepare",
+    "rook-ceph-rgw",
+    "rook-discover",
+  ];
+  const newCollectors = _.map(names, (name) => {
+    return {
+      logs: {
+        collectorName: name,
+        selector: [`app=${name}`],
+        namespace: "rook-ceph",
+        name: "kots/rook",
+      },
+    };
+  });
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    newCollectors,
+  );
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
