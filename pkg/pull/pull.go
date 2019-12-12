@@ -137,6 +137,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
+
+		if err := publicKeysMatch(fetchOptions.License, airgap); err != nil {
+			return "", errors.Wrap(err, "failed to validate app key")
+		}
+
 		fetchOptions.Airgap = airgap
 	}
 
@@ -467,4 +472,22 @@ func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) 
 	}
 
 	return filepath.Join(pullOptions.RootDir, "images")
+}
+
+func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
+	if license == nil || airgap == nil {
+		// not sure when this would happen, but earlier logic allows this combinaion
+		return nil
+	}
+
+	publicKey, err := GetAppPublicKey(license)
+	if err != nil {
+		return errors.Wrap(err, "failed to get public key from license")
+	}
+
+	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+		return errors.Wrap(err, "failed to verify bundle signature")
+	}
+
+	return nil
 }
