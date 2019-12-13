@@ -6,19 +6,21 @@ export class Collector {
   public spec: String;
 }
 
-export async function injectKotsCollectors(parsedSpec: any, licenseData: string): Promise<any> {
+export function injectKotsCollectors(params: Params, parsedSpec: any, licenseData: string): any {
   let spec = parsedSpec;
-  spec = await injectDBCollector(spec);
+  spec = injectDBCollector(params, spec);
   spec = injectLicenseCollector(spec, licenseData);
   spec = injectAPICollector(spec);
   spec = injectOperatorCollector(spec);
-  spec = injectRookCollectors(spec);
-  spec = injectKurlCollectors(spec);
+  if (params.enableKurl) {
+    spec = injectRookCollectors(spec);
+    spec = injectKurlCollectors(spec);
+  }
   return spec;
 }
 
-async function injectDBCollector(parsedSpec: any): Promise<any> {
-  const uri = (await Params.getParams()).postgresUri;
+function injectDBCollector(params: Params, parsedSpec: any): any {
+  const uri = params.postgresUri;
   const pgConfig = parse(uri);
 
   let collectorNameBase = "kotsadm-postgres-db";

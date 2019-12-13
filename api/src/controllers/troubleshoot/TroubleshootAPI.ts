@@ -30,10 +30,12 @@ export class TroubleshootAPI {
 
     let parsedSpec = jsYaml.load(collector);
 
+    const params = await Params.getParams();
+
     // the injected collector has a different namespace in dev environment,
     // so the order of these calls matters.
     parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-    parsedSpec = await injectKotsCollectors(parsedSpec, "");
+    parsedSpec = injectKotsCollectors(params, parsedSpec, "");
 
     response.send(200, parsedSpec);
   }
@@ -75,7 +77,7 @@ export class TroubleshootAPI {
       // the injected collector has a different namespace in dev environment,
       // so the order of these calls matters.
       parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-      parsedSpec = await injectKotsCollectors(parsedSpec, licenseData);
+      parsedSpec = injectKotsCollectors(params, parsedSpec, licenseData);
     }
     parsedSpec.spec.afterCollection = [
       {
