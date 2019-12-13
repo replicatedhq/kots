@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
@@ -19,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func InstallCmd() *cobra.Command {
@@ -53,6 +55,19 @@ func InstallCmd() *cobra.Command {
 			upstream := pull.RewriteUpstream(args[0])
 
 			namespace := v.GetString("namespace")
+			if namespace != "" {
+				if strings.Contains(namespace, "_") {
+					return errors.New("a namespace should not contain the _ character")
+				}
+
+				errs := validation.IsValidLabelValue(namespace)
+				if len(errs) > 0 {
+					return errors.New(errs[0])
+				}
+
+				return nil
+			}
+
 			if namespace == "" {
 				enteredNamespace, err := promptForNamespace(upstream)
 				if err != nil {
@@ -263,6 +278,16 @@ func promptForNamespace(upstreamURI string) (string, error) {
 			if len(input) == 0 {
 				return errors.New("invalid namespace")
 			}
+
+			if strings.Contains(input, "_") {
+				return errors.New("a namespace should not contain the _ character")
+			}
+
+			errs := validation.IsValidLabelValue(input)
+			if len(errs) > 0 {
+				return errors.New(errs[0])
+			}
+
 			return nil
 		},
 	}
