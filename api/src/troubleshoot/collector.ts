@@ -13,6 +13,7 @@ export async function injectKotsCollectors(parsedSpec: any, licenseData: string)
   spec = injectAPICollector(spec);
   spec = injectOperatorCollector(spec);
   spec = injectRookCollectors(spec);
+  spec = injectKurlCollectors(spec);
   return spec;
 }
 
@@ -135,6 +136,30 @@ function injectRookCollectors(parsedSpec: any): any {
         selector: [`app=${name}`],
         namespace: "rook-ceph",
         name: "kots/rook",
+      },
+    };
+  });
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    newCollectors,
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectKurlCollectors(parsedSpec: any): any {
+  const names: string[] = [
+    "registry",
+  ];
+  const newCollectors = _.map(names, (name) => {
+    return {
+      logs: {
+        collectorName: name,
+        selector: [`app=${name}`],
+        namespace: "kurl",
+        name: "kots/kurl",
       },
     };
   });
