@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrSignatureInvalid = errors.New("license signature is invalid")
-	ErrSignatureMissing = errors.New("license signature is missing")
+	ErrSignatureInvalid = errors.New("signature is invalid")
+	ErrSignatureMissing = errors.New("signature is missing")
 )
 
 type InnerSignature struct {
@@ -228,4 +228,31 @@ func getMessageFromLicense(license *kotsv1beta1.License) ([]byte, error) {
 	}
 
 	return message, err
+}
+
+func GetAppPublicKey(license *kotsv1beta1.License) ([]byte, error) {
+	// old licenses's signature is a single space character
+	if len(license.Spec.Signature) == 0 || len(license.Spec.Signature) == 1 {
+		return nil, ErrSignatureMissing
+	}
+
+	innerSignature := &InnerSignature{}
+
+	outerSignature := &OuterSignature{}
+	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal license outer signature")
+	}
+
+	isOldFormat := len(outerSignature.InnerSignature) == 0
+	if isOldFormat {
+		if err := json.Unmarshal(license.Spec.Signature, innerSignature); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal license signature")
+		}
+	} else {
+		if err := json.Unmarshal(outerSignature.InnerSignature, innerSignature); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal license inner signature")
+		}
+	}
+
+	return []byte(innerSignature.PublicKey), nil
 }
