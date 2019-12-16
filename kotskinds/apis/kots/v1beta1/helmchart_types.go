@@ -17,11 +17,46 @@ limitations under the License.
 package v1beta1
 
 import (
+	"encoding/json"
+
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MappedChartValue struct {
 	Value string `json:",inline"`
+
+	directValue string                      `json:"-"`
+	children    map[string]MappedChartValue `json:"-"`
+}
+
+func (m *MappedChartValue) GetValue() interface{} {
+	if m.directValue != "" {
+		return m.directValue
+	}
+
+	return m.children
+}
+
+func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
+	var b interface{}
+	err := json.Unmarshal(value, &b)
+	if err != nil {
+		return err
+	}
+
+	if b, ok := b.(string); ok {
+		m.directValue = b
+		return nil
+	}
+
+	if b, ok := b.(map[string]MappedChartValue); ok {
+		m.children = b
+		return nil
+	}
+
+	return errors.Errorf("unknown mapped chart value type: %T", b)
 }
 
 type ChartIdentifier struct {
