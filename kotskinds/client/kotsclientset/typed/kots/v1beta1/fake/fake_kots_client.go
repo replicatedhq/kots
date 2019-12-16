@@ -43,6 +43,10 @@ func (c *FakeKotsV1beta1) ConfigValueses(namespace string) v1beta1.ConfigValuesI
 	return &FakeConfigValueses{c, namespace}
 }
 
+func (c *FakeKotsV1beta1) HelmCharts(namespace string) v1beta1.HelmChartInterface {
+	return &FakeHelmCharts{c, namespace}
+}
+
 func (c *FakeKotsV1beta1) Installations(namespace string) v1beta1.InstallationInterface {
 	return &FakeInstallations{c, namespace}
 }
