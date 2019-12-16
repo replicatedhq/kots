@@ -1,7 +1,7 @@
 import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams, HeaderParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
 import { Request, Response } from "express";
-import { putObject, upload } from "../../util/s3";
+import { putObject } from "../../util/s3";
 import { Params } from "../../server/params";
 import path from "path";
 import fs from "fs";
@@ -23,7 +23,7 @@ import {
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
-import { extractFromTgzStream, getImageFiles, getImageFormats, pathToShortImageName, pathToImageName } from "../../airgap/archive";
+import { extractFromTgzStream } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import {
   kotsPullFromAirgap,
@@ -31,7 +31,8 @@ import {
   kotsTestRegistryCredentials,
   Update,
   kotsAppCheckForUpdates,
-  kotsAppDownloadUpdates
+  kotsAppDownloadUpdates,
+  kotsAppDownloadUpdateFromAirgap
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import { getDiffSummary } from "../../util/utilities";
@@ -408,28 +409,8 @@ export class KotsAPI {
       liveness.start();
 
       await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...", "running");
-      await upload(params, file.originalname, fs.createReadStream(file.path), params.airgapBucket);
 
       await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
-      const imagesRoot = path.join(dstDir.name, "images");
-
-      const imageFormats = getImageFormats(imagesRoot);
-
-      let imageMap: any[] = [];
-      for (const format of imageFormats) {
-        const formatRoot = path.join(imagesRoot, format);
-        const files = await getImageFiles(formatRoot);
-
-        const m = files.map(imageFile => {
-          return {
-            format: format,
-            filePath: imageFile,
-            shortName: pathToShortImageName(formatRoot, imageFile),
-            fullName: pathToImageName(formatRoot, imageFile),
-          }
-        });
-        imageMap = imageMap.concat(m);
-      }
 
       const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
       let downstream;
@@ -494,6 +475,58 @@ export class KotsAPI {
       hasPreflight,
       isConfigurable,
     };
+  }
+
+  @Post("/airgap/update")
+  async kotsUploadAirgapUpdate(
+    @MultipartFile("file") file: Express.Multer.File,
+    @BodyParams("") body: any,
+    @Req() request: Request,
+    @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
+  ) {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
+    const stores = request.app.locals.stores;
+
+    const liveness = new Repeater(() => {
+      return new Promise((resolve) => {
+        request.app.locals.stores.kotsAppStore.updateUpdateDownloadStatusLiveness().finally(() => {
+          resolve();
+        })
+      });
+    }, 1000);
+
+    // we are doing this asyncronously....
+    const processFile = async function() {
+      try {
+        liveness.start();
+        await stores.kotsAppStore.setUpdateDownloadStatus("Processing package...", "running");
+
+        const app = await stores.kotsAppStore.getApp(body.appId);
+        const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
+
+        await kotsAppDownloadUpdateFromAirgap(file.path, app, registryInfo, stores);
+
+        await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
+
+      } catch(err) {
+
+        await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
+        throw(err);
+
+      } finally {
+        liveness.stop();
+      }
+    }
+
+    processFile();
+
+    response.status(202);
   }
 
   @Post("/airgap/reset/:slug")

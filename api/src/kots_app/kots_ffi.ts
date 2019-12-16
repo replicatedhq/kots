@@ -45,6 +45,7 @@ function kots() {
     UpdateCheck: ["void", [GoString, GoString, GoString]],
     ListUpdates: ["void", [GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
+    UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoString]],
@@ -222,10 +223,69 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, regist
     }
 
     if (isUpdateAvailable > 0) {
-      await saveUpdateVersion(archive, app, stores);
+      await saveUpdateVersion(archive, app, stores, "Upstream Update");
     }
 
     return isUpdateAvailable > 0;
+  } finally {
+    tmpDir.removeCallback();
+  }
+}
+
+export async function kotsAppDownloadUpdateFromAirgap(airgapFile: string, app: KotsApp, registryInfo: KotsAppRegistryDetails, stores: Stores): Promise<void> {
+  const tmpDir = tmp.dirSync();
+  const archive = path.join(tmpDir.name, "archive.tar.gz");
+
+  try {
+    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
+    const namespace = getK8sNamespace();
+
+    const statusServer = new StatusServer();
+    await statusServer.start(tmpDir.name);
+
+    const socketParam = new GoString();
+    socketParam["p"] = statusServer.socketFilename;
+    socketParam["n"] = statusServer.socketFilename.length;
+
+    const archiveParam = new GoString();
+    archiveParam["p"] = archive;
+    archiveParam["n"] = archive.length;
+
+    const namespaceParam = new GoString();
+    namespaceParam["p"] = namespace;
+    namespaceParam["n"] = namespace.length;
+
+    const airgapFileParam = new GoString();
+    airgapFileParam["p"] = airgapFile;
+    airgapFileParam["n"] = airgapFile.length;
+
+    const registryJson = JSON.stringify(registryInfo)
+    const registryJsonParam = new GoString();
+    registryJsonParam["p"] = registryJson;
+    registryJsonParam["n"] = registryJson.length;
+
+    kots().UpdateDownloadFromAirgap(socketParam, archiveParam, namespaceParam, registryJsonParam, airgapFileParam);
+    await statusServer.connection();
+    const isUpdateAvailable: number = await statusServer.termination((resolve, reject, obj): boolean => {
+      if (obj.status === "running") {
+        stores.kotsAppStore.setUpdateDownloadStatus(obj.display_message, "running");
+        return false;
+      }
+      if (obj.status === "terminated") {
+        if (obj.exit_code !== -1) {
+          resolve(obj.exit_code);
+        } else {
+          reject(new Error(`process failed: ${obj.display_message}`));
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (isUpdateAvailable) {
+      await saveUpdateVersion(archive, app, stores, "Airgap Upload");
+    }
+
   } finally {
     tmpDir.removeCallback();
   }
@@ -327,7 +387,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
     }
 
     if (isUpdateAvailable > 0) {
-      await saveUpdateVersion(archive, app, stores);
+      await saveUpdateVersion(archive, app, stores, "Upstream Update");
     }
 
     return isUpdateAvailable > 0;
@@ -336,7 +396,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
   }
 }
 
-async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) {
+async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, updateSource: string) {
   // if there was an update available, expect that the new archive is in the smae place as the one we pased in
   const params = await Params.getParams();
   const buffer = fs.readFileSync(archive);
@@ -395,7 +455,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
       ? "pending_preflight"
       : "pending";
     const diffSummary = await getDiffSummary(app);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, status, "Upstream Update", diffSummary, commitUrl, gitDeployable);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, status, updateSource, diffSummary, commitUrl, gitDeployable);
   }
 }
 
@@ -645,7 +705,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     }
 
     await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", "", "", false);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap Upload", "", "", false);
   }
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);

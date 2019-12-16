@@ -290,17 +290,19 @@ class UploadAirgapBundle extends React.Component {
                 }
               </p>
             </div>
-            {showRegistry ? <div className="u-marginTop--30">
-              <AirgapRegistrySettings
-                app={null}
-                hideCta={true}
-                hideTestConnection={true}
-                namespaceDescription="What namespace do you want the application images pushed to?"
-                gatherDetails={this.getRegistryDetails}
-                registryDetails={registryDetails}
-                showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
-              />
-            </div> : null}
+            {showRegistry &&
+              <div className="u-marginTop--30">
+                <AirgapRegistrySettings
+                  app={null}
+                  hideCta={true}
+                  hideTestConnection={true}
+                  namespaceDescription="What namespace do you want the application images pushed to?"
+                  gatherDetails={this.getRegistryDetails}
+                  registryDetails={registryDetails}
+                  showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
+                />
+              </div>
+            }
             <div className="u-marginTop--20 flex">
               <div className={classNames("FileUpload-wrapper", "flex1", {
                 "has-file": hasFile,

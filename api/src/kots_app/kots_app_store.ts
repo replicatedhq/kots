@@ -1574,11 +1574,6 @@ order by adv.sequence desc`;
     }
   }
 
-  async getAirgapBundleGetUrl(filename: string): Promise<string> {
-    const signed = await signGetRequest(this.params, this.params.airgapBucket, filename, 60);
-    return signed;
-  }
-
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
