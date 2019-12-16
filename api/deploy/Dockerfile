@@ -1,4 +1,4 @@
-FROM node:10
+FROM node:10 AS build
 WORKDIR /src
 ADD . /src
 
@@ -8,8 +8,6 @@ RUN make deps-prod
 RUN curl -L https://install.goreleaser.com/github.com/tj/node-prune.sh | bash && ./bin/node-prune
 
 FROM node:10-buster-slim
-COPY --from=0 /src/build /src/build
-COPY --from=0 /src/node_modules /src/node_modules
 
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.16.1
@@ -46,6 +44,9 @@ ADD ./deploy/policy.json /etc/containers/policy.json
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
     libgpgme-dev libdevmapper-dev \
   && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /src/build /src/build
+COPY --from=build /src/node_modules /src/node_modules
 
 EXPOSE 3000
 ARG commit=unknown

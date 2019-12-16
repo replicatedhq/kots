@@ -6,16 +6,21 @@ export class Collector {
   public spec: String;
 }
 
-export async function injectKotsCollectors(parsedSpec: any, licenseData: string): Promise<any> {
+export function injectKotsCollectors(params: Params, parsedSpec: any, licenseData: string): any {
   let spec = parsedSpec;
-  spec = await injectDBCollector(spec);
-  spec = await injectLicenseCollector(spec, licenseData);
-  spec = await injectAPICollector(spec);
+  spec = injectDBCollector(params, spec);
+  spec = injectLicenseCollector(spec, licenseData);
+  spec = injectAPICollector(spec);
+  spec = injectOperatorCollector(spec);
+  if (params.enableKurl) {
+    spec = injectRookCollectors(spec);
+    spec = injectKurlCollectors(spec);
+  }
   return spec;
 }
 
-async function injectDBCollector(parsedSpec: any): Promise<any> {
-  const uri = (await Params.getParams()).postgresUri;
+function injectDBCollector(params: Params, parsedSpec: any): any {
+  const uri = params.postgresUri;
   const pgConfig = parse(uri);
 
   let collectorNameBase = "kotsadm-postgres-db";
@@ -25,17 +30,14 @@ async function injectDBCollector(parsedSpec: any): Promise<any> {
       selector: [`app=${pgConfig.host}`],
       containerName: pgConfig.host,
       namespace: process.env["POD_NAMESPACE"],
-      name: "admin_console",
+      name: "kots/admin_console",
       command: ["pg_dump"],
       args: ["-U", pgConfig.user],
       timeout: "10s",
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
+  let collectors = _.get(parsedSpec, "spec.collectors", []) as any[];
 
   let nameCounter = 1;
   for (let i = 0; i < collectors.length; i++) {
@@ -58,47 +60,116 @@ async function injectDBCollector(parsedSpec: any): Promise<any> {
   return parsedSpec;
 }
 
-async function injectLicenseCollector(parsedSpec: any, licenseData: string): Promise<any> {
+function injectLicenseCollector(parsedSpec: any, licenseData: string): any {
   if (!licenseData) {
     return parsedSpec;
   }
 
-  const licenseCollector = {
+  const newCollector = {
     data: {
       collectorName: "license.yaml",
-      name: "admin_console",
+      name: "kots/admin_console",
       data: licenseData,
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
-
-  collectors.push(licenseCollector);
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
 }
 
-async function injectAPICollector(parsedSpec: any): Promise<any> {
-  let collectorNameBase = "kotsadm-api";
+function injectAPICollector(parsedSpec: any): any {
   const newCollector = {
     logs: {
-      collectorName: collectorNameBase,
+      collectorName: "kotsadm-api",
       selector: ["app=kotsadm-api"],
       namespace: process.env["POD_NAMESPACE"],
-      name: "admin_console",
+      name: "kots/admin_console",
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
-  if (!collectors) {
-    collectors = [];
-  }
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
 
-  collectors.push(newCollector);
+  return parsedSpec;
+}
+
+function injectOperatorCollector(parsedSpec: any): any {
+  const newCollector = {
+    logs: {
+      collectorName: "kotsadm-operator",
+      selector: ["app=kotsadm-operator"],
+      namespace: process.env["POD_NAMESPACE"],
+      name: "kots/admin_console",
+    },
+  };
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectRookCollectors(parsedSpec: any): any {
+  const names: string[] = [
+    "rook-ceph-agent",
+    "rook-ceph-mgr",
+    "rook-ceph-mon",
+    "rook-ceph-operator",
+    "rook-ceph-osd",
+    "rook-ceph-osd-prepare",
+    "rook-ceph-rgw",
+    "rook-discover",
+  ];
+  const newCollectors = _.map(names, (name) => {
+    return {
+      logs: {
+        collectorName: name,
+        selector: [`app=${name}`],
+        namespace: "rook-ceph",
+        name: "kots/rook",
+      },
+    };
+  });
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    newCollectors,
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectKurlCollectors(parsedSpec: any): any {
+  const names: string[] = [
+    "registry",
+  ];
+  const newCollectors = _.map(names, (name) => {
+    return {
+      logs: {
+        collectorName: name,
+        selector: [`app=${name}`],
+        namespace: "kurl",
+        name: "kots/kurl",
+      },
+    };
+  });
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    newCollectors,
+  );
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
