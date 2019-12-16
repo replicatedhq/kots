@@ -933,6 +933,9 @@ order by adv.sequence desc`;
     ];
 
     const result = await this.pool.query(q, v);
+    if (!result.rows.length) {
+      return undefined;
+    }
     return result.rows[0].app_spec;
   }
 
