@@ -118,10 +118,27 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset, rules
 
 func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kubernetes.Clientset) error {
 	if scope == Cluster {
-		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(namespace))
-		if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+		clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
+		if kuberneteserrors.IsNotFound(err) {
+			_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(namespace))
+			if err != nil {
+				return errors.Wrap(err, "failed to create cluster rolebinding")
+			}
+
+			return nil
+		}
+
+		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
+			Kind:      "ServiceAccount",
+			Name:      "kotsadm-operator",
+			Namespace: namespace,
+		})
+
+		_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+		if err != nil {
 			return errors.Wrap(err, "failed to create cluster rolebinding")
 		}
+
 		return nil
 	}
 
