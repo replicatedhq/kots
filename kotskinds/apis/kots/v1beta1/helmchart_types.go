@@ -27,13 +27,24 @@ import (
 type MappedChartValue struct {
 	Value string `json:",inline"`
 
-	directValue string                      `json:"-"`
-	children    map[string]MappedChartValue `json:"-"`
+	valueType string `json:"-"`
+
+	strValue  string `json:"-"`
+	boolValue bool   `json:"-"`
+	intValue  int64  `json:"-"`
+
+	children map[string]MappedChartValue `json:"-"`
 }
 
 func (m *MappedChartValue) GetValue() interface{} {
-	if m.directValue != "" {
-		return m.directValue
+	if m.valueType == "string" {
+		return m.strValue
+	}
+	if m.valueType == "bool" {
+		return m.boolValue
+	}
+	if m.valueType == "int" {
+		return m.intValue
 	}
 
 	return m.children
@@ -47,12 +58,31 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	}
 
 	if b, ok := b.(string); ok {
-		m.directValue = b
+		m.strValue = b
+		m.valueType = "string"
 		return nil
 	}
 
-	if b, ok := b.(map[string]MappedChartValue); ok {
-		m.children = b
+	if b, ok := b.(bool); ok {
+		m.boolValue = b
+		m.valueType = "bool"
+		return nil
+	}
+
+	if b, ok := b.(int64); ok {
+		m.intValue = b
+		m.valueType = "int"
+		return nil
+	}
+
+	if _, ok := b.(map[string]interface{}); ok {
+		m.children = make(map[string]MappedChartValue)
+		// for k, v := range b {
+		// 	m.children[k] = v.(MappedChartValue)
+		// }
+
+		m.valueType = "children"
+
 		return nil
 	}
 
