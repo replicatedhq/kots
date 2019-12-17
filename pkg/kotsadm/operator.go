@@ -124,8 +124,9 @@ func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kub
 			if err != nil {
 				return errors.Wrap(err, "failed to create cluster rolebinding")
 			}
-
 			return nil
+		} else if err != nil {
+			return errors.Wrap(err, "failed to get cluster rolebinding")
 		}
 
 		for _, subject := range clusterRoleBinding.Subjects {
