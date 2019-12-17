@@ -48,6 +48,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			return nil, errors.Wrap(err, "failed to parse helm value")
 		}
 	}
+
 	marshalledVals, err := yaml.Marshal(vals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal helm values")

@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -143,9 +144,14 @@ type ChartIdentifier struct {
 }
 
 func (h *HelmChartSpec) RenderValues() ([]string, error) {
-	return []string{
-		"secretKey=123123123123123132",
-	}, nil
+	keys := []string{}
+
+	for k, v := range h.Values {
+		key := fmt.Sprintf("%s=%v", k, v.GetValue())
+		keys = append(keys, key)
+	}
+
+	return keys, nil
 }
 
 // HelmChartSpec defines the desired state of HelmChartSpec

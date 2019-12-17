@@ -675,7 +675,19 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			return nil, errors.Wrap(err, "failed to do something")
 		}
 
-		fmt.Printf("%T\n", helmBase)
+		for _, helmBaseFile := range helmBase.Files {
+			// this is a little bit of an abuse of the next function
+			if !helmBaseFile.ShouldBeIncludedInBaseFilesystem(false) {
+				continue
+			}
+
+			upstreamFile := types.UpstreamFile{
+				Path:    filepath.Join("charts", "unknown", helmBaseFile.Path),
+				Content: helmBaseFile.Content,
+			}
+
+			upstreamFiles = append(upstreamFiles, upstreamFile)
+		}
 
 		ignoredFilenames = append(ignoredFilenames, filename)
 	}
