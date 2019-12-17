@@ -29,11 +29,12 @@ type MappedChartValue struct {
 
 	valueType string `json:"-"`
 
-	strValue  string `json:"-"`
-	boolValue bool   `json:"-"`
-	intValue  int64  `json:"-"`
+	strValue   string  `json:"-"`
+	boolValue  bool    `json:"-"`
+	floatValue float64 `json:"-"`
 
-	children map[string]MappedChartValue `json:"-"`
+	children       map[string]*MappedChartValue `json:"-"`
+	childrenArrays []*MappedChartValue          `json:"-"`
 }
 
 func (m *MappedChartValue) GetValue() interface{} {
@@ -43,11 +44,22 @@ func (m *MappedChartValue) GetValue() interface{} {
 	if m.valueType == "bool" {
 		return m.boolValue
 	}
-	if m.valueType == "int" {
-		return m.intValue
+	if m.valueType == "float" {
+		return m.floatValue
+	}
+	if m.valueType == "nil" {
+		return nil
 	}
 
-	return m.children
+	if m.valueType == "children" {
+		return m.children
+	}
+	if m.valueType == "childrenArray" {
+		return m.childrenArrays
+	}
+
+	panic("unknown value type")
+	return nil
 }
 
 func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
@@ -55,6 +67,11 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	err := json.Unmarshal(value, &b)
 	if err != nil {
 		return err
+	}
+
+	if b == nil {
+		m.valueType = "nil"
+		return nil
 	}
 
 	if b, ok := b.(string); ok {
@@ -69,19 +86,50 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 		return nil
 	}
 
-	if b, ok := b.(int64); ok {
-		m.intValue = b
-		m.valueType = "int"
+	if b, ok := b.(float64); ok {
+		m.floatValue = b
+		m.valueType = "float"
 		return nil
 	}
 
-	if _, ok := b.(map[string]interface{}); ok {
-		m.children = make(map[string]MappedChartValue)
-		// for k, v := range b {
-		// 	m.children[k] = v.(MappedChartValue)
-		// }
+	if b, ok := b.(map[string]interface{}); ok {
+		m.children = make(map[string]*MappedChartValue)
+		for k, v := range b {
+			vv, err := json.Marshal(v)
+			if err != nil {
+				return err
+			}
+
+			m2 := &MappedChartValue{}
+			if err := m2.UnmarshalJSON(vv); err != nil {
+				return err
+			}
+
+			m.children[k] = m2
+		}
 
 		m.valueType = "children"
+
+		return nil
+	}
+
+	if b, ok := b.([]interface{}); ok {
+		m.childrenArrays = []*MappedChartValue{}
+		for _, v := range b {
+			vv, err := json.Marshal(v)
+			if err != nil {
+				return err
+			}
+
+			m2 := &MappedChartValue{}
+			if err := m2.UnmarshalJSON(vv); err != nil {
+				return err
+			}
+
+			m.childrenArrays = append(m.childrenArrays, m2)
+		}
+
+		m.valueType = "childrenArray"
 
 		return nil
 	}

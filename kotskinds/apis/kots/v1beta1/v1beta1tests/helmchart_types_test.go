@@ -39,6 +39,10 @@ spec:
   builder:
     ingress:
       enabled: true
+      test: ~
+      1: 4
+      a: 4.0
+      b: ["a", "b"]
 `
 
 	kotsscheme.AddToScheme(scheme.Scheme)

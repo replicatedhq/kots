@@ -853,9 +853,17 @@ func (in *MappedChartValue) DeepCopyInto(out *MappedChartValue) {
 	*out = *in
 	if in.children != nil {
 		in, out := &in.children, &out.children
-		*out = make(map[string]MappedChartValue, len(*in))
+		*out = make(map[string]*MappedChartValue, len(*in))
 		for key, val := range *in {
-			(*out)[key] = *val.DeepCopy()
+			var outVal *MappedChartValue
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(MappedChartValue)
+				(*in).DeepCopyInto(*out)
+			}
+			(*out)[key] = outVal
 		}
 	}
 }
