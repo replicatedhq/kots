@@ -142,6 +142,12 @@ type ChartIdentifier struct {
 	ChartVersion string `json:"chartVersion"`
 }
 
+func (h *HelmChartSpec) RenderValues() ([]string, error) {
+	return []string{
+		"secretKey=123123123123123132",
+	}, nil
+}
+
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
 	Chart   ChartIdentifier             `json:"chart"`

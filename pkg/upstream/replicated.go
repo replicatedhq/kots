@@ -556,6 +556,26 @@ func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) 
 	return nil, nil
 }
 
+func findHelmChartInRelease(release *Release) *kotsv1beta1.HelmChart {
+	for _, content := range release.Manifests {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(content, nil, nil)
+		if err != nil {
+			continue
+		}
+
+		if gvk.Group == "kots.io" {
+			if gvk.Version == "v1beta1" {
+				if gvk.Kind == "HelmChart" {
+					return obj.(*kotsv1beta1.HelmChart)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -636,13 +656,19 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			return nil, errors.Wrap(err, "failed to fetch helm dependency")
 		}
 
-		// we should write the values.yaml next so that the render base
-		// has the proper context
+		kotsHelmChart := findHelmChartInRelease(release)
+		if kotsHelmChart == nil {
+			return nil, errors.Errorf("unable to find matching kots.io/v1beta1, kind: HelmChart for chart archive %s", filename)
+		}
+		localValues, err := kotsHelmChart.Spec.RenderValues()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render local values for chart")
+		}
 
 		helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
 			SplitMultiDocYAML: true,
 			Namespace:         "",
-			HelmOptions:       []string{},
+			HelmOptions:       localValues,
 			Log:               nil,
 		})
 		if err != nil {
