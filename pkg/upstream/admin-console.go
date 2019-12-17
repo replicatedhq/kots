@@ -9,6 +9,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -26,7 +27,7 @@ type UpstreamSettings struct {
 	AutoCreateClusterToken string
 }
 
-func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]UpstreamFile, error) {
+func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]types.UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
 		settings := &UpstreamSettings{
 			SharedPassword:         sharedPassword,
@@ -100,8 +101,8 @@ func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *
 	}
 }
 
-func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]UpstreamFile, error) {
-	upstreamFiles := []UpstreamFile{}
+func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamFile, error) {
+	upstreamFiles := []types.UpstreamFile{}
 
 	deployOptions := kotsadm.DeployOptions{
 		Namespace:              "default",
@@ -130,7 +131,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]UpstreamFile, e
 		return nil, errors.Wrap(err, "failed to get minio yaml")
 	}
 	for n, v := range adminConsoleDocs {
-		upstreamFile := UpstreamFile{
+		upstreamFile := types.UpstreamFile{
 			Path:    path.Join("admin-console", n),
 			Content: v,
 		}

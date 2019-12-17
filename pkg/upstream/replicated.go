@@ -21,12 +21,14 @@ import (
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -109,7 +111,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor, versionLa
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string, cipher *crypto.AESCipher) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string, cipher *crypto.AESCipher) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -191,7 +193,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		return nil, errors.Wrap(err, "failed to get files from release")
 	}
 
-	upstream := &Upstream{
+	upstream := &types.Upstream{
 		URI:          u.RequestURI(),
 		Name:         application.Name,
 		Files:        files,
@@ -608,8 +610,8 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	return app
 }
 
-func releaseToFiles(release *Release) ([]UpstreamFile, error) {
-	upstreamFiles := []UpstreamFile{}
+func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
+	upstreamFiles := []types.UpstreamFile{}
 
 	// prerender the release looking for helm charts
 	// which are only identifyed as base64 encoded tar streams
@@ -634,14 +636,24 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 			return nil, errors.Wrap(err, "failed to fetch helm dependency")
 		}
 
-		fmt.Printf("helmUpstream = %T\n", helmUpstream)
+		_, err = base.RenderHelm(helmUpstream, &base.RenderOptions{
+			SplitMultiDocYAML: true,
+			Namespace:         "",
+			HelmOptions:       []string{},
+			Log:               nil,
+		})
 
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to do something")
+		}
 		// we should write the values.yaml next so that the render base
 		// has the proper context
 
 		// we need to call base.RenderHelm now
 		// but that's in a package that references this package.
 		// so that's hard
+
+		fmt.Printf("%T\n", helmUpstream)
 
 		ignoredFilenames = append(ignoredFilenames, filename)
 	}
@@ -658,7 +670,7 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 			continue
 		}
 
-		upstreamFile := UpstreamFile{
+		upstreamFile := types.UpstreamFile{
 			Path:    filename,
 			Content: content,
 		}
@@ -667,8 +679,8 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 	}
 
 	// Stash the user data for this search (we will readd at the end)
-	userdataFiles := []UpstreamFile{}
-	withoutUserdataFiles := []UpstreamFile{}
+	userdataFiles := []types.UpstreamFile{}
+	withoutUserdataFiles := []types.UpstreamFile{}
 	for _, file := range upstreamFiles {
 		d, _ := path.Split(file.Path)
 		dirs := strings.Split(d, string(os.PathSeparator))
@@ -693,7 +705,7 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 
 		}
 
-		cleanedUpstreamFiles := []UpstreamFile{}
+		cleanedUpstreamFiles := []types.UpstreamFile{}
 		for _, file := range withoutUserdataFiles {
 			d, f := path.Split(file.Path)
 			d2 := strings.Split(d, string(os.PathSeparator))
@@ -786,7 +798,7 @@ type FindPrivateImagesOptions struct {
 	Log                *logger.Logger
 }
 
-func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
+func FindPrivateImages(u *types.Upstream, options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)
@@ -828,7 +840,7 @@ type FindObjectsWithImagesOptions struct {
 	Log          *logger.Logger
 }
 
-func (u *Upstream) FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
+func FindObjectsWithImages(u *types.Upstream, options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)

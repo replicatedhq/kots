@@ -6,11 +6,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, error) {
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
 	config, configValues, license, installation := findConfig(u, renderOptions.Log)
 
 	var templateContext map[string]template.ItemValue
@@ -131,7 +131,7 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfig(u *upstream.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation) {
+func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License

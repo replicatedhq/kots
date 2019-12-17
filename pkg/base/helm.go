@@ -8,7 +8,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -17,7 +17,7 @@ import (
 	"k8s.io/helm/pkg/timeconv"
 )
 
-func renderHelm(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, error) {
+func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
 	chartPath, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create chart dir")

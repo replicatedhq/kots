@@ -15,6 +15,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/helm/cmd/helm/search"
 	"k8s.io/helm/pkg/downloader"
@@ -52,7 +53,7 @@ func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
 	return updates, nil
 }
 
-func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
+func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {
 	repoName, chartName, chartVersion, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
@@ -140,13 +141,13 @@ func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
 	return nil, errors.New("chart version not found")
 }
 
-func chartArchiveToSparseUpstream(chartArchivePath string) (*Upstream, error) {
+func chartArchiveToSparseUpstream(chartArchivePath string) (*types.Upstream, error) {
 	files, err := readTarGz(chartArchivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read chart archive")
 	}
 
-	upstream := &Upstream{
+	upstream := &types.Upstream{
 		Type:  "helm",
 		Files: files,
 	}
@@ -243,7 +244,7 @@ func getKnownHelmRepoURI(repoName string) string {
 	return val
 }
 
-func readTarGz(source string) ([]UpstreamFile, error) {
+func readTarGz(source string) ([]types.UpstreamFile, error) {
 	f, err := os.Open(source)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive")
@@ -257,7 +258,7 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 
 	tarReader := tar.NewReader(gzf)
 
-	upstreamFiles := []UpstreamFile{}
+	upstreamFiles := []types.UpstreamFile{}
 	for {
 		header, err := tarReader.Next()
 
@@ -277,7 +278,7 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to read file from tar archive")
 			}
-			upstreamFile := UpstreamFile{
+			upstreamFile := types.UpstreamFile{
 				Path:    name,
 				Content: buf.Bytes(),
 			}
@@ -301,7 +302,7 @@ func readTarGz(source string) ([]UpstreamFile, error) {
 
 		}
 
-		cleanedUpstreamFiles := []UpstreamFile{}
+		cleanedUpstreamFiles := []types.UpstreamFile{}
 		for _, file := range upstreamFiles {
 			d, f := path.Split(file.Path)
 			d2 := strings.Split(d, string(os.PathSeparator))

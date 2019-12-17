@@ -9,19 +9,13 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type WriteOptions struct {
-	RootDir             string
-	CreateAppDir        bool
-	IncludeAdminConsole bool
-	SharedPassword      string
-}
-
-func (u *Upstream) WriteUpstream(options WriteOptions) error {
+func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	renderDir := options.RootDir
 	if options.CreateAppDir {
 		renderDir = path.Join(renderDir, u.Name)
@@ -95,7 +89,7 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 					return errors.Wrap(err, "failed to replace values with previous values")
 				}
 
-				updatedValues := UpstreamFile{
+				updatedValues := types.UpstreamFile{
 					Path:    f.Path,
 					Content: mergedValues,
 				}
@@ -137,15 +131,6 @@ func (u *Upstream) WriteUpstream(options WriteOptions) error {
 	}
 
 	return nil
-}
-
-func (u *Upstream) GetBaseDir(options WriteOptions) string {
-	renderDir := options.RootDir
-	if options.CreateAppDir {
-		renderDir = path.Join(renderDir, u.Name)
-	}
-
-	return path.Join(renderDir, "base")
 }
 
 func getEncryptionKey(previousInstallationContent []byte) (string, error) {
