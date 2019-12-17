@@ -611,7 +611,49 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 	upstreamFiles := []UpstreamFile{}
 
+	// prerender the release looking for helm charts
+	// which are only identifyed as base64 encoded tar streams
+	ignoredFilenames := []string{}
 	for filename, content := range release.Manifests {
+		decoded, err := base64.StdEncoding.DecodeString(string(content))
+		if err != nil {
+			continue
+		}
+
+		tmpFile, err := ioutil.TempFile("", "kots")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp file")
+		}
+		_, err = io.Copy(tmpFile, bytes.NewReader(decoded))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to copy chart to temp file")
+		}
+
+		helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to fetch helm dependency")
+		}
+
+		fmt.Printf("helmUpstream = %T\n", helmUpstream)
+		// we need to call base.RenderHelm now
+		// but that's in a package that references this package.
+		// so that's hard
+
+		ignoredFilenames = append(ignoredFilenames, filename)
+	}
+
+	for filename, content := range release.Manifests {
+		ignore := false
+		for _, ignoredFilename := range ignoredFilenames {
+			if filename == ignoredFilename {
+				ignore = true
+			}
+		}
+
+		if ignore {
+			continue
+		}
+
 		upstreamFile := UpstreamFile{
 			Path:    filename,
 			Content: content,

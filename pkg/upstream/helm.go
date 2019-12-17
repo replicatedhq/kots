@@ -124,24 +124,34 @@ func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
 			return nil, errors.Wrap(err, "failed to download chart")
 		}
 
-		files, err := readTarGz(path.Join(archiveDir, fmt.Sprintf("%s-%s.tgz", chartName, chartVersion)))
+		upstream, err := chartArchiveToSparseUpstream(path.Join(archiveDir, fmt.Sprintf("%s-%s.tgz", chartName, chartVersion)))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read chart archive")
+			return nil, errors.Wrap(err, "failed to parse chart archive as upstream")
 		}
 
-		upstream := &Upstream{
-			URI:          u.RequestURI(),
-			Name:         chartName,
-			Type:         "helm",
-			Files:        files,
-			UpdateCursor: chartVersion,
-			VersionLabel: chartVersion,
-		}
+		upstream.URI = u.RequestURI()
+		upstream.Name = chartName
+		upstream.UpdateCursor = chartVersion
+		upstream.VersionLabel = chartVersion
 
 		return upstream, nil
 	}
 
 	return nil, errors.New("chart version not found")
+}
+
+func chartArchiveToSparseUpstream(chartArchivePath string) (*Upstream, error) {
+	files, err := readTarGz(chartArchivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read chart archive")
+	}
+
+	upstream := &Upstream{
+		Type:  "helm",
+		Files: files,
+	}
+
+	return upstream, nil
 }
 
 func helmLoadRepositoriesIndex(helmHome, repoName, repoURI string) (*search.Index, error) {
