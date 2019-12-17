@@ -50,3 +50,7 @@ kubectl kots download [--namespace] [app-slug]
 ```
 
 The app-slug argument is optional. If there is more than 1 application in the specified namespace, kots will prompt for which one to download.
+
+# Community
+
+For questions about using Ship, there's a [Replicated Community](https://help.replicated.com/community) forum, and a [#kots channel in Kubernetes Slack](https://kubernetes.slack.com/channels/kots).
