@@ -577,7 +577,7 @@ class AppVersionHistory extends Component {
     }
 
     // only render loader if there is no app yet to avoid flickering
-    if (data?.loading && !app) {
+    if (data?.loading && !data?.getKotsDownstreamHistory?.length) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
