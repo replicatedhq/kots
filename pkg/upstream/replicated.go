@@ -636,24 +636,20 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			return nil, errors.Wrap(err, "failed to fetch helm dependency")
 		}
 
-		_, err = base.RenderHelm(helmUpstream, &base.RenderOptions{
+		// we should write the values.yaml next so that the render base
+		// has the proper context
+
+		helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
 			SplitMultiDocYAML: true,
 			Namespace:         "",
 			HelmOptions:       []string{},
 			Log:               nil,
 		})
-
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to do something")
 		}
-		// we should write the values.yaml next so that the render base
-		// has the proper context
 
-		// we need to call base.RenderHelm now
-		// but that's in a package that references this package.
-		// so that's hard
-
-		fmt.Printf("%T\n", helmUpstream)
+		fmt.Printf("%T\n", helmBase)
 
 		ignoredFilenames = append(ignoredFilenames, filename)
 	}
