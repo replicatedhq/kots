@@ -128,6 +128,12 @@ func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kub
 			return nil
 		}
 
+		for _, subject := range clusterRoleBinding.Subjects {
+			if subject.Namespace == namespace && subject.Name == "kotsadm-operator" && subject.Kind == "ServiceAccount" {
+				return nil
+			}
+		}
+
 		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
 			Kind:      "ServiceAccount",
 			Name:      "kotsadm-operator",
