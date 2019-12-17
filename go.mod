@@ -19,9 +19,13 @@ require (
 	github.com/containers/storage v1.12.13 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
+	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
+	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190711103511-473e67f1d7d2 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190711103511-473e67f1d7d2 // indirect
 	github.com/etcd-io/bbolt v1.3.3 // indirect
@@ -29,6 +33,7 @@ require (
 	github.com/frankban/quicktest v1.4.1 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -43,6 +48,8 @@ require (
 	github.com/mistifyio/go-zfs v2.1.1+incompatible // indirect
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nwaples/rardecode v1.0.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc8 // indirect
 	github.com/opencontainers/selinux v1.2.2 // indirect
@@ -63,6 +70,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
 	golang.org/x/sys v0.0.0-20190801041406-cbf593c0f2f3 // indirect
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect

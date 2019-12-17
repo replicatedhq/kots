@@ -25,6 +25,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(InstallCmd())
 	cmd.AddCommand(UploadCmd())
 	cmd.AddCommand(DownloadCmd())
+	cmd.AddCommand(UpstreamCmd())
 	cmd.AddCommand(AdminConsoleCmd())
 	cmd.AddCommand(ResetPasswordCmd())
 	cmd.AddCommand(VersionCmd())
