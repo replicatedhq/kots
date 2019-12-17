@@ -635,6 +635,10 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 		}
 
 		fmt.Printf("helmUpstream = %T\n", helmUpstream)
+
+		// we should write the values.yaml next so that the render base
+		// has the proper context
+
 		// we need to call base.RenderHelm now
 		// but that's in a package that references this package.
 		// so that's hard
