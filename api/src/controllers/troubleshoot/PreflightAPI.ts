@@ -3,6 +3,7 @@ import { Controller, Get, Post, Res, Req } from "@tsed/common";
 import jsYaml from "js-yaml";
 
 import { Params } from "../../server/params";
+import { kotsRenderFile } from "../../kots_app/kots_ffi";
 
 @Controller("/api/v1/preflight")
 export class PreflightAPI {
@@ -10,7 +11,6 @@ export class PreflightAPI {
   async getPreflightStatus(
     @Req() request: Request,
     @Res() response: Response,
-
   ): Promise<void> {
     const { appSlug, clusterSlug, sequence } = request.params;
 
@@ -23,6 +23,7 @@ export class PreflightAPI {
     try {
       // Fetch YAML from the database and return to client with injected key
       const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(appSlug);
+      const app = await request.app.locals.stores.kotsAppStore.getApp(appId);
 
       const preflightSpecYaml = await request.app.locals.stores.preflightStore.getKotsPreflightSpec(appId, seqInt);
 
@@ -32,7 +33,15 @@ export class PreflightAPI {
         return;
       }
 
-      const specJson = jsYaml.load(preflightSpecYaml);
+      // render the yaml with the full context
+      const renderedSpecYaml = await kotsRenderFile(app, request.app.locals.stores, preflightSpecYaml);
+
+      const specJson = jsYaml.load(renderedSpecYaml);
+
+      for (const a of specJson.spec.analyzers) {
+        console.log(a);
+      }
+
       const params = await Params.getParams();
       const putUrl = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
       specJson.spec.uploadResultsTo = putUrl;
