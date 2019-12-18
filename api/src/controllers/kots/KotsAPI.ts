@@ -26,7 +26,10 @@ import { StatusServer } from "../../airgap/status";
 import {
   kotsPullFromAirgap,
   kotsAppFromAirgapData,
-  kotsTestRegistryCredentials
+  kotsTestRegistryCredentials,
+  Update,
+  kotsAppCheckForUpdates,
+  kotsAppDownloadUpdates
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import { getDiffSummary } from "../../util/utilities";
@@ -136,6 +139,66 @@ export class KotsAPI {
     response.header("Content-Type", "application/gzip");
     response.status(200);
     response.send(await app.getArchive(''+app.currentSequence));
+  }
+
+  @Post("/:slug/update-check")
+  async kotsUpdateCheck(
+    @Req() request: Request,
+    @Res() response: Response,
+    @PathParams("slug") slug: string,
+  ) {
+    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+    const app = _.find(apps, (a: KotsApp) => {
+      return a.slug === slug;
+    });
+
+    if (!app) {
+      response.status(404);
+      return {};
+    }
+
+    const cursor = await request.app.locals.stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
+    const updateStatus = await request.app.locals.stores.kotsAppStore.getUpdateDownloadStatus();
+    if (updateStatus.status === "running") {
+      return 0;
+    }
+    const liveness = new Repeater(() => {
+      return new Promise((resolve) => {
+        request.app.locals.stores.kotsAppStore.updateUpdateDownloadStatusLiveness().finally(() => {
+          resolve();
+        })
+      });
+    }, 1000);
+
+    let updatesAvailable: Update[];
+    try {
+      await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
+      liveness.start();
+      updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+    } catch(err) {
+      liveness.stop();
+      await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
+      throw err;
+    }
+
+    let downloadUpdates = async function() {
+      try {
+        await kotsAppDownloadUpdates(updatesAvailable, app, request.app.locals.stores);
+
+        await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
+      } catch(err) {
+        await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
+        throw err;
+      } finally {
+        liveness.stop();
+      }
+    }
+    downloadUpdates(); // download asyncronously
+
+    response.status(200);
+    return {
+      updatesAvailable: updatesAvailable.length,
+    };
   }
 
   @Post("/license")
