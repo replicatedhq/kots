@@ -11,6 +11,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/template"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -78,6 +79,8 @@ func RenderFile(socket string, filePath string, archivePath string) {
 			}
 
 			builder.AddCtx(configCtx)
+
+			kotsconfig.ApplyValuesToConfig(config, configCtx.ItemValues)
 		}
 
 		if license != nil {
@@ -134,11 +137,9 @@ func findConfig(archivePath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigVal
 
 			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
 				config = obj.(*kotsv1beta1.Config)
-			}
-			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
 				values = obj.(*kotsv1beta1.ConfigValues)
-			}
-			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 				license = obj.(*kotsv1beta1.License)
 			}
 
