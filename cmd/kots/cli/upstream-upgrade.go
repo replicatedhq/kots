@@ -37,7 +37,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			log := logger.NewLogger()
-			log.ActionWithoutSpinner("Checking for application updates")
+			log.ActionWithSpinner("Checking for application updates")
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
