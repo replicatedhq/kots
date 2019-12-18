@@ -43,7 +43,7 @@ func TemplateConfig(log *logger.Logger, configPath string, configData string, co
 		return "", errors.Wrap(err, "failed to create config context")
 	}
 
-	applyValuesToConfig(config, configCtx.ItemValues)
+	ApplyValuesToConfig(config, configCtx.ItemValues)
 	configDocWithData, err := marshalConfig(config)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config")
@@ -69,7 +69,7 @@ func marshalConfig(config *kotsv1beta1.Config) (string, error) {
 	return string(marshalled.Bytes()), nil
 }
 
-func applyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
+func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
 			value, ok := values[i.Name]
