@@ -381,8 +381,11 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
       commitUrl = await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
     }
 
+    const status = preflightSpec
+      ? "pending_preflight"
+      : "pending";
     const diffSummary = await getDiffSummary(app);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, "pending", "Upstream Update", diffSummary, commitUrl);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, status, "Upstream Update", diffSummary, commitUrl);
   }
 }
 
