@@ -56,7 +56,7 @@ export function KotsMutations(stores: Stores) {
         });
       }, 1000);
 
-      var updatesAvailable: Update[];
+      let updatesAvailable: Update[];
       try {
         await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
 
