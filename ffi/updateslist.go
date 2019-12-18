@@ -43,6 +43,7 @@ func ListUpdates(socket, licenseData, currentCursor string) {
 		getUpdatesOptions := pull.GetUpdatesOptions{
 			LicenseFile:   licenseFile,
 			CurrentCursor: currentCursor,
+			Silent:        true,
 		}
 
 		updates, err := pull.GetUpdates(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), getUpdatesOptions)
