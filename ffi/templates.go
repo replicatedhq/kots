@@ -18,7 +18,6 @@ import (
 
 //export RenderFile
 func RenderFile(socket string, filePath string, archivePath string) {
-	fmt.Printf("archivePath  %s\n", archivePath)
 	go func() {
 		var ffiResult *FFIResult
 
