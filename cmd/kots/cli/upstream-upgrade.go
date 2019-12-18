@@ -75,6 +75,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			if resp.StatusCode == 404 {
 				log.FinishSpinnerWithError()
 				return errors.New("The application was not found in the cluster in the specified namespace")
+			} else if resp.StatusCode != 200 {
+				log.FinishSpinnerWithError()
+				return errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 			}
 
 			b, err := ioutil.ReadAll(resp.Body)
