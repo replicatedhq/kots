@@ -1,12 +1,12 @@
 import React, { Component } from "react";
 import { ShipConfigRenderer } from "@replicatedhq/ship-init";
 import { compose, withApollo, graphql } from "react-apollo";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import debounce from "lodash/debounce";
 import map from "lodash/map";
-
+import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import { getAppConfigGroups, getKotsApp, templateConfigGroups } from "../../queries/AppsQueries";
 import { updateAppConfig, updateDownstreamsStatus } from "../../mutations/AppsMutations";
@@ -25,7 +25,8 @@ class AppConfig extends Component {
       initialConfigGroups: [],
       configGroups: [],
       savingConfig: false,
-      changed: false
+      changed: false,
+      showNextStepModal: false
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -98,7 +99,7 @@ class AppConfig extends Component {
           history.replace(`/app/${slug}`);
         }
       } else {
-        this.setState({ savingConfig: false, changed: false });
+        this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
       }
     } catch(error) {
       console.log(error);
@@ -165,8 +166,12 @@ class AppConfig extends Component {
     });
   }
 
+  hideNextStepModal = () => {
+    this.setState({ showNextStepModal: false });
+  }
+
   render() {
-    const { configGroups, savingConfig, changed } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -177,9 +182,12 @@ class AppConfig extends Component {
       );
     }
 
+    const app = this.props.app || getKotsApp?.getKotsApp;
+    const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
-        {fromLicenseFlow && getKotsApp?.getKotsApp && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {getKotsApp.getKotsApp.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow } )}>
           <div className="ConfigInnerWrapper flex1 u-padding--15">
             <div className="flex1">
@@ -188,6 +196,40 @@ class AppConfig extends Component {
           </div>
         </div>
         <button className="btn secondary blue u-marginTop--20 u-marginBottom--auto" disabled={savingConfig || (!changed && !fromLicenseFlow)} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
+
+        {!fromLicenseFlow &&
+          <Modal
+            isOpen={showNextStepModal}
+            onRequestClose={this.hideNextStepModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Next step"
+            ariaHideApp={false}
+            className="Modal MediumSize"
+          >
+            {gitops?.enabled ?
+              <div className="Modal-body">
+                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                  The config for {app.name} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri}>repo</a> to see the diff.
+                </p>
+                <div className="flex justifyContent--flexEnd">
+                  <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
+                </div>
+              </div>
+              :
+              <div className="Modal-body">
+                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated. A new version is available on the version history page with these changes. 
+                </p>
+                <div className="flex justifyContent--flexEnd">
+                  <button type="button" className="btn blue secondary u-marginRight--10" onClick={this.hideNextStepModal}>Continue editing</button>
+                  <Link to={`/app/${app?.slug}/version-history`}>
+                    <button type="button" className="btn blue primary">Go to new version</button>
+                  </Link>
+                </div>
+              </div>
+            }
+          </Modal>
+        }
       </div>
     )
   }
