@@ -21,10 +21,15 @@ type DownloadOptions struct {
 	Namespace  string
 	Kubeconfig string
 	Overwrite  bool
+	Silent     bool
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
 	log := logger.NewLogger()
+	if downloadOptions.Silent {
+		log.Silence()
+	}
+
 	log.ActionWithSpinner("Connecting to cluster")
 
 	podName, err := findKotsadm(downloadOptions)
