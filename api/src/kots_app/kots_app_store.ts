@@ -468,9 +468,7 @@ export class KotsAppStore {
       dryrunStderr: base64Decode(row.dryrun_stderr),
       applyStdout: base64Decode(row.apply_stdout),
       applyStderr: base64Decode(row.apply_stderr),
-      renderError: `Error: Command failed: kustomize build /tmp/tmp-1wtkPuUxYIF7p/overlays/downstreams/microk8s
-Error: AccumulateTarget: failed to find an object with apps_v1_Deployment|example-nginx to apply the patch
-      `
+      renderError: null
     };
   }
 

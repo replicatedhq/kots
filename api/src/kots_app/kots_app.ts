@@ -643,7 +643,7 @@ export interface KotsDownstreamOutput {
   dryrunStderr: string;
   applyStdout: string;
   applyStderr: string;
-  renderError?: string;
+  renderError: string | null;
 }
 
 export interface ConfigData {

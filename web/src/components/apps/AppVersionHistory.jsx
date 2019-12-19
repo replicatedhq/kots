@@ -10,7 +10,6 @@ import Modal from "react-modal";
 import moment from "moment";
 import changeCase from "change-case";
 import find from "lodash/find";
-import map from "lodash/map";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
@@ -262,7 +261,7 @@ class AppVersionHistory extends Component {
     const tabs = Object.keys(logs);
     return (
       <div className="flex action-tab-bar u-marginTop--10">
-        {map(tabs, tab => (
+        {tabs.filter(tab => tab !== "renderError").map(tab => (
           <div className={`tab-item blue ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
             {tab}
           </div>
@@ -786,7 +785,7 @@ class AppVersionHistory extends Component {
                     />
                   </div>
                   :
-                  <div>
+                  <div className="flex-column flex1">
                     {this.renderLogsTabs()}
                     <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
                       <MonacoEditor
