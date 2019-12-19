@@ -57,6 +57,9 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-postgres",
 			Namespace: deployOptions.Namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -68,6 +71,9 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kotsadm-postgres",
+						Labels: map[string]string{
+							KotsadmKey: KotsadmLabelValue,
+						},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -84,7 +90,8 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "kotsadm-postgres",
+						"app":      "kotsadm-postgres",
+						KotsadmKey: KotsadmLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -190,6 +197,9 @@ func postgresService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-postgres",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{

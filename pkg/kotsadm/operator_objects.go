@@ -20,6 +20,9 @@ func operatorClusterRole(namespace string) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-role",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -42,6 +45,9 @@ func operatorClusterRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-rolebinding",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -69,6 +75,9 @@ func operatorRole(namespace string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-role",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -91,6 +100,9 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator-rolebinding",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -118,6 +130,9 @@ func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator",
 			Namespace: namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 	}
 
@@ -140,6 +155,9 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator",
 			Namespace: deployOptions.Namespace,
+			Labels: map[string]string{
+				KotsadmKey: KotsadmLabelValue,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -150,7 +168,8 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "kotsadm-operator",
+						"app":      "kotsadm-operator",
+						KotsadmKey: KotsadmLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{

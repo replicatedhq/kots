@@ -8,6 +8,7 @@ import (
 func applicationMetadataConfig(data []byte, namespace string) *corev1.ConfigMap {
 	labels := map[string]string{}
 	labels["kotsadm"] = "application"
+	labels[KotsadmKey] = KotsadmLabelValue
 
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
