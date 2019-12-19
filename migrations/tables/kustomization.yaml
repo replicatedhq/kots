@@ -52,4 +52,3 @@ resources:
 - ./app_downstream_output.yaml
 - ./pending_support_bundle.yaml
 - ./app_status.yaml
-- ./app_config_cache.yaml

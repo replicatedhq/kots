@@ -18,6 +18,8 @@ import {
   extractAppIconFromTarball,
   extractKotsAppLicenseFromTarball,
   extractAnalyzerSpecFromTarball,
+  extractConfigSpecFromTarball,
+  extractConfigValuesFromTarball,
 } from "../util/tar";
 import { KotsAppRegistryDetails } from "../kots_app"
 import { Cluster } from "../cluster";
@@ -46,7 +48,7 @@ function kots() {
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool]],
-    TemplateConfig: [GoString, [GoString, GoString, GoString]],
+    TemplateConfig: [GoString, [GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
     GetLatestLicense: [GoString, [GoString, GoString]],
@@ -351,6 +353,8 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
   const appTitle = await extractAppTitleFromTarball(buffer);
   const appIcon = await extractAppIconFromTarball(buffer);
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+  const configSpec = await extractConfigSpecFromTarball(buffer);
+  const configValues = await extractConfigValuesFromTarball(buffer);
 
   console.log(`Save new version ${app.id}:${newSequence}, cursor=${installationSpec.cursor}`);
 
@@ -367,6 +371,8 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
     appSpec,
     kotsAppSpec,
     kotsAppLicense,
+    configSpec,
+    configValues,
     appTitle,
     appIcon
   );
@@ -474,8 +480,10 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     const appTitle = await extractAppTitleFromTarball(buffer);
     const appIcon = await extractAppIconFromTarball(buffer);
     const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+    const configSpec = await extractConfigSpecFromTarball(buffer);
+    const configValues = await extractConfigValuesFromTarball(buffer);
+    kotsApp.isConfigurable = !!configSpec;
     kotsApp.hasPreflight = !!preflightSpec;
-    kotsApp.currentSequence = 0;
 
     await stores.kotsAppStore.createMidstreamVersion(
       kotsApp.id,
@@ -490,11 +498,12 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       appSpec,
       kotsAppSpec,
       kotsAppLicense,
+      configSpec,
+      configValues,
       appTitle,
       appIcon
     );
 
-    const isAppConfigurable = await kotsApp.isAppConfigurable();
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
     const clusters = await stores.clusterStore.listAllUsersClusters();
 
@@ -507,7 +516,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         continue;
       }
 
-      const downstreamState = isAppConfigurable
+      const downstreamState = kotsApp.isConfigurable
         ? "pending_config"
         : kotsApp.hasPreflight
           ? "pending_preflight"
@@ -598,6 +607,8 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   const appTitle = await extractAppTitleFromTarball(buffer);
   const appIcon = await extractAppIconFromTarball(buffer);
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+  const configSpec = await extractConfigSpecFromTarball(buffer);
+  const configValues = await extractConfigValuesFromTarball(buffer);
 
   await stores.kotsAppStore.createMidstreamVersion(
     app.id,
@@ -612,6 +623,8 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     appSpec,
     kotsAppSpec,
     kotsAppLicense,
+    configSpec,
+    configValues,
     appTitle,
     appIcon
   );
@@ -633,12 +646,9 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);
 
-  app.currentSequence = 0;
-  const isConfigurable = await app.isAppConfigurable();
-
   return {
     hasPreflight: !!preflightSpec,
-    isConfigurable,
+    isConfigurable: !!configSpec,
   };
 }
 
@@ -691,20 +701,16 @@ export async function kotsTestRegistryCredentials(endpoint: string, username: st
   }
 }
 
-export async function kotsTemplateConfig(configPath: string, configContent: string, configValuesContent: string): Promise<any> {
-  const configPathParam = new GoString();
-  configPathParam["p"] = configPath;
-  configPathParam["n"] = String(configPath).length;
-
+export async function kotsTemplateConfig(configSpec: string, configValues: string): Promise<any> {
   const configDataParam = new GoString();
-  configDataParam["p"] = configContent;
-  configDataParam["n"] = String(configContent).length;
+  configDataParam["p"] = configSpec;
+  configDataParam["n"] = String(configSpec).length;
 
   const configValuesDataParam = new GoString();
-  configValuesDataParam["p"] = configValuesContent;
-  configValuesDataParam["n"] = String(configValuesContent).length;
+  configValuesDataParam["p"] = configValues;
+  configValuesDataParam["n"] = String(configValues).length;
 
-  const templatedConfig = kots().TemplateConfig(configPathParam, configDataParam, configValuesDataParam);
+  const templatedConfig = kots().TemplateConfig(configDataParam, configValuesDataParam);
   if (templatedConfig == "" || templatedConfig["p"] == "") {
     throw new ReplicatedError("failed to template config");
   }

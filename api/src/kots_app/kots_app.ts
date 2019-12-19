@@ -36,6 +36,7 @@ export class KotsApp {
   airgapUploadPending: boolean;
   isAirgap: boolean;
   hasPreflight: boolean;
+  isConfigurable: boolean;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
@@ -148,9 +149,8 @@ export class KotsApp {
   }
 
   private async getConfigDataFromFiles(files: FilesAsString): Promise<ConfigData> {
-    let configContent: string = "",
-        configPath: string = "",
-        configValuesContent: string = "",
+    let configSpec: string = "",
+        configValues: string = "",
         configValuesPath: string = "";
 
     for (const path in files.files) {
@@ -161,10 +161,9 @@ export class KotsApp {
           continue;
         }
         if (parsedContent.kind === "Config" && parsedContent.apiVersion === "kots.io/v1beta1") {
-          configContent = content;
-          configPath = path;
+          configSpec = content;
         } else if (parsedContent.kind === "ConfigValues" && parsedContent.apiVersion === "kots.io/v1beta1") {
-          configValuesContent = content;
+          configValues = content;
           configValuesPath = path;
         }
       } catch {
@@ -173,9 +172,8 @@ export class KotsApp {
     }
 
     return {
-      configContent,
-      configPath,
-      configValuesContent,
+      configSpec,
+      configValues,
       configValuesPath,
     }
   }
@@ -201,44 +199,39 @@ export class KotsApp {
     return false;
   }
 
-  async applyConfigValues(configPath: string, configContent: string, configValuesContent: string): Promise<KotsConfigGroup[]> {
-    const templatedConfig = await kotsTemplateConfig(configPath, configContent, configValuesContent);
+  async applyConfigValues(configSpec: string, configValues: string): Promise<KotsConfigGroup[]> {
+    const templatedConfig = await kotsTemplateConfig(configSpec, configValues);
 
     if (!templatedConfig.spec || !templatedConfig.spec.groups) {
       throw new ReplicatedError("Config groups not found");
     }
 
-    const parsedConfigValues = yaml.safeLoad(configValuesContent);
+    const parsedConfigValues = yaml.safeLoad(configValues);
     if (!parsedConfigValues.spec || !parsedConfigValues.spec.values) {
       throw new ReplicatedError("Config values not found");
     }
 
-    const configGroups = templatedConfig.spec.groups;
-    const configValues = parsedConfigValues.spec.values;
+    const specConfigGroups = templatedConfig.spec.groups;
+    const specConfigValues = parsedConfigValues.spec.values;
 
-    configGroups.forEach(group => {
+    specConfigGroups.forEach(group => {
       group.items.forEach(item => {
         if (item.type === "password") {
           item.value = this.getPasswordMask();
-        } else if (item.name in configValues) {
-          item.value = configValues[item.name].value;
+        } else if (item.name in specConfigValues) {
+          item.value = specConfigValues[item.name].value;
         }
       });
     });
 
-    return configGroups;
+    return specConfigGroups;
   }
 
   async getAppConfigGroups(stores: Stores, appId: string, sequence: string): Promise<KotsConfigGroup[]> {
     try {
-      const paths: string[] = await this.getFilesPaths(sequence);
-      const files: FilesAsString = await this.getFiles(sequence, paths);
-
-      const configData = await this.getConfigDataFromFiles(files);
-      await stores.kotsAppStore.updateAppConfigCache(appId, sequence, configData);
-
-      const { configPath, configContent, configValuesContent } = configData;
-      return await this.applyConfigValues(configPath, configContent, configValuesContent);
+      const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
+      const { configSpec, configValues } = configData!;
+      return await this.applyConfigValues(configSpec, configValues);
     } catch(err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
     }
@@ -250,13 +243,13 @@ export class KotsApp {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsString = await this.getFiles(sequence, paths);
 
-      const { configContent, configValuesContent, configValuesPath } = await this.getConfigDataFromFiles(files);
+      const { configSpec, configValues, configValuesPath } = await this.getConfigDataFromFiles(files);
 
-      const parsedConfig = yaml.safeLoad(configContent);
-      const parsedConfigValues = yaml.safeLoad(configValuesContent);
+      const parsedConfig = yaml.safeLoad(configSpec);
+      const parsedConfigValues = yaml.safeLoad(configValues);
 
-      const configValues = parsedConfigValues.spec.values;
-      const configGroups = parsedConfig.spec.groups;
+      const specConfigValues = parsedConfigValues.spec.values;
+      const specConfigGroups = parsedConfig.spec.groups;
 
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const encryptionKey = await stores.kotsAppStore.getAppEncryptionKey(appId, sequence);
@@ -267,13 +260,13 @@ export class KotsApp {
         const group = updatedConfigGroups[g];
         for (let i = 0; i < group.items.length; i++) {
           const item = group.items[i];
-          if (this.shouldUpdateConfigValues(configGroups, configValues, item)) {
+          if (this.shouldUpdateConfigValues(specConfigGroups, specConfigValues, item)) {
             if (item.type === "password") {
               const passwordValue = encryptionKey !== "" ? await kotsEncryptString(encryptionKey, item.value) : item.value;
               const configVal = {
                 value: passwordValue,
               };
-              configValues[item.name] = configVal;
+              specConfigValues[item.name] = configVal;
             } else {
               // these are "omitempty" in Go, but TS adds "null" strings in.
               let configVal = {};
@@ -283,13 +276,13 @@ export class KotsApp {
               if (item.default) {
                 configVal["default"] = item.default;
               }
-              configValues[item.name] = configVal;
+              specConfigValues[item.name] = configVal;
             }
           }
         }
       }
 
-      files.files[configValuesPath] = yaml.safeDump(parsedConfigValues);
+      files.files[configValuesPath!] = yaml.safeDump(parsedConfigValues);
 
       const bundlePacker = new TarballPacker();
       const inputTgzBuffer: Buffer = await bundlePacker.packFiles(files);
@@ -318,11 +311,11 @@ export class KotsApp {
   }
 
   async templateConfigGroups(stores: Stores, appId: string, sequence: string, configGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
-    const configData = await stores.kotsAppStore.getAppConfigCache(appId, sequence);
-    const { configPath, configContent, configValuesContent } = configData;
-
-    const parsedConfig = yaml.safeLoad(configContent);
-    const parsedConfigValues = yaml.safeLoad(configValuesContent);
+    const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
+    const { configSpec, configValues } = configData!;
+    
+    const parsedConfig = yaml.safeLoad(configSpec);
+    const parsedConfigValues = yaml.safeLoad(configValues);
 
     const specConfigValues = parsedConfigValues.spec.values;
     const specConfigGroups = parsedConfig.spec.groups;
@@ -343,7 +336,7 @@ export class KotsApp {
     });
 
     const updatedConfigValues = yaml.safeDump(parsedConfigValues);
-    return await this.applyConfigValues(configPath, configContent, updatedConfigValues);
+    return await this.applyConfigValues(configSpec, updatedConfigValues);
   }
 
   // Source files
@@ -482,16 +475,23 @@ export class KotsApp {
     const sequence = this.currentSequence || 0;
     return await stores.kotsAppStore.isGitOpsSupported(this.id, sequence);
   }
-  
-  public async isAppConfigurable(): Promise<boolean> {
+
+  /**
+   * this should be removed in 1.9.0 release
+   */
+  public async isAppConfigurable(stores: Stores): Promise<boolean> {
+    if (this.isConfigurable) {
+      return true;
+    }
     const sequence = Number.isInteger(this.currentSequence!) ? `${this.currentSequence}` : "";
     if (sequence === "") {
       return false;
     }
     const paths: string[] = await this.getFilesPaths(sequence);
     const files: FilesAsString = await this.getFiles(sequence, paths);
-    const { configPath } = await this.getConfigDataFromFiles(files);
-    return configPath !== "";
+    const { configSpec, configValues } = await this.getConfigDataFromFiles(files);
+    await stores.kotsAppStore.updateAppConfigData(this.id, sequence, configSpec, configValues);
+    return configSpec !== "";
   }
 
   private async isAllowRollback(stores: Stores): Promise<boolean> {
@@ -533,7 +533,7 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
-      isConfigurable: () => this.isAppConfigurable(),
+      isConfigurable: () => this.isAppConfigurable(stores), // should be removed in 1.9.0 release
       isGitOpsSupported: () => this.isGitOpsSupported(stores),
       allowRollback: () => this.isAllowRollback(stores),
       currentVersion: () => this.getCurrentAppVersion(stores),
@@ -642,8 +642,7 @@ export interface KotsDownstreamOutput {
 }
 
 export interface ConfigData {
-  configContent: string;
-  configPath: string;
-  configValuesContent: string;
-  configValuesPath: string;
+  configSpec: string;
+  configValues: string;
+  configValuesPath?: string;
 }

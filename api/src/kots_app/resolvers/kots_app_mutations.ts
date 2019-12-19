@@ -187,7 +187,7 @@ export function KotsMutations(stores: Stores) {
           isAirgap: parsedLicense.spec.isAirgapSupported,
           needsRegistry,
           slug: kotsApp.slug,
-          isConfigurable: kotsApp.isAppConfigurable()
+          isConfigurable: kotsApp.isConfigurable
         }
       } catch(err) {
         await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
@@ -279,10 +279,7 @@ export function KotsMutations(stores: Stores) {
         }
         const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
         await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-        return {
-          ...kotsApp,
-          isConfigurable: kotsApp.isAppConfigurable()
-        };
+        return kotsApp;
       } catch(err) {
         throw new ReplicatedError(err.message);
       }
