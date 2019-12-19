@@ -458,7 +458,8 @@ export class KotsAppStore {
         dryrunStdout: "",
         dryrunStderr: "",
         applyStdout: "",
-        applyStderr: ""
+        applyStderr: "",
+        renderError: ""
       };
     };
 
@@ -467,7 +468,8 @@ export class KotsAppStore {
       dryrunStdout: base64Decode(row.dryrun_stdout),
       dryrunStderr: base64Decode(row.dryrun_stderr),
       applyStdout: base64Decode(row.apply_stdout),
-      applyStderr: base64Decode(row.apply_stderr)
+      applyStderr: base64Decode(row.apply_stderr),
+      renderError: null
     };
   }
 
