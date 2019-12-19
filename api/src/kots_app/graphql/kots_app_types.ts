@@ -235,6 +235,7 @@ const KotsDownstreamOutput = `
     dryrunStderr: String
     applyStdout: String
     applyStderr: String
+    renderError: String
   }
 `;
 
