@@ -114,7 +114,6 @@ func findConfig(archivePath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigVal
 
 	err := filepath.Walk(archivePath,
 		func(path string, info os.FileInfo, err error) error {
-			fmt.Printf("%s\n", path)
 			if err != nil {
 				return err
 			}
