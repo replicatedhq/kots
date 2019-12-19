@@ -391,16 +391,17 @@ export class KotsAppStore {
     return apps;
   }
 
-  async updateDownstreamsStatus(appId: string, sequence: number, status: string): Promise<void> {
+  async updateDownstreamsStatus(appId: string, sequence: number, status: string, statusInfo: string): Promise<void> {
     const q = `
       update app_downstream_version
-      set status = $3
+      set status = $3, status_info = $4
       where app_id = $1 and sequence = $2
     `;
     const v = [
       appId,
       sequence,
       status,
+      statusInfo,
     ];
     await this.pool.query(q, v);
   }

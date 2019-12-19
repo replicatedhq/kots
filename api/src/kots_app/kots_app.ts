@@ -427,60 +427,55 @@ export class KotsApp {
 
   async render(sequence: string, overlayPath: string): Promise<string> {
     const replicatedParams = await Params.getParams();
-    const tmpDir = tmp.dirSync();
+    const params = {
+      Bucket: replicatedParams.shipOutputBucket,
+      Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
+    };
 
-    try {
-      const params = {
-        Bucket: replicatedParams.shipOutputBucket,
-        Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
-      };
+    const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
+    const extract = tar.extract();
+    const gzunipStream = zlib.createGunzip();
 
-      const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
-      const extract = tar.extract();
-      const gzunipStream = zlib.createGunzip();
+    return new Promise((resolve, reject) => {
+      const tmpDir = tmp.dirSync();
+      extract.on("entry", async (header, stream, next) => {
+        if (header.type !== "file") {
+          stream.resume();
+          next();
+          return;
+        }
 
-      return new Promise((resolve, reject) => {
-        extract.on("entry", async (header, stream, next) => {
-          if (header.type !== "file") {
-            stream.resume();
-            next();
+        const contents = await this.readFile(stream);
+
+        const fileName = path.join(tmpDir.name, header.name);
+
+        const parsed = path.parse(fileName);
+        if (!fs.existsSync(parsed.dir)) {
+          // TODO, move to node 10 and use the built in
+          // fs.mkdirSync(parsed.dir, {recursive: true});
+          mkdirp.sync(parsed.dir);
+        }
+
+        fs.writeFileSync(fileName, contents);
+        next();
+      });
+
+      extract.on("finish", () => {
+        // Run kustomize
+        exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, { maxBuffer: 1024 * 5000 }, (err, stdout, stderr) => {
+          tmpDir.removeCallback();
+          if (err) {
+            // logger.error({ msg: "err running kustomize", err, stderr })
+            reject(err);
             return;
           }
 
-          const contents = await this.readFile(stream);
-
-          const fileName = path.join(tmpDir.name, header.name);
-
-          const parsed = path.parse(fileName);
-          if (!fs.existsSync(parsed.dir)) {
-            // TODO, move to node 10 and use the built in
-            // fs.mkdirSync(parsed.dir, {recursive: true});
-            mkdirp.sync(parsed.dir);
-          }
-
-          fs.writeFileSync(fileName, contents);
-          next();
+          resolve(stdout);
         });
-
-        extract.on("finish", () => {
-          // Run kustomize
-          exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, { maxBuffer: 1024 * 5000 }, (err, stdout, stderr) => {
-            if (err) {
-              logger.error({ msg: "err running kustomize", err, stderr })
-              reject(err);
-              return;
-            }
-
-            resolve(stdout);
-          });
-        });
-
-        tgzStream.pipe(gzunipStream).pipe(extract);
       });
 
-    } finally {
-      // tmpDir.removeCallback();
-    }
+      tgzStream.pipe(gzunipStream).pipe(extract);
+    });
   }
 
   public async isGitOpsSupported(stores: Stores): Promise<boolean> {

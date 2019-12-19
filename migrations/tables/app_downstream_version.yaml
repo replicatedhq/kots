@@ -31,6 +31,8 @@ spec:
           notNull: true
       - name: status
         type: text
+      - name: status_info
+        type: text
       - name: source
         type: text
       - name: diff_summary
