@@ -28,6 +28,7 @@ type PullOptions struct {
 	Downstreams         []string
 	LocalPath           string
 	LicenseFile         string
+	InstallationFile    string
 	AirgapRoot          string
 	ConfigFile          string
 	UpdateCursor        string
@@ -132,6 +133,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		fetchOptions.ConfigValues = config
 	}
+	if pullOptions.InstallationFile != "" {
+		installation, err := parseInstallationFromFile(pullOptions.InstallationFile)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to parse installation from file")
+		}
+		if installation != nil {
+			fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
+		}
+	}
+
 	if pullOptions.AirgapRoot != "" {
 		airgap, err := findAirgapMetaInDir(pullOptions.AirgapRoot)
 		if err != nil {
@@ -422,6 +433,30 @@ func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 	config := decoded.(*kotsv1beta1.ConfigValues)
 
 	return config, nil
+}
+
+func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read installation file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode installation file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
+		return nil, errors.New("not installation file")
+	}
+
+	installation := decoded.(*kotsv1beta1.Installation)
+
+	return installation, nil
 }
 
 func findAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {

@@ -232,13 +232,13 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values1, err := createConfigValues(applicationName, config, nil)
+	values1, err := createConfigValues(applicationName, config, nil, nil)
 	req.NoError(err)
 	assert.Equal(t, expected1, values1.Spec.Values)
 
 	// Like an app without a config, should have exact same values
 	expected2 := configValues.Spec.Values
-	values2, err := createConfigValues(applicationName, nil, configValues)
+	values2, err := createConfigValues(applicationName, nil, configValues, nil)
 	req.NoError(err)
 	assert.Equal(t, expected2, values2.Spec.Values)
 
@@ -259,7 +259,7 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values3, err := createConfigValues(applicationName, config, configValues)
+	values3, err := createConfigValues(applicationName, config, configValues, nil)
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
 }

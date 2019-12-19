@@ -38,7 +38,7 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	}
 
 	// add config context
-	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext)
+	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
 	}

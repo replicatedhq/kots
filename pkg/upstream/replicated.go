@@ -21,6 +21,7 @@ import (
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -108,7 +109,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor, versionLa
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string, cipher *crypto.AESCipher) (*Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -172,7 +173,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 	if config != nil || existingConfigValues != nil {
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -439,7 +440,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -475,7 +476,7 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
-	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues)
+	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}

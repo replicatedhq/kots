@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/template"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -53,11 +54,22 @@ func RenderFile(socket string, filePath string, archivePath string) {
 		builder.AddCtx(template.StaticCtx{})
 
 		// look for config
-		config, values, license, err := findConfig(tmpRoot)
+		config, values, license, installation, err := findConfig(tmpRoot)
 		if err != nil {
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
+
+		var cipher *crypto.AESCipher
+		if installation != nil {
+			c, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
+			if err != nil {
+				ffiResult = NewFFIResult(-1).WithError(err)
+				return
+			}
+			cipher = c
+		}
+
 		if config != nil {
 			templateContextValues := make(map[string]template.ItemValue)
 
@@ -70,7 +82,7 @@ func RenderFile(socket string, filePath string, archivePath string) {
 				}
 			}
 
-			configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues)
+			configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
 			if err != nil {
 				fmt.Printf("failed to create config context %s\n", err.Error())
 				ffiResult = NewFFIResult(1).WithError(err)
@@ -107,10 +119,11 @@ func RenderFile(socket string, filePath string, archivePath string) {
 	}()
 }
 
-func findConfig(archivePath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, error) {
+func findConfig(archivePath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
+	var installation *kotsv1beta1.Installation
 
 	err := filepath.Walk(archivePath,
 		func(path string, info os.FileInfo, err error) error {
@@ -139,14 +152,16 @@ func findConfig(archivePath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigVal
 				values = obj.(*kotsv1beta1.ConfigValues)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 				license = obj.(*kotsv1beta1.License)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
+				installation = obj.(*kotsv1beta1.Installation)
 			}
 
 			return nil
 		})
 
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to walk archive dir")
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to walk archive dir")
 	}
 
-	return config, values, license, nil
+	return config, values, license, installation, nil
 }

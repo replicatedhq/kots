@@ -150,7 +150,7 @@ func (u *Upstream) GetBaseDir(options WriteOptions) string {
 
 func getEncryptionKey(previousInstallationContent []byte) (string, error) {
 	if previousInstallationContent == nil {
-		cipher, err := crypto.NewAESCypher()
+		cipher, err := crypto.NewAESCipher()
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create new AES cipher")
 		}

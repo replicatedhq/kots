@@ -17,7 +17,7 @@ type AESCipher struct {
 
 const keyLength = 24 // 192 bit
 
-func NewAESCypher() (*AESCipher, error) {
+func NewAESCipher() (*AESCipher, error) {
 	key := make([]byte, keyLength)
 	if _, err := rand.Read(key); err != nil {
 		return nil, errors.Wrap(err, "failed to read key")
