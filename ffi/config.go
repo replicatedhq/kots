@@ -10,8 +10,8 @@ import (
 )
 
 //export TemplateConfig
-func TemplateConfig(configPath string, configData string, configValuesData string) *C.char {
-	rendered, err := config.TemplateConfig(logger.NewLogger(), configPath, configData, configValuesData)
+func TemplateConfig(configSpecData string, configValuesData string) *C.char {
+	rendered, err := config.TemplateConfig(logger.NewLogger(), configSpecData, configValuesData)
 	if err != nil {
 		fmt.Printf("failed to apply templates to config: %s\n", err.Error())
 		return C.CString("")
