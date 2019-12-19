@@ -171,7 +171,6 @@ class AppVersionHistory extends Component {
     }
 
     const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
-    const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
     const showActions = !isPastVersion || app.allowRollback;
 
@@ -183,11 +182,11 @@ class AppVersionHistory extends Component {
             disabled={isCurrentVersion}
             onClick={() => this.deployVersion(version)}
           >
-            {isPendingVersion ?
-              "Deploy" :
+            {isPastVersion ?
+              "Rollback" :
               isCurrentVersion ?
                 "Deployed" :
-                "Rollback"
+                "Deploy"
             }
           </button>
         }
@@ -299,6 +298,10 @@ class AppVersionHistory extends Component {
     await this.props.makeCurrentVersion(match.params.slug, version.sequence, clusterSlug);
     await this.props.data.refetch();
     this.setState({ versionToDeploy: null });
+
+    if (this.props.updateCallback) {
+      this.props.updateCallback();
+    }
   }
 
   onForceDeployClick = () => {
