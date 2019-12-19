@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.Logger, configPath string, configData string, configValuesData string) (string, error) {
+func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData string) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
@@ -21,7 +21,7 @@ func TemplateConfig(log *logger.Logger, configPath string, configData string, co
 	// This process will re-order items and discard comments, so it should not be saved.
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(configData), nil, nil)
+	obj, _, err := decode([]byte(configSpecData), nil, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to decode config data")
 	}
@@ -51,7 +51,7 @@ func TemplateConfig(log *logger.Logger, configPath string, configData string, co
 
 	builder.AddCtx(configCtx)
 
-	rendered, err := builder.RenderTemplate(configPath, configDocWithData)
+	rendered, err := builder.RenderTemplate("config", configDocWithData)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render config template")
 	}
