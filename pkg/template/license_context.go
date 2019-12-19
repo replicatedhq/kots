@@ -1,6 +1,8 @@
 package template
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"text/template"
 
@@ -15,6 +17,7 @@ type LicenseCtx struct {
 func (ctx LicenseCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"LicenseFieldValue": ctx.licenseFieldValue,
+		"LicenseDockerCfg":  ctx.licenseDockercfg,
 	}
 }
 
@@ -25,4 +28,27 @@ func (ctx LicenseCtx) licenseFieldValue(name string) string {
 		}
 	}
 	return ""
+}
+
+func (ctx LicenseCtx) licenseDockercfg() string {
+	auth := fmt.Sprintf("%s:%s", ctx.License.Spec.LicenseID, ctx.License.Spec.LicenseID)
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+
+	dockercfg := map[string]interface{}{
+		"auths": map[string]interface{}{
+			"proxy.replicated.com": map[string]string{
+				"auth": encodedAuth,
+			},
+			"registry.replicated.com": map[string]string{
+				"auth": encodedAuth,
+			},
+		},
+	}
+
+	b, err := json.Marshal(dockercfg)
+	if err != nil {
+		return ""
+	}
+
+	return base64.StdEncoding.EncodeToString(b)
 }
