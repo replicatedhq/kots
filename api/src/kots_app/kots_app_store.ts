@@ -442,9 +442,10 @@ export class KotsAppStore {
 
   async getDownstreamOutput(appId: string, clusterId: string, sequence: number): Promise<KotsDownstreamOutput> {
     const q = `
-      select dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr
-      from app_downstream_output
-      where app_id = $1 and cluster_id = $2 and downstream_sequence = $3
+      select adv.status, adv.status_info, ado.dryrun_stdout, ado.dryrun_stderr, ado.apply_stdout, ado.apply_stderr
+      from app_downstream_version adv LEFT JOIN app_downstream_output ado
+        ON adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
+      where adv.app_id = $1 and adv.cluster_id = $2 and adv.sequence = $3
     `;
     const v = [
       appId,
@@ -464,12 +465,20 @@ export class KotsAppStore {
     };
 
     const row = result.rows[0];
+
+    let renderError: string | null;
+    if (row.status === "failed") {
+      renderError = row.status_info;
+    } else {
+      renderError = null;
+    }
+
     return {
       dryrunStdout: base64Decode(row.dryrun_stdout),
       dryrunStderr: base64Decode(row.dryrun_stderr),
       applyStdout: base64Decode(row.apply_stdout),
       applyStderr: base64Decode(row.apply_stderr),
-      renderError: null
+      renderError: renderError,
     };
   }
 
