@@ -333,7 +333,7 @@ export function KotsMutations(stores: Stores) {
       const { slug, sequence, status } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(slug);
       const app = await context.getApp(appId);
-      await stores.kotsAppStore.updateDownstreamsStatus(app.id, sequence, status);
+      await stores.kotsAppStore.updateDownstreamsStatus(app.id, sequence, status, "");
       return true;
     },
   }

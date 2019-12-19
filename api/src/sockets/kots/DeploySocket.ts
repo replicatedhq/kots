@@ -114,27 +114,31 @@ export class KotsDeploySocketService {
         }
 
         const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
-        const deployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
-        if (deployedAppSequence! > -1) {
+        const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
+        if (maybeDeployedAppSequence! > -1) {
+          const deployedAppSequence = Number(maybeDeployedAppSequence);
           if (clusterSocketHistory.sentDeploySequences.indexOf(`${app.id}/${deployedAppSequence!}`) === -1) {
-            const desiredNamespace = ".";
-
             const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
+            try {
+              const desiredNamespace = ".";
+              const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+              const b = new Buffer(rendered);
 
-            const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
-            const b = new Buffer(rendered);
+              const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-            const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+              const args = {
+                app_id: app.id,
+                kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
+                namespace: desiredNamespace,
+                manifests: b.toString("base64"),
+              };
 
-            const args = {
-              app_id: app.id,
-              kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
-              namespace: desiredNamespace,
-              manifests: b.toString("base64"),
-            };
-
-            this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
-            clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
+              this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
+              clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
+            } catch(err) {
+              this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
+              continue;
+            }
 
             try {
               const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore)
