@@ -3,6 +3,7 @@ package base
 import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -10,38 +11,29 @@ import (
 )
 
 func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	// Find the config for the config groups
-	var config *kotsv1beta1.Config
-	for _, upstreamFile := range u.Files {
-		maybeConfig := tryGetConfigFromFileContent(upstreamFile.Content, renderOptions.Log)
-		if maybeConfig != nil {
-			config = maybeConfig
-		}
-	}
+	config, configValues, license, installation := findConfig(u, renderOptions.Log)
 
-	// Find the values from the context
 	var templateContext map[string]template.ItemValue
-	for _, c := range u.Files {
-		if c.Path == "userdata/config.yaml" {
-			ctx, err := UnmarshalConfigValuesContent(c.Content)
-			if err != nil {
-				renderOptions.Log.Error(err)
-				templateContext = map[string]template.ItemValue{}
-			} else {
-				templateContext = ctx
+	if configValues != nil {
+		ctx := map[string]template.ItemValue{}
+		for k, v := range configValues.Spec.Values {
+			ctx[k] = template.ItemValue{
+				Value:   v.Value,
+				Default: v.Default,
 			}
 		}
+		templateContext = ctx
+	} else {
+		templateContext = map[string]template.ItemValue{}
 	}
 
-	// Find the license
-	var license *kotsv1beta1.License
-	for _, c := range u.Files {
-		if c.Path == "userdata/license.yaml" {
-			maybeLicense := UnmarshalLicenseContent(c.Content, renderOptions.Log)
-			if maybeLicense != nil {
-				license = maybeLicense
-			}
+	var cipher *crypto.AESCipher
+	if installation != nil {
+		c, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create cipher")
 		}
+		cipher = c
 	}
 
 	baseFiles := []BaseFile{}
@@ -50,7 +42,7 @@ func renderReplicated(u *upstream.Upstream, renderOptions *RenderOptions) (*Base
 	builder.AddCtx(template.StaticCtx{})
 
 	if config != nil {
-		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext)
+		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create config context")
 		}
@@ -137,4 +129,31 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	}
 
 	return nil
+}
+
+func findConfig(u *upstream.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation) {
+	var config *kotsv1beta1.Config
+	var values *kotsv1beta1.ConfigValues
+	var license *kotsv1beta1.License
+	var installation *kotsv1beta1.Installation
+
+	for _, file := range u.Files {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(file.Content, nil, nil)
+		if err != nil {
+			log.Debug("%s", err)
+			continue
+		}
+
+		if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
+			config = obj.(*kotsv1beta1.Config)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
+			values = obj.(*kotsv1beta1.ConfigValues)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
+			license = obj.(*kotsv1beta1.License)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
+			installation = obj.(*kotsv1beta1.Installation)
+		}
+	}
+	return config, values, license, installation
 }

@@ -47,7 +47,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	docs["secret-shared-password.yaml"] = sharedPassword.Bytes()
 
 	if deployOptions.APIEncryptionKey == "" {
-		cipher, err := crypto.NewAESCypher()
+		cipher, err := crypto.NewAESCipher()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new API encryption key")
 		}
@@ -279,7 +279,7 @@ func ensureAPIEncryptionSecret(deployOptions *DeployOptions, clientset *kubernet
 	}
 
 	if deployOptions.APIEncryptionKey == "" {
-		cipher, err := crypto.NewAESCypher()
+		cipher, err := crypto.NewAESCipher()
 		if err != nil {
 			return errors.Wrap(err, "failed to create new AES cipher")
 		}

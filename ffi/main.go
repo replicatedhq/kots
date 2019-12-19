@@ -67,6 +67,7 @@ func UpdateCheck(socket, fromArchivePath, namespace string) {
 			LicenseFile:         expectedLicenseFile,
 			Namespace:           namespace,
 			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
+			InstallationFile:    filepath.Join(tmpRoot, "upstream", "userdata", "installation.yaml"),
 			RootDir:             tmpRoot,
 			ExcludeKotsKinds:    true,
 			ExcludeAdminConsole: true,

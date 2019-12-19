@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -18,6 +19,7 @@ type FetchOptions struct {
 	License             *kotsv1beta1.License
 	ConfigValues        *kotsv1beta1.ConfigValues
 	Airgap              *kotsv1beta1.Airgap
+	EncryptionKey       string
 	CurrentCursor       string
 	CurrentVersionLabel string
 }
@@ -36,6 +38,15 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return readFilesFromPath(upstreamURI)
 	}
 
+	var cipher *crypto.AESCipher
+	if fetchOptions.EncryptionKey != "" {
+		c, err := crypto.AESCipherFromString(fetchOptions.EncryptionKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create cipher")
+		}
+		cipher = c
+	}
+
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse request uri failed")
@@ -44,7 +55,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, pickVersionLabel(fetchOptions))
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, pickVersionLabel(fetchOptions), cipher)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
