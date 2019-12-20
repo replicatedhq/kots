@@ -15,6 +15,7 @@ import Dashboard from "./Dashboard";
 import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
+import { isAwaitingResults } from "../../utilities/utilities";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "./AppConfig";
 import AppLicense from "./AppLicense";
@@ -157,6 +158,7 @@ class AppDetailPage extends Component {
     );
 
     const app = getKotsAppQuery?.getKotsApp;
+
     const refreshAppData = getKotsAppQuery.refetch;
 
     // if there is app, don't render a loader to avoid flickering
@@ -166,6 +168,12 @@ class AppDetailPage extends Component {
       return centeredLoader;
     }
 
+    const downstream = app?.downstreams?.length && app.downstreams[0];
+    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
+      getKotsAppQuery?.startPolling(2000);
+    } else {
+      getKotsAppQuery?.stopPolling();
+    }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
