@@ -58,6 +58,10 @@ func downloadHelm(u *url.URL, repoURI string) (*Upstream, error) {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
 	}
 
+	if repoURI == "" {
+		repoURI = getKnownHelmRepoURI(repoName)
+	}
+
 	helmHome, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary helm home")
