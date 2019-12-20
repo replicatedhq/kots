@@ -59,9 +59,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	for _, upstreamFile := range u.Files {
-		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+		content := fmt.Sprintf("%s", upstreamFile.Content)
+		rendered, err := builder.RenderTemplate(upstreamFile.Path, content)
 		if err != nil {
-			fmt.Printf("\n\nthis file is bad:\n\n%s\n", upstreamFile.Content)
+			renderOptions.Log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, content))
 			return nil, errors.Wrap(err, "failed to render file template")
 		}
 
