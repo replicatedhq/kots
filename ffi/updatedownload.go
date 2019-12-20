@@ -73,6 +73,7 @@ func UpdateDownload(socket, fromArchivePath, namespace, registryJson, cursor str
 			LicenseFile:         expectedLicenseFile,
 			Namespace:           namespace,
 			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
+			InstallationFile:    installationFilePath,
 			UpdateCursor:        cursor,
 			RootDir:             tmpRoot,
 			ExcludeKotsKinds:    true,
