@@ -15,7 +15,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { checkForKotsUpdates } from "../../mutations/AppsMutations";
-import { Utilities, hasPendingPreflight, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
@@ -602,7 +602,7 @@ class AppVersionHistory extends Component {
     const currentDownstreamVersion = downstream?.currentVersion;
     const versionHistory = data?.getKotsDownstreamHistory?.length ? data.getKotsDownstreamHistory : [];
 
-    if (hasPendingPreflight(versionHistory)) {
+    if (isAwaitingResults(versionHistory)) {
       data?.startPolling(2000);
     } else {
       data?.stopPolling();

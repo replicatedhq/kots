@@ -670,7 +670,7 @@ export class KotsAppStore {
 
       let versionItem: KotsVersion = {
         title: row.version_label,
-        status: row.has_error ? "failed" : row.status,
+        status: this.downstreamVersionStatus(row),
         createdOn: row.created_at,
         parentSequence: row.parent_sequence,
         sequence: row.sequence,
@@ -865,7 +865,7 @@ order by adv.sequence desc`;
 
     let versionItem: KotsVersion = {
       title: row.version_label,
-      status: row.has_error ? "failed" : row.status,
+      status: this.downstreamVersionStatus(row),
       createdOn: row.created_at,
       parentSequence: row.parent_sequence,
       sequence: row.sequence,
@@ -1654,6 +1654,25 @@ order by adv.sequence desc`;
     const q = `update api_task_status set updated_at = $1 where id = $2`;
     const v = [new Date(), id];
     await this.pool.query(q, v);
+  }
+
+  private downstreamVersionStatus(row: any): string {
+    let status = "unknown";
+
+    // first check if operator has reported back.
+    // and if it hasn't, we should not show "deployed" to the user.
+
+    if (row.has_error === false) {
+      status = row.status;
+    } else if (row.has_error === true) {
+      status = "failed";
+    } else if (row.status === "deployed") {
+      status = "deploying";
+    } else if (row.status) {
+      status = row.status;
+    }
+
+    return status;
   }
 
   private mapAppRegistryDetails(row: any): KotsAppRegistryDetails {
