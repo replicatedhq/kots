@@ -656,10 +656,13 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			return nil, errors.Wrap(err, "failed to fetch helm dependency")
 		}
 
-		kotsHelmChart := findHelmChartInRelease(release)
+		kotsHelmChart := findHelmChartInRelease(release) // TODO support matching the chart name and version here
 		if kotsHelmChart == nil {
 			return nil, errors.Errorf("unable to find matching kots.io/v1beta1, kind: HelmChart for chart archive %s", filename)
 		}
+
+		helmUpstream.Name = kotsHelmChart.Spec.Chart.Name
+
 		localValues, err := kotsHelmChart.Spec.RenderValues()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
