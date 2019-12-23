@@ -12,22 +12,21 @@ import { Params } from "../../server/params";
 export function KotsQueries(stores: Stores, params: Params) {
   return {
     async getKotsMetadata(): Promise<KotsAppMetadata|null> {
+      let parsedBranding: any;
       try {
         const rawBranding = await kotsAppGetBranding();
-        const parsedBranding = yaml.safeLoad(rawBranding);
-        const namespace = process.env["POD_NAMESPACE"] || "";
-
-        return {
-          name: parsedBranding.spec.title,
-          iconUri: parsedBranding.spec.icon,
-          namespace: namespace,
-          isKurlEnabled: params.enableKurl,
-        };
+        parsedBranding = yaml.safeLoad(rawBranding);
       } catch (err) {
         console.log(err);
         logger.error("[kotsAppGetBranding] - Unable to retrieve or parse branding information");
-        return null;
       }
+
+      return {
+        name: _.get(parsedBranding, "spec.title"),
+        iconUri: _.get(parsedBranding, "spec.icon"),
+        namespace: process.env["POD_NAMESPACE"] || "",
+        isKurlEnabled: params.enableKurl,
+      };
     },
 
     async getKotsApp(root: any, args: any, context: Context): Promise<KotsApp> {
