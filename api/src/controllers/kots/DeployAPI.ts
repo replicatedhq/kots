@@ -77,7 +77,7 @@ export class DeployAPI {
       // this means that we could possible have a version and/or preflights to run
 
       // this needs to be updated after the preflight PR is merged
-      const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightUrls();
+      const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightParams(true);
       const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentVersion(app.id, cluster.id);
       const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.sequence;
       if (pendingPreflightURLs.length > 0) {

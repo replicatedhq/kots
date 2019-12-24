@@ -41,6 +41,9 @@ spec:
         type: text
       - name: preflight_result_created_at
         type: timestamp without time zone
+      - name: preflight_ignore_permissions
+        type: boolean
+        default: "false"
       - name: git_commit_url
         type: text
       - name: git_deployable

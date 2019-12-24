@@ -44,7 +44,8 @@ type DesiredState struct {
 }
 
 type PreflightRequest struct {
-	URI string `json:"uri"`
+	URI               string `json:"uri"`
+	IgnorePermissions bool   `json:"ignorePermissions"`
 }
 
 type SupportBundleRequest struct {
@@ -186,7 +187,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 	err = socketClient.On("preflight", func(h *socket.Channel, args PreflightRequest) {
 		log.Printf("received a preflight event: %#v", args)
-		if err := runPreflight(args.URI); err != nil {
+		if err := runPreflight(args.URI, args.IgnorePermissions); err != nil {
 			log.Printf("error running preflight: %s", err.Error())
 		}
 	})
@@ -308,7 +309,7 @@ func runSupportBundle(collectorURI string) error {
 	return kubernetesApplier.SupportBundle(collectorURI)
 }
 
-func runPreflight(preflightURI string) error {
+func runPreflight(preflightURI string, ignorePermissions bool) error {
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
@@ -333,7 +334,7 @@ func runPreflight(preflightURI string) error {
 
 	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
-	return kubernetesApplier.Preflight(preflightURI)
+	return kubernetesApplier.Preflight(preflightURI, ignorePermissions)
 }
 
 func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusInformerString) error {

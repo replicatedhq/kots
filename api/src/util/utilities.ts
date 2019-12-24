@@ -19,6 +19,10 @@ export function base64Encode(value: string): string {
 };
 
 export function getPreflightResultState(preflightResults): string {
+  if (!preflightResults.results && preflightResults.errors) {
+    return "fail";
+  }
+
   const results = preflightResults.results;
   let resultState = "pass";
   for (const check of results) {

@@ -1,24 +1,30 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { graphql, compose } from "react-apollo";
+import { graphql, compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
-
 import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queries/AppsQueries";
 import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 import { getPreflightResultState } from "../utilities/utilities";
 import "../scss/components/PreflightCheckPage.scss";
+import { ignorePreflightPermissionErrors, retryPreflights } from "../mutations/AppsMutations";
+import PreflightResultErrors from "./PreflightResultErrors";
+import has from "lodash/has";
 
 class PreflightResultPage extends Component {
   state = {
     showSkipModal: false,
-    showWarningModal: false
-  }
+    showWarningModal: false,
+  };
 
   async componentWillUnmount() {
+    if (has(this.props.data, "stopPolling")) {
+      this.props.data.stopPolling();
+    }
+
     if (this.props.fromLicenseFlow && this.props.refetchListApps) {
       await this.props.refetchListApps();
     }
@@ -69,6 +75,54 @@ class PreflightResultPage extends Component {
     });
   }
 
+  ignorePermissionErrors = () => {
+    const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
+    const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
+    this.props.client.mutate({
+      mutation: ignorePreflightPermissionErrors,
+      variables: {
+        appSlug: preflightResultData.appSlug,
+        clusterSlug: preflightResultData.clusterSlug,
+        sequence: sequence,
+      },
+    }).then(() => {
+      this.props.data.refetch();
+    });
+  }
+
+  retryResults= () => {
+    const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
+    const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
+    this.props.client.mutate({
+      mutation: retryPreflights,
+      variables: {
+        appSlug: preflightResultData.appSlug,
+        clusterSlug: preflightResultData.clusterSlug,
+        sequence: sequence,
+      },
+    }).then(() => {
+      this.props.data.refetch();
+    });
+  }
+
+  renderErrors = (errors) => {
+    this.props.data?.startPolling(2000);
+
+    const valueFromAPI = errors.map(error => {
+      return error.error;
+    }).join("\n");
+
+    return (
+      <PreflightResultErrors
+        valueFromAPI={valueFromAPI}
+        ignorePermissionErrors={this.ignorePermissionErrors}
+        retryResults={this.retryResults}
+        logo={this.props.logo}
+        preflightResultData={this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult}
+      />
+    );
+  }
+  
   render() {
     const { data } = this.props;
     const { showSkipModal, showWarningModal } = this.state;
@@ -78,14 +132,16 @@ class PreflightResultPage extends Component {
       ? null
       : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
     const hasData = preflightResultData?.result;
-
+    let preflightJSON = {};
     if (hasData) {
       data.stopPolling();
       if (showSkipModal) {
         this.hideSkipModal();
       }
+      
+      preflightJSON = JSON.parse(preflightResultData?.result);
     }
-
+  
     return (
       <div className="flex-column flex1 container">
         <Helmet>
@@ -94,11 +150,11 @@ class PreflightResultPage extends Component {
         <div className="flex1 flex u-overflow--auto">
           <div className="PreflightChecks--wrapper flex flex-column u-paddingTop--30 u-overflow--hidden">
             {this.props.history.location.pathname.includes("version-history") &&
-            <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={() => this.props.history.goBack()}>
+            <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
-            <div className="u-minWidth--full u-minHeight--full u-marginTop--20">
+            <div className="u-minWidth--full u-minHeight--full u-marginTop--20 u-overflow--auto">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
@@ -110,19 +166,20 @@ class PreflightResultPage extends Component {
                   <Loader size="60" />
                 </div>
               )}
-              {hasData && (
+              {preflightJSON?.errors && this.renderErrors(preflightJSON?.errors) }
+              {hasData && !preflightJSON.errors ? (
                 <div className="flex-column">
                   <PreflightRenderer
                     className="u-marginTop--20"
                     results={preflightResultData.result}
                   />
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
 
-        {hasData ? (
+        {preflightJSON.errors ? null : hasData ? (
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
@@ -188,6 +245,7 @@ class PreflightResultPage extends Component {
 }
 
 export default compose(
+  withApollo,
   withRouter,
   graphql(getKotsPreflightResult, {
     skip: props => {

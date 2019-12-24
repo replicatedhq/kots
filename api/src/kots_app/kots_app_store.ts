@@ -1574,6 +1574,34 @@ order by adv.sequence desc`;
     }
   }
 
+  async ignorePreflightPermissionErrors(appId: string, clusterId: string, sequence: number): Promise<void> {
+    const q =`UPDATE app_downstream_version
+SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null
+WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
+
+    const v = [
+      appId,
+      clusterId,
+      sequence
+    ];
+
+    await this.pool.query(q, v);
+  }
+
+  async retryPreflights(appId: string, clusterId: string, sequence: number): Promise<void> {
+    const q =`UPDATE app_downstream_version
+SET status = 'pending_preflight', preflight_ignore_permissions = false, preflight_result = null
+WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
+
+    const v = [
+      appId,
+      clusterId,
+      sequence
+    ];
+
+    await this.pool.query(q, v);
+  }
+  
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
@@ -1587,10 +1615,6 @@ order by adv.sequence desc`;
       installStatus: result.rows[0].install_state,
       currentMessage: taskStatus.currentMessage,
     };
-  }
-
-  async clearAirgapInstallInProgress(): Promise<void> {
-    await this.clearApiTaskStatus("airgap-install");
   }
 
   async setAirgapInstallStatus(msg: string, status: string): Promise<void> {

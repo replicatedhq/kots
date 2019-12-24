@@ -246,7 +246,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchGraphQLData}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={() => <PreflightResultPage />} />
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
                     <Route exact path="/app/:slug/config/:sequence?" render={() =>
                       <AppConfig
                         app={app}

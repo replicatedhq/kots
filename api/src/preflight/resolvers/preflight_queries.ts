@@ -18,6 +18,11 @@ export function PrefightQueries(stores: Stores) {
     async getLatestKotsPreflightResult(root: any, args: any, context: Context): Promise<PreflightResult> {
       const result = await stores.preflightStore.getLatestKotsPreflightResult();
       return result;
+    },
+
+    async getPreflightCommand(root: any, args: any, context: Context): Promise<string> {
+      const { appSlug, clusterSlug, sequence } = args;
+      return await stores.preflightStore.getPreflightCommand(appSlug, clusterSlug, sequence);
     }
   };
 }
