@@ -92,6 +92,9 @@ func AESCipherFromString(data string) (aesCipher *AESCipher, initErr error) {
 }
 
 func (c *AESCipher) ToString() string {
+	if c == nil {
+		return ""
+	}
 	return base64.StdEncoding.EncodeToString(append(c.key, c.nonce...))
 }
 

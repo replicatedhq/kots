@@ -195,13 +195,14 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 	}
 
 	upstream := &types.Upstream{
-		URI:          u.RequestURI(),
-		Name:         application.Name,
-		Files:        files,
-		Type:         "replicated",
-		UpdateCursor: release.UpdateCursor,
-		VersionLabel: release.VersionLabel,
-		ReleaseNotes: release.ReleaseNotes,
+		URI:           u.RequestURI(),
+		Name:          application.Name,
+		Files:         files,
+		Type:          "replicated",
+		UpdateCursor:  release.UpdateCursor,
+		VersionLabel:  release.VersionLabel,
+		ReleaseNotes:  release.ReleaseNotes,
+		EncryptionKey: cipher.ToString(),
 	}
 
 	return upstream, nil

@@ -11,7 +11,7 @@ import (
 )
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	config, configValues, license, installation := findConfig(u, renderOptions.Log)
+	config, configValues, license := findConfig(u, renderOptions.Log)
 
 	var templateContext map[string]template.ItemValue
 	if configValues != nil {
@@ -28,8 +28,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	var cipher *crypto.AESCipher
-	if installation != nil {
-		c, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
+	if u.EncryptionKey != "" {
+		c, err := crypto.AESCipherFromString(u.EncryptionKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create cipher")
 		}
@@ -132,11 +132,10 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation) {
+func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
-	var installation *kotsv1beta1.Installation
 
 	for _, file := range u.Files {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -152,9 +151,7 @@ func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Con
 			values = obj.(*kotsv1beta1.ConfigValues)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 			license = obj.(*kotsv1beta1.License)
-		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
-			installation = obj.(*kotsv1beta1.Installation)
 		}
 	}
-	return config, values, license, installation
+	return config, values, license
 }
