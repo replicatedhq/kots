@@ -29,7 +29,7 @@ export default () => {
     const downstream = data.getKotsDownstreamHistory[1];
 
     expect(downstream.title).to.equal("my-other-awesome-version");
-    expect(downstream.status).to.equal("deployed");
+    expect(downstream.status).to.equal("deploying");
     expect(typeof downstream.createdOn).to.equal("string");
     expect(downstream.sequence).to.equal(0);
     expect(downstream.releaseNotes).to.equal("# Markdown string here");
