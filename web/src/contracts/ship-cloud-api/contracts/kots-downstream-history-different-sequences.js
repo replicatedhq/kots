@@ -63,7 +63,7 @@ export default () => {
           getKotsDownstreamHistory: [
             {
               "title": "my-other-awesome-version-2",
-              "status": "deployed",
+              "status": "deploying",
               "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
               "sequence": 1,
               "releaseNotes": "# Markdown string here",
@@ -73,7 +73,7 @@ export default () => {
             },
             {
               "title": "my-other-awesome-version",
-              "status": "deployed",
+              "status": "deploying",
               "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
               "sequence": 0,
               "releaseNotes": "# Markdown string here",
