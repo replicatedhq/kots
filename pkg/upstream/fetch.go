@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -24,7 +25,7 @@ type FetchOptions struct {
 	CurrentVersionLabel string
 }
 
-func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
+func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstream, error) {
 	upstream, err := downloadUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
@@ -33,7 +34,7 @@ func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, e
 	return upstream, nil
 }
 
-func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*Upstream, error) {
+func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstream, error) {
 	if !util.IsURL(upstreamURI) {
 		return readFilesFromPath(upstreamURI)
 	}

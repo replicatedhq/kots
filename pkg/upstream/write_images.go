@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
@@ -21,7 +22,7 @@ type WriteUpstreamImageOptions struct {
 	ReportWriter   io.Writer
 }
 
-func (u *Upstream) CopyUpstreamImages(options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
+func CopyUpstreamImages(u *types.Upstream, options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)

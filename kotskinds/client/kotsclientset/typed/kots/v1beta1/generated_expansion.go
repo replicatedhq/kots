@@ -25,6 +25,8 @@ type ConfigExpansion interface{}
 
 type ConfigValuesExpansion interface{}
 
+type HelmChartExpansion interface{}
+
 type InstallationExpansion interface{}
 
 type LicenseExpansion interface{}

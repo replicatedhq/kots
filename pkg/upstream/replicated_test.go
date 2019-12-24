@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +73,7 @@ func Test_releaseToFiles(t *testing.T) {
 	tests := []struct {
 		name     string
 		release  *Release
-		expected []UpstreamFile
+		expected []types.UpstreamFile
 	}{
 		{
 			name: "with common prefix",
@@ -82,12 +83,12 @@ func Test_releaseToFiles(t *testing.T) {
 					"manifests/service.yaml":    []byte("---"),
 				},
 			},
-			expected: []UpstreamFile{
-				UpstreamFile{
+			expected: []types.UpstreamFile{
+				types.UpstreamFile{
 					Path:    "deployment.yaml",
 					Content: []byte("---"),
 				},
-				UpstreamFile{
+				types.UpstreamFile{
 					Path:    "service.yaml",
 					Content: []byte("---"),
 				},
@@ -101,12 +102,12 @@ func Test_releaseToFiles(t *testing.T) {
 					"service.yaml":              []byte("---"),
 				},
 			},
-			expected: []UpstreamFile{
-				UpstreamFile{
+			expected: []types.UpstreamFile{
+				types.UpstreamFile{
 					Path:    "manifests/deployment.yaml",
 					Content: []byte("---"),
 				},
-				UpstreamFile{
+				types.UpstreamFile{
 					Path:    "service.yaml",
 					Content: []byte("---"),
 				},
@@ -121,16 +122,16 @@ func Test_releaseToFiles(t *testing.T) {
 					"userdata/values.yaml":      []byte("---"),
 				},
 			},
-			expected: []UpstreamFile{
-				UpstreamFile{
+			expected: []types.UpstreamFile{
+				types.UpstreamFile{
 					Path:    "deployment.yaml",
 					Content: []byte("---"),
 				},
-				UpstreamFile{
+				types.UpstreamFile{
 					Path:    "service.yaml",
 					Content: []byte("---"),
 				},
-				UpstreamFile{
+				types.UpstreamFile{
 					Path:    "userdata/values.yaml",
 					Content: []byte("---"),
 				},

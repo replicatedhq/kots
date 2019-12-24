@@ -3,7 +3,7 @@ package base
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 type RenderOptions struct {
@@ -15,9 +15,9 @@ type RenderOptions struct {
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required
 // to take an upstream and make it a valid kubernetes base
-func RenderUpstream(u *upstream.Upstream, renderOptions *RenderOptions) (*Base, error) {
+func RenderUpstream(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
 	if u.Type == "helm" {
-		return renderHelm(u, renderOptions)
+		return RenderHelm(u, renderOptions)
 	}
 
 	if u.Type == "replicated" {

@@ -21,16 +21,19 @@ import (
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/helm/pkg/chartutil"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
@@ -109,7 +112,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor, versionLa
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string, cipher *crypto.AESCipher) (*Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor, versionLabel string, cipher *crypto.AESCipher) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -191,7 +194,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		return nil, errors.Wrap(err, "failed to get files from release")
 	}
 
-	upstream := &Upstream{
+	upstream := &types.Upstream{
 		URI:          u.RequestURI(),
 		Name:         application.Name,
 		Files:        files,
@@ -554,6 +557,24 @@ func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) 
 	return nil, nil
 }
 
+func tryParsingAsHelmChartGVK(content []byte) *kotsv1beta1.HelmChart {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil
+	}
+
+	if gvk.Group == "kots.io" {
+		if gvk.Version == "v1beta1" {
+			if gvk.Kind == "HelmChart" {
+				return obj.(*kotsv1beta1.HelmChart)
+			}
+		}
+	}
+
+	return nil
+}
+
 func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -572,6 +593,49 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 	}
 
 	return nil
+}
+
+func findHelmChartArchiveInRelease(release *Release, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
+	for _, content := range release.Manifests {
+		decoded, err := base64.StdEncoding.DecodeString(string(content))
+		if err != nil {
+			// not encoded, not a chart archive
+			continue
+		}
+
+		// decoded is a chart tar gz, so it has a Chart.yaml
+		// we need this
+		chartArchivePath, err := ioutil.TempFile("", "chart")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
+		}
+		defer os.Remove(chartArchivePath.Name())
+		if err := ioutil.WriteFile(chartArchivePath.Name(), decoded, 0644); err != nil {
+			return nil, errors.Wrap(err, "failed to write chart to temp file")
+		}
+
+		files, err := readTarGz(chartArchivePath.Name())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read chart archive")
+		}
+
+		for _, chartFile := range files {
+			if chartFile.Path == "Chart.yaml" {
+				chartManifest, err := chartutil.UnmarshalChartfile(chartFile.Content)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
+				}
+
+				if chartManifest.GetName() == kotsHelmChart.Spec.Chart.Name {
+					if chartManifest.GetVersion() == kotsHelmChart.Spec.Chart.ChartVersion {
+						return decoded, nil
+					}
+				}
+			}
+		}
+	}
+
+	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
 }
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {
@@ -608,11 +672,88 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	return app
 }
 
-func releaseToFiles(release *Release) ([]UpstreamFile, error) {
-	upstreamFiles := []UpstreamFile{}
+func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
+	upstreamFiles := []types.UpstreamFile{}
+
+	// prerender the release looking for helm charts
+	// which are only identifyed as base64 encoded tar streams
+	ignoredFilenames := []string{}
+	for filename, content := range release.Manifests {
+		_, err := base64.StdEncoding.DecodeString(string(content))
+		if err != nil {
+			continue
+		}
+
+		// if it base64 decoded, we should ignore thie file
+		// because it's (probably) a helm chart
+		ignoredFilenames = append(ignoredFilenames, filename)
+	}
 
 	for filename, content := range release.Manifests {
-		upstreamFile := UpstreamFile{
+		ignore := false
+		for _, ignoredFilename := range ignoredFilenames {
+			if filename == ignoredFilename {
+				ignore = true
+			}
+		}
+
+		if ignore {
+			continue
+		}
+
+		kotsHelmChart := tryParsingAsHelmChartGVK(content)
+		if kotsHelmChart != nil {
+			archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to find helm chart archive in release")
+			}
+			tmpFile, err := ioutil.TempFile("", "kots")
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create temp file")
+			}
+			_, err = io.Copy(tmpFile, bytes.NewReader(archive))
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to copy chart to temp file")
+			}
+
+			helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to fetch helm dependency")
+			}
+			helmUpstream.Name = kotsHelmChart.Spec.Chart.Name
+
+			localValues, err := kotsHelmChart.Spec.RenderValues()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render local values for chart")
+			}
+
+			helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
+				SplitMultiDocYAML: true,
+				Namespace:         "",
+				HelmOptions:       localValues,
+				Log:               nil,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render helm chart in upstream")
+			}
+
+			for _, helmBaseFile := range helmBase.Files {
+				// this is a little bit of an abuse of the next function
+				if !helmBaseFile.ShouldBeIncludedInBaseFilesystem(false) {
+					continue
+				}
+
+				upstreamFile := types.UpstreamFile{
+					Path:    filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path),
+					Content: helmBaseFile.Content,
+				}
+
+				upstreamFiles = append(upstreamFiles, upstreamFile)
+			}
+
+		}
+
+		upstreamFile := types.UpstreamFile{
 			Path:    filename,
 			Content: content,
 		}
@@ -621,8 +762,8 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 	}
 
 	// Stash the user data for this search (we will readd at the end)
-	userdataFiles := []UpstreamFile{}
-	withoutUserdataFiles := []UpstreamFile{}
+	userdataFiles := []types.UpstreamFile{}
+	withoutUserdataFiles := []types.UpstreamFile{}
 	for _, file := range upstreamFiles {
 		d, _ := path.Split(file.Path)
 		dirs := strings.Split(d, string(os.PathSeparator))
@@ -647,7 +788,7 @@ func releaseToFiles(release *Release) ([]UpstreamFile, error) {
 
 		}
 
-		cleanedUpstreamFiles := []UpstreamFile{}
+		cleanedUpstreamFiles := []types.UpstreamFile{}
 		for _, file := range withoutUserdataFiles {
 			d, f := path.Split(file.Path)
 			d2 := strings.Split(d, string(os.PathSeparator))
@@ -740,7 +881,7 @@ type FindPrivateImagesOptions struct {
 	Log                *logger.Logger
 }
 
-func (u *Upstream) FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
+func FindPrivateImages(u *types.Upstream, options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)
@@ -782,7 +923,7 @@ type FindObjectsWithImagesOptions struct {
 	Log          *logger.Logger
 }
 
-func (u *Upstream) FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
+func FindObjectsWithImages(u *types.Upstream, options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
 	rootDir := options.RootDir
 	if options.CreateAppDir {
 		rootDir = path.Join(rootDir, u.Name)

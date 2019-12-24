@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
@@ -165,13 +166,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
 
-	writeUpstreamOptions := upstream.WriteOptions{
+	writeUpstreamOptions := upstreamtypes.WriteOptions{
 		RootDir:             pullOptions.RootDir,
 		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 	}
-	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
+	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
@@ -210,7 +211,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			newImages, err := u.CopyUpstreamImages(writeUpstreamImageOptions)
+			newImages, err := upstream.CopyUpstreamImages(u, writeUpstreamImageOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
 			}
@@ -245,7 +246,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			// only run the TagAndPushImagesFromFiles code if the "copy directly" code hasn't already run
 			var rewrittenImages []image.Image
 			if images == nil {
-				rewrittenImages, err = u.TagAndPushUpstreamImages(pushUpstreamImageOptions)
+				rewrittenImages, err = upstream.TagAndPushUpstreamImages(u, pushUpstreamImageOptions)
 				if err != nil {
 					return "", errors.Wrap(err, "failed to push upstream images")
 				}
@@ -256,7 +257,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				CreateAppDir: pullOptions.CreateAppDir,
 				Log:          log,
 			}
-			affectedObjects, err := u.FindObjectsWithImages(findObjectsOptions)
+			affectedObjects, err := upstream.FindObjectsWithImages(u, findObjectsOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to find objects with images")
 			}
@@ -298,7 +299,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			},
 			Log: log,
 		}
-		rewrittenImages, affectedObjects, err := u.FindPrivateImages(findPrivateImagesOptions)
+		rewrittenImages, affectedObjects, err := upstream.FindPrivateImages(u, findPrivateImagesOptions)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to push upstream images")
 		}
@@ -497,7 +498,7 @@ func findAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 	return nil, nil
 }
 
-func imagesDirFromOptions(upstream *upstream.Upstream, pullOptions PullOptions) string {
+func imagesDirFromOptions(upstream *upstreamtypes.Upstream, pullOptions PullOptions) string {
 	if pullOptions.RewriteImageOptions.ImageFiles != "" {
 		return pullOptions.RewriteImageOptions.ImageFiles
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
 )
@@ -64,12 +65,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	includeAdminConsole := false
 
-	writeUpstreamOptions := upstream.WriteOptions{
+	writeUpstreamOptions := upstreamtypes.WriteOptions{
 		RootDir:             rewriteOptions.RootDir,
 		CreateAppDir:        rewriteOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 	}
-	if err := u.WriteUpstream(writeUpstreamOptions); err != nil {
+	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to write upstream")
 	}
@@ -104,7 +105,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
 
-		newImages, err := u.CopyUpstreamImages(writeUpstreamImageOptions)
+		newImages, err := upstream.CopyUpstreamImages(u, writeUpstreamImageOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to write upstream images")
 		}
@@ -116,7 +117,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CreateAppDir: rewriteOptions.CreateAppDir,
 		Log:          log,
 	}
-	affectedObjects, err := u.FindObjectsWithImages(findObjectsOptions)
+	affectedObjects, err := upstream.FindObjectsWithImages(u, findObjectsOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to find objects with images")
 	}
@@ -213,7 +214,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	return nil
 }
 
-func imagesDirFromOptions(upstream *upstream.Upstream, rewriteOptions RewriteOptions) string {
+func imagesDirFromOptions(upstream *upstreamtypes.Upstream, rewriteOptions RewriteOptions) string {
 	if rewriteOptions.CreateAppDir {
 		return filepath.Join(rewriteOptions.RootDir, upstream.Name, "images")
 	}

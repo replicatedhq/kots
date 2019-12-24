@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
@@ -25,7 +26,7 @@ type PushUpstreamImageOptions struct {
 	DestinationRegistry registry.RegistryOptions
 }
 
-func (u *Upstream) TagAndPushUpstreamImages(options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
+func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
 	formatDirs, err := ioutil.ReadDir(options.ImagesDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read images dir")

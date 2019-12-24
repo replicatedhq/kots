@@ -12,7 +12,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
-	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstream.Upstream, baseDir string) error {
+func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream, baseDir string) error {
 	// Package this app into a bundle so that the Admin Console can write it as the first version...
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
