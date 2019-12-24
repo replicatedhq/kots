@@ -38,29 +38,28 @@ type MappedChartValue struct {
 	childrenArrays []*MappedChartValue          `json:"-"`
 }
 
-func (m *MappedChartValue) GetValue() interface{} {
+func (m *MappedChartValue) GetValue() (interface{}, error) {
 	if m.valueType == "string" {
-		return m.strValue
+		return m.strValue, nil
 	}
 	if m.valueType == "bool" {
-		return m.boolValue
+		return m.boolValue, nil
 	}
 	if m.valueType == "float" {
-		return m.floatValue
+		return m.floatValue, nil
 	}
 	if m.valueType == "nil" {
-		return nil
+		return nil, nil
 	}
 
 	if m.valueType == "children" {
-		return m.children
+		return m.children, nil
 	}
 	if m.valueType == "childrenArray" {
-		return m.childrenArrays
+		return m.childrenArrays, nil
 	}
 
-	panic("unknown value type")
-	return nil
+	return nil, errors.New("unknown value type")
 }
 
 func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
@@ -147,7 +146,12 @@ func (h *HelmChartSpec) RenderValues() ([]string, error) {
 	keys := []string{}
 
 	for k, v := range h.Values {
-		key := fmt.Sprintf("%s=%v", k, v.GetValue())
+		value, err := v.GetValue()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get value")
+		}
+
+		key := fmt.Sprintf("%s=%v", k, value)
 		keys = append(keys, key)
 	}
 

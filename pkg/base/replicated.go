@@ -1,8 +1,6 @@
 package base
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -59,10 +57,9 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	for _, upstreamFile := range u.Files {
-		content := fmt.Sprintf("%s", upstreamFile.Content)
-		rendered, err := builder.RenderTemplate(upstreamFile.Path, content)
+		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 		if err != nil {
-			renderOptions.Log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, content))
+			renderOptions.Log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
 			return nil, errors.Wrap(err, "failed to render file template")
 		}
 
