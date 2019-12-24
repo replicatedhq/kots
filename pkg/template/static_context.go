@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -35,31 +36,32 @@ type StaticCtx struct {
 }
 
 func (ctx StaticCtx) FuncMap() template.FuncMap {
-	sprigMap := sprig.TxtFuncMap()
+	funcMap := sprig.TxtFuncMap()
 
-	sprigMap["Now"] = ctx.now
-	sprigMap["NowFmt"] = ctx.nowFormat
-	sprigMap["ToLower"] = strings.ToLower
-	sprigMap["ToUpper"] = strings.ToUpper
-	sprigMap["TrimSpace"] = strings.TrimSpace
-	sprigMap["Trim"] = ctx.trim
-	sprigMap["UrlEncode"] = url.QueryEscape
-	sprigMap["Base64Encode"] = ctx.base64Encode
-	sprigMap["Base64Decode"] = ctx.base64Decode
-	sprigMap["Split"] = strings.Split
-	sprigMap["RandomString"] = ctx.RandomString
-	sprigMap["Add"] = ctx.add
-	sprigMap["Sub"] = ctx.sub
-	sprigMap["Mult"] = ctx.mult
-	sprigMap["Div"] = ctx.div
-	sprigMap["ParseBool"] = ctx.parseBool
-	sprigMap["ParseFloat"] = ctx.parseFloat
-	sprigMap["ParseInt"] = ctx.parseInt
-	sprigMap["ParseUint"] = ctx.parseUint
-	sprigMap["HumanSize"] = ctx.humanSize
-	sprigMap["KubeSeal"] = ctx.kubeSeal
+	funcMap["Now"] = ctx.now
+	funcMap["NowFmt"] = ctx.nowFormat
+	funcMap["ToLower"] = strings.ToLower
+	funcMap["ToUpper"] = strings.ToUpper
+	funcMap["TrimSpace"] = strings.TrimSpace
+	funcMap["Trim"] = ctx.trim
+	funcMap["UrlEncode"] = url.QueryEscape
+	funcMap["Base64Encode"] = ctx.base64Encode
+	funcMap["Base64Decode"] = ctx.base64Decode
+	funcMap["Split"] = strings.Split
+	funcMap["RandomString"] = ctx.RandomString
+	funcMap["Add"] = ctx.add
+	funcMap["Sub"] = ctx.sub
+	funcMap["Mult"] = ctx.mult
+	funcMap["Div"] = ctx.div
+	funcMap["ParseBool"] = ctx.parseBool
+	funcMap["ParseFloat"] = ctx.parseFloat
+	funcMap["ParseInt"] = ctx.parseInt
+	funcMap["ParseUint"] = ctx.parseUint
+	funcMap["HumanSize"] = ctx.humanSize
+	funcMap["KubeSeal"] = ctx.kubeSeal
+	funcMap["Namespace"] = ctx.namespace
 
-	return sprigMap
+	return funcMap
 }
 
 func (ctx StaticCtx) now() string {
@@ -298,4 +300,10 @@ func (ctx StaticCtx) kubeSeal(certData string, namespace string, name string, va
 
 	encodedCipherText := base64.StdEncoding.EncodeToString(cipherText)
 	return encodedCipherText, nil
+}
+
+func (ctx StaticCtx) namespace() string {
+	// this is really only useful when called via the ffi function from kotsadm
+	// because that namespace is not configurable otherwise
+	return os.Getenv("POD_NAMESPACE")
 }
