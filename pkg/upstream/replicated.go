@@ -676,32 +676,7 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
-	// prerender the release looking for helm charts
-	// which are only identifyed as base64 encoded tar streams
-	ignoredFilenames := []string{}
 	for filename, content := range release.Manifests {
-		_, err := base64.StdEncoding.DecodeString(string(content))
-		if err != nil {
-			continue
-		}
-
-		// if it base64 decoded, we should ignore thie file
-		// because it's (probably) a helm chart
-		ignoredFilenames = append(ignoredFilenames, filename)
-	}
-
-	for filename, content := range release.Manifests {
-		ignore := false
-		for _, ignoredFilename := range ignoredFilenames {
-			if filename == ignoredFilename {
-				ignore = true
-			}
-		}
-
-		if ignore {
-			continue
-		}
-
 		kotsHelmChart := tryParsingAsHelmChartGVK(content)
 		if kotsHelmChart != nil {
 			archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
