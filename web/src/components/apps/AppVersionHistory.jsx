@@ -17,6 +17,7 @@ import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadSta
 import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import has from "lodash/has";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
@@ -604,10 +605,10 @@ class AppVersionHistory extends Component {
 
     if (isAwaitingResults(versionHistory)) {
       data?.startPolling(2000);
-    } else {
+    } else if (has(data, "stopPolling")) {
       data?.stopPolling();
     }
-
+  
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
