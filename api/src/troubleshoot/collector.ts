@@ -12,6 +12,7 @@ export function injectKotsCollectors(params: Params, parsedSpec: any, licenseDat
   spec = injectLicenseCollector(spec, licenseData);
   spec = injectAPICollector(spec);
   spec = injectOperatorCollector(spec);
+  spec = injectReplicatedPullSecretCollector(spec);
   if (params.enableKurl) {
     spec = injectRookCollectors(spec);
     spec = injectKurlCollectors(spec);
@@ -119,6 +120,27 @@ function injectOperatorCollector(parsedSpec: any): any {
 
   return parsedSpec;
 }
+
+function injectReplicatedPullSecretCollector(parsedSpec: any): any {
+  const newCollector = {
+    secret: {
+      collectorName: "kotsadm-replicated-registry",
+      namespace: getCollectorNamespace(),
+      name: "kotsadm-replicated-registry",
+      key: ".dockerconfigjson",
+      includeValue: false,
+    },
+  };
+
+  let collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
 
 function injectRookCollectors(parsedSpec: any): any {
   const names: string[] = [
