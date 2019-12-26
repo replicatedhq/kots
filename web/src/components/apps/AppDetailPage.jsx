@@ -4,6 +4,7 @@ import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
+import has from "lodash/has";
 
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
@@ -171,7 +172,7 @@ class AppDetailPage extends Component {
     const downstream = app?.downstreams?.length && app.downstreams[0];
     if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
       getKotsAppQuery?.startPolling(2000);
-    } else {
+    } else if (has(getKotsAppQuery, "stopPolling")) {
       getKotsAppQuery?.stopPolling();
     }
 
