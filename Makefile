@@ -22,7 +22,7 @@ kots-local-build:
 	cd api; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG}
 	cd web; make build-kotsadm && docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG}
 	cd operator; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG}
-	docker pull schemahero/schemahero:alpha
+	docker pull schemahero/schemahero:0.7.1
 	cd migrations && docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG}
 
 
