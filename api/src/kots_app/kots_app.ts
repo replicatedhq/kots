@@ -294,7 +294,6 @@ export class KotsApp {
 
       const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
       await kotsRewriteVersion(inputArchive, downstreams, registrySettings, false, outputArchive, stores);
-
       const outputTgzBuffer = fs.readFileSync(outputArchive);
       if (!createNewVersion) {
         const params = await Params.getParams();
@@ -313,7 +312,7 @@ export class KotsApp {
   async templateConfigGroups(stores: Stores, appId: string, sequence: string, configGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
     const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
     const { configSpec, configValues } = configData!;
-    
+
     const parsedConfig = yaml.safeLoad(configSpec);
     const parsedConfigValues = yaml.safeLoad(configValues);
 

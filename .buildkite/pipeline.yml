@@ -4,7 +4,7 @@ steps:
       - "migrations/fixtures/schema/fixtures.sql"
     plugins:
       - docker#v3.0.1:
-          image: schemahero/schemahero:alpha
+          image: schemahero/schemahero:0.7.1
           always-pull: true
           workdir: /repo
           debug: true
