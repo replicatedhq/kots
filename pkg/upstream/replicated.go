@@ -676,50 +676,6 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
-	// Stash the user data for this search (we will readd at the end)
-	userdataFiles := []types.UpstreamFile{}
-	withoutUserdataFiles := []types.UpstreamFile{}
-	for _, file := range upstreamFiles {
-		d, _ := path.Split(file.Path)
-		dirs := strings.Split(d, string(os.PathSeparator))
-
-		if dirs[0] == "userdata" {
-			userdataFiles = append(userdataFiles, file)
-		} else {
-			withoutUserdataFiles = append(withoutUserdataFiles, file)
-		}
-	}
-
-	// remove any common prefix from all files
-	if len(withoutUserdataFiles) > 0 {
-		firstFileDir, _ := path.Split(withoutUserdataFiles[0].Path)
-		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
-
-		for _, file := range withoutUserdataFiles {
-			d, _ := path.Split(file.Path)
-			dirs := strings.Split(d, string(os.PathSeparator))
-
-			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
-
-		}
-
-		cleanedUpstreamFiles := []types.UpstreamFile{}
-		for _, file := range withoutUserdataFiles {
-			d, f := path.Split(file.Path)
-			d2 := strings.Split(d, string(os.PathSeparator))
-
-			cleanedUpstreamFile := file
-			d2 = d2[len(commonPrefix):]
-			cleanedUpstreamFile.Path = path.Join(path.Join(d2...), f)
-
-			cleanedUpstreamFiles = append(cleanedUpstreamFiles, cleanedUpstreamFile)
-		}
-
-		upstreamFiles = cleanedUpstreamFiles
-	}
-
-	upstreamFiles = append(upstreamFiles, userdataFiles...)
-
 	for filename, content := range release.Manifests {
 		kotsHelmChart := tryParsingAsHelmChartGVK(content)
 
@@ -793,6 +749,50 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			upstreamFiles = append(upstreamFiles, upstreamFile)
 		}
 	}
+
+	// Stash the user data for this search (we will readd at the end)
+	userdataFiles := []types.UpstreamFile{}
+	withoutUserdataFiles := []types.UpstreamFile{}
+	for _, file := range upstreamFiles {
+		d, _ := path.Split(file.Path)
+		dirs := strings.Split(d, string(os.PathSeparator))
+
+		if dirs[0] == "userdata" {
+			userdataFiles = append(userdataFiles, file)
+		} else {
+			withoutUserdataFiles = append(withoutUserdataFiles, file)
+		}
+	}
+
+	// remove any common prefix from all files
+	if len(withoutUserdataFiles) > 0 {
+		firstFileDir, _ := path.Split(withoutUserdataFiles[0].Path)
+		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
+
+		for _, file := range withoutUserdataFiles {
+			d, _ := path.Split(file.Path)
+			dirs := strings.Split(d, string(os.PathSeparator))
+
+			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
+
+		}
+
+		cleanedUpstreamFiles := []types.UpstreamFile{}
+		for _, file := range withoutUserdataFiles {
+			d, f := path.Split(file.Path)
+			d2 := strings.Split(d, string(os.PathSeparator))
+
+			cleanedUpstreamFile := file
+			d2 = d2[len(commonPrefix):]
+			cleanedUpstreamFile.Path = path.Join(path.Join(d2...), f)
+
+			cleanedUpstreamFiles = append(cleanedUpstreamFiles, cleanedUpstreamFile)
+		}
+
+		upstreamFiles = cleanedUpstreamFiles
+	}
+
+	upstreamFiles = append(upstreamFiles, userdataFiles...)
 
 	return upstreamFiles, nil
 }
