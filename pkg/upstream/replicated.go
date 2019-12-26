@@ -676,67 +676,6 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
-	for filename, content := range release.Manifests {
-		kotsHelmChart := tryParsingAsHelmChartGVK(content)
-		if kotsHelmChart != nil {
-			archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to find helm chart archive in release")
-			}
-			tmpFile, err := ioutil.TempFile("", "kots")
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create temp file")
-			}
-			_, err = io.Copy(tmpFile, bytes.NewReader(archive))
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to copy chart to temp file")
-			}
-
-			helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to fetch helm dependency")
-			}
-			helmUpstream.Name = kotsHelmChart.Spec.Chart.Name
-
-			localValues, err := kotsHelmChart.Spec.RenderValues()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render local values for chart")
-			}
-
-			helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
-				SplitMultiDocYAML: true,
-				Namespace:         "",
-				HelmOptions:       localValues,
-				Log:               nil,
-			})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render helm chart in upstream")
-			}
-
-			for _, helmBaseFile := range helmBase.Files {
-				// this is a little bit of an abuse of the next function
-				if !helmBaseFile.ShouldBeIncludedInBaseFilesystem(false) {
-					continue
-				}
-
-				upstreamFile := types.UpstreamFile{
-					Path:    filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path),
-					Content: helmBaseFile.Content,
-				}
-
-				upstreamFiles = append(upstreamFiles, upstreamFile)
-			}
-
-		}
-
-		upstreamFile := types.UpstreamFile{
-			Path:    filename,
-			Content: content,
-		}
-
-		upstreamFiles = append(upstreamFiles, upstreamFile)
-	}
-
 	// Stash the user data for this search (we will readd at the end)
 	userdataFiles := []types.UpstreamFile{}
 	withoutUserdataFiles := []types.UpstreamFile{}
@@ -780,6 +719,80 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	}
 
 	upstreamFiles = append(upstreamFiles, userdataFiles...)
+
+	for filename, content := range release.Manifests {
+		kotsHelmChart := tryParsingAsHelmChartGVK(content)
+
+		if kotsHelmChart == nil {
+			// this is the quick and happy path
+			upstreamFile := types.UpstreamFile{
+				Path:    filename,
+				Content: content,
+			}
+
+			upstreamFiles = append(upstreamFiles, upstreamFile)
+
+			continue
+		}
+
+		archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find helm chart archive in release")
+		}
+		tmpFile, err := ioutil.TempFile("", "kots")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp file")
+		}
+		_, err = io.Copy(tmpFile, bytes.NewReader(archive))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to copy chart to temp file")
+		}
+
+		helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to fetch helm dependency")
+		}
+		helmUpstream.Name = kotsHelmChart.Name
+
+		localValues, err := kotsHelmChart.Spec.RenderValues()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render local values for chart")
+		}
+
+		helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
+			SplitMultiDocYAML: true,
+			Namespace:         "",
+			HelmOptions:       localValues,
+			Log:               nil,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
+		}
+
+		// Remove all existing files from this chart in the list of files
+		upstreamFilesWithoutChart := []types.UpstreamFile{}
+		prefixToIgnore := filepath.Join("charts", kotsHelmChart.Name) + string(os.PathSeparator)
+		for _, upstreamFile := range upstreamFiles {
+			if !strings.HasPrefix(upstreamFile.Path, prefixToIgnore) {
+				upstreamFilesWithoutChart = append(upstreamFilesWithoutChart, upstreamFile)
+			}
+		}
+		upstreamFiles = upstreamFilesWithoutChart
+
+		for _, helmBaseFile := range helmBase.Files {
+			// this is a little bit of an abuse of the next function
+			if !helmBaseFile.ShouldBeIncludedInBaseFilesystem(false) {
+				continue
+			}
+
+			upstreamFile := types.UpstreamFile{
+				Path:    filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path),
+				Content: helmBaseFile.Content,
+			}
+
+			upstreamFiles = append(upstreamFiles, upstreamFile)
+		}
+	}
 
 	return upstreamFiles, nil
 }
