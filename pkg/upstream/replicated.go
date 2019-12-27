@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/base"
+	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
@@ -172,7 +173,10 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		}
 	}
 
-	config := findConfigInRelease(release)
+	config, _, _, _, err := findTemplateContextDataInRelease(release)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find config in release")
+	}
 	if config != nil || existingConfigValues != nil {
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
@@ -576,7 +580,12 @@ func tryParsingAsHelmChartGVK(content []byte) *kotsv1beta1.HelmChart {
 	return nil
 }
 
-func findConfigInRelease(release *Release) *kotsv1beta1.Config {
+func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
+	var config *kotsv1beta1.Config
+	var values *kotsv1beta1.ConfigValues
+	var license *kotsv1beta1.License
+	var installation *kotsv1beta1.Installation
+
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(content, nil, nil)
@@ -587,13 +596,19 @@ func findConfigInRelease(release *Release) *kotsv1beta1.Config {
 		if gvk.Group == "kots.io" {
 			if gvk.Version == "v1beta1" {
 				if gvk.Kind == "Config" {
-					return obj.(*kotsv1beta1.Config)
+					config = obj.(*kotsv1beta1.Config)
+				} else if gvk.Kind == "ConfigValues" {
+					values = obj.(*kotsv1beta1.ConfigValues)
+				} else if gvk.Kind == "License" {
+					license = obj.(*kotsv1beta1.License)
+				} else if gvk.Kind == "Installation" {
+					installation = obj.(*kotsv1beta1.Installation)
 				}
 			}
 		}
 	}
 
-	return nil
+	return config, values, license, installation, nil
 }
 
 func findHelmChartArchiveInRelease(release *Release, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
@@ -716,7 +731,27 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 		}
 		helmUpstream.Name = kotsHelmChart.Name
 
-		localValues, err := kotsHelmChart.Spec.RenderValues()
+		mergedValues := kotsHelmChart.Spec.Values
+		for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
+			// TODO build template
+			renderedWhen, err := renderStringFromRelease(release, optionalValues.When)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render when from conditional on optional value")
+			}
+			parsedBool, err := strconv.ParseBool(renderedWhen)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
+			}
+			if !parsedBool {
+				continue
+			}
+
+			for k, v := range optionalValues.Values {
+				mergedValues[k] = v
+			}
+		}
+
+		localValues, err := kotsHelmChart.Spec.RenderValues(mergedValues)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
 		}
@@ -931,4 +966,59 @@ func FindObjectsWithImages(u *types.Upstream, options FindObjectsWithImagesOptio
 	}
 
 	return objects, nil
+}
+
+func renderStringFromRelease(release *Release, in string) (string, error) {
+	config, values, license, installation, err := findTemplateContextDataInRelease(release)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to find template context data in release")
+	}
+
+	builder := template.Builder{}
+	builder.AddCtx(template.StaticCtx{})
+
+	var cipher *crypto.AESCipher
+	if installation != nil {
+		c, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read cipher from installation spec")
+		}
+		cipher = c
+	}
+
+	if config != nil {
+		templateContextValues := make(map[string]template.ItemValue)
+
+		if values != nil {
+			for k, v := range values.Spec.Values {
+				templateContextValues[k] = template.ItemValue{
+					Value:   v.Value,
+					Default: v.Default,
+				}
+			}
+		}
+
+		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to create config context")
+		}
+
+		builder.AddCtx(configCtx)
+
+		kotsconfig.ApplyValuesToConfig(config, configCtx.ItemValues)
+	}
+
+	if license != nil {
+		licenseCtx := template.LicenseCtx{
+			License: license,
+		}
+		builder.AddCtx(licenseCtx)
+	}
+
+	rendered, err := builder.RenderTemplate(in, string(in))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to render template")
+	}
+
+	return rendered, nil
 }
