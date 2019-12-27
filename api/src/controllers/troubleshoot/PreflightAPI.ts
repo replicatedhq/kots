@@ -38,10 +38,6 @@ export class PreflightAPI {
 
       const specJson = jsYaml.load(renderedSpecYaml);
 
-      for (const a of specJson.spec.analyzers) {
-        console.log(a);
-      }
-
       const params = await Params.getParams();
       const putUrl = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
       specJson.spec.uploadResultsTo = putUrl;
