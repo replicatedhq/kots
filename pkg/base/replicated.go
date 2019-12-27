@@ -85,6 +85,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			parsedBool, err := strconv.ParseBool(renderedExclude)
 			if err != nil {
 				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude, u.Name))
+				return nil, errors.Wrap(err, "failed to parse helm chart exclude")
 			}
 
 			if parsedBool {
