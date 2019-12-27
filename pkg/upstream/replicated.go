@@ -21,8 +21,6 @@ import (
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/base"
-	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
@@ -34,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/helm/pkg/chartutil"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
@@ -611,49 +608,6 @@ func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *k
 	return config, values, license, installation, nil
 }
 
-func findHelmChartArchiveInRelease(release *Release, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
-	for _, content := range release.Manifests {
-		decoded, err := base64.StdEncoding.DecodeString(string(content))
-		if err != nil {
-			// not encoded, not a chart archive
-			continue
-		}
-
-		// decoded is a chart tar gz, so it has a Chart.yaml
-		// we need this
-		chartArchivePath, err := ioutil.TempFile("", "chart")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
-		}
-		defer os.Remove(chartArchivePath.Name())
-		if err := ioutil.WriteFile(chartArchivePath.Name(), decoded, 0644); err != nil {
-			return nil, errors.Wrap(err, "failed to write chart to temp file")
-		}
-
-		files, err := readTarGz(chartArchivePath.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read chart archive")
-		}
-
-		for _, chartFile := range files {
-			if chartFile.Path == "Chart.yaml" {
-				chartManifest, err := chartutil.UnmarshalChartfile(chartFile.Content)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
-				}
-
-				if chartManifest.GetName() == kotsHelmChart.Spec.Chart.Name {
-					if chartManifest.GetVersion() == kotsHelmChart.Spec.Chart.ChartVersion {
-						return decoded, nil
-					}
-				}
-			}
-		}
-	}
-
-	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
-}
-
 func findAppInRelease(release *Release) *kotsv1beta1.Application {
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -692,103 +646,12 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
 	for filename, content := range release.Manifests {
-		kotsHelmChart := tryParsingAsHelmChartGVK(content)
-
-		if kotsHelmChart == nil {
-			// this is the quick and happy path
-			upstreamFile := types.UpstreamFile{
-				Path:    filename,
-				Content: content,
-			}
-
-			upstreamFiles = append(upstreamFiles, upstreamFile)
-
-			continue
-		}
-
-		// write the gvk kots.io/v1beta1 helmchart to the upstream
-		upstreamFiles = append(upstreamFiles, types.UpstreamFile{
+		upstreamFile := types.UpstreamFile{
 			Path:    filename,
 			Content: content,
-		})
-
-		archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to find helm chart archive in release")
-		}
-		tmpFile, err := ioutil.TempFile("", "kots")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp file")
-		}
-		_, err = io.Copy(tmpFile, bytes.NewReader(archive))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to copy chart to temp file")
 		}
 
-		helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to fetch helm dependency")
-		}
-		helmUpstream.Name = kotsHelmChart.Name
-
-		mergedValues := kotsHelmChart.Spec.Values
-		for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-			// TODO build template
-			renderedWhen, err := renderStringFromRelease(release, optionalValues.When)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render when from conditional on optional value")
-			}
-			parsedBool, err := strconv.ParseBool(renderedWhen)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
-			}
-			if !parsedBool {
-				continue
-			}
-
-			for k, v := range optionalValues.Values {
-				mergedValues[k] = v
-			}
-		}
-
-		localValues, err := kotsHelmChart.Spec.RenderValues(mergedValues)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render local values for chart")
-		}
-
-		helmBase, err := base.RenderHelm(helmUpstream, &base.RenderOptions{
-			SplitMultiDocYAML: true,
-			Namespace:         "",
-			HelmOptions:       localValues,
-			Log:               nil,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
-		}
-
-		// Remove all existing files from this chart in the list of files
-		upstreamFilesWithoutChart := []types.UpstreamFile{}
-		prefixToIgnore := filepath.Join("charts", kotsHelmChart.Name) + string(os.PathSeparator)
-		for _, upstreamFile := range upstreamFiles {
-			if !strings.HasPrefix(upstreamFile.Path, prefixToIgnore) {
-				upstreamFilesWithoutChart = append(upstreamFilesWithoutChart, upstreamFile)
-			}
-		}
-		upstreamFiles = upstreamFilesWithoutChart
-
-		for _, helmBaseFile := range helmBase.Files {
-			// this is a little bit of an abuse of the next function
-			if !helmBaseFile.ShouldBeIncludedInBaseFilesystem(false) {
-				continue
-			}
-
-			upstreamFile := types.UpstreamFile{
-				Path:    filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path),
-				Content: helmBaseFile.Content,
-			}
-
-			upstreamFiles = append(upstreamFiles, upstreamFile)
-		}
+		upstreamFiles = append(upstreamFiles, upstreamFile)
 	}
 
 	// Stash the user data for this search (we will readd at the end)
@@ -966,59 +829,4 @@ func FindObjectsWithImages(u *types.Upstream, options FindObjectsWithImagesOptio
 	}
 
 	return objects, nil
-}
-
-func renderStringFromRelease(release *Release, in string) (string, error) {
-	config, values, license, installation, err := findTemplateContextDataInRelease(release)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to find template context data in release")
-	}
-
-	builder := template.Builder{}
-	builder.AddCtx(template.StaticCtx{})
-
-	var cipher *crypto.AESCipher
-	if installation != nil {
-		c, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to read cipher from installation spec")
-		}
-		cipher = c
-	}
-
-	if config != nil {
-		templateContextValues := make(map[string]template.ItemValue)
-
-		if values != nil {
-			for k, v := range values.Spec.Values {
-				templateContextValues[k] = template.ItemValue{
-					Value:   v.Value,
-					Default: v.Default,
-				}
-			}
-		}
-
-		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to create config context")
-		}
-
-		builder.AddCtx(configCtx)
-
-		kotsconfig.ApplyValuesToConfig(config, configCtx.ItemValues)
-	}
-
-	if license != nil {
-		licenseCtx := template.LicenseCtx{
-			License: license,
-		}
-		builder.AddCtx(licenseCtx)
-	}
-
-	rendered, err := builder.RenderTemplate(in, string(in))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to render template")
-	}
-
-	return rendered, nil
 }
