@@ -691,6 +691,12 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 			continue
 		}
 
+		// write the gvk kots.io/v1beta1 helmchart to the upstream
+		upstreamFiles = append(upstreamFiles, types.UpstreamFile{
+			Path:    filename,
+			Content: content,
+		})
+
 		archive, err := findHelmChartArchiveInRelease(release, kotsHelmChart)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find helm chart archive in release")

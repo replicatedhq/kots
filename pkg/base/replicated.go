@@ -1,6 +1,11 @@
 package base
 
 import (
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -56,7 +61,52 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		builder.AddCtx(licenseCtx)
 	}
 
+	// loop through all files once, looking for helm charts so we can exclude them, if they "when" out
+	excludedPathPrefixes := []string{}
 	for _, upstreamFile := range u.Files {
+		kotsHelmChart := tryParsingAsHelmChartGVK(upstreamFile.Content)
+
+		if kotsHelmChart == nil {
+			continue
+		}
+
+		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+		if err != nil {
+			renderOptions.Log.Error(errors.Errorf("Failed to render helm chart manifest %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
+			return nil, errors.Wrap(err, "failed to render kots helm chart kind")
+		}
+
+		kotsHelmChart = tryParsingAsHelmChartGVK([]byte(rendered))
+		if kotsHelmChart == nil {
+			renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered to an unparseable kind. Filename %s. Using the underendered version of this file.", upstreamFile.Path))
+			kotsHelmChart = tryParsingAsHelmChartGVK(upstreamFile.Content)
+		}
+
+		if kotsHelmChart.Spec.Exclude != "" {
+			parsedBool, err := strconv.ParseBool(kotsHelmChart.Spec.Exclude)
+			if err != nil {
+				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude, upstreamFile.Path))
+			}
+
+			if parsedBool {
+				excludedPathPrefixes = append(excludedPathPrefixes, filepath.Join("charts", kotsHelmChart.Name)+string(os.PathSeparator))
+			}
+		}
+	}
+
+	for _, upstreamFile := range u.Files {
+		// most apps will have 0-<very small int> of helm charts
+		excludeFile := false
+		for _, excludedPathPrefix := range excludedPathPrefixes {
+			if strings.HasPrefix(upstreamFile.Path, excludedPathPrefix) {
+				excludeFile = true
+				break
+			}
+		}
+		if excludeFile {
+			continue
+		}
+
 		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 		if err != nil {
 			renderOptions.Log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
@@ -117,6 +167,24 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	return ctx, nil
 }
 
+func tryParsingAsHelmChartGVK(content []byte) *kotsv1beta1.HelmChart {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil
+	}
+
+	if gvk.Group == "kots.io" {
+		if gvk.Version == "v1beta1" {
+			if gvk.Kind == "HelmChart" {
+				return obj.(*kotsv1beta1.HelmChart)
+			}
+		}
+	}
+
+	return nil
+}
+
 func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta1.Config {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
@@ -141,7 +209,6 @@ func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Con
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(file.Content, nil, nil)
 		if err != nil {
-			log.Debug("%s", err)
 			continue
 		}
 
