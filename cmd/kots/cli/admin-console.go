@@ -35,7 +35,7 @@ func AdminConsoleCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true, stopCh)
+			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}

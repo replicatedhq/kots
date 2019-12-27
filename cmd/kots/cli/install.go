@@ -162,7 +162,7 @@ func InstallCmd() *cobra.Command {
 				stopCh := make(chan struct{})
 				defer close(stopCh)
 
-				errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh)
+				errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh, log)
 				if err != nil {
 					return err
 				}
@@ -192,7 +192,7 @@ func InstallCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true, stopCh)
+			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}

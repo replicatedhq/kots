@@ -47,7 +47,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	errChan, err := k8sutil.PortForward(uploadLicenseOptions.Kubeconfig, 3000, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh)
+	errChan, err := k8sutil.PortForward(uploadLicenseOptions.Kubeconfig, 3000, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")

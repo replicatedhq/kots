@@ -48,7 +48,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to find kotsadm pod")
 			}
 
-			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 3000, 3000, v.GetString("namespace"), podName, false, stopCh)
+			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 3000, 3000, v.GetString("namespace"), podName, false, stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to start port forwarding")
