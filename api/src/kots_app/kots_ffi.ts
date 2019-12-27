@@ -382,16 +382,20 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores) 
     const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(app.id, clusterId);
 
     let commitUrl = "";
+    let gitDeployable = false;
     if (downstreamGitops.enabled) {
       const commitMessage = `Updates to the upstream of ${app.name}`;
       commitUrl = await createGitCommitForVersion(stores, app.id, clusterId, newSequence, commitMessage);
+      if (commitUrl !== "") {
+        gitDeployable = true;
+      }
     }
 
     const status = preflightSpec
       ? "pending_preflight"
       : "pending";
     const diffSummary = await getDiffSummary(app);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, status, "Upstream Update", diffSummary, commitUrl);
+    await stores.kotsAppStore.createDownstreamVersion(app.id, newSequence, clusterId, installationSpec.versionLabel, status, "Upstream Update", diffSummary, commitUrl, gitDeployable);
   }
 }
 
@@ -523,7 +527,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
           : "deployed";
 
       await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "");
+      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "", false);
     }
 
     return kotsApp;
@@ -641,7 +645,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     }
 
     await stores.kotsAppStore.createDownstream(app.id, downstream, cluster.id);
-    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", "", "");
+    await stores.kotsAppStore.createDownstreamVersion(app.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Airgap", "", "", false);
   }
 
   await stores.kotsAppStore.setKotsAirgapAppInstalled(app.id);

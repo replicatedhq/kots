@@ -127,6 +127,12 @@ export async function createGitCommit(gitOpsCreds: any, branch: string, tree: co
     const head = await NodeGit.Reference.nameToId(repo, "HEAD");
     const parent = await repo.getCommit(head);
 
+    const diff = await NodeGit.Diff.treeToIndex(repo, await parent.getTree(), null);
+    const patches = await diff.patches();
+    if (_.size(patches) === 0) {
+      return "";
+    }
+
     // commit
     const signature = NodeGit.Signature.now("KOTS Admin Console", "help@replicated.com");
     const commitHash = await repo.createCommit("HEAD", signature, signature, commitMessage, oid, [parent]);

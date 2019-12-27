@@ -93,6 +93,7 @@ const KotsVersion = `
     preflightResult: String
     preflightResultCreatedAt: String
     commitUrl: String
+    gitDeployable: Boolean
     hasError: Boolean
   }
 `;

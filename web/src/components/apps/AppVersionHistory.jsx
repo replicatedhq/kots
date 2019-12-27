@@ -146,6 +146,9 @@ class AppVersionHistory extends Component {
     const downstream = app.downstreams[0];
 
     if (downstream.gitops?.enabled) {
+      if (version.gitDeployable === false) {
+        return (<div>Nothing to commit</div>);
+      }
       if (!version.commitUrl) {
         return null;
       }
@@ -217,6 +220,7 @@ class AppVersionHistory extends Component {
       return null;
     }
     const clusterSlug = downstream.cluster?.slug;
+
     return (
       <div className="flex alignItems--center" style={{ position: "relative", top: "-2px" }}>
         <div className="flex alignItems--center">

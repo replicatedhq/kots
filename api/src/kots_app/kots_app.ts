@@ -572,6 +572,7 @@ export interface KotsVersion {
   source?: string;
   diffSummary?: string;
   commitUrl?: string;
+  gitDeployable?: boolean;
 }
 
 export interface KotsAppMetadata {

@@ -322,7 +322,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Kots Install", "", "");
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Kots Install", "", "", false);
     }
 
     return {
@@ -587,16 +587,20 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     const downstreamGitops = await stores.kotsAppStore.getDownstreamGitOps(kotsApp.id, clusterId);
 
     let commitUrl = "";
+    let gitDeployable = false;
     if (downstreamGitops.enabled) {
       const commitMessage = `${source} for ${kotsApp.name}`;
       commitUrl = await createGitCommitForVersion(stores, kotsApp.id, clusterId, newSequence, commitMessage);
+      if (commitUrl !== "") {
+        gitDeployable = true;
+      }
     }
 
     const status = preflightSpec
       ? "pending_preflight"
       : "pending";
     const diffSummary = await getDiffSummary(kotsApp);
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary, commitUrl);
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary, commitUrl, gitDeployable);
   }
 
   return {

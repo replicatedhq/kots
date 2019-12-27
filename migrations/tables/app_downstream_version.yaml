@@ -43,3 +43,6 @@ spec:
         type: timestamp without time zone
       - name: git_commit_url
         type: text
+      - name: git_deployable
+        type: boolean
+        default: "true"
