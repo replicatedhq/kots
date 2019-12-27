@@ -49,7 +49,7 @@ func IsPortAvailable(port int) bool {
 	return true
 }
 
-func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}) (<-chan error, error) {
+func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.Logger) (<-chan error, error) {
 	if !IsPortAvailable(localPort) {
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
@@ -215,8 +215,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 					}
 
 					forwardedAdditionalPorts[desiredAdditionalPort] = serviceStopCh
-					log := logger.NewLogger()
-					log.Info("Go to http://localhost:%d to access the application", desiredAdditionalPort.LocalPort)
+					log.ActionWithoutSpinner("Go to http://localhost:%d to access the application", desiredAdditionalPort.LocalPort)
 				}
 			}
 		}()
