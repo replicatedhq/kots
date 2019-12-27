@@ -187,16 +187,22 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 	return keys, nil
 }
 
-func (h *HelmChartSpec) RenderValues() ([]string, error) {
-	return renderOneLevelValues(h.Values, []string{})
+func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]string, error) {
+	return renderOneLevelValues(values, []string{})
+}
+
+type OptionalValue struct {
+	When   string                      `json:"when"`
+	Values map[string]MappedChartValue `json:"values,omitempty"`
 }
 
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
-	Chart   ChartIdentifier             `json:"chart"`
-	Exclude string                      `json:"exclude,omitempty"`
-	Values  map[string]MappedChartValue `json:"values,omitempty"`
-	Builder map[string]MappedChartValue `json:"builder,omitempty"`
+	Chart          ChartIdentifier             `json:"chart"`
+	Exclude        string                      `json:"exclude,omitempty"`
+	Values         map[string]MappedChartValue `json:"values,omitempty"`
+	OptionalValues []*OptionalValue            `json:"optionalValues,omitempty"`
+	Builder        map[string]MappedChartValue `json:"builder,omitempty"`
 }
 
 // HelmChartStatus defines the observed state of HelmChart
