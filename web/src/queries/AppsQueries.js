@@ -246,6 +246,7 @@ export const getKotsDownstreamHistoryRaw = `
       preflightResult
       preflightResultCreatedAt
       commitUrl
+      gitDeployable
     }
   }
 `;

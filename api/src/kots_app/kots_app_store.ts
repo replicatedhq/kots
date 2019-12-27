@@ -574,7 +574,7 @@ export class KotsAppStore {
     await this.pool.query(qq, vv);
   }
 
-  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string, source: string, diffSummary: string, commitUrl: string): Promise<void> {
+  async createDownstreamVersion(id: string, parentSequence: number, clusterId: string, versionLabel: string, status: string, source: string, diffSummary: string, commitUrl: string, gitDeployable: boolean): Promise<void> {
     const pg = await this.pool.connect();
 
     try {
@@ -587,7 +587,7 @@ export class KotsAppStore {
       const result = await pg.query(q, v);
       const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
 
-      q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
+      q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
       v = [
         id,
         clusterId,
@@ -598,7 +598,8 @@ export class KotsAppStore {
         status,
         source,
         diffSummary,
-        commitUrl
+        commitUrl,
+        gitDeployable
       ];
       await pg.query(q, v);
       await pg.query("commit");
@@ -642,6 +643,7 @@ export class KotsAppStore {
          adv.preflight_result,
          adv.preflight_result_created_at,
          adv.git_commit_url,
+         adv.git_deployable,
          ado.is_error AS has_error
         FROM
           app_downstream_version AS adv
@@ -680,7 +682,8 @@ export class KotsAppStore {
         releaseNotes: releaseNotes || "",
         preflightResult: row.preflight_result,
         preflightResultCreatedAt: row.preflight_result_created_at,
-        commitUrl: row.git_commit_url || ""
+        commitUrl: row.git_commit_url || "",
+        gitDeployable: row.git_deployable
       };
       versionItems.push(versionItem);
     }
@@ -707,7 +710,7 @@ export class KotsAppStore {
     }
 
     q = `select created_at, version_label, status, sequence, parent_sequence,
-applied_at, source, diff_summary, preflight_result, preflight_result_created_at, git_commit_url
+applied_at, source, diff_summary, preflight_result, preflight_result_created_at, git_commit_url, git_deployable
 from app_downstream_version
 where app_id = $1 and cluster_id = $3 and sequence > $2
 order by sequence desc`;
@@ -736,7 +739,8 @@ order by sequence desc`;
         releaseNotes: releaseNotes || "",
         preflightResult: row.preflight_result,
         preflightResultCreatedAt: row.preflight_result_created_at,
-        commitUrl: row.git_commit_url || ""
+        commitUrl: row.git_commit_url || "",
+        gitDeployable: row.git_deployable
       };
       versionItems.push(versionItem);
     }
@@ -841,7 +845,7 @@ order by sequence desc`;
 
     q = `select adv.created_at, adv.version_label, adv.status, adv.sequence,
 adv.parent_sequence, adv.applied_at, adv.source, adv.diff_summary, adv.preflight_result,
-adv.preflight_result_created_at, adv.git_commit_url, ado.is_error AS has_error
+adv.preflight_result_created_at, adv.git_commit_url, adv.git_deployable, ado.is_error AS has_error
 from app_downstream_version as adv
 left join app_downstream_output as ado
 on adv.app_id = ado.app_id and adv.cluster_id = ado.cluster_id and adv.sequence = ado.downstream_sequence
@@ -875,7 +879,8 @@ order by adv.sequence desc`;
       releaseNotes: releaseNotes || "",
       preflightResult: row.preflight_result,
       preflightResultCreatedAt: row.preflight_result_created_at,
-      commitUrl: row.git_commit_url || ""
+      commitUrl: row.git_commit_url || "",
+      gitDeployable: row.git_deployable
     };
 
     return versionItem;
