@@ -299,6 +299,7 @@ export class KotsApp {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
         await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
+        await stores.kotsAppStore.updateAppConfigValuesCache(appId, sequence, yaml.safeDump(parsedConfigValues));
       } else {
         await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }

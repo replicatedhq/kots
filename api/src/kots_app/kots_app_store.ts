@@ -184,7 +184,7 @@ export class KotsAppStore {
 
       const downstreamData = JSON.parse(base64Decode(configMapData[`${appId}-${clusterId}`]));
       downstreamData.lastError = err;
-      
+
       configMapData[`${appId}-${clusterId}`] = base64Encode(JSON.stringify(downstreamData));
 
       const configMapObj: k8s.V1Secret = {
@@ -304,7 +304,7 @@ export class KotsAppStore {
       }
 
       const key = `${appId}-${clusterId}`;
-      
+
       let lastError = {};
       if (key in data) {
         const parsedData = JSON.parse(base64Decode(data[key]));
@@ -586,7 +586,7 @@ export class KotsAppStore {
       ];
       const result = await pg.query(q, v);
       const newSequence = result.rows[0].last_sequence !== null ? parseInt(result.rows[0].last_sequence) + 1 : 0;
-      
+
       q = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
       v = [
         id,
@@ -766,7 +766,7 @@ order by sequence desc`;
 
       const base64Data = configmap.body.data![appClusterKey];
       const configMapData = JSON.parse(base64Decode(base64Data));
-      
+
       let provider = "", publicKey = "", privateKey = "", hostname;
       for (const key of Object.keys(secretData)) {
         const value = base64Decode(secretData[key]);
@@ -983,6 +983,16 @@ order by adv.sequence desc`;
     };
 
     return configData;
+  }
+
+  async updateAppConfigValuesCache(appId: string, sequence: string, configValues: string): Promise<void> {
+    const q = `update app_version set config_values = $1 where app_id = $2 and sequence = $3`;
+    const v = [
+      configValues,
+      appId,
+      sequence,
+    ];
+    await this.pool.query(q, v);
   }
 
   /**
@@ -1363,12 +1373,12 @@ order by adv.sequence desc`;
       return "";
     }
   }
-  
+
   async isGitOpsSupported(appId: string, sequence: number): Promise<boolean> {
     const kc = new k8s.KubeConfig();
     kc.loadFromDefault();
     const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-    
+
     try {
       const namespace = process.env["POD_NAMESPACE"]!;
       const secretName = "kotsadm-gitops";
