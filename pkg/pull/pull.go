@@ -328,10 +328,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		Log:               log,
 	}
 	log.ActionWithSpinner("Creating base")
+
 	b, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
+
 	log.FinishSpinner()
 
 	writeBaseOptions := base.WriteOptions{
