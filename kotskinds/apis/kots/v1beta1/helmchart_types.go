@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -53,7 +54,15 @@ func (m *MappedChartValue) GetValue() (interface{}, error) {
 	}
 
 	if m.valueType == "children" {
-		return m.children, nil
+		children := map[string]interface{}{}
+		for k, v := range m.children {
+			childValue, err := v.GetValue()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get value of child")
+			}
+			children[k] = childValue
+		}
+		return children, nil
 	}
 	if m.valueType == "childrenArray" {
 		return m.childrenArrays, nil
@@ -142,20 +151,44 @@ type ChartIdentifier struct {
 	ChartVersion string `json:"chartVersion"`
 }
 
-func (h *HelmChartSpec) RenderValues() ([]string, error) {
+func renderOneLevelValues(values map[string]MappedChartValue, parent []string) ([]string, error) {
 	keys := []string{}
 
-	for k, v := range h.Values {
-		value, err := v.GetValue()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get value")
-		}
+	for k, v := range values {
+		if v.valueType == "children" {
+			notNilChildren := map[string]MappedChartValue{}
+			for ck, cv := range v.children {
+				if cv != nil {
+					notNilChildren[ck] = *cv
+				}
+			}
+			childKeys, err := renderOneLevelValues(notNilChildren, append(parent, k))
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get children")
+			}
 
-		key := fmt.Sprintf("%s=%v", k, value)
-		keys = append(keys, key)
+			keys = append(keys, childKeys...)
+		} else {
+			value, err := v.GetValue()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get value")
+			}
+
+			key := fmt.Sprintf("%s", strings.Join(parent, "."))
+			if len(key) > 0 {
+				key = key + "."
+			}
+
+			key = fmt.Sprintf("%s%s=%v", key, k, value)
+			keys = append(keys, key)
+		}
 	}
 
 	return keys, nil
+}
+
+func (h *HelmChartSpec) RenderValues() ([]string, error) {
+	return renderOneLevelValues(h.Values, []string{})
 }
 
 // HelmChartSpec defines the desired state of HelmChartSpec

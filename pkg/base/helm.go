@@ -2,6 +2,7 @@ package base
 
 import (
 	"io/ioutil"
+	golog "log"
 	"os"
 	"path"
 	"strings"
@@ -72,6 +73,9 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		KubeVersion: "1.16.0",
 	}
 
+	// Silence the go logger because helm will complain about some of our template strings
+	golog.SetOutput(ioutil.Discard)
+	defer golog.SetOutput(os.Stdout)
 	rendered, err := renderutil.Render(c, config, renderOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render chart")
