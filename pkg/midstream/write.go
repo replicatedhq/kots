@@ -54,12 +54,8 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		m.Kustomization.Resources = append(m.Kustomization.Resources, secretFilename)
 	}
 
-	patchFilename, err := m.writeObjectsWithPullSecret(options)
-	if err != nil {
+	if err := m.writeObjectsWithPullSecret(options); err != nil {
 		return errors.Wrap(err, "failed to write patches")
-	}
-	if patchFilename != "" {
-		m.Kustomization.PatchesStrategicMerge = append(m.Kustomization.PatchesStrategicMerge, kustomizetypes.PatchStrategicMerge(patchFilename))
 	}
 
 	m.mergeKustomization(existingKustomization)
@@ -79,6 +75,7 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	filteredImages := removeExistingImages(m.Kustomization.Images, existing.Images)
 	m.Kustomization.Images = append(m.Kustomization.Images, filteredImages...)
 
+	existing.PatchesStrategicMerge = removeFromPatches(existing.PatchesStrategicMerge, patchesFilename)
 	newPatches := findNewPatches(m.Kustomization.PatchesStrategicMerge, existing.PatchesStrategicMerge)
 	m.Kustomization.PatchesStrategicMerge = append(existing.PatchesStrategicMerge, newPatches...)
 
@@ -124,16 +121,20 @@ func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
 	return secretFilename, nil
 }
 
-func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) (string, error) {
-	if len(m.DocForPatches) == 0 {
-		return "", nil
-	}
-
+func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 	filename := filepath.Join(options.MidstreamDir, patchesFilename)
+	if len(m.DocForPatches) == 0 {
+		err := os.Remove(filename)
+		if err != nil && !os.IsNotExist(err) {
+			return errors.Wrap(err, "failed to delete pull secret patches")
+		}
+
+		return nil
+	}
 
 	f, err := os.Create(filename)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create resources file")
+		return errors.Wrap(err, "failed to create resources file")
 	}
 	defer f.Close()
 
@@ -142,18 +143,30 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) (string, er
 
 		b, err := yaml.Marshal(withPullSecret)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to marshal object")
+			return errors.Wrap(err, "failed to marshal object")
 		}
 
 		if _, err := f.Write([]byte("---\n")); err != nil {
-			return "", errors.Wrap(err, "failed to write object")
+			return errors.Wrap(err, "failed to write object")
 		}
 		if _, err := f.Write(b); err != nil {
-			return "", errors.Wrap(err, "failed to write object")
+			return errors.Wrap(err, "failed to write object")
 		}
 	}
 
-	return patchesFilename, nil
+	m.Kustomization.PatchesStrategicMerge = append(m.Kustomization.PatchesStrategicMerge, patchesFilename)
+
+	return nil
+}
+
+func removeFromPatches(patches []kustomizetypes.PatchStrategicMerge, filename string) []kustomizetypes.PatchStrategicMerge {
+	newPatches := []kustomizetypes.PatchStrategicMerge{}
+	for _, patch := range patches {
+		if string(patch) != filename {
+			newPatches = append(newPatches, patch)
+		}
+	}
+	return newPatches
 }
 
 func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
