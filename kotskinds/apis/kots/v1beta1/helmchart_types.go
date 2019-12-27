@@ -161,6 +161,7 @@ func (h *HelmChartSpec) RenderValues() ([]string, error) {
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
 	Chart   ChartIdentifier             `json:"chart"`
+	Exclude string                      `json:"exclude,omitempty"`
 	Values  map[string]MappedChartValue `json:"values,omitempty"`
 	Builder map[string]MappedChartValue `json:"builder,omitempty"`
 }
