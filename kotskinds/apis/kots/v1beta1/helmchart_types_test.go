@@ -99,7 +99,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			h := HelmChartSpec{
 				Values: test.values,
 			}
-			actual, err := h.RenderValues()
+			actual, err := h.RenderValues(h.Values)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.expect, actual)
