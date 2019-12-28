@@ -38,47 +38,41 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
-	foundGVKNames := [][]byte{}
+	resources, patches := deduplicateOnContent(b.Files, options.ExcludeKotsKinds)
+
 	kustomizeResources := []string{}
 	kustomizePatches := []kustomizetypes.PatchStrategicMerge{}
-	for _, file := range b.Files {
-		writeToBase := file.ShouldBeIncludedInBaseFilesystem(options.ExcludeKotsKinds)
-		writeToKustomization := file.ShouldBeIncludedInBaseKustomization(options.ExcludeKotsKinds)
 
-		if !writeToBase && !writeToKustomization {
-			continue
-		}
-
-		if writeToKustomization {
-			found := false
-			thisGVKName := GetGVKWithNameHash(file.Content)
-			for _, gvkName := range foundGVKNames {
-				if bytes.Compare(gvkName, thisGVKName) == 0 {
-					found = true
-				}
-			}
-
-			if !found || thisGVKName == nil {
-				kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
-				foundGVKNames = append(foundGVKNames, thisGVKName)
-			} else {
-				kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
+	for _, file := range resources {
+		fileRenderPath := path.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
-		if writeToBase {
-			fileRenderPath := path.Join(renderDir, file.Path)
-			d, _ := path.Split(fileRenderPath)
-			if _, err := os.Stat(d); os.IsNotExist(err) {
-				if err := os.MkdirAll(d, 0744); err != nil {
-					return errors.Wrap(err, "failed to mkdir")
-				}
-			}
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write base file")
+		}
 
-			if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-				return errors.Wrap(err, "failed to write base file")
+		kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
+	}
+
+	for _, file := range patches {
+		fileRenderPath := path.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
 			}
 		}
+
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write base file")
+		}
+
+		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
 	}
 
 	kustomization := kustomizetypes.Kustomization{
@@ -95,6 +89,41 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	}
 
 	return nil
+}
+
+func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, []BaseFile) {
+	resources := []BaseFile{}
+	patches := []BaseFile{}
+
+	foundGVKNames := [][]byte{}
+
+	for _, file := range files {
+		writeToKustomization := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
+
+		if !writeToKustomization {
+			continue
+		}
+
+		if writeToKustomization {
+			found := false
+			thisGVKName := GetGVKWithNameHash(file.Content)
+			for _, gvkName := range foundGVKNames {
+				if bytes.Compare(gvkName, thisGVKName) == 0 {
+					found = true
+				}
+			}
+
+			if !found || thisGVKName == nil {
+				resources = append(resources, file)
+				foundGVKNames = append(foundGVKNames, thisGVKName)
+			} else {
+				patches = append(patches, file)
+			}
+		}
+
+	}
+
+	return resources, patches
 }
 
 func (b *Base) GetOverlaysDir(options WriteOptions) string {

@@ -81,33 +81,3 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) boo
 
 	return true
 }
-
-// ShouldBeIncludedInBaseFilesystem attempts to determine if this is a valid Kubernetes manifest.
-// It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
-func (f BaseFile) ShouldBeIncludedInBaseFilesystem(excludeKotsKinds bool) bool {
-	o := OverlySimpleGVK{}
-
-	if err := yaml.Unmarshal(f.Content, &o); err != nil {
-		return false
-	}
-
-	if o.APIVersion == "" || o.Kind == "" {
-		return false
-	}
-
-	if excludeKotsKinds {
-		if o.APIVersion == "kots.io/v1beta1" {
-			return false
-		}
-
-		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
-			return false
-		}
-
-		if o.APIVersion == "app.k8s.io/v1beta1" {
-			return false
-		}
-	}
-
-	return true
-}
