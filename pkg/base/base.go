@@ -1,6 +1,9 @@
 package base
 
 import (
+	"crypto/sha256"
+	"fmt"
+
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
@@ -21,9 +24,31 @@ type OverlySimpleGVK struct {
 	Kind       string `yaml:"kind"`
 }
 
+type OverlySimpleGVKWithName struct {
+	APIVersion string               `yaml:"apiVersion"`
+	Kind       string               `yaml:"kind"`
+	Metadata   OverlySimpleMetadata `yaml:"metadata"`
+}
+
+type OverlySimpleMetadata struct {
+	Name string `yaml:"name"`
+}
+
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
+}
+
+func GetGVKWithNameHash(content []byte) []byte {
+	o := OverlySimpleGVKWithName{}
+
+	if err := yaml.Unmarshal(content, &o); err != nil {
+		return nil
+	}
+
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprintf("%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name)))
+	return h.Sum(nil)
 }
 
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.

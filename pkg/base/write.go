@@ -1,6 +1,7 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -37,7 +38,9 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
+	foundGVKNames := [][]byte{}
 	kustomizeResources := []string{}
+	kustomizePatches := []kustomizetypes.PatchStrategicMerge{}
 	for _, file := range b.Files {
 		writeToBase := file.ShouldBeIncludedInBaseFilesystem(options.ExcludeKotsKinds)
 		writeToKustomization := file.ShouldBeIncludedInBaseKustomization(options.ExcludeKotsKinds)
@@ -47,7 +50,20 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 
 		if writeToKustomization {
-			kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
+			found := false
+			thisGVKName := GetGVKWithNameHash(file.Content)
+			for _, gvkName := range foundGVKNames {
+				if bytes.Compare(gvkName, thisGVKName) == 0 {
+					found = true
+				}
+			}
+
+			if !found || thisGVKName == nil {
+				kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
+				foundGVKNames = append(foundGVKNames, thisGVKName)
+			} else {
+				kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
+			}
 		}
 
 		if writeToBase {
@@ -70,7 +86,8 @@ func (b *Base) WriteBase(options WriteOptions) error {
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
 		},
-		Resources: kustomizeResources,
+		Resources:             kustomizeResources,
+		PatchesStrategicMerge: kustomizePatches,
 	}
 
 	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
