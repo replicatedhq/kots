@@ -31,6 +31,12 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
+	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(renderDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for base root")
+		}
+	}
+
 	kustomizeResources := []string{}
 	for _, file := range b.Files {
 		writeToBase := file.ShouldBeIncludedInBaseFilesystem(options.ExcludeKotsKinds)
