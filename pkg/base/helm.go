@@ -108,7 +108,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 		for idx, fileString := range fileStrings {
 			filename := strings.TrimSuffix(k, filepath.Ext(k))
-			filename = fmt.Sprintf("%s-%d%s", filename, idx, filepath.Ext(k))
+			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(k))
 
 			baseFile := BaseFile{
 				Path:    filename,
@@ -116,7 +116,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			}
 
 			baseFiles = append(baseFiles, baseFile)
-			continue
 		}
 	}
 
