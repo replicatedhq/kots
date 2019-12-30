@@ -1,10 +1,12 @@
 package base
 
 import (
+	"fmt"
 	"io/ioutil"
 	golog "log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -83,12 +85,38 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	baseFiles := []BaseFile{}
 	for k, v := range rendered {
-		baseFile := BaseFile{
-			Path:    k,
-			Content: []byte(v),
+		if !renderOptions.SplitMultiDocYAML {
+			baseFile := BaseFile{
+				Path:    k,
+				Content: []byte(v),
+			}
+
+			baseFiles = append(baseFiles, baseFile)
+			continue
 		}
 
-		baseFiles = append(baseFiles, baseFile)
+		fileStrings := strings.Split(v, "\n---\n")
+		if len(fileStrings) == 1 {
+			baseFile := BaseFile{
+				Path:    k,
+				Content: []byte(v),
+			}
+
+			baseFiles = append(baseFiles, baseFile)
+			continue
+		}
+
+		for idx, fileString := range fileStrings {
+			filename := strings.TrimSuffix(k, filepath.Ext(k))
+			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(k))
+
+			baseFile := BaseFile{
+				Path:    filename,
+				Content: []byte(fileString),
+			}
+
+			baseFiles = append(baseFiles, baseFile)
+		}
 	}
 
 	// remove any common prefix from all files
@@ -101,7 +129,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			dirs := strings.Split(d, string(os.PathSeparator))
 
 			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
-
 		}
 
 		cleanedBaseFiles := []BaseFile{}
