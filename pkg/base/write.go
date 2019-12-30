@@ -107,6 +107,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, 
 		if writeToKustomization {
 			found := false
 			thisGVKName := GetGVKWithNameHash(file.Content)
+
 			for _, gvkName := range foundGVKNames {
 				if bytes.Compare(gvkName, thisGVKName) == 0 {
 					found = true
