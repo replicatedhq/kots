@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
 	"io"
 	"io/ioutil"
 	"os"
@@ -301,23 +300,23 @@ func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Con
 	return config, values, license
 }
 
+// findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
+// that matches the chart name and version specified in the kotsHelmChart parameter
 func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {
 	for _, upstreamFile := range upstreamFiles {
-		decoded, err := base64.StdEncoding.DecodeString(string(upstreamFile.Content))
-		if err != nil {
-			// not encoded, not a chart archive
+		if !isHelmChart(upstreamFile.Content) {
 			continue
 		}
 
-		// decoded is a chart tar gz, so it has a Chart.yaml
-		// we need this
+		// We treat all .tar.gz archives as helm charts
 		chartArchivePath, err := ioutil.TempFile("", "chart")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp file for chart archive path")
 		}
 		defer os.Remove(chartArchivePath.Name())
-		if err := ioutil.WriteFile(chartArchivePath.Name(), decoded, 0644); err != nil {
-			return nil, errors.Wrap(err, "failed to write chart to temp file")
+		_, err = io.Copy(chartArchivePath, bytes.NewReader(upstreamFile.Content))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to copy maybe chart to tmp file")
 		}
 
 		files, err := readTarGz(chartArchivePath.Name())
@@ -334,7 +333,7 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 
 				if chartManifest.GetName() == kotsHelmChart.Spec.Chart.Name {
 					if chartManifest.GetVersion() == kotsHelmChart.Spec.Chart.ChartVersion {
-						return decoded, nil
+						return upstreamFile.Content, nil
 					}
 				}
 			}
@@ -342,6 +341,15 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 	}
 
 	return nil, errors.Errorf("unable to find helm chart archive for chart name %s, version %s", kotsHelmChart.Spec.Chart.Name, kotsHelmChart.Spec.Chart.ChartVersion)
+}
+
+func isHelmChart(data []byte) bool {
+	gzReader, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return false
+	}
+	gzReader.Close()
+	return true
 }
 
 func readTarGz(source string) ([]upstreamtypes.UpstreamFile, error) {
