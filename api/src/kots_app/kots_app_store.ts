@@ -613,7 +613,7 @@ export class KotsAppStore {
   }
 
   async getPreviouslyDeployedSequence(appId: string, clusterId: string, currentSequence: number): Promise<number | undefined> {
-    const q = `select max(sequence) as prev from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence < $3`;
+    const q = `select sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and applied_at is not null order by applied_at desc limit 2`;
     const v = [
       appId,
       clusterId,
@@ -622,12 +622,11 @@ export class KotsAppStore {
 
     const result = await this.pool.query(q, v);
 
-    const prev = result.rows[0].prev;
-    try {
-      return parseInt(prev);
-    } catch {
-      /* not an int */
+    if (result.rowCount !== 2) {
+      return;
     }
+
+    return parseInt(result.rows[1].sequence);
   }
 
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
