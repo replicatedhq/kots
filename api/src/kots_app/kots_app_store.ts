@@ -612,6 +612,24 @@ export class KotsAppStore {
     }
   }
 
+  async getPreviouslyDeployedSequence(appId: string, clusterId: string, currentSequence: number): Promise<number | undefined> {
+    const q = `select max(sequence) as prev from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence < $3`;
+    const v = [
+      appId,
+      clusterId,
+      currentSequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    const prev = result.rows[0].prev;
+    try {
+      return parseInt(prev);
+    } catch {
+      /* not an int */
+    }
+  }
+
   async listPastVersions(appId: string, clusterId: string): Promise<KotsVersion[]> {
     let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
