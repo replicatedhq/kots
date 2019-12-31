@@ -91,6 +91,30 @@ func (c *Kubectl) Preflight(preflightURI string) error {
 	return nil
 }
 
+func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte) ([]byte, []byte, error) {
+	args := []string{
+		"delete",
+	}
+
+	if targetNamespace != "" {
+		args = append(args, []string{
+			"-n",
+			targetNamespace,
+		}...)
+	}
+
+	args = append(args, []string{
+		"-f",
+		"-",
+	}...)
+
+	cmd := c.kubectlCommand(args...)
+	cmd.Stdin = bytes.NewReader(yamlDoc)
+
+	stdout, stderr, err := Run(cmd)
+	return stdout, stderr, errors.Wrap(err, "failed to run kubectl delete")
+}
+
 func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool) ([]byte, []byte, error) {
 	args := []string{
 		"apply",
