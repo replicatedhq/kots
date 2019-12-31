@@ -148,7 +148,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
 			SplitMultiDocYAML: true,
-			Namespace:         "",
+			Namespace:         "repl{{ Namespace }}",
 			HelmOptions:       localValues,
 			Log:               nil,
 		})
