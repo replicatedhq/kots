@@ -237,6 +237,7 @@ export class KotsApp {
     }
   }
 
+  // TODO this function needs to be rewritten to simply use the archive and let kots do the work
   async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[], createNewVersion: boolean): Promise<void> {
     const tmpDir = tmp.dirSync();
     try {
@@ -282,24 +283,22 @@ export class KotsApp {
         }
       }
 
-      files.files[configValuesPath!] = yaml.safeDump(parsedConfigValues);
+      const updatedConfigValues = yaml.safeDump(parsedConfigValues);
 
-      const bundlePacker = new TarballPacker();
-      const inputTgzBuffer: Buffer = await bundlePacker.packFiles(files);
+      // Get a fresh copy of the archive
+      fs.writeFileSync(path.join(tmpDir.name, "input.tar.gz"), await this.getArchive(sequence));
 
       const inputArchive = path.join(tmpDir.name, "input.tar.gz");
       const outputArchive = path.join(tmpDir.name, "output.tar.gz");
 
-      fs.writeFileSync(inputArchive, inputTgzBuffer);
-
       const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
-      await kotsRewriteVersion(inputArchive, downstreams, registrySettings, false, outputArchive, stores);
+      await kotsRewriteVersion(inputArchive, downstreams, registrySettings, false, outputArchive, stores, updatedConfigValues);
       const outputTgzBuffer = fs.readFileSync(outputArchive);
       if (!createNewVersion) {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
         await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
-        await stores.kotsAppStore.updateAppConfigValuesCache(appId, sequence, yaml.safeDump(parsedConfigValues));
+        await stores.kotsAppStore.updateAppConfigValuesCache(appId, sequence, updatedConfigValues);
       } else {
         await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }

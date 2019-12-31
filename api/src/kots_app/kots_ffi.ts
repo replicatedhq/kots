@@ -47,7 +47,7 @@ function kots() {
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
-    RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool]],
+    RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoString]],
     TemplateConfig: [GoString, [GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
@@ -800,7 +800,7 @@ export async function getLatestLicense(licenseData: string): Promise<string> {
   }
 }
 
-export async function kotsRewriteVersion(archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores): Promise<string> {
+export async function kotsRewriteVersion(archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores, updatedConfigValues: string): Promise<string> {
   const tmpDir = tmp.dirSync();
   try {
     const k8sNamespace = getK8sNamespace();
@@ -834,7 +834,11 @@ export async function kotsRewriteVersion(archive: string, downstreams: string[],
     registryJsonParam["p"] = registryJson;
     registryJsonParam["n"] = registryJson.length;
 
-    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages);
+    const updatedConfigValuesParam = new GoString();
+    updatedConfigValuesParam["p"] = updatedConfigValues;
+    updatedConfigValuesParam["n"] = updatedConfigValues.length;
+
+    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages, updatedConfigValuesParam);
 
     let errrorMessage = "";
 
