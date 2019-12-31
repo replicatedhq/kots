@@ -131,7 +131,14 @@ export class KotsDeploySocketService {
                 kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
                 namespace: desiredNamespace,
                 manifests: b.toString("base64"),
+                previous_manifests: "",
               };
+
+              if (app.currentSequence) {
+                const previousRendered = await app.render(''+(app.currentSequence-1), `overlays/downstreams/${cluster.title}`);
+                const bb = new Buffer(previousRendered);
+                args.previous_manifests = bb.toString("base64");
+              }
 
               this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
               clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
