@@ -412,7 +412,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		targetNamespace = applicationManifests.Namespace
 	}
 
-	for k, oldContents := range decodedCurrentMap {
+	for k, oldContents := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; !ok {
 			log.Println("deleting manifest(s)")
 			stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents))
