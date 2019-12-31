@@ -305,5 +305,9 @@ func (ctx StaticCtx) kubeSeal(certData string, namespace string, name string, va
 func (ctx StaticCtx) namespace() string {
 	// this is really only useful when called via the ffi function from kotsadm
 	// because that namespace is not configurable otherwise
+	if os.Getenv("DEV_NAMESPACE") != "" {
+		return os.Getenv("DEV_NAMESPACE")
+	}
+
 	return os.Getenv("POD_NAMESPACE")
 }
