@@ -838,7 +838,7 @@ export async function kotsRewriteVersion(archive: string, downstreams: string[],
     updatedConfigValuesParam["p"] = updatedConfigValues;
     updatedConfigValuesParam["n"] = updatedConfigValues.length;
 
-    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages, updatedConfigValues);
+    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages, updatedConfigValuesParam);
 
     let errrorMessage = "";
 
