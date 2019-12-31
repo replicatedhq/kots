@@ -13,6 +13,7 @@ import (
 	"github.com/containers/image/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/version"
 )
 
 var (
@@ -92,6 +93,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 		return errors.Wrap(err, "failed to create auth request")
 	}
 
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuthToken))
 
 	resp, err = insecureClient.Do(req)

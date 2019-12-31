@@ -15,6 +15,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -149,7 +150,7 @@ func GetLatestLicense(socket, licenseData string) {
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
-
+		req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 		req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 		resp, err := http.DefaultClient.Do(req)

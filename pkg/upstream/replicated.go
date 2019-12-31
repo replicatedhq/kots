@@ -29,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -231,6 +232,7 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
@@ -396,6 +398,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)
@@ -557,24 +560,6 @@ func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) 
 	}
 
 	return nil, nil
-}
-
-func tryParsingAsHelmChartGVK(content []byte) *kotsv1beta1.HelmChart {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil
-	}
-
-	if gvk.Group == "kots.io" {
-		if gvk.Version == "v1beta1" {
-			if gvk.Kind == "HelmChart" {
-				return obj.(*kotsv1beta1.HelmChart)
-			}
-		}
-	}
-
-	return nil
 }
 
 func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
@@ -742,6 +727,8 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
+
+	getReq.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
