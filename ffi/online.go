@@ -3,6 +3,7 @@ package main
 import "C"
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/rewrite"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -190,6 +192,13 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 			}
 
 			configValues = obj.(*kotsv1beta1.ConfigValues)
+
+			err = ioutil.WriteFile(filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"), mustMarshalConfigValues(configValues), 0644)
+			if err != nil {
+				fmt.Printf("failed to write marshaled config values: %s\n", err.Error())
+				ffiResult = NewFFIResult(-1).WithError(err)
+				return
+			}
 		} else {
 			configValues, err = parseConfigValuesFromFile(filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"))
 			if err != nil {
@@ -239,4 +248,15 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 
 		ffiResult = NewFFIResult(0)
 	}()
+}
+
+func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(configValues, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
 }
