@@ -94,7 +94,7 @@ func PullFromLicense(socket string, licenseData string, downstream string, names
 }
 
 //export RewriteVersion
-func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages bool) {
+func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages bool, marshalledConfigValues string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -179,11 +179,24 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 		}
 		license := obj.(*kotsv1beta1.License)
 
-		configValues, err := parseConfigValuesFromFile(filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"))
-		if err != nil {
-			fmt.Printf("failed to decode config values: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
+		var configValues *kotsv1beta1.ConfigValues
+
+		if marshalledConfigValues != "" {
+			obj, _, err := decode([]byte(marshalledConfigValues), nil, nil)
+			if err != nil {
+				fmt.Printf("failed to decode marshaled config values: %s\n", err.Error())
+				ffiResult = NewFFIResult(-1).WithError(err)
+				return
+			}
+
+			configValues = obj.(*kotsv1beta1.ConfigValues)
+		} else {
+			configValues, err = parseConfigValuesFromFile(filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"))
+			if err != nil {
+				fmt.Printf("failed to decode config values from release archive: %s\n", err.Error())
+				ffiResult = NewFFIResult(-1).WithError(err)
+				return
+			}
 		}
 
 		options := rewrite.RewriteOptions{
