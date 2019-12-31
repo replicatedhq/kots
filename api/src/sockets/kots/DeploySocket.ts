@@ -134,8 +134,9 @@ export class KotsDeploySocketService {
                 previous_manifests: "",
               };
 
-              if (app.currentSequence) {
-                const previousRendered = await app.render(''+(app.currentSequence-1), `overlays/downstreams/${cluster.title}`);
+              const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence!);
+              if (previousSequence !== undefined) {
+                const previousRendered = await app.render(''+(previousSequence-1), `overlays/downstreams/${cluster.title}`);
                 const bb = new Buffer(previousRendered);
                 args.previous_manifests = bb.toString("base64");
               }
