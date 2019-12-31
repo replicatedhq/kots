@@ -241,7 +241,7 @@ export function KotsMutations(stores: Stores) {
                 lastSyncedAt: "",
                 namespace: namespace,
               }
-              await kotsRewriteVersion(inputArchive, downstreams, registryInfo, true, outputArchive, stores);
+              await kotsRewriteVersion(inputArchive, downstreams, registryInfo, true, outputArchive, stores, "");
 
               await stores.kotsAppStore.setImageRewriteStatus("Generating new version", "running");
 
