@@ -38,7 +38,10 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
-	resources, patches := deduplicateOnContent(b.Files, options.ExcludeKotsKinds)
+	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to deduplicate content")
+	}
 
 	kustomizeResources := []string{}
 	kustomizePatches := []kustomizetypes.PatchStrategicMerge{}
@@ -91,14 +94,17 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	return nil
 }
 
-func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, []BaseFile) {
+func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, []BaseFile, error) {
 	resources := []BaseFile{}
 	patches := []BaseFile{}
 
 	foundGVKNames := [][]byte{}
 
 	for _, file := range files {
-		writeToKustomization := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
+		writeToKustomization, err := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to check if file should be included")
+		}
 
 		if !writeToKustomization {
 			continue
@@ -124,7 +130,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, 
 
 	}
 
-	return resources, patches
+	return resources, patches, nil
 }
 
 func (b *Base) GetOverlaysDir(options WriteOptions) string {

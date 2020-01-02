@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestShouldBeIncludedInBaseKustomization(t *testing.T) {
@@ -122,16 +123,174 @@ connection:
             name: rds-postgres`),
 			expected: true,
 		},
+		{
+			name: "annotation of excluded true",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+  annotations:
+    kots.io/exclude: true
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         false,
+		},
+		{
+			name: "annotation of excluded false as string",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+  annotations:
+    kots.io/exclude: "false"
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         true,
+		},
+		{
+			name: "annotation of excluded false",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+  annotations:
+    kots.io/exclude: false
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         true,
+		},
+		{
+			name: "annotation of when false",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+  annotations:
+    kots.io/when: false
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         false,
+		},
+		{
+			name: "annotation of when true",
+			path: "config.yaml",
+			content: []byte(`apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: sentry-enterprise
+  annotations:
+    kots.io/when: true
+spec:
+  groups:
+    - name: database
+      title: Database
+      description: Database Options
+      items:
+        - name: postgres_type
+          type: select_one
+          title: Postgres
+          default: embedded_postgres
+          items:
+            - name: embedded_postgres
+              title: Embedded Postgres
+            - name: external_postgres
+              title: External Postgres
+        - name: embedded_postgres_password
+          type: text
+          read_only: true
+          value: ""`),
+			excludeKotsKinds: true,
+			expected:         true,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
 			b := BaseFile{
 				Path:    test.path,
 				Content: test.content,
 			}
 
-			actual := b.ShouldBeIncludedInBaseKustomization(test.excludeKotsKinds)
+			actual, err := b.ShouldBeIncludedInBaseKustomization(test.excludeKotsKinds)
+			req.NoError(err)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

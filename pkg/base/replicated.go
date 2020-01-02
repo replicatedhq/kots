@@ -158,7 +158,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		for _, helmBaseFile := range helmBase.Files {
 			// this is a little bit of an abuse of the next function
-			if !helmBaseFile.ShouldBeIncludedInBaseKustomization(false) {
+			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to determine if file should be included in base")
+			}
+
+			if !include {
 				continue
 			}
 
