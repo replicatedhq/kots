@@ -162,7 +162,7 @@ kind: Config
 metadata:
   name: sentry-enterprise
   annotations:
-    kots.io/exclude: "false""
+    kots.io/exclude: "false"
 spec:
   groups:
     - name: database
@@ -183,7 +183,7 @@ spec:
           read_only: true
           value: ""`),
 			excludeKotsKinds: true,
-			expected:         false,
+			expected:         true,
 		},
 		{
 			name: "annotation of excluded false",
