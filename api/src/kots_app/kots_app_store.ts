@@ -617,7 +617,6 @@ export class KotsAppStore {
     const v = [
       appId,
       clusterId,
-      currentSequence,
     ];
 
     const result = await this.pool.query(q, v);
