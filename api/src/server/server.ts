@@ -145,7 +145,13 @@ export class Server extends ServerLoader {
     }
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
-      const token = req.get("Authorization") || "";
+      let token = req.get("Authorization") || "";
+
+      // remove the "bearer", if it has one
+      if (token.startsWith("Bearer")) {
+        const splitToken = token.split(" ");
+        token = splitToken.pop()!;
+      }
 
       const context = await Context.fetch(stores, token);
       res.locals.context = context;
@@ -156,9 +162,7 @@ export class Server extends ServerLoader {
     const requireContextGraphql = async (req: Request, res: Response, next: NextFunction) => {
       const anonymousOperations = [
         "ping",
-        "loginToAdminConsole",
         "logout",
-        "getKotsMetadata",
       ];
 
       if (anonymousOperations.includes(req.body.operationName)) {
@@ -174,11 +178,6 @@ export class Server extends ServerLoader {
     };
 
     this.expressApp.locals.stores = stores;
-
-    this.use("/api/v1/download/:watchId", setContext);
-    this.use("/api/v1/download/:watchId", (request: Request, response: Response, next: NextFunction) => {
-      next(response.locals.context.requireValidSession());
-    });
 
     this.use("/graphql", setContext);
     this.use("/graphql", requireContextGraphql);

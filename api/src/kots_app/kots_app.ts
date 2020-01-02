@@ -589,13 +589,6 @@ export interface KotsVersion {
   gitDeployable?: boolean;
 }
 
-export interface KotsAppMetadata {
-  name: string;
-  iconUri: string;
-  namespace: string;
-  isKurlEnabled: boolean;
-}
-
 export interface AppRegistryDetails {
   appSlug: string;
   hostname: string;

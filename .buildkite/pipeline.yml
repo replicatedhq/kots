@@ -1,9 +1,11 @@
 steps:
-  - label: "schema-fixtures"
+  ## First, run some pact tests and test everything
+
+  - label: "generate-schema"
     artifact_paths:
       - "migrations/fixtures/schema/fixtures.sql"
     plugins:
-      - docker#v3.0.1:
+      - docker#v3.5.0:
           image: schemahero/schemahero:0.7.1
           always-pull: true
           workdir: /repo
@@ -14,60 +16,178 @@ steps:
           volumes:
             - "./migrations/fixtures:/out"
             - "./migrations/tables:/in"
-          command: ["fixtures", "--input-dir", "/in", "--output-dir", "/out/schema", "--dbname", "ship-cloud", "--driver", "postgres"]
-
+          command:
+            [
+              "fixtures",
+              "--input-dir",
+              "/in",
+              "--output-dir",
+              "/out/schema",
+              "--dbname",
+              "ship-cloud",
+              "--driver",
+              "postgres",
+            ]
   - wait
-
   - commands:
-      - buildkite-agent artifact download migrations/fixtures/schema/fixtures.sql . --step schema-fixtures
+      - buildkite-agent artifact download migrations/fixtures/schema/fixtures.sql . --step generate-schema
       - make -C migrations/fixtures deps build run
-    label: "build-fixtures"
+    label: "generate-fixtures"
     plugins:
-      - docker#v3.0.1:
+      - docker#v3.5.0:
           image: replicated/gitops-builder:buildkite
           always-pull: true
           workdir: /repo
     artifact_paths:
       - "migrations/fixtures/fixtures.sql"
-
   - wait
-
   - commands:
-      - buildkite-agent artifact download migrations/fixtures/fixtures.sql . --step build-fixtures
+      - buildkite-agent artifact download migrations/fixtures/fixtures.sql . --step generate-fixtures
       - make -C migrations/fixtures publish
-    label: "publish-fixtures"
+    label: "publish fixtures"
     branches: "master"
 
+  # Wait for testing to complete before moving on
+  - wait # next is build
+
+  ## migations
+  - label: "build schema migrations"
+    commands:
+      - make -C migrations schema-alpha
+    branches: "master"
+  - label: "release schema migrations on tag"
+    commands:
+      - if [ ! -z "$GIT_TAG" ]; then make -C migrations schema-release; fi
+
+  ## web
+  - label: "test web"
+    command: cd web && make deps test && yarn run publish:pact
+    plugins:
+      - docker#v3.5.0:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo/web
+          environment:
+            - PACT_BROKER_USERNAME
+            - PACT_BROKER_PASSWORD
+    retry:
+      automatic:
+        # this command exiting with status 2 typically means that the yarn package failed to download
+        - exit_status: 2
+          limit: 5
+  - label: "build-web"
+    commands:
+      - make -C web deps build-kotsadm
+    plugins:
+      - docker#v3.5.0:
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo/web
+          environment:
+            - BUILDKITE_COMMIT
+            - GIT_TAG
+    artifact_paths:
+      - "web/dist/**/*"
+    retry:
+      automatic:
+        # this command exiting with status 2 typically means that the yarn package failed to download
+        - exit_status: 2
+          limit: 5
+
+  - label: "build-operator"
+    command: make -C operator test build
+    plugins:
+      - docker#v3.5.0:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite
+          workdir: /go/src/github.com/replicatedhq/kotsadm/operator
+    artifact_paths:
+      - "operator/bin/**/*"
+      - "operator/pacts/**/*"
+
+  ## wait for consumers to finish so that pact tests are in the broker (above here are consumers, below are providers)
   - wait
 
-  - trigger: "kotsadm-migrations"
-    async: false
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "${BUILDKITE_COMMIT}"
-      branch: "${BUILDKITE_BRANCH}"
-      env:
-        GIT_TAG: "${BUILDKITE_TAG}"
+  ## go api
+  - label: "build-go-api"
+    commands:
+      - make test kotsadm
+    plugins:
+      - docker#v3.5.0:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite
+          workdir: /go/src/github.com/replicatedhq/kotsadm
+    artifact_paths:
+      - "/bin/**/*"
 
-  - trigger: "kotsadm-web"
-    async: false
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "${BUILDKITE_COMMIT}"
-      branch: "${BUILDKITE_BRANCH}"
-      env:
-        GIT_TAG: "${BUILDKITE_TAG}"
+  ## typescript api
+  - label: "verify pacts"
+    commands:
+      - docker-compose -f api/test/docker-compose.yml down
+      - docker-compose -f api/test/docker-compose.yml pull
+      - docker-compose -f api/test/docker-compose.yml build
+      - docker-compose -f api/test/docker-compose.yml up --exit-code-from kotsadm-api
+      - docker-compose -f api/test/docker-compose.yml down
+  - label: "build typescript api"
+    commands:
+      - make -C api deps build
+    plugins:
+      - docker#v3.5.0:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite
+          workdir: /repo/api
+    artifact_paths:
+      - "api/build/**/*"
+      - "api/bin/**/*"
+  - wait
+  - commands:
+      - make -C api can-i-deploy
 
-  - trigger: "kotsadm-operator"
-    async: false
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "${BUILDKITE_COMMIT}"
-      branch: "${BUILDKITE_BRANCH}"
-      env:
-        GIT_TAG: "${BUILDKITE_TAG}"
+  - wait # wait for all builds to be completed before moving on (to the publish steps)
 
-  - label: "publish-minio"
+  - label: "go api alpha release"
+    commands:
+      - mkdir -p bin
+      - buildkite-agent artifact download bin/* . --step build-go-api
+      - chmod +x bin/kotsadm
+      - mkdir web/dist
+      - buildkite-agent artifact download web/dist/* . --step build-web
+      - make build-alpha
+    branches: "master"
+
+  - label: "go api tagged release"
+    commands:
+      - if [ ! -z "$GIT_TAG" ]; then mkdir -p bin deploy/bin; fi
+      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download bin/* . --step build-go-api; fi
+      - if [ ! -z "$GIT_TAG" ]; then cp bin/kotsadm deploy/bin/kotsadm; fi
+      - if [ ! -z "$GIT_TAG" ]; then chmod +x deploy/bin/kotsadm; fi
+      - if [ ! -z "$GIT_TAG" ]; then mkdir -p web/dist; fi
+      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download web/dist/* . --step build-web; fi
+      - if [ ! -z "$GIT_TAG" ]; then make build-release; fi
+
+  - label: "typescript api alpha releaase"
+    commands:
+      - make -C api build-alpha
+    branches: "master"
+  - label: "typescript api tagged release"
+    commands:
+      - if [ ! -z "$GIT_TAG" ]; then make -C api build-release; fi
+
+  - label: "operator alpha release"
+    commands:
+      - mkdir -p operator/bin
+      - buildkite-agent artifact download operator/bin/* . --step build-operator
+      - chmod +x operator/bin/kotsadm-operator
+      - make -C operator build-alpha
+    branches: "master"
+
+  - label: "operator tagged release"
+    commands:
+      - if [ ! -z "$GIT_TAG" ]; then mkdir -p operator/bin operator/deploy/bin; fi
+      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download operator/bin/* . --step build-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$GIT_TAG" ]; then make -C operator build-release; fi
+
+  - label: "minio alpha release"
     commands:
       - make -C minio publish-latest
     branches: "master"
@@ -75,7 +195,7 @@ steps:
       root-docker: "true"
       queue: root-docker
 
-  - label: "release-minio"
+  - label: "minio tagged release"
     commands:
       - if [ ! -z "$BUILDKITE_TAG" ]; then make -C minio publish-release; fi
     agents:

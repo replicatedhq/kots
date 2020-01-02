@@ -217,21 +217,6 @@ export class UserStore {
     return id;
   }
 
-  async updateLastLogin(id: string): Promise<boolean> {
-    const currentTime = new Date();
-
-    const q = "UPDATE ship_user SET last_login = $1 where id = $2";
-
-    const v = [
-      currentTime,
-      id
-    ];
-
-    await this.pool.query(q, v);
-
-    return true;
-  }
-
   public async createAdminConsolePassword(passwordBcrypt: string): Promise<string> {
     const id = randomstring.generate({ capitalization: "lowercase" });
     const pg = await this.pool.connect();

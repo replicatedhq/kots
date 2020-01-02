@@ -17,7 +17,6 @@ export class SessionStore {
   /**
    * Creates a signed JWT for authenticaion
    * @param userId - string of user_id from the database
-   * @param isSingleTenant - true if the user is coming from secure admin console. See user_mutations.ts#loginToAdminConsole
    */
   async createPasswordSession(userId: string): Promise<string> {
     const sessionId = randomstring.generate({ capitalization: "lowercase" });
@@ -80,6 +79,7 @@ export class SessionStore {
         const session = await this.getSession(decoded.sessionId);
         return session;
       } catch (e) {
+        console.log(e);
         // Errors here negligible as they are from jwts not passing verification
       }
     }

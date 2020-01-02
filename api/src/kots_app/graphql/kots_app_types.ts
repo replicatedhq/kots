@@ -98,15 +98,6 @@ const KotsVersion = `
   }
 `;
 
-const KotsAppMetadata = `
-  type KotsAppMetadata {
-    name: String!
-    iconUri: String!
-    namespace: String!
-    isKurlEnabled: Boolean
-  }
-`;
-
 const AppRegistryDetails = `
   input AppRegistryDetails {
     appSlug: String!
@@ -272,7 +263,6 @@ export default [
   KotsAppLink,
   KotsDownstream,
   KotsVersion,
-  KotsAppMetadata,
   KotsDownstreamOutput,
   ResourceState,
 

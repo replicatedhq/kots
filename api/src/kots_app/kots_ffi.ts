@@ -24,7 +24,7 @@ import {
 import { KotsAppRegistryDetails } from "../kots_app"
 import { Cluster } from "../cluster";
 import * as _ from "lodash";
-import yaml, { dump } from "js-yaml";
+import yaml from "js-yaml";
 import { StatusServer } from "../airgap/status";
 import { getDiffSummary } from "../util/utilities";
 import { ReplicatedError } from "../server/errors";
@@ -46,7 +46,6 @@ function kots() {
     ListUpdates: ["void", [GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    ReadMetadata: ["void", [GoString, GoString]],
     RemoveMetadata: ["void", [GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoString]],
     TemplateConfig: [GoString, [GoString, GoString]],
@@ -56,50 +55,6 @@ function kots() {
     VerifyAirgapLicense: [GoString, [GoString]],
     RenderFile: ["void", [GoString, GoString, GoString]],
   });
-}
-
-export async function kotsAppGetBranding(): Promise<string> {
-  const namespace = process.env["POD_NAMESPACE"];
-  if (!namespace) {
-    throw new Error("unable to determine current namespace");
-  }
-
-  const tmpDir = tmp.dirSync();
-  try {
-    const statusServer = new StatusServer();
-    await statusServer.start(tmpDir.name);
-
-    const socketParam = new GoString();
-    socketParam["p"] = statusServer.socketFilename;
-    socketParam["n"] = statusServer.socketFilename.length;
-
-    const namespaceParam = new GoString();
-    namespaceParam["p"] = namespace;
-    namespaceParam["n"] = namespace.length;
-
-    let branding = "";
-    kots().ReadMetadata(socketParam, namespaceParam);
-
-    await statusServer.connection();
-    await statusServer.termination((resolve, reject, obj): boolean => {
-      // Return true if completed
-      if (obj.status === "terminated") {
-        branding = obj.data;
-        if (obj.exit_code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
-        }
-        return true;
-      }
-      return false;
-    });
-
-    return branding;
-
-  } finally {
-    tmpDir.removeCallback();
-  }
 }
 
 export interface Update {

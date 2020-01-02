@@ -1,8 +1,3 @@
-const UserInfo = `
-type UserInfo {
-  avatarUrl: String
-  username: String
-}`;
 
 const GQLAccessToken = `
 type AccessToken {
@@ -16,7 +11,6 @@ type AdminSignupInfo {
 }`;
 
 export default [
-  UserInfo,
   GQLAccessToken,
   AdminSignupInfo,
 ];

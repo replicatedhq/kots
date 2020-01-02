@@ -9,12 +9,10 @@ export const Query = `
     healthz: Healthz!
     ping: String!
 
-    userInfo: UserInfo
     userFeatures: [Feature]
 
     listClusters: [Cluster]
 
-    getKotsMetadata: KotsAppMetadata
     listApps: Apps
     getGitOpsRepo: KotsGitOps
     getKotsApp(slug: String!): KotsApp

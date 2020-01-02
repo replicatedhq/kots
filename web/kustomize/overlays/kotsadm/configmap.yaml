@@ -5,15 +5,6 @@ metadata:
 data:
   start-kotsadm-web.sh: |
     #!/bin/bash
-    sed -i 's/###_GRAPHQL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/graphql/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_GITHUB_CLIENT_ID_###/{{repl ConfigOption "github-clientid"}}/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_SHIPDOWNLOAD_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/download/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_SHIPINIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/init\//g' /usr/share/nginx/html/index.html
-    sed -i 's/###_SHIPUPDATE_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/update\//g' /usr/share/nginx/html/index.html
-    sed -i 's/###_SHIPEDIT_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/v1\/edit\//g' /usr/share/nginx/html/index.html
-    sed -i 's/###_GITHUB_REDIRECT_URI_###/https:\/\/{{repl ConfigOption "hostname"}}\/auth\/github\/callback/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_GITHUB_INSTALL_URL_###/{{repl ConfigOption "github-installurl" | replace "/" "\\/"}}/g' /usr/share/nginx/html/index.html
-    sed -i 's/###_INSTALL_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api\/install/g' /usr/share/nginx/html/index.html
+    sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/v1g' /usr/share/nginx/html/index.html
 
     nginx -g "daemon off;"

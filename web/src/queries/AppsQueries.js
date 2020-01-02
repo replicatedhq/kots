@@ -6,19 +6,6 @@ export const ping = gql(`
   }
 `);
 
-export const getKotsMetadataRaw = `
-  query getKotsMetadata {
-    getKotsMetadata {
-      name
-      iconUri
-      namespace
-      isKurlEnabled
-    }
-  }
-`;
-
-export const getKotsMetadata = gql(getKotsMetadataRaw);
-
 export const listAppsRaw = `
   query listApps {
     listApps {

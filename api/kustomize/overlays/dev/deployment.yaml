@@ -1,24 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kotsadm-api
+  name: kotsadm-api-node
 spec:
   template:
     spec:
       securityContext:
         runAsUser: 0
       containers:
-        - name: kotsadm-api
+        - name: kotsadm-api-node
           env:
             - name: DEV_NAMESPACE
               value: "test"
             - name: LOG_LEVEL
               value: debug
             - name: SESSION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: session
-                  key: key
+              value: this-is-not-too-secret
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:

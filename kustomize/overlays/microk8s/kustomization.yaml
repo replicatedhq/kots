@@ -1,9 +1,9 @@
 bases:
-  - ../github
+  - ../dev
 
-patchesStrategicMerge:
-  - ./kotsadm-api-nodeport.yaml
-  - ./kotsadm-api-service-account.yaml
+# patchesStrategicMerge:
+#   - ./kotsadm-api-nodeport.yaml
+#   - ./kotsadm-api-service-account.yaml
 
 resources:
   - ./cluster-rbac.yaml

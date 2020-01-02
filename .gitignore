@@ -1,7 +1,6 @@
 .vscode/
 supportbundle.tar.gz
-/go.mod
-/go.sum
 /troubleshoot.so
 /kots.so
 vendor
+bin

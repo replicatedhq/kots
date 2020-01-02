@@ -47,14 +47,6 @@ interface CreateAppBody {
   metadata: string;
 }
 
-interface CreateAppMetadata {
-  name: string;
-  versionLabel: string;
-  upstreamURI: string;
-  updateCursor: string;
-  license: string;
-}
-
 interface UploadLicenseBody {
   name: string;
   license: string;

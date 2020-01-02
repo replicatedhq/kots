@@ -1,9 +1,6 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import { graphql, compose, withApollo } from "react-apollo";
-import { withRouter } from "react-router-dom";
 import { Utilities } from "../utilities/utilities";
-import { loginToAdminConsole } from "../mutations/AuthMutations";
 import "../scss/components/Login.scss";
 
 class SecureAdminConsole extends React.Component {
@@ -17,7 +14,7 @@ class SecureAdminConsole extends React.Component {
 
   completeLogin = (data) => {
     const { onLoginSuccess } = this.props;
-    let token = data.loginToAdminConsole.token
+    let token = data.token;
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
       onLoginSuccess().then((res) => {
@@ -46,23 +43,31 @@ class SecureAdminConsole extends React.Component {
   }
 
   loginToConsole = async () => {
-
-    try {
-      const { password } = this.state;
-      if (this.validatePassword()) {
-        this.setState({ authLoading: true });
-        const res = await this.props.loginToAdminConsole(password);
-        this.completeLogin(res.data);
-      }
-    } catch (error) {
-      const errorStack = error.graphQLErrors.map(({ msg }) => msg);
-
-      this.setState({
-        authLoading: false,
-        passwordErr: true,
-        passwordErrMessage: errorStack.length > 0
-          ? errorStack.join("\n")
-          : "There was an error logging in. Please try again"
+    const { password } = this.state;
+    if (this.validatePassword()) {
+      this.setState({ authLoading: true });
+      fetch(`${window.env.API_ENDPOINT}/login`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({
+          password: password,
+        })
+      })
+      .then(async (res) => {
+        if (res.status >= 400) {
+          this.setState({
+            authLoading: false,
+            passwordErr: true,
+            passwordErrMessage: res.status === 401 ? "Invalid password. Please try again" : "There was an error logging in. Please try again",
+          });
+          return;
+        }
+        this.completeLogin(await res.json());
+      })
+      .catch((err) => {
+        console.error(err);
       });
     }
   }
@@ -135,12 +140,4 @@ class SecureAdminConsole extends React.Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-  graphql(loginToAdminConsole, {
-    props: ({ mutate }) => ({
-      loginToAdminConsole: (password) => mutate({ variables: { password } })
-    })
-  }),
-)(SecureAdminConsole);
+export default SecureAdminConsole;

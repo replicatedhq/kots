@@ -2,33 +2,12 @@ import _ from "lodash";
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
 import { ReplicatedError } from "../../server/errors";
-import { KotsApp, KotsVersion, KotsAppMetadata, KotsAppRegistryDetails, KotsConfigGroup, KotsDownstreamOutput } from "../";
+import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsConfigGroup, KotsDownstreamOutput } from "../";
 import { Cluster } from "../../cluster";
-import { kotsAppGetBranding } from "../kots_ffi";
-import yaml from "js-yaml";
-import { logger } from "../../server/logger";
 import { Params } from "../../server/params";
 
 export function KotsQueries(stores: Stores, params: Params) {
   return {
-    async getKotsMetadata(): Promise<KotsAppMetadata|null> {
-      let parsedBranding: any;
-      try {
-        const rawBranding = await kotsAppGetBranding();
-        parsedBranding = yaml.safeLoad(rawBranding);
-      } catch (err) {
-        console.log(err);
-        logger.error("[kotsAppGetBranding] - Unable to retrieve or parse branding information");
-      }
-
-      return {
-        name: _.get(parsedBranding, "spec.title"),
-        iconUri: _.get(parsedBranding, "spec.icon"),
-        namespace: process.env["POD_NAMESPACE"] || "",
-        isKurlEnabled: params.enableKurl,
-      };
-    },
-
     async getKotsApp(root: any, args: any, context: Context): Promise<KotsApp> {
       const { slug, id } = args;
       if (!id && !slug) {

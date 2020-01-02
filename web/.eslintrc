@@ -27,6 +27,7 @@
     "indent": "off",
     "no-console": [0],
     "no-debugger": [0],
+    "no-unused-vars": "off",
     "curly": [2],
     "no-mixed-spaces-and-tabs": ["error"],
     "jsx-quotes": ["error", "prefer-double"],

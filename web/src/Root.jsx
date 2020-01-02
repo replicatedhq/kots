@@ -7,16 +7,11 @@ import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-import GitHubAuth from "./components/github_auth/GitHubAuth";
-import GitHubInstall from "./components/github_install/GitHubInstall";
 import GitOps from "././components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
-import ClusterScope from "./components/clusterscope/ClusterScope";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
@@ -50,9 +45,7 @@ const GraphQLClient = ShipClientGQL(
 
 class ProtectedRoute extends Component {
   render() {
-    const redirectURL = window.env.DISABLE_KOTS
-      ? `/login?next=${this.props.location.pathname}${this.props.location.search}`
-      : `/secure-console?next=${this.props.location.pathname}${this.props.location.search}`;
+    const redirectURL = `/secure-console?next=${this.props.location.pathname}${this.props.location.search}`;
 
     return (
       <Route path={this.props.path} render={(innerProps) => {
@@ -157,24 +150,34 @@ class Root extends Component {
 
   fetchKotsAppMetadata = async () => {
     this.setState({ fetchingMetadata: true });
-    const meta = await GraphQLClient.query({
-      query: getKotsMetadata,
-      fetchPolicy: "no-cache"
-    }).catch( error => {
-      this.setState({ fetchingMetadata: false });
-      throw error;
-    });
-    if (meta.data.getKotsMetadata) {
+
+    fetch(`${window.env.API_ENDPOINT}/metadata`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "GET",
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!data) {
+        this.setState({ fetchingMetadata: false });
+        return;
+      }
+
       this.setState({
-        appLogo: meta.data.getKotsMetadata.iconUri,
-        selectedAppName: meta.data.getKotsMetadata.name,
-        appNameSpace: meta.data.getKotsMetadata.namespace,
-        isKurlEnabled: meta.data.getKotsMetadata.isKurlEnabled,
+        appLogo: data.iconUri,
+        selectedAppName: data.name,
+        appNameSpace: data.namespace,
+        isKurlEnabled: data.isKurlEnabled,
         fetchingMetadata: false
       });
-    } else {
+    })
+    .catch((err) => {
       this.setState({ fetchingMetadata: false });
-    }
+      throw err;
+    });
+
   }
 
   ping = async (tries = 0) => {
@@ -190,14 +193,13 @@ class Root extends Component {
         }, 1000);
         return;
       }
+
       this.setState({ connectionTerminated: true });
     });
   }
 
   onRootMounted = () => {
-    if (!window.env.DISABLE_KOTS) {
-      this.fetchKotsAppMetadata();
-    }
+    this.fetchKotsAppMetadata();
     this.ping();
 
     if (Utilities.isLoggedIn()) {
@@ -268,7 +270,7 @@ class Root extends Component {
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
 
-                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/login"} />} />
+                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />
                     <Route exact path="/crashz" render={() => {
                       const Crashz = () => {
                         throw new Error("Crashz!");
@@ -276,17 +278,12 @@ class Root extends Component {
                       return <Crashz />;
 
                     }}/>
-                    <Route exact path="/login" render={props => (<Login {...props} onLoginSuccess={this.refetchListApps} appName={this.state.selectedAppName} />) } />
                     <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchListApps={this.refetchListApps} /> }/>
                     <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
-                    <Route exact path="/signup" component={Signup} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
                     <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <Route path="/auth/github" render={props => (<GitHubAuth {...props} refetchListApps={this.refetchListApps}/>)} />
-                    <Route path="/install/github" component={GitHubInstall} />
-                    <Route exact path="/clusterscope" component={ClusterScope} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
