@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -132,7 +133,11 @@ func Test_DeduplicateOnContent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actualResources, actualPatches := deduplicateOnContent(test.files, test.excludeKotsKinds)
+			req := require.New(t)
+
+			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds)
+			req.NoError(err)
+
 			assert.ElementsMatch(t, test.expectedResources, actualResources)
 			assert.ElementsMatch(t, test.expectedPatches, actualPatches)
 		})
