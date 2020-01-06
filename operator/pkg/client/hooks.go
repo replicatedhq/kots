@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/rest"
-	"github.com/pkg/errors"
+	"k8s.io/client-go/tools/cache"
 )
 
 // runHooksInformer will create goroutines to start various informers for kots objects
@@ -25,13 +25,13 @@ func (c *Client) runHooksInformer() error {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
 
-	restClient := clientset.RESTClient()
+	restClient := clientset.BatchV1().RESTClient()
 
 	c.hookStopChans = []chan struct{}{}
 
 	// Watch jobs
 	go func() {
-		jobWatchList := cache.NewListWatchFromClient(restClient, "jobs", "", fields.Everything())
+		jobWatchList := cache.NewListWatchFromClient(restClient, "jobs", c.TargetNamespace, fields.Everything())
 		resyncPeriod := 30 * time.Second
 
 		_, controller := cache.NewInformer(jobWatchList, &batchv1.Job{}, resyncPeriod,
@@ -46,28 +46,33 @@ func (c *Client) runHooksInformer() error {
 					// if the job doesn't contain our annotation, ignore it
 					hookValue, ok := job.Annotations["kots.io/hook-delete-policy"]
 					if !ok {
+						fmt.Println("no annotation found, ignoring")
 						return
 					}
 
 					cleanUpJob := false
-					if job.Status.Active == 0 && job.Status.Succeeded == 0 && strings.Contains(hookValue, "hook-succeeded") {
+					reason := ""
+					if job.Status.Active == 0 && job.Status.Succeeded > 0 && strings.Contains(hookValue, "hook-succeeded") {
 						cleanUpJob = true
+						reason = "successful"
 					}
 
-					if job.Status.Active == 0 && job.Status.Succeeded > 0 && strings.Contains(hookValue, "hook-failed") {
+					if job.Status.Active == 0 && job.Status.Failed > 0 && strings.Contains(hookValue, "hook-failed") {
 						cleanUpJob = true
+						reason = "failed"
 					}
 
 					if !cleanUpJob {
+						fmt.Printf("not cleaning up job %q, active=%d, succeeeded=%d, failed=%d\n", job.Name, job.Status.Active, job.Status.Succeeded, job.Status.Failed)
 						return
 					}
 
-					fmt.Printf("atempting to delete job %s\n", job.Name)
+					fmt.Printf("attempting to %s delete job %s\n", reason, job.Name)
 					if err := clientset.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{}); err != nil {
 						fmt.Errorf("error deleting job: %s", err.Error())
 						return
 					}
-					fmt.Printf("deleted job %s\n", job.Name)
+					fmt.Printf("deleted %s job %s\n", reason, job.Name)
 				},
 			},
 		)
