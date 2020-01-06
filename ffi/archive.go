@@ -44,7 +44,7 @@ func loadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to devode installation data")
+		return nil, errors.Wrap(err, "failed to decode installation data")
 	}
 
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {

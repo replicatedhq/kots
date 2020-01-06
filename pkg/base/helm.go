@@ -90,6 +90,9 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 				Path:    k,
 				Content: []byte(v),
 			}
+			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
+				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
+			}
 
 			baseFiles = append(baseFiles, baseFile)
 			continue
@@ -100,6 +103,9 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			baseFile := BaseFile{
 				Path:    k,
 				Content: []byte(v),
+			}
+			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
+				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
 			}
 
 			baseFiles = append(baseFiles, baseFile)
@@ -113,6 +119,9 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			baseFile := BaseFile{
 				Path:    filename,
 				Content: []byte(fileString),
+			}
+			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
+				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
 			}
 
 			baseFiles = append(baseFiles, baseFile)
