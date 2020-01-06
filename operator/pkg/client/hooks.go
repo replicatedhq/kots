@@ -10,10 +10,21 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/rest"
+	"github.com/pkg/errors"
 )
 
 // runHooksInformer will create goroutines to start various informers for kots objects
-func (c *Client) runHooksInformer(clientset *kubernetes.Clientset) error {
+func (c *Client) runHooksInformer() error {
+	restconfig, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get in cluster config")
+	}
+	clientset, err := kubernetes.NewForConfig(restconfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new kubernetes client")
+	}
+
 	restClient := clientset.RESTClient()
 
 	c.hookStopChans = []chan struct{}{}

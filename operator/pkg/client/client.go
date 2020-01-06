@@ -68,6 +68,9 @@ type Client struct {
 func (c *Client) Run() error {
 	log.Println("Starting kotsadm-operator loop")
 
+	c.runHooksInformer()
+	defer c.shutdownHooksInformer()
+
 	for {
 		err := c.connect()
 		if err != nil {
@@ -155,9 +158,6 @@ func (c *Client) connect() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
-
-	c.runHooksInformer(clientset)
-	defer c.shutdownHooksInformer()
 
 	c.appStateMonitor = appstate.NewMonitor(clientset, c.TargetNamespace)
 	defer c.appStateMonitor.Shutdown()
