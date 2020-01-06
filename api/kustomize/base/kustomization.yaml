@@ -1,6 +1,5 @@
 
 resources:
 - ./deployment.yaml
-- ./fake-secret.yaml
 - ./fake-session-secret.yaml
 - ./service.yaml

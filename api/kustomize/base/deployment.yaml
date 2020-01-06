@@ -37,10 +37,6 @@ spec:
                   - kotsadm-api
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
-      volumes:
-        - name: github-app-private-key
-          secret:
-            secretName: github-app-private-key
       containers:
         - name: kotsadm-api
           image: kotsadm-api

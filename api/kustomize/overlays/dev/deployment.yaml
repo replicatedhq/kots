@@ -40,23 +40,6 @@ spec:
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
               value: "true"
-            - name: GITHUB_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: client-id
-            - name: GITHUB_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: client-secret
-            - name: GITHUB_INTEGRATION_ID
-              valueFrom:
-                secretKeyRef:
-                  name: github-app
-                  key: integration-id
-            - name: GITHUB_PRIVATE_KEY_FILE
-              value: /keys/github/private-key.pem
             - name: SHIP_API_ENDPOINT
               value: http://kotsadm-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
@@ -74,9 +57,6 @@ spec:
             - name: SHARED_PASSWORD_BCRYPT
               value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
           volumeMounts:
-            - name: github-app-private-key
-              mountPath: /keys/github
-              readOnly: true
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
       volumes:
