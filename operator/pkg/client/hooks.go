@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -17,10 +16,10 @@ import (
 func (c *Client) runHooksInformer(clientset *kubernetes.Clientset) error {
 	restClient := clientset.RESTClient()
 
+	c.hookStopChans = []chan struct{}{}
+
 	// Watch jobs
 	go func() {
-		ctx := context.Background()
-
 		jobWatchList := cache.NewListWatchFromClient(restClient, "jobs", "", fields.Everything())
 		resyncPeriod := 30 * time.Second
 
@@ -61,7 +60,16 @@ func (c *Client) runHooksInformer(clientset *kubernetes.Clientset) error {
 				},
 			},
 		)
-
-		controller.Run(ctx.Done())
+		stopChan := make(chan struct{})
+		c.hookStopChans = append(c.hookStopChans, stopChan)
+		controller.Run(stopChan)
 	}()
+
+	return nil
+}
+
+func (c *Client) shutdownHooksInformer() {
+	for _, stopChan := range c.hookStopChans {
+		stopChan <- struct{}{}
+	}
 }

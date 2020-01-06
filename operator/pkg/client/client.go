@@ -62,6 +62,7 @@ type Client struct {
 	TargetNamespace string
 
 	appStateMonitor *appstate.Monitor
+	hookStopChans   []chan struct{}
 }
 
 func (c *Client) Run() error {
@@ -156,6 +157,7 @@ func (c *Client) connect() error {
 	}
 
 	c.runHooksInformer(clientset)
+	defer c.shutdownHooksInformer()
 
 	c.appStateMonitor = appstate.NewMonitor(clientset, c.TargetNamespace)
 	defer c.appStateMonitor.Shutdown()
