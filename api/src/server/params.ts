@@ -16,7 +16,6 @@ export class Params {
   readonly bugsnagKey: string;
   readonly sessionKey: string;
   readonly shipOutputBucket: string;
-  readonly airgapBucket: string;
   readonly sigsciRpcAddress: string;
   readonly shipApiEndpoint: string;
   readonly objectStoreInDatabase: string;
@@ -42,7 +41,6 @@ export class Params {
     bugsnagKey,
     sessionKey,
     shipOutputBucket,
-    airgapBucket,
     sigsciRpcAddress,
     shipApiEndpoint,
     objectStoreInDatabase,
@@ -67,7 +65,6 @@ export class Params {
     this.bugsnagKey = bugsnagKey;
     this.sessionKey = sessionKey;
     this.shipOutputBucket = shipOutputBucket;
-    this.airgapBucket = airgapBucket;
     this.sigsciRpcAddress = sigsciRpcAddress;
     this.shipApiEndpoint = shipApiEndpoint;
     this.objectStoreInDatabase = objectStoreInDatabase;
@@ -100,7 +97,6 @@ export class Params {
       bugsnagKey: params["BUGSNAG_KEY"],
       sessionKey: params["SESSION_KEY"],
       shipOutputBucket: params["S3_BUCKET_NAME"],
-      airgapBucket: params["AIRGAP_BUNDLE_S3_BUCKET"],
       sigsciRpcAddress: params["SIGSCI_RPC_ADDRESS"],
       shipApiEndpoint: process.env["SHIP_API_ENDPOINT"],
       objectStoreInDatabase: process.env["OBJECT_STORE_IN_DATABASE"],
@@ -133,7 +129,6 @@ export class Params {
       BUGSNAG_KEY: "/shipcloud/bugsnag/key",
       SESSION_KEY: "/shipcloud/session/key",
       S3_BUCKET_NAME: "/shipcloud/s3/ship_output_bucket",
-      AIRGAP_BUNDLE_S3_BUCKET: "/shipcloud/airgap_bucket_name",
       SIGSCI_RPC_ADDRESS: "/shipcloud/sigsci_rpc_address",
       SHIP_API_ENDPOINT: "",
       OBJECT_STORE_IN_DATABASE: "",

@@ -6,6 +6,7 @@ import Helmet from "react-helmet";
 import dayjs from "dayjs";
 import MonacoEditor from "react-monaco-editor";
 import relativeTime from "dayjs/plugin/relativeTime";
+import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import moment from "moment";
 import changeCase from "change-case";
@@ -13,6 +14,7 @@ import find from "lodash/find";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
@@ -21,6 +23,12 @@ import has from "lodash/has";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
+
+const COMMON_ERRORS = {
+  "HTTP 401": "Registry credentials are invalid",
+  "invalid username/password": "Registry credentials are invalid",
+  "no such host": "No such host"
+};
 
 class AppVersionHistory extends Component {
   state = {
@@ -35,13 +43,17 @@ class AppVersionHistory extends Component {
     selectedDiffReleases: false,
     checkedReleasesToDiff: [],
     diffHovered: false,
+    uploadingAirgapFile: false,
     checkingForUpdates: false,
     checkingUpdateText: "Checking for updates",
     errorCheckingUpdate: false,
+    airgapUploadError: null,
     showDiffOverlay: false,
     firstSequence: 0,
     secondSequence: 0,
-    updateChecker: new Repeater()
+    updateChecker: new Repeater(),
+    uploadTotal: 0,
+    uploadSent: 0
   }
 
   componentDidMount() {
@@ -455,6 +467,76 @@ class AppVersionHistory extends Component {
     });
   }
 
+  onDropBundle = async files => {
+    this.setState({ 
+      uploadingAirgapFile: true,
+      checkingForUpdates: true,
+      airgapUploadError: null
+    });
+
+    const formData = new FormData();
+    formData.append("file", files[0]);
+    formData.append("appId", this.props.app.id);
+
+    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap/update`;
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+
+    xhr.setRequestHeader("Authorization", Utilities.getToken())
+
+    xhr.upload.onprogress = event => {
+      const total = event.total;
+      const sent = event.loaded;
+
+      this.setState({
+        uploadSent: sent,
+        uploadTotal: total
+      });
+    }
+
+    xhr.upload.onerror = () => {
+      this.setState({
+        uploadingAirgapFile: false,
+        checkingForUpdates: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        airgapUploadError: "Error uploading bundle, please try again"
+      });
+    }
+
+    xhr.onloadend = async () => {
+      const response = xhr.response;
+      if (xhr.status === 202) {
+        this.state.updateChecker.start(this.updateStatus, 1000);
+        this.setState({
+          uploadingAirgapFile: false
+        });
+      } else {
+        this.setState({
+          uploadingAirgapFile: false,
+          checkingForUpdates: false,
+          airgapUploadError: `Error uploading airgap bundle: ${response}`
+        });
+      }
+    }
+
+    xhr.send(formData);
+  }
+
+  onProgressError = async (airgapUploadError) => {
+    Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
+      if (airgapUploadError.includes(errorString)){
+        airgapUploadError = message;
+      }
+    });
+    this.setState({
+      airgapUploadError,
+      checkingForUpdates: false,
+      uploadSent: 0,
+      uploadTotal: 0
+    });
+  }
+
   renderDiffBtn = () => {
     const { app, data } = this.props;
     const { 
@@ -569,9 +651,13 @@ class AppVersionHistory extends Component {
       checkingForUpdates,
       checkingUpdateText,
       errorCheckingUpdate,
+      airgapUploadError,
       showDiffOverlay,
       firstSequence,
-      secondSequence
+      secondSequence,
+      uploadingAirgapFile,
+      uploadTotal,
+      uploadSent
     } = this.state;
 
     if (!app) {
@@ -593,10 +679,23 @@ class AppVersionHistory extends Component {
     }
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
-    if (errorCheckingUpdate) {
+    if (airgapUploadError) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{airgapUploadError}</p>
+    } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
+      if (app.isAirgap && uploadingAirgapFile) {
+        updateText = (
+          <AirgapUploadProgress
+            total={uploadTotal}
+            sent={uploadSent}
+            onProgressError={this.onProgressError}
+            smallSize={true}
+          />
+        );
+      } else {
+        updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
+      }
     } else if (!app.lastUpdateCheck) {
       updateText = null;
     }
@@ -641,7 +740,18 @@ class AppVersionHistory extends Component {
               <div className="flex-auto flex-column alignItems--center justifyContent--center">
                 {checkingForUpdates
                   ? <Loader size="32" />
-                  : <button className="btn secondary blue" onClick={isAirgap ? this.onUploadNewVersion : this.onCheckForUpdates}>{isAirgap ? "Upload new version" : "Check for updates"}</button>
+                  : isAirgap
+                    ?
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept=".airgap"
+                      onDropAccepted={this.onDropBundle}
+                      multiple={false}
+                    >
+                      <button className="btn secondary blue">Upload new version</button>
+                    </Dropzone>
+                    :
+                    <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
                 }
                 {updateText}
               </div>
