@@ -1,6 +1,7 @@
 package base
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"strconv"
@@ -9,6 +10,8 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
+	batchv1 "k8s.io/api/batch/v1"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -47,6 +50,37 @@ func GetGVKWithNameHash(content []byte) []byte {
 	h := sha256.New()
 	h.Write([]byte(fmt.Sprintf("%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name)))
 	return h.Sum(nil)
+}
+
+func (f BaseFile) transpileHelmHooksToKotsHooks() error {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(f.Content, nil, nil)
+	if err != nil {
+		return nil // this isn't an error, it's just not a job witih a hook, that's certain
+	}
+
+	// we currently only support hooks on jobs
+	if gvk.Group != "batch" || gvk.Version != "v1" || gvk.Kind != "Job" {
+		return nil
+	}
+
+	job := obj.(*batchv1.Job)
+
+	helmHookDeletePolicyAnnotation, ok := job.Annotations["helm.sh/hook-delete-policy"]
+	if !ok {
+		return nil
+	}
+
+	job.Annotations["kots.io/hook-delete-policy"] = helmHookDeletePolicyAnnotation
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(job, &b); err != nil {
+		panic(err)
+	}
+
+	f.Content = b.Bytes()
+	return nil
 }
 
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
