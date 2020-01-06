@@ -155,7 +155,7 @@ func (c *Client) connect() error {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
 
-	go c.runHooksInformer(clientset)
+	c.runHooksInformer(clientset)
 
 	c.appStateMonitor = appstate.NewMonitor(clientset, c.TargetNamespace)
 	defer c.appStateMonitor.Shutdown()

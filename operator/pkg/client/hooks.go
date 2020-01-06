@@ -14,7 +14,6 @@ import (
 )
 
 // runHooksInformer will create goroutines to start various informers for kots objects
-// this function blocks
 func (c *Client) runHooksInformer(clientset *kubernetes.Clientset) error {
 	restClient := clientset.RESTClient()
 
@@ -65,8 +64,4 @@ func (c *Client) runHooksInformer(clientset *kubernetes.Clientset) error {
 
 		controller.Run(ctx.Done())
 	}()
-
-	// TODO watch other types?
-
-	select {}
 }
