@@ -76,7 +76,7 @@ func (f BaseFile) transpileHelmHooksToKotsHooks() error {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(job, &b); err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to encode job")
 	}
 
 	f.Content = b.Bytes()
