@@ -18,34 +18,36 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 )
 
 type ConfigChildItem struct {
-	Name        string `json:"name"`
-	Title       string `json:"title"`
-	Recommended bool   `json:"recommended,omitempty"`
-	Default     string `json:"default,omitempty"`
-	Value       string `son:"value,omitempty"`
+	Name        string                 `json:"name"`
+	Title       string                 `json:"title"`
+	Recommended bool                   `json:"recommended,omitempty"`
+	Default     multitype.BoolOrString `json:"default,omitempty"`
+	Value       multitype.BoolOrString `son:"value,omitempty"`
 }
 
 type ConfigItem struct {
-	Name        string            `json:"name"`
-	Type        string            `json:"type"`
-	Title       string            `json:"title,omitempty"`
-	HelpText    string            `json:"help_text,omitempty"`
-	Recommended bool              `json:"recommended,omitempty"`
-	Default     string            `json:"default,omitempty"`
-	Value       string            `json:"value,omitempty"`
-	MultiValue  []string          `json:"multi_value,omitempty"`
-	ReadOnly    bool              `json:"readonly,omitempty"`
-	WriteOnce   bool              `json:"write_once,omitempty"`
-	When        string            `json:"when,omitempty"`
-	Multiple    bool              `json:"multiple,omitempty"`
-	Hidden      bool              `json:"hidden,omitempty"`
-	Position    int               `json:"-"`
-	Affix       string            `json:"affix,omitempty"`
-	Required    bool              `json:"required,omitempty"`
-	Items       []ConfigChildItem `json:"items,omitempty"`
+	Name        string                 `json:"name"`
+	Type        string                 `json:"type"`
+	Title       string                 `json:"title,omitempty"`
+	HelpText    string                 `json:"help_text,omitempty"`
+	Recommended bool                   `json:"recommended,omitempty"`
+	Default     multitype.BoolOrString `json:"default,omitempty"`
+	Value       multitype.BoolOrString `json:"value,omitempty"`
+	MultiValue  []string               `json:"multi_value,omitempty"`
+	ReadOnly    bool                   `json:"readonly,omitempty"`
+	WriteOnce   bool                   `json:"write_once,omitempty"`
+	When        string                 `json:"when,omitempty"`
+	Multiple    bool                   `json:"multiple,omitempty"`
+	Hidden      bool                   `json:"hidden,omitempty"`
+	Position    int                    `json:"-"`
+	Affix       string                 `json:"affix,omitempty"`
+	Required    bool                   `json:"required,omitempty"`
+	Items       []ConfigChildItem      `json:"items,omitempty"`
 	// Props       map[string]interface{} `json:"props,omitempty"`
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`

@@ -498,12 +498,12 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 				foundValue = prevValue.Value
 			}
 
-			renderedValue, err := builder.RenderTemplate(item.Name, item.Value)
+			renderedValue, err := builder.RenderTemplate(item.Name, item.Value.String())
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render config item value")
 			}
 
-			renderedDefault, err := builder.RenderTemplate(item.Name, item.Default)
+			renderedDefault, err := builder.RenderTemplate(item.Name, item.Default.String())
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render config item default")
 			}

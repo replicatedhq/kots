@@ -29,8 +29,8 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templ
 					Default: v.Default,
 				}
 			} else {
-				builtDefault, _ := b.String(configItem.Default)
-				builtValue, _ := b.String(configItem.Value)
+				builtDefault, _ := b.String(configItem.Default.String())
+				builtValue, _ := b.String(configItem.Value.String())
 				itemValue = ItemValue{
 					Value:   builtValue,
 					Default: builtDefault,
