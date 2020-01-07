@@ -67,7 +67,6 @@ class PreflightResultErrors extends Component {
                 </CodeSnippet>
               </div>
               <div className="u-marginTop--30 flex justifyContent--flexEnd">
-                <span className="replicated-link u-fontSize--normal" onClick={this.props.retryResults}>Try again</span>
                 <span className="replicated-link u-marginLeft--20 u-fontSize--normal" onClick={this.props.ignorePermissionErrors}>
                   Proceed with limited Preflights
                 </span>
