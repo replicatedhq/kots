@@ -62,10 +62,14 @@ type Client struct {
 	TargetNamespace string
 
 	appStateMonitor *appstate.Monitor
+	hookStopChans   []chan struct{}
 }
 
 func (c *Client) Run() error {
 	log.Println("Starting kotsadm-operator loop")
+
+	c.runHooksInformer()
+	defer c.shutdownHooksInformer()
 
 	for {
 		err := c.connect()
