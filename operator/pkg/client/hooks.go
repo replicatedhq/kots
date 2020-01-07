@@ -39,7 +39,7 @@ func (c *Client) runHooksInformer() error {
 				UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 					job, ok := newObj.(*batchv1.Job)
 					if !ok {
-						fmt.Errorf("error getting new job")
+						fmt.Println("error getting new job")
 						return
 					}
 
@@ -69,7 +69,7 @@ func (c *Client) runHooksInformer() error {
 
 					fmt.Printf("attempting to %s delete job %s\n", reason, job.Name)
 					if err := clientset.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{}); err != nil {
-						fmt.Errorf("error deleting job: %s", err.Error())
+						fmt.Printf("error deleting job: %s", err.Error())
 						return
 					}
 					fmt.Printf("deleted %s job %s\n", reason, job.Name)
