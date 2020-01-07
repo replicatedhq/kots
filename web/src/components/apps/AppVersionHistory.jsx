@@ -391,10 +391,6 @@ class AppVersionHistory extends Component {
     }
   }
 
-  onUploadNewVersion = () => {
-    this.props.history.push(`/${this.props.match.params.slug}/airgap`);
-  }
-
   triggerStatusUpdates = () => {
     this.props.client.query({
       query: getUpdateDownloadStatus,
