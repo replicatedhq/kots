@@ -508,6 +508,9 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 			return nil
 		}
+
+		// Give the API server a minute (well, 5 seconds) to cache the CRDs
+		time.Sleep(time.Second * 5)
 	}
 
 	log.Println("applying manifest(s)")
