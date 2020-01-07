@@ -33,9 +33,14 @@ ADD ./deploy/install-krew.sh /install-krew.sh
 RUN /install-krew.sh
 ENV PATH="$HOME/.krew/bin:$PATH"
 
-# Install our plugins
-ENV TROUBLESHOOT_VERSION=0.9.15
+COPY ./bin/kotsadm-operator /kotsadm-operator
+USER root
+RUN chmod a+x /kotsadm-operator
+USER kotsadm-operator
 
+# Install our plugins
+USER root
+ENV TROUBLESHOOT_VERSION=0.9.15
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/preflight_linux_amd64.tar.gz" > /tmp/preflight.tar.gz && \
   cd /tmp && tar xzvf preflight.tar.gz && \
   mv /tmp/preflight /usr/local/bin/kubectl-preflight
@@ -43,10 +48,6 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${T
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/support-bundle_linux_amd64.tar.gz" > /tmp/support-bundle.tar.gz && \
   cd /tmp && tar xzvf support-bundle.tar.gz && \
   mv /tmp/support-bundle /usr/local/bin/kubectl-support_bundle
-
-COPY ./bin/kotsadm-operator /kotsadm-operator
-USER root
-RUN chmod a+x /kotsadm-operator
 USER kotsadm-operator
 
 EXPOSE 3000
