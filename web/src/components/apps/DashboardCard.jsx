@@ -105,7 +105,6 @@ export default class DashboardCard extends React.Component {
     const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
-
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
