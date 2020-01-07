@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -21,7 +22,7 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	// This process will re-order items and discard comments, so it should not be saved.
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(configSpecData), nil, nil)
+	obj, _, err := decode([]byte(configSpecData), nil, nil) // TODO fix decode of boolstrings
 	if err != nil {
 		return "", errors.Wrap(err, "failed to decode config data")
 	}
@@ -74,14 +75,14 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 		for idxI, i := range g.Items {
 			value, ok := values[i.Name]
 			if ok {
-				config.Spec.Groups[idxG].Items[idxI].Value = value.ValueStr()
-				config.Spec.Groups[idxG].Items[idxI].Default = value.DefaultStr()
+				config.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
+				config.Spec.Groups[idxG].Items[idxI].Default = multitype.FromString(value.DefaultStr())
 			}
 			for idxC, c := range i.Items {
 				value, ok := values[c.Name]
 				if ok {
-					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = value.ValueStr()
-					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = value.DefaultStr()
+					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = multitype.FromString(value.ValueStr())
+					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = multitype.FromString(value.DefaultStr())
 				}
 			}
 		}

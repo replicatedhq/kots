@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -170,23 +171,38 @@ func Test_createConfigValues(t *testing.T) {
 					Items: []kotsv1beta1.ConfigItem{
 						// should replace default
 						kotsv1beta1.ConfigItem{
-							Name:    "1_with_default",
-							Type:    "string",
-							Default: "default_1_new",
-							Value:   "",
+							Name: "1_with_default",
+							Type: "string",
+							Default: multitype.BoolOrString{
+								Type:   multitype.String,
+								StrVal: "default_1_new",
+							},
+							Value: multitype.BoolOrString{
+								Type:   multitype.String,
+								StrVal: "",
+							},
 						},
 						// should preserve value and add default
 						kotsv1beta1.ConfigItem{
-							Name:    "2_with_value",
-							Type:    "string",
-							Default: "default_2",
-							Value:   "value_2_new",
+							Name: "2_with_value",
+							Type: "string",
+							Default: multitype.BoolOrString{
+								Type:   multitype.String,
+								StrVal: "default_2",
+							},
+							Value: multitype.BoolOrString{
+								Type:   multitype.String,
+								StrVal: "value_2_new",
+							},
 						},
 						// should add a new item
 						kotsv1beta1.ConfigItem{
-							Name:    "4_with_default",
-							Type:    "string",
-							Default: "default_4",
+							Name: "4_with_default",
+							Type: "string",
+							Default: multitype.BoolOrString{
+								Type:   multitype.String,
+								StrVal: "default_4",
+							},
 						},
 					},
 				},
