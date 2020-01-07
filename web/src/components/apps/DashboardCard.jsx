@@ -1,11 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Dropzone from "react-dropzone";
 
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 import dayjs from "dayjs";
 import size from "lodash/size";
+import AirgapUploadProgress from "../AirgapUploadProgress";
 
 import Loader from "../shared/Loader";
 
@@ -101,12 +103,23 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, isAirgap, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, onUploadNewVersion, redirectToDiff } = this.props;
+    const { app, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff } = this.props;
     const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
-    if (errorCheckingUpdate) {
+    if (this.props.airgapUploadError) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{this.props.airgapUploadError}</p>
+    } else if (this.props.uploadingAirgapFile) {
+      updateText = (
+        <AirgapUploadProgress
+          total={this.props.uploadTotal}
+          sent={this.props.uploadSent}
+          onProgressError={this.props.onProgressError}
+          smallSize={true}
+        />
+      );
+    } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateText}</p>
@@ -114,16 +127,28 @@ export default class DashboardCard extends React.Component {
       updateText = null;
     }
 
+    const showAirgapUI = app.isAirgap && !this.props.uploadingAirgapFile && !checkingForUpdates;
+    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
+
     return (
       <div>
         <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {currentVersion?.status === "deployed" ? "Installed" : ""} </p>
         <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
 
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
-        {checkingForUpdates
-          ? <Loader size="32" className="flex justifyContent--center u-marginTop--10" />
-          : <button className="btn primary lightBlue u-marginTop--10" onClick={isAirgap ? onUploadNewVersion : isUpdateAvailable ? redirectToDiff : onCheckForUpdates}> {isAirgap ? "Upload new version" : isUpdateAvailable ? "Show Update" : "Check for update"} </button>
-        }
+        {checkingForUpdates && <Loader size="32" className="flex justifyContent--center u-marginTop--10" />}
+        {showAirgapUI && <Dropzone
+            className="Dropzone-wrapper"
+            accept=".airgap"
+            onDropAccepted={this.props.onDropBundle}
+            multiple={false}
+          >
+            <button className="btn secondary blue">Upload new version</button>
+          </Dropzone>}
+        {showOnlineUI && <button className="btn primary lightBlue u-marginTop--10"
+          onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>
+            {isUpdateAvailable ? "Show Update" : "Check for update"}
+          </button>}
         {updateText}
       </div>
     )

@@ -27,7 +27,7 @@ function AirgapUploadProgress(props) {
     percentage = Math.floor((sent / total) * 100).toFixed() + "%";
     progressBar = (
       <div className={`progressbar ${smallSize && "small"}`}>
-        <div className="progressbar-meter" style={{ width: `${(sent / total) * (smallSize ? 200 : 600)}px` }} />
+        <div className="progressbar-meter" style={{ width: `${(sent / total) * (smallSize ? 100 : 600)}px` }} />
       </div>
     );
   } else {

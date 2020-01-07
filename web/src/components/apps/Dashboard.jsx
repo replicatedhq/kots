@@ -8,7 +8,7 @@ import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import { Repeater } from "../../utilities/repeater";
-
+import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
@@ -19,6 +19,12 @@ import Handlebars from "handlebars";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
+
+const COMMON_ERRORS = {
+  "HTTP 401": "Registry credentials are invalid",
+  "invalid username/password": "Registry credentials are invalid",
+  "no such host": "No such host"
+};
 
 class Dashboard extends Component {
 
@@ -37,8 +43,10 @@ class Dashboard extends Component {
     savingPromValue: false,
     activeChart: null,
     crosshairValues: [],
-    updateChecker: new Repeater()
-  }
+    updateChecker: new Repeater(),
+    uploadingAirgapFile: false,
+    airgapUploadError: null
+}
 
   toggleConfigureGraphs = () => {
     const { showConfigureGraphs } = this.state;
@@ -113,6 +121,10 @@ class Dashboard extends Component {
       this.setState({ appLicense: getAppLicense });
     }
     this.props.getKotsAppDashboard.startPolling(2000);
+  }
+
+  componentWillUnmount() {
+    this.state.updateChecker.stop();
   }
 
   onCheckForUpdates = async () => {
@@ -191,8 +203,76 @@ class Dashboard extends Component {
     this.props.history.push(`${this.props.match.params.slug}/version-history/diff/${currentSequence}/${pendingSequence}`)
   }
 
-  onUploadNewVersion = () => {
-    this.props.history.push(`/${this.props.match.params.slug}/airgap`);
+  onDropBundle = async files => {
+    this.setState({ 
+      uploadingAirgapFile: true,
+      checkingForUpdates: true,
+      airgapUploadError: null,
+      uploadSent: 0,
+      uploadTotal: 0
+  });
+
+    const formData = new FormData();
+    formData.append("file", files[0]);
+    formData.append("appId", this.props.app.id);
+  
+    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap/update`;
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+
+    xhr.setRequestHeader("Authorization", Utilities.getToken())
+
+    xhr.upload.onprogress = event => {
+      const total = event.total;
+      const sent = event.loaded;
+
+      this.setState({
+        uploadSent: sent,
+        uploadTotal: total
+      });
+    }
+
+    xhr.upload.onerror = () => {
+      this.setState({
+        uploadingAirgapFile: false,
+        checkingForUpdates: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        airgapUploadError: "Error uploading bundle, please try again"
+      });
+    }
+
+    xhr.onloadend = async () => {
+      const response = xhr.response;
+      if (xhr.status === 202) {
+        this.state.updateChecker.start(this.updateStatus, 1000);
+        this.setState({
+          uploadingAirgapFile: false
+        });
+      } else {
+        this.setState({
+          uploadingAirgapFile: false,
+          checkingForUpdates: false,
+          airgapUploadError: `Error uploading airgap bundle: ${response}`
+        });
+      }
+    }
+
+    xhr.send(formData);
+  }
+
+  onProgressError = async (airgapUploadError) => {
+    Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
+      if (airgapUploadError.includes(errorString)){
+        airgapUploadError = message;
+      }
+    });
+    this.setState({
+      airgapUploadError,
+      checkingForUpdates: false,
+      uploadSent: 0,
+      uploadTotal: 0
+    });
   }
 
   getLegendItems = (chart) => {
@@ -316,6 +396,8 @@ class Dashboard extends Component {
       checkingForUpdates,
       checkingUpdateText,
       errorCheckingUpdate,
+      uploadingAirgapFile,
+      airgapUploadError,
       appLicense,
       showConfigureGraphs,
       promValue,
@@ -324,7 +406,6 @@ class Dashboard extends Component {
 
     const { app } = this.props;
 
-    const isAirgap = app.isAirgap;
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
 
     if (!app || !appLicense) {
@@ -370,12 +451,17 @@ class Dashboard extends Component {
                 versionHistory={true}
                 currentVersion={currentVersion}
                 downstreams={downstreams}
-                isAirgap={isAirgap}
                 app={app}
                 url={this.props.match.url}
                 checkingForUpdates={checkingForUpdates}
                 checkingUpdateText={checkingUpdateText}
                 errorCheckingUpdate={errorCheckingUpdate}
+                onDropBundle={this.onDropBundle}
+                uploadingAirgapFile={uploadingAirgapFile}
+                airgapUploadError={airgapUploadError}
+                uploadSent={this.state.uploadSent}
+                uploadTotal={this.state.uploadTotal}
+                onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 redirectToDiff={() => this.redirectToDiff(currentVersion?.sequence, latestPendingVersion.sequence)}
