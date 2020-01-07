@@ -420,7 +420,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		if _, ok := decodedCurrentMap[k]; !ok {
 			gv, k, n, err := ParseSimpleGVK([]byte(oldContents))
 			if err != nil {
-				log.Println("deleting unidentified manifest")
+				log.Printf("deleting unidentified manifest. unable to parse error: %s\n", err.Error())
 			} else {
 				log.Printf("deleting manifest(s): %s/%s/%s\n", gv, k, n)
 			}
