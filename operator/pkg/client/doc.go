@@ -2,6 +2,9 @@ package client
 
 import (
 	"strings"
+
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func splitMutlidocYAMLIntoCRDsAndOthers(multidoc []byte) ([]byte, []byte, error) {
@@ -23,4 +26,36 @@ func splitMutlidocYAMLIntoCRDsAndOthers(multidoc []byte) ([]byte, []byte, error)
 	}
 
 	return []byte(strings.Join(crds, "\n---\n")), []byte(strings.Join(other, "\n---\n")), nil
+}
+
+func docsByNamespace(multidoc []byte, defaultNamespace string) (map[string][]byte, error) {
+	byNamespace := map[string][]string{}
+
+	docs := strings.Split(string(multidoc), "\n---\n")
+	for _, doc := range docs {
+		o := OverlySimpleGVKWithName{}
+
+		if err := yaml.Unmarshal([]byte(doc), &o); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal doc to look for namespace")
+		}
+
+		namespace := o.Metadata.Namespace
+		if namespace == "" {
+			namespace = defaultNamespace
+		}
+
+		_, ok := byNamespace[namespace]
+		if ok {
+			byNamespace[namespace] = append(byNamespace[namespace], doc)
+		} else {
+			byNamespace[namespace] = []string{doc}
+		}
+	}
+
+	result := map[string][]byte{}
+	for k, v := range byNamespace {
+		result[k] = []byte(strings.Join(v, "\n---\n"))
+	}
+
+	return result, nil
 }

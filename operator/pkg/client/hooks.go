@@ -46,7 +46,7 @@ func (c *Client) runHooksInformer() error {
 					// if the job doesn't contain our annotation, ignore it
 					hookValue, ok := job.Annotations["kots.io/hook-delete-policy"]
 					if !ok {
-						fmt.Println("no annotation found, ignoring")
+						fmt.Println("no annotation found on job, not going to handle any cleanup")
 						return
 					}
 

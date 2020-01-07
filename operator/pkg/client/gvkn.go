@@ -14,7 +14,8 @@ type OverlySimpleGVKWithName struct {
 }
 
 type OverlySimpleMetadata struct {
-	Name string `yaml:"name"`
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
 }
 
 func GetGVKWithName(content []byte) string {
@@ -37,4 +38,14 @@ func IsCRD(content []byte) bool {
 	}
 
 	return o.APIVersion == "apiextensions.k8s.io/v1beta1" && o.Kind == "CustomResourceDefinition"
+}
+
+func ParseSimpleGVK(content []byte) (string, string, string, error) {
+	o := OverlySimpleGVKWithName{}
+
+	if err := yaml.Unmarshal(content, &o); err != nil {
+		return "", "", "", nil
+	}
+
+	return o.APIVersion, o.Kind, o.Metadata.Name, nil
 }

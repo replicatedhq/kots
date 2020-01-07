@@ -418,7 +418,12 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 
 	for k, oldContents := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; !ok {
-			log.Println("deleting manifest(s)")
+			gv, k, n, err := ParseSimpleGVK([]byte(oldContents))
+			if err != nil {
+				log.Println("deleting unidentified manifest")
+			} else {
+				log.Printf("deleting manifest(s): %s/%s/%s\n", gv, k, n)
+			}
 			stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents))
 			if err != nil {
 				log.Printf("stdout (delete) = %s", stdout)
@@ -431,10 +436,10 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 	return nil
 }
 
-func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
-	kubectl, err := util.FindKubectlVersion(applicationManifests.KubectlVersion)
+func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
+	kubectl, err := util.FindKubectlVersion(kubectlVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
+		return nil, errors.Wrap(err, "failed to find kubectl")
 	}
 
 	preflight := ""
@@ -451,79 +456,8 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
+		return nil, errors.Wrap(err, "failed to get in cluster config")
 	}
 
-	// this is pretty raw, and required kubectl...  we should
-	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
-
-	targetNamespace := c.TargetNamespace
-	if applicationManifests.Namespace != "." {
-		targetNamespace = applicationManifests.Namespace
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
-	}
-
-	customResourceDefinitions, otherDocs, err := splitMutlidocYAMLIntoCRDsAndOthers(decoded)
-	if err != nil {
-		return errors.Wrap(err, "failed to split decoded into crds and other")
-	}
-
-	// We don't dry run if there's a crd becasue there's a likely chance that the
-	// other docs has a custom resource using it
-	shouldDryRun := customResourceDefinitions != nil
-	if shouldDryRun {
-		log.Println("dry run applying manifests(s)")
-		dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(targetNamespace, decoded, true)
-		if dryRunErr != nil {
-			log.Printf("stdout (dryrun) = %s", dryrunStdout)
-			log.Printf("stderr (dryrun) = %s", dryrunStderr)
-			log.Printf("error: %s", dryRunErr.Error())
-		}
-
-		if dryRunErr != nil {
-			if err := c.sendResult(applicationManifests, true, dryrunStdout, dryrunStderr, []byte{}, []byte{}); err != nil {
-				return errors.Wrap(err, "failed to report dry run status")
-			}
-
-			return nil // don't return an error because execution is proper, the api now has the error
-		}
-	}
-
-	if len(customResourceDefinitions) > 0 {
-		log.Println("applying custom resource definition(s)")
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(targetNamespace, customResourceDefinitions, false)
-		if applyErr != nil {
-			log.Printf("stdout (apply CRDS) = %s", applyStdout)
-			log.Printf("stderr (apply CRDS) = %s", applyStderr)
-			log.Printf("error (CRDS): %s", applyErr.Error())
-
-			if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
-				return errors.Wrap(err, "failed to report crd status")
-			}
-
-			return nil
-		}
-
-		// Give the API server a minute (well, 5 seconds) to cache the CRDs
-		time.Sleep(time.Second * 5)
-	}
-
-	log.Println("applying manifest(s)")
-	applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(targetNamespace, otherDocs, false)
-	if err != nil {
-		log.Printf("stdout (apply) = %s", applyStdout)
-		log.Printf("stderr (apply) = %s", applyStderr)
-		log.Printf("error: %s", applyErr.Error())
-	}
-
-	if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
-		return errors.Wrap(err, "failed to report status")
-	}
-
-	return nil
+	return applier.NewKubectl(kubectl, preflight, supportBundle, config), nil
 }
