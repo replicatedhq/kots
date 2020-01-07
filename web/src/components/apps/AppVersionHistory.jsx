@@ -216,7 +216,7 @@ class AppVersionHistory extends Component {
     const clusterSlug = downstream.cluster?.slug;
     return (
       <Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`}>
-        <span className="link" style={{ fontSize: 14 }}>View results</span>
+        <span className="replicated-link" style={{ fontSize: 12 }}>View preflight results</span>
       </Link>
     );
   }
@@ -227,11 +227,32 @@ class AppVersionHistory extends Component {
     if (!downstream) {
       return null;
     }
+
+    let preflightsFailed = false;
+    if (version.status === "pending" && version.preflightResult) {
+      const parsed = JSON.parse(version.preflightResult);
+      preflightsFailed = parsed && parsed.errors;
+    }
+
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
     if (isPastVersion && isPastVersion.status !== "failed") {
       return null;
     }
     const clusterSlug = downstream.cluster?.slug;
+
+    let preflightBlock = null;
+    if (version.status === "pending_preflight") {
+      preflightBlock = (
+        <span className="flex u-marginLeft--5 alignItems--center">
+          <Loader size="20" />
+        </span>);
+    } else if (app.hasPreflight && version.status === "pending") {
+      if (preflightsFailed) {
+        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
+      } else {
+        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
+      }
+    }
 
     return (
       <div className="flex alignItems--center" style={{ position: "relative", top: "-2px" }}>
@@ -255,13 +276,7 @@ class AppVersionHistory extends Component {
             {Utilities.toTitleCase(version.status === "pending_preflight" ? "Running checks" : version.status === "pending" ? "Ready to deploy" : version.status).replace("_", " ")}
           </span>
         </div>
-        {version.status === "pending_preflight" ?
-          <span className="flex u-marginLeft--5 alignItems--center">
-            <Loader size="20" />
-          </span>
-          : app.hasPreflight && version.status === "pending" &&
-          <Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>
-        }
+        {preflightBlock}
         {version.status === "failed" &&
           <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version)}>View logs</span>
         }
@@ -796,7 +811,7 @@ class AppVersionHistory extends Component {
                   {versionHistory.length > 1 && this.renderDiffBtn()}
                 </div>
                 {/* Downstream version history */}
-                {versionHistory.length && versionHistory.map((version) => {
+                {versionHistory.length >= 1 ? versionHistory.map((version) => {
                   const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                   return (
                     <div 
@@ -830,7 +845,11 @@ class AppVersionHistory extends Component {
                       </div>
                     </div>
                   );
-                })}
+                }) : 
+                  <div className="flex-column flex1 alignItems--center justifyContent--center">
+                    <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">No versions have been deployed.</p>
+                  </div>
+                }
 
                 {/* Diff overlay */}
                 {showDiffOverlay &&

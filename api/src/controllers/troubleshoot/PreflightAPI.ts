@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Controller, Get, Post, Res, Req } from "@tsed/common";
+import { Controller, Get, Post, Res, Req, QueryParams } from "@tsed/common";
 import jsYaml from "js-yaml";
 
 import { Params } from "../../server/params";
@@ -11,6 +11,7 @@ export class PreflightAPI {
   async getPreflightStatus(
     @Req() request: Request,
     @Res() response: Response,
+    @QueryParams("incluster") inCluster: string,
   ): Promise<void> {
     const { appSlug, clusterSlug, sequence } = request.params;
 
@@ -38,8 +39,14 @@ export class PreflightAPI {
 
       const specJson = jsYaml.load(renderedSpecYaml);
 
+      let putUrl;
       const params = await Params.getParams();
-      const putUrl = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+      if (inCluster === "true") {
+        putUrl = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+      } else {
+        putUrl = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+      }
+
       specJson.spec.uploadResultsTo = putUrl;
 
       response.send(200, specJson);

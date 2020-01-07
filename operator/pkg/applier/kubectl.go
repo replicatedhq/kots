@@ -73,11 +73,14 @@ func (c *Kubectl) SupportBundle(collectorURI string) error {
 	return nil
 }
 
-func (c *Kubectl) Preflight(preflightURI string) error {
+func (c *Kubectl) Preflight(preflightURI string, ignorePermissions bool) error {
 	log.Printf("running kubectl preflight %s", preflightURI)
-	args := []string{
-		preflightURI,
+
+	args := []string{}
+	if ignorePermissions {
+		args = append(args, "--collect-without-permissions=true")
 	}
+	args = append(args, preflightURI)
 
 	cmd := c.preflightCommand(args...)
 	cmd.Env = os.Environ()

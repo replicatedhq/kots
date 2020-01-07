@@ -37,6 +37,22 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
+    async ignorePreflightPermissionErrors(root: any, args: any, context: Context): Promise<boolean> {
+      const { appSlug, clusterSlug, sequence } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
+      await stores.kotsAppStore.ignorePreflightPermissionErrors(appId, clusterId, sequence);
+      return true;
+    },
+
+    async retryPreflights(root: any, args: any, context: Context): Promise<boolean> {
+      const { appSlug, clusterSlug, sequence } = args;
+      const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
+      const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
+      await stores.kotsAppStore.retryPreflights(appId, clusterId, sequence);
+      return true;
+    },
+
     async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
       const { appId } = args;
 

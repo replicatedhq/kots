@@ -15,7 +15,7 @@ const DefaultReadyState = [{kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", st
 interface ClusterSocketHistory {
   clusterId: string;
   socketId: string;
-  sentPreflightUrls: string[];
+  sentPreflightUrls: {[key: string]: boolean};
   sentDeploySequences: string[];
 }
 
@@ -67,7 +67,7 @@ export class KotsDeploySocketService {
     this.clusterSocketHistory.push({
       clusterId: cluster.id,
       socketId: socket.id,
-      sentPreflightUrls: [],
+      sentPreflightUrls: {},
       sentDeploySequences: [],
     });
   }
@@ -105,11 +105,15 @@ export class KotsDeploySocketService {
     for (const clusterSocketHistory of this.clusterSocketHistory) {
       const apps = await this.kotsAppStore.listAppsForCluster(clusterSocketHistory.clusterId);
       for (const app of apps) {
-        const pendingPreflightURLs = await this.preflightStore.getPendingPreflightUrls();
-        for (const pendingPreflightURL of pendingPreflightURLs) {
-          if (clusterSocketHistory.sentPreflightUrls.indexOf(pendingPreflightURL) === -1) {
-            this.io.in(clusterSocketHistory.clusterId).emit("preflight", {uri: pendingPreflightURL});
-            clusterSocketHistory.sentPreflightUrls.push(pendingPreflightURL);
+        const pendingPreflightParams = await this.preflightStore.getPendingPreflightParams(true);
+        for (const param of pendingPreflightParams) {
+          if (clusterSocketHistory.sentPreflightUrls[param.url] !== param.ignorePermissions) {
+            const msg = {
+              uri: param.url,
+              ignorePermissions: param.ignorePermissions
+            }
+            this.io.in(clusterSocketHistory.clusterId).emit("preflight", msg);
+            clusterSocketHistory.sentPreflightUrls[param.url] = param.ignorePermissions;
           }
         }
 

@@ -155,3 +155,17 @@ export const disableAppGitopsRaw = `
   }
 `;
 export const disableAppGitops = gql(disableAppGitopsRaw);
+
+export const ignorePreflightPermissionErrorsRaw = `
+mutation ignorePreflightPermissionErrors($appSlug: String, $clusterSlug: String, $sequence: Int) {
+  ignorePreflightPermissionErrors(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence)
+}
+`;
+export const ignorePreflightPermissionErrors = gql(ignorePreflightPermissionErrorsRaw);
+
+export const retryPreflightsRaw = `
+mutation retryPreflights($appSlug: String, $clusterSlug: String, $sequence: Int) {
+  retryPreflights(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence)
+}
+`;
+export const retryPreflights = gql(retryPreflightsRaw);
