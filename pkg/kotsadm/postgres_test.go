@@ -32,7 +32,10 @@ func Test_getPostgresYAML(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			manifests, err := getPostgresYAML(test.namespace, test.password)
+			manifests, err := getPostgresYAML(DeployOptions{
+				Namespace:        test.namespace,
+				PostgresPassword: test.password,
+			})
 			req.NoError(err)
 			assert.NotNil(t, manifests)
 
