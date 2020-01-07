@@ -1,3 +1,5 @@
+// Based on https://github.com/kubernetes/apimachinery/blob/455a99f/pkg/util/intstr/intstr.go
+
 package multitype
 
 import (
@@ -7,7 +9,7 @@ import (
 	fuzz "github.com/google/gofuzz"
 )
 
-// BoolOrString is a type that can hold an bool32 or a string.  When used in
+// BoolOrString is a type that can hold an bool or a string.  When used in
 // JSON or YAML marshalling and unmarshalling, it produces or consumes the
 // inner type.  This allows you to have, for example, a JSON field that can
 // accept a booolean string or raw bool.
@@ -54,7 +56,7 @@ func (boolstr *BoolOrString) UnmarshalJSON(value []byte) error {
 	return json.Unmarshal(value, &boolstr.BoolVal)
 }
 
-// String returns the string value, or the Itoa of the bool value.
+// String returns the string value, '1' for true, or '' for false.
 func (boolstr *BoolOrString) String() string {
 	if boolstr.Type == String {
 		return boolstr.StrVal
