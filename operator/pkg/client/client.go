@@ -418,7 +418,12 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 
 	for k, oldContents := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; !ok {
-			log.Println("deleting manifest(s)")
+			gv, k, n, err := ParseSimpleGVK([]byte(oldContents))
+			if err != nil {
+				log.Printf("deleting unidentified manifest. unable to parse error: %s\n", err.Error())
+			} else {
+				log.Printf("deleting manifest(s): %s/%s/%s\n", gv, k, n)
+			}
 			stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents))
 			if err != nil {
 				log.Printf("stdout (delete) = %s", stdout)
@@ -431,18 +436,10 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 	return nil
 }
 
-func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
-	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
+func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
+	kubectl, err := util.FindKubectlVersion(kubectlVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
-	}
-
-	// TODO sort, order matters
-	// TODO should we split multi-doc to retry on failed?
-
-	kubectl, err := util.FindKubectlVersion(applicationManifests.KubectlVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
+		return nil, errors.Wrap(err, "failed to find kubectl")
 	}
 
 	preflight := ""
@@ -459,47 +456,8 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
+		return nil, errors.Wrap(err, "failed to get in cluster config")
 	}
 
-	// this is pretty raw, and required kubectl...  we should
-	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
-
-	targetNamespace := c.TargetNamespace
-	if applicationManifests.Namespace != "." {
-		targetNamespace = applicationManifests.Namespace
-	}
-
-	log.Println("dry run applying manifests(s)")
-	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(targetNamespace, decoded, true)
-	if dryRunErr != nil {
-		log.Printf("stdout (dryrun) = %s", drrunStdout)
-		log.Printf("stderr (dryrun) = %s", dryrunStderr)
-		log.Printf("error: %s", dryRunErr.Error())
-	}
-
-	var applyStdout []byte
-	var applyStderr []byte
-	var applyErr error
-	if dryRunErr == nil {
-		log.Println("applying manifest(s)")
-		stdout, stderr, err := kubernetesApplier.Apply(targetNamespace, decoded, false)
-		if err != nil {
-			log.Printf("stdout (apply) = %s", stdout)
-			log.Printf("stderr (apply) = %s", stderr)
-			log.Printf("error: %s", err.Error())
-		}
-
-		applyStdout = stdout
-		applyStderr = stderr
-		applyErr = err
-	}
-
-	hasErr := applyErr != nil || dryRunErr != nil
-	if err := c.sendResult(applicationManifests, hasErr, drrunStdout, dryrunStderr, applyStdout, applyStderr); err != nil {
-		return errors.Wrap(err, "failed to report status")
-	}
-
-	return nil
+	return applier.NewKubectl(kubectl, preflight, supportBundle, config), nil
 }
