@@ -7,7 +7,123 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestShouldBeIncludedInBaseKustomization(t *testing.T) {
+func Test_transpileHelmHooksToKotsHooks(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{
+			name: "not a job",
+			content: `apiVersion: batch/v1
+kind: Deployment
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+			expected: `apiVersion: batch/v1
+kind: Deployment
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+		},
+		{
+			name: "a job without a hook",
+			content: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+			expected: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+		},
+		{
+			name: "a job with a helm hook",
+			content: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+  annotations:
+    "helm.sh/hook-delete-policy": "hook-succeeded"
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+			expected: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+  annotations:
+    "helm.sh/hook-delete-policy": "hook-succeeded"
+spec:
+  template:
+    spec:
+      containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+          restartPolicy: Never
+          backoffLimit: 4`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			b := BaseFile{
+				Path:    "test",
+				Content: []byte(test.content),
+			}
+
+			err := b.transpileHelmHooksToKotsHooks()
+			req.NoError(err)
+			assert.Equal(t, test.expected, string(b.Content))
+		})
+	}
+
+}
+
+func Test_ShouldBeIncludedInBaseKustomization(t *testing.T) {
 	tests := []struct {
 		name             string
 		path             string

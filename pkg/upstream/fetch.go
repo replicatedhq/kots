@@ -56,7 +56,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Up
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, fetchOptions.CurrentCursor, pickVersionLabel(fetchOptions), cipher)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)
@@ -73,4 +73,11 @@ func pickVersionLabel(fetchOptions *FetchOptions) string {
 		return fetchOptions.Airgap.Spec.VersionLabel
 	}
 	return fetchOptions.CurrentVersionLabel
+}
+
+func pickCursor(fetchOptions *FetchOptions) string {
+	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.UpdateCursor != "" {
+		return fetchOptions.Airgap.Spec.UpdateCursor
+	}
+	return fetchOptions.CurrentCursor
 }
