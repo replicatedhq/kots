@@ -28,3 +28,13 @@ func GetGVKWithName(content []byte) string {
 	h.Write([]byte(fmt.Sprintf("%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name)))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
+
+func IsCRD(content []byte) bool {
+	o := OverlySimpleGVKWithName{}
+
+	if err := yaml.Unmarshal(content, &o); err != nil {
+		return false
+	}
+
+	return o.APIVersion == "apiextensions.k8s.io/v1beta1" && o.Kind == "CustomResourceDefinition"
+}

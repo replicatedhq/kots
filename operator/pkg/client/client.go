@@ -432,14 +432,6 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 }
 
 func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
-	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
-	}
-
-	// TODO sort, order matters
-	// TODO should we split multi-doc to retry on failed?
-
 	kubectl, err := util.FindKubectlVersion(applicationManifests.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
@@ -471,33 +463,62 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		targetNamespace = applicationManifests.Namespace
 	}
 
-	log.Println("dry run applying manifests(s)")
-	drrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(targetNamespace, decoded, true)
-	if dryRunErr != nil {
-		log.Printf("stdout (dryrun) = %s", drrunStdout)
-		log.Printf("stderr (dryrun) = %s", dryrunStderr)
-		log.Printf("error: %s", dryRunErr.Error())
+	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode manifests")
 	}
 
-	var applyStdout []byte
-	var applyStderr []byte
-	var applyErr error
-	if dryRunErr == nil {
-		log.Println("applying manifest(s)")
-		stdout, stderr, err := kubernetesApplier.Apply(targetNamespace, decoded, false)
-		if err != nil {
-			log.Printf("stdout (apply) = %s", stdout)
-			log.Printf("stderr (apply) = %s", stderr)
-			log.Printf("error: %s", err.Error())
+	customResourceDefinitions, otherDocs, err := splitMutlidocYAMLIntoCRDsAndOthers(decoded)
+	if err != nil {
+		return errors.Wrap(err, "failed to split decoded into crds and other")
+	}
+
+	// We don't dry run if there's a crd becasue there's a likely chance that the
+	// other docs has a custom resource using it
+	shouldDryRun := customResourceDefinitions != nil
+	if shouldDryRun {
+		log.Println("dry run applying manifests(s)")
+		dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(targetNamespace, decoded, true)
+		if dryRunErr != nil {
+			log.Printf("stdout (dryrun) = %s", dryrunStdout)
+			log.Printf("stderr (dryrun) = %s", dryrunStderr)
+			log.Printf("error: %s", dryRunErr.Error())
 		}
 
-		applyStdout = stdout
-		applyStderr = stderr
-		applyErr = err
+		if dryRunErr != nil {
+			if err := c.sendResult(applicationManifests, true, dryrunStdout, dryrunStderr, []byte{}, []byte{}); err != nil {
+				return errors.Wrap(err, "failed to report dry run status")
+			}
+
+			return nil // don't return an error because execution is proper, the api now has the error
+		}
 	}
 
-	hasErr := applyErr != nil || dryRunErr != nil
-	if err := c.sendResult(applicationManifests, hasErr, drrunStdout, dryrunStderr, applyStdout, applyStderr); err != nil {
+	if len(customResourceDefinitions) > 0 {
+		log.Println("applying custom resource definition(s)")
+		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(targetNamespace, customResourceDefinitions, false)
+		if applyErr != nil {
+			log.Printf("stdout (apply CRDS) = %s", applyStdout)
+			log.Printf("stderr (apply CRDS) = %s", applyStderr)
+			log.Printf("error (CRDS): %s", applyErr.Error())
+
+			if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
+				return errors.Wrap(err, "failed to report crd status")
+			}
+
+			return nil
+		}
+	}
+
+	log.Println("applying manifest(s)")
+	applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(targetNamespace, otherDocs, false)
+	if err != nil {
+		log.Printf("stdout (apply) = %s", applyStdout)
+		log.Printf("stderr (apply) = %s", applyStderr)
+		log.Printf("error: %s", applyErr.Error())
+	}
+
+	if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
 		return errors.Wrap(err, "failed to report status")
 	}
 
