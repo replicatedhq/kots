@@ -7,8 +7,9 @@ import size from "lodash/size";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
+import { Repeater } from "../../utilities/repeater";
 
-import { getAppLicense, getKotsAppDashboard } from "@src/queries/AppsQueries";
+import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -35,7 +36,8 @@ class Dashboard extends Component {
     promValue: "",
     savingPromValue: false,
     activeChart: null,
-    crosshairValues: []
+    crosshairValues: [],
+    updateChecker: new Repeater()
   }
 
   toggleConfigureGraphs = () => {
@@ -102,6 +104,8 @@ class Dashboard extends Component {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
 
+    this.triggerStatusUpdates();
+
     if (app) {
       this.setWatchState(app);
     }
@@ -116,10 +120,6 @@ class Dashboard extends Component {
 
     this.setState({ checkingForUpdates: true });
 
-    this.loadingTextTimer = setTimeout(() => {
-      this.setState({ checkingUpdateText: "Almost there, hold tight..." });
-    }, 10000);
-
     await client.mutate({
       mutation: checkForKotsUpdates,
       variables: {
@@ -128,14 +128,62 @@ class Dashboard extends Component {
     }).catch(() => {
       this.setState({ errorCheckingUpdate: true });
     }).finally(() => {
-      clearTimeout(this.loadingTextTimer);
+      this.state.updateChecker.start(this.updateStatus, 1000);
+    });
+  }
+
+  triggerStatusUpdates = () => {
+    this.props.client.query({
+      query: getUpdateDownloadStatus,
+      variables: {},
+      fetchPolicy: "no-cache",
+    }).then((res) => {
       this.setState({
-        checkingForUpdates: false,
-        checkingUpdateText: "Checking for updates"
+        checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
       });
-      if (this.props.updateCallback) {
-        this.props.updateCallback();
+      if (res.data.getUpdateDownloadStatus.status !== "running") {
+        return;
       }
+      this.state.updateChecker.start(this.updateStatus, 1000);
+      this.setState({
+        checkingForUpdates: true,
+      });
+    }).catch((err) => {
+      console.log("failed to get rewrite status", err);
+    });
+  }
+
+  updateStatus = () => {
+    return new Promise((resolve, reject) => {
+      this.props.client.query({
+        query: getUpdateDownloadStatus,
+        fetchPolicy: "no-cache",
+      }).then((res) => {
+
+        this.setState({
+          checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
+        });
+
+        if (res.data.getUpdateDownloadStatus.status !== "running") {
+
+          this.state.updateChecker.stop();
+          this.setState({
+            checkingForUpdates: false,
+            checkingUpdateText: "Checking for updates"
+          });
+
+          if (this.props.updateCallback) {
+            this.props.updateCallback();
+          }
+          // this.props.data.refetch();
+        }
+
+        resolve();
+
+      }).catch((err) => {
+        console.log("failed to get rewrite status", err);
+        reject();
+      });
     });
   }
 
