@@ -2,17 +2,45 @@ package kotsadm
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func minioStatefulset(namespace string) *appsv1.StatefulSet {
+func minioStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
+	size := resource.MustParse("4Gi")
+
+	if deployOptions.LimitRange != nil {
+		var allowedMax *resource.Quantity
+		var allowedMin *resource.Quantity
+
+		for _, limit := range deployOptions.LimitRange.Spec.Limits {
+			if limit.Type == corev1.LimitTypePersistentVolumeClaim {
+				max, ok := limit.Max["storage"]
+				if ok {
+					allowedMax = &max
+				}
+
+				min, ok := limit.Min["storage"]
+				if ok {
+					allowedMin = &min
+				}
+			}
+		}
+
+		newSize := promptForSizeIfNotBetween("minio", &size, allowedMin, allowedMax)
+		if newSize == nil {
+			os.Exit(-1)
+		}
+
+		size = *newSize
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -20,7 +48,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-minio",
-			Namespace: namespace,
+			Namespace: deployOptions.Namespace,
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -42,7 +70,7 @@ func minioStatefulset(namespace string) *appsv1.StatefulSet {
 						},
 						Resources: corev1.ResourceRequirements{
 							Requests: corev1.ResourceList{
-								corev1.ResourceName(corev1.ResourceStorage): resource.MustParse("4Gi"),
+								corev1.ResourceName(corev1.ResourceStorage): size,
 							},
 						},
 					},

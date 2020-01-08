@@ -29,6 +29,7 @@ type DeployOptions struct {
 	NodePort               int32
 	Hostname               string
 	ApplicationMetadata    []byte
+	LimitRange             *corev1.LimitRange
 }
 
 type UpgradeOptions struct {
@@ -50,7 +51,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 		}
 	}
 
-	minioDocs, err := getMinioYAML(deployOptions.Namespace)
+	minioDocs, err := getMinioYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get minio yaml")
 	}
@@ -58,7 +59,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	postgresDocs, err := getPostgresYAML(deployOptions.Namespace, deployOptions.PostgresPassword)
+	postgresDocs, err := getPostgresYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get postgres yaml")
 	}
@@ -182,6 +183,12 @@ func Deploy(deployOptions DeployOptions) error {
 	if deployOptions.AutoCreateClusterToken == "" {
 		deployOptions.AutoCreateClusterToken = uuid.New().String()
 	}
+
+	limitRange, err := maybeGetNamespaceLimitRanges(clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get limit ranges for namespace")
+	}
+	deployOptions.LimitRange = limitRange
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")

@@ -11,18 +11,18 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getMinioYAML(namespace string) (map[string][]byte, error) {
+func getMinioYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var statefulset bytes.Buffer
-	if err := s.Encode(minioStatefulset(namespace), &statefulset); err != nil {
+	if err := s.Encode(minioStatefulset(deployOptions), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio statefulset")
 	}
 	docs["minio-statefulset.yaml"] = statefulset.Bytes()
 
 	var service bytes.Buffer
-	if err := s.Encode(minioService(namespace), &service); err != nil {
+	if err := s.Encode(minioService(deployOptions.Namespace), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio service")
 	}
 	docs["minio-service.yaml"] = service.Bytes()
@@ -35,7 +35,7 @@ func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) e
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
 
-	if err := ensureMinioStatefulset(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureMinioStatefulset(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio statefulset")
 	}
 
@@ -46,14 +46,14 @@ func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func ensureMinioStatefulset(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().StatefulSets(namespace).Get("kotsadm-minio", metav1.GetOptions{})
+func ensureMinioStatefulset(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(namespace).Create(minioStatefulset(namespace))
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(minioStatefulset(deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}
