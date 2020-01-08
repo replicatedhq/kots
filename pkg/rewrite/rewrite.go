@@ -78,14 +78,34 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 
+	renderOptions := base.RenderOptions{
+		SplitMultiDocYAML: true,
+		Namespace:         rewriteOptions.K8sNamespace,
+		Log:               log,
+	}
+	log.ActionWithSpinner("Creating base")
+	b, err := base.RenderUpstream(u, &renderOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to render upstream")
+	}
+	log.FinishSpinner()
+
+	writeBaseOptions := base.WriteOptions{
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		Overwrite:        true,
+		ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
+	}
+	if err := b.WriteBase(writeBaseOptions); err != nil {
+		return errors.Wrap(err, "failed to write base")
+	}
+
 	var pullSecret *corev1.Secret
 	var images []image.Image
 	var objects []*k8sdoc.Doc
 
 	if rewriteOptions.CopyImages {
-		writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
-			RootDir:      rewriteOptions.RootDir,
-			CreateAppDir: rewriteOptions.CreateAppDir,
+		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
+			BaseDir:      writeBaseOptions.BaseDir,
 			ReportWriter: rewriteOptions.ReportWriter,
 			Log:          log,
 			SourceRegistry: registry.RegistryOptions{
@@ -105,19 +125,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
 
-		newImages, err := upstream.CopyUpstreamImages(u, writeUpstreamImageOptions)
+		newImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to write upstream images")
 		}
 		images = newImages
 	}
 
-	findObjectsOptions := upstream.FindObjectsWithImagesOptions{
-		RootDir:      rewriteOptions.RootDir,
-		CreateAppDir: rewriteOptions.CreateAppDir,
-		Log:          log,
+	findObjectsOptions := base.FindObjectsWithImagesOptions{
+		BaseDir: writeBaseOptions.BaseDir,
 	}
-	affectedObjects, err := upstream.FindObjectsWithImages(u, findObjectsOptions)
+	affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to find objects with images")
 	}
@@ -155,27 +173,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	objects = affectedObjects
-
-	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML: true,
-		Namespace:         rewriteOptions.K8sNamespace,
-		Log:               log,
-	}
-	log.ActionWithSpinner("Creating base")
-	b, err := base.RenderUpstream(u, &renderOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to render upstream")
-	}
-	log.FinishSpinner()
-
-	writeBaseOptions := base.WriteOptions{
-		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		Overwrite:        true,
-		ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
-	}
-	if err := b.WriteBase(writeBaseOptions); err != nil {
-		return errors.Wrap(err, "failed to write base")
-	}
 
 	log.ActionWithSpinner("Creating midstream")
 
