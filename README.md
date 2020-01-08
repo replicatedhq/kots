@@ -8,21 +8,22 @@ Software vendors can [package their Kubernetes applications](https://kots.io/ven
 Check out the [full docs on the cluster operator experience](https://kots.io/kots-cli/getting-started/) for using the Kots CLI as a Kubectl plugin.
 
 ## Try Kots
-Try Kots as a cluster operator by installing the Replicated sample app ([Sentry Pro Example](https://github.com/replicatedhq/kots-sentry/)) into an existing Kubernetes cluster. First install the Kots CLI (a Kubectl plugin) on your workstation:
+Try Kots as a cluster operator by installing the Replicated sample app ([Sentry Pro Example](https://github.com/replicatedhq/kots-sentry/)) into an existing Kubernetes cluster. First, install the Kots CLI (a Kubectl plugin) on your workstation:
 ```
 curl https://kots.io/install | bash
 ```
 
-### `kots install`
+### Run `kots install`
 The `install` command is the recommended way to learn KOTS. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated KOTS apps.
 
-and running the following command:
+Continue with the demo by running the following command:
 ```
 kubectl kots install sentry-pro
 ```
 
 Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
 
+### Access the Admin Console
 Visit http://localhost:8800 to access the Admin Console, enter the password.
 
 Download the [sample license](https://kots.io/sample-license) for Sentry Pro & upload it to the console. You'll then be presented with configuration settings, preflight checks and other application options.
@@ -31,7 +32,6 @@ If you terminate your terminal session, the port-forward will also terminate. To
 ```
 kubectl kots admin-console --namespace sentry-pro
 ```
-
 
 # Community
 
