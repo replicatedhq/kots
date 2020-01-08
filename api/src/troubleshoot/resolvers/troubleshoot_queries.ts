@@ -37,8 +37,7 @@ export function TroubleshootQueries(stores: Stores) {
 
     async supportBundleFiles(root, { bundleId, fileNames }, context: Context, { }): Promise<any> {
       const bundle = await stores.troubleshootStore.getSupportBundle(bundleId);
-      const files = await bundle.getFiles(bundle, fileNames);
-      const jsonFiles = JSON.stringify(files.files);
+      const jsonFiles = await bundle.getFilesJSON(bundle, fileNames);
       if (jsonFiles.length >= 5000000) {
         throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
       }

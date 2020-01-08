@@ -97,12 +97,12 @@ export async function getDiffSummary(app: KotsApp): Promise<string> {
   for (const path in oldFiles.files) {
     if (!(path in newFiles.files)) {
       filesChanged++;
-      linesRemoved += oldFiles.files[path].split("\n").length;
+      linesRemoved += oldFiles.files[path].toString().split("\n").length;
       continue;
     }
-    const oldContent = oldFiles.files[path];
-    const newContent = newFiles.files[path];
-    const diffs = jsdiff.diffLines(oldContent, newContent);
+    const oldContent: Buffer = oldFiles.files[path];
+    const newContent: Buffer = newFiles.files[path];
+    const diffs = jsdiff.diffLines(oldContent.toString(), newContent.toString());
 
     let fileHasChanged = false;
     diffs.forEach(part => {
@@ -124,7 +124,7 @@ export async function getDiffSummary(app: KotsApp): Promise<string> {
   for (const path in newFiles.files) {
     if (!(path in oldFiles.files)) {
       filesChanged++;
-      linesAdded += newFiles.files[path].split("\n").length;
+      linesAdded += newFiles.files[path].toString().split("\n").length;
     }
   }
 

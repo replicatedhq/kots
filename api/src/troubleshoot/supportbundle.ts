@@ -1,6 +1,6 @@
 import _ from "lodash";
 import zlib from "zlib";
-import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker } from "./util";
+import { eq, eqIgnoringLeadingSlash, FilesAsBuffers, TarballUnpacker } from "./util";
 import { getS3 } from "../util/s3";
 import { Params } from "../server/params";
 
@@ -35,7 +35,7 @@ export class SupportBundle {
     }]);
 
     const index = indexFiles.files[supportBundleIndexJsonPath] &&
-      JSON.parse(indexFiles.files[supportBundleIndexJsonPath]);
+      JSON.parse(indexFiles.files[supportBundleIndexJsonPath].toString());
 
     let paths: string[] = [];
     if (!index) {
@@ -77,13 +77,25 @@ export class SupportBundle {
     return tree;
   }
 
-  async getFiles(bundle: SupportBundle, fileNames: string[]): Promise<FilesAsString> {
+  async getFiles(bundle: SupportBundle, fileNames: string[]): Promise<FilesAsBuffers> {
     const fileNameList = fileNames.map((fileName) => ({
       path: fileName,
       matcher: eqIgnoringLeadingSlash(fileName),
     }));
     const filesWeWant = await this.downloadFiles(bundle.id, fileNameList);
     return filesWeWant;
+  }
+
+  async getFilesJSON(bundle: SupportBundle, fileNames: string[]): Promise<string> {
+    const files: FilesAsBuffers = await this.getFiles(bundle, fileNames);
+    let fileStrings: {
+      [key: string]: string;
+    } = {};
+    for (const path in files.files) {
+      fileStrings[path] = files.files[path].toString();
+    }
+    const jsonFiles = JSON.stringify(fileStrings);
+    return jsonFiles;
   }
 
   public static isS3NotFoundError(err) {
@@ -95,10 +107,10 @@ export class SupportBundle {
     );
   }
 
-  async downloadFiles(bundleId: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsString> {
+  async downloadFiles(bundleId: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsBuffers> {
     const replicatedParams = await Params.getParams();
 
-    return new Promise<FilesAsString>((resolve, reject) => {
+    return new Promise<FilesAsBuffers>((resolve, reject) => {
       const params = {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? replicatedParams.shipOutputBucket + "/" : ""}supportbundles/${bundleId}/supportbundle.tar.gz`,
