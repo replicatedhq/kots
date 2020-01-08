@@ -1617,6 +1617,10 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
     };
   }
 
+  async clearAirgapInstallInProgress(): Promise<void> {
+    await this.clearApiTaskStatus("airgap-install");
+  }
+
   async setAirgapInstallStatus(msg: string, status: string): Promise<void> {
     await this.setApiTaskStatus("airgap-install", msg, status);
   }
