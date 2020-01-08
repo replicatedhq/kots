@@ -12,10 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func UpstreamUpgradeCmd() *cobra.Command {
@@ -42,7 +38,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			podName, err := findKotsadm(v.GetString("namespace"))
+			podName, err := k8sutil.FindKotsadm(v.GetString("namespace"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to find kotsadm pod")
@@ -113,29 +109,4 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 
 	return cmd
-}
-
-func findKotsadm(namespace string) (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list pods")
-	}
-
-	for _, pod := range pods.Items {
-		if pod.Status.Phase == corev1.PodRunning {
-			return pod.Name, nil
-		}
-	}
-
-	return "", errors.New("unable to find kotsadm pod")
 }

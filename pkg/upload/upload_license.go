@@ -38,7 +38,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Uploading license to Admin Console")
 
-	podName, err := findKotsadm(uploadLicenseOptions.Namespace)
+	podName, err := k8sutil.FindKotsadm(uploadLicenseOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
