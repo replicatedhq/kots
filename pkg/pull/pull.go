@@ -180,17 +180,42 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(fetchOptions.License)
 
+	renderOptions := base.RenderOptions{
+		SplitMultiDocYAML: true,
+		Namespace:         pullOptions.Namespace,
+		HelmOptions:       pullOptions.HelmOptions,
+		Log:               log,
+	}
+	log.ActionWithSpinner("Creating base")
+
+	b, err := base.RenderUpstream(u, &renderOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to render upstream")
+	}
+
+	log.FinishSpinner()
+
+	writeBaseOptions := base.WriteOptions{
+		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		Overwrite:        true,
+		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
+	}
+	if err := b.WriteBase(writeBaseOptions); err != nil {
+		return "", errors.Wrap(err, "failed to write base")
+	}
+
 	var pullSecret *corev1.Secret
 	var images []image.Image
 	var objects []*k8sdoc.Doc
 	if pullOptions.RewriteImages {
 
+		log.ActionWithSpinner("Copying private images")
+
 		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
-			writeUpstreamImageOptions := upstream.WriteUpstreamImageOptions{
-				RootDir:      pullOptions.RootDir,
-				CreateAppDir: pullOptions.CreateAppDir,
-				Log:          log,
+			writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
+				BaseDir: writeBaseOptions.BaseDir,
+				Log:     log,
 				SourceRegistry: registry.RegistryOptions{
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
@@ -211,7 +236,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			newImages, err := upstream.CopyUpstreamImages(u, writeUpstreamImageOptions)
+			newImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
 			}
@@ -252,12 +277,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			findObjectsOptions := upstream.FindObjectsWithImagesOptions{
-				RootDir:      pullOptions.RootDir,
-				CreateAppDir: pullOptions.CreateAppDir,
-				Log:          log,
+			findObjectsOptions := base.FindObjectsWithImagesOptions{
+				BaseDir: writeBaseOptions.BaseDir,
 			}
-			affectedObjects, err := upstream.FindObjectsWithImages(u, findObjectsOptions)
+			affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to find objects with images")
 			}
@@ -289,17 +312,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	} else if fetchOptions.License != nil {
 
 		// Rewrite private images
-		findPrivateImagesOptions := upstream.FindPrivateImagesOptions{
-			RootDir:      pullOptions.RootDir,
-			CreateAppDir: pullOptions.CreateAppDir,
-			AppSlug:      fetchOptions.License.Spec.AppSlug,
+		findPrivateImagesOptions := base.FindPrivateImagesOptions{
+			BaseDir: writeBaseOptions.BaseDir,
+			AppSlug: fetchOptions.License.Spec.AppSlug,
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
-			Log: log,
 		}
-		rewrittenImages, affectedObjects, err := upstream.FindPrivateImages(u, findPrivateImagesOptions)
+		rewrittenImages, affectedObjects, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to push upstream images")
 		}
@@ -319,30 +340,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		images = rewrittenImages
 		objects = affectedObjects
-	}
-
-	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML: true,
-		Namespace:         pullOptions.Namespace,
-		HelmOptions:       pullOptions.HelmOptions,
-		Log:               log,
-	}
-	log.ActionWithSpinner("Creating base")
-
-	b, err := base.RenderUpstream(u, &renderOptions)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to render upstream")
-	}
-
-	log.FinishSpinner()
-
-	writeBaseOptions := base.WriteOptions{
-		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
-		Overwrite:        true,
-		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
-	}
-	if err := b.WriteBase(writeBaseOptions); err != nil {
-		return "", errors.Wrap(err, "failed to write base")
 	}
 
 	log.ActionWithSpinner("Creating midstream")

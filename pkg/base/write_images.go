@@ -1,20 +1,17 @@
-package upstream
+package base
 
 import (
 	"io"
-	"path"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/upstream/types"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 type WriteUpstreamImageOptions struct {
-	RootDir        string
-	CreateAppDir   bool
+	BaseDir        string
 	AppSlug        string
 	SourceRegistry registry.RegistryOptions
 	DestRegistry   registry.RegistryOptions
@@ -22,14 +19,8 @@ type WriteUpstreamImageOptions struct {
 	ReportWriter   io.Writer
 }
 
-func CopyUpstreamImages(u *types.Upstream, options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
-	rootDir := options.RootDir
-	if options.CreateAppDir {
-		rootDir = path.Join(rootDir, u.Name)
-	}
-	upstreamDir := path.Join(rootDir, "upstream")
-
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, upstreamDir)
+func CopyUpstreamImages(options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
