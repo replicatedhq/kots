@@ -2,7 +2,7 @@
 
 Kotsadm is an installable admin console for managing Kubernetes Off-The-Shelf (KOTS) software. Kotsadm provides a nextgen admin experience for any KOTS application, designed to meet the needs of a wide spectrum of enterprise IT admins, from a “click-to-deploy” model to “automated operations”.
 
-Once deployed, Kotsadm gives administrators the ability to get an application configured and [installed](https://kots.io/kotsadm/installing/installing-a-kots-app/) and [updated](https://kots.io/kotsadm/updating/updating-kots-apps/) using step-through configuration, and automated preflight checks. 
+Once deployed, Kotsadm gives administrators the ability to get an application configured, [installed](https://kots.io/kotsadm/installing/installing-a-kots-app/) and [updated](https://kots.io/kotsadm/updating/updating-kots-apps/) using step-through configuration, and automated preflight checks. 
 
 For advanced cluster operators, we recommend setting up the [GitOps](https://kots.io/kotsadm/gitops/single-app-workflows/) & [internal registry](https://kots.io/kotsadm/registries/self-hosted-registry/) integrations to move away from click-to-deploy and instead leverage an Kotsadm's automated operations.
 
