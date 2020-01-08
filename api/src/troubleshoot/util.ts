@@ -1,10 +1,10 @@
 import tar from "tar-stream";
 import zlib from "zlib";
 
-export interface FilesAsString {
+export interface FilesAsBuffers {
   fakeIndex: string[];
   files: {
-    [key: string]: string;
+    [key: string]: Buffer;
   };
 }
 
@@ -13,6 +13,9 @@ export interface RequestedFile {
   matcher: (file: string) => boolean;
 }
 
+export function isTgzByName(filenname: string): boolean {
+  return filenname.endsWith('.tar.gz') || filenname.endsWith('.tgz');
+}
 
 export function eq(f1: string) {
   return (f2: string) => f1 === f2;
@@ -39,15 +42,15 @@ export class TarballUnpacker {
   /**
    * unpackFrom will read the stream
    */
-  public async unpackFrom(tarStream: NodeJS.ReadableStream, filesWeCareAbout?: RequestedFile[]): Promise<FilesAsString> {
+  public async unpackFrom(tarStream: NodeJS.ReadableStream, filesWeCareAbout?: RequestedFile[]): Promise<FilesAsBuffers> {
     if (!tarStream) {
       return { files: {}, fakeIndex: [] };
     }
 
-    return await new Promise<FilesAsString>((resolve, reject) => {
+    return await new Promise<FilesAsBuffers>((resolve, reject) => {
       const extract = tar.extract();
 
-      const extractedFiles: FilesAsString = { files: {}, fakeIndex: [] };
+      const extractedFiles: FilesAsBuffers = { files: {}, fakeIndex: [] };
       const promises: Array<Promise<any>> = [];
 
       extract.on("entry", (header: any, stream: NodeJS.ReadableStream, requestNextTarFile: () => void) => {
@@ -91,14 +94,15 @@ export class TarballUnpacker {
    * this is kinda lazy to just read these all in, should
    * just pass streams around someday
    */
-  private readFile(s: NodeJS.ReadableStream): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      let contents = ``;
+  private readFile(s: NodeJS.ReadableStream): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
+      const buffers: Buffer[] = [];
       s.on("data", (chunk) => {
-        contents += chunk.toString();
+        buffers.push(chunk);
       });
       s.on("error", reject);
       s.on("end", () => {
+        const contents = Buffer.concat(buffers);
         resolve(contents);
       });
     });
@@ -110,7 +114,7 @@ export class TarballPacker {
   /**
    * packFiles will create a .tar.gz for files
    */
-  public async packFiles(files: FilesAsString): Promise<Buffer> {
+  public async packFiles(files: FilesAsBuffers): Promise<Buffer> {
     return new Promise(resolve => {
       const pack = tar.pack();
       for (const path in files.files) {

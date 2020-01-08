@@ -2,7 +2,7 @@ import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { getLatestLicense, verifyAirgapLicense } from "../../kots_app/kots_ffi";
 import { ReplicatedError } from "../../server/errors";
-import { FilesAsString, TarballPacker } from "../../troubleshoot/util";
+import { FilesAsBuffers, TarballPacker } from "../../troubleshoot/util";
 import { uploadUpdate } from "../../controllers/kots/KotsAPI";
 import { getLicenseInfoFromYaml } from "../../util/utilities";
 import { KLicense } from "../klicense";
@@ -43,13 +43,13 @@ export function KotsLicenseMutations(stores: Stores) {
       }
       
       const paths: string[] = await app.getFilesPaths(`${app.currentSequence!}`);
-      const files: FilesAsString = await app.getFiles(`${app.currentSequence!}`, paths);
+      const files: FilesAsBuffers = await app.getFiles(`${app.currentSequence!}`, paths);
 
       let licenseFilePath = "";
       for (const path in files.files) {
         try {
           const content = files.files[path];
-          const parsedContent = yaml.safeLoad(content);
+          const parsedContent = yaml.safeLoad(content.toString());
           if (!parsedContent) {
             continue;
           }

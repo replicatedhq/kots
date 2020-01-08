@@ -2,7 +2,7 @@ import { Params } from "../server/params";
 import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
-import { eq, eqIgnoringLeadingSlash, FilesAsString, TarballUnpacker, TarballPacker } from "../troubleshoot/util";
+import { eq, eqIgnoringLeadingSlash, FilesAsBuffers, TarballUnpacker, isTgzByName } from "../troubleshoot/util";
 import { kotsTemplateConfig, kotsEncryptString, kotsRewriteVersion } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
@@ -119,7 +119,7 @@ export class KotsApp {
     }]);
 
     const index = indexFiles.files[bundleIndexJsonPath] &&
-      JSON.parse(indexFiles.files[bundleIndexJsonPath]);
+      JSON.parse(indexFiles.files[bundleIndexJsonPath].toString());
 
     let paths: string[] = [];
     if (!index) {
@@ -148,7 +148,7 @@ export class KotsApp {
     return null;
   }
 
-  private async getConfigDataFromFiles(files: FilesAsString): Promise<ConfigData> {
+  private async getConfigDataFromFiles(files: FilesAsBuffers): Promise<ConfigData> {
     let configSpec: string = "",
         configValues: string = "",
         configValuesPath: string = "";
@@ -156,14 +156,14 @@ export class KotsApp {
     for (const path in files.files) {
       try {
         const content = files.files[path];
-        const parsedContent = yaml.safeLoad(content);
+        const parsedContent = yaml.safeLoad(content.toString());
         if (!parsedContent) {
           continue;
         }
         if (parsedContent.kind === "Config" && parsedContent.apiVersion === "kots.io/v1beta1") {
-          configSpec = content;
+          configSpec = content.toString();
         } else if (parsedContent.kind === "ConfigValues" && parsedContent.apiVersion === "kots.io/v1beta1") {
-          configValues = content;
+          configValues = content.toString();
           configValuesPath = path;
         }
       } catch {
@@ -242,7 +242,7 @@ export class KotsApp {
     const tmpDir = tmp.dirSync();
     try {
       const paths: string[] = await this.getFilesPaths(sequence);
-      const files: FilesAsString = await this.getFiles(sequence, paths);
+      const files: FilesAsBuffers = await this.getFiles(sequence, paths);
 
       const { configSpec, configValues, configValuesPath } = await this.getConfigDataFromFiles(files);
 
@@ -302,8 +302,6 @@ export class KotsApp {
       } else {
         await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }
-    } catch(err) {
-      throw new ReplicatedError(`Error while updating app config ${err}`);
     } finally {
       tmpDir.removeCallback();
     }
@@ -374,7 +372,7 @@ export class KotsApp {
     return tree;
   }
 
-  async getFiles(sequence: string, fileNames: string[]): Promise<FilesAsString> {
+  async getFiles(sequence: string, fileNames: string[]): Promise<FilesAsBuffers> {
     const fileNameList = fileNames.map((fileName) => ({
       path: fileName,
       matcher: eqIgnoringLeadingSlash(fileName),
@@ -383,10 +381,27 @@ export class KotsApp {
     return filesWeWant;
   }
 
-  async downloadFiles(appId: string, sequence: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsString> {
+  async getFilesJSON(sequence: string, fileNames: string[]): Promise<string> {
+    const files: FilesAsBuffers = await this.getFiles(sequence, fileNames);
+    let fileStrings: {
+      [key: string]: string;
+    } = {};
+    for (const path in files.files) {
+      const content = files.files[path];
+      if (isTgzByName(path)) {
+        fileStrings[path] = content.toString('base64');
+      } else {
+        fileStrings[path] = content.toString();
+      }
+    }
+    const jsonFiles = JSON.stringify(fileStrings);
+    return jsonFiles;
+  }
+
+  async downloadFiles(appId: string, sequence: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsBuffers> {
     const replicatedParams = await Params.getParams();
 
-    return new Promise<FilesAsString>((resolve, reject) => {
+    return new Promise<FilesAsBuffers>((resolve, reject) => {
       const params = {
         Bucket: replicatedParams.shipOutputBucket,
         Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${appId}/${sequence}.tar.gz`,
@@ -487,7 +502,7 @@ export class KotsApp {
       return false;
     }
     const paths: string[] = await this.getFilesPaths(sequence);
-    const files: FilesAsString = await this.getFiles(sequence, paths);
+    const files: FilesAsBuffers = await this.getFiles(sequence, paths);
     const { configSpec, configValues } = await this.getConfigDataFromFiles(files);
     await stores.kotsAppStore.updateAppConfigData(this.id, sequence, configSpec, configValues);
     return configSpec !== "";

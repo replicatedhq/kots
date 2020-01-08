@@ -132,8 +132,7 @@ export function KotsQueries(stores: Stores, params: Params) {
     async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await context.getApp(appId);
-      const files = await app.getFiles(args.sequence, args.fileNames);
-      const jsonFiles = JSON.stringify(files.files);
+      const jsonFiles: string = await app.getFilesJSON(args.sequence, args.fileNames);
       if (jsonFiles.length >= 5000000) {
         throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
       }
