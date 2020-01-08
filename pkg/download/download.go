@@ -72,6 +72,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		log.FinishSpinner()
 		return errors.Wrap(err, "failed to write archive")
 	}
+	tmpFile.Close()
 
 	// Delete the destination, if needed and requested
 	if _, err := os.Stat(path); err == nil {
