@@ -191,8 +191,6 @@ export class KotsAPI {
       try {
         await kotsAppDownloadUpdates(updatesAvailable, app, request.app.locals.stores);
 
-        await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
-
         if (deploy) {
           const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
           for (const clusterId of clusterIds) {
@@ -204,6 +202,8 @@ export class KotsAPI {
             }
           }
         }
+
+        await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
       } catch(err) {
         await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
         throw err;
