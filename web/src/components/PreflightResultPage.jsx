@@ -13,6 +13,7 @@ import "../scss/components/PreflightCheckPage.scss";
 import { ignorePreflightPermissionErrors, retryPreflights } from "../mutations/AppsMutations";
 import PreflightResultErrors from "./PreflightResultErrors";
 import has from "lodash/has";
+import size from "lodash/size";
 
 class PreflightResultPage extends Component {
   state = {
@@ -131,9 +132,10 @@ class PreflightResultPage extends Component {
     const preflightResultData = isLoading
       ? null
       : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
-    const hasData = preflightResultData?.result;
+
+    const stopPolling = !!preflightResultData?.result;
     let preflightJSON = {};
-    if (hasData) {
+    if (stopPolling) {
       data.stopPolling();
       if (showSkipModal) {
         this.hideSkipModal();
@@ -141,6 +143,8 @@ class PreflightResultPage extends Component {
       
       preflightJSON = JSON.parse(preflightResultData?.result);
     }
+    const hasResult = size(preflightJSON.results) > 0;
+    const hasErrors = size(preflightJSON.errors) > 0;
   
     return (
       <div className="flex-column flex1 container">
@@ -161,25 +165,26 @@ class PreflightResultPage extends Component {
               <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
                 Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements you can still proceed, but understand that things might not work properly.
               </p>
-              {(isLoading || !hasData) && (
+              {(!stopPolling) && (
                 <div className="flex-column justifyContent--center alignItems--center u-minHeight--full u-minWidth--full">
                   <Loader size="60" />
                 </div>
               )}
-              {preflightJSON?.errors && this.renderErrors(preflightJSON?.errors) }
-              {hasData && !preflightJSON.errors ? (
+              {hasErrors && this.renderErrors(preflightJSON?.errors) }
+              {stopPolling && !hasErrors &&
                 <div className="flex-column">
                   <PreflightRenderer
                     className="u-marginTop--20"
                     results={preflightResultData.result}
                   />
                 </div>
-              ) : null}
+              }
             </div>
           </div>
         </div>
 
-        {preflightJSON.errors ? null : hasData ? (
+        { hasErrors && null }
+        { (hasResult || stopPolling) &&
           <div className="flex-auto flex justifyContent--flexEnd">
             <button
               type="button"
@@ -189,17 +194,18 @@ class PreflightResultPage extends Component {
               Continue
             </button>
           </div>
-        ) : (
-            <div className="flex-auto flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn primary blue u-marginBottom--15"
-                onClick={this.showSkipModal}
-              >
-                Skip
-            </button>
-            </div>
-          )}
+        }
+        { (!hasResult && !stopPolling) && 
+          <div className="flex-auto flex justifyContent--flexEnd">
+            <button
+              type="button"
+              className="btn primary blue u-marginBottom--15"
+              onClick={this.showSkipModal}
+            >
+              Skip
+          </button>
+          </div>
+        }
 
         <Modal
           isOpen={showSkipModal}
