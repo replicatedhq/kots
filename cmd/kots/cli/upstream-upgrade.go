@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -61,10 +62,10 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}()
 
 			appSlug := args[0]
-			resp, err := http.Get(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s/update-check", appSlug))
+			resp, err := http.Post(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s/update-check", appSlug), "application/json", strings.NewReader("{}"))
 			if err != nil {
 				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to get from kotsadm")
+				return errors.Wrap(err, "failed to check for updates")
 			}
 			defer resp.Body.Close()
 
@@ -95,10 +96,19 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				log.ActionWithoutSpinner("There are no application updates available")
 				log.ActionWithoutSpinner("")
 			} else {
-				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.UpdatesAvailable))
-				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
-				log.ActionWithoutSpinner("")
+				if !viper.GetBool("deploy") {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.UpdatesAvailable))
+					log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
+					log.ActionWithoutSpinner("")
+				}
+
+				// Apply the latest version
+				_, err := http.Post(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s/deploy-latest", appSlug), "application/json", strings.NewReader("{}"))
+				if err != nil {
+					log.FinishSpinnerWithError()
+					return errors.Wrap(err, "failed to deploy latest")
+				}
 			}
 
 			return nil
@@ -107,6 +117,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
+	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version downloads")
 
 	return cmd
 }
