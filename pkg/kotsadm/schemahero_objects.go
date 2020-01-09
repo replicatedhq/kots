@@ -13,6 +13,14 @@ import (
 func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 	name := fmt.Sprintf("kotsadm-migrations-%d", time.Now().Unix())
 
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
+			FSGroup:   util.IntPointer(1001),
+		}
+	}
+
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -23,11 +31,8 @@ func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
 			Namespace: deployOptions.Namespace,
 		},
 		Spec: corev1.PodSpec{
-			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: util.IntPointer(1001),
-				FSGroup:   util.IntPointer(1001),
-			},
-			RestartPolicy: corev1.RestartPolicyOnFailure,
+			SecurityContext: &securityContext,
+			RestartPolicy:   corev1.RestartPolicyOnFailure,
 			Containers: []corev1.Container{
 				{
 					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(), kotsadmTag()),

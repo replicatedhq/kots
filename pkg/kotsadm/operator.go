@@ -21,30 +21,30 @@ const (
 	Namespace = "namespace"
 )
 
-func getOperatorYAML(namespace, autoCreateClusterToken string) (map[string][]byte, error) {
+func getOperatorYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var role bytes.Buffer
-	if err := s.Encode(operatorRole(namespace), &role); err != nil {
+	if err := s.Encode(operatorRole(deployOptions.Namespace), &role); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator role")
 	}
 	docs["operator-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(operatorRoleBinding(namespace), &roleBinding); err != nil {
+	if err := s.Encode(operatorRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator role binding")
 	}
 	docs["operator-rolebinding.yaml"] = roleBinding.Bytes()
 
 	var serviceAccount bytes.Buffer
-	if err := s.Encode(operatorServiceAccount(namespace), &serviceAccount); err != nil {
+	if err := s.Encode(operatorServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator service account")
 	}
 	docs["operator-serviceaccount.yaml"] = serviceAccount.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(operatorDeployment(namespace, autoCreateClusterToken), &deployment); err != nil {
+	if err := s.Encode(operatorDeployment(deployOptions), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator deployment")
 	}
 	docs["operator-deployment.yaml"] = deployment.Bytes()
@@ -183,7 +183,7 @@ func ensureOperatorDeployment(deployOptions DeployOptions, clientset *kubernetes
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(operatorDeployment(deployOptions.Namespace, deployOptions.AutoCreateClusterToken))
+		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(operatorDeployment(deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}

@@ -41,6 +41,14 @@ func postgresStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 		size = *newSize
 	}
 
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(999),
+			FSGroup:   util.IntPointer(999),
+		}
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -80,10 +88,7 @@ func postgresStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: util.IntPointer(999),
-						FSGroup:   util.IntPointer(999),
-					},
+					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-postgres",

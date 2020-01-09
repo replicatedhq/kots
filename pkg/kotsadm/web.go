@@ -31,7 +31,7 @@ func getWebYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs["web-config.yaml"] = config.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(webDeployment(deployOptions.Namespace), &deployment); err != nil {
+	if err := s.Encode(webDeployment(deployOptions), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marsha web deployment")
 	}
 	docs["web-deployment.yaml"] = deployment.Bytes()
@@ -68,7 +68,7 @@ func ensureWeb(deployOptions *DeployOptions, clientset *kubernetes.Clientset) er
 		return errors.Wrap(err, "failed to ensure web configmap")
 	}
 
-	if err := ensureWebDeployment(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureWebDeployment(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure web deployment")
 	}
 
@@ -95,14 +95,14 @@ func ensureWebConfig(deployOptions *DeployOptions, clientset *kubernetes.Clients
 	return nil
 }
 
-func ensureWebDeployment(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().Deployments(namespace).Get("kotsadm-web", metav1.GetOptions{})
+func ensureWebDeployment(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err := clientset.AppsV1().Deployments(namespace).Create(webDeployment(namespace))
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(webDeployment(deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
