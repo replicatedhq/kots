@@ -107,6 +107,11 @@ export default class DashboardCard extends React.Component {
     const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
+    let checkingUpdateTextShort = checkingUpdateText;
+    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
+      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
+    }
+
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (this.props.airgapUploadError) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{this.props.airgapUploadError}</p>
@@ -122,7 +127,7 @@ export default class DashboardCard extends React.Component {
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateText}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (!app.lastUpdateCheck) {
       updateText = null;
     }
