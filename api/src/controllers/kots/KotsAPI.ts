@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams, HeaderParams } from "@tsed/common";
+import { Controller, Get, Put, Post, BodyParams, Req, Res, PathParams, HeaderParams, QueryParams } from "@tsed/common";
 import { MultipartFile } from "@tsed/multipartfiles";
 import { Request, Response } from "express";
 import { putObject } from "../../util/s3";
@@ -144,41 +144,14 @@ export class KotsAPI {
     response.send(await app.getArchive(''+app.currentSequence));
   }
 
-  @Post("/:slug/deploy-latest")
-  async kotsDeployLatest(
-    @Req() request: Request,
-    @Res() response: Response,
-    @PathParams("slug") slug: string,
-  ) {
-    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
-    const app = _.find(apps, (a: KotsApp) => {
-      return a.slug === slug;
-    });
 
-    if (!app) {
-      response.status(404);
-      return {};
-    }
-
-    const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
-    for (const clusterId of clusterIds) {
-      const pendingVersions = await request.app.locals.stores.kotsAppStore.listPendingVersions(app.id, clusterId);
-      // pending versions are sorted in the store
-      if (pendingVersions.length > 0) {
-        const lastPendingVersion = pendingVersions.pop();
-        await request.app.locals.stores.kotsAppStore.deployVersion(app.id, lastPendingVersion.sequence, clusterId);
-      }
-    }
-
-    response.status(200);
-    return { };
-  }
 
   @Post("/:slug/update-check")
   async kotsUpdateCheck(
     @Req() request: Request,
     @Res() response: Response,
     @PathParams("slug") slug: string,
+    @QueryParams("deploy") deploy: boolean,
   ) {
     const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
     const app = _.find(apps, (a: KotsApp) => {
@@ -219,6 +192,18 @@ export class KotsAPI {
         await kotsAppDownloadUpdates(updatesAvailable, app, request.app.locals.stores);
 
         await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
+
+        if (deploy) {
+          const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
+          for (const clusterId of clusterIds) {
+            const pendingVersions = await request.app.locals.stores.kotsAppStore.listPendingVersions(app.id, clusterId);
+            // pending versions are sorted in the store
+            if (pendingVersions.length > 0) {
+              const lastPendingVersion = pendingVersions[0];
+              await request.app.locals.stores.kotsAppStore.deployVersion(app.id, lastPendingVersion.sequence, clusterId);
+            }
+          }
+        }
       } catch(err) {
         await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
         throw err;
