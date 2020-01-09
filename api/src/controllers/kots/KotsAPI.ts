@@ -144,6 +144,36 @@ export class KotsAPI {
     response.send(await app.getArchive(''+app.currentSequence));
   }
 
+  @Post("/:slug/deploy-latest")
+  async kotsDeployLatest(
+    @Req() request: Request,
+    @Res() response: Response,
+    @PathParams("slug") slug: string,
+  ) {
+    const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
+    const app = _.find(apps, (a: KotsApp) => {
+      return a.slug === slug;
+    });
+
+    if (!app) {
+      response.status(404);
+      return {};
+    }
+
+    const clusterIds = request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
+    for (const clusterId of clusterIds) {
+      const pendingVersions = await request.app.locals.stores.kotsAppStore.listPendingVersions(app.id, clusterId);
+      // pending versions are sorted in the store
+      if (pendingVersions.length > 0) {
+        const lastPendingVersion = pendingVersions.pop();
+        await request.app.locals.stores.kotsAppStore.deployVersion(app.id, lastPendingVersion.sequence, clusterId);
+      }
+    }
+
+    response.status(200);
+    return { };
+  }
+
   @Post("/:slug/update-check")
   async kotsUpdateCheck(
     @Req() request: Request,
