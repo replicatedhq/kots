@@ -45,7 +45,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to find kotsadm pod")
 			}
 
-			errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 3000, 3000, v.GetString("namespace"), podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 0, 3000, v.GetString("namespace"), podName, false, stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to start port forwarding")
@@ -62,7 +62,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}()
 
 			appSlug := args[0]
-			resp, err := http.Post(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s/update-check", appSlug), "application/json", strings.NewReader("{}"))
+			updateCheckURI = fmt.Sprintf("http://localhost:%d/api/v1/kots/%s/update-check", localPort, appSlug)
+			if viper.GetBool("deploy") {
+				updateCheckURI = fmt.Sprintf("%s?deploy=true", updateCheckURI)
+			}
+			resp, err := http.Post(updateCheckURI, "application/json", strings.NewReader("{}"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to check for updates")
@@ -91,25 +95,34 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to parse response")
 			}
 
+			log.FinishSpinner()
+
+			if viper.GetBool("deploy") {
+				if ucr.UpdatesAvailable == 0 {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
+				} else {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ucr.UpdatesAvailable))
+				}
+
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
+				log.ActionWithoutSpinner("")
+
+				return nil
+			}
+
 			if ucr.UpdatesAvailable == 0 {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("There are no application updates available")
-				log.ActionWithoutSpinner("")
 			} else {
-				if !viper.GetBool("deploy") {
-					log.ActionWithoutSpinner("")
-					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.UpdatesAvailable))
-					log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
-					log.ActionWithoutSpinner("")
-				}
-
-				// Apply the latest version
-				_, err := http.Post(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s/deploy-latest", appSlug), "application/json", strings.NewReader("{}"))
-				if err != nil {
-					log.FinishSpinnerWithError()
-					return errors.Wrap(err, "failed to deploy latest")
-				}
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.UpdatesAvailable))
 			}
+
+			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
+			log.ActionWithoutSpinner("")
 
 			return nil
 		},

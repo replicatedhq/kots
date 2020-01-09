@@ -56,6 +56,7 @@ require (
 	github.com/opencontainers/selinux v1.2.2 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913 // indirect
 	github.com/otiai10/copy v1.0.2
+	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7 // indirect
 	github.com/replicatedhq/troubleshoot v0.9.13
