@@ -33,7 +33,7 @@ func postgresStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 			}
 		}
 
-		newSize := promptForSizeIfNotBetween("minio", &size, allowedMin, allowedMax)
+		newSize := promptForSizeIfNotBetween("postgres", &size, allowedMin, allowedMax)
 		if newSize == nil {
 			os.Exit(-1)
 		}
