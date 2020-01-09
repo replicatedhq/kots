@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -47,11 +48,12 @@ func UploadCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh, log)
+			localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
 
+			uploadOptions.Endpoint = fmt.Sprintf("http://localhost:%d", localPort)
 			go func() {
 				select {
 				case err := <-errChan:
