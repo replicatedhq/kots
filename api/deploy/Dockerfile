@@ -9,6 +9,10 @@ RUN curl -L https://install.goreleaser.com/github.com/tj/node-prune.sh | bash &&
 
 FROM node:10-buster-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 # Install Kubectl
 ENV KUBECTL_VERSION=v1.16.1
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
