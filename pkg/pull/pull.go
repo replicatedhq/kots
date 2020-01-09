@@ -220,6 +220,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
 				},
+				ReportWriter: pullOptions.ReportWriter,
 			}
 			if fetchOptions.License != nil {
 				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
@@ -322,7 +323,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 		rewrittenImages, affectedObjects, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to push upstream images")
+			return "", errors.Wrap(err, "failed to find private images")
 		}
 
 		// Note that there maybe no rewritten images if only replicated private images are being used.

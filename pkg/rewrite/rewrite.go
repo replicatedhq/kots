@@ -103,7 +103,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	var images []image.Image
 	var objects []*k8sdoc.Doc
 
-	if rewriteOptions.CopyImages {
+	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
+		// When CopyImages is set, we copy images, rewrite all images, and use registry
+		// settings to create secrets for all objects that have images.
+		// When only registry endpoint is set, we don't need to copy images, but still
+		// need to rewrite them and create secrets.
 		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
 			BaseDir:      writeBaseOptions.BaseDir,
 			ReportWriter: rewriteOptions.ReportWriter,
@@ -118,6 +122,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Username:  rewriteOptions.RegistryUsername,
 				Password:  rewriteOptions.RegistryPassword,
 			},
+			DryRun: !rewriteOptions.CopyImages,
 		}
 		if fetchOptions.License != nil {
 			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
@@ -125,22 +130,19 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
 
-		newImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
+		rewrittenImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to write upstream images")
 		}
-		images = newImages
-	}
 
-	findObjectsOptions := base.FindObjectsWithImagesOptions{
-		BaseDir: writeBaseOptions.BaseDir,
-	}
-	affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to find objects with images")
-	}
+		findObjectsOptions := base.FindObjectsWithImagesOptions{
+			BaseDir: writeBaseOptions.BaseDir,
+		}
+		affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to find objects with images")
+		}
 
-	if rewriteOptions.RegistryEndpoint != "" {
 		registryUser := rewriteOptions.RegistryUsername
 		registryPass := rewriteOptions.RegistryPassword
 		if registryUser == "" {
@@ -159,20 +161,41 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to create private registry pull secret")
 		}
-	} else {
-		replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
-		pullSecret, err = registry.PullSecretForRegistries(
-			replicatedRegistryInfo.ToSlice(),
-			rewriteOptions.License.Spec.LicenseID,
-			rewriteOptions.License.Spec.LicenseID,
-			rewriteOptions.K8sNamespace,
-		)
-		if err != nil {
-			return errors.Wrap(err, "failed to create Replicated registry pull secret")
-		}
-	}
 
-	objects = affectedObjects
+		images = rewrittenImages
+		objects = affectedObjects
+	} else {
+		// When CopyImages is not set, we only rewrite private images and use license to create secrets
+		// for all objects that have private images
+		findPrivateImagesOptions := base.FindPrivateImagesOptions{
+			BaseDir: writeBaseOptions.BaseDir,
+			AppSlug: fetchOptions.License.Spec.AppSlug,
+			ReplicatedRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+		}
+		rewrittenImages, affectedObjects, err := base.FindPrivateImages(findPrivateImagesOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to find private images")
+		}
+
+		if len(affectedObjects) > 0 {
+			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
+			pullSecret, err = registry.PullSecretForRegistries(
+				replicatedRegistryInfo.ToSlice(),
+				rewriteOptions.License.Spec.LicenseID,
+				rewriteOptions.License.Spec.LicenseID,
+				rewriteOptions.K8sNamespace,
+			)
+			if err != nil {
+				return errors.Wrap(err, "failed to create Replicated registry pull secret")
+			}
+		}
+
+		images = rewrittenImages
+		objects = affectedObjects
+	}
 
 	log.ActionWithSpinner("Creating midstream")
 
