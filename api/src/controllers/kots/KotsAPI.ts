@@ -160,7 +160,7 @@ export class KotsAPI {
       return {};
     }
 
-    const clusterIds = request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
+    const clusterIds = await request.app.locals.stores.kotsAppStore.listClusterIDsForApp(app.id);
     for (const clusterId of clusterIds) {
       const pendingVersions = await request.app.locals.stores.kotsAppStore.listPendingVersions(app.id, clusterId);
       // pending versions are sorted in the store
