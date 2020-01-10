@@ -109,7 +109,7 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset, rules
 
 	role.Rules = rules
 	_, err = clientset.RbacV1().Roles(namespace).Create(role)
-	if err != nil {
+	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
 		return None, errors.Wrap(err, "failed to create restricted role")
 	}
 
