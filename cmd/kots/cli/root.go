@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -38,7 +37,6 @@ func RootCmd() *cobra.Command {
 
 func InitAndExecute() {
 	if err := RootCmd().Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }
