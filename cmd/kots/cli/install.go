@@ -239,7 +239,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
+	cmd.Flags().MarkHidden("exclude-admin-console")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
