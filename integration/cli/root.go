@@ -15,7 +15,7 @@ func RootCmd() *cobra.Command {
 		Short:         "",
 		Long:          `.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},

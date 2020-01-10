@@ -29,7 +29,7 @@ func InstallCmd() *cobra.Command {
 		Short:         "Install an application to a cluster",
 		Long:          `Pull Kubernetes manifests from the remote upstream, deploy them to the specified cluster, then setup port forwarding to make the kotsadm admin console accessible.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -64,11 +64,7 @@ func InstallCmd() *cobra.Command {
 				if len(errs) > 0 {
 					return errors.New(errs[0])
 				}
-
-				return nil
-			}
-
-			if namespace == "" {
+			} else {
 				enteredNamespace, err := promptForNamespace(upstream)
 				if err != nil {
 					return errors.Wrap(err, "failed to prompt for namespace")

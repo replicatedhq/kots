@@ -16,7 +16,7 @@ func DownloadCmd() *cobra.Command {
 		Short:         "Download Kubernetes manifests from your cluster to the local filesystem",
 		Long:          `Download the active Kubernetes manifests from a cluster to the local filesystem so that they can be edited and then reapplied to the cluster with 'kots upload'.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
