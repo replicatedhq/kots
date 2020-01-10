@@ -3,6 +3,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import sortBy from "lodash/sortBy";
 import jwt from "jsonwebtoken";
+import size from "lodash/size";
 import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -212,6 +213,13 @@ export function isAwaitingResults(versionHistory) {
 }
 
 export function getPreflightResultState(preflightResults) {
+  if (size(preflightResults.errors) > 0) {
+    return "fail";
+  }
+  if (size(preflightResults.results) === 0) {
+    return "pass";
+  }
+
   const results = preflightResults.results;
   let resultState = "pass";
   for (const check of results) {
