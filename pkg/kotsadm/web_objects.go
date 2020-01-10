@@ -43,7 +43,15 @@ nginx -g "daemon off;"`, deployOptions.Hostname, deployOptions.Hostname,
 	return configMap
 }
 
-func webDeployment(namespace string) *appsv1.Deployment {
+func webDeployment(deployOptions DeployOptions) *appsv1.Deployment {
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(101),
+			FSGroup:   util.IntPointer(101),
+		}
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -51,7 +59,7 @@ func webDeployment(namespace string) *appsv1.Deployment {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-web",
-			Namespace: namespace,
+			Namespace: deployOptions.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -66,10 +74,7 @@ func webDeployment(namespace string) *appsv1.Deployment {
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: util.IntPointer(101),
-						FSGroup:   util.IntPointer(101),
-					},
+					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-web-scripts",

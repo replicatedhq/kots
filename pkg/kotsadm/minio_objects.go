@@ -41,6 +41,38 @@ func minioStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 		size = *newSize
 	}
 
+	var securityContext corev1.PodSecurityContext
+	var initContainers []corev1.Container
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
+			FSGroup:   util.IntPointer(1001),
+		}
+
+		initContainers = []corev1.Container{
+			{
+				Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Name:            "kotsadm-minio-init",
+				Command: []string{
+					"/bin/sh",
+					"-ce",
+					"chown -R minio:minio /export && chown -R minio:minio /home/minio/.minio",
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "kotsadm-minio",
+						MountPath: "/export",
+					},
+					{
+						Name:      "minio-config-dir",
+						MountPath: "/home/minio/.minio/",
+					},
+				},
+			},
+		}
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -83,10 +115,7 @@ func minioStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: util.IntPointer(1001),
-						FSGroup:   util.IntPointer(1001),
-					},
+					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-minio",
@@ -187,28 +216,7 @@ func minioStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
 							},
 						},
 					},
-					InitContainers: []corev1.Container{
-						{
-							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "kotsadm-minio-init",
-							Command: []string{
-								"/bin/sh",
-								"-ce",
-								"chown -R minio:minio /export && chown -R minio:minio /home/minio/.minio",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "kotsadm-minio",
-									MountPath: "/export",
-								},
-								{
-									Name:      "minio-config-dir",
-									MountPath: "/home/minio/.minio/",
-								},
-							},
-						},
-					},
+					InitContainers: initContainers,
 				},
 			},
 		},

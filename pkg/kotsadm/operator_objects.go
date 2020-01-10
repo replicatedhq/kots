@@ -124,7 +124,14 @@ func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deployment {
+func operatorDeployment(deployOptions DeployOptions) *appsv1.Deployment {
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
+		}
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -132,7 +139,7 @@ func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deploy
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-operator",
-			Namespace: namespace,
+			Namespace: deployOptions.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -147,9 +154,7 @@ func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deploy
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: util.IntPointer(1001),
-					},
+					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-operator",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
@@ -160,11 +165,11 @@ func operatorDeployment(namespace, autoCreateClusterToken string) *appsv1.Deploy
 							Env: []corev1.EnvVar{
 								{
 									Name:  "KOTSADM_API_ENDPOINT",
-									Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", namespace),
+									Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", deployOptions.Namespace),
 								},
 								{
 									Name:  "KOTSADM_TOKEN",
-									Value: autoCreateClusterToken,
+									Value: deployOptions.AutoCreateClusterToken,
 								},
 								{
 									Name: "KOTSADM_TARGET_NAMESPACE",

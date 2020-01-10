@@ -30,6 +30,7 @@ type DeployOptions struct {
 	Hostname               string
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
+	IsOpenShift            bool // true if the application is being deployed to an OpenShift cluster
 }
 
 type UpgradeOptions struct {
@@ -85,7 +86,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	}
 
 	// api
-	apiDocs, err := getApiYAML(deployOptions.Namespace, deployOptions.AutoCreateClusterToken)
+	apiDocs, err := getApiYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get api yaml")
 	}
@@ -103,7 +104,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	}
 
 	// operator
-	operatorDocs, err := getOperatorYAML(deployOptions.Namespace, deployOptions.AutoCreateClusterToken)
+	operatorDocs, err := getOperatorYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get operator yaml")
 	}
@@ -189,6 +190,8 @@ func Deploy(deployOptions DeployOptions) error {
 		return errors.Wrap(err, "failed to get limit ranges for namespace")
 	}
 	deployOptions.LimitRange = limitRange
+
+	deployOptions.IsOpenShift = isOpenshift(clientset)
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")

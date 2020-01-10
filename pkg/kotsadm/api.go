@@ -15,36 +15,36 @@ import (
 
 var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
 
-func getApiYAML(namespace, autoCreateClusterToken string) (map[string][]byte, error) {
+func getApiYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var role bytes.Buffer
-	if err := s.Encode(apiRole(namespace), &role); err != nil {
+	if err := s.Encode(apiRole(deployOptions.Namespace), &role); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api role")
 	}
 	docs["api-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(apiRoleBinding(namespace), &roleBinding); err != nil {
+	if err := s.Encode(apiRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api role binding")
 	}
 	docs["api-rolebinding.yaml"] = roleBinding.Bytes()
 
 	var serviceAccount bytes.Buffer
-	if err := s.Encode(apiServiceAccount(namespace), &serviceAccount); err != nil {
+	if err := s.Encode(apiServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api service account")
 	}
 	docs["api-serviceaccount.yaml"] = serviceAccount.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(apiDeployment(namespace, autoCreateClusterToken), &deployment); err != nil {
+	if err := s.Encode(apiDeployment(deployOptions), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api deployment")
 	}
 	docs["api-deployment.yaml"] = deployment.Bytes()
 
 	var service bytes.Buffer
-	if err := s.Encode(apiService(namespace), &service); err != nil {
+	if err := s.Encode(apiService(deployOptions.Namespace), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api service")
 	}
 	docs["api-service.yaml"] = service.Bytes()
@@ -167,7 +167,7 @@ func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(apiDeployment(deployOptions.Namespace, deployOptions.AutoCreateClusterToken))
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(apiDeployment(deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
