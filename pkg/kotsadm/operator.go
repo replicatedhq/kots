@@ -54,7 +54,10 @@ func getOperatorYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 
 func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
 	// TODO: log this error on debug level
-	rules, _ := k8sutil.GetCurrentRules(deployOptions.Kubeconfig, deployOptions.Context, clientset)
+	rules, err := k8sutil.GetCurrentRules(deployOptions.Kubeconfig, deployOptions.Context, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current rules")
+	}
 
 	if err := ensureOperatorRBAC(deployOptions.Namespace, clientset, rules); err != nil {
 		return errors.Wrap(err, "failed to ensure operator rbac")
