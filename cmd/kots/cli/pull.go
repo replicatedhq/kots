@@ -16,7 +16,7 @@ func PullCmd() *cobra.Command {
 		Short:         "Pull Kubernetes manifests from remote upstream to the local filesystem",
 		Long:          `Pull Kubernetes manifests from the remote upstream and save them to the local filesystem, so they can be edited before deploying them to a cluster.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
