@@ -24,6 +24,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{"a=b"},
 		},
 		{
+
 			name: "with-child",
 			values: map[string]MappedChartValue{
 				"postgres": MappedChartValue{
@@ -37,6 +38,30 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				},
 			},
 			expect: []string{"postgres.enabled=true"},
+		},
+		{
+			name: "array",
+			values: map[string]MappedChartValue{
+				"queues": MappedChartValue{
+					valueType: "array",
+					array: []map[string]*MappedChartValue{
+						map[string]*MappedChartValue{
+							"queue": &MappedChartValue{
+								strValue:  "first",
+								valueType: "string",
+							},
+							"replicas": &MappedChartValue{
+								floatValue: float64(5),
+								valueType:  "float",
+							},
+						},
+					},
+				},
+			},
+			expect: []string{
+				"queues[0].queue=first",
+				"queues[0].replicas=5",
+			},
 		},
 		{
 			name: "with-deep-children",
