@@ -53,8 +53,7 @@ func getOperatorYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 }
 
 func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	// TODO: log this error on debug level
-	rules, err := k8sutil.GetCurrentRules(deployOptions.Kubeconfig, deployOptions.Context, clientset)
+	rules, err := k8sutil.GetCurrentRules(deployOptions, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current rules")
 	}
