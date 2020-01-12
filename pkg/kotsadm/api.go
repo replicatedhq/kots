@@ -11,11 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
 
-func getApiYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -52,7 +54,7 @@ func getApiYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func waitForAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	start := time.Now()
 
 	for {
@@ -77,7 +79,7 @@ func waitForAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) e
 	}
 }
 
-func ensureAPI(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensureApiRBAC(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api rbac")
 	}
@@ -160,7 +162,7 @@ func ensureApiServiceAccount(namespace string, clientset *kubernetes.Clientset) 
 	return nil
 }
 
-func ensureAPIDeployment(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 func getApplicationMetadataYAML(data []byte, namespace string) (map[string][]byte, error) {
@@ -24,7 +26,7 @@ func getApplicationMetadataYAML(data []byte, namespace string) (map[string][]byt
 	return docs, nil
 }
 
-func ensureApplicationMetadata(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

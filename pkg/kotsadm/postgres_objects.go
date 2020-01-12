@@ -9,10 +9,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func postgresStatefulset(deployOptions DeployOptions) *appsv1.StatefulSet {
+func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	size := resource.MustParse("1Gi")
 
 	if deployOptions.LimitRange != nil {

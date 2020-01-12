@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 func Test_getMigrationsYAML(t *testing.T) {
@@ -30,7 +32,7 @@ func Test_getMigrationsYAML(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			deployOptions := DeployOptions{
+			deployOptions := types.DeployOptions{
 				Namespace:        test.namespace,
 				PostgresPassword: fmt.Sprintf("%d", time.Now().Unix()),
 			}

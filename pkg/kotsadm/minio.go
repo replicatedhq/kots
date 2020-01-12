@@ -9,9 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
-func getMinioYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -30,7 +32,7 @@ func getMinioYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
@@ -46,7 +48,7 @@ func ensureMinio(deployOptions DeployOptions, clientset *kubernetes.Clientset) e
 	return nil
 }
 
-func ensureMinioStatefulset(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

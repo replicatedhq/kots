@@ -7,10 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func migrationsPod(deployOptions DeployOptions) *corev1.Pod {
+func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 	name := fmt.Sprintf("kotsadm-migrations-%d", time.Now().Unix())
 
 	var securityContext corev1.PodSecurityContext

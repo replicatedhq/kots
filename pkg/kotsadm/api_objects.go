@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -94,7 +95,7 @@ func apiServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func apiDeployment(deployOptions DeployOptions) *appsv1.Deployment {
+func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{

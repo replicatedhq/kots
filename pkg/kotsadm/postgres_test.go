@@ -8,6 +8,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 func Test_getPostgresYAML(t *testing.T) {
@@ -32,7 +34,7 @@ func Test_getPostgresYAML(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			manifests, err := getPostgresYAML(DeployOptions{
+			manifests, err := getPostgresYAML(types.DeployOptions{
 				Namespace:        test.namespace,
 				PostgresPassword: test.password,
 			})
