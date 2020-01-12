@@ -5,12 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 func Test_getMigrationsYAML(t *testing.T) {

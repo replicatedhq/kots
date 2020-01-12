@@ -3,14 +3,13 @@ package kotsadm
 import (
 	"os"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {

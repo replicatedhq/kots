@@ -12,17 +12,16 @@ import (
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"k8s.io/apimachinery/pkg/util/validation"
-
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upload"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func InstallCmd() *cobra.Command {
@@ -115,7 +114,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to pull app metadata")
 				}
 
-				deployOptions := types.DeployOptions{
+				deployOptions := kotsadmtypes.DeployOptions{
 					Namespace:           namespace,
 					Kubeconfig:          v.GetString("kubeconfig"),
 					Context:             v.GetString("context"),

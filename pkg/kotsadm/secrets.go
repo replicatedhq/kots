@@ -7,10 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"

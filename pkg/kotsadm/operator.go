@@ -4,10 +4,8 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
-
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

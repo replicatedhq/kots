@@ -4,9 +4,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -24,7 +23,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			upgradeOptions := types.UpgradeOptions{
+			upgradeOptions := kotsadmtypes.UpgradeOptions{
 				Namespace:  v.GetString("namespace"),
 				Kubeconfig: v.GetString("kubeconfig"),
 			}

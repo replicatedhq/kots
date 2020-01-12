@@ -8,13 +8,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm"
-	types2 "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 type UpstreamSettings struct {
@@ -106,7 +105,7 @@ func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *
 func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
-	deployOptions := types2.DeployOptions{
+	deployOptions := kotsadmtypes.DeployOptions{
 		Namespace:              "default",
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,

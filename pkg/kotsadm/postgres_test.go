@@ -3,13 +3,12 @@ package kotsadm
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 func Test_getPostgresYAML(t *testing.T) {

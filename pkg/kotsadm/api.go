@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
 var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
