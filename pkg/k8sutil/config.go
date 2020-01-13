@@ -2,14 +2,13 @@ package k8sutil
 
 import (
 	"github.com/pkg/errors"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 )
 
-func GetCurrentRules(deployOptions kotsadm.DeployOptions, clientset *kubernetes.Clientset) ([]rbacv1.PolicyRule, error) {
+func GetCurrentRules(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset) ([]rbacv1.PolicyRule, error) {
 	sar := &authorizationv1.SelfSubjectRulesReview{
 		Spec: authorizationv1.SelfSubjectRulesReviewSpec{
 			Namespace: deployOptions.Namespace,

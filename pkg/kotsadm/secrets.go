@@ -8,6 +8,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
+func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -74,7 +75,7 @@ func getSecretsYAML(deployOptions *DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensureSecrets(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensureJWTSessionSecret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure jwt session secret")
 	}
@@ -171,7 +172,7 @@ func getPostgresSecret(namespace string, clientset *kubernetes.Clientset) (*core
 	return pgSecret, nil
 }
 
-func ensurePostgresSecret(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensurePostgresSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	existingPgSecret, err := getPostgresSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing postgres secret")
@@ -200,7 +201,7 @@ func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) 
 	return sharedPasswordSecret, nil
 }
 
-func ensureSharedPasswordSecret(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if deployOptions.SharedPassword == "" {
 		sharedPassword, err := promptForSharedPassword()
 		if err != nil {
@@ -266,7 +267,7 @@ func promptForSharedPassword() (string, error) {
 
 }
 
-func ensureAPIEncryptionSecret(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	secret, err := getAPIEncryptionSecret(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing postgres secret")

@@ -3,15 +3,15 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func webConfig(deployOptions DeployOptions) *corev1.ConfigMap {
+func webConfig(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -43,7 +43,7 @@ nginx -g "daemon off;"`, deployOptions.Hostname, deployOptions.Hostname,
 	return configMap
 }
 
-func webDeployment(deployOptions DeployOptions) *appsv1.Deployment {
+func webDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -133,7 +133,7 @@ func webDeployment(deployOptions DeployOptions) *appsv1.Deployment {
 	return deployment
 }
 
-func webService(deployOptions DeployOptions) *corev1.Service {
+func webService(deployOptions types.DeployOptions) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       3000,

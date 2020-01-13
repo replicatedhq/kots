@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -12,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getPostgresYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -34,7 +35,7 @@ func getPostgresYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensurePostgres(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensurePostgresSecret(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
@@ -50,7 +51,7 @@ func ensurePostgres(deployOptions DeployOptions, clientset *kubernetes.Clientset
 	return nil
 }
 
-func ensurePostgresStatefulset(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
