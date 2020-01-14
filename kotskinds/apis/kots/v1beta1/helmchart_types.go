@@ -58,14 +58,22 @@ func (m *MappedChartValue) GetValue() (interface{}, error) {
 		for k, v := range m.children {
 			childValue, err := v.GetValue()
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get value of child")
+				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
 			children[k] = childValue
 		}
 		return children, nil
 	}
 	if m.valueType == "array" {
-		return m.array, nil
+		var elements []interface{}
+		for i, v := range m.array {
+			elValue, err := v.GetValue()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
+			}
+			elements = append(elements, elValue)
+		}
+		return elements, nil
 	}
 
 	return nil, errors.New("unknown value type")
@@ -162,7 +170,12 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 					notNilChildren[ck] = *cv
 				}
 			}
-			childKeys, err := renderOneLevelValues(notNilChildren, append(parent, k))
+
+			next := append([]string{}, parent...)
+			if k != "" {
+				next = append(next, escapeKeyIfNeeded(k))
+			}
+			childKeys, err := renderOneLevelValues(notNilChildren, next)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get children")
 			}
@@ -173,15 +186,13 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				notNilChildren := map[string]MappedChartValue{}
 				notNilChildren[""] = *mv
 
-				childKeys, err := renderOneLevelValues(notNilChildren, []string{})
+				key := fmt.Sprintf("%s[%d]", escapeKeyIfNeeded(k), i)
+				childKeys, err := renderOneLevelValues(notNilChildren, append(parent, key))
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to get children")
 				}
 
-				for _, childKey := range childKeys {
-					key := fmt.Sprintf("%s[%d].%s", escapeKeyIfNeeded(k), i, childKey)
-					keys = append(keys, key)
-				}
+				keys = append(keys, childKeys...)
 			}
 		} else {
 			value, err := v.GetValue()
@@ -189,13 +200,12 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				return nil, errors.Wrap(err, "failed to get value")
 			}
 
-			key := fmt.Sprintf("%s", strings.Join(parent, "."))
-			if len(key) > 0 {
-				key = key + "."
+			next := append([]string{}, parent...)
+			if k != "" {
+				next = append(next, escapeKeyIfNeeded(k))
 			}
-
-			key = fmt.Sprintf("%s%s=%v", key, escapeKeyIfNeeded(k), value)
-			keys = append(keys, key)
+			key := strings.Join(next, ".")
+			keys = append(keys, fmt.Sprintf("%s=%v", key, value))
 		}
 	}
 

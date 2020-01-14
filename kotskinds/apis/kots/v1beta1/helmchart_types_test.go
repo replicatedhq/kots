@@ -139,34 +139,39 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{"postgres.enabled=true"},
 		},
 		{
-			name: "array",
+			name: "children with array",
 			values: map[string]MappedChartValue{
-				"queues": MappedChartValue{
-					valueType: "array",
-					array: []*MappedChartValue{
-						{
-							valueType: "children",
-							children: map[string]*MappedChartValue{
-								"queue": &MappedChartValue{
-									strValue:  "first",
-									valueType: "string",
+				"worker": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"queues": &MappedChartValue{
+							valueType: "array",
+							array: []*MappedChartValue{
+								{
+									valueType: "children",
+									children: map[string]*MappedChartValue{
+										"queue": &MappedChartValue{
+											strValue:  "first",
+											valueType: "string",
+										},
+										"replicas": &MappedChartValue{
+											floatValue: float64(1),
+											valueType:  "float",
+										},
+									},
 								},
-								"replicas": &MappedChartValue{
-									floatValue: float64(1),
-									valueType:  "float",
-								},
-							},
-						},
-						{
-							valueType: "children",
-							children: map[string]*MappedChartValue{
-								"queue": &MappedChartValue{
-									strValue:  "second",
-									valueType: "string",
-								},
-								"replicas": &MappedChartValue{
-									floatValue: float64(2),
-									valueType:  "float",
+								{
+									valueType: "children",
+									children: map[string]*MappedChartValue{
+										"queue": &MappedChartValue{
+											strValue:  "second",
+											valueType: "string",
+										},
+										"replicas": &MappedChartValue{
+											floatValue: float64(2),
+											valueType:  "float",
+										},
+									},
 								},
 							},
 						},
@@ -174,10 +179,10 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				},
 			},
 			expect: []string{
-				"queues[0].queue=first",
-				"queues[0].replicas=1",
-				"queues[1].queue=second",
-				"queues[1].replicas=2",
+				"worker.queues[0].queue=first",
+				"worker.queues[0].replicas=1",
+				"worker.queues[1].queue=second",
+				"worker.queues[1].replicas=2",
 			},
 		},
 		{
@@ -327,6 +332,53 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"child": "val",
+			},
+		},
+		{
+			name: "array",
+			mappedChartValue: MappedChartValue{
+				valueType: "array",
+				array: []*MappedChartValue{
+					&MappedChartValue{
+						strValue:  "val1",
+						valueType: "string",
+					},
+					&MappedChartValue{
+						strValue:  "val2",
+						valueType: "string",
+					},
+				},
+			},
+			expected: []interface{}{
+				"val1",
+				"val2",
+			},
+		},
+		{
+			name: "children with array",
+			mappedChartValue: MappedChartValue{
+				valueType: "children",
+				children: map[string]*MappedChartValue{
+					"child": &MappedChartValue{
+						array: []*MappedChartValue{
+							&MappedChartValue{
+								strValue:  "val1",
+								valueType: "string",
+							},
+							&MappedChartValue{
+								strValue:  "val2",
+								valueType: "string",
+							},
+						},
+						valueType: "array",
+					},
+				},
+			},
+			expected: map[string]interface{}{
+				"child": []interface{}{
+					"val1",
+					"val2",
+				},
 			},
 		},
 	}
