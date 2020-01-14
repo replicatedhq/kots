@@ -178,7 +178,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 					}
 
 					for _, childKey := range childKeys {
-						key := fmt.Sprintf("%s[%d].%s", k, i, childKey)
+						key := fmt.Sprintf("%s[%d].%s", escapeIfNeeded(k), i, escapeIfNeeded(childKey))
 						keys = append(keys, key)
 					}
 				}
@@ -194,12 +194,20 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				key = key + "."
 			}
 
-			key = fmt.Sprintf("%s%s=%v", key, k, value)
+			key = fmt.Sprintf("%s%s=%v", key, escapeIfNeeded(k), value)
 			keys = append(keys, key)
 		}
 	}
 
 	return keys, nil
+}
+
+func escapeIfNeeded(in string) string {
+	if !strings.Contains(in, ".") {
+		return in
+	}
+
+	return fmt.Sprintf(`%s`, strings.ReplaceAll(in, ".", `\.`))
 }
 
 func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]string, error) {

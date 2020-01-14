@@ -115,6 +115,33 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				"storage.postgres.host=amazonaws.com",
 			},
 		},
+		{
+			name: "with a map",
+			values: map[string]MappedChartValue{
+				"ingress": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: true,
+							valueType: "bool",
+						},
+						"annotations": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"kubernetes.io/ingress.class": &MappedChartValue{
+									strValue:  "nginx",
+									valueType: "string",
+								},
+							},
+						},
+					},
+				},
+			},
+			expect: []string{
+				"ingress.enabled=true",
+				`ingress.annotations.kubernetes\.io/ingress\.class=nginx`,
+			},
+		},
 	}
 
 	for _, test := range tests {
