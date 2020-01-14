@@ -1,12 +1,81 @@
 package v1beta1
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func Test_UnmarshalValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		value  string
+		expect map[string]MappedChartValue
+	}{
+		{
+			name: "simple",
+			value: `{
+  "apiVersion": "kots.io/v1beta1",
+  "kind": "HelmChart",
+  "metadata": {
+    "name": "test"
+  },
+  "spec": {
+    "values": {
+      "k8s": "blue"
+    }
+  }
+}`,
+			expect: map[string]MappedChartValue{
+				"k8s": MappedChartValue{
+					strValue:  "blue",
+					valueType: "string",
+				},
+			},
+		},
+		{
+			name: "array",
+			value: `{
+  "apiVersion": "kots.io/v1beta1",
+  "kind": "HelmChart",
+  "metadata": {
+    "name": "test"
+  },
+  "spec": {
+    "values": {
+      "l": [
+        {
+	  "a": "b"
+	},
+	{
+	  "a": "c"
+	}
+      ]
+    }
+  }
+}`,
+			expect: map[string]MappedChartValue{
+				"l": MappedChartValue{
+					// TODO
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			actual := HelmChart{}
+			err := json.Unmarshal([]byte(test.value), &actual)
+			req.NoError(err)
+
+			assert.Equal(t, test.expect, actual.Spec.Values)
+		})
+	}
+}
 func Test_HelmChartSpecRenderValues(t *testing.T) {
 	tests := []struct {
 		name   string
