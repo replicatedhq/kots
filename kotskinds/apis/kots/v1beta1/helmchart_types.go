@@ -35,13 +35,13 @@ type MappedChartValue struct {
 	boolValue  bool    `json:"-"`
 	floatValue float64 `json:"-"`
 
-	children map[string]*MappedChartValue   `json:"-"`
-	array    []map[string]*MappedChartValue `json:"-"`
+	children map[string]*MappedChartValue `json:"-"`
+	array    []*MappedChartValue          `json:"-"`
 }
 
 func (m *MappedChartValue) GetValue() (interface{}, error) {
 	if m.valueType == "string" {
-		return m.strValue, nil
+		return escapeValueIfNeeded(m.strValue), nil
 	}
 	if m.valueType == "bool" {
 		return m.boolValue, nil
@@ -58,14 +58,22 @@ func (m *MappedChartValue) GetValue() (interface{}, error) {
 		for k, v := range m.children {
 			childValue, err := v.GetValue()
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get value of child")
+				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
 			children[k] = childValue
 		}
 		return children, nil
 	}
 	if m.valueType == "array" {
-		return m.array, nil
+		var elements []interface{}
+		for i, v := range m.array {
+			elValue, err := v.GetValue()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
+			}
+			elements = append(elements, elValue)
+		}
+		return elements, nil
 	}
 
 	return nil, errors.New("unknown value type")
@@ -123,7 +131,7 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	}
 
 	if b, ok := b.([]interface{}); ok {
-		m.array = []map[string]*MappedChartValue{}
+		m.array = []*MappedChartValue{}
 		for _, v := range b {
 			vv, err := json.Marshal(v)
 			if err != nil {
@@ -134,6 +142,8 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 			if err := m2.UnmarshalJSON(vv); err != nil {
 				return err
 			}
+
+			m.array = append(m.array, m2)
 		}
 
 		m.valueType = "array"
@@ -160,7 +170,12 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 					notNilChildren[ck] = *cv
 				}
 			}
-			childKeys, err := renderOneLevelValues(notNilChildren, append(parent, k))
+
+			next := append([]string{}, parent...)
+			if k != "" {
+				next = append(next, escapeKeyIfNeeded(k))
+			}
+			childKeys, err := renderOneLevelValues(notNilChildren, next)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get children")
 			}
@@ -168,20 +183,16 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 			keys = append(keys, childKeys...)
 		} else if v.valueType == "array" {
 			for i, mv := range v.array {
-				for key, v := range mv {
-					notNilChildren := map[string]MappedChartValue{}
-					notNilChildren[key] = *v
+				notNilChildren := map[string]MappedChartValue{}
+				notNilChildren[""] = *mv
 
-					childKeys, err := renderOneLevelValues(notNilChildren, []string{})
-					if err != nil {
-						return nil, errors.Wrap(err, "failed to get children")
-					}
-
-					for _, childKey := range childKeys {
-						key := fmt.Sprintf("%s[%d].%s", escapeIfNeeded(k), i, escapeIfNeeded(childKey))
-						keys = append(keys, key)
-					}
+				key := fmt.Sprintf("%s[%d]", escapeKeyIfNeeded(k), i)
+				childKeys, err := renderOneLevelValues(notNilChildren, append(parent, key))
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to get children")
 				}
+
+				keys = append(keys, childKeys...)
 			}
 		} else {
 			value, err := v.GetValue()
@@ -189,25 +200,28 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				return nil, errors.Wrap(err, "failed to get value")
 			}
 
-			key := fmt.Sprintf("%s", strings.Join(parent, "."))
-			if len(key) > 0 {
-				key = key + "."
+			next := append([]string{}, parent...)
+			if k != "" {
+				next = append(next, escapeKeyIfNeeded(k))
 			}
-
-			key = fmt.Sprintf("%s%s=%v", key, escapeIfNeeded(k), value)
-			keys = append(keys, key)
+			key := strings.Join(next, ".")
+			keys = append(keys, fmt.Sprintf("%s=%v", key, value))
 		}
 	}
 
 	return keys, nil
 }
 
-func escapeIfNeeded(in string) string {
-	if !strings.Contains(in, ".") {
-		return in
-	}
+func escapeKeyIfNeeded(in string) string {
+	return strings.NewReplacer(
+		".", `\.`,
+	).Replace(in)
+}
 
-	return fmt.Sprintf(`%s`, strings.ReplaceAll(in, ".", `\.`))
+func escapeValueIfNeeded(in string) string {
+	return strings.NewReplacer(
+		",", `\,`,
+	).Replace(in)
 }
 
 func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]string, error) {

@@ -1,12 +1,101 @@
 package v1beta1
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func Test_UnmarshalValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		value  string
+		expect map[string]MappedChartValue
+	}{
+		{
+			name: "simple",
+			value: `{
+  "apiVersion": "kots.io/v1beta1",
+  "kind": "HelmChart",
+  "metadata": {
+    "name": "test"
+  },
+  "spec": {
+    "values": {
+      "k8s": "blue"
+    }
+  }
+}`,
+			expect: map[string]MappedChartValue{
+				"k8s": MappedChartValue{
+					strValue:  "blue",
+					valueType: "string",
+				},
+			},
+		},
+		{
+			name: "array",
+			value: `{
+  "apiVersion": "kots.io/v1beta1",
+  "kind": "HelmChart",
+  "metadata": {
+    "name": "test"
+  },
+  "spec": {
+    "values": {
+      "l": [
+        {
+	  "a": "b"
+	},
+	{
+	  "a": "c"
+	}
+      ]
+    }
+  }
+}`,
+			expect: map[string]MappedChartValue{
+				"l": MappedChartValue{
+					valueType: "array",
+					array: []*MappedChartValue{
+						{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"a": &MappedChartValue{
+									valueType: "string",
+									strValue:  "b",
+								},
+							},
+						},
+						{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"a": &MappedChartValue{
+									valueType: "string",
+									strValue:  "c",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			actual := HelmChart{}
+			err := json.Unmarshal([]byte(test.value), &actual)
+			req.NoError(err)
+
+			assert.Equal(t, test.expect, actual.Spec.Values)
+		})
+	}
+}
 func Test_HelmChartSpecRenderValues(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -22,6 +111,16 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				},
 			},
 			expect: []string{"a=b"},
+		},
+		{
+			name: "string with comma",
+			values: map[string]MappedChartValue{
+				"a": MappedChartValue{
+					strValue:  "b,c,d",
+					valueType: "string",
+				},
+			},
+			expect: []string{`a=b\,c\,d`},
 		},
 		{
 
@@ -40,27 +139,50 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{"postgres.enabled=true"},
 		},
 		{
-			name: "array",
+			name: "children with array",
 			values: map[string]MappedChartValue{
-				"queues": MappedChartValue{
-					valueType: "array",
-					array: []map[string]*MappedChartValue{
-						map[string]*MappedChartValue{
-							"queue": &MappedChartValue{
-								strValue:  "first",
-								valueType: "string",
-							},
-							"replicas": &MappedChartValue{
-								floatValue: float64(5),
-								valueType:  "float",
+				"worker": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"queues": &MappedChartValue{
+							valueType: "array",
+							array: []*MappedChartValue{
+								{
+									valueType: "children",
+									children: map[string]*MappedChartValue{
+										"queue": &MappedChartValue{
+											strValue:  "first",
+											valueType: "string",
+										},
+										"replicas": &MappedChartValue{
+											floatValue: float64(1),
+											valueType:  "float",
+										},
+									},
+								},
+								{
+									valueType: "children",
+									children: map[string]*MappedChartValue{
+										"queue": &MappedChartValue{
+											strValue:  "second",
+											valueType: "string",
+										},
+										"replicas": &MappedChartValue{
+											floatValue: float64(2),
+											valueType:  "float",
+										},
+									},
+								},
 							},
 						},
 					},
 				},
 			},
 			expect: []string{
-				"queues[0].queue=first",
-				"queues[0].replicas=5",
+				"worker.queues[0].queue=first",
+				"worker.queues[0].replicas=1",
+				"worker.queues[1].queue=second",
+				"worker.queues[1].replicas=2",
 			},
 		},
 		{
@@ -174,6 +296,14 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			expected: "abc",
 		},
 		{
+			name: "string with comma",
+			mappedChartValue: MappedChartValue{
+				strValue:  "abc,def,ghi",
+				valueType: "string",
+			},
+			expected: `abc\,def\,ghi`,
+		},
+		{
 			name: "bool",
 			mappedChartValue: MappedChartValue{
 				boolValue: true,
@@ -202,6 +332,53 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"child": "val",
+			},
+		},
+		{
+			name: "array",
+			mappedChartValue: MappedChartValue{
+				valueType: "array",
+				array: []*MappedChartValue{
+					&MappedChartValue{
+						strValue:  "val1",
+						valueType: "string",
+					},
+					&MappedChartValue{
+						strValue:  "val2",
+						valueType: "string",
+					},
+				},
+			},
+			expected: []interface{}{
+				"val1",
+				"val2",
+			},
+		},
+		{
+			name: "children with array",
+			mappedChartValue: MappedChartValue{
+				valueType: "children",
+				children: map[string]*MappedChartValue{
+					"child": &MappedChartValue{
+						array: []*MappedChartValue{
+							&MappedChartValue{
+								strValue:  "val1",
+								valueType: "string",
+							},
+							&MappedChartValue{
+								strValue:  "val2",
+								valueType: "string",
+							},
+						},
+						valueType: "array",
+					},
+				},
+			},
+			expected: map[string]interface{}{
+				"child": []interface{}{
+					"val1",
+					"val2",
+				},
 			},
 		},
 	}
