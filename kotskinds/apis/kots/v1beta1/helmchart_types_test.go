@@ -141,13 +141,21 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									strValue:  "first",
 									valueType: "string",
 								},
+								"replicas": &MappedChartValue{
+									floatValue: float64(1),
+									valueType:  "float",
+								},
 							},
 						},
 						{
 							valueType: "children",
 							children: map[string]*MappedChartValue{
+								"queue": &MappedChartValue{
+									strValue:  "second",
+									valueType: "string",
+								},
 								"replicas": &MappedChartValue{
-									floatValue: float64(5),
+									floatValue: float64(2),
 									valueType:  "float",
 								},
 							},
@@ -157,7 +165,9 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			},
 			expect: []string{
 				"queues[0].queue=first",
-				"queues[0].replicas=5",
+				"queues[0].replicas=1",
+				"queues[1].queue=second",
+				"queues[1].replicas=2",
 			},
 		},
 		{
