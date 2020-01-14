@@ -58,7 +58,21 @@ func Test_UnmarshalValues(t *testing.T) {
 }`,
 			expect: map[string]MappedChartValue{
 				"l": MappedChartValue{
-					// TODO
+					valueType: "array",
+					array: []map[string]*MappedChartValue{
+						{
+							"a": &MappedChartValue{
+								valueType: "string",
+								strValue:  "b",
+							},
+						},
+						{
+							"a": &MappedChartValue{
+								valueType: "string",
+								strValue:  "c",
+							},
+						},
+					},
 				},
 			},
 		},
