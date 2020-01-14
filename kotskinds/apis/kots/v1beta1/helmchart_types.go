@@ -35,8 +35,8 @@ type MappedChartValue struct {
 	boolValue  bool    `json:"-"`
 	floatValue float64 `json:"-"`
 
-	children map[string]*MappedChartValue   `json:"-"`
-	array    []map[string]*MappedChartValue `json:"-"`
+	children map[string]*MappedChartValue `json:"-"`
+	array    []*MappedChartValue          `json:"-"`
 }
 
 func (m *MappedChartValue) GetValue() (interface{}, error) {
@@ -123,8 +123,9 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 	}
 
 	if b, ok := b.([]interface{}); ok {
-		m.array = []map[string]*MappedChartValue{}
+		m.array = []*MappedChartValue{}
 		for _, v := range b {
+			fmt.Printf("v = %v\n", v)
 			vv, err := json.Marshal(v)
 			if err != nil {
 				return err
@@ -134,6 +135,8 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 			if err := m2.UnmarshalJSON(vv); err != nil {
 				return err
 			}
+
+			fmt.Printf("m2 = %#v\n", m2)
 		}
 
 		m.valueType = "array"
@@ -167,22 +170,22 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 
 			keys = append(keys, childKeys...)
 		} else if v.valueType == "array" {
-			for i, mv := range v.array {
-				for key, v := range mv {
-					notNilChildren := map[string]MappedChartValue{}
-					notNilChildren[key] = *v
+			// for i, mv := range v.array {
+			// 	for key, v := range mv {
+			// 		notNilChildren := map[string]MappedChartValue{}
+			// 		notNilChildren[key] = *v
 
-					childKeys, err := renderOneLevelValues(notNilChildren, []string{})
-					if err != nil {
-						return nil, errors.Wrap(err, "failed to get children")
-					}
+			// 		childKeys, err := renderOneLevelValues(notNilChildren, []string{})
+			// 		if err != nil {
+			// 			return nil, errors.Wrap(err, "failed to get children")
+			// 		}
 
-					for _, childKey := range childKeys {
-						key := fmt.Sprintf("%s[%d].%s", escapeIfNeeded(k), i, escapeIfNeeded(childKey))
-						keys = append(keys, key)
-					}
-				}
-			}
+			// 		for _, childKey := range childKeys {
+			// 			key := fmt.Sprintf("%s[%d].%s", escapeIfNeeded(k), i, escapeIfNeeded(childKey))
+			// 			keys = append(keys, key)
+			// 		}
+			// 	}
+			// }
 		} else {
 			value, err := v.GetValue()
 			if err != nil {

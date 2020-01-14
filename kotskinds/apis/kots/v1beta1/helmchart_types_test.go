@@ -59,17 +59,23 @@ func Test_UnmarshalValues(t *testing.T) {
 			expect: map[string]MappedChartValue{
 				"l": MappedChartValue{
 					valueType: "array",
-					array: []map[string]*MappedChartValue{
+					array: []*MappedChartValue{
 						{
-							"a": &MappedChartValue{
-								valueType: "string",
-								strValue:  "b",
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"a": &MappedChartValue{
+									valueType: "string",
+									strValue:  "b",
+								},
 							},
 						},
 						{
-							"a": &MappedChartValue{
-								valueType: "string",
-								strValue:  "c",
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"a": &MappedChartValue{
+									valueType: "string",
+									strValue:  "c",
+								},
 							},
 						},
 					},
@@ -127,15 +133,23 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			values: map[string]MappedChartValue{
 				"queues": MappedChartValue{
 					valueType: "array",
-					array: []map[string]*MappedChartValue{
-						map[string]*MappedChartValue{
-							"queue": &MappedChartValue{
-								strValue:  "first",
-								valueType: "string",
+					array: []*MappedChartValue{
+						{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"queue": &MappedChartValue{
+									strValue:  "first",
+									valueType: "string",
+								},
 							},
-							"replicas": &MappedChartValue{
-								floatValue: float64(5),
-								valueType:  "float",
+						},
+						{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"replicas": &MappedChartValue{
+									floatValue: float64(5),
+									valueType:  "float",
+								},
 							},
 						},
 					},
