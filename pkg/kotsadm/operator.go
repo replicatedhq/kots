@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ const (
 	Namespace = "namespace"
 )
 
-func getOperatorYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -52,9 +53,8 @@ func getOperatorYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensureOperator(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
-	// TODO: log this error on debug level
-	rules, err := k8sutil.GetCurrentRules(deployOptions.Kubeconfig, deployOptions.Context, clientset)
+func ensureOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	rules, err := k8sutil.GetCurrentRules(deployOptions, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current rules")
 	}
@@ -179,7 +179,7 @@ func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Client
 	return nil
 }
 
-func ensureOperatorDeployment(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-operator", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {

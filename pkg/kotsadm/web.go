@@ -8,6 +8,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -20,7 +21,7 @@ var (
 	executableMode = int32(511) // hex 777
 )
 
-func getWebYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getWebYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -45,7 +46,7 @@ func getWebYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func ensureWeb(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureWeb(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if deployOptions.Hostname == "" {
 		hostname, err := promptForHostname()
 		if err != nil {
@@ -79,7 +80,7 @@ func ensureWeb(deployOptions *DeployOptions, clientset *kubernetes.Clientset) er
 	return nil
 }
 
-func ensureWebConfig(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureWebConfig(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-web-scripts", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -95,7 +96,7 @@ func ensureWebConfig(deployOptions *DeployOptions, clientset *kubernetes.Clients
 	return nil
 }
 
-func ensureWebDeployment(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureWebDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -111,7 +112,7 @@ func ensureWebDeployment(deployOptions DeployOptions, clientset *kubernetes.Clie
 	return nil
 }
 
-func ensureWebService(deployOptions *DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureWebService(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -127,7 +128,7 @@ func ensureWebService(deployOptions *DeployOptions, clientset *kubernetes.Client
 	return nil
 }
 
-func promptForWebServiceType(deployOptions *DeployOptions) (string, error) {
+func promptForWebServiceType(deployOptions *types.DeployOptions) (string, error) {
 	prompt := promptui.Select{
 		Label: "Web/UI Service Type:",
 		Items: []string{"ClusterIP", "NodePort", "LoadBalancer"},

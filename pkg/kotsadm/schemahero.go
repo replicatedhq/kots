@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getMigrationsYAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func getMigrationsYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
@@ -26,7 +27,7 @@ func getMigrationsYAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func runSchemaHeroMigrations(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func runSchemaHeroMigrations(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	// we don't deploy the operator because that would require too high of
 	// a priv. so we just deploy database migrations here, at deployment time
 
@@ -70,7 +71,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (
 	}
 }
 
-func createSchemaHeroPod(deployOptions DeployOptions, clientset *kubernetes.Clientset) error {
+func createSchemaHeroPod(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(migrationsPod(deployOptions))
 	if err != nil {
 		return errors.Wrap(err, "failed to create pod")

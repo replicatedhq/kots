@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +33,7 @@ func Test_getPostgresYAML(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			manifests, err := getPostgresYAML(DeployOptions{
+			manifests, err := getPostgresYAML(types.DeployOptions{
 				Namespace:        test.namespace,
 				PostgresPassword: test.password,
 			})

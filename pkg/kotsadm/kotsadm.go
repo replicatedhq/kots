@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,35 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type DeployOptions struct {
-	Namespace              string
-	Kubeconfig             string
-	Context                string
-	IncludeShip            bool
-	IncludeGitHub          bool
-	SharedPassword         string
-	SharedPasswordBcrypt   string
-	S3AccessKey            string
-	S3SecretKey            string
-	JWT                    string
-	PostgresPassword       string
-	APIEncryptionKey       string
-	AutoCreateClusterToken string
-	ServiceType            string
-	NodePort               int32
-	Hostname               string
-	ApplicationMetadata    []byte
-	LimitRange             *corev1.LimitRange
-	IsOpenShift            bool // true if the application is being deployed to an OpenShift cluster
-}
-
-type UpgradeOptions struct {
-	Namespace  string
-	Kubeconfig string
-}
-
 // YAML will return a map containing the YAML needed to run the admin console
-func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
+func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 
 	if deployOptions.ApplicationMetadata != nil {
@@ -115,7 +89,7 @@ func YAML(deployOptions DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func Upgrade(upgradeOptions UpgradeOptions) error {
+func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -147,7 +121,7 @@ func Upgrade(upgradeOptions UpgradeOptions) error {
 	return nil
 }
 
-func Deploy(deployOptions DeployOptions) error {
+func Deploy(deployOptions types.DeployOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -200,7 +174,7 @@ func Deploy(deployOptions DeployOptions) error {
 	return nil
 }
 
-func ensureKotsadm(deployOptions DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
@@ -238,8 +212,8 @@ func ensureKotsadm(deployOptions DeployOptions, clientset *kubernetes.Clientset,
 	return nil
 }
 
-func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset *kubernetes.Clientset) (*DeployOptions, error) {
-	deployOptions := DeployOptions{
+func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
+	deployOptions := types.DeployOptions{
 		Namespace:     namespace,
 		Kubeconfig:    kubeconfig,
 		IncludeShip:   false,

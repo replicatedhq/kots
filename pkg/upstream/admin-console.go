@@ -9,6 +9,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -104,7 +105,7 @@ func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *
 func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
-	deployOptions := kotsadm.DeployOptions{
+	deployOptions := kotsadmtypes.DeployOptions{
 		Namespace:              "default",
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,

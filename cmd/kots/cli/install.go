@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upload"
@@ -113,7 +114,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to pull app metadata")
 				}
 
-				deployOptions := kotsadm.DeployOptions{
+				deployOptions := kotsadmtypes.DeployOptions{
 					Namespace:           namespace,
 					Kubeconfig:          v.GetString("kubeconfig"),
 					Context:             v.GetString("context"),
