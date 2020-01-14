@@ -113,6 +113,16 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{"a=b"},
 		},
 		{
+			name: "string with comma",
+			values: map[string]MappedChartValue{
+				"a": MappedChartValue{
+					strValue:  "b,c,d",
+					valueType: "string",
+				},
+			},
+			expect: []string{`a=b\,c\,d`},
+		},
+		{
 
 			name: "with-child",
 			values: map[string]MappedChartValue{
@@ -279,6 +289,14 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 				valueType: "string",
 			},
 			expected: "abc",
+		},
+		{
+			name: "string with comma",
+			mappedChartValue: MappedChartValue{
+				strValue:  "abc,def,ghi",
+				valueType: "string",
+			},
+			expected: `abc\,def\,ghi`,
 		},
 		{
 			name: "bool",

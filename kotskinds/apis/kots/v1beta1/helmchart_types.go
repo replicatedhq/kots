@@ -41,7 +41,7 @@ type MappedChartValue struct {
 
 func (m *MappedChartValue) GetValue() (interface{}, error) {
 	if m.valueType == "string" {
-		return m.strValue, nil
+		return escapeValueIfNeeded(m.strValue), nil
 	}
 	if m.valueType == "bool" {
 		return m.boolValue, nil
@@ -179,7 +179,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				}
 
 				for _, childKey := range childKeys {
-					key := fmt.Sprintf("%s[%d].%s", escapeIfNeeded(k), i, childKey)
+					key := fmt.Sprintf("%s[%d].%s", escapeKeyIfNeeded(k), i, childKey)
 					keys = append(keys, key)
 				}
 			}
@@ -194,7 +194,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				key = key + "."
 			}
 
-			key = fmt.Sprintf("%s%s=%v", key, escapeIfNeeded(k), value)
+			key = fmt.Sprintf("%s%s=%v", key, escapeKeyIfNeeded(k), value)
 			keys = append(keys, key)
 		}
 	}
@@ -202,12 +202,16 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 	return keys, nil
 }
 
-func escapeIfNeeded(in string) string {
-	if !strings.Contains(in, ".") {
-		return in
-	}
+func escapeKeyIfNeeded(in string) string {
+	return strings.NewReplacer(
+		".", `\.`,
+	).Replace(in)
+}
 
-	return fmt.Sprintf(`%s`, strings.ReplaceAll(in, ".", `\.`))
+func escapeValueIfNeeded(in string) string {
+	return strings.NewReplacer(
+		",", `\,`,
+	).Replace(in)
 }
 
 func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]string, error) {
