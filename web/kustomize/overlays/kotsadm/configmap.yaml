@@ -5,6 +5,4 @@ metadata:
 data:
   start-kotsadm-web.sh: |
     #!/bin/bash
-    sed -i 's/###_REST_ENDPOINT_###/https:\/\/{{repl ConfigOption "hostname"}}\/api/v1g' /usr/share/nginx/html/index.html
-
     nginx -g "daemon off;"
