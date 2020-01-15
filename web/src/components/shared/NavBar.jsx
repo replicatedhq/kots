@@ -6,7 +6,6 @@ import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
 import { listClusters } from "@src/queries/ClusterQueries";
-import { userInfo } from "@src/queries/UserQueries";
 import { getKotsLicenseType } from "@src/queries/AppsQueries";
 import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
@@ -38,15 +37,6 @@ export class NavBar extends PureComponent {
   }
 
   componentDidUpdate(lastProps) {
-    if (Utilities.isLoggedIn() && !this.state.user) {
-      this.props.client.query({ query: userInfo })
-        .then((res) => {
-          this.setState({ user: res.data.userInfo });
-        }).catch(() => {
-          Utilities.logoutUser();
-        });
-    }
-
     const { pathname } = this.props.location;
     if (pathname !== lastProps.location.pathname) {
       this.setSelectedTab();
@@ -55,13 +45,7 @@ export class NavBar extends PureComponent {
   }
 
   componentDidMount() {
-    if (Utilities.isLoggedIn()) {
-      this.getKotsLicenseType();
-      this.props.client.query({ query: userInfo })
-        .then((res) => {
-          this.setState({ user: res.data.userInfo });
-        }).catch();
-    }
+
     this.setSelectedTab();
   }
 

@@ -1,7 +1,6 @@
 const Mutation = `
 type Mutation {
   ping: String
-  loginToAdminConsole(password: String!): AdminSignupInfo
   logout: String
 
   updateCluster(clusterId: String!, clusterName: String!): Cluster

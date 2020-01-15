@@ -19,7 +19,7 @@ metadata:
   namespace: kube-system
 subjects:
 - kind: ServiceAccount
-  name: kotsadm-api
+  name: kotsadm-api-node
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -51,7 +51,7 @@ metadata:
   namespace: default
 subjects:
 - kind: ServiceAccount
-  name: kotsadm-api
+  name: kotsadm-api-node
   namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io

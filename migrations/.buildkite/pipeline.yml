@@ -1,7 +1,0 @@
-steps:
-  - commands:
-      - make -C migrations schema-alpha
-    branches: "master"
-
-  - commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C migrations schema-release; fi

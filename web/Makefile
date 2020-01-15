@@ -37,40 +37,25 @@ serve: deps
 		--progress -w --debug --compress --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
 
-.PHONY: build-kotsadm
-build-kotsadm: SHIP_CLOUD_ENV = enterprise
-build-kotsadm: webpack_build
-
 .PHONY: build-local
-build-local: SHIP_CLOUD_ENV = skaffold
 build-local: webpack_build_local
-
-webpack_build_local:
+build-local:
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
 		--config webpack.config.js \
-		--env ${SHIP_CLOUD_ENV} \
+		--env skaffold \
 		--mode development \
 		--compress
 
-.PHONY: webpack_build
-webpack_build: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
-webpack_build:
+.PHONY: build-kotsadm
+build-kotsadm: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
+build-kotsadm:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
 		--config webpack.config.js \
-		--env ${SHIP_CLOUD_ENV} \
+		--env enterprise \
 		--mode production
 
-.PHONY: publish-kotsadm-tag
-publish-kotsadm-tag:
-	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:${GIT_TAG} .
-	docker push kotsadm/kotsadm-web:${GIT_TAG}
-
-.PHONY: publish-kotsadm-alpha
-publish-kotsadm-alpha:
-	docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t kotsadm/kotsadm-web:alpha .
-	docker push kotsadm/kotsadm-web:alpha

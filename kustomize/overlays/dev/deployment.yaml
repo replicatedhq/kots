@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: kotsadm-api
+          env:
+            - name: DISABLE_SPA_SERVING
+              value: "1"
+            - name: KOTSADM_TARGET_NAMESPACE
+              value: "test"
+              valueFrom: ~
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: ship-postgres # This secret is created in the migrations directory
+                  key: uri
+            - name: SHARED_PASSWORD_BCRYPT
+              value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
+            - name: SESSION_KEY
+              value: this-is-not-too-secret

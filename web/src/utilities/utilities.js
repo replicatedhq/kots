@@ -145,15 +145,15 @@ export function getLineChanges(lineChangesArr) {
   let addedLines = 0;
   let removedLines = 0;
   lineChangesArr.forEach(lineChange => {
-    const { 
-      originalStartLineNumber, 
-      originalEndLineNumber, 
-      modifiedStartLineNumber, 
-      modifiedEndLineNumber 
+    const {
+      originalStartLineNumber,
+      originalEndLineNumber,
+      modifiedStartLineNumber,
+      modifiedEndLineNumber
     } = lineChange;
 
-    if (originalEndLineNumber === originalStartLineNumber && 
-        modifiedEndLineNumber === modifiedStartLineNumber && 
+    if (originalEndLineNumber === originalStartLineNumber &&
+        modifiedEndLineNumber === modifiedStartLineNumber &&
         originalEndLineNumber && modifiedEndLineNumber) {
       addedLines++;
       removedLines++;
@@ -180,20 +180,6 @@ export function getLineChanges(lineChangesArr) {
 export function isHelmChart(watch) {
   return Boolean(watch.helmName);
 }
-
-/**
- * @return {boolean} - true if user is using admin console/shared password
- */
-export function isSingleTenant() {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    return false;
-  }
-  const decodedToken = jwt.decode(token);
-
-  return !!decodedToken.isSingleTenant;
-}
-
 /**
  * Returns true if any item in version history is awaiting results
  * from kotsadm operator.
@@ -352,20 +338,13 @@ export const Utilities = {
 
   logoutUser(client) {
     const token = this.getToken();
-    const isSharedConsoleAdmin = isSingleTenant();
     // TODO: for now we just remove the token,
-    // this DOES NOT perform an actual logout of GitHub.
     if (token) {
       if (client) {client.resetStore();}
       window.localStorage.removeItem("token");
     }
 
-    if (isSharedConsoleAdmin) {
-      window.location = "/secure-console";
-    } else {
-      window.location = "/login";
-    }
-
+    window.location = "/secure-console";
   },
 
   isEmailValid(email) {

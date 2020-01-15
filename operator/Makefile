@@ -27,13 +27,13 @@ vet:
 
 .PHONY: test
 test: fmt vet pacts
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	go test ./pkg/... ./cmd/...
 
 .PHONY: build
 build:
 	go build -o bin/kotsadm-operator github.com/replicatedhq/kotsadm/operator/cmd/kotsadm-operator
 
-.PHONY: runs
+.PHONY: run
 run: bin
 	./bin/kotsadm-operator --api-endpoint http://localhost:30065 --token local
 

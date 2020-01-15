@@ -1,7 +1,35 @@
-SHELL := /bin/bash
+SHELL := /bin/bash -o pipefail
+export GO111MODULE=on
+export GOPROXY=https://proxy.golang.org
+
+.PHONY: kotsadm
+kotsadm:
+	go build -o bin/kotsadm github.com/replicatedhq/kotsadm/cmd/kotsadm
+
+.PHONY: fmt
+fmt:
+	go fmt ./pkg/... ./cmd/...
+
+.PHONY: vet
+vet:
+	go vet ./pkg/... ./cmd/...
 
 .PHONY: test
-test:
+test: fmt vet
+	go test ./pkg/... ./cmd/...
+
+.PHONY: build-alpha
+build-alpha:
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:alpha .
+	docker push kotsadm/kotsadm:alpha
+
+.PHONY: build-release
+build-release:
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:${GIT_TAG} .
+	docker push kotsadm/kotsadm:${GIT_TAG}
+
+.PHONY: project-pact-tests
+project-pact-tests:
 	make -C web test
 	make -C operator test
 
@@ -13,16 +41,3 @@ test:
 	make -C api test
 
 	@echo All contract tests have passed.
-
-.PHONY: kots-local-build
-kots-local-build: REGISTRY=registry.somebigbank.com
-kots-local-build: NAMESPACE=kotsadm
-kots-local-build: TAG=special
-kots-local-build:
-	cd api; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-api:${TAG}
-	cd web; make build-kotsadm && docker build --build-arg=nginxconf=deploy/kotsadm.conf -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-web:${TAG}
-	cd operator; docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-operator:${TAG}
-	docker pull schemahero/schemahero:0.7.1
-	cd migrations && docker build -f deploy/Dockerfile -t ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG} . && docker push ${REGISTRY}/${NAMESPACE}/kotsadm-migrations:${TAG}
-
-

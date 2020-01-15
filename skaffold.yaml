@@ -15,18 +15,13 @@ profiles:
         path: "./kustomize/overlays/microk8s"
         flags:
           apply:
-            - --validate=false  ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
+            - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
 
 build:
   local:
     useBuildkit: true
 
   artifacts:
-    - image: kotsadm-api
-      context: "./api"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
-
     - image: kotsadm-web
       context: "./web"
       sync:
@@ -43,6 +38,16 @@ build:
             dest: "./"
       docker:
         dockerfile: ./Dockerfile.skaffold
+
+    - image: kotsadm-api-node
+      context: "./api"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+    - image: kotsadm-api
+      context: "./"
+      docker:
+        dockerfile: ./dev/Dockerfile
 
     - image: kotsadm-operator
       context: "./operator"

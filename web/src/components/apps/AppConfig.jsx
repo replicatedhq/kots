@@ -218,7 +218,7 @@ class AppConfig extends Component {
               :
               <div className="Modal-body">
                 <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
-                  The config for {app?.name} has been updated. A new version is available on the version history page with these changes. 
+                  The config for {app?.name} has been updated. A new version is available on the version history page with these changes.
                 </p>
                 <div className="flex justifyContent--flexEnd">
                   <button type="button" className="btn blue secondary u-marginRight--10" onClick={this.hideNextStepModal}>Continue editing</button>
