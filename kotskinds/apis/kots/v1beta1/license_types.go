@@ -94,6 +94,7 @@ type EntitlementField struct {
 	Title       string           `json:"title,omitempty"`
 	Description string           `json:"description,omitempty"`
 	Value       EntitlementValue `json:"value,omitempty"`
+	ValueType   string           `json:"valueType,omitempty"`
 	IsHidden    bool             `json:"isHidden,omitempty"`
 }
 
@@ -102,6 +103,7 @@ type LicenseSpec struct {
 	Signature         []byte                      `json:"signature"`
 	AppSlug           string                      `json:"appSlug"`
 	Endpoint          string                      `json:"endpoint,omitempty"`
+	CustomerName      string                      `json:"customerName,omitempty"`
 	ChannelName       string                      `json:"channelName,omitempty"`
 	LicenseSequence   int64                       `json:"licenseSequence,omitempty"`
 	LicenseID         string                      `json:"licenseID"`

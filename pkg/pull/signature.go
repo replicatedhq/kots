@@ -148,7 +148,10 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 			return errors.New("one or more of the entitlements descriptions have changed")
 		}
 		if outerEntitlement.IsHidden != innerEntitlement.IsHidden {
-			return errors.New("one or more of the hidden entitlements have changed")
+			return errors.New("one or more of the entitlements hidden flags have changed")
+		}
+		if outerEntitlement.ValueType != innerEntitlement.ValueType {
+			return errors.New("one or more of the entitlements value types have changed")
 		}
 	}
 
