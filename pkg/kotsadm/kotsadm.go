@@ -1,306 +1,194 @@
 package kotsadm
 
 import (
-	"github.com/google/uuid"
+	"bytes"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
-// YAML will return a map containing the YAML needed to run the admin console
-func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
+var timeoutWaitingForKotsadm = time.Duration(time.Minute * 2)
+
+func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	if deployOptions.ApplicationMetadata != nil {
-		metadataDocs, err := getApplicationMetadataYAML(deployOptions.ApplicationMetadata, deployOptions.Namespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get application metadata yaml")
-		}
-		for n, v := range metadataDocs {
-			docs[n] = v
-		}
+	var role bytes.Buffer
+	if err := s.Encode(kotsadmRole(deployOptions.Namespace), &role); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm role")
 	}
+	docs["kotsadm-role.yaml"] = role.Bytes()
 
-	minioDocs, err := getMinioYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get minio yaml")
+	var roleBinding bytes.Buffer
+	if err := s.Encode(kotsadmRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
 	}
-	for n, v := range minioDocs {
-		docs[n] = v
-	}
+	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
 
-	postgresDocs, err := getPostgresYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres yaml")
+	var serviceAccount bytes.Buffer
+	if err := s.Encode(kotsadmServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm service account")
 	}
-	for n, v := range postgresDocs {
-		docs[n] = v
-	}
+	docs["kotsadm-serviceaccount.yaml"] = serviceAccount.Bytes()
 
-	migrationDocs, err := getMigrationsYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get migrations yaml")
+	var deployment bytes.Buffer
+	if err := s.Encode(kotsadmDeployment(deployOptions), &deployment); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm deployment")
 	}
-	for n, v := range migrationDocs {
-		docs[n] = v
-	}
+	docs["kotsadm-deployment.yaml"] = deployment.Bytes()
 
-	// secrets
-	secretsDocs, err := getSecretsYAML(&deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get secrets yaml")
+	var service bytes.Buffer
+	if err := s.Encode(kotsadmService(deployOptions.Namespace), &service); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm service")
 	}
-	for n, v := range secretsDocs {
-		docs[n] = v
-	}
-
-	// api
-	apiDocs, err := getApiYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get api yaml")
-	}
-	for n, v := range apiDocs {
-		docs[n] = v
-	}
-
-	// web
-	webDocs, err := getWebYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get web yaml")
-	}
-	for n, v := range webDocs {
-		docs[n] = v
-	}
-
-	// operator
-	operatorDocs, err := getOperatorYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get operator yaml")
-	}
-	for n, v := range operatorDocs {
-		docs[n] = v
-	}
+	docs["kotsadm-service.yaml"] = service.Bytes()
 
 	return docs, nil
 }
 
-func Upgrade(upgradeOptions types.UpgradeOptions) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
+func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	start := time.Now()
 
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	log := logger.NewLogger()
-
-	_, err = clientset.CoreV1().Namespaces().Get(upgradeOptions.Namespace, metav1.GetOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		err := errors.New("The namespace cannot be found or accessed")
-		log.Error(err)
-		return err
-	}
-
-	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, upgradeOptions.Kubeconfig, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to read deploy options")
-	}
-
-	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
-		return errors.Wrap(err, "failed to uppgrade admin console")
-	}
-
-	return nil
-}
-
-func Deploy(deployOptions types.DeployOptions) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	log := logger.NewLogger()
-
-	namespace := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: deployOptions.Namespace,
-		},
-	}
-
-	log.ChildActionWithSpinner("Creating namespace")
-	_, err = clientset.CoreV1().Namespaces().Create(namespace)
-	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
-		// Can't create namespace, but this might be a role restriction and namespace might already exist.
-		_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(metav1.ListOptions{})
+	for {
+		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm"})
 		if err != nil {
-			return errors.Wrap(err, "failed to verify access to namespace")
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				if pod.Status.ContainerStatuses[0].Ready == true {
+					return nil
+				}
+			}
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > timeoutWaitingForKotsadm {
+			return errors.New("timeout waiting for kotsadm pod")
 		}
 	}
-	log.FinishChildSpinner()
+}
 
-	if deployOptions.AutoCreateClusterToken == "" {
-		deployOptions.AutoCreateClusterToken = uuid.New().String()
+func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	if err := ensureKotsadmRBAC(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm rbac")
 	}
 
-	limitRange, err := maybeGetNamespaceLimitRanges(clientset, deployOptions.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to get limit ranges for namespace")
+	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure custom branding")
 	}
-	deployOptions.LimitRange = limitRange
+	if err := ensureKotsadmDeployment(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm deployment")
+	}
 
-	deployOptions.IsOpenShift = isOpenshift(clientset)
-
-	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
-		return errors.Wrap(err, "failed to deploy admin console")
+	if err := ensureKotsadmService(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm service")
 	}
 
 	return nil
 }
 
-func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
-	if err := ensureMinio(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure minio")
+func ensureKotsadmRBAC(namespace string, clientset *kubernetes.Clientset) error {
+	if err := ensureKotsadmRole(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm role")
 	}
 
-	if err := ensurePostgres(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres")
+	if err := ensureKotsadmRoleBinding(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm role binding")
 	}
 
-	if err := runSchemaHeroMigrations(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to run database migrations")
-	}
-
-	if err := ensureSecrets(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure secrets exist")
-	}
-
-	if err := ensureAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api exists")
-	}
-
-	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-	if err := waitForAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to wait for API")
-	}
-	log.FinishSpinner()
-
-	if err := ensureWeb(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure web exists")
-	}
-
-	if err := ensureOperator(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure operator")
+	if err := ensureKotsadmServiceAccount(namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm service account")
 	}
 
 	return nil
 }
 
-func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
-	deployOptions := types.DeployOptions{
-		Namespace:     namespace,
-		Kubeconfig:    kubeconfig,
-		IncludeShip:   false,
-		IncludeGitHub: false,
-		ServiceType:   "ClusterIP",
-		Hostname:      "localhost:8800",
-	}
-
-	// Shared password, we can't read the original, but we can check if there's a bcrypted value
-	// the caller should not recreate if there is a password bcrypt on the return value
-	sharedPasswordSecret, err := getSharedPasswordSecret(namespace, clientset)
+func ensureKotsadmRole(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().Roles(namespace).Get("kotsadm-role", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get shared password secret")
-	}
-	if sharedPasswordSecret != nil {
-		data, ok := sharedPasswordSecret.Data["passwordBcrypt"]
-		if ok {
-			deployOptions.SharedPasswordBcrypt = string(data)
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get role")
 		}
-	}
-	if deployOptions.SharedPasswordBcrypt == "" {
-		sharedPassword, err := promptForSharedPassword()
+
+		_, err := clientset.RbacV1().Roles(namespace).Create(kotsadmRole(namespace))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to prompt for shared password")
+			return errors.Wrap(err, "failed to create role")
 		}
-
-		deployOptions.SharedPassword = sharedPassword
 	}
 
-	// s3 secret, get from cluster or create new random values
-	s3Secret, err := getS3Secret(namespace, clientset)
+	return nil
+}
+
+func ensureKotsadmRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().RoleBindings(namespace).Get("kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get s3 secret")
-	}
-	if s3Secret != nil {
-		accessKey, ok := s3Secret.Data["accesskey"]
-		if ok {
-			deployOptions.S3AccessKey = string(accessKey)
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get rolebinding")
 		}
 
-		secretyKey, ok := s3Secret.Data["secretkey"]
-		if ok {
-			deployOptions.S3SecretKey = string(secretyKey)
+		_, err := clientset.RbacV1().RoleBindings(namespace).Create(kotsadmRoleBinding(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create rolebinding")
 		}
 	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
-	}
 
-	// jwt key, get or create new value
-	jwtSecret, err := getJWTSessionSecret(namespace, clientset)
+	return nil
+}
+
+func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get("kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get jwt secret")
-	}
-	if jwtSecret != nil {
-		sessionKey, ok := jwtSecret.Data["key"]
-		if ok {
-			deployOptions.JWT = string(sessionKey)
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get serviceaccouont")
+		}
+
+		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(kotsadmServiceAccount(namespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create serviceaccount")
 		}
 	}
 
-	// postgres password, read from the secret or create new password
-	pgSecret, err := getPostgresSecret(namespace, clientset)
+	return nil
+}
+
+func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres secret")
-	}
-	if pgSecret != nil {
-		password, ok := pgSecret.Data["password"]
-		if ok {
-			deployOptions.PostgresPassword = string(password)
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing deployment")
+		}
+
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(kotsadmDeployment(deployOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to create deployment")
 		}
 	}
 
-	// API encryption key, read from the secret or create new password
-	encyptionSecret, err := getAPIEncryptionSecret(namespace, clientset)
+	return nil
+}
+
+func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get postgres secret")
-	}
-	if encyptionSecret != nil {
-		key, ok := encyptionSecret.Data["encryptionKey"]
-		if ok {
-			deployOptions.APIEncryptionKey = string(key)
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing service")
+		}
+
+		_, err := clientset.CoreV1().Services(namespace).Create(kotsadmService(namespace))
+		if err != nil {
+			return errors.Wrap(err, "Failed to create service")
 		}
 	}
 
-	return &deployOptions, nil
+	return nil
 }
