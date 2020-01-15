@@ -116,7 +116,7 @@ steps:
           image: replicated/gitops-builder:buildkite
           workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
-      - "/bin/**/*"
+      - "./bin/**/*"
 
   ## typescript api
   - label: "verify pacts"
