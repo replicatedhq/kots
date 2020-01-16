@@ -24,8 +24,8 @@ run:
 
 .PHONY: schema-fixtures
 schema-fixtures:
-	docker pull schemahero/schemahero:0.7.1
-	docker run --user root -e uid=1 -v `pwd`:/out -v `pwd`/../tables:/in schemahero/schemahero:0.7.1 fixtures --input-dir /in --output-dir /out/schema --dbname -ship-cloud --driver postgres
+	docker pull schemahero/schemahero:0.7.2
+	docker run --user root -e uid=1 -v `pwd`:/out -v `pwd`/../tables:/in schemahero/schemahero:0.7.2 fixtures --input-dir /in --output-dir /out/schema --dbname -ship-cloud --driver postgres
 
 .PHONY: publish
 publish: IMAGE = kotsadm/${PROJECT_NAME}:latest
