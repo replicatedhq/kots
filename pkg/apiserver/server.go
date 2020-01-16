@@ -38,24 +38,26 @@ func Start() {
 	r.Path("/api/v1/troubleshoot/{appSlug}").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
+
 	// Implemented handlers
-	r.HandleFunc("/v1/login", handlers.Login)
-	r.HandleFunc("/v1/logout", handlers.NotImplemented)
-	r.Path("/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
+	r.HandleFunc("/api/v1/login", handlers.Login)
+	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
+	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
 
 	// TODO
 
 	// KURL
-	r.HandleFunc("/v1/kurl", handlers.NotImplemented)
+	r.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
 
 	// Prom
-	r.HandleFunc("/v1/prometheus", handlers.NotImplemented)
+	r.HandleFunc("/api/v1/prometheus", handlers.NotImplemented)
 
 	// GitOps
-	r.HandleFunc("/v1/gitops", handlers.NotImplemented)
+	r.HandleFunc("/api/v1/gitops", handlers.NotImplemented)
 
 	// License
-	r.HandleFunc("/v1/license", handlers.NotImplemented)
+	r.HandleFunc("/api/v1/license", handlers.NotImplemented)
 
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
