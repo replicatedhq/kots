@@ -441,7 +441,15 @@ func isPrivateImage(image string) (bool, error) {
 		return false, errors.Wrapf(err, "failed to parse image ref:%s", image)
 	}
 
-	remoteImage, err := ref.NewImage(context.Background(), nil)
+	sysCtx := types.SystemContext{}
+
+	// allow pulling images from http/invalid https docker repos
+	// intended for development only, _THIS MAKES THINGS INSECURE_
+	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+		sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
+
+	remoteImage, err := ref.NewImage(context.Background(), &sysCtx)
 	if err == nil {
 		remoteImage.Close()
 		return false, nil
