@@ -146,9 +146,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			localValues[i] = renderedValue
 		}
 
+		namespace := kotsHelmChart.Spec.Namespace
+		if namespace != "" {
+			namespace = "repl{{ Namespace}}"
+		}
+
 		helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
 			SplitMultiDocYAML: true,
-			Namespace:         "repl{{ Namespace }}",
+			Namespace:         namespace,
 			HelmOptions:       localValues,
 			Log:               nil,
 		})
