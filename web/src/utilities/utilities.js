@@ -18,11 +18,11 @@ export function getFileContent(file) {
   return new Promise((resolve, reject) => {
     let content = "";
     const reader = new FileReader();
-    reader.onloadend = function(e) {
+    reader.onloadend = function (e) {
       content = e.target.result;
       resolve(content);
     };
-    reader.onerror = function(e) {
+    reader.onerror = function (e) {
       reject(e);
     };
     reader.readAsText(file);
@@ -58,16 +58,16 @@ export function getBuildVersion() {
 export function sortAnalyzers(bundleInsight) {
   return sortBy(bundleInsight, (item) => {
     switch (item.severity) {
-    case "error":
-      return 1;
-    case "warn":
-      return 2;
-    case "info":
-      return 3;
-    case "debug":
-      return 4;
-    default:
-      return 1;
+      case "error":
+        return 1;
+      case "warn":
+        return 2;
+      case "info":
+        return 3;
+      case "debug":
+        return 4;
+      default:
+        return 1;
     }
   })
 }
@@ -122,7 +122,7 @@ export function getLicenseExpiryDate(license) {
 
 export function rootPath(path) {
   if (path[0] !== "/") {
-    return path = "/"+path;
+    return path = "/" + path;
   } else {
     return path;
   }
@@ -153,8 +153,8 @@ export function getLineChanges(lineChangesArr) {
     } = lineChange;
 
     if (originalEndLineNumber === originalStartLineNumber &&
-        modifiedEndLineNumber === modifiedStartLineNumber &&
-        originalEndLineNumber && modifiedEndLineNumber) {
+      modifiedEndLineNumber === modifiedStartLineNumber &&
+      originalEndLineNumber && modifiedEndLineNumber) {
       addedLines++;
       removedLines++;
     } else {
@@ -187,7 +187,7 @@ export function isHelmChart(watch) {
  * @return {Boolean}
  */
 export function isAwaitingResults(versionHistory) {
-  for(const version of versionHistory) {
+  for (const version of versionHistory) {
     switch (version.status) {
       case "pending_preflight":
       case "unknown":
@@ -267,7 +267,7 @@ export const Utilities = {
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
       return true;
-    } catch(e) {
+    } catch (e) {
       return false;
     }
   },
@@ -340,7 +340,7 @@ export const Utilities = {
     const token = this.getToken();
     // TODO: for now we just remove the token,
     if (token) {
-      if (client) {client.resetStore();}
+      if (client) { client.resetStore(); }
       window.localStorage.removeItem("token");
     }
 
@@ -352,26 +352,4 @@ export const Utilities = {
     const exp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return exp.test(newEmail);
   },
-
-  async handleDownload(id) {
-    const response = await fetch(`${window.env.SHIPDOWNLOAD_ENDPOINT}/${id}`, {
-      headers: new Headers({
-        "Authorization": Utilities.getToken(),
-      }),
-    })
-
-    if (response.ok) {
-      const blob = await response.blob();
-
-      let contentType = response.headers.get("Content-Type");
-      let filename = `rendered.${contentType}`;
-
-      const contentDispositionHeader = response.headers.get("Content-Disposition");
-      if (contentDispositionHeader) {
-        ([, filename] = contentDispositionHeader.split("filename="));
-      }
-
-      download(blob, filename, response.headers.get("Content-Type"));
-    }
-  }
 };

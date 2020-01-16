@@ -39,7 +39,7 @@ let history = connectHistory(browserHistory);
  */
 const GraphQLClient = ShipClientGQL(
   window.env.GRAPHQL_ENDPOINT,
-  window.env.REST_ENDPOINT,
+  window.env.API_ENDPOINT,
   () => Utilities.getToken()
 );
 
@@ -62,9 +62,9 @@ class ProtectedRoute extends Component {
 }
 
 const ThemeContext = React.createContext({
-  setThemeState: () => {},
+  setThemeState: () => { },
   getThemeState: () => ({}),
-  clearThemeState: () => {}
+  clearThemeState: () => { }
 });
 
 class Root extends Component {
@@ -136,7 +136,7 @@ class Root extends Component {
     const apps = await GraphQLClient.query({
       query: listApps,
       fetchPolicy: "no-cache"
-    }).catch( error => {
+    }).catch(error => {
       throw error;
     });
 
@@ -158,25 +158,25 @@ class Root extends Component {
       },
       method: "GET",
     })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!data) {
-        this.setState({ fetchingMetadata: false });
-        return;
-      }
+      .then(async (res) => {
+        const data = await res.json();
+        if (!data) {
+          this.setState({ fetchingMetadata: false });
+          return;
+        }
 
-      this.setState({
-        appLogo: data.iconUri,
-        selectedAppName: data.name,
-        appNameSpace: data.namespace,
-        isKurlEnabled: data.isKurlEnabled,
-        fetchingMetadata: false
+        this.setState({
+          appLogo: data.iconUri,
+          selectedAppName: data.name,
+          appNameSpace: data.namespace,
+          isKurlEnabled: data.isKurlEnabled,
+          fetchingMetadata: false
+        });
+      })
+      .catch((err) => {
+        this.setState({ fetchingMetadata: false });
+        throw err;
       });
-    })
-    .catch((err) => {
-      this.setState({ fetchingMetadata: false });
-      throw err;
-    });
 
   }
 
@@ -277,8 +277,8 @@ class Root extends Component {
                       };
                       return <Crashz />;
 
-                    }}/>
-                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchListApps={this.refetchListApps} /> }/>
+                    }} />
+                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
                     <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />

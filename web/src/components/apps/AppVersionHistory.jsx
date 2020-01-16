@@ -178,9 +178,9 @@ class AppVersionHistory extends Component {
       // no current version found
       return (
         <button
-            className="btn primary blue"
-            onClick={() => this.deployVersion(version)}
-          >
+          className="btn primary blue"
+          onClick={() => this.deployVersion(version)}
+        >
           Deploy
         </button>
       );
@@ -479,7 +479,7 @@ class AppVersionHistory extends Component {
   }
 
   onDropBundle = async files => {
-    this.setState({ 
+    this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: null
@@ -489,7 +489,7 @@ class AppVersionHistory extends Component {
     formData.append("file", files[0]);
     formData.append("appId", this.props.app.id);
 
-    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap/update`;
+    const url = `${window.env.API_ENDPOINT}/kots/airgap/update`;
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
 
@@ -535,8 +535,8 @@ class AppVersionHistory extends Component {
   }
 
   onProgressError = async (airgapUploadError) => {
-    Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
-      if (airgapUploadError.includes(errorString)){
+    Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
+      if (airgapUploadError.includes(errorString)) {
         airgapUploadError = message;
       }
     });
@@ -550,8 +550,8 @@ class AppVersionHistory extends Component {
 
   renderDiffBtn = () => {
     const { app, data } = this.props;
-    const { 
-      showDiffOverlay, 
+    const {
+      showDiffOverlay,
       selectedDiffReleases,
       checkedReleasesToDiff,
     } = this.state;
@@ -581,11 +581,11 @@ class AppVersionHistory extends Component {
             Diff releases
           </button>
         </div>
-      :
-      <div className="flex-auto flex alignItems--center" onClick={this.onSelectReleasesToDiff}>
-        <span className="icon diffReleasesIcon"></span>
-        <span className="u-fontSize--small u-fontWeight--medium u-color--royalBlue u-cursor--pointer u-marginLeft--5">Diff versions</span>
-      </div>
+        :
+        <div className="flex-auto flex alignItems--center" onClick={this.onSelectReleasesToDiff}>
+          <span className="icon diffReleasesIcon"></span>
+          <span className="u-fontSize--small u-fontWeight--medium u-color--royalBlue u-cursor--pointer u-marginLeft--5">Diff versions</span>
+        </div>
     );
   }
 
@@ -618,7 +618,7 @@ class AppVersionHistory extends Component {
       firstSequence = checkedReleasesToDiff[0].parentSequence;
       secondSequence = checkedReleasesToDiff[1].parentSequence;
     }
-    
+
     return {
       firstSequence,
       secondSequence
@@ -722,7 +722,7 @@ class AppVersionHistory extends Component {
     } else if (has(data, "stopPolling")) {
       data?.stopPolling();
     }
-  
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -743,7 +743,7 @@ class AppVersionHistory extends Component {
                 <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{app.currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
                 <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">
                   {app?.currentVersion?.deployedAt && `Released on ${dayjs(app.currentVersion.deployedAt).format("MMMM D, YYYY")}`}
-                  {app?.currentVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": app?.currentVersion?.deployedAt})} onClick={this.showReleaseNotes}>Release Notes</span>}
+                  {app?.currentVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": app?.currentVersion?.deployedAt })} onClick={this.showReleaseNotes}>Release Notes</span>}
                 </p>
               </div>
             </div>
@@ -814,7 +814,7 @@ class AppVersionHistory extends Component {
                 {versionHistory.length >= 1 ? versionHistory.map((version) => {
                   const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                   return (
-                    <div 
+                    <div
                       key={version.sequence}
                       className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "selected": isChecked })}
                       onClick={() => selectedDiffReleases && this.handleSelectReleasesToDiff(version, !isChecked)}
@@ -845,7 +845,7 @@ class AppVersionHistory extends Component {
                       </div>
                     </div>
                   );
-                }) : 
+                }) :
                   <div className="flex-column flex1 alignItems--center justifyContent--center">
                     <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">No versions have been deployed.</p>
                   </div>
@@ -902,28 +902,9 @@ class AppVersionHistory extends Component {
                 <div className="flex-column flex1">
                   {logs.renderError ?
                     <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
-                    <MonacoEditor
-                      language="json"
-                      value={logs.renderError}
-                      height="100%"
-                      width="100%"
-                      options={{
-                        readOnly: true,
-                        contextmenu: false,
-                        minimap: {
-                          enabled: false
-                        },
-                        scrollBeyondLastLine: false,
-                      }}
-                    />
-                  </div>
-                  :
-                  <div className="flex-column flex1">
-                    {this.renderLogsTabs()}
-                    <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
                       <MonacoEditor
                         language="json"
-                        value={logs[selectedTab]}
+                        value={logs.renderError}
                         height="100%"
                         width="100%"
                         options={{
@@ -936,7 +917,26 @@ class AppVersionHistory extends Component {
                         }}
                       />
                     </div>
-                  </div>
+                    :
+                    <div className="flex-column flex1">
+                      {this.renderLogsTabs()}
+                      <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
+                        <MonacoEditor
+                          language="json"
+                          value={logs[selectedTab]}
+                          height="100%"
+                          width="100%"
+                          options={{
+                            readOnly: true,
+                            contextmenu: false,
+                            minimap: {
+                              enabled: false
+                            },
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
+                    </div>
                   }
                   <div className="u-marginTop--20 flex">
                     <button type="button" className="btn primary" onClick={this.hideLogsModal}>Ok, got it!</button>
