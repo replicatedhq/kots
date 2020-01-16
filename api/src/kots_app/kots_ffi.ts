@@ -46,7 +46,6 @@ function kots() {
     ListUpdates: ["void", [GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    RemoveMetadata: ["void", [GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoString]],
     TemplateConfig: [GoString, [GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
