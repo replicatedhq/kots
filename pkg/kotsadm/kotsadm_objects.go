@@ -12,14 +12,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func apiRole(namespace string) *rbacv1.Role {
+func kotsadmRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-api-role",
+			Name:      "kotsadm-role",
 			Namespace: namespace,
 		},
 		// creation cannot be restricted by name
@@ -52,41 +52,41 @@ func apiRole(namespace string) *rbacv1.Role {
 	return role
 }
 
-func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
+func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-api-rolebinding",
+			Name:      "kotsadm-rolebinding",
 			Namespace: namespace,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      "kotsadm-api",
+				Name:      "kotsadm",
 				Namespace: namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "Role",
-			Name:     "kotsadm-api-role",
+			Name:     "kotsadm-role",
 		},
 	}
 
 	return roleBinding
 }
 
-func apiServiceAccount(namespace string) *corev1.ServiceAccount {
+func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	serviceAccount := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-api",
+			Name:      "kotsadm",
 			Namespace: namespace,
 		},
 	}
@@ -94,7 +94,7 @@ func apiServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
+func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -108,30 +108,30 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-api",
+			Name:      "kotsadm",
 			Namespace: deployOptions.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "kotsadm-api",
+					"app": "kotsadm",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "kotsadm-api",
+						"app": "kotsadm",
 					},
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext:    &securityContext,
-					ServiceAccountName: "kotsadm-api",
+					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(), kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullAlways,
-							Name:            "kotsadm-api",
+							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
@@ -163,71 +163,6 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 								{
-									Name:  "AUTO_CREATE_CLUSTER",
-									Value: "1",
-								},
-								{
-									Name:  "AUTO_CREATE_CLUSTER_NAME",
-									Value: "this-cluster",
-								},
-								{
-									Name:  "AUTO_CREATE_CLUSTER_TOKEN",
-									Value: deployOptions.AutoCreateClusterToken,
-								},
-								{
-									Name:  "SHIP_API_ENDPOINT",
-									Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
-								},
-								{
-									Name:  "SHIP_API_ADVERTISE_ENDPOINT",
-									Value: "http://localhost:8800",
-								},
-								{
-									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
-								},
-								{
-									Name:  "S3_BUCKET_NAME",
-									Value: "kotsadm",
-								},
-								{
-									Name: "API_ENCRYPTION_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-encryption",
-											},
-											Key: "encryptionKey",
-										},
-									},
-								},
-								{
-									Name: "S3_ACCESS_KEY_ID",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "accesskey",
-										},
-									},
-								},
-								{
-									Name: "S3_SECRET_ACCESS_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "secretkey",
-										},
-									},
-								},
-								{
-									Name:  "S3_BUCKET_ENDPOINT",
-									Value: "true",
-								},
-								{
 									Name: "SESSION_KEY",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
@@ -257,14 +192,6 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 										},
 									},
 								},
-								{
-									Name:  "ENABLE_KOTS",
-									Value: "1",
-								},
-								{
-									Name:  "ENABLE_SHIP",
-									Value: "0",
-								},
 							},
 						},
 					},
@@ -276,7 +203,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	return deployment
 }
 
-func apiService(namespace string) *corev1.Service {
+func kotsadmService(namespace string) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       3000,
@@ -291,12 +218,12 @@ func apiService(namespace string) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-api-node",
+			Name:      "kotsadm",
 			Namespace: namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app": "kotsadm-api",
+				"app": "kotsadm",
 			},
 			Type: serviceType,
 			Ports: []corev1.ServicePort{

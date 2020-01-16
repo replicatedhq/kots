@@ -27,7 +27,7 @@ func AdminConsoleCmd() *cobra.Command {
 
 			log := logger.NewLogger()
 
-			podName, err := k8sutil.WaitForWeb(v.GetString("namespace"), time.Second*5)
+			podName, err := k8sutil.WaitForKotsadm(v.GetString("namespace"), time.Second*5)
 			if err != nil {
 				return errors.Wrap(err, "failed to wait for web")
 			}

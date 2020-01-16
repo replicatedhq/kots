@@ -182,7 +182,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			podName, err := k8sutil.WaitForWeb(namespace, time.Minute*3)
+			podName, err := k8sutil.WaitForKotsadm(namespace, time.Minute*3)
 			if err != nil {
 				return errors.Wrap(err, "failed to wait for web")
 			}

@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func WaitForWeb(namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
+func WaitForKotsadm(namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -25,7 +25,7 @@ func WaitForWeb(namespace string, timeoutWaitingForWeb time.Duration) (string, e
 
 	for {
 		// todo, find service, not pod
-		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-web"})
+		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm"})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to list pods")
 		}
@@ -41,7 +41,7 @@ func WaitForWeb(namespace string, timeoutWaitingForWeb time.Duration) (string, e
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > timeoutWaitingForWeb {
-			return "", errors.New("timeout waiting for web pod")
+			return "", errors.New("timeout waiting for kotsadm pod")
 		}
 	}
 }
