@@ -115,7 +115,11 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	}
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
-		return errors.Wrap(err, "failed to uppgrade admin console")
+		return errors.Wrap(err, "failed to upgrade admin console")
+	}
+
+	if err := removeUnusedKotsadmComponents(*deployOptions, clientset, log); err != nil {
+		return errors.Wrap(err, "failed to removed unused admin console components")
 	}
 
 	return nil
@@ -169,6 +173,26 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
+	}
+
+	return nil
+}
+
+func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	// if there's a kotsadm web deployment, rmove (pre 1.11.0)
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete("kotsadm-web", &metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-web deployment")
+		}
+	}
+
+	// if there's a service named "kotsadm-api", remove (pre 1.11.0)
+	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete("kotsadm-api", &metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-api service")
+		}
 	}
 
 	return nil

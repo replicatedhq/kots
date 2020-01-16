@@ -178,7 +178,7 @@ func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernete
 }
 
 func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-api", metav1.GetOptions{})
+	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-api-node", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
