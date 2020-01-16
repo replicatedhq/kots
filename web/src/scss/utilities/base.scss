@@ -38,6 +38,43 @@ body a {
   }
 }
 
+.status-indicator {
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 500;
+  color: #AFAFAF;
+  position: relative;
+  padding-left: 12px;
+
+  &::before {
+    position: absolute;
+    content: "";
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 100%;
+    margin-right: 4px;
+    top: 4px;
+    left: 0;
+  }
+
+  &.completed::before {
+    background-color: #44bb66;
+  }
+  &.failed::before {
+    background-color: #BC4752;
+  }
+  &.inprogress::before {
+    background-color: #326DE6;
+  }
+  &.reclaimed::before {
+    background-color: #4999AD;
+  }
+  &.deleting::before {
+    background-color: #F7B500;
+  }
+}
+
 code {
   padding: 2px 4px;
   font-size: 90%;
@@ -125,6 +162,11 @@ code {
     display: block;
   }
 }
+
+.arrow_box {
+  padding: 10px;
+}
+
 
 /*
 Apply this class to any icon using main_spritesheet. From there

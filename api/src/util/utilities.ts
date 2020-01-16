@@ -161,3 +161,7 @@ export function getGitProviderCommitUrl(repoUri: string, commitHash: string, pro
       return `${repoUri}/commit/${commitHash}`;
   }
 }
+
+export async function sleep(seconds): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+}

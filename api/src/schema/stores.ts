@@ -5,6 +5,7 @@ import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
 import { HelmChartStore } from "../helmchart";
+import { SnapshotsStore } from "../snapshots";
 import { TroubleshootStore } from "../troubleshoot";
 import { KotsLicenseStore } from "../klicenses";
 import { PreflightStore } from "../preflight/preflight_store";
@@ -22,6 +23,7 @@ export interface Stores {
   featureStore: FeatureStore;
   healthzStore: HealthzStore;
   helmChartStore: HelmChartStore;
+  snapshotsStore: SnapshotsStore,
   troubleshootStore: TroubleshootStore;
   kotsLicenseStore: KotsLicenseStore;
   preflightStore: PreflightStore;

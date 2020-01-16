@@ -19,7 +19,8 @@ import {
   extractKotsAppLicenseFromTarball,
   extractAnalyzerSpecFromTarball,
   extractConfigSpecFromTarball,
-  extractConfigValuesFromTarball
+  extractConfigValuesFromTarball,
+  extractBackupSpecFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
 import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
@@ -42,6 +43,7 @@ import { base64Decode } from "../../util/utilities";
 import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 import { createGitCommitForVersion } from "../../kots_app/gitops";
+import { backup } from "../../snapshots/backup";
 
 interface CreateAppBody {
   metadata: string;
@@ -297,6 +299,7 @@ export class KotsAPI {
     const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
     const configSpec = await extractConfigSpecFromTarball(buffer);
     const configValues = await extractConfigValuesFromTarball(buffer);
+    const backupSpec = await extractBackupSpecFromTarball(buffer);
 
     await request.app.locals.stores.kotsAppStore.createMidstreamVersion(
       kotsApp.id,
@@ -314,7 +317,8 @@ export class KotsAPI {
       configSpec,
       configValues,
       appTitle,
-      appIcon
+      appIcon,
+      backupSpec
     );
 
     // we have a local copy of the file now, let's look for downstreams
@@ -579,6 +583,18 @@ export class KotsAPI {
     }
     return {error: testError};
   }
+
+  @Post("/:slug/snapshot")
+  async kotsSnapshot(
+    @BodyParams("") body: any,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<any> {
+    const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(request.params.slug);
+    const scheduled = true;
+
+    await backup(request.app.locals.stores, appId, scheduled);
+  }
 }
 
 export async function uploadUpdate(stores, slug, buffer, source) {
@@ -602,6 +618,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
   const configSpec = await extractConfigSpecFromTarball(buffer);
   const configValues = await extractConfigValuesFromTarball(buffer);
+  const backupSpec = await extractBackupSpecFromTarball(buffer);
 
   await stores.kotsAppStore.createMidstreamVersion(
     kotsApp.id,
@@ -619,7 +636,8 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     configSpec,
     configValues,
     appTitle,
-    appIcon
+    appIcon,
+    backupSpec
   );
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(kotsApp.id);

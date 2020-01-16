@@ -20,6 +20,7 @@ import {
   extractAnalyzerSpecFromTarball,
   extractConfigSpecFromTarball,
   extractConfigValuesFromTarball,
+  extractBackupSpecFromTarball,
 } from "../util/tar";
 import { KotsAppRegistryDetails } from "../kots_app"
 import { Cluster } from "../cluster";
@@ -369,6 +370,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
   const configSpec = await extractConfigSpecFromTarball(buffer);
   const configValues = await extractConfigValuesFromTarball(buffer);
+  const backupSpec = await extractBackupSpecFromTarball(buffer);
 
   console.log(`Save new version ${app.id}:${newSequence}, cursor=${installationSpec.cursor}`);
 
@@ -388,7 +390,8 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
     configSpec,
     configValues,
     appTitle,
-    appIcon
+    appIcon,
+    backupSpec
   );
 
   const clusterIds = await stores.kotsAppStore.listClusterIDsForApp(app.id);
@@ -502,6 +505,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     const configValues = await extractConfigValuesFromTarball(buffer);
     kotsApp.isConfigurable = !!configSpec;
     kotsApp.hasPreflight = !!preflightSpec;
+    const backupSpec = await extractBackupSpecFromTarball(buffer);
 
     await stores.kotsAppStore.createMidstreamVersion(
       kotsApp.id,
@@ -519,7 +523,8 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       configSpec,
       configValues,
       appTitle,
-      appIcon
+      appIcon,
+      backupSpec
     );
 
     const downstreams = await extractDownstreamNamesFromTarball(buffer);
@@ -627,6 +632,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
   const configSpec = await extractConfigSpecFromTarball(buffer);
   const configValues = await extractConfigValuesFromTarball(buffer);
+  const backupSpec = await extractBackupSpecFromTarball(buffer);
 
   await stores.kotsAppStore.createMidstreamVersion(
     app.id,
@@ -644,7 +650,8 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     configSpec,
     configValues,
     appTitle,
-    appIcon
+    appIcon,
+    backupSpec
   );
 
   const downstreams = await extractDownstreamNamesFromTarball(buffer);
@@ -898,10 +905,17 @@ export async function verifyAirgapLicense(licenseData: string): Promise<string> 
   return license["p"];
 }
 
-export function getK8sNamespace(): String {
+export function getK8sNamespace(): string {
   if (process.env["DEV_NAMESPACE"]) {
     return String(process.env["DEV_NAMESPACE"]);
   }
+  if (process.env["POD_NAMESPACE"]) {
+    return String(process.env["POD_NAMESPACE"]);
+  }
+  return "default";
+}
+
+export function getKotsadmNamespace(): string {
   if (process.env["POD_NAMESPACE"]) {
     return String(process.env["POD_NAMESPACE"]);
   }
