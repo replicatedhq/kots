@@ -176,7 +176,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 								},
 								{
 									Name:  "SHIP_API_ENDPOINT",
-									Value: fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", deployOptions.Namespace),
+									Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
 								},
 								{
 									Name:  "SHIP_API_ADVERTISE_ENDPOINT",
