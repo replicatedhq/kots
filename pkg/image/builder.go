@@ -234,6 +234,12 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 
 	sourceCtx := &types.SystemContext{}
 
+	// allow pulling images from http/invalid https docker repos
+	// intended for development only, _THIS MAKES THINGS INSECURE_
+	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+		sourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
+
 	isPrivate, err := isPrivateImage(image)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if image is private")
