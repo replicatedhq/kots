@@ -38,6 +38,7 @@ type ConfigItem struct {
 	Recommended bool                   `json:"recommended,omitempty"`
 	Default     multitype.BoolOrString `json:"default,omitempty"`
 	Value       multitype.BoolOrString `json:"value,omitempty"`
+	Data        string                 `json:"data,omitempty"`
 	MultiValue  []string               `json:"multi_value,omitempty"`
 	ReadOnly    bool                   `json:"readonly,omitempty"`
 	WriteOnce   bool                   `json:"write_once,omitempty"`
