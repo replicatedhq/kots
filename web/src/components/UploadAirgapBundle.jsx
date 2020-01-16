@@ -48,15 +48,15 @@ class UploadAirgapBundle extends React.Component {
   uploadAirgapBundle = async () => {
     const { onUploadSuccess, match, showRegistry } = this.props;
 
-    this.setState({ 
-      fileUploading: true, 
-      errorMessage: "", 
-      showSupportBundleCommand: false, 
-      onlineInstallErrorMessage: "" 
+    this.setState({
+      fileUploading: true,
+      errorMessage: "",
+      showSupportBundleCommand: false,
+      onlineInstallErrorMessage: ""
     });
 
     // Reset the airgap upload state
-    const resetUrl = `${window.env.REST_ENDPOINT}/v1/kots/airgap/reset/${match.params.slug}`;
+    const resetUrl = `${window.env.API_ENDPOINT}/kots/airgap/reset/${match.params.slug}`;
     await fetch(resetUrl, {
       method: "POST",
       headers: {
@@ -107,7 +107,7 @@ class UploadAirgapBundle extends React.Component {
       formData.append("password", this.state.registryDetails.password);
     }
 
-    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap`;
+    const url = `${window.env.API_ENDPOINT}/kots/airgap`;
     const xhr = new XMLHttpRequest();
 
     xhr.upload.onprogress = event => {
@@ -211,8 +211,8 @@ class UploadAirgapBundle extends React.Component {
     });
 
     setTimeout(() => {
-      Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
-        if (errorMessage.includes(errorString)){
+      Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
+        if (errorMessage.includes(errorString)) {
           errorMessage = message;
         }
       });
@@ -275,9 +275,9 @@ class UploadAirgapBundle extends React.Component {
             <div className="flex-column alignItems--center">
               <div className="flex">
                 {logo
-                ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
-                : !fetchingMetadata ? <span className="icon kots-login-icon u-marginRight--10" />
-                : <span style={{ width: "60px", height: "60px" }} />
+                  ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
+                  : !fetchingMetadata ? <span className="icon kots-login-icon u-marginRight--10" />
+                    : <span style={{ width: "60px", height: "60px" }} />
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
@@ -399,10 +399,10 @@ class UploadAirgapBundle extends React.Component {
               <p className="u-fontSize--small u-color--chestnut">{onlineInstallErrorMessage}</p>
               <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
               <CodeSnippet
-                  language="bash"
-                  canCopy={true}
-                  onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-                >
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              >
                 kubectl support-bundle https://kots.io
               </CodeSnippet>
             </div>
@@ -418,7 +418,7 @@ export default compose(
   withRouter,
   withApollo,
   graphql(resumeInstallOnline, {
-    props:({ mutate }) => ({
+    props: ({ mutate }) => ({
       resumeInstallOnline: (slug) => mutate({ variables: { slug } })
     })
   })

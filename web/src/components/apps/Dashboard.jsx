@@ -46,7 +46,7 @@ class Dashboard extends Component {
     updateChecker: new Repeater(),
     uploadingAirgapFile: false,
     airgapUploadError: null
-}
+  }
 
   toggleConfigureGraphs = () => {
     const { showConfigureGraphs } = this.state;
@@ -99,7 +99,7 @@ class Dashboard extends Component {
     if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
       if (this.props.getAppLicense?.getAppLicense === null) {
         this.setState({ appLicense: {} });
-      } else {  
+      } else {
         const { getAppLicense } = this.props.getAppLicense;
         if (getAppLicense) {
           this.setState({ appLicense: getAppLicense });
@@ -204,19 +204,19 @@ class Dashboard extends Component {
   }
 
   onDropBundle = async files => {
-    this.setState({ 
+    this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: null,
       uploadSent: 0,
       uploadTotal: 0
-  });
+    });
 
     const formData = new FormData();
     formData.append("file", files[0]);
     formData.append("appId", this.props.app.id);
-  
-    const url = `${window.env.REST_ENDPOINT}/v1/kots/airgap/update`;
+
+    const url = `${window.env.API_ENDPOINT}/kots/airgap/update`;
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
 
@@ -262,8 +262,8 @@ class Dashboard extends Component {
   }
 
   onProgressError = async (airgapUploadError) => {
-    Object.entries(COMMON_ERRORS).forEach( ([errorString, message]) => {
-      if (airgapUploadError.includes(errorString)){
+    Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
+      if (airgapUploadError.includes(errorString)) {
         airgapUploadError = message;
       }
     });
@@ -350,7 +350,7 @@ class Dashboard extends Component {
 
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: []})}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })}>
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
@@ -358,10 +358,10 @@ class Dashboard extends Component {
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
             <Crosshair values={this.state.crosshairValues}>
-              <div className="flex flex-column" style={{ background: "black", width:"250px" }}>
-                  <p className="u-fontWeight--bold u-textAlign--center"> {moment.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
-                <br/>
-                {this.state.crosshairValues.map((c ,i)=> {
+              <div className="flex flex-column" style={{ background: "black", width: "250px" }}>
+                <p className="u-fontWeight--bold u-textAlign--center"> {moment.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
+                <br />
+                {this.state.crosshairValues.map((c, i) => {
                   return (
                     <div className="flex-auto flex flexWrap--wrap u-padding--5" key={i}>
                       <div className="flex flex1">
@@ -477,7 +477,7 @@ class Dashboard extends Component {
             <div className="u-marginTop--30 flex flex1">
               {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
                 <div>
-                  <div className="flex flex1 justifyContent--flexEnd"> 
+                  <div className="flex flex1 justifyContent--flexEnd">
                     <span className="card-link" onClick={this.toggleConfigureGraphs}> Configure Prometheus Address </span>
                   </div>
                   <div className="flex-auto flex flexWrap--wrap u-width--full">

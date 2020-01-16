@@ -37,7 +37,7 @@ class SupportBundleRow extends React.Component {
     const bundleId = bundle.id;
     const hiddenIFrameID = "hiddenDownloader";
     let iframe = document.getElementById(hiddenIFrameID);
-    const url = `${window.env.REST_ENDPOINT}/v1/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
+    const url = `${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
     if (iframe === null) {
       iframe = document.createElement("iframe");
       iframe.id = hiddenIFrameID;
@@ -73,45 +73,45 @@ class SupportBundleRow extends React.Component {
           <div className="bundle-row-wrapper">
             <div className="bundle-row flex flex1">
               <div className="flex flex1 flex-column" onClick={() => this.handleBundleClick(bundle)}>
-              <div className="flex">
                 <div className="flex">
-                  {!this.props.isCustomer && bundle.customer ?
-                    <div className="flex-column flex1 flex-verticalCenter">
-                      <span className="u-fontSize--large u-color--tuna u-fontWeight--medium u-cursor--pointer">
-                        <span>Collected on <span className="u-fontWeight--bold">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
-                      </span>
+                  <div className="flex">
+                    {!this.props.isCustomer && bundle.customer ?
+                      <div className="flex-column flex1 flex-verticalCenter">
+                        <span className="u-fontSize--large u-color--tuna u-fontWeight--medium u-cursor--pointer">
+                          <span>Collected on <span className="u-fontWeight--bold">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
+                        </span>
+                      </div>
+                      :
+                      <div className="flex-column flex1 flex-verticalCenter">
+                        <span>
+                          <span className="u-fontSize--large u-cursor--pointer u-color--tuna u-fontWeight--medium">Collected on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
+                          {this.renderSharedContext()}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div className="flex u-marginTop--10">
+                  {bundle?.analysis?.insights?.length ?
+                    <div className="flex flex1 u-marginRight--5">
+                      {sortBy(filter(bundle?.analysis?.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => (
+                        <div key={i} className="analysis-icon-wrapper">
+                          {insight.icon_key ?
+                            <span className={`icon clickable analysis-${insight.icon_key}`} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>
+                            : insight.icon ?
+                              <span className="u-cursor--pointer" style={{ backgroundImage: `url(${insight.icon})` }} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>
+                              : null
+                          }
+                          <ReactTooltip id={`${bundle.id}-${i}-${insight.key}`} effect="solid" className="replicated-tooltip">
+                            <span>{insight.detail}</span>
+                          </ReactTooltip>
+                        </div>
+                      ))}
                     </div>
                     :
-                    <div className="flex-column flex1 flex-verticalCenter">
-                      <span>
-                        <span className="u-fontSize--large u-cursor--pointer u-color--tuna u-fontWeight--medium">Collected on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span></span>
-                        {this.renderSharedContext()}
-                      </span>
-                    </div>
+                    noInsightsMessage
                   }
                 </div>
-              </div>
-              <div className="flex u-marginTop--10">
-                {bundle?.analysis?.insights?.length ?
-                  <div className="flex flex1 u-marginRight--5">
-                    {sortBy(filter(bundle?.analysis?.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => (
-                      <div key={i} className="analysis-icon-wrapper">
-                        {insight.icon_key ?
-                          <span className={`icon clickable analysis-${insight.icon_key}`} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>
-                          : insight.icon ?
-                            <span className="u-cursor--pointer" style={{ backgroundImage: `url(${insight.icon})` }} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>
-                            : null
-                        }
-                        <ReactTooltip id={`${bundle.id}-${i}-${insight.key}`} effect="solid" className="replicated-tooltip">
-                          <span>{insight.detail}</span>
-                        </ReactTooltip>
-                      </div>
-                    ))}
-                  </div>
-                  :
-                  noInsightsMessage
-                }
-              </div>
               </div>
               <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                 <span className="u-fontSize--small u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>

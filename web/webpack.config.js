@@ -15,24 +15,6 @@ module.exports = function (env) {
   const srcPath = path.join(__dirname, "src");
   const appEnv = require("./env/" + (env || "dev") + ".js");
 
-  if (process.env["GITHUB_CLIENT_ID"]) {
-    appEnv.GITHUB_CLIENT_ID = process.env["GITHUB_CLIENT_ID"];
-  }
-  if (process.env["GITHUB_INSTALL_URL"]) {
-    appEnv.GITHUB_INSTALL_URL = process.env["GITHUB_INSTALL_URL"];
-  }
-  if (process.env["SHIP_CLUSTER_API_SERVER"]) {
-    appEnv.INSTALL_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/install`;
-    appEnv.GRAPHQL_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/graphql`;
-    appEnv.REST_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api`;
-    appEnv.SHIPINIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/init/`;
-    appEnv.SHIPUPDATE_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/update/`;
-    appEnv.SHIPEDIT_ENDPOINT = `${process.env["SHIP_CLUSTER_API_SERVER"]}/api/v1/edit/`;
-  }
-  if (process.env["SHIP_CLUSTER_WEB_URI"]) {
-    appEnv.GITHUB_REDIRECT_URI = `${process.env["SHIP_CLUSTER_WEB_URI"]}/auth/github/callback`;
-  }
-
   var common = {
     output: {
       path: distPath,
@@ -166,7 +148,8 @@ module.exports = function (env) {
         "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT === "staging"
           ? "production"
           : appEnv.ENVIRONMENT
-      )}),
+        )
+      }),
       new MonacoWebpackPlugin({
         languages: [
           "yaml",

@@ -49,7 +49,7 @@ export class SupportBundleAnalysis extends React.Component {
   reAnalyzeBundle = async (callback) => {
     try {
       const bundleId = this.props.getSupportBundle.getSupportBundle.id;
-      const bundleUrl = `${window.env.REST_ENDPOINT}/v1/troubleshoot/analyzebundle/${bundleId}`;
+      const bundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/analyzebundle/${bundleId}`;
 
       const response = await fetch(bundleUrl, {
         method: "POST"
@@ -70,7 +70,7 @@ export class SupportBundleAnalysis extends React.Component {
     const bundleId = bundle.id;
     const hiddenIFrameID = "hiddenDownloader";
     let iframe = document.getElementById(hiddenIFrameID);
-    const url = `${window.env.REST_ENDPOINT}/v1/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
+    const url = `${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
     if (iframe === null) {
       iframe = document.createElement("iframe");
       iframe.id = hiddenIFrameID;

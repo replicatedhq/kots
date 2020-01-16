@@ -158,7 +158,7 @@ class KotsApplicationTree extends React.Component {
               </div>
               : fileLoadErr ?
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
+                  <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a problem getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
                   <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download a tar.gz of the resources and have access to all of the files</p>
                   <div className="u-marginTop--20">
                     <button className="btn secondary" onClick={this.handleDownload}>Download tar.gz</button>
@@ -234,7 +234,7 @@ class KotsApplicationTree extends React.Component {
                     canCopy={true}
                     onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                   >
-                  {`kubectl kots upload --slug ${this.props.match.params.slug} ~/${this.props.match.params.slug}`}
+                    {`kubectl kots upload --slug ${this.props.match.params.slug} ~/${this.props.match.params.slug}`}
                   </CodeSnippet>
                 </div>
               </div>
