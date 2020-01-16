@@ -12,7 +12,7 @@ export type InstallationMap = {
 };
 
 export class SessionStore {
-  constructor(private readonly pool: pg.Pool, private readonly params: Params) {}
+  constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 
   /**
    * Creates a signed JWT for authenticaion
@@ -74,6 +74,10 @@ export class SessionStore {
     //tslint:disable-next-line possible-timing-attack
     if (token.length > 0 && token !== "null") {
       try {
+        if (token.startsWith("Bearer ")) {
+          token = token.split(" ")[1];
+        }
+
         const decoded: any = jwt.verify(token, this.params.sessionKey);
 
         const session = await this.getSession(decoded.sessionId);
