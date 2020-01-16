@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/pkg/errors"
-
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -28,6 +27,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				Kubeconfig: v.GetString("kubeconfig"),
 			}
 
+			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
+			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
+			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
+
 			log := logger.NewLogger()
 			log.ActionWithoutSpinner("Upgrading Admin Console")
 			if err := kotsadm.Upgrade(upgradeOptions); err != nil {
@@ -45,6 +48,13 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
+
+	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().MarkHidden("kotsadm-tag")
+	cmd.Flags().MarkHidden("kotsadm-registry")
+	cmd.Flags().MarkHidden("kotsadm-namespace")
 
 	return cmd
 }
