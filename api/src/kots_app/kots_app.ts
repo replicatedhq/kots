@@ -622,6 +622,7 @@ export interface KotsConfigItem {
   recommended: boolean;
   default: string;
   value: string;
+  data: string;
   multi_value: [string];
   readonly: boolean;
   write_once: boolean;

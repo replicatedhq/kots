@@ -320,6 +320,7 @@ export const getAppConfigGroups = gql`
         recommended
         default
         value
+        data
         multi_value
         readonly
         write_once
@@ -384,6 +385,7 @@ export const templateConfigGroups = gql`
         recommended
         default
         value
+        data
         multi_value
         readonly
         write_once
