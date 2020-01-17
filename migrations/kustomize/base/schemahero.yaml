@@ -669,7 +669,7 @@ spec:
               fieldPath: metadata.namespace
         - name: SECRET_NAME
           value: schemahero-webhook-server-secret
-        image: schemahero/schemahero-manager:0.7.1
+        image: schemahero/schemahero-manager:0.7.2
         imagePullPolicy: Always
         name: manager
         ports:
