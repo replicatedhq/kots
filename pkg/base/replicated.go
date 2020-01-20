@@ -147,7 +147,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 
 		namespace := kotsHelmChart.Spec.Namespace
-		if namespace != "" {
+		if namespace == "" {
 			namespace = "repl{{ Namespace}}"
 		}
 
