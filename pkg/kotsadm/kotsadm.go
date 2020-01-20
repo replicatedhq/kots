@@ -16,6 +16,9 @@ import (
 
 var timeoutWaitingForKotsadm = time.Duration(time.Minute * 2)
 
+const KotsadmKey = "kots.io/kotsadm"
+const KotsadmLabelValue = "true"
+
 func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)

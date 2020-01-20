@@ -144,6 +144,10 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 		if o.APIVersion == "app.k8s.io/v1beta1" {
 			return false, nil
 		}
+
+		if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
+			return false, nil
+		}
 	}
 
 	return true, nil
