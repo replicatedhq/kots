@@ -134,7 +134,8 @@ export class ClusterNodes extends Component {
                     </div>
                     <div className="flex justifyContent--center alignItems--center u-marginTop--15">
                       <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                        "is-active": this.state.selectedNodeType === "master"
+                        "is-active": this.state.selectedNodeType === "master",
+                        "is-disabled": !kurl?.ha
                       })}>
                         <input
                           id="masterNode"
