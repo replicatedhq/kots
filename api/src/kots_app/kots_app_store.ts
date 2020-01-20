@@ -38,7 +38,7 @@ export class KotsAppStore {
         provider,
         ...hostname
       };
-    } catch(err) {
+    } catch (err) {
       return {
         enabled: false
       };
@@ -61,7 +61,7 @@ export class KotsAppStore {
         const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
         data = secret.body.data || {};
         secretExists = true;
-      } catch(err) {
+      } catch (err) {
         // secret does not exist yet
       }
 
@@ -117,7 +117,7 @@ export class KotsAppStore {
       } else {
         await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
       }
-    } catch(err) {
+    } catch (err) {
       const msg = _.get(err, "response.body.message");
       throw new ReplicatedError(`Failed to create gitops secret ${msg || String(err)}`);
     }
@@ -166,7 +166,7 @@ export class KotsAppStore {
       }
 
       await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Error updating gitops secret: ${err.response || err}`);
     }
   }
@@ -197,7 +197,7 @@ export class KotsAppStore {
       }
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Failed to set gitops error ${err.response || err}`)
     }
   }
@@ -213,17 +213,17 @@ export class KotsAppStore {
       try {
         const secretName = "kotsadm-gitops";
         await k8sApi.deleteNamespacedSecret(secretName, namespace);
-      } catch(err) {
+      } catch (err) {
         // secret does not exist
       }
 
       try {
         const configMapName = "kotsadm-gitops";
         await k8sApi.deleteNamespacedConfigMap(configMapName, namespace);
-      } catch(err) {
+      } catch (err) {
         // config map does not exist
       }
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Failed to reset gitops data, ${err.response || err}`);
     }
   }
@@ -251,7 +251,7 @@ export class KotsAppStore {
       }
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Failed to disable gitops for app with id ${appId}, ${err.response || err}`)
     }
   }
@@ -299,7 +299,7 @@ export class KotsAppStore {
         const configmap = await k8sApi.readNamespacedConfigMap(configMapName, namespace);
         data = configmap.body.data || {};
         configMapExists = true;
-      } catch(err) {
+      } catch (err) {
         // configmap does not exist yet
       }
 
@@ -340,7 +340,7 @@ export class KotsAppStore {
       } else {
         await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
       }
-    } catch(err) {
+    } catch (err) {
       const msg = _.get(err, "response.body.message");
       throw new ReplicatedError(`Failed to create gitops configmap ${msg || String(err)}`);
     }
@@ -819,7 +819,7 @@ order by sequence desc`;
         privateKey: privateKey,
         lastError: configMapData.lastError
       }
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Failed to get gitops info ${err.response || err}`);
     }
   }
@@ -839,7 +839,7 @@ order by sequence desc`;
         deployKey: gitopsInfo.publicKey,
         isConnected: gitopsInfo.lastError === "",
       }
-    } catch(err) {
+    } catch (err) {
       return {
         enabled: false
       };
@@ -1411,7 +1411,7 @@ order by adv.sequence desc`;
       const secretName = "kotsadm-gitops";
       await k8sApi.readNamespacedSecret(secretName, namespace);
       return true;
-    } catch(err) {
+    } catch (err) {
       // secret does not exist
     }
 
@@ -1430,7 +1430,7 @@ order by adv.sequence desc`;
     const row = result.rows[0];
     const license: string = row.kots_license;
     if (!license) {
-      return false;
+      return true;
     }
 
     try {
@@ -1605,7 +1605,7 @@ order by adv.sequence desc`;
   }
 
   async ignorePreflightPermissionErrors(appId: string, clusterId: string, sequence: number): Promise<void> {
-    const q =`UPDATE app_downstream_version
+    const q = `UPDATE app_downstream_version
 SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null
 WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
 
@@ -1619,7 +1619,7 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
   }
 
   async retryPreflights(appId: string, clusterId: string, sequence: number): Promise<void> {
-    const q =`UPDATE app_downstream_version
+    const q = `UPDATE app_downstream_version
 SET status = 'pending_preflight', preflight_ignore_permissions = false, preflight_result = null
 WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
 
@@ -1631,7 +1631,7 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
 
     await this.pool.query(q, v);
   }
-  
+
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
