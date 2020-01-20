@@ -46,6 +46,7 @@ export class KotsDeploySocketService {
 
             setInterval(this.preflightLoop.bind(this), 1000);
             setInterval(this.supportBundleLoop.bind(this), 1000);
+            setInterval(this.restoreLoop.bind(this), 1000);
           })
       });
   }
@@ -97,6 +98,54 @@ export class KotsDeploySocketService {
     }
   }
 
+  async restoreLoop() {
+    if (!this.clusterSocketHistory) {
+      return;
+    }
+
+    for (const clusterSocketHistory of this.clusterSocketHistory) {
+      const apps = await this.kotsAppStore.listAppsForCluster(clusterSocketHistory.clusterId);
+      for (const app of apps) {
+        if (!app.restoreInProgressName || app.restoreUndeployed) {
+          continue;
+        }
+
+        const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
+        const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
+        if (maybeDeployedAppSequence! > -1) {
+          const deployedAppSequence = Number(maybeDeployedAppSequence);
+          const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
+          try {
+            const desiredNamespace = ".";
+            const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+            const b = new Buffer(rendered);
+
+            const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+
+            // make operator prune everything
+            const args = {
+              app_id: app.id,
+              kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
+              namespace: desiredNamespace,
+              manifests: "",
+              previous_manifests: b.toString("base64"),
+            };
+
+            this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
+            // reset app deployment state
+            clusterSocketHistory.sentDeploySequences = _.filter(clusterSocketHistory.sentDeploySequences, (s) => {
+              return !_.startsWith(s, app.id);
+            });
+            await this.kotsAppStore.updateAppRestoreUndeployed(app.id, true);
+          } catch(e) {
+            console.log("Restore undeploy failed");
+            console.log(e);
+          }
+        }
+      }
+    }
+  }
+
   async preflightLoop() {
     if (!this.clusterSocketHistory) {
       return;
@@ -105,6 +154,9 @@ export class KotsDeploySocketService {
     for (const clusterSocketHistory of this.clusterSocketHistory) {
       const apps = await this.kotsAppStore.listAppsForCluster(clusterSocketHistory.clusterId);
       for (const app of apps) {
+        if (app.restoreInProgressName) {
+          continue;
+        }
         const pendingPreflightParams = await this.preflightStore.getPendingPreflightParams(true);
         for (const param of pendingPreflightParams) {
           if (clusterSocketHistory.sentPreflightUrls[param.url] !== param.ignorePermissions) {

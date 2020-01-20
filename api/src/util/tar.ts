@@ -195,6 +195,38 @@ export function extractPreflightSpecFromTarball(tarball: Buffer): Promise<string
   });
 }
 
+export function extractBackupSpecFromTarball(tarball: Buffer): Promise<string | null> {
+  const uncompressed = zlib.unzipSync(tarball);
+  const extract = tar.extract();
+
+  return new Promise((resolve, reject) => {
+    extract.on("error", reject);
+
+    extract.on("entry", (header, stream, next) => {
+      stream.pipe(concat(data => {
+        if (!isYaml(data.toString())) {
+          next();
+          return;
+        }
+
+        const doc = yaml.safeLoad(data.toString());
+        if (doc.apiVersion === "velero.io/v1" && doc.kind === "Backup") {
+          resolve(data.toString());
+          next();
+          return;
+        }
+        next();
+      }));
+    });
+
+    extract.on("finish", () => {
+      resolve(null);
+    });
+
+    extract.end(uncompressed);
+  });
+}
+
 export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<InstallationSpec> {
   const uncompressed = zlib.unzipSync(tarball);
   const extract = tar.extract();

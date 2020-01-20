@@ -416,7 +416,6 @@ class Dashboard extends Component {
       );
     }
 
-
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -466,13 +465,32 @@ class Dashboard extends Component {
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 redirectToDiff={() => this.redirectToDiff(currentVersion?.sequence, latestPendingVersion.sequence)}
               />
-              <DashboardCard
-                cardName="License"
-                cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
-                license={true}
-                url={this.props.match.url}
-                appLicense={appLicense}
-              />
+              {app.allowSnapshots ?
+                <div className="small-dashboard-wrapper flex-column flex">
+                  <DashboardCard
+                    cardName="Snapshots"
+                    cardIcon="snapshotIcon"
+                    url={this.props.match.url}
+                    isSnapshotAllowed={app.allowSnapshots}
+                  />
+                  <DashboardCard
+                    cardName="License"
+                    cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
+                    license={true}
+                    isSnapshotAllowed={app.allowSnapshots}
+                    url={this.props.match.url}
+                    appLicense={appLicense}
+                  />
+                </div>
+                :
+                <DashboardCard
+                  cardName="License"
+                  cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
+                  license={true}
+                  url={this.props.match.url}
+                  appLicense={appLicense}
+                />
+              }
             </div>
             <div className="u-marginTop--30 flex flex1">
               {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?

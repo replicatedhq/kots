@@ -22,6 +22,7 @@ import { FeatureStore } from "../feature/feature_store";
 import { GithubNonceStore } from "../user/store";
 import { HealthzStore } from "../healthz/healthz_store";
 import { HelmChartStore } from "../helmchart";
+import { SnapshotsStore } from "../snapshots";
 import { TroubleshootStore } from "../troubleshoot";
 import { KotsLicenseStore } from "../klicenses";
 import { PreflightStore } from "../preflight/preflight_store";
@@ -114,6 +115,7 @@ export class Server extends ServerLoader {
       featureStore: new FeatureStore(pool, params),
       healthzStore: new HealthzStore(pool, params),
       helmChartStore: new HelmChartStore(pool),
+      snapshotsStore: new SnapshotsStore(pool, params),
       troubleshootStore: new TroubleshootStore(pool, params),
       kotsLicenseStore: new KotsLicenseStore(pool, params),
       preflightStore: new PreflightStore(pool),

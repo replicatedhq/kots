@@ -160,33 +160,36 @@ export default class DashboardCard extends React.Component {
   }
 
   renderLicenseCard = () => {
-    const { appLicense } = this.props;
+    const { appLicense, isSnapshotAllowed } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
 
     return (
       <div>
-        {size(appLicense) > 0 ?
-          <div>
-            {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
-            <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
-          </div>
+        {isSnapshotAllowed ?
+          null
           :
-          <div>
-            <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
-          </div>
+          size(appLicense) > 0 ?
+            <div>
+              {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
+              <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
+            </div>
+            :
+            <div>
+              <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+            </div>
         }
       </div>
     )
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed } = this.props;
 
 
     return (
-      <div className={`${appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
+      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
         <div className="flex u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 justifyContent--center">
@@ -201,9 +204,11 @@ export default class DashboardCard extends React.Component {
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
                 :
-              size(appLicense) > 0 ?
-                <Link to={`${url}/license`} className="card-link"> View license details </Link>
-                : null
+                size(appLicense) > 0 ?
+                  <Link to={`${url}/license`} className="card-link"> View license details </Link>
+                  : isSnapshotAllowed ?
+                  <Link to={`${url}/snapshots`} className="card-link"> View snapshot details </Link>
+                  : null
             }
             <div className="u-marginTop--15">
               <div className="flex flex1">
@@ -211,7 +216,11 @@ export default class DashboardCard extends React.Component {
                   this.renderApplicationCard()
                   : versionHistory ?
                     this.renderVersionHistoryCard()
-                    : this.renderLicenseCard()
+                    : license ?
+                    this.renderLicenseCard()
+                    : isSnapshotAllowed ?
+                    null
+                    : null
                 }
               </div>
             </div>

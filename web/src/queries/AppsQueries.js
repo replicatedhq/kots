@@ -101,6 +101,7 @@ export const getKotsAppRaw = `
       isConfigurable
       isGitOpsSupported
       allowRollback
+      allowSnapshots
       currentVersion {
         title
         status

@@ -122,3 +122,27 @@
   padding: 12px 12px 0px 12px;
   background-color: #F8F8F8;
 }
+
+.small-dashboard-wrapper {
+  min-width: 260px;
+  max-height: 200px;
+  width: 260px;
+  height: 200px;
+  margin-right: 30px;
+}
+
+.small-dashboard-card {
+  min-width: 260px;
+  max-height: 85px;
+  width: 260px;
+  height: 85px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
+  transition: box-shadow .2s;
+  border: 1px solid rgba(0, 0, 0, 0);
+  border-radius: 4px;
+  padding: 12px 12px 0px 12px;
+
+  &:first-child {
+    margin-bottom: 20px;
+  }
+}

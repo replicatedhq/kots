@@ -31,6 +31,9 @@ func removeInternalGVK(manifests []byte) ([]byte, error) {
 				}
 			}
 		}
+		if gvk.Group == "velero.io" && gvk.Version == "v1" && gvk.Kind == "Backup" {
+			continue
+		}
 
 		cleaned = append(cleaned, splitRenderedContent)
 	}

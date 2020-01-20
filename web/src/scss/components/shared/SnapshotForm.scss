@@ -1,0 +1,31 @@
+.snapshot-form-wrapper {
+  width: 100%;
+  max-width: 480px;
+
+  .BoxedCheckbox {
+    padding-left: 10px;
+  }
+}
+
+.cron-expression-text {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: #9B9B9B;
+  bottom: -18px;
+}
+
+.optional-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #C4C8CA;
+  line-height: 1;
+  margin-left: 4px;
+}
+
+.gcs-editor {
+  border-radius: 4px;
+  border: 1px solid #DFDFDF;
+  overflow: hidden;
+}

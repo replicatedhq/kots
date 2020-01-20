@@ -11,6 +11,7 @@ import { AppsQueries, AppsMutations } from "../apps";
 import { KotsQueries, KotsDashboardQueries, KotsMutations } from "../kots_app";
 import { KurlQueries, KurlMutations } from "../kurl";
 import { MonitoringQueries, MonitoringMutations } from "../monitoring";
+import { SnapshotMutations, SnapshotQueries } from "../snapshots";
 
 export const Resolvers = (stores: Stores, params: Params) => {
   let query = {
@@ -23,6 +24,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...UserQueries(stores),
     ...MonitoringQueries(stores),
     ...KotsQueries(stores, params),
+    ...SnapshotQueries(stores, params),
     ...KotsDashboardQueries(stores, params),
     ...KotsLicenseQueries(stores),
     ...KurlQueries(stores, params),
@@ -36,6 +38,7 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...MonitoringMutations(stores),
     ...KotsLicenseMutations(stores),
     ...KotsMutations(stores),
+    ...SnapshotMutations(stores),
     ...KurlMutations(stores, params),
     ...AppsMutations(stores),
   };

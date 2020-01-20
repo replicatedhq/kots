@@ -63,6 +63,14 @@ $cell-width: 140px;
 .NodeRow--wrapper {
   padding: 12px;
   border-top: 1px solid #DFDFDF;
+
+  &.is-expired {
+    background-color: #F8F8F8;
+  }
+
+  &.is-deleting {
+    background-color: #F8F8F8;
+  }
 }
 
 .NodeRow--items p {

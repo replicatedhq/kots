@@ -512,11 +512,12 @@ export class KotsAppStore {
     configSpec: any,
     configValues: any,
     appTitle: string | null,
-    appIcon: string | null
+    appIcon: string | null,
+    backupSpec: any,
   ): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key,
-        supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       ON CONFLICT(app_id, sequence) DO UPDATE SET
       created_at = EXCLUDED.created_at,
       version_label = EXCLUDED.version_label,
@@ -530,7 +531,8 @@ export class KotsAppStore {
       kots_app_spec = EXCLUDED.kots_app_spec,
       kots_license = EXCLUDED.kots_license,
       config_spec = EXCLUDED.config_spec,
-      config_values = EXCLUDED.config_values
+      config_values = EXCLUDED.config_values,
+      backup_spec = EXCLUDED.backup_spec
     `;
     const v = [
       id,
@@ -548,6 +550,7 @@ export class KotsAppStore {
       kotsAppLicense,
       configSpec,
       configValues,
+      backupSpec,
     ];
 
     await this.pool.query(q, v);
@@ -1328,7 +1331,7 @@ order by adv.sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, restore_in_progress_name, restore_undeployed from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -1364,6 +1367,9 @@ order by adv.sequence desc`;
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     kotsApp.isConfigurable = !!rr.rows[0] && !!rr.rows[0].config_spec;
+    kotsApp.snapshotTTL = row.snapshot_ttl;
+    kotsApp.restoreInProgressName = row.restore_in_progress_name;
+    kotsApp.restoreUndeployed = row.restore_undeployed;
 
     return kotsApp;
   }
@@ -1539,6 +1545,30 @@ order by adv.sequence desc`;
       await pg.query("rollback");
       pg.release();
     }
+  }
+
+  async updateAppSnapshotTTL(appId: string, snapshotTTL: string): Promise<void> {
+    const q = `update app set snapshot_ttl = $1 where id = $2`;
+    const v = [snapshotTTL, appId];
+    await this.pool.query(q, v);
+  }
+
+  async updateAppRestoreInProgressName(appId: string, restoreInProgressName: string): Promise<void> {
+    const q = `update app set restore_in_progress_name = $1 where id = $2`;
+    const v = [restoreInProgressName, appId];
+    await this.pool.query(q, v);
+  }
+
+  async updateAppRestoreUndeployed(appId: string, undeployed: boolean): Promise<void> {
+    const q = `update app set restore_undeployed = $1 where id = $2`;
+    const v = [undeployed, appId];
+    await this.pool.query(q, v);
+  }
+
+  async updateAppRestoreReset(appId): Promise<void> {
+    const q = `update app set restore_in_progress_name = NULL, restore_undeployed = NULL where id = $1`;
+    const v = [appId];
+    await this.pool.query(q, v);
   }
 
   async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {

@@ -490,3 +490,42 @@
   width: 65px;
   height: 64px;
 }
+
+.icon.snapshotIcon {
+  background-position: -139px -360px;
+  width: 40px;
+  height: 40px;
+}
+
+.icon.snapshotSettingsIcon {
+  background-position: -129px -125px;
+  width: 16px;
+  height: 17px;
+}
+
+.icon.snapshotScheduleIcon {
+  background-position: -129px -143px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon.snapshotDestination--aws {
+  background-position: -168px -229px;
+  width: 12px;
+  height: 14px;
+}
+.icon.snapshotDestination--azure {
+  background-position: -168px -245px;
+  width: 16px;
+  height: 14px;
+}
+.icon.snapshotDestination--google {
+  background-position: -168px -262px;
+  width: 16px;
+  height: 15px;
+}
+.icon.snapshotDestination--s3compatible {
+  background-position: -168px -279px;
+  width: 16px;
+  height: 16px;
+}

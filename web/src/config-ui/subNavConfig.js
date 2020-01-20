@@ -83,9 +83,12 @@ export default [
       return true;
     }
   },
-  // {
-  //   tabName: "integrations",
-  //   displayName: "Integrations",
-  //   to: (slug) => `/app/${slug}/integrations`
-  // }
+  {
+    tabName: "snapshots",
+    displayName: "Snapshots",
+    to: (slug) => `/app/${slug}/snapshots`,
+    displayRule: (watch) => {
+      return watch.allowSnapshots;
+    }
+  }
 ];

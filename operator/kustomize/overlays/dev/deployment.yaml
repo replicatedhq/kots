@@ -7,6 +7,7 @@ spec:
     spec:
       containers:
         - name: kotsadm-operator
+          imagePullPolicy: IfNotPresent
           env:
             - name: KOTSADM_TARGET_NAMESPACE
               value: "test"
