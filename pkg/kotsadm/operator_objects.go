@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -137,6 +138,66 @@ func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	}
 
 	return serviceAccount
+}
+
+func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
+		}
+	}
+
+	desiredDeployment := apiDeployment(deployOptions)
+
+	// ensure the non-optional kots labels are present (added in 1.11.0)
+	if deployment.ObjectMeta.Labels == nil {
+		deployment.ObjectMeta.Labels = map[string]string{}
+	}
+	deployment.ObjectMeta.Labels[KotsadmKey] = KotsadmLabelValue
+	if deployment.Spec.Template.ObjectMeta.Labels == nil {
+		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
+	}
+	deployment.Spec.Template.ObjectMeta.Labels[KotsadmKey] = KotsadmLabelValue
+
+	// security context (added in 1.11.0)
+	deployment.Spec.Template.Spec.SecurityContext = &securityContext
+	containerIdx := -1
+	for idx, c := range deployment.Spec.Template.Spec.Containers {
+		if c.Name == "kotsadm-operator" {
+			containerIdx = idx
+		}
+	}
+
+	if containerIdx == -1 {
+		return errors.New("failed to find kotsadm-operator container in deployment")
+	}
+
+	// image
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(), kotsadmTag())
+
+	// copy the env vars from the desired to existing. this could undo a change that the user had.
+	// we don't know which env vars we set and which are user edited. this method avoids deleting
+	// env vars that the user added, but doesn't handle edited vars
+	mergedEnvs := []corev1.EnvVar{}
+	for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+		mergedEnvs = append(mergedEnvs, env)
+	}
+	for _, existingEnv := range deployment.Spec.Template.Spec.Containers[containerIdx].Env {
+		isUnxpected := true
+		for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+			if env.Name == existingEnv.Name {
+				isUnxpected = false
+			}
+		}
+
+		if isUnxpected {
+			mergedEnvs = append(mergedEnvs, existingEnv)
+		}
+	}
+	deployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+
+	return nil
 }
 
 func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
