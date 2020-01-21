@@ -128,8 +128,8 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.IsGitOpsSupported != innerLicense.Spec.IsGitOpsSupported {
 		return errors.New("\"IsGitOpsSupported\" field has changed")
 	}
-	if outerLicense.Spec.AllowSnapshots != innerLicense.Spec.AllowSnapshots {
-		return errors.New("\"AllowSnapshots\" field has changed")
+	if outerLicense.Spec.IsSnapshotSupported != innerLicense.Spec.IsSnapshotSupported {
+		return errors.New("\"IsSnapshotSupported\" field has changed")
 	}
 
 	// Check entitlements
