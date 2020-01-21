@@ -465,19 +465,19 @@ class Dashboard extends Component {
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 redirectToDiff={() => this.redirectToDiff(currentVersion?.sequence, latestPendingVersion.sequence)}
               />
-              {app.allowSnapshots ?
+              {app.isSnapshotSupported ?
                 <div className="small-dashboard-wrapper flex-column flex">
                   <DashboardCard
                     cardName="Snapshots"
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
-                    isSnapshotAllowed={app.allowSnapshots}
+                    isSnapshotAllowed={app.isSnapshotSupported}
                   />
                   <DashboardCard
                     cardName="License"
                     cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
                     license={true}
-                    isSnapshotAllowed={app.allowSnapshots}
+                    isSnapshotAllowed={app.isSnapshotSupported}
                     url={this.props.match.url}
                     appLicense={appLicense}
                   />
