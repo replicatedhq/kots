@@ -126,6 +126,8 @@ func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
 		}
 	}
 
+	// We have never changed the role, so there is no "upgrade" applied
+
 	return nil
 }
 
@@ -141,6 +143,8 @@ func ensureApiRoleBinding(namespace string, clientset *kubernetes.Clientset) err
 			return errors.Wrap(err, "failed to create rolebinding")
 		}
 	}
+
+	// We have never changed the role binding, so there is no "upgrade" applied
 
 	return nil
 }
@@ -158,11 +162,13 @@ func ensureApiServiceAccount(namespace string, clientset *kubernetes.Clientset) 
 		}
 	}
 
+	// We have never changed the service account, so there is no "upgrade" applied
+
 	return nil
 }
 
 func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
@@ -172,6 +178,17 @@ func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernete
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
+
+		return nil
+	}
+
+	if err = updateApiDeployment(existingDeployment, deployOptions); err != nil {
+		return errors.Wrap(err, "failed to merge deployments")
+	}
+
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(existingDeployment)
+	if err != nil {
+		return errors.Wrap(err, "failed to update api deployment")
 	}
 
 	return nil
@@ -189,6 +206,8 @@ func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
 			return errors.Wrap(err, "Failed to create service")
 		}
 	}
+
+	// We have never changed the api service. We renamed it in 1.11.0, but that's a new object creation
 
 	return nil
 }

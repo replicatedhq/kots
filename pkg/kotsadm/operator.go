@@ -180,7 +180,7 @@ func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Client
 }
 
 func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-operator", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-operator", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
@@ -191,6 +191,16 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 			return errors.Wrap(err, "failed to create deployment")
 		}
 
+		return nil
+	}
+
+	if err = updateOperatorDeployment(existingDeployment, deployOptions); err != nil {
+		return errors.Wrap(err, "failed to merge deployment")
+	}
+
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(existingDeployment)
+	if err != nil {
+		return errors.Wrap(err, "failed to update operator deployment")
 	}
 
 	return nil
