@@ -200,7 +200,7 @@ export class KotsDeploySocketService {
               this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
               clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
             } catch(err) {
-              this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
+              await this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
               continue;
             }
 
