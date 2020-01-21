@@ -15,7 +15,7 @@ import { Phase } from "../velero";
 import { SnapshotConfig, AzureCloudName, SnapshotProvider } from "../snapshot_config";
 import { VeleroClient } from "./veleroClient";
 import { readSchedule } from "../schedule";
-import { convertTTL } from "../backup";
+import { parseTTL, formatTTL } from "../backup";
 import { ReplicatedError } from "../../server/errors";
 
 export function SnapshotQueries(stores: Stores, params: Params) {
@@ -28,7 +28,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       const schedule = await readSchedule(args.slug);
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await stores.kotsAppStore.getApp(appId);
-      const converted = convertTTL(app.snapshotTTL || "");
 
       let ttl = {
         inputValue: "1",
@@ -36,11 +35,11 @@ export function SnapshotQueries(stores: Stores, params: Params) {
         converted: "720h",
       };
       if (app.snapshotTTL) {
-        const [inputValue, inputTimeUnit ] = app.snapshotTTL.split(" ");
+        const { quantity, unit } = parseTTL(app.snapshotTTL);
         ttl = {
-          inputValue,
-          inputTimeUnit,
-          converted: convertTTL(app.snapshotTTL),
+          inputValue: quantity.toString(),
+          inputTimeUnit: unit,
+          converted: app.snapshotTTL,
         };
       }
 

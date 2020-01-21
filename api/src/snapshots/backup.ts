@@ -16,6 +16,7 @@ import {
 } from "./snapshot";
 import { logger } from "../server/logger";
 
+// tslint:disable-next-line cyclomatic-complexity
 export async function backup(stores: Stores, appId: string, scheduled: boolean) {
   const app = await stores.kotsAppStore.getApp(appId);
   const kotsVersion = await stores.kotsAppStore.getCurrentAppVersion(appId);
@@ -60,7 +61,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
     throw e;
   }
 
-  let backup: Backup = {
+  const b: Backup = {
     apiVersion: "velero.io/v1",
     kind: "Backup",
     metadata: {
@@ -76,7 +77,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
     spec: {
       hooks: spec.hooks,
       includedNamespaces: namespaces,
-      ttl: convertTTL(app.snapshotTTL || ""),
+      ttl: app.snapshotTTL,
       storageLocation: backend,
     }
   };
@@ -84,7 +85,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
   const ownNS = getKotsadmNamespace();
   if (_.includes(namespaces, ownNS)) {
     // exclude kotsadm control plane objects
-    backup.spec.labelSelector = {
+    b.spec.labelSelector = {
       matchExpressions: [{
         key: kotsadmLabelKey,
         operator: "NotIn",
@@ -93,19 +94,18 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
     }
   }
 
-  await velero.createBackup(backup);
+  await velero.createBackup(b);
 }
 
-export function convertTTL(ttl: string): string {
-  const defaultTTL = "720h";
-  const [quant, unit] = ttl.split(" ");
-  const n = parseInt(quant);
+// tslint:disable-next-line cyclomatic-complexity
+export function formatTTL(quantity: any, unit: any) {
+  const n = parseInt(quantity, 10);
   if (_.isNaN(n)) {
-    logger.warn(`Ignoring invalid snapshot TTL: ${ttl}`);
-    return defaultTTL;
+    throw new ReplicatedError(`Invalid snapshot TTL: ${quantity} ${unit}`);
   }
+
   switch (unit) {
-  case "seoncds":
+  case "seconds":
     return `${n}s`;
   case "minutes":
     return `${n}m`;
@@ -120,8 +120,47 @@ export function convertTTL(ttl: string): string {
   case "years":
     return `${n * 8766}h`;
   default:
-    logger.warn(`Ignoring invalid snapshot TTL: ${ttl}`);
+    throw new ReplicatedError(`Invalid snapshot TTL: ${quantity} ${unit}`);
+  }
+}
+
+export interface ParsedTTL {
+  quantity: number,
+  unit: string,
+};
+
+// tslint:disable-next-line cyclomatic-complexity
+export function parseTTL(s: string): ParsedTTL {
+  const match = s.match(/^\d+(s|m|h)$/)
+  if (!match || match.length !== 2) {
+    throw new ReplicatedError(`Invalid snapshot TTL: ${s}`);
+  }
+  const quantity = parseInt(match[0], 10);
+  switch (match[1]) {
+  case "s":
+    return { quantity: parseInt(match[0], 10), unit: "seconds" };
+  case "m":
+    return { quantity: parseInt(match[0], 10), unit: "minutes" };
+  case "h":
+    if (quantity / 8766 >= 1 && quantity % 8766 === 0) {
+      return { quantity: quantity / 8766, unit: "years" };
+    }
+    if (quantity / 720 >= 1 && quantity % 720 === 0) {
+      return { quantity: quantity / 720, unit: "months" };
+    }
+    if (quantity / 168 >= 1 && quantity % 168 === 0) {
+      return { quantity: quantity / 168, unit: "weeks" };
+    }
+    if (quantity / 24 >= 1 && quantity % 24 === 0) {
+      return { quantity: quantity / 24, unit: "days" };
+    }
+    return {
+      quantity,
+      unit: "hours",
+    };
+  default:
+    // continue
   }
 
-  return defaultTTL;
+  throw new ReplicatedError(`Invalid snapshot TTL: ${s}`);
 }
