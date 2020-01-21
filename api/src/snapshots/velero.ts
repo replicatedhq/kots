@@ -21,7 +21,7 @@ export interface BackupSpec {
   labelSelector?: V1LabelSelector,
   snapshotVolumes?: boolean|null,
   storageLocation: string,
-  ttl: string,
+  ttl?: string,
   volumeSnapshotLocations?: Array<string>,
 }
 

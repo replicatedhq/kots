@@ -25,7 +25,7 @@ import {
   BatchV1beta1Api,
   V1beta1CronJob } from "@kubernetes/client-node";
 import { logger } from "../../server/logger";
-import { backup } from "../backup";
+import { formatTTL, backup } from "../backup";
 import { sleep } from "../../util/utilities";
 
 export function SnapshotMutations(stores: Stores) {
@@ -44,25 +44,7 @@ export function SnapshotMutations(stores: Stores) {
 
       const app = await stores.kotsAppStore.getApp(appId);
 
-      const ttlN = parseInt(retentionQuantity);
-      if (_.isNaN(ttlN) || ttlN < 1) {
-        throw new ReplicatedError(`Invalid snapshot retention: ${retentionQuantity} ${retentionUnit}`);
-      }
-
-      switch (retentionUnit) {
-      case "seconds":
-      case "minutes":
-      case "hours":
-      case "days":
-      case "weeks":
-      case "months":
-      case "years":
-        break;
-      default:
-        throw new ReplicatedError(`Invalid snapshot retention: ${retentionQuantity} ${retentionUnit}`);
-      }
-
-      const retention = `${ttlN} ${retentionUnit}`;
+      const retention = formatTTL(retentionQuantity, retentionUnit);
       if (app.snapshotTTL !== retention) {
         await stores.kotsAppStore.updateAppSnapshotTTL(appId, retention);
       }
