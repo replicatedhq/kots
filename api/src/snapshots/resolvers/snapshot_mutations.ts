@@ -232,12 +232,12 @@ export function SnapshotMutations(stores: Stores) {
       await stores.kotsAppStore.updateAppRestoreInProgressName(appId, restoreName);
 
       logger.info(`Restore waiting for current app version to be removed`);
-      for (let i = 30; i--; i >= 0) {
+      for (let i = 30; i >= 0; i--) {
         const { restoreUndeployed } = await stores.kotsAppStore.getApp(appId);
         if (restoreUndeployed) {
           break;
         }
-        if (i == 0) {
+        if (i === 0) {
           throw new ReplicatedError(`Restore timed-out waiting for app to undeploy`);
         }
         await sleep(1);
@@ -257,7 +257,7 @@ export function SnapshotMutations(stores: Stores) {
     async deleteSnapshot(root: any, args: any, context: Context): Promise<void> {
       context.requireSingleTenantSession();
       const velero = new VeleroClient("velero"); // TODO namespace
-      velero.deleteSnapshot(args.snapshotName);
+      await velero.deleteSnapshot(args.snapshotName);
     },
   };
 }
