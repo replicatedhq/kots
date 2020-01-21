@@ -136,6 +136,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
         if (!clusterId) {
           throw new ReplicatedError(`Backup is missing cluster ID annotation`);
         }
+        console.log(`Restore setting deploy version to ${sequence}`);
         await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
         await stores.kotsAppStore.updateAppRestoreReset(appId);
       }

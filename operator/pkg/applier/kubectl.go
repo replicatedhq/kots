@@ -94,9 +94,13 @@ func (c *Kubectl) Preflight(preflightURI string, ignorePermissions bool) error {
 	return nil
 }
 
-func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte) ([]byte, []byte, error) {
+func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]byte, []byte, error) {
 	args := []string{
 		"delete",
+	}
+
+	if wait {
+		args = append(args, "--wait")
 	}
 
 	if targetNamespace != "" {
@@ -118,13 +122,16 @@ func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte) ([]byte, []byte
 	return stdout, stderr, errors.Wrap(err, "failed to run kubectl delete")
 }
 
-func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool) ([]byte, []byte, error) {
+func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool, wait bool) ([]byte, []byte, error) {
 	args := []string{
 		"apply",
 	}
 
 	if dryRun {
 		args = append(args, "--dry-run")
+	}
+	if wait {
+		args = append(args, "--wait")
 	}
 
 	if targetNamespace != "" {

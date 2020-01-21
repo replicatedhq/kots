@@ -1,34 +1,24 @@
-import * as _ from "lodash";
-import * as yaml from "js-yaml";
 import * as cronstrue from "cronstrue";
+import * as _ from "lodash";
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
-import { Params } from "../../server/params";
-import { Backup } from "../velero";
-import { backupStorageLocationName, VeleroClient } from "./veleroClient";
+import { VeleroClient } from "./veleroClient";
 import { ReplicatedError } from "../../server/errors";
 import {
-  kotsAppSlugKey,
   kotsAppIdKey,
-  kotsClusterIdKey,
   kotsAppSequenceKey,
-  kotsadmLabelKey,
-  snapshotTriggerKey,
+  kotsClusterIdKey,
   RestoreDetail,
-  SnapshotTrigger
 } from "../snapshot";
 import { Phase } from "../velero";
-import { SnapshotStore, SnapshotProvider } from "../snapshot_config";
+import { SnapshotProvider, SnapshotStore } from "../snapshot_config";
 import { deleteSchedule, schedule } from "../schedule";
-import { getK8sNamespace, kotsRenderFile } from "../../kots_app/kots_ffi";
-import {
-  BatchV1beta1Api,
-  V1beta1CronJob } from "@kubernetes/client-node";
 import { logger } from "../../server/logger";
 import { formatTTL, backup } from "../backup";
 import { sleep } from "../../util/utilities";
 
 export function SnapshotMutations(stores: Stores) {
+  /* tslint:disable:max-func-body-length cyclomatic-complexity */
   return {
     async saveSnapshotConfig(root: any, args: any, context: Context): Promise<void> {
       context.requireSingleTenantSession();
@@ -147,7 +137,7 @@ export function SnapshotMutations(stores: Stores) {
         path: prefix,
         provider: SnapshotProvider.Google,
         google: {
-          serviceAccount
+          serviceAccount,
         },
       };
       const client = new VeleroClient("velero"); // TODO velero namespace
@@ -168,34 +158,34 @@ export function SnapshotMutations(stores: Stores) {
       const velero = new VeleroClient("velero"); // TODO velero namespace
 
       // ensure the backup exists with required annotations
-      const backup = await velero.readBackup(args.snapshotName);
-      if (!backup.metadata.annotations) {
+      const b = await velero.readBackup(args.snapshotName);
+      if (!b.metadata.annotations) {
         throw new ReplicatedError(`Backup is missing appID, cluster ID and version annotations`);
       }
-      const appId = backup.metadata.annotations[kotsAppIdKey];
+      const appId = b.metadata.annotations[kotsAppIdKey];
       if (!appId) {
         throw new ReplicatedError(`Backup is missing app ID annotation`);
       }
-      const clusterId = backup.metadata.annotations[kotsClusterIdKey];
+      const clusterId = b.metadata.annotations[kotsClusterIdKey];
       if (!clusterId) {
         throw new ReplicatedError(`Backup is missing cluster ID annotation`);
       }
-      const sequenceString = backup.metadata.annotations[kotsAppSequenceKey];
+      const sequenceString = b.metadata.annotations[kotsAppSequenceKey];
       if (!sequenceString) {
         throw new ReplicatedError(`Backup is missing version annotation`);
       }
-      const sequence = parseInt(sequenceString);
+      const sequence = parseInt(sequenceString, 10);
       if (_.isNaN(sequence)) {
         throw new ReplicatedError(`Failed to parse sequence from Backup: ${sequenceString}`);
       }
       logger.info(`Restore found Backup ${args.snapshotName} for app ${appId} sequence ${sequence} on cluster ${clusterId}`);
  
       // ensure the backup's kots app version exists in the db
-      const currentVersion = await stores.kotsAppStore.getCurrentAppVersion(appId);
+      const currentVersion = await stores.kotsAppStore.getCurrentVersion(appId, clusterId);
       if (!currentVersion || currentVersion.sequence !== sequence) {
         const pastVersions = await stores.kotsAppStore.listPastVersions(appId, clusterId);
-        const version = _.find(pastVersions, (version) => {
-          return version.sequence === sequence;
+        const version = _.find(pastVersions, (v) => {
+          return v.sequence === sequence;
         });
         if (!version) {
           throw new ReplicatedError(`Cannot restore version ${sequence} since it has never been installed in this cluster`);

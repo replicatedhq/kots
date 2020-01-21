@@ -98,6 +98,7 @@ export class KotsDeploySocketService {
     }
   }
 
+  /* tslint:disable:cyclomatic-complexity */
   async restoreLoop() {
     if (!this.clusterSocketHistory) {
       return;
@@ -117,7 +118,7 @@ export class KotsDeploySocketService {
           const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
           try {
             const desiredNamespace = ".";
-            const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+            const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
             const b = new Buffer(rendered);
 
             const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
@@ -129,9 +130,14 @@ export class KotsDeploySocketService {
               namespace: desiredNamespace,
               manifests: "",
               previous_manifests: b.toString("base64"),
+              result_callback: "/api/v1/undeploy/result",
+              wait: true,
             };
 
             this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
+
+            // TODO: wait for undeploy
+
             // reset app deployment state
             clusterSocketHistory.sentDeploySequences = _.filter(clusterSocketHistory.sentDeploySequences, (s) => {
               return !_.startsWith(s, app.id);
@@ -173,11 +179,11 @@ export class KotsDeploySocketService {
         const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
         if (maybeDeployedAppSequence! > -1) {
           const deployedAppSequence = Number(maybeDeployedAppSequence);
-          if (clusterSocketHistory.sentDeploySequences.indexOf(`${app.id}/${deployedAppSequence!}`) === -1) {
+          if (clusterSocketHistory.sentDeploySequences.indexOf(`${app.id}/${deployedAppSequence}`) === -1) {
             const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
             try {
               const desiredNamespace = ".";
-              const rendered = await app.render(''+app.currentSequence, `overlays/downstreams/${cluster.title}`);
+              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
               const b = new Buffer(rendered);
 
               const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
@@ -188,17 +194,19 @@ export class KotsDeploySocketService {
                 namespace: desiredNamespace,
                 manifests: b.toString("base64"),
                 previous_manifests: "",
+                result_callback: "/api/v1/deploy/result",
+                wait: false,
               };
 
-              const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence!);
+              const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence);
               if (previousSequence !== undefined) {
-                const previousRendered = await app.render(''+(previousSequence), `overlays/downstreams/${cluster.title}`);
+                const previousRendered = await app.render(previousSequence.toString(), `overlays/downstreams/${cluster.title}`);
                 const bb = new Buffer(previousRendered);
                 args.previous_manifests = bb.toString("base64");
               }
 
               this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
-              clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence!}`);
+              clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence}`);
             } catch(err) {
               await this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
               continue;

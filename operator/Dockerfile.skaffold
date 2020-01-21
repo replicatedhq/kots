@@ -38,11 +38,11 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${T
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
 WORKDIR $PROJECTPATH
-ADD Makefile $PROJECTPATH/
-ADD go.mod $PROJECTPATH/
-ADD go.sum $PROJECTPATH/
-ADD cmd $PROJECTPATH/cmd
-ADD pkg $PROJECTPATH/pkg
+ADD Makefile ./
+ADD go.mod ./
+ADD go.sum ./
+ADD cmd ./cmd
+ADD pkg ./pkg
 
 RUN make build
 

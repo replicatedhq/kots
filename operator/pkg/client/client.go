@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,7 +9,6 @@ import (
 	"net/url"
 	"os/exec"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -34,6 +32,8 @@ type ApplicationManifests struct {
 	Namespace         string `json:"namespace"`
 	PreviousManifests string `json:"previous_manifests"`
 	Manifests         string `json:"manifests"`
+	Wait              bool   `json:"wait"`
+	ResultCallback    string `json:"result_callback"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server
@@ -241,6 +241,13 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 }
 
 func (c *Client) sendResult(applicationManifests ApplicationManifests, isError bool, dryrunStdout []byte, dryrunStderr []byte, applyStdout []byte, applyStderr []byte) error {
+	if applicationManifests.ResultCallback == "" {
+		return nil
+	}
+
+	uri := fmt.Sprintf("%s%s", c.APIEndpoint, applicationManifests.ResultCallback)
+	log.Printf("Reporting results to %q", uri)
+
 	applyResult := struct {
 		AppID        string `json:"app_id"`
 		IsError      bool   `json:"is_error"`
@@ -262,9 +269,6 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 		return errors.Wrap(err, "failed to marshal results")
 	}
 
-	uri := fmt.Sprintf("%s/api/v1/deploy/result", c.APIEndpoint)
-
-	log.Printf("Reporting results to %q", uri)
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
 	req.Header["Content-Type"] = []string{"application/json"}
 	req.SetBasicAuth("", c.Token)
@@ -369,69 +373,6 @@ func (c *Client) sendAppStatus(appStatus types.AppStatus) error {
 
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code from kotsadm server: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (c *Client) diffAndRemovePreviousManifests(applicationManifests ApplicationManifests) error {
-	decodedPrevious, err := base64.StdEncoding.DecodeString(applicationManifests.PreviousManifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode previous manifests")
-	}
-
-	decodedCurrent, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
-	}
-
-	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
-	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
-	decodedPreviousMap := map[string]string{}
-	for _, decodedPreviousString := range decodedPreviousStrings {
-		decodedPreviousMap[GetGVKWithName([]byte(decodedPreviousString))] = decodedPreviousString
-	}
-
-	// now get the current names
-	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
-	decodedCurrentMap := map[string]string{}
-	for _, decodedCurrentString := range decodedCurrentStrings {
-		decodedCurrentMap[GetGVKWithName([]byte(decodedCurrentString))] = decodedCurrentString
-	}
-
-	// now remove anything that's in previous but not in current
-	kubectl, err := util.FindKubectlVersion(applicationManifests.KubectlVersion)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
-	}
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-
-	// this is pretty raw, and required kubectl...  we should
-	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, "", "", config)
-	targetNamespace := c.TargetNamespace
-	if applicationManifests.Namespace != "." {
-		targetNamespace = applicationManifests.Namespace
-	}
-
-	for k, oldContents := range decodedPreviousMap {
-		if _, ok := decodedCurrentMap[k]; !ok {
-			gv, k, n, err := ParseSimpleGVK([]byte(oldContents))
-			if err != nil {
-				log.Printf("deleting unidentified manifest. unable to parse error: %s\n", err.Error())
-			} else {
-				log.Printf("deleting manifest(s): %s/%s/%s\n", gv, k, n)
-			}
-			stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents))
-			if err != nil {
-				log.Printf("stdout (delete) = %s", stdout)
-				log.Printf("stderr (delete) = %s", stderr)
-				log.Printf("error: %s", err.Error())
-			}
-		}
 	}
 
 	return nil
