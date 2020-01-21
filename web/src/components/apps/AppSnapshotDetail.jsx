@@ -204,6 +204,9 @@ class AppSnapshotDetail extends Component {
   getSeriesData = (volumes) => {
     const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD"];
     const series = [{ data: null }]
+    if (!volumes) {
+      return series;
+    }
     const data = volumes.map((volume, i) => {
       return {
         x: volume.name,
