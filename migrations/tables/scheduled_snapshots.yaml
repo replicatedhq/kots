@@ -1,0 +1,26 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  name: scheduled-snapshots
+spec:
+  database: kotsadm-postgres
+  name: scheduled_snapshots
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: app_id
+        type: text
+        constraints:
+          notNull: true
+      - name: scheduled_timestamp
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: backup_name
+        type: text

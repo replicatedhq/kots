@@ -12,10 +12,10 @@ import {
 } from "../snapshot";
 import { Phase } from "../velero";
 import { SnapshotProvider, SnapshotStore } from "../snapshot_config";
-import { deleteSchedule, schedule } from "../schedule";
 import { logger } from "../../server/logger";
 import { formatTTL, backup } from "../backup";
 import { sleep } from "../../util/utilities";
+import { nextScheduled } from "../schedule";
 
 export function SnapshotMutations(stores: Stores) {
   // tslint:disable-next-line max-func-body-length cyclomatic-complexity
@@ -40,7 +40,8 @@ export function SnapshotMutations(stores: Stores) {
       }
 
       if (!autoEnabled) {
-        await deleteSchedule(app.slug);
+        await stores.kotsAppStore.updateAppSnapshotSchedule(app.id, null);
+        await stores.snapshotsStore.deletePendingScheduledSnapshots(app.id);
         return;
       }
 
@@ -53,17 +54,12 @@ export function SnapshotMutations(stores: Stores) {
         throw new ReplicatedError("Snapshot schedule expression does not support seconds or years");
       }
 
-      switch (scheduleSelected) {
-      case "hourly":
-      case "daily":
-      case "weekly":
-      case "custom":
-        break;
-      default:
-        throw new ReplicatedError(`Invalid schedule selection: ${scheduleSelected}`);
+      if (scheduleExpression !== app.snapshotSchedule) {
+        await stores.snapshotsStore.deletePendingScheduledSnapshots(app.id);
+        await stores.kotsAppStore.updateAppSnapshotSchedule(app.id, scheduleExpression);
+        const queued = nextScheduled(app.id, scheduleExpression);
+        await stores.snapshotsStore.createScheduledSnapshot(queued);
       }
-
-      await schedule(app.slug, scheduleExpression, scheduleSelected);
     },
 
     async snapshotProviderAWS(root: any, args: any, context: Context): Promise<void> {
@@ -151,6 +147,7 @@ export function SnapshotMutations(stores: Stores) {
       await backup(stores, args.appId, scheduled);
     },
 
+    // tslint:disable-next-line cyclomatic-complexity
     async restoreSnapshot(root: any, args: any, context: Context): Promise<RestoreDetail> {
       context.requireSingleTenantSession();
 
