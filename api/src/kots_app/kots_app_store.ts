@@ -1441,6 +1441,46 @@ order by adv.sequence desc`;
     }
   }
 
+  async isAllowSnapshotsPartOfLicenseYaml(appId: string, sequence: number): Promise<boolean> {
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+    try {
+      const namespace = process.env["POD_NAMESPACE"]!;
+      const secretName = "kotsadm-gitops";
+      await k8sApi.readNamespacedSecret(secretName, namespace);
+      return true;
+    } catch (err) {
+      // secret does not exist
+    }
+
+    const q = `select kots_license from app_version where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+
+    if (result.rowCount == 0) {
+      throw new ReplicatedError("No app versions found");
+    }
+
+    const row = result.rows[0];
+    const license: string = row.kots_license;
+    if (!license) {
+      return true;
+    }
+
+    try {
+      return !!yaml.safeLoad(license).spec.allowSnapshots;
+    } catch (err) {
+      console.log(err);
+      return false;
+    }
+  }
+
   async getIdFromSlug(slug: string): Promise<string> {
     const q = "select id from app where slug = $1";
     const v = [slug];
