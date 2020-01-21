@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import zlib from "zlib";
 import querystring from "querystring";
-import { parse } from "logfmt";
+import moment from "moment";
 import * as _ from "lodash";
 import prettyBytes from "pretty-bytes";
 import {
@@ -263,9 +263,12 @@ export class VeleroClient {
           rv.phase = pvr.status.phase;
         }
         if (pvr.status.progress) {
-          // TODO add % completed
           rv.sizeBytesHuman = pvr.status.progress.totalBytes ? prettyBytes(pvr.status.progress.totalBytes) : "0 B";
           rv.doneBytesHuman = pvr.status.progress.bytesDone ? prettyBytes(pvr.status.progress.bytesDone) : "0 B";
+          rv.completionPercent = Math.round(pvr.status.progress.bytesDone / pvr.status.progress.totalBytes * 100);
+          const bytesPerSecond = pvr.status.progress.bytesDone / moment().diff(moment(pvr.status.startTimestamp), "seconds");
+          const bytesRemaining = pvr.status.progress.totalBytes - pvr.status.progress.bytesDone;
+          rv.timeRemainingSeconds = Math.round(bytesRemaining / bytesPerSecond);
         }
       }
 
@@ -298,7 +301,10 @@ export class VeleroClient {
           // progress object is empty if volume size was 0
           sv.sizeBytesHuman = pvb.status.progress.totalBytes ? prettyBytes(pvb.status.progress.totalBytes) : "0 B";
           sv.doneBytesHuman = pvb.status.progress.bytesDone ? prettyBytes(pvb.status.progress.bytesDone): "0 B";
-          // TODO add % completed
+          sv.completionPercent = Math.round(pvb.status.progress.bytesDone / pvb.status.progress.totalBytes * 100);
+          const bytesPerSecond = pvb.status.progress.bytesDone / moment().diff(moment(pvb.status.startTimestamp), "seconds");
+          const bytesRemaining = pvb.status.progress.totalBytes - pvb.status.progress.bytesDone;
+          sv.timeRemainingSeconds = Math.round(bytesRemaining / bytesPerSecond);
         }
       }
       volumes.push(sv);

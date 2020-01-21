@@ -49,6 +49,8 @@ export interface SnapshotVolume {
   name: string;
   sizeBytesHuman?: string;
   doneBytesHuman?: string;
+  completionPercent?: number;
+  timeRemainingSeconds?: number;
   started?: string;
   finished?: string;
   phase?: Phase;
@@ -90,6 +92,8 @@ export interface RestoreVolume {
   podVolumeName: string;
   sizeBytesHuman?: string;
   doneBytesHuman?: string;
+  completionPercent?: number;
+  timeRemainingSeconds?: number;
   started? : string;
   finished?: string;
 }

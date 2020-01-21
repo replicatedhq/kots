@@ -111,6 +111,8 @@ const SnapshotVolume = `
     name: String
     sizeBytesHuman: String
     doneBytesHuman: String
+    completionPercent: Int
+    timeRemainingSeconds: Int
     started: String
     finished: String
     phase: String
@@ -153,6 +155,8 @@ const RestoreVolume = `
     podVolumeName: String
     sizeBytesHuman: String
     doneBytesHuman: String
+    completionPercent: Int
+    timeRemainingSeconds: Int
     started: String
     finished: String
   }

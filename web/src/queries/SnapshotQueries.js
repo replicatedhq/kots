@@ -106,6 +106,8 @@ export const snapshotDetailRaw = `
         name
         sizeBytesHuman
         doneBytesHuman
+        completionPercent
+        timeRemainingSeconds
         started
         finished
         phase
@@ -133,6 +135,8 @@ query restoreDetail($appId: String!) {
       name
       sizeBytesHuman
       doneBytesHuman
+      completionPercent
+      timeRemainingSeconds
       started
       finished
       phase
