@@ -526,8 +526,10 @@ export class KotsApp {
 
   private async isAllowSnapshots(stores: Stores): Promise<boolean> {
     const parsedKotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
+    const partOfLicenseYaml = await stores.kotsAppStore.isAllowSnapshotsPartOfLicenseYaml(this.id, this.currentSequence!);
+
     try {
-      if (parsedKotsAppSpec && parsedKotsAppSpec.allowSnapshots) {
+      if (parsedKotsAppSpec && parsedKotsAppSpec.allowSnapshots && partOfLicenseYaml) {
         return true;
       }
     } catch {
