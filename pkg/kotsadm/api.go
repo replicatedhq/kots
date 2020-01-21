@@ -126,7 +126,7 @@ func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
 		}
 	}
 
-	// We have never change the role, so there is no "upgrade" applied
+	// We have never changed the role, so there is no "upgrade" applied
 
 	return nil
 }
@@ -144,7 +144,7 @@ func ensureApiRoleBinding(namespace string, clientset *kubernetes.Clientset) err
 		}
 	}
 
-	// We have never change the role binding, so there is no "upgrade" applied
+	// We have never changed the role binding, so there is no "upgrade" applied
 
 	return nil
 }
@@ -162,7 +162,7 @@ func ensureApiServiceAccount(namespace string, clientset *kubernetes.Clientset) 
 		}
 	}
 
-	// We have never change the service account, so there is no "upgrade" applied
+	// We have never changed the service account, so there is no "upgrade" applied
 
 	return nil
 }
