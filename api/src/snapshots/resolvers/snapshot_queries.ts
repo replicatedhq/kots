@@ -19,6 +19,7 @@ import { parseTTL, formatTTL } from "../backup";
 import { ReplicatedError } from "../../server/errors";
 
 export function SnapshotQueries(stores: Stores, params: Params) {
+  // tslint:disable-next-line max-func-body-length
   return {
     async snapshotConfig(root: any, args: any, context: Context): Promise<SnapshotConfig> {
       context.requireSingleTenantSession();
@@ -69,6 +70,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       return await client.getSnapshotDetail(id);
     },
 
+    // tslint:disable-next-line cyclomatic-complexity
     async restoreDetail(root: any, args: any, context: Context): Promise<RestoreDetail> {
       context.requireSingleTenantSession();
 
@@ -124,11 +126,11 @@ export function SnapshotQueries(stores: Stores, params: Params) {
         if (!backup.metadata.annotations) {
           throw new ReplicatedError(`Backup is missing required annotations`);
         }
-        const sequenceString = backup.metadata!.annotations[kotsAppSequenceKey];
+        const sequenceString = backup.metadata.annotations[kotsAppSequenceKey];
         if (!sequenceString) {
           throw new ReplicatedError(`Backup is missing version annotation`);
         }
-        const sequence = parseInt(sequenceString);
+        const sequence = parseInt(sequenceString, 10);
         if (_.isNaN(sequence)) {
           throw new ReplicatedError(`Failed to parse sequence from Backup: ${sequenceString}`);
         }

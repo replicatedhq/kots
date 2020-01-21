@@ -1,7 +1,8 @@
 import { BodyParams, Controller, Get, HeaderParams, Put, Req, Res } from "@tsed/common";
 import BasicAuth from "basic-auth";
 import Express from "express";
-import _ from "lodash";
+import { KotsAppStore } from "../../kots_app/kots_app_store";
+import { ClusterStore } from "../../cluster";
 
 interface ErrorResponse {
   error: {};
@@ -20,14 +21,16 @@ export class RestoreAPI {
 
     let cluster;
     try {
-      cluster = await request.app.locals.stores.clusterStore.getFromDeployToken(credentials.pass);
+      cluster = await (request.app.locals.stores.clusterStore as ClusterStore).getFromDeployToken(credentials.pass);
     } catch (err) {
       // TODO error type
       response.status(401);
       return {};
     }
 
-    console.log("+++ UNDEPLOY", JSON.stringify(body, null, 2));
+    const status = body.is_error ? "failed" : "completed";
+    console.log(`Restore API set RestoreUndeployStatus = ${status} for app ${body.app_id}`);
+    await (request.app.locals.stores.kotsAppStore as KotsAppStore).updateAppRestoreUndeployStatus(body.app_id, status);
 
     return {};
   }

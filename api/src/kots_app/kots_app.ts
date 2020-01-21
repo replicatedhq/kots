@@ -39,7 +39,7 @@ export class KotsApp {
   isConfigurable: boolean;
   snapshotTTL?: string;
   restoreInProgressName?: string;
-  restoreUndeployed?: boolean;
+  restoreUndeployStatus?: string;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {

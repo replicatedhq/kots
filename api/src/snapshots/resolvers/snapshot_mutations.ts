@@ -18,7 +18,7 @@ import { formatTTL, backup } from "../backup";
 import { sleep } from "../../util/utilities";
 
 export function SnapshotMutations(stores: Stores) {
-  /* tslint:disable:max-func-body-length cyclomatic-complexity */
+  // tslint:disable-next-line max-func-body-length cyclomatic-complexity
   return {
     async saveSnapshotConfig(root: any, args: any, context: Context): Promise<void> {
       context.requireSingleTenantSession();
@@ -202,26 +202,6 @@ export function SnapshotMutations(stores: Stores) {
       // set restore in progress to switch deploy socket from deploy to undeploy mode
       // TODO most queries and mutations should be unavailable when this is set
       await stores.kotsAppStore.updateAppRestoreInProgressName(appId, restoreName);
-
-      logger.info(`Restore waiting for current app version to be removed`);
-      for (let i = 30; i >= 0; i--) {
-        const { restoreUndeployed } = await stores.kotsAppStore.getApp(appId);
-        if (restoreUndeployed) {
-          break;
-        }
-        if (i === 0) {
-          throw new ReplicatedError(`Restore timed-out waiting for app to undeploy`);
-        }
-        await sleep(1);
-      }
-      logger.info(`Restore successfully removed current app version.`);
-      // TODO remove here and let restoreLoop create the restore resource
-      // TODO need to get some state back from operator
-      await sleep(10);
-
-      // create the Restore resource
-      await velero.restore(args.snapshotName, restoreName);
-      logger.info(`Created Restore object ${restoreName}`);
 
       return { name: restoreName, phase: Phase.New, volumes: [], errors: [], warnings: [] };
     },

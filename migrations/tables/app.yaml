@@ -63,5 +63,5 @@ spec:
         type: text
       - name: restore_in_progress_name
         type: text
-      - name: restore_undeployed
-        type: boolean
+      - name: restore_undeploy_status
+        type: text

@@ -1331,7 +1331,7 @@ order by adv.sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, restore_in_progress_name, restore_undeployed from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -1369,7 +1369,7 @@ order by adv.sequence desc`;
     kotsApp.isConfigurable = !!rr.rows[0] && !!rr.rows[0].config_spec;
     kotsApp.snapshotTTL = row.snapshot_ttl;
     kotsApp.restoreInProgressName = row.restore_in_progress_name;
-    kotsApp.restoreUndeployed = row.restore_undeployed;
+    kotsApp.restoreUndeployStatus = row.restore_undeploy_status;
 
     return kotsApp;
   }
@@ -1599,14 +1599,14 @@ order by adv.sequence desc`;
     await this.pool.query(q, v);
   }
 
-  async updateAppRestoreUndeployed(appId: string, undeployed: boolean): Promise<void> {
-    const q = `update app set restore_undeployed = $1 where id = $2`;
-    const v = [undeployed, appId];
+  async updateAppRestoreUndeployStatus(appId: string, undeployStatus: string): Promise<void> {
+    const q = `update app set restore_undeploy_status = $1 where id = $2`;
+    const v = [undeployStatus, appId];
     await this.pool.query(q, v);
   }
 
   async updateAppRestoreReset(appId): Promise<void> {
-    const q = `update app set restore_in_progress_name = NULL, restore_undeployed = NULL where id = $1`;
+    const q = `update app set restore_in_progress_name = NULL, restore_undeploy_status = '' where id = $1`;
     const v = [appId];
     await this.pool.query(q, v);
   }

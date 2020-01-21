@@ -9,6 +9,8 @@ import { PreflightStore } from "../../preflight/preflight_store";
 import _ from "lodash";
 import { TroubleshootStore } from "../../troubleshoot";
 import {logger} from "../../server/logger";
+import { VeleroClient } from "../../snapshots/resolvers/veleroClient";
+import { Phase } from "../../snapshots/velero";
 
 const DefaultReadyState = [{kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", state: State.Ready}];
 
@@ -98,7 +100,7 @@ export class KotsDeploySocketService {
     }
   }
 
-  /* tslint:disable:cyclomatic-complexity */
+  // tslint:disable-next-line cyclomatic-complexity
   async restoreLoop() {
     if (!this.clusterSocketHistory) {
       return;
@@ -107,45 +109,79 @@ export class KotsDeploySocketService {
     for (const clusterSocketHistory of this.clusterSocketHistory) {
       const apps = await this.kotsAppStore.listAppsForCluster(clusterSocketHistory.clusterId);
       for (const app of apps) {
-        if (!app.restoreInProgressName || app.restoreUndeployed) {
+        if (!app.restoreInProgressName) {
           continue;
         }
 
-        const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
-        const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
-        if (maybeDeployedAppSequence! > -1) {
-          const deployedAppSequence = Number(maybeDeployedAppSequence);
-          const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
+        switch (app.restoreUndeployStatus) {
+        case "in_process":
+          // undeploy in process, continue loop
+          break;
+
+        case "completed":
+          logger.info(`Restore successfully removed current app version.`);
+
+          let parts = app.restoreInProgressName.split("-");
+          parts = parts.slice(0, parts.length-1); // trim restore time to get snapshot name
+          const snapshotName = parts.join("-");
+
+          const velero = new VeleroClient("velero"); // TODO velero namespace
+
           try {
-            const desiredNamespace = ".";
-            const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
-            const b = new Buffer(rendered);
+            const restore = await velero.readRestore(app.restoreInProgressName);
+            if (!restore) {
+              // create the Restore resource
+              await velero.restore(snapshotName, app.restoreInProgressName);
+              logger.info(`Created Restore object ${app.restoreInProgressName}`);
+            }
+          } catch (err) {
+            console.log("Velero restore failed");
+            console.log(err);
+          }
+          break;
 
-            const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+        case "failed":
+          logger.warn(`Restore ${app.restoreInProgressName} falied`);
+          // TODO
+          break;
 
-            // make operator prune everything
-            const args = {
-              app_id: app.id,
-              kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
-              namespace: desiredNamespace,
-              manifests: "",
-              previous_manifests: b.toString("base64"),
-              result_callback: "/api/v1/undeploy/result",
-              wait: true,
-            };
+        default:
+          const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
+          const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
+          if (maybeDeployedAppSequence! > -1) {
+            const deployedAppSequence = Number(maybeDeployedAppSequence);
+            const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
+            try {
+              const desiredNamespace = ".";
+              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
+              const b = new Buffer(rendered);
 
-            this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
+              const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-            // TODO: wait for undeploy
+              // make operator prune everything
+              const args = {
+                app_id: app.id,
+                kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
+                namespace: desiredNamespace,
+                manifests: "",
+                previous_manifests: b.toString("base64"),
+                result_callback: "/api/v1/undeploy/result",
+                wait: true,
+              };
 
-            // reset app deployment state
-            clusterSocketHistory.sentDeploySequences = _.filter(clusterSocketHistory.sentDeploySequences, (s) => {
-              return !_.startsWith(s, app.id);
-            });
-            await this.kotsAppStore.updateAppRestoreUndeployed(app.id, true);
-          } catch(e) {
-            console.log("Restore undeploy failed");
-            console.log(e);
+              this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
+
+              // reset app deployment state
+              clusterSocketHistory.sentDeploySequences = _.filter(clusterSocketHistory.sentDeploySequences, (s) => {
+                return !_.startsWith(s, app.id);
+              });
+
+              await this.kotsAppStore.updateAppRestoreUndeployStatus(app.id, "in_process");
+            } catch (err) {
+              console.log("Restore undeploy failed");
+              console.log(err);
+            }
+            break;
           }
         }
       }
