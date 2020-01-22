@@ -1474,7 +1474,7 @@ order by adv.sequence desc`;
     }
 
     try {
-      return !!yaml.safeLoad(license).spec.allowSnapshots;
+      return !!yaml.safeLoad(license).spec.isSnapshotSupported;
     } catch (err) {
       console.log(err);
       return false;
