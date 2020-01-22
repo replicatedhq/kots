@@ -50,7 +50,7 @@ steps:
   # Wait for testing to complete before moving on
   - wait # next is build
 
-  ## migations
+  ## migrations
   - label: "build schema migrations"
     commands:
       - make -C migrations schema-alpha
@@ -74,6 +74,7 @@ steps:
         # this command exiting with status 2 typically means that the yarn package failed to download
         - exit_status: 2
           limit: 5
+
   - label: "build-web"
     commands:
       - make -C web deps build-kotsadm
@@ -137,7 +138,9 @@ steps:
     artifact_paths:
       - "api/build/**/*"
       - "api/bin/**/*"
-  - wait
+
+  - wait # wait for pacts to finish before checking if they pass
+
   - commands:
       - make -C api can-i-deploy
 
@@ -163,10 +166,11 @@ steps:
       - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download web/dist/* . --step build-web; fi
       - if [ ! -z "$GIT_TAG" ]; then make build-release; fi
 
-  - label: "typescript api alpha releaase"
+  - label: "typescript api alpha release"
     commands:
       - make -C api build-alpha
     branches: "master"
+
   - label: "typescript api tagged release"
     commands:
       - if [ ! -z "$GIT_TAG" ]; then make -C api build-release; fi
