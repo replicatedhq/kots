@@ -64,12 +64,12 @@ export default () => {
             {
               "title": "my-other-awesome-version",
               "status": "pending",
-              "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "createdOn": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "sequence": 0,
               "releaseNotes": "# Release Notes Markdown Text",
-              "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "deployedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "preflightResult": Matchers.like("string"),
-              "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
+              "preflightResultCreatedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)")
             }
           ],
         },

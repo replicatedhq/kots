@@ -64,10 +64,10 @@ export default () => {
             {
               "title": "kots-no-release-notes-version-label",
               "status": "pending",
-              "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "createdOn": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "sequence": 0,
               "releaseNotes": "",
-              "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "deployedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "preflightResult": null,
               "preflightResultCreatedAt": null
             }

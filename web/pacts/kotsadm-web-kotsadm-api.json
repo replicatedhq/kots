@@ -55,6 +55,17 @@
                 "createdOn": "2019-04-10 12:34:56.789",
                 "lastUpdated": "2019-04-11 01:23:45.567",
                 "shipOpsRef": null
+              },
+              {
+                "id": "l9cpydvcf30ekf25pmokwn6qlnxscrci",
+                "title": "this-cluster",
+                "slug": "this-cluster",
+                "createdOn": "Wed Jan 22 2020 00:34:12 GMT+0000 (Coordinated Universal Time)",
+                "lastUpdated": null,
+                "shipOpsRef": {
+                  "token": "g7yoarinjpaft3si5z1h5de1uam443bb"
+                },
+                "totalApplicationCount": 0
               }
             ]
           }
@@ -71,6 +82,15 @@
           },
           "$.body.data.listClusters[1].lastUpdated": {
             "match": "type"
+          },
+          "$.body.data.listClusters[2].id": {
+            "match": "type"
+          },
+          "$.body.data.listClusters[2].createdOn": {
+            "match": "type"
+          },
+          "$.body.data.listClusters[2].shipOpsRef.token": {
+            "match": "type"
           }
         }
       }
@@ -86,7 +106,7 @@
         },
         "body": {
           "operationName": "getKotsApp",
-          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      upstreamUri\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      isGitOpsSupported\n      allowRollback\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          source\n          releaseNotes\n          parentSequence\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        gitops {\n          enabled\n          provider\n          uri\n          hostname\n          path\n          branch\n          format\n          action\n          deployKey\n          isConnected\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
+          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      upstreamUri\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      isGitOpsSupported\n      allowRollback\n      isSnapshotSupported\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          source\n          releaseNotes\n          parentSequence\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        gitops {\n          enabled\n          provider\n          uri\n          hostname\n          path\n          branch\n          format\n          action\n          deployKey\n          isConnected\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
           "variables": {
             "slug": "kots-app-slug"
           }
@@ -94,7 +114,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*upstreamUri\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*isGitOpsSupported\\s*allowRollback\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*source\\s*releaseNotes\\s*parentSequence\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*gitops\\s*\\{\\s*enabled\\s*provider\\s*uri\\s*hostname\\s*path\\s*branch\\s*format\\s*action\\s*deployKey\\s*isConnected\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*upstreamUri\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*isGitOpsSupported\\s*allowRollback\\s*isSnapshotSupported\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*source\\s*releaseNotes\\s*parentSequence\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*gitops\\s*\\{\\s*enabled\\s*provider\\s*uri\\s*hostname\\s*path\\s*branch\\s*format\\s*action\\s*deployKey\\s*isConnected\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -376,7 +396,16 @@
           }
         },
         "matchingRules": {
+          "$.body.data.getKotsDownstreamHistory[0].createdOn": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[0].deployedAt": {
+            "match": "type"
+          },
           "$.body.data.getKotsDownstreamHistory[0].preflightResult": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[0].preflightResultCreatedAt": {
             "match": "type"
           }
         }
@@ -425,6 +454,14 @@
                 "preflightResultCreatedAt": null
               }
             ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.getKotsDownstreamHistory[0].createdOn": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[0].deployedAt": {
+            "match": "type"
           }
         }
       }
@@ -485,10 +522,28 @@
           }
         },
         "matchingRules": {
+          "$.body.data.getKotsDownstreamHistory[0].createdOn": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[0].deployedAt": {
+            "match": "type"
+          },
           "$.body.data.getKotsDownstreamHistory[0].preflightResult": {
             "match": "type"
           },
+          "$.body.data.getKotsDownstreamHistory[0].preflightResultCreatedAt": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[1].createdOn": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[1].deployedAt": {
+            "match": "type"
+          },
           "$.body.data.getKotsDownstreamHistory[1].preflightResult": {
+            "match": "type"
+          },
+          "$.body.data.getKotsDownstreamHistory[1].preflightResultCreatedAt": {
             "match": "type"
           }
         }

@@ -64,22 +64,22 @@ export default () => {
             {
               "title": "my-other-awesome-version-2",
               "status": "deploying",
-              "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "createdOn": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "sequence": 1,
               "releaseNotes": "# Markdown string here",
-              "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "deployedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "preflightResult": Matchers.like("string"),
-              "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
+              "preflightResultCreatedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)")
             },
             {
               "title": "my-other-awesome-version",
               "status": "deploying",
-              "createdOn": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "createdOn": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "sequence": 0,
               "releaseNotes": "# Markdown string here",
-              "deployedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)",
+              "deployedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"),
               "preflightResult": Matchers.like("string"),
-              "preflightResultCreatedAt": "Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)"
+              "preflightResultCreatedAt": Matchers.like("Fri Apr 19 2019 01:23:45 GMT+0000 (Coordinated Universal Time)")
             }
           ],
         },
