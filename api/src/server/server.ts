@@ -127,7 +127,7 @@ export class Server extends ServerLoader {
     }
 
     logger.info({msg: "ensuring a local cluster exists"});
-    if (process.env["AUTO_CREATE_CLUSTER_TOKEN"] === "" || process.env["AUTO_CREATE_CLUSTER_TOKEN"] === undefined) {
+    if (!process.env["AUTO_CREATE_CLUSTER_TOKEN"]) {
       logger.error({msg: "you must set AUTO_CREATE_CLUSTER_TOKEN"});
       process.exit(1);
       return;
