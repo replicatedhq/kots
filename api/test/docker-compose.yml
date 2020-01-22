@@ -9,3 +9,4 @@ services:
     environment:
       - PACT_BROKER_USERNAME=${PACT_BROKER_USERNAME}
       - PACT_BROKER_PASSWORD=${PACT_BROKER_PASSWORD}
+      - AUTO_CREATE_CLUSTER_TOKEN=this-is-a-test-value
