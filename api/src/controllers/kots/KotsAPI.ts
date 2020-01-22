@@ -233,7 +233,7 @@ export class KotsAPI {
     const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
     let downstream;
     for (const cluster of clusters) {
-      if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+      if (cluster.title === "this-cluster") {
         downstream = cluster;
       }
     }
@@ -426,7 +426,7 @@ export class KotsAPI {
       const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
       let downstream;
       for (const cluster of clusters) {
-        if (cluster.title === process.env["AUTO_CREATE_CLUSTER_NAME"]) {
+        if (cluster.title === "this-cluster") {
           downstream = cluster;
         }
       }
