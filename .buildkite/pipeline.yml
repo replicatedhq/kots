@@ -135,6 +135,8 @@ steps:
           always-pull: true
           image: replicated/gitops-builder:buildkite
           workdir: /repo/api
+          environment:
+          - "AUTO_CREATE_CLUSTER_TOKEN=this-is-a-test-value"
     artifact_paths:
       - "api/build/**/*"
       - "api/bin/**/*"
