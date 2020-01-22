@@ -4,7 +4,7 @@ export interface ApplicationSpec {
   ports?: ApplicationPort[];
   releaseNotes?: string;
   allowRollback?: boolean;
-  isSnapshotSupported?: boolean;
+  allowSnapshots?: boolean;
   statusInformers?: string[];
   graphs?: MetricGraph[];
   kubectlVersion?: string;

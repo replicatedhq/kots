@@ -88,7 +88,7 @@ export default [
     displayName: "Snapshots",
     to: (slug) => `/app/${slug}/snapshots`,
     displayRule: (watch) => {
-      return watch.isSnapshotSupported;
+      return watch.allowSnapshots;
     }
   }
 ];
