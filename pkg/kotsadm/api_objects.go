@@ -237,6 +237,10 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 								{
+									Name:  "AUTO_CREATE_CLUSTER_TOKEN",
+									Value: deployOptions.AutoCreateClusterToken,
+								},
+								{
 									Name:  "SHIP_API_ENDPOINT",
 									Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
 								},
