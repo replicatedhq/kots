@@ -72,7 +72,7 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
     }
     if (networkError) {
       console.log(`[Network error]: ${networkError}`);
-      if (networkError.statusCode === 403) {
+      if (networkError.statusCode === 403 && Utilities.isLoggedIn()) {
         Utilities.logoutUser();
       }
     }

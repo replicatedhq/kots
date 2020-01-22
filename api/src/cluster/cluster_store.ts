@@ -121,6 +121,11 @@ export class ClusterStore {
     ];
 
     const result = await this.pool.query(q, v);
+
+    if (result.rows.length === 0) {
+      throw new ReplicatedError("No cluster found");
+    }
+    
     return this.getCluster(result.rows[0].id);
   }
 
