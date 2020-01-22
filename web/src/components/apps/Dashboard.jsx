@@ -407,6 +407,8 @@ class Dashboard extends Component {
     const { app } = this.props;
 
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
+    const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
+    const currentSequence = currentVersion ? currentVersion.sequence : 0;
 
     if (!app || !appLicense) {
       return (
@@ -463,7 +465,7 @@ class Dashboard extends Component {
                 onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
-                redirectToDiff={() => this.redirectToDiff(currentVersion?.sequence, latestPendingVersion.sequence)}
+                redirectToDiff={() => this.redirectToDiff(currentSequence, latestSequence)}
               />
               {app.allowSnapshots ?
                 <div className="small-dashboard-wrapper flex-column flex">
