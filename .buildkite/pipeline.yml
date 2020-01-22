@@ -126,7 +126,7 @@ steps:
       - docker-compose -f api/test/docker-compose.yml pull
       - docker-compose -f api/test/docker-compose.yml build
       - docker-compose -f api/test/docker-compose.yml up --exit-code-from kotsadm-api
-      - docker-compose -f api/test/docker-compose.yml down
+      - docker-compose -f api/test/docker-compose.yml down --remove-orphans
   - label: "build typescript api"
     commands:
       - make -C api deps build
