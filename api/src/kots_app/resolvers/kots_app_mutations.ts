@@ -206,7 +206,11 @@ export function KotsMutations(stores: Stores) {
           isConfigurable: kotsApp.isConfigurable
         }
       } catch(err) {
-        await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
+        try {
+          await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
+        } catch(nestedErr) {
+          console.log(`unable to update failed install state: ${nestedErr.message}\n`);
+        }
         throw new ReplicatedError(err.message);
       }
     },
