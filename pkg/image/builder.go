@@ -80,7 +80,10 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 }
 
 func GetPrivateImages(upstreamDir string) ([]string, []*k8sdoc.Doc, error) {
-	uniqueImages := make(map[string]bool)
+	checkedImages := map[string]interface{}{}
+	uniqueImages := map[string]interface{}{}
+	var empty interface{}
+
 	objects := make([]*k8sdoc.Doc, 0) // all objects where images are referenced from
 
 	err := filepath.Walk(upstreamDir,
@@ -101,15 +104,21 @@ func GetPrivateImages(upstreamDir string) ([]string, []*k8sdoc.Doc, error) {
 			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
 				numPrivateImages := 0
 				for _, image := range images {
+					if _, ok := checkedImages[image]; ok {
+						continue
+					}
+
 					isPrivate, err := isPrivateImage(image)
 					if err != nil {
 						return errors.Wrap(err, "failed to check if image is private")
 					}
+
+					checkedImages[image] = empty
 					if !isPrivate {
 						continue
 					}
 					numPrivateImages = numPrivateImages + 1
-					uniqueImages[image] = true
+					uniqueImages[image] = empty
 				}
 
 				if numPrivateImages == 0 {
