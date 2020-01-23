@@ -71,8 +71,8 @@ func Start() {
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         ":3000",
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 2 * time.Minute,
+		ReadTimeout:  2 * time.Minute,
 	}
 
 	fmt.Printf("Starting kotsadm API on port %d...\n", 3000)
