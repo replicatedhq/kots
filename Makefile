@@ -25,8 +25,8 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:${GIT_TAG} .
-	docker push kotsadm/kotsadm:${GIT_TAG}
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:${BUILDKITE_TAG} .
+	docker push kotsadm/kotsadm:${BUILDKITE_TAG}
 
 .PHONY: project-pact-tests
 project-pact-tests:

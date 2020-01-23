@@ -44,5 +44,5 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${GIT_TAG} .
-	docker push kotsadm/kotsadm-operator:${GIT_TAG}
+	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${BUILDKITE_TAG} .
+	docker push kotsadm/kotsadm-operator:${BUILDKITE_TAG}

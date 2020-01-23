@@ -49,7 +49,7 @@ build-local:
 		--compress
 
 .PHONY: build-kotsadm
-build-kotsadm: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
+build-kotsadm: SHIP_CLUSTER_BUILD_VERSION = $(if ${BUILDKITE_TAG},${BUILDKITE_TAG},$(shell echo ${BUILDKITE_COMMIT} | cut -c1-7))
 build-kotsadm:
 	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
 	node \
