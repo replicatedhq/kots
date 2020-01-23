@@ -72,7 +72,7 @@ build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 build-alpha: build_and_push
 
 .PHONY: build-release
-build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
+build-release: IMAGE = kotsadm/${PROJECT_NAME}:${BUILDKITE_TAG}
 build-release: build_and_push
 
 .PHONY: build_and_push
