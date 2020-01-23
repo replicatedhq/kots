@@ -230,8 +230,9 @@ class AppVersionHistory extends Component {
 
     let preflightsFailed = false;
     if (version.status === "pending" && version.preflightResult) {
-      const parsed = JSON.parse(version.preflightResult);
-      preflightsFailed = parsed && parsed.errors;
+      const preflightResult = JSON.parse(version.preflightResult);
+      const preflightState = getPreflightResultState(preflightResult);
+      preflightsFailed = preflightState === "fail";
     }
 
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
@@ -264,16 +265,24 @@ class AppVersionHistory extends Component {
               "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
               "exclamationMark--icon": version.status === "opened",
               "grayCircleMinus--icon": version.status === "closed",
-              "error-small": version.status === "failed"
+              "error-small": version.status === "failed" || preflightsFailed
             })}
           />
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-color--nevada": version.status === "deployed" || version.status === "merged",
             "u-color--orange": version.status === "opened",
             "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-color--red": version.status === "failed"
+            "u-color--red": version.status === "failed" || preflightsFailed
           })}>
-            {Utilities.toTitleCase(version.status === "pending_preflight" ? "Running checks" : version.status === "pending" ? "Ready to deploy" : version.status).replace("_", " ")}
+            {Utilities.toTitleCase(
+              version.status === "pending_preflight" 
+                ? "Running checks" 
+                : preflightsFailed
+                  ? "Checks failed"
+                  : version.status === "pending"
+                    ? "Ready to deploy" 
+                    : version.status
+              ).replace("_", " ")}
           </span>
         </div>
         {preflightBlock}
