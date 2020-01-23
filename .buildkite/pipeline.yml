@@ -57,7 +57,7 @@ steps:
     branches: "master"
   - label: "release schema migrations on tag"
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C migrations schema-release; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make -C migrations schema-release; fi
 
   ## web
   - label: "test web"
@@ -84,7 +84,7 @@ steps:
           workdir: /repo/web
           environment:
             - BUILDKITE_COMMIT
-            - GIT_TAG
+            - BUILDKITE_TAG
     artifact_paths:
       - "web/dist/**/*"
     retry:
@@ -136,7 +136,7 @@ steps:
           image: replicated/gitops-builder:buildkite
           workdir: /repo/api
           environment:
-          - "AUTO_CREATE_CLUSTER_TOKEN=this-is-a-test-value"
+            - "AUTO_CREATE_CLUSTER_TOKEN=this-is-a-test-value"
     artifact_paths:
       - "api/build/**/*"
       - "api/bin/**/*"
@@ -160,13 +160,13 @@ steps:
 
   - label: "go api tagged release"
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then mkdir -p bin deploy/bin; fi
-      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download bin/* . --step build-go-api; fi
-      - if [ ! -z "$GIT_TAG" ]; then cp bin/kotsadm deploy/bin/kotsadm; fi
-      - if [ ! -z "$GIT_TAG" ]; then chmod +x deploy/bin/kotsadm; fi
-      - if [ ! -z "$GIT_TAG" ]; then mkdir -p web/dist; fi
-      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download web/dist/* . --step build-web; fi
-      - if [ ! -z "$GIT_TAG" ]; then make build-release; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then mkdir -p bin deploy/bin; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then buildkite-agent artifact download bin/* . --step build-go-api; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then cp bin/kotsadm deploy/bin/kotsadm; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then chmod +x deploy/bin/kotsadm; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then mkdir -p web/dist; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then buildkite-agent artifact download web/dist/* . --step build-web; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make build-release; fi
 
   - label: "typescript api alpha release"
     commands:
@@ -175,7 +175,7 @@ steps:
 
   - label: "typescript api tagged release"
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then make -C api build-release; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make -C api build-release; fi
 
   - label: "operator alpha release"
     commands:
@@ -187,11 +187,11 @@ steps:
 
   - label: "operator tagged release"
     commands:
-      - if [ ! -z "$GIT_TAG" ]; then mkdir -p operator/bin operator/deploy/bin; fi
-      - if [ ! -z "$GIT_TAG" ]; then buildkite-agent artifact download operator/bin/* . --step build-operator; fi
-      - if [ ! -z "$GIT_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
-      - if [ ! -z "$GIT_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
-      - if [ ! -z "$GIT_TAG" ]; then make -C operator build-release; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then mkdir -p operator/bin operator/deploy/bin; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then buildkite-agent artifact download operator/bin/* . --step build-operator; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make -C operator build-release; fi
 
   - label: "minio alpha release"
     commands:
