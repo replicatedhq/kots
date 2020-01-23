@@ -40,7 +40,7 @@ USER kotsadm-operator
 
 # Install our plugins
 USER root
-ENV TROUBLESHOOT_VERSION=0.9.18
+ENV TROUBLESHOOT_VERSION=0.9.19
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/preflight_linux_amd64.tar.gz" > /tmp/preflight.tar.gz && \
   cd /tmp && tar xzvf preflight.tar.gz && \
   mv /tmp/preflight /usr/local/bin/kubectl-preflight
