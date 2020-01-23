@@ -50,7 +50,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		cipher = c
 	}
 
-	baseFiles := []BaseFile{}
+	base := Base{
+		Files: []BaseFile{},
+		Bases: []Base{},
+	}
 
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
@@ -68,6 +71,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			License: license,
 		}
 		builder.AddCtx(licenseCtx)
+	}
+
+	for _, upstreamFile := range u.Files {
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+		}
+
+		base.Files = append(base.Files, baseFile)
 	}
 
 	// render helm charts that were specified
@@ -161,11 +173,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
 		}
 
+		helmBaseFiles := []BaseFile{}
 		for _, helmBaseFile := range helmBase.Files {
+			filePath := filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path)
+
 			// this is a little bit of an abuse of the next function
 			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to determine if file should be included in base")
+				return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", filePath)
 			}
 
 			if !include {
@@ -173,34 +188,45 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 
 			upstreamFile := upstreamtypes.UpstreamFile{
-				Path:    filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path),
+				Path:    filePath,
 				Content: helmBaseFile.Content,
 			}
 
 			u.Files = append(u.Files, upstreamFile)
-		}
-	}
 
-	for _, upstreamFile := range u.Files {
-		rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
-		if err != nil {
-			renderOptions.Log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
-			return nil, errors.Wrap(err, "failed to render file template")
-		}
+			baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", filePath)
+			}
 
-		baseFile := BaseFile{
-			Path:    upstreamFile.Path,
-			Content: []byte(rendered),
+			helmBaseFiles = append(helmBaseFiles, baseFile)
 		}
 
-		baseFiles = append(baseFiles, baseFile)
-	}
-
-	base := Base{
-		Files: baseFiles,
+		if kotsHelmChart.Spec.Namespace != "" {
+			base.Bases = append(base.Bases, Base{
+				Path:      filepath.Join("charts", kotsHelmChart.Name),
+				Namespace: kotsHelmChart.Spec.Namespace,
+				Files:     helmBaseFiles,
+			})
+		} else {
+			base.Files = append(base.Files, helmBaseFiles...)
+		}
 	}
 
 	return &base, nil
+}
+
+func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Builder, log *logger.Logger) (BaseFile, error) {
+	rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
+	if err != nil {
+		log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
+		return BaseFile{}, errors.Wrap(err, "failed to render file template")
+	}
+
+	return BaseFile{
+		Path:    upstreamFile.Path,
+		Content: []byte(rendered),
+	}, nil
 }
 
 func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile) []*kotsv1beta1.HelmChart {
