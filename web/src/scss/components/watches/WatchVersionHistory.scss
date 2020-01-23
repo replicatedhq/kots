@@ -55,6 +55,15 @@ $cell-width: 140px;
 
 }
 
+.checking-update-error-wrapper {
+  background-color: #FBECEA;
+  border-radius: 4px;
+  padding: 15px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
 .watch-cell {
   width: $cell-width;
 }

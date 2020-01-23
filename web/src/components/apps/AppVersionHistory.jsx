@@ -443,7 +443,8 @@ class AppVersionHistory extends Component {
           this.state.updateChecker.stop();
           this.setState({
             checkingForUpdates: false,
-            checkingUpdateText: "Checking for updates"
+            checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed",
+            checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage
           });
 
           if (this.props.updateCallback) {
@@ -464,15 +465,16 @@ class AppVersionHistory extends Component {
   onCheckForUpdates = async () => {
     const { client, app } = this.props;
 
-    this.setState({ checkingForUpdates: true });
+    this.setState({ checkingForUpdates: true, checkingForUpdateError: false });
 
     await client.mutate({
       mutation: checkForKotsUpdates,
       variables: {
         appId: app.id,
       }
-    }).catch(() => {
+    }).catch((err) => {
       this.setState({ errorCheckingUpdate: true });
+      console.log(err);
     }).finally(() => {
       this.state.updateChecker.start(this.updateStatus, 1000);
     });
@@ -769,6 +771,13 @@ class AppVersionHistory extends Component {
             }
           </div>
         </div>
+        {this.state.checkingForUpdateError &&
+        <div className="flex-column flex-auto u-marginBottom--30">
+          <div className="checking-update-error-wrapper">
+            <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{this.state.checkingUpdateText}</p>
+          </div>
+        </div>
+        }
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
