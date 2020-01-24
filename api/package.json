@@ -33,6 +33,7 @@
     "common-tags": "^1.8.0",
     "concat-stream": "^2.0.0",
     "cors": "^2.8.5",
+    "cron-converter": "^1.0.0",
     "cronstrue": "^1.86.0",
     "date-fns": "^1.29.0",
     "diff": "^4.0.1",

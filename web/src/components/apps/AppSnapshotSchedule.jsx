@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
-import { getCronFrequency, getReadableCronDescriptor } from "../../utilities/utilities";
+import { getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
 import { snapshotConfig } from "../../queries/SnapshotQueries";
 import { saveSnapshotConfig } from "../../mutations/SnapshotMutations";
 import find from "lodash/find";
@@ -75,7 +75,7 @@ class AppSnapshotSchedule extends Component {
         autoEnabled: snapshotConfig.snapshotConfig.autoEnabled,
         retentionInput: snapshotConfig.snapshotConfig.ttl.inputValue,
         selectedRetentionUnit: find(RETENTION_UNITS, ["value", snapshotConfig.snapshotConfig.ttl.inputTimeUnit]),
-        selectedSchedule: find(SCHEDULES, ["value", snapshotConfig.snapshotConfig.autoSchedule.userSelected]),
+        selectedSchedule: find(SCHEDULES, ["value", getCronInterval(snapshotConfig.snapshotConfig.autoSchedule.schedule)]),
         frequency: snapshotConfig.snapshotConfig.autoSchedule.schedule,
       }, () => this.getReadableCronExpression());
     } else {
@@ -148,7 +148,6 @@ class AppSnapshotSchedule extends Component {
       this.props.app.id,
       this.state.retentionInput,
       this.state.selectedRetentionUnit?.value,
-      this.state.selectedSchedule?.value,
       this.state.frequency,
       this.state.autoEnabled,
     ).then(() => {
@@ -284,7 +283,7 @@ export default compose(
   }),
   graphql(saveSnapshotConfig, {
     props: ({ mutate }) => ({
-      saveSnapshotConfig: (appId, inputValue, inputTimeUnit, userSelected, schedule, autoEnabled) => mutate({ variables: { appId, inputValue, inputTimeUnit, userSelected, schedule, autoEnabled } })
+      saveSnapshotConfig: (appId, inputValue, inputTimeUnit, schedule, autoEnabled) => mutate({ variables: { appId, inputValue, inputTimeUnit, schedule, autoEnabled } })
     })
   })
 )(AppSnapshotSchedule);

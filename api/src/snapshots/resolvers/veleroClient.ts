@@ -14,6 +14,7 @@ import request, { RequestPromiseOptions } from "request-promise";
 import {
   kotsAppSlugKey,
   kotsAppSequenceKey,
+  kotsAppIdKey,
   snapshotTriggerKey,
   snapshotVolumeCountKey,
   snapshotVolumeSuccessCountKey,
@@ -132,6 +133,25 @@ export class VeleroClient {
     }
 
     return snapshots;
+  }
+
+  async hasUnfinishedBackup(appId: string): Promise<boolean> {
+    if (!appId) {
+      return false;
+    }
+    const body = await this.request("GET", "backups");
+
+    return _.some(body.items, (backup: Backup) => {
+      const backupAppId = backup.metadata.annotations && backup.metadata.annotations[kotsAppIdKey];
+      const phase = backup.status && backup.status.phase;
+      if (!phase) {
+        // no status means phase new
+        return true;
+      }
+      const isPhaseUnfinished = phase === Phase.New || phase === Phase.InProgress;
+
+      return appId === backupAppId && isPhaseUnfinished;
+    });
   }
 
   async snapshotFromBackup(backup: Backup): Promise<Snapshot> {

@@ -42,8 +42,8 @@ export const snapshotProviderGoogleRaw = `
 export const snapshotProviderGoogle = gql(snapshotProviderGoogleRaw);
 
 export const saveSnapshotConfigRaw = `
-  mutation saveSnapshotConfig($appId: String!, $inputValue: Int!, $inputTimeUnit: String!, $userSelected: String!, $schedule: String!, $autoEnabled: Boolean!) {
-    saveSnapshotConfig(appId: $appId, inputValue: $inputValue, inputTimeUnit: $inputTimeUnit, userSelected: $userSelected, schedule: $schedule, autoEnabled: $autoEnabled)
+  mutation saveSnapshotConfig($appId: String!, $inputValue: Int!, $inputTimeUnit: String!, $schedule: String!, $autoEnabled: Boolean!) {
+    saveSnapshotConfig(appId: $appId, inputValue: $inputValue, inputTimeUnit: $inputTimeUnit, schedule: $schedule, autoEnabled: $autoEnabled)
   }
 `;
 export const saveSnapshotConfig = gql(saveSnapshotConfigRaw);

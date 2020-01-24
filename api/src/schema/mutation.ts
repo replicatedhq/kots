@@ -38,7 +38,7 @@ type Mutation {
   setPrometheusAddress(value: String!): Boolean
   deletePrometheusAddress: Boolean
 
-  saveSnapshotConfig(appId: String!, inputValue: Int!, inputTimeUnit: String!, userSelected: String!, schedule: String!, autoEnabled: Boolean!): Boolean
+  saveSnapshotConfig(appId: String!, inputValue: Int!, inputTimeUnit: String!, schedule: String!, autoEnabled: Boolean!): Boolean
   snapshotProviderAWS(bucket: String!, prefix: String, region: String!, accessKeyID: String, accessKeySecret: String): Boolean
   snapshotProviderS3Compatible(bucket: String!, prefix: String, region: String!, endpoint: String!, accessKeyID: String, accessKeySecret: String): Boolean
   snapshotProviderAzure(bucket: String!, prefix: String, tenantID: String!, resourceGroup: String!, storageAccount: String!, subscriptionID: String!, clientID: String!, clientSecret: String!, cloudName: String!): Boolean
