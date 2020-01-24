@@ -6,6 +6,7 @@ export interface SnapshotConfig {
 }
 
 export interface SnapshotSchedule {
+  userSelected: string;
   schedule: string;
 }
 
