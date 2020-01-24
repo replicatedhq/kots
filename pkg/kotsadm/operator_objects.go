@@ -148,7 +148,7 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 		}
 	}
 
-	desiredDeployment := apiDeployment(deployOptions)
+	desiredDeployment := operatorDeployment(deployOptions)
 
 	// ensure the non-optional kots labels are present (added in 1.11.0)
 	if deployment.ObjectMeta.Labels == nil {
