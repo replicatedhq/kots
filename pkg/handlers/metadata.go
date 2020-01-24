@@ -46,17 +46,17 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isKurlEnabled := false
+	_, err = clientset.CoreV1().ConfigMaps("kube-system").Get("kurl-config", metav1.GetOptions{})
+	if err == nil {
+		isKurlEnabled = true
+	}
+
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
-	}
-
-	isKurlEnabled := false
-	_, err = clientset.CoreV1().ConfigMaps("kube-system").Get("kurl-config", metav1.GetOptions{})
-	if err == nil {
-		isKurlEnabled = true
 	}
 
 	metadataResponse := MetadataResponse{
@@ -66,7 +66,7 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 		IsKurlEnabled: isKurlEnabled,
 	}
 
-	if brandingConfigMap != nil {
+	if err == nil {
 		data, ok := brandingConfigMap.Data["application.yaml"]
 		if !ok {
 			logger.Error(err)
