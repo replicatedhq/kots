@@ -53,11 +53,17 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isKurlEnabled := false
+	_, err = clientset.CoreV1().ConfigMaps("kube-system").Get("kurl-config", metav1.GetOptions{})
+	if err == nil {
+		isKurlEnabled = true
+	}
+
 	metadataResponse := MetadataResponse{
 		IconURI:       "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png",
 		Name:          "the application",
 		Namespace:     os.Getenv("POD_NAMESPACE"),
-		IsKurlEnabled: false,
+		IsKurlEnabled: isKurlEnabled,
 	}
 
 	if err == nil {
