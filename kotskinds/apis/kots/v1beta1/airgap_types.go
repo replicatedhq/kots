@@ -25,6 +25,7 @@ type AirgapSpec struct {
 	VersionLabel string `json:"versionLabel,omitempty"`
 	ReleaseNotes string `json:"releaseNotes,omitempty"`
 	UpdateCursor string `json:"updateCursor,omitempty"`
+	ChannelName  string `json:"channelName,omitempty"`
 	Signature    []byte `json:"signature,omitempty"`
 }
 
