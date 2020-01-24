@@ -117,6 +117,7 @@ export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: Ko
       await kotsAppDownloadUpdate(update.cursor, app, registryInfo, stores);
     } catch (err) {
       console.error(`Failed to download release ${update.cursor}: ${err}`);
+      throw err;
     }
   }
 }
