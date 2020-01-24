@@ -3,19 +3,17 @@ package main
 import "C"
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/upstream"
-	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -142,45 +140,12 @@ func GetLatestLicense(socket, licenseData string) {
 		}
 		license := obj.(*kotsv1beta1.License)
 
-		url := fmt.Sprintf("%s/release/%s/license", license.Spec.Endpoint, license.Spec.AppSlug)
-
-		req, err := http.NewRequest("GET", url, nil)
+		latestLicense, err := kotslicense.GetLatestLicense(license)
 		if err != nil {
-			fmt.Printf("failed to call newrequest: %s\n", err.Error())
+			fmt.Printf("failed to get latest license: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
-		req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
-		req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			fmt.Printf("failed to execute get request: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode >= 400 {
-			fmt.Printf("unexpected result from get request: %d\n", resp.StatusCode)
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("failed to load response")
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-
-		obj, _, err = decode(body, nil, nil)
-		if err != nil {
-			fmt.Printf("failed to decode latest license data: %s\n", err.Error())
-			ffiResult = NewFFIResult(-1).WithError(err)
-			return
-		}
-		latestLicense := obj.(*kotsv1beta1.License)
 
 		marshalledLicense := upstream.MustMarshalLicense(latestLicense)
 		ffiResult = NewFFIResult(1).WithData(string(marshalledLicense))
