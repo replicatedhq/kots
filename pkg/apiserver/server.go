@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kotsadm/pkg/handlers"
@@ -72,10 +71,8 @@ func Start() {
 	}
 
 	srv := &http.Server{
-		Handler:      r,
-		Addr:         ":3000",
-		WriteTimeout: 2 * time.Minute,
-		ReadTimeout:  2 * time.Minute,
+		Handler: r,
+		Addr:    ":3000",
 	}
 
 	fmt.Printf("Starting kotsadm API on port %d...\n", 3000)
