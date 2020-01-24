@@ -1,170 +1,123 @@
-import * as _ from "lodash";
-import * as yaml from "js-yaml";
-import {
-  AppsV1Api,
-  BatchV1beta1Api,
-  KubeConfig,
-  V1beta1CronJob,
-  V1beta1CronJobSpec,
-  V1Deployment } from "@kubernetes/client-node";
-import { getKotsadmNamespace } from "../kots_app/kots_ffi";
-import { ReplicatedError } from "../server/errors";
+import randomstring from "randomstring";
+import Cron from "cron-converter";
+import { Pool } from "pg";
 import { logger } from "../server/logger";
-import { kotsadmLabelKey } from "./snapshot";
+import { getPostgresPool } from "../util/persistence/db";
+import { backup } from "./backup";
+import { KotsApp } from "../kots_app/kots_app";
+import { Stores } from "../schema/stores";
+import { ScheduledSnapshot } from "./snapshot";
+import { VeleroClient } from "./resolvers/veleroClient";
 
-function snapshotScheduleName(appSlug: string) {
-  return `velero-${appSlug}`;
-}
+export class SnapshotScheduler {
+  constructor(
+    private stores: Stores,
+    private pool: Pool,
+  ) {}
+  
+  run() {
+    setInterval(this.scheduleLoop.bind(this), 60000);
+  }
 
-const scheduleSelectionKey = "kots.io/snapshot-schedule-selection";
-const kotsadmLabelValue = "kotsadm";
+  async scheduleLoop() {
+    try {
+      const apps = await this.stores.kotsAppStore.listApps();
+      for (const app of apps) {
+        if (app.restoreInProgressName) {
+          continue;
+        }
+        await this.handleApp(app);
+      }
+    } catch (e) {
+      logger.error(e);
+    }
+  }
 
-export async function deleteSchedule(appSlug: string): Promise<void> {
-  const name = snapshotScheduleName(appSlug);
-  const ownNS = getKotsadmNamespace();
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-  const batchv1 = kc.makeApiClient(BatchV1beta1Api);
-
-  try {
-    await batchv1.deleteNamespacedCronJob(name, ownNS);
-  } catch (e) {
-    if (e.response && e.response.statusCode === 404) {
+  // tslint:disable-next-line cyclomatic-complexity
+  async handleApp(app: KotsApp) {
+    if (!app.snapshotSchedule) {
       return;
     }
-    throw e;
-  }
-}
-
-export async function schedule(appSlug: string, schedule: string, selection: string): Promise<void> {
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-  const batchv1 = kc.makeApiClient(BatchV1beta1Api);
-  const appsv1 = kc.makeApiClient(AppsV1Api);
-
-  const cronJobName = snapshotScheduleName(appSlug);
-  const labels = { kotsadmLabelKey: kotsadmLabelValue };
-  const ownNS = getKotsadmNamespace();
-  const ownImage = await getOwnImage(kc.makeApiClient(AppsV1Api), ownNS);
-  const spec: V1beta1CronJobSpec = {
-    concurrencyPolicy: "Forbid",
-    schedule: schedule,
-    startingDeadlineSeconds: 30,
-    jobTemplate: {
-      metadata: { labels },
-      spec: {
-        template: {
-          metadata: { labels },
-          spec: {
-            containers: [{
-              name: cronJobName,
-              image: ownImage,
-              command: [
-                "/bin/bash", 
-                "-c",
-                `curl -v --fail -X POST http://kotsadm-api:3000/api/v1/kots/${appSlug}/snapshot`,
-              ],
-            }],
-            restartPolicy: "OnFailure",
-          },
-        },
-      },
-    },
-  };
-
-  try {
-    let { body: cronJob } = await batchv1.readNamespacedCronJob(cronJobName, ownNS);
-    cronJob.spec = spec;
-    cronJob.metadata!.annotations = cronJob.metadata!.annotations || {};
-    cronJob.metadata!.annotations[scheduleSelectionKey] = selection;
-
-    await batchv1.replaceNamespacedCronJob(cronJobName, ownNS, cronJob);
-    return;
-  } catch (e) {
-    const statusCode = e.response && e.response.statusCode;
-    if (statusCode === 403) {
-      throw  new ReplicatedError(`Forbidden: RBAC may be misconfigured for reading or updating CronJobs in namespace ${ownNS}`);
+    /*
+     * This queue uses the scheduled_snapshots table to keep track of the next scheduled snapshot
+     * for each app. Nothing else uses this table.
+     *
+     * For each app, list all pending snapshots. If scheduled snapshots are enabled there should be
+     * exactly 1 pending snapshot for the app. (If the table has been manually edited and there are
+     * 0 or 2+ pending snapshots this routine will fix it up so there's exactly 1 when it finishes.)
+     *
+     * If there are multiple replicas running of this api, or if this loop takes longer than 1
+     * minute, then there will be concurrent reads/writes on this table. Listing pending snapshots
+     * does not lock any rows and may return a row that is locked by another transaction. Before
+     * taking a lock on the row, first check that it's not scheduled for a time in the future, then
+     * check that there is not already another snapshot in progress for the app. If both of those
+     * checks pass than attempt to acquire a lock on the row. Acquiring a lock uses `SKIP LOCKED`
+     * so it does not wait if another transaction has already acquired a lock on the row.
+     *
+     * If the lock is acuired, create the Backup CR for velero, save the Backup name to the row to
+     * mark that it has been handled, then schedule the next snapshot from the app's cron schedule
+     * expression in the same transaction.
+     */
+    const pending = await this.stores.snapshotsStore.listPendingScheduledSnapshots(app.id);
+    const [next] = pending;
+    if (!next) {
+      logger.warn(`No pending snapshots scheduled for app ${app.id} with schedule ${app.snapshotSchedule}. Queueing one.`);
+      const queued = nextScheduled(app.id, app.snapshotSchedule);
+      await this.stores.snapshotsStore.createScheduledSnapshot(queued);
+      return;
     }
-    if (statusCode !== 404) {
-      if (e.response && e.response.body && e.response.body.message) {
-        throw new ReplicatedError(e.response.body.message);
+    if (new Date(next.scheduledTimestamp).valueOf() > Date.now()) {
+      logger.debug(`Not yet time to snapshot app ${app.id}`);
+      return;
+    }
+
+    const client = await this.pool.connect();
+
+    const velero = new VeleroClient("velero"); // TODO namespace
+    const hasUnfinished = await velero.hasUnfinishedBackup(app.id);
+    if (hasUnfinished) {
+      logger.info(`Postponing scheduled snapshot for ${app.id} because one is in progress`);
+      return;
+    }
+
+    try {
+      await client.query("BEGIN");
+
+      logger.info(`Acquiring lock on scheduled snapshot ${next.id}`);
+      const acquiredLock = await this.stores.snapshotsStore.lockScheduledSnapshot(client, next.id);
+      if (!acquiredLock) {
+        logger.info(`Failed to lock scheduled snapshot ${next.id}`);
+        client.query("ROLLBACK");
+        return;
       }
+
+      const b = await backup(this.stores, app.id, true);
+      await this.stores.snapshotsStore.updateScheduledSnapshot(client, next.id, b.metadata.name!);
+      logger.info(`Created backup ${b.metadata.name} from scheduled snapshot ${next.id}`);
+
+      if (pending.length > 1) {
+        await this.stores.snapshotsStore.deletePendingScheduledSnapshots(app.id, client);
+      }
+      const queued = nextScheduled(app.id, app.snapshotSchedule);
+      await this.stores.snapshotsStore.createScheduledSnapshot(queued, client);
+      logger.info(`Scheduled next snapshot ${queued.id}`);
+
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
       throw e;
+    } finally {
+      client.release();
     }
   }
+};
 
-  const cj: V1beta1CronJob = {
-    apiVersion: "batch/v1beta1",
-    kind: "CronJob",
-    metadata: {
-      name: cronJobName,
-      namespace: ownNS,
-      labels,
-      annotations: {
-        [scheduleSelectionKey]: selection,
-      },
-    },
-    spec,
+export function nextScheduled(appId: string, cronExpression: string): ScheduledSnapshot {
+  const cron = new Cron();
+
+  return {
+    appId,
+    id: randomstring.generate({ capitalization: "lowercase" }),
+    scheduledTimestamp: cron.fromString(cronExpression).schedule().next(),
   };
-
-  try {
-    await batchv1.createNamespacedCronJob(ownNS, cj);
-  } catch (e) {
-    if (e.response && e.response.statusCode === 403) {
-      throw new ReplicatedError(`Forbidden: RBAC may be misconfigured for creating CronJobs in namespace ${ownNS}`);
-    }
-    if (e.response && e.response.body && e.response.body.message) {
-      throw new ReplicatedError(e.response.body.message);
-    }
-    throw e;
-  }
-}
-
-async function getOwnImage(appsv1: AppsV1Api, ownNS: string): Promise<string> {
-  let deployment: V1Deployment;
-
-  try {
-    ({ body: deployment } = await appsv1.readNamespacedDeployment("kotsadm-api", ownNS));
-  } catch(e) {
-    if (e.statusCode === 403) {
-      throw new ReplicatedError(`Failed to lookup image from kotsadm-api deployment in namespace ${ownNS}: 403`);
-    }
-    throw e;
-  }
-
-  for (let container of deployment.spec!.template!.spec!.containers) {
-    if (container.name === "kotsadm-api") {
-      return container.image!;
-    }
-  }
-
-  throw  new ReplicatedError(`Failed to lookup image from kotsadm-api deployment in namespace ${ownNS}`);
-}
-
-export interface scheduleSettings {
-  schedule: string;
-  selection: string;
-}
-
-export async function readSchedule(appSlug): Promise<scheduleSettings|null> {
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-  const batchv1 = kc.makeApiClient(BatchV1beta1Api);
-  const cronJobName = snapshotScheduleName(appSlug);
-  const ownNS = getKotsadmNamespace();
-
-  try {
-    const { response, body: cronJob } = await batchv1.readNamespacedCronJob(cronJobName, ownNS);
-
-    return {
-      schedule: cronJob!.spec!.schedule,
-      selection: (cronJob.metadata!.annotations && cronJob.metadata!.annotations[scheduleSelectionKey]) || "custom",
-    };
-  } catch (e) {
-    if (e.response && e.response.statusCode === 404) {
-      return null;
-    }
-    throw e;
-  }
-  return null;
 }

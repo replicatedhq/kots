@@ -9,7 +9,6 @@ const SnapshotConfig = `
 
 const SnapshotSchedule = `
   type SnapshotSchedule {
-    userSelected: String
     schedule: String
   }
 `;

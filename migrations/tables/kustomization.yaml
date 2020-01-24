@@ -52,3 +52,4 @@ resources:
 - ./app_downstream_output.yaml
 - ./pending_support_bundle.yaml
 - ./app_status.yaml
+- ./scheduled_snapshots.yaml

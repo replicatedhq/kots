@@ -17,7 +17,7 @@ import {
 import { logger } from "../server/logger";
 
 // tslint:disable-next-line cyclomatic-complexity
-export async function backup(stores: Stores, appId: string, scheduled: boolean) {
+export async function backup(stores: Stores, appId: string, scheduled: boolean): Promise<Backup> {
   const app = await stores.kotsAppStore.getApp(appId);
   const kotsVersion = await stores.kotsAppStore.getCurrentAppVersion(appId);
   if (!kotsVersion) {
@@ -48,17 +48,13 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
   const velero = new VeleroClient("velero"); // TODO namespace
 
   let backend: string;
-  try {
-    const backends = await velero.listBackends();
-    if (_.includes(backends, backupStorageLocationName)) {
-      backend = backupStorageLocationName;
-    } else if (_.includes(backends, "local-ceph-rgw")) {
-      backend = "local-ceph-rgw";
-    } else {
-      throw new ReplicatedError("No backupstoragelocation configured");
-    }
-  } catch (e) {
-    throw e;
+  const backends = await velero.listBackends();
+  if (_.includes(backends, backupStorageLocationName)) {
+    backend = backupStorageLocationName;
+  } else if (_.includes(backends, "local-ceph-rgw")) {
+    backend = "local-ceph-rgw";
+  } else {
+    throw new ReplicatedError("No backupstoragelocation configured");
   }
 
   const b: Backup = {
@@ -95,6 +91,8 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean) 
   }
 
   await velero.createBackup(b);
+
+  return b;
 }
 
 // tslint:disable-next-line cyclomatic-complexity
