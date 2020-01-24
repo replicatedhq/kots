@@ -43,7 +43,6 @@ import { base64Decode } from "../../util/utilities";
 import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 import { createGitCommitForVersion } from "../../kots_app/gitops";
-import { backup } from "../../snapshots/backup";
 
 interface CreateAppBody {
   metadata: string;
@@ -582,18 +581,6 @@ export class KotsAPI {
       response.status(401);
     }
     return {error: testError};
-  }
-
-  @Post("/:slug/snapshot")
-  async kotsSnapshot(
-    @BodyParams("") body: any,
-    @Req() request: Request,
-    @Res() response: Response,
-  ): Promise<any> {
-    const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(request.params.slug);
-    const scheduled = true;
-
-    await backup(request.app.locals.stores, appId, scheduled);
   }
 }
 

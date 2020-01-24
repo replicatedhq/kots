@@ -14,7 +14,6 @@ import {
 import { Phase } from "../velero";
 import { SnapshotConfig, AzureCloudName, SnapshotProvider } from "../snapshot_config";
 import { VeleroClient } from "./veleroClient";
-import { readSchedule } from "../schedule";
 import { parseTTL, formatTTL } from "../backup";
 import { ReplicatedError } from "../../server/errors";
 
@@ -26,7 +25,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
 
       const velero = new VeleroClient("velero"); // TODO namespace
       const store = await velero.readSnapshotStore();
-      const schedule = await readSchedule(args.slug);
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await stores.kotsAppStore.getApp(appId);
 
@@ -45,14 +43,14 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       }
 
       return {
-        autoEnabled: !!schedule,
-        autoSchedule: schedule ? { userSelected: schedule.selection, schedule: schedule.schedule } : { userSelected: "weekly", schedule: "0 0 * * MON" },
+        autoEnabled: !!app.snapshotSchedule,
+        autoSchedule: app.snapshotSchedule ? { schedule: app.snapshotSchedule } : { schedule: "0 0 * * MON" },
         ttl,
         store,
       };
     },
 
-    async listSnapshots(root: any, args: any, context: Context): Promise<Array<Snapshot>> {
+    async listSnapshots(root: any, args: any, context: Context): Promise<Snapshot[]> {
       context.requireSingleTenantSession();
 
       const { slug } = args;
@@ -67,7 +65,8 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       context.requireSingleTenantSession();
       const { slug, id } = args;
       const client = new VeleroClient("velero"); // TODO namespace
-      return await client.getSnapshotDetail(id);
+      const detail = await client.getSnapshotDetail(id);
+      return detail;
     },
 
     // tslint:disable-next-line cyclomatic-complexity

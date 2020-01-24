@@ -397,6 +397,19 @@ export class KotsAppStore {
     return apps;
   }
 
+  async listApps(): Promise<KotsApp[]> {
+    const q = `select id from app`;
+    const v = [];
+
+    const result = await this.pool.query(q, v);
+    const apps: KotsApp[] = [];
+    for (const row of result.rows) {
+      apps.push(await this.getApp(row.id));
+    }
+
+    return apps;
+  }
+
   async updateDownstreamsStatus(appId: string, sequence: number, status: string, statusInfo: string): Promise<void> {
     const q = `
       update app_downstream_version
@@ -1337,7 +1350,7 @@ order by adv.sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, snapshot_schedule, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -1374,6 +1387,7 @@ order by adv.sequence desc`;
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     kotsApp.isConfigurable = !!rr.rows[0] && !!rr.rows[0].config_spec;
     kotsApp.snapshotTTL = row.snapshot_ttl;
+    kotsApp.snapshotSchedule = row.snapshot_schedule;
     kotsApp.restoreInProgressName = row.restore_in_progress_name;
     kotsApp.restoreUndeployStatus = row.restore_undeploy_status;
 
@@ -1596,6 +1610,12 @@ order by adv.sequence desc`;
   async updateAppSnapshotTTL(appId: string, snapshotTTL: string): Promise<void> {
     const q = `update app set snapshot_ttl = $1 where id = $2`;
     const v = [snapshotTTL, appId];
+    await this.pool.query(q, v);
+  }
+
+  async updateAppSnapshotSchedule(appId: string, snapshotSchedule: string|null): Promise<void> {
+    const q = `update app set snapshot_schedule = $1 where id = $2`;
+    const v = [snapshotSchedule, appId];
     await this.pool.query(q, v);
   }
 
