@@ -9,6 +9,7 @@ import yaml from "js-yaml";
 
 interface InstallationSpec {
   cursor: string;
+  channelName: string;
   versionLabel: string;
   releaseNotes: string;
   encryptionKey: string;
@@ -245,6 +246,7 @@ export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<Ins
         if ((doc.apiVersion === "kots.io/v1beta1") && (doc.kind === "Installation")) {
           const spec = {
             cursor: doc.spec.updateCursor,
+            channelName: doc.spec.channelName || "",
             versionLabel: doc.spec.versionLabel || "Unknown",
             releaseNotes: doc.spec.releaseNotes || "",
             encryptionKey: doc.spec.encryptionKey || "",
@@ -261,6 +263,7 @@ export function extractInstallationSpecFromTarball(tarball: Buffer): Promise<Ins
     extract.on("finish", () => {
       resolve({
         cursor: "",
+        channelName: "",
         versionLabel: "",
         releaseNotes: "",
         encryptionKey: ""

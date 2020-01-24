@@ -78,7 +78,7 @@ export function KotsMutations(stores: Stores) {
 
         liveness.start();
 
-        updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+        updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
       } catch(err) {
         liveness.stop();
         await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");

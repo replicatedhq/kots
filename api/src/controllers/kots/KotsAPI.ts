@@ -173,7 +173,7 @@ export class KotsAPI {
     try {
       await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
       liveness.start();
-      updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+      updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
     } catch(err) {
       liveness.stop();
       await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
@@ -306,6 +306,7 @@ export class KotsAPI {
       installationSpec.versionLabel,
       installationSpec.releaseNotes,
       installationSpec.cursor,
+      installationSpec.channelName,
       installationSpec.encryptionKey,
       supportBundleSpec,
       analyzersSpec,
@@ -612,6 +613,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     installationSpec.versionLabel,
     installationSpec.releaseNotes,
     installationSpec.cursor,
+    installationSpec.channelName,
     installationSpec.encryptionKey,
     supportBundleSpec,
     analyzersSpec,

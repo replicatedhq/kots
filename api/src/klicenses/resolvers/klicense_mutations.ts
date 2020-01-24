@@ -41,7 +41,9 @@ export function KotsLicenseMutations(stores: Stores) {
       } catch(err) {
         throw new ReplicatedError(`Failed to parse license: ${err}`)
       }
-      
+
+      await stores.kotsAppStore.updateKotsAppLicense(app.id, latestLicense);
+
       const paths: string[] = await app.getFilesPaths(`${app.currentSequence!}`);
       const files: FilesAsBuffers = await app.getFiles(`${app.currentSequence!}`, paths);
 
