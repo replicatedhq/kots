@@ -109,7 +109,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, logo, fetchingMetadata, isKurlEnabled, isGitOpsSupported } = this.props;
+    const { className, logo, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps } = this.props;
     const { user, licenseType, selectedTab } = this.state;
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
@@ -133,7 +133,7 @@ export class NavBar extends PureComponent {
                     </Link>
                   </div>
                 </div>
-                {Utilities.isLoggedIn() && (
+                {Utilities.isLoggedIn() && listApps.length > 0 && (
                   <div className="flex flex-auto left-items">
                     <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "dashboard" })}>
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.redirectToDashboard}>
@@ -161,8 +161,7 @@ export class NavBar extends PureComponent {
                       </div>
                     }
                   </div>
-                )
-                }
+                )}
               </div>
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">

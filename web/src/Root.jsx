@@ -266,6 +266,7 @@ class Root extends Component {
                   fetchingMetadata={this.state.fetchingMetadata}
                   isKurlEnabled={this.state.isKurlEnabled}
                   isGitOpsSupported={this.isGitOpsSupported()}
+                  listApps={listApps}
                 />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
