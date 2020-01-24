@@ -13,6 +13,7 @@ COPY ./bin/kotsadm /kotsadm
 COPY ./web/dist /web/dist
 USER root
 RUN chmod a+x /kotsadm
+RUN chmod a+w /web/dist/*
 USER kotsadm
 WORKDIR /
 
