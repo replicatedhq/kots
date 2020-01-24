@@ -32,11 +32,11 @@ export interface Snapshot {
 }
 
 export interface SnapshotDetail extends Snapshot {
-  namespaces: string[];
-  hooks: SnapshotHook[];
-  volumes: SnapshotVolume[];
-  errors: SnapshotError[];
-  warnings: SnapshotError[];
+  namespaces: Array<string>;
+  hooks: Array<SnapshotHook>;
+  volumes: Array<SnapshotVolume>;
+  errors: Array<SnapshotError>;
+  warnings: Array<SnapshotError>;
 }
 
 export interface SnapshotError {
@@ -72,16 +72,16 @@ export interface SnapshotHook {
   stderr: string;
   started: string;
   finished: string;
-  errors: SnapshotError[],
-  warnings: SnapshotError[],
+  errors: Array<SnapshotError>,
+  warnings: Array<SnapshotError>,
 }
 
 export interface RestoreDetail {
   name: string;
   phase: Phase,
-  volumes: RestoreVolume[];
-  errors: SnapshotError[];
-  warnings: SnapshotError[];
+  volumes: Array<RestoreVolume>;
+  errors: Array<SnapshotError>;
+  warnings: Array<SnapshotError>;
 }
 
 export interface RestoreVolume {
@@ -96,12 +96,4 @@ export interface RestoreVolume {
   timeRemainingSeconds?: number;
   started? : string;
   finished?: string;
-}
-
-export interface ScheduledSnapshot {
-  id: string;
-  appId: string;
-  scheduledTimestamp: string;
-  // name of Backup CR will be set once scheduled
-  backupName?: string;
 }

@@ -24,6 +24,7 @@ export const snapshotConfigRaw = `
     snapshotConfig(slug: $slug) {
       autoEnabled
       autoSchedule {
+        userSelected
         schedule
       }
       ttl {

@@ -38,7 +38,6 @@ export class KotsApp {
   hasPreflight: boolean;
   isConfigurable: boolean;
   snapshotTTL?: string;
-  snapshotSchedule?: string;
   restoreInProgressName?: string;
   restoreUndeployStatus?: string;
 

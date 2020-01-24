@@ -73,19 +73,6 @@ export function sortAnalyzers(bundleInsight) {
   })
 }
 
-export function getCronInterval(frequency) {
-  switch (frequency) {
-  case "0 * * * *":
-    return "hourly";
-  case "0 0 1 * *":
-    return "daily";
-  case "0 0 * * MON":
-    return "weekly";
-  default: 
-    return "custom";
-  }
-}
-
 export function getCronFrequency(schedule) {
   switch (schedule) {
     case "hourly":
