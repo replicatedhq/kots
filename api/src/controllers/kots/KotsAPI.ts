@@ -354,6 +354,7 @@ export class KotsAPI {
     return uploadUpdate(stores, metadata.slug, buffer, "Kots Upload");
   }
 
+  // tslint:disable-next-line max-func-body-length cyclomatic-complexity
   @Post("/airgap")
   async kotsUploadAirgap(
     @MultipartFile("file") file: Express.Multer.File,
@@ -361,11 +362,12 @@ export class KotsAPI {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<any> {
-    const params = await Params.getParams();
-
     const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp();
 
-    let registryHost, namespace, username, password = "";
+    let registryHost = "";
+    let namespace = "";
+    let username = "";
+    let password = "";
 
     let needsRegistry = true;
     try {
@@ -379,7 +381,7 @@ export class KotsAPI {
         // parse the dockerconfig secret
         const parsed = JSON.parse(base64Decode(res.body.data[".dockerconfigjson"]));
         const auths = parsed.auths;
-        for (const hostname in auths) {
+        for (const hostname of Object.keys(auths)) {
           const config = auths[hostname];
           if (config.username === "kurl") {
             registryHost = hostname;
@@ -390,7 +392,7 @@ export class KotsAPI {
         }
       }
     } catch {
-      /* no need to handle, rbac problem or not a path we can read registry */
+      // no need to handle, rbac problem or not a path we can read registry
     }
 
     if (needsRegistry) {
@@ -408,83 +410,79 @@ export class KotsAPI {
       });
     }, 1000);
 
-    const dstDir = tmp.dirSync();
-    var appSlug: string;
-    let hasPreflight: Boolean;
-    let isConfigurable: Boolean;
-    try {
-      await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
-      await request.app.locals.stores.kotsAppStore.resetAirgapInstallInProgress(app.id);
+    // we are doing this asyncronously....
+    const processFile = async () => {
+      const dstDir = tmp.dirSync();
 
-      liveness.start();
-
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...", "running");
-
-      await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
-
-      const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
-      let downstream;
-      for (const cluster of clusters) {
-        if (cluster.title === "this-cluster") {
-          downstream = cluster;
-        }
-      }
-
-      const tmpDstDir = tmp.dirSync();
       try {
-        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing app package...", "running");
+        await request.app.locals.stores.kotsAppStore.updateRegistryDetails(app.id, registryHost, username, password, namespace);
+        await request.app.locals.stores.kotsAppStore.resetAirgapInstallInProgress(app.id);
 
-        const out = path.join(tmpDstDir.name, "archive.tar.gz");
+        liveness.start();
 
-        const statusServer = new StatusServer();
-        await statusServer.start(dstDir.name);
-        const args = kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace, username, password);
-        await statusServer.connection();
-        await statusServer.termination((resolve, reject, obj): boolean => {
-          // Return true if completed
-          if (obj.status === "running") {
-            request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message, "running");
-            return false;
-          } else if (obj.status === "terminated") {
-            if (obj.exit_code === 0) {
-              resolve();
-            } else {
-              reject(new Error(`process failed: ${obj.display_message}`));
-            }
-            return true;
+        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing package...", "running");
+
+        await extractFromTgzStream(fs.createReadStream(file.path), dstDir.name);
+
+        const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
+        let downstream: any;
+        for (const cluster of clusters) {
+          if (cluster.title === "this-cluster") {
+            downstream = cluster;
           }
-          return false;
-        });
+        }
 
-        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Creating app...", "running");
-        const appProps = await kotsAppFromAirgapData(out, app, request.app.locals.stores);
-        hasPreflight = appProps.hasPreflight;
-        isConfigurable = appProps.isConfigurable;
+        const tmpDstDir = tmp.dirSync();
+        try {
+          await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Processing app package...", "running");
+
+          const out = path.join(tmpDstDir.name, "archive.tar.gz");
+
+          const statusServer = new StatusServer();
+          await statusServer.start(dstDir.name);
+          // DO NOT DELETE: args are returned so they are not garbage collected before native code is done
+          const garbage = await kotsPullFromAirgap(statusServer.socketFilename, out, app, String(app.license), dstDir.name, downstream.title, request.app.locals.stores, registryHost, namespace, username, password);
+          await statusServer.connection();
+          await statusServer.termination((resolve, reject, obj): boolean => {
+            // Return true if completed
+            if (obj.status === "running") {
+              request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(obj.display_message, "running");
+              return false;
+            } else if (obj.status === "terminated") {
+              if (obj.exit_code === 0) {
+                resolve();
+              } else {
+                reject(new Error(`process failed: ${obj.display_message}`));
+              }
+              return true;
+            }
+            return false;
+          });
+
+          await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus("Creating app...", "running");
+          await kotsAppFromAirgapData(out, app, request.app.locals.stores);
+        } finally {
+          tmpDstDir.removeCallback();
+        }
+
+        await request.app.locals.stores.kotsAppStore.clearAirgapInstallInProgress();
+
+      } catch(err) {
+
+        await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err), "failed");
+        await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
+        throw(err);
+
       } finally {
-        tmpDstDir.removeCallback();
+        liveness.stop();
+        dstDir.removeCallback();
       }
-
-      appSlug = app.slug;
-      await request.app.locals.stores.kotsAppStore.clearAirgapInstallInProgress();
-
-    } catch(err) {
-
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err), "failed");
-      await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
-      throw(err);
-
-    } finally {
-      liveness.stop();
-      dstDir.removeCallback();
     }
 
-    response.header("Content-Type", "application/json");
-    response.status(200);
-    return {
-      slug: appSlug,
-      hasPreflight,
-      isConfigurable,
-    };
+    // tslint:disable-next-line no-floating-promises
+    processFile();
+
+    response.status(202);
   }
 
   @Post("/airgap/update")
@@ -512,7 +510,7 @@ export class KotsAPI {
     }, 1000);
 
     // we are doing this asyncronously....
-    const processFile = async function() {
+    const processFile = async () => {
       try {
         liveness.start();
         await stores.kotsAppStore.setUpdateDownloadStatus("Processing package...", "running");
@@ -534,6 +532,7 @@ export class KotsAPI {
       }
     }
 
+    // tslint:disable-next-line no-floating-promises
     processFile();
 
     response.status(202);

@@ -6,12 +6,22 @@ import { formatByteSize } from "@src/utilities/utilities";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
 function AirgapUploadProgress(props) {
-  const { history, total, sent, onProgressError, smallSize } = props;
+  const { total, sent, onProgressError, onProgressSuccess, smallSize } = props;
   const { getAirgapInstallStatus } = props.data;
 
-  if (!smallSize && getAirgapInstallStatus?.installStatus === "installed") {
-    history.replace("/");
+  if (getAirgapInstallStatus?.installStatus === "installed") {
+    // this conditional is really awkward but im keeping the functionality the same
+    if (!smallSize) {
+      props.data?.stopPolling();
+    }
+    if (onProgressSuccess) {
+      onProgressSuccess();
+    }
+    if (!smallSize) {
+      return null;
+    }
   }
+
   const hasError = getAirgapInstallStatus?.installStatus === "airgap_upload_error";
 
   if (hasError) {

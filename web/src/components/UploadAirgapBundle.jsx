@@ -16,6 +16,7 @@ import { Utilities } from "../utilities/utilities";
 import Loader from "./shared/Loader";
 import { validateRegistryInfo } from "../queries/UserQueries";
 import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
+import { getKotsApp } from "../queries/AppsQueries";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -46,7 +47,7 @@ class UploadAirgapBundle extends React.Component {
   }
 
   uploadAirgapBundle = async () => {
-    const { onUploadSuccess, match, showRegistry } = this.props;
+    const { match, showRegistry } = this.props;
 
     this.setState({
       fileUploading: true,
@@ -131,20 +132,9 @@ class UploadAirgapBundle extends React.Component {
     }
 
     xhr.onloadend = async () => {
+      // airgap upload progress will alert us of success
       const response = xhr.response;
-      if (xhr.status === 200) {
-        await onUploadSuccess();
-
-        const jsonResponse = JSON.parse(response);
-
-        if (jsonResponse.isConfigurable) {
-          this.props.history.replace(`/${jsonResponse.slug}/config`);
-        } else if (jsonResponse.hasPreflight) {
-          this.props.history.replace(`/preflight`);
-        } else {
-          this.props.history.replace(`/app/${jsonResponse.slug}`);
-        }
-      } else {
+      if (xhr.status !== 202) {
         throw new Error(`Error uploading airgap bundle: ${response}`);
       }
     }
@@ -227,6 +217,38 @@ class UploadAirgapBundle extends React.Component {
     }, 0);
   }
 
+  onProgressSuccess = async () => {
+    const { onUploadSuccess, match } = this.props;
+
+    await onUploadSuccess();
+
+    const app = await this.getKotsApp(match.params.slug);
+
+    if (app.isConfigurable) {
+      this.props.history.replace(`/${app.slug}/config`);
+    } else if (app.hasPreflight) {
+      this.props.history.replace(`/preflight`);
+    } else {
+      this.props.history.replace(`/app/${app.slug}`);
+    }
+  }
+
+  getKotsApp = (slug) => {
+    return new Promise((resolve, reject) => {
+      this.props.client.query({
+        query: getKotsApp,
+        variables: {
+          slug: slug,
+        },
+        fetchPolicy: "no-cache"
+      }).then(response => {
+        resolve(response.data.getKotsApp);
+      }).catch((error) => {
+        reject(error);
+      });
+    });
+  }
+
   toggleViewOnlineInstallErrorMessage = () => {
     this.setState({
       viewOnlineInstallErrorMessage: !this.state.viewOnlineInstallErrorMessage
@@ -261,6 +283,7 @@ class UploadAirgapBundle extends React.Component {
           total={uploadTotal}
           sent={uploadSent}
           onProgressError={this.onProgressError}
+          onProgressSuccess={this.onProgressSuccess}
         />
       );
     }
