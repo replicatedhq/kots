@@ -4,7 +4,7 @@ module.exports = {
   API_ENDPOINT: "http://localhost:8800/api/v1",
   GRAPHQL_ENDPOINT: "http://localhost:8800/graphql",
   SHIP_CLUSTER_BUILD_VERSION: (function () {
-    return String(Date.now());
+    return process.env.SHIP_CLUSTER_BUILD_VERSION;
   }()),
 };
 
