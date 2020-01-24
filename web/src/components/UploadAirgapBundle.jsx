@@ -58,13 +58,24 @@ class UploadAirgapBundle extends React.Component {
 
     // Reset the airgap upload state
     const resetUrl = `${window.env.API_ENDPOINT}/kots/airgap/reset/${match.params.slug}`;
-    await fetch(resetUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": Utilities.getToken(),
-      }
-    });
+    try {
+      await fetch(resetUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": Utilities.getToken(),
+        }
+      });
+    } catch (error) {
+      console.error(error);
+      this.setState({
+        fileUploading: false,
+        uploadSent: 0,
+        uploadTotal: 0,
+        errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
+      });
+      return;
+    }
 
     if (showRegistry) {
       const { slug } = this.props.match.params;
@@ -77,22 +88,33 @@ class UploadAirgapBundle extends React.Component {
         });
         return;
       }
-      const validated = await this.props.client.query({
-        query: validateRegistryInfo,
-        variables: {
-          slug: slug,
-          endpoint: this.state.registryDetails.hostname,
-          username: this.state.registryDetails.username,
-          password: this.state.registryDetails.password,
-          org: this.state.registryDetails.namespace,
+      try {
+        const validated = await this.props.client.query({
+          query: validateRegistryInfo,
+          variables: {
+            slug: slug,
+            endpoint: this.state.registryDetails.hostname,
+            username: this.state.registryDetails.username,
+            password: this.state.registryDetails.password,
+            org: this.state.registryDetails.namespace,
+          }
+        });
+        if (validated.data.validateRegistryInfo) {
+          this.setState({
+            fileUploading: false,
+            uploadSent: 0,
+            uploadTotal: 0,
+            errorMessage: validated.data.validateRegistryInfo,
+          });
+          return;
         }
-      });
-      if (validated.data.validateRegistryInfo) {
+      } catch (error) {
+        console.error(error);
         this.setState({
           fileUploading: false,
           uploadSent: 0,
           uploadTotal: 0,
-          errorMessage: validated.data.validateRegistryInfo,
+          errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
         });
         return;
       }
@@ -128,7 +150,6 @@ class UploadAirgapBundle extends React.Component {
         uploadTotal: 0,
         errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
       });
-
     }
 
     xhr.onloadend = async () => {
