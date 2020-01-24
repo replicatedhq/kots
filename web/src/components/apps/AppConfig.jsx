@@ -195,7 +195,13 @@ class AppConfig extends Component {
             </div>
           </div>
         </div>
-        <button className="btn secondary blue u-marginTop--20 u-marginBottom--auto" disabled={savingConfig || (!changed && !fromLicenseFlow)} onClick={this.handleSave}>{savingConfig ? "Saving" : fromLicenseFlow ? "Continue" : "Save config"}</button>
+        {savingConfig ?
+          <div className="u-marginTop--20 u-marginBottom--auto">
+            <Loader size="30" />
+          </div>
+        :
+          <button className="btn secondary blue u-marginTop--20 u-marginBottom--auto" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+        }
 
         {!fromLicenseFlow &&
           <Modal
