@@ -120,27 +120,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
             });
           });
         });
-
-        // Switch operator back to deploy mode on the restored sequence
-        const backup = await velero.readBackup(restore.spec.backupName);
-        if (!backup.metadata.annotations) {
-          throw new ReplicatedError(`Backup is missing required annotations`);
-        }
-        const sequenceString = backup.metadata.annotations[kotsAppSequenceKey];
-        if (!sequenceString) {
-          throw new ReplicatedError(`Backup is missing version annotation`);
-        }
-        const sequence = parseInt(sequenceString, 10);
-        if (_.isNaN(sequence)) {
-          throw new ReplicatedError(`Failed to parse sequence from Backup: ${sequenceString}`);
-        }
-        const clusterId = backup.metadata.annotations[kotsClusterIdKey];
-        if (!clusterId) {
-          throw new ReplicatedError(`Backup is missing cluster ID annotation`);
-        }
-        console.log(`Restore setting deploy version to ${sequence}`);
-        await stores.kotsAppStore.deployVersion(appId, sequence, clusterId);
-        await stores.kotsAppStore.updateAppRestoreReset(appId);
       }
 
       return detail;

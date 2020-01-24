@@ -12,6 +12,12 @@ import yaml from "js-yaml";
 import { base64Decode, getPreflightResultState, base64Encode } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
 
+export enum UndeployStatus {
+  InProcess = "in_process",
+  Completed = "completed",
+  Failed = "failed",
+}
+
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 

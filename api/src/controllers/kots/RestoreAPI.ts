@@ -1,8 +1,9 @@
 import { BodyParams, Controller, Get, HeaderParams, Put, Req, Res } from "@tsed/common";
 import BasicAuth from "basic-auth";
 import Express from "express";
-import { KotsAppStore } from "../../kots_app/kots_app_store";
+import { KotsAppStore, UndeployStatus } from "../../kots_app/kots_app_store";
 import { ClusterStore } from "../../cluster";
+import { logger } from "../../server/logger";
 
 interface ErrorResponse {
   error: {};
@@ -28,8 +29,8 @@ export class RestoreAPI {
       return {};
     }
 
-    const status = body.is_error ? "failed" : "completed";
-    console.log(`Restore API set RestoreUndeployStatus = ${status} for app ${body.app_id}`);
+    const status = body.is_error ? UndeployStatus.Failed : UndeployStatus.Completed;
+    logger.info(`Restore API set RestoreUndeployStatus = ${status} for app ${body.app_id}`);
     await (request.app.locals.stores.kotsAppStore as KotsAppStore).updateAppRestoreUndeployStatus(body.app_id, status);
 
     return {};
