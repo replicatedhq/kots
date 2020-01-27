@@ -508,6 +508,11 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
     kotsApp.hasPreflight = !!preflightSpec;
     const backupSpec = await extractBackupSpecFromTarball(buffer);
 
+    if (kotsAppLicense) {
+      // update kots app with latest license
+      await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, kotsAppLicense);
+    }
+
     await stores.kotsAppStore.createMidstreamVersion(
       kotsApp.id,
       0,
