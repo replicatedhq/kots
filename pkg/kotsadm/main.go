@@ -329,5 +329,14 @@ func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset
 		}
 	}
 
+	// AutoCreateClusterToken
+	autocreateClusterToken, err := getAPIAutoCreateClusterToken(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get auto create cluster token")
+	}
+	if autocreateClusterToken != "" {
+		deployOptions.AutoCreateClusterToken = autocreateClusterToken
+	}
+
 	return &deployOptions, nil
 }
