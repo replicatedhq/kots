@@ -116,3 +116,30 @@ func TestIntPointer(t *testing.T) {
 		})
 	}
 }
+
+func TestGenPassword(t *testing.T) {
+	tests := []struct {
+		name   string
+		length int
+	}{
+		{
+			name:   "8",
+			length: 8,
+		},
+		{
+			name:   "32",
+			length: 32,
+		},
+		{
+			name:   "0",
+			length: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got := GenPassword(tt.length)
+			req.Len(got, tt.length)
+		})
+	}
+}

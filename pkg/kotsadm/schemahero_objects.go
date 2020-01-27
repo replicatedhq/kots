@@ -30,7 +30,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			Name:      name,
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Spec: corev1.PodSpec{

@@ -22,7 +22,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 			Name:      "kotsadm-role",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		// creation cannot be restricted by name
@@ -65,7 +65,7 @@ func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 			Name:      "kotsadm-rolebinding",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -95,7 +95,7 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 			Name:      "kotsadm",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 	}
@@ -120,7 +120,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Name:      "kotsadm",
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -132,8 +132,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":      "kotsadm",
-						KotsadmKey: KotsadmLabelValue,
+						"app":            "kotsadm",
+						types.KotsadmKey: types.KotsadmLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{

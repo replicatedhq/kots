@@ -23,7 +23,7 @@ func apiRole(namespace string) *rbacv1.Role {
 			Name:      "kotsadm-api-role",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		// creation cannot be restricted by name
@@ -66,7 +66,7 @@ func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
 			Name:      "kotsadm-api-rolebinding",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -96,7 +96,7 @@ func apiServiceAccount(namespace string) *corev1.ServiceAccount {
 			Name:      "kotsadm-api",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 	}
@@ -118,11 +118,11 @@ func updateApiDeployment(deployment *appsv1.Deployment, deployOptions types.Depl
 	if deployment.ObjectMeta.Labels == nil {
 		deployment.ObjectMeta.Labels = map[string]string{}
 	}
-	deployment.ObjectMeta.Labels[KotsadmKey] = KotsadmLabelValue
+	deployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
 	if deployment.Spec.Template.ObjectMeta.Labels == nil {
 		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
 	}
-	deployment.Spec.Template.ObjectMeta.Labels[KotsadmKey] = KotsadmLabelValue
+	deployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
 
 	// security context (added in 1.11.0)
 	deployment.Spec.Template.Spec.SecurityContext = &securityContext
@@ -181,7 +181,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Name:      "kotsadm-api",
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -193,8 +193,8 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":      "kotsadm-api",
-						KotsadmKey: KotsadmLabelValue,
+						"app":            "kotsadm-api",
+						types.KotsadmKey: types.KotsadmLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -352,7 +352,7 @@ func apiService(namespace string) *corev1.Service {
 			Name:      "kotsadm-api-node",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{

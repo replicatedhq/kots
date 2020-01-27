@@ -165,7 +165,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 			keepPolling = false
 		}()
 
-		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
+		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort) // TODO add auth
 		sleepTime := time.Second * 1
 		go func() {
 			for keepPolling {

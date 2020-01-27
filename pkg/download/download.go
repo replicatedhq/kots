@@ -9,6 +9,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
@@ -53,7 +54,20 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}()
 
-	resp, err := http.Get(fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug))
+	authSlug, err := auth.GetOrCreateAuthSlug(downloadOptions.Namespace)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to get kotsadm auth slug")
+	}
+
+	newRequest, err := http.NewRequest("get", fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug), nil)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to create download request")
+	}
+	newRequest.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newRequest)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get from kotsadm")

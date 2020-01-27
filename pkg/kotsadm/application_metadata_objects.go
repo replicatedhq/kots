@@ -1,6 +1,7 @@
 package kotsadm
 
 import (
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -8,7 +9,7 @@ import (
 func applicationMetadataConfig(data []byte, namespace string) *corev1.ConfigMap {
 	labels := map[string]string{}
 	labels["kotsadm"] = "application"
-	labels[KotsadmKey] = KotsadmLabelValue
+	labels[types.KotsadmKey] = types.KotsadmLabelValue
 
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
