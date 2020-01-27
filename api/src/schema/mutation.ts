@@ -46,6 +46,7 @@ type Mutation {
   manualSnapshot(appId: String!): Boolean
   restoreSnapshot(snapshotName: String!): RestoreDetail
   deleteSnapshot(snapshotName: String!): Boolean
+  cancelRestore(appId: String!): Boolean
 }
 `;
 

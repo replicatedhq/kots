@@ -50,10 +50,11 @@ export default compose(
   withRouter,
   graphql(restoreDetail, {
     name: "restoreDetail",
-    options: ({ app }) => {
-      const appId = app.id
+    options: ({ app, match }) => {
+      const appId = app.id;
+      const restoreName = match.params.id;
       return {
-        variables: { appId },
+        variables: { appId, restoreName },
         fetchPolicy: "no-cache"
       }
     }

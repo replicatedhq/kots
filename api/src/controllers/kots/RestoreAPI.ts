@@ -31,7 +31,14 @@ export class RestoreAPI {
 
     const status = body.is_error ? UndeployStatus.Failed : UndeployStatus.Completed;
     logger.info(`Restore API set RestoreUndeployStatus = ${status} for app ${body.app_id}`);
-    await (request.app.locals.stores.kotsAppStore as KotsAppStore).updateAppRestoreUndeployStatus(body.app_id, status);
+    const kotsAppStore = request.app.locals.stores.kotsAppStore as KotsAppStore;
+    const app = await kotsAppStore.getApp(body.app_id);
+    if (app.restoreInProgressName) {
+      // Add a delay until we have logic to wait for all pods to be deleted.
+      setTimeout(async () => {
+        await kotsAppStore.updateAppRestoreUndeployStatus(body.app_id, status);
+      }, 20 * 1000);
+    }
 
     return {};
   }

@@ -71,8 +71,6 @@ export class SnapshotScheduler {
       return;
     }
 
-    const client = await this.pool.connect();
-
     const velero = new VeleroClient("velero"); // TODO namespace
     const hasUnfinished = await velero.hasUnfinishedBackup(app.id);
     if (hasUnfinished) {
@@ -80,6 +78,7 @@ export class SnapshotScheduler {
       return;
     }
 
+    const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
 

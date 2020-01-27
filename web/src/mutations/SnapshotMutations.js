@@ -56,3 +56,10 @@ export const restoreSnapshotRaw = `
   }
 `;
 export const restoreSnapshot = gql(restoreSnapshotRaw);
+
+export const cancelRestoreRaw = `
+  mutation cancelRestore($appId: String!) {
+    cancelRestore(appId: $appId)
+  }
+`;
+export const cancelRestore = gql(cancelRestoreRaw);
