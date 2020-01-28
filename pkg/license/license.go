@@ -12,7 +12,7 @@ import (
 )
 
 func GetLatestLicense(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
-	url := fmt.Sprintf("%s/release/%s/license", license.Spec.Endpoint, license.Spec.AppSlug)
+	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
