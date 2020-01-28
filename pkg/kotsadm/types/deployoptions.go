@@ -1,9 +1,5 @@
 package types
 
-import (
-	"k8s.io/api/core/v1"
-)
-
 type DeployOptions struct {
 	Namespace              string
 	Kubeconfig             string

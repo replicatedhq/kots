@@ -3,12 +3,13 @@ package license
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/version"
-	"io/ioutil"
-	"k8s.io/client-go/kubernetes/scheme"
-	"net/http"
 )
 
 func GetLatestLicense(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {

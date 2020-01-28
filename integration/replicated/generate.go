@@ -114,7 +114,7 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	pullOptions := pull.PullOptions{
 		RootDir:             tmpRootDir,
 		LocalPath:           rawArchivePath,
-		Namespace: namespace,
+		Namespace:           namespace,
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
