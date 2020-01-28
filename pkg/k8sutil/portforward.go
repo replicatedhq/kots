@@ -15,6 +15,7 @@ import (
 
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -165,7 +166,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 			keepPolling = false
 		}()
 
-		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort) // TODO add auth
+		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
 		sleepTime := time.Second * 1
 		go func() {
 			for keepPolling {
@@ -178,6 +179,13 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 					continue
 				}
 				req.Header.Set("Accept", "application/json")
+
+				authSlug, err := auth.GetOrCreateAuthSlug(namespace)
+				if err != nil {
+					runtime.HandleError(errors.Wrap(err, "failed to get kotsadm auth slug"))
+					continue
+				}
+				req.Header.Add("Authorization", authSlug)
 
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
