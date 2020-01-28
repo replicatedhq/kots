@@ -6,6 +6,8 @@ import { Params } from "../server/params";
 import pg from "pg";
 import { Session } from "./session";
 import { ReplicatedError } from "../server/errors";
+import * as k8s from "@kubernetes/client-node";
+import {base64Decode} from "../util/utilities";
 
 export type InstallationMap = {
   [key: string]: number;
@@ -83,7 +85,25 @@ export class SessionStore {
           // it needs to be compared with the "kotsadm-authstring" secret
           // if that matches, we return a new session token with the session ID set to the authstring value
           // and the userID set to "kots-cli"
-          // TODO verification code
+          // this works for now as the endpoints used by the kots cli don't rely on user ID
+          // TODO make real userid/sessionid
+          const kc = new k8s.KubeConfig();
+          kc.loadFromDefault();
+          const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+          const namespace = process.env["POD_NAMESPACE"]!;
+          const secretName = "kotsadm-authstring";
+          const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
+          const data = secret.body.data!;
+          const authString = base64Decode(data["kotsadm-authstring"]);
+          if (!authString) {
+            console.log(`no authstring: ${data}`);
+            return new Session();
+          } else if (authString !== token) {
+            console.log(`authstring from secret is ${authString}, does not match ${token}`);
+            return new Session();
+          }
+
           const kotsSession = new Session();
           kotsSession.sessionId = token;
           kotsSession.userId = "kots-cli";
