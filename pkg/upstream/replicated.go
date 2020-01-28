@@ -231,7 +231,10 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		urlPath = path.Join(urlPath, *r.Channel)
 	}
 
-	url := fmt.Sprintf("%s://%s?channelSequence=%s", u.Scheme, urlPath, cursor.Cursor)
+	urlValues := url.Values{}
+	urlValues.Set("channelSequence", cursor.Cursor)
+	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -336,7 +339,11 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	}
 	defer getResp.Body.Close()
 
-	if getResp.StatusCode >= 400 {
+	if getResp.StatusCode >= 300 {
+		body, _ := ioutil.ReadAll(getResp.Body)
+		if len(body) > 0 {
+			return nil, util.ActionableError{Message: string(body)}
+		}
 		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
 	}
 
@@ -405,7 +412,11 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	if license.Spec.ChannelName != cursor.ChannelName {
 		sequence = ""
 	}
-	url := fmt.Sprintf("%s://%s/release/%s/pending?channelSequence=%s", u.Scheme, hostname, license.Spec.AppSlug, sequence)
+
+	urlValues := url.Values{}
+	urlValues.Set("channelSequence", sequence)
+	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -421,13 +432,16 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		return nil, errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	if resp.StatusCode >= 400 {
+		if len(body) > 0 {
+			return nil, util.ActionableError{Message: string(body)}
+		}
+		return nil, errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
 	}
 
 	var channelReleases struct {

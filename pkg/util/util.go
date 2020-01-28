@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"fmt"
 	"net/url"
 )
 
@@ -59,4 +60,12 @@ func IntPointer(x int) *int64 {
 	var xout int64
 	xout = int64(x)
 	return &xout
+}
+
+type ActionableError struct {
+	Message string
+}
+
+func (e ActionableError) Error() string {
+	return fmt.Sprintf("%s", e.Message)
 }
