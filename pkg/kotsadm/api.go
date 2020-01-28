@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -114,7 +115,7 @@ func ensureApiRBAC(namespace string, clientset *kubernetes.Clientset) error {
 }
 
 func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().Roles(namespace).Get("kotsadm-api-role", metav1.GetOptions{})
+	currentRole, err := clientset.RbacV1().Roles(namespace).Get("kotsadm-api-role", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get role")
@@ -126,7 +127,12 @@ func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
 		}
 	}
 
-	// We have never changed the role, so there is no "upgrade" applied
+	// we have now changed the role, so an upgrade is required
+	k8sutil.UpdateRole(currentRole, apiRole(namespace))
+	_, err = clientset.RbacV1().Roles(namespace).Update(currentRole)
+	if err != nil {
+		return errors.Wrap(err, "failed to update role")
+	}
 
 	return nil
 }

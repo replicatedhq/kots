@@ -77,3 +77,31 @@ func GenPassword(length int) string {
 	}
 	return string(outRunes)
 }
+
+// CompareStringArrays returns true if all elements in arr1 are present in arr2 and the other way around.
+// it does not check for equal counts of duplicates, or for ordering.
+func CompareStringArrays(arr1, arr2 []string) bool {
+	for _, str1 := range arr1 {
+		foundMatch := false
+		for _, str2 := range arr2 {
+			if str1 == str2 {
+				foundMatch = true
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+	for _, str2 := range arr2 {
+		foundMatch := false
+		for _, str1 := range arr1 {
+			if str1 == str2 {
+				foundMatch = true
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+	return true
+}

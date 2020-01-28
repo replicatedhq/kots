@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +42,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 			{
 				APIGroups:     []string{""},
 				Resources:     []string{"secrets"},
-				ResourceNames: []string{"kotsadm-encryption", "kotsadm-gitops"},
+				ResourceNames: []string{"kotsadm-encryption", "kotsadm-gitops", auth.KotsadmAuthstringSecretName},
 				Verbs:         metav1.Verbs{"get", "update"},
 			},
 			{

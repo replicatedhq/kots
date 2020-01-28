@@ -143,3 +143,43 @@ func TestGenPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestCompareStringArrays(t *testing.T) {
+	tests := []struct {
+		name string
+		arr1 []string
+		arr2 []string
+		want bool
+	}{
+		{
+			name: "empty arrays",
+			arr1: []string{},
+			arr2: []string{},
+			want: true,
+		},
+		{
+			name: "one empty array",
+			arr1: []string{},
+			arr2: []string{"element"},
+			want: false,
+		},
+		{
+			name: "superset",
+			arr1: []string{"different element", "element"},
+			arr2: []string{"element"},
+			want: false,
+		},
+		{
+			name: "duplicates",
+			arr1: []string{"different element", "element"},
+			arr2: []string{"element", "element", "different element"},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			req.Equal(CompareStringArrays(tt.arr1, tt.arr2), tt.want)
+		})
+	}
+}
