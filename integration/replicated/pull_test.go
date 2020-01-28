@@ -61,7 +61,7 @@ func Test_PullReplicated(t *testing.T) {
 			pullOptions := pull.PullOptions{
 				RootDir:             actualDir,
 				LicenseFile:         path.Join(test.testDir, "license.yaml"),
-				Namespace: namespace,
+				Namespace:           namespace,
 				ExcludeAdminConsole: true,
 				ExcludeKotsKinds:    true,
 				Silent:              true,
