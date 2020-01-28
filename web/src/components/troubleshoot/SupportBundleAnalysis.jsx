@@ -149,7 +149,10 @@ export class SupportBundleAnalysis extends React.Component {
             <div className="flex1 flex-column">
               <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
                 <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
-                  <div className="flex flex-column flex1">
+                  <div className="flex-column flex1">
+                    <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
+                      <Link to={`/app/${this.props.watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5">Support bundles</Link> > <span className="u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span>
+                    </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
                         <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
