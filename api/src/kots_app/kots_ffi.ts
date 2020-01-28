@@ -96,7 +96,7 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
         if (obj.exit_code === 0) {
           resolve(JSON.parse(obj.data) as Update[]);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -170,7 +170,7 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, regist
         if (obj.exit_code !== -1) {
           resolve(obj.exit_code);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -235,7 +235,7 @@ export async function kotsAppDownloadUpdateFromAirgap(airgapFile: string, app: K
         if (obj.exit_code !== -1) {
           resolve(obj.exit_code);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -285,7 +285,7 @@ export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string
         if (obj.exit_code !== -1) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -334,7 +334,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
         if (obj.exit_code !== -1) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -484,7 +484,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         if (obj.exit_code === 0) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
