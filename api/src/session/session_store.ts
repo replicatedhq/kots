@@ -78,6 +78,18 @@ export class SessionStore {
           token = token.split(" ")[1];
         }
 
+        if (token.startsWith("Kots ")) {
+          // this is a token from the kots CLI
+          // it needs to be compared with the "kotsadm-authstring" secret
+          // if that matches, we return a new session token with the session ID set to the authstring value
+          // and the userID set to "kots-cli"
+          // TODO verification code
+          const kotsSession = new Session();
+          kotsSession.sessionId = token;
+          kotsSession.userId = "kots-cli";
+          return kotsSession;
+        }
+
         const decoded: any = jwt.verify(token, this.params.sessionKey);
 
         const session = await this.getSession(decoded.sessionId);
