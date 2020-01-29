@@ -25,13 +25,17 @@ func LogIn(password string) (*User, error) {
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
+	var shaBytes []byte
 	existingPassword, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-password", metav1.GetOptions{})
 	if err != nil {
 		// either no existing password secret or unable to get it
-		return nil, errors.Wrap(err, "unable to get kotsadm-password secret")
+		// so instead we fallback to the environment variable
+		shaBytes = []byte(os.Getenv("SHARED_PASSWORD_BCRYPT"))
+	} else {
+		shaBytes = existingPassword.Data["passwordBcrypt"]
 	}
 
-	if err := bcrypt.CompareHashAndPassword(existingPassword.Data["passwordBcrypt"], []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(shaBytes, []byte(password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			return nil, nil
 		}
