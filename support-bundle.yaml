@@ -3,4 +3,33 @@ kind: Collector
 metadata:
   name: collector-sample
 spec:
-  collectors: []
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+    - exec: 
+        args: 
+          - "-U"
+          - kotsadm
+        collectorName: kotsadm-postgres-db
+        command: 
+          - pg_dump
+        containerName: kotsadm-postgres
+        name: kots/admin_console
+        selector: 
+          - app=kotsadm-postgres
+        timeout: 10s
+    - logs: 
+        collectorName: kotsadm-api
+        name: kots/admin_console
+        selector: 
+          - app=kotsadm-api
+    - logs: 
+        collectorName: kotsadm-operator
+        name: kots/admin_console
+        selector: 
+          - app=kotsadm-operator
+    - secret: 
+        collectorName: kotsadm-replicated-registry
+        includeValue: false
+        key: .dockerconfigjson
+        name: kotsadm-replicated-registry
