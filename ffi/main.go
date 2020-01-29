@@ -88,7 +88,7 @@ func UpdateCheck(socket, fromArchivePath, namespace string) {
 
 		fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
 
-		isUpdateAvailable := string(beforeCursor) != string(afterCursor)
+		isUpdateAvailable := !beforeCursor.Equal(afterCursor)
 		if !isUpdateAvailable {
 			ffiResult = NewFFIResult(0)
 			return

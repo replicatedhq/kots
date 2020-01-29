@@ -23,6 +23,7 @@ import (
 // InstallationSpec defines the desired state of InstallationSpec
 type InstallationSpec struct {
 	UpdateCursor  string `json:"updateCursor,omitempty"`
+	ChannelName   string `json:"channelName,omitempty"`
 	VersionLabel  string `json:"versionLabel,omitempty"`
 	ReleaseNotes  string `json:"releaseNotes,omitempty"`
 	EncryptionKey string `json:"encryptionKey,omitempty"`

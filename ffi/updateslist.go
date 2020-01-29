@@ -12,7 +12,7 @@ import (
 )
 
 //export ListUpdates
-func ListUpdates(socket, licenseData, currentCursor string) {
+func ListUpdates(socket, licenseData, currentCursor, currentChannel string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -41,9 +41,10 @@ func ListUpdates(socket, licenseData, currentCursor string) {
 		defer os.Remove(licenseFile)
 
 		getUpdatesOptions := pull.GetUpdatesOptions{
-			LicenseFile:   licenseFile,
-			CurrentCursor: currentCursor,
-			Silent:        true,
+			LicenseFile:    licenseFile,
+			CurrentCursor:  currentCursor,
+			CurrentChannel: currentChannel,
+			Silent:         true,
 		}
 
 		updates, err := pull.GetUpdates(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), getUpdatesOptions)

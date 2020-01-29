@@ -9,6 +9,7 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type statusMessage struct {
@@ -105,7 +106,12 @@ func NewFFIResult(exitCode int) *FFIResult {
 }
 
 func (f *FFIResult) WithError(err error) *FFIResult {
-	f.Err = err
+	cause := errors.Cause(err)
+	if _, ok := cause.(util.ActionableError); ok {
+		f.Err = cause
+	} else {
+		f.Err = err
+	}
 	return f
 }
 

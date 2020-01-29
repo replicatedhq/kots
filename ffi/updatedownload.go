@@ -109,7 +109,7 @@ func UpdateDownload(socket, fromArchivePath, namespace, registryJson, cursor str
 
 		fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
 
-		isUpdateAvailable := string(beforeCursor) != string(afterCursor)
+		isUpdateAvailable := !beforeCursor.Equal(afterCursor)
 		if !isUpdateAvailable {
 			ffiResult = NewFFIResult(0)
 			return
@@ -216,7 +216,7 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
 			AirgapRoot:          airgapRoot,
 			InstallationFile:    installationFilePath,
-			UpdateCursor:        beforeCursor,
+			UpdateCursor:        beforeCursor.Cursor,
 			RootDir:             tmpRoot,
 			ExcludeKotsKinds:    true,
 			ExcludeAdminConsole: true,
@@ -246,14 +246,14 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 
 		fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
 
-		bc, err := cursor.NewCursor(string(beforeCursor))
+		bc, err := cursor.NewCursor(string(beforeCursor.Cursor))
 		if err != nil {
 			fmt.Printf("failed to parse current cursor: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
-		ac, err := cursor.NewCursor(string(afterCursor))
+		ac, err := cursor.NewCursor(string(afterCursor.Cursor))
 		if err != nil {
 			fmt.Printf("failed to parse update cursor: %s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
