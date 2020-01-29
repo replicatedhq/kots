@@ -47,7 +47,11 @@ func Test_PullReplicated(t *testing.T) {
 			archiveData, err := ioutil.ReadFile(path.Join(test.testDir, "archive.tar.gz"))
 			req.NoError(err)
 
-			stopCh, err := StartMockServer(endpoint, "integration", "integration", archiveData)
+			licenseFilepath := path.Join(test.testDir, "license.yaml")
+			licenseFile, err := ioutil.ReadFile(licenseFilepath)
+			req.NoError(err)
+
+			stopCh, err := StartMockServer(endpoint, "integration", "integration", archiveData, licenseFile)
 			req.NoError(err)
 
 			defer func() {
@@ -60,7 +64,7 @@ func Test_PullReplicated(t *testing.T) {
 
 			pullOptions := pull.PullOptions{
 				RootDir:             actualDir,
-				LicenseFile:         path.Join(test.testDir, "license.yaml"),
+				LicenseFile:         licenseFilepath,
 				Namespace:           namespace,
 				ExcludeAdminConsole: true,
 				ExcludeKotsKinds:    true,
