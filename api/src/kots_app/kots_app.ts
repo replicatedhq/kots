@@ -295,8 +295,9 @@ export class KotsApp {
       const inputArchive = path.join(tmpDir.name, "input.tar.gz");
       const outputArchive = path.join(tmpDir.name, "output.tar.gz");
 
+      const app = await stores.kotsAppStore.getApp(appId);
       const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
-      await kotsRewriteVersion(inputArchive, downstreams, registrySettings, false, outputArchive, stores, updatedConfigValues);
+      await kotsRewriteVersion(app, inputArchive, downstreams, registrySettings, false, outputArchive, stores, updatedConfigValues);
       const outputTgzBuffer = fs.readFileSync(outputArchive);
       if (!createNewVersion) {
         const params = await Params.getParams();
