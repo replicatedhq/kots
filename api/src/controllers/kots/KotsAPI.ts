@@ -68,11 +68,13 @@ export class KotsAPI {
   async kotsPorts(
     @Req() request: Request,
     @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
-    // This method is connected to over kubectl...
-    // There is no user auth, but this method should be
-    // exposed only on cluster ip to enforce that it's
-    // not exposed to the public
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
 
     const kotsAppStore: KotsAppStore = request.app.locals.stores.kotsAppStore;
 
@@ -123,9 +125,15 @@ export class KotsAPI {
     @Req() request: Request,
     @Res() response: Response,
     @PathParams("slug") slug: string,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
-    // this assumes single tenant and single app for now
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
 
+    // this assumes single tenant and single app for now
     const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
     const app = _.find(apps, (a: KotsApp) => {
       return a.slug === slug;
@@ -149,7 +157,14 @@ export class KotsAPI {
     @Res() response: Response,
     @PathParams("slug") slug: string,
     @QueryParams("deploy") deploy: boolean,
+    @HeaderParams("Authorization") auth: string,
   ) {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const apps = await request.app.locals.stores.kotsAppStore.listInstalledKotsApps();
     const app = _.find(apps, (a: KotsApp) => {
       return a.slug === slug;
@@ -184,7 +199,7 @@ export class KotsAPI {
       throw err;
     }
 
-    let downloadUpdates = async function() {
+    const downloadUpdates = async function() {
       try {
         await kotsAppDownloadUpdates(updatesAvailable, app, request.app.locals.stores);
 
@@ -207,7 +222,7 @@ export class KotsAPI {
       } finally {
         liveness.stop();
       }
-    }
+    };
     downloadUpdates(); // download asyncronously
 
     response.status(200);
@@ -351,7 +366,15 @@ export class KotsAPI {
     @MultipartFile("file") file: Express.Multer.File,
     @BodyParams("") body: CreateAppBody,
     @Req() request: Request,
+    @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const metadata = JSON.parse(body.metadata);
     const buffer = fs.readFileSync(file.path);
     const stores = request.app.locals.stores;
@@ -366,7 +389,14 @@ export class KotsAPI {
     @BodyParams("") body: any,
     @Req() request: Request,
     @Res() response: Response,
+    @HeaderParams("Authorization") auth: string,
   ): Promise<any> {
+    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
+    if (!session || !session.userId) {
+      response.status(401);
+      return {};
+    }
+
     const app = await request.app.locals.stores.kotsAppStore.getPendingKotsAirgapApp();
 
     let registryHost = "";
