@@ -47,7 +47,7 @@ function kots() {
     ListUpdates: ["void", [GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoString]],
+    RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoBool, GoString]],
     TemplateConfig: [GoString, [GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
@@ -827,7 +827,7 @@ export async function getLatestLicense(licenseData: string): Promise<string> {
   }
 }
 
-export async function kotsRewriteVersion(archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores, updatedConfigValues: string): Promise<string> {
+export async function kotsRewriteVersion(app: KotsApp, archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores, updatedConfigValues: string): Promise<string> {
   const tmpDir = tmp.dirSync();
   try {
     const k8sNamespace = getK8sNamespace();
@@ -865,7 +865,7 @@ export async function kotsRewriteVersion(archive: string, downstreams: string[],
     updatedConfigValuesParam["p"] = updatedConfigValues;
     updatedConfigValuesParam["n"] = updatedConfigValues.length;
 
-    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages, updatedConfigValuesParam);
+    kots().RewriteVersion(socketParam, inputPathParam, outputFileParam, downstreamsParam, k8sNamespaceParam, registryJsonParam, copyImages, app.isAirgap, updatedConfigValuesParam);
 
     let errrorMessage = "";
 
