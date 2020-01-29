@@ -2,7 +2,10 @@ package util
 
 import (
 	"bytes"
-	"math/rand"
+	crand "crypto/rand"
+	"fmt"
+	"math/big"
+	rand "math/rand"
 	"net/url"
 	"time"
 )
@@ -71,9 +74,21 @@ var passwordLetters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN
 
 // generates a [0-9a-zA-Z] password of the specified length
 func GenPassword(length int) string {
+	lettersLen := big.NewInt(int64(len(passwordLetters)))
+
 	var outRunes []rune
 	for i := 0; i < length; i++ {
-		outRunes = append(outRunes, passwordLetters[rand.Intn(len(passwordLetters))])
+		cryptoRandNum, err := crand.Int(crand.Reader, lettersLen)
+		var randNum int64
+		if err != nil {
+			// print error message and fallback to math.rand's number generator
+			fmt.Printf("failed to get cryptographically random number: %v\n", err)
+			randNum = int64(rand.Intn(len(passwordLetters)))
+		} else {
+			randNum = cryptoRandNum.Int64()
+		}
+
+		outRunes = append(outRunes, passwordLetters[randNum])
 	}
 	return string(outRunes)
 }
