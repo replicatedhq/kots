@@ -1,5 +1,9 @@
 package types
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 type DeployOptions struct {
 	Namespace              string
 	Kubeconfig             string
@@ -18,6 +22,6 @@ type DeployOptions struct {
 	NodePort               int32
 	Hostname               string
 	ApplicationMetadata    []byte
-	LimitRange             *v1.LimitRange
+	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool // true if the application is being deployed to an OpenShift cluster
 }
