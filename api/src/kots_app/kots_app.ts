@@ -303,7 +303,7 @@ export class KotsApp {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
         await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
-        await stores.kotsAppStore.updateAppConfigValuesCache(appId, sequence, updatedConfigValues);
+        await stores.kotsAppStore.updateAppConfigValues(appId, sequence, updatedConfigValues);
       } else {
         await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }
@@ -495,24 +495,6 @@ export class KotsApp {
     return await stores.kotsAppStore.isGitOpsSupported(this.id, sequence);
   }
 
-  /**
-   * this should be removed in 1.9.0 release
-   */
-  public async isAppConfigurable(stores: Stores): Promise<boolean> {
-    if (this.isConfigurable) {
-      return true;
-    }
-    const sequence = Number.isInteger(this.currentSequence!) ? `${this.currentSequence}` : "";
-    if (sequence === "") {
-      return false;
-    }
-    const paths: string[] = await this.getFilesPaths(sequence);
-    const files: FilesAsBuffers = await this.getFiles(sequence, paths);
-    const { configSpec, configValues } = await this.getConfigDataFromFiles(files);
-    await stores.kotsAppStore.updateAppConfigData(this.id, sequence, configSpec, configValues);
-    return configSpec !== "";
-  }
-
   private async isAllowRollback(stores: Stores): Promise<boolean> {
     const parsedKotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, this.currentSequence!);
     try {
@@ -566,7 +548,6 @@ export class KotsApp {
   public toSchema(downstreams: Cluster[], stores: Stores) {
     return {
       ...this,
-      isConfigurable: () => this.isAppConfigurable(stores), // should be removed in 1.9.0 release
       isGitOpsSupported: () => this.isGitOpsSupported(stores),
       allowRollback: () => this.isAllowRollback(stores),
       allowSnapshots: () => this.isAllowSnapshots(stores),

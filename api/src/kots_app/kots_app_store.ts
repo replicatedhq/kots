@@ -1036,23 +1036,9 @@ order by adv.sequence desc`;
     return configData;
   }
 
-  async updateAppConfigValuesCache(appId: string, sequence: string, configValues: string): Promise<void> {
+  async updateAppConfigValues(appId: string, sequence: string, configValues: string): Promise<void> {
     const q = `update app_version set config_values = $1 where app_id = $2 and sequence = $3`;
     const v = [
-      configValues,
-      appId,
-      sequence,
-    ];
-    await this.pool.query(q, v);
-  }
-
-  /**
-   * this should be removed in 1.9.0 release
-   */
-  async updateAppConfigData(appId: string, sequence: string, configSpec: string, configValues: string): Promise<void> {
-    const q = `update app_version set config_spec = $1, config_values = $2 where app_id = $3 and sequence = $4`;
-    const v = [
-      configSpec,
       configValues,
       appId,
       sequence,
