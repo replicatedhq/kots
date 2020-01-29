@@ -96,7 +96,7 @@ func PullFromLicense(socket string, licenseData string, downstream string, names
 }
 
 //export RewriteVersion
-func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages bool, marshalledConfigValues string) {
+func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages, isAirgap bool, marshalledConfigValues string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -222,6 +222,7 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 			K8sNamespace:      k8sNamespace,
 			ReportWriter:      statusClient.getOutputWriter(),
 			CopyImages:        copyImages,
+			IsAirgap:          isAirgap,
 			RegistryEndpoint:  registryInfo.Host,
 			RegistryUsername:  registryInfo.Username,
 			RegistryPassword:  registryInfo.Password,

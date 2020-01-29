@@ -16,12 +16,13 @@ type WriteUpstreamImageOptions struct {
 	SourceRegistry registry.RegistryOptions
 	DestRegistry   registry.RegistryOptions
 	DryRun         bool
+	IsAirgap       bool
 	Log            *logger.Logger
 	ReportWriter   io.Writer
 }
 
 func CopyUpstreamImages(options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.DryRun)
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.DryRun, options.IsAirgap)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
