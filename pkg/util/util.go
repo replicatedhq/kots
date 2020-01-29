@@ -2,9 +2,17 @@ package util
 
 import (
 	"bytes"
+	crand "crypto/rand"
 	"fmt"
+	"math/big"
+	rand "math/rand"
 	"net/url"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func IsURL(str string) bool {
 	_, err := url.ParseRequestURI(str)
@@ -60,6 +68,57 @@ func IntPointer(x int) *int64 {
 	var xout int64
 	xout = int64(x)
 	return &xout
+}
+
+var passwordLetters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+// generates a [0-9a-zA-Z] password of the specified length
+func GenPassword(length int) string {
+	lettersLen := big.NewInt(int64(len(passwordLetters)))
+
+	var outRunes []rune
+	for i := 0; i < length; i++ {
+		cryptoRandNum, err := crand.Int(crand.Reader, lettersLen)
+		var randNum int64
+		if err != nil {
+			// print error message and fallback to math.rand's number generator
+			fmt.Printf("failed to get cryptographically random number: %v\n", err)
+			randNum = int64(rand.Intn(len(passwordLetters)))
+		} else {
+			randNum = cryptoRandNum.Int64()
+		}
+
+		outRunes = append(outRunes, passwordLetters[randNum])
+	}
+	return string(outRunes)
+}
+
+// CompareStringArrays returns true if all elements in arr1 are present in arr2 and the other way around.
+// it does not check for equal counts of duplicates, or for ordering.
+func CompareStringArrays(arr1, arr2 []string) bool {
+	for _, str1 := range arr1 {
+		foundMatch := false
+		for _, str2 := range arr2 {
+			if str1 == str2 {
+				foundMatch = true
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+	for _, str2 := range arr2 {
+		foundMatch := false
+		for _, str1 := range arr1 {
+			if str1 == str2 {
+				foundMatch = true
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+	return true
 }
 
 type ActionableError struct {

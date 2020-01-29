@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +23,7 @@ func jwtSecret(namespace string, jwt string) *corev1.Secret {
 			Name:      "kotsadm-session",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -47,7 +48,7 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 			Name:      "kotsadm-postgres",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -69,7 +70,7 @@ func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 			Name:      "kotsadm-password",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -90,7 +91,7 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 			Name:      "kotsadm-minio",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -112,7 +113,7 @@ func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 			Name:      "kotsadm-encryption",
 			Namespace: namespace,
 			Labels: map[string]string{
-				KotsadmKey: KotsadmLabelValue,
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string][]byte{

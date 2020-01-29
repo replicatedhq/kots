@@ -5,7 +5,9 @@ import (
 	"path"
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/auth"
 	kotsupload "github.com/replicatedhq/kots/pkg/upload"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,6 +35,7 @@ func Test_Upload(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.path, func(t *testing.T) {
 			req := require.New(t)
+			auth.SetAuthSlugCache("Kots " + util.GenPassword(32))
 
 			uploadOptions := kotsupload.UploadOptions{
 				Namespace:       test.namespace,

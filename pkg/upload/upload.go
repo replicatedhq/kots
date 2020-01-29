@@ -16,6 +16,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -168,7 +169,7 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 			"slug":         uploadOptions.ExistingAppSlug,
 			"versionLabel": uploadOptions.versionLabel,
 			"updateCursor": uploadOptions.updateCursor,
-			// Intnetionally not including registry info here.  Updating settings should be its own thing.
+			// Intentionally not including registry info here.  Updating settings should be its own thing.
 		}
 		b, err := json.Marshal(metadata)
 		if err != nil {
@@ -217,11 +218,17 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		return nil, errors.Wrap(err, "failed to close writer")
 	}
 
+	authSlug, err := auth.GetOrCreateAuthSlug(uploadOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get auth slug")
+	}
+
 	req, err := http.NewRequest(method, uri, body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new request")
 	}
 
+	req.Header.Set("Authorization", authSlug)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return req, nil
 }

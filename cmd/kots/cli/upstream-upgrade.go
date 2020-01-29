@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -66,7 +67,21 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			if viper.GetBool("deploy") {
 				updateCheckURI = fmt.Sprintf("%s?deploy=true", updateCheckURI)
 			}
-			resp, err := http.Post(updateCheckURI, "application/json", strings.NewReader("{}"))
+
+			authSlug, err := auth.GetOrCreateAuthSlug(v.GetString("namespace"))
+			if err != nil {
+				log.FinishSpinnerWithError()
+				return errors.Wrap(err, "failed to get kotsadm auth slug")
+			}
+
+			newReq, err := http.NewRequest("POST", updateCheckURI, strings.NewReader("{}"))
+			if err != nil {
+				log.FinishSpinnerWithError()
+				return errors.Wrap(err, "failed to create update check request")
+			}
+			newReq.Header.Add("Content-Type", "application/json")
+			newReq.Header.Add("Authorization", authSlug)
+			resp, err := http.DefaultClient.Do(newReq)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to check for updates")

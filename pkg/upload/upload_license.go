@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
@@ -111,11 +112,17 @@ func createUploadLicenseRequest(license string, uploadLicenseOptions UploadLicen
 		return nil, errors.Wrap(err, "failed to marshal json")
 	}
 
+	authSlug, err := auth.GetOrCreateAuthSlug(uploadLicenseOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kotsadm auth slug")
+	}
+
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(b))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new request")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", authSlug)
 	return req, nil
 }
