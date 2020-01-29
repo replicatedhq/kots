@@ -32,6 +32,7 @@ type RewriteOptions struct {
 	ConfigValues      *kotsv1beta1.ConfigValues
 	ReportWriter      io.Writer
 	CopyImages        bool
+	IsAirgap          bool
 	RegistryEndpoint  string
 	RegistryUsername  string
 	RegistryPassword  string
@@ -122,7 +123,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Username:  rewriteOptions.RegistryUsername,
 				Password:  rewriteOptions.RegistryPassword,
 			},
-			DryRun: !rewriteOptions.CopyImages,
+			DryRun:   !rewriteOptions.CopyImages,
+			IsAirgap: rewriteOptions.IsAirgap,
 		}
 		if fetchOptions.License != nil {
 			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug

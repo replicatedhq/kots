@@ -1,7 +1,7 @@
 package types
 
 import (
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type DeployOptions struct {
@@ -22,6 +22,6 @@ type DeployOptions struct {
 	NodePort               int32
 	Hostname               string
 	ApplicationMetadata    []byte
-	LimitRange             *v1.LimitRange
+	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool // true if the application is being deployed to an OpenShift cluster
 }

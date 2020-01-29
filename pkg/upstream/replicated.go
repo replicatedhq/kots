@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -181,7 +182,11 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 
 	// Add the license to the upstream, if one was propvided
 	if license != nil {
-		release.Manifests["userdata/license.yaml"] = MustMarshalLicense(license)
+		latestLicense, err := kotslicense.GetLatestLicense(license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest license")
+		}
+		release.Manifests["userdata/license.yaml"] = MustMarshalLicense(latestLicense)
 	}
 
 	files, err := releaseToFiles(release)

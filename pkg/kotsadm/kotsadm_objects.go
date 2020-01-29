@@ -40,10 +40,15 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 				Verbs:     metav1.Verbs{"create"},
 			},
 			{
-				APIGroups:     []string{""},
-				Resources:     []string{"secrets"},
-				ResourceNames: []string{"kotsadm-encryption", "kotsadm-gitops", auth.KotsadmAuthstringSecretName},
-				Verbs:         metav1.Verbs{"get", "update"},
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				ResourceNames: []string{
+					"kotsadm-encryption",
+					"kotsadm-gitops",
+					"kotsadm-password",
+					auth.KotsadmAuthstringSecretName,
+				},
+				Verbs: metav1.Verbs{"get", "update"},
 			},
 			{
 				APIGroups: []string{""},
