@@ -145,6 +145,11 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
+		license, err = kotslicense.GetLatestLicense(license)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest license")
+		}
+
 		release = downloadedRelease
 	}
 
@@ -186,13 +191,9 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		release.Manifests["userdata/config.yaml"] = mustMarshalConfigValues(configValues)
 	}
 
-	// Add the license to the upstream, if one was propvided
+	// Add the license to the upstream, if one was provided
 	if license != nil {
-		latestLicense, err := kotslicense.GetLatestLicense(license)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest license")
-		}
-		release.Manifests["userdata/license.yaml"] = MustMarshalLicense(latestLicense)
+		release.Manifests["userdata/license.yaml"] = MustMarshalLicense(license)
 	}
 
 	files, err := releaseToFiles(release)
