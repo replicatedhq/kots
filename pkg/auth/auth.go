@@ -16,10 +16,21 @@ import (
 const KotsadmAuthstringSecretName = "kotsadm-authstring"
 const KotsadmAuthstringSecretKey = "kotsadm-authstring"
 
+var authSlugCache string
+
+// ThisIsATest disables secret fetch/creation in the auth package
+func SetAuthSlugCache(newval string) {
+	authSlugCache = newval
+}
+
 // GetOrCreateAuthSlug will check for an authslug secret in the provided namespace
 // if one exists, it will return the value from that secret
 // if none exists, it will create one and return that value
 func GetOrCreateAuthSlug(namespace string) (string, error) {
+	if authSlugCache != "" {
+		return authSlugCache, nil
+	}
+
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -58,8 +69,10 @@ func GetOrCreateAuthSlug(namespace string) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create new kotsadm authstring secret")
 		}
+		SetAuthSlugCache(newAuthstring)
 		return newAuthstring, nil
 	}
 
+	SetAuthSlugCache(string(existingSecret.Data[KotsadmAuthstringSecretKey]))
 	return string(existingSecret.Data[KotsadmAuthstringSecretKey]), nil
 }
