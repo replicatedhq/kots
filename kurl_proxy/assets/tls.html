@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="Form to upload TLS certificate and key">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TLS Certificate and Key Upload</title>
+  <link rel="stylesheet" href="/tls/assets/tls-custom.css" />
+  <script src="/tls/assets/tls.js"></script>
+</head>
+
+<body>
+  {{if .Enabled}}
+  <div class="u-minHeight--full u-width--full flex-column flex1">
+    <div class="flex-1-auto flex u-width--full justifyContent--center alignItems--center">
+      <div class="flex flex-column justifyContent--center alignItems--center">
+        <div class="borderWrapper flex-column flex">
+          <div class="flex u-marginBottom--8">
+            {{if .AppIcon }}<img class="appIcon flex flex-auto" src="{{ .AppIcon }}" />{{end}}
+            <div class="flex-column flex1 justifyContent--center">
+              <p class="tls-header">HTTPS for {{ .AppTitle }} admin console</p>
+            </div>
+          </div>
+          <p class="tls-header-sub">We're currently using a self-signed TLS certificate to secure the
+            communication between your browser & the management console. If you don't upload your own
+            TLS cert, you'll see a warning about this in your browser every time you access the
+            management console.</p>
+          <div>
+            <p class="tls-section-header">Private key & certificate</p>
+            <p class="tls-section-sub">Files will be uploaded directly to the mangement server & will never leave.</p>
+          </div>
+          <form id="upload-form" class="flex-column" action="" method="post" enctype="multipart/form-data">
+            <div>
+              <p class="tls-section-header2">Hostname</p>
+              <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
+              <input id="hostname" class="form-input larger" type="text" name="hostname" placeholder="app.yourdomain.com"
+                style="width: 250px; margin-bottom: 20px;" />
+            </div>
+            <div class="flex upload-form">
+              <div class="u-position--relative flex-column flex-auto upload">
+                <div>
+                  <label class="tls-section-header2">Upload private key</label>
+                  <input type="file" name="key" id="key" class="inputkey" />
+                  <label for="key" class="btn secondary u-marginTop--8">Choose private key</label>
+                </div>
+              </div>
+              <div class="u-position--relative flex-column flex-auto u-marginRight--15 upload">
+                <div>
+                  <label class="tls-section-header2">Upload SSL certificate</label>
+                  <input type="file" name="cert" id="cert" class="inputcert" />
+                  <label for="cert" class="btn secondary u-marginTop--8">Choose SSL certificate</label>
+                </div>
+              </div>
+            </div>
+
+            <div id="error" style="display: none">
+              <div class="notification is-warning">
+                <p>The certficate and key pair you uploaded are invalid</p>
+              </div>
+            </div>
+
+            <div class="button-wrapper flex alignItems--center">
+              <button class="btn primary" type="submit">Upload &amp; continue</button>
+              <div class="flex-column justifyContent--center">
+                <button id="skip-button" class="text-button" type="submit" formaction="/tls/skip">Skip &amp;
+                  continue</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{else}}
+
+  <div class="tlsContent--wrapper">
+    <div class="notification is-info">
+      <p>Anonymous uploads have been disabled. Set acceptAnonymousUploads to 1 in the {{ .Secret }} secret to re-enable.
+      </p>
+    </div>
+  </div>
+  {{end}}
+</body>
+
+</html>

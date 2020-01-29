@@ -99,10 +99,20 @@ steps:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite
-          workdir: /go/src/github.com/replicatedhq/kotsadm/operator
+          workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
       - "operator/bin/**/*"
       - "operator/pacts/**/*"
+
+  - label: "build-kurl_proxy"
+    command: make -C kurl_proxy test build
+    plugins:
+      - docker#v3.5.0:
+          always-pull: true
+          image: replicated/gitops-builder:buildkite
+          workdir: /go/src/github.com/replicatedhq/kotsadm
+    artifact_paths:
+      - "kurl_proxy/bin/**/*"
 
   ## wait for consumers to finish so that pact tests are in the broker (above here are consumers, below are providers)
   - wait
@@ -192,6 +202,21 @@ steps:
       - if [ ! -z "$BUILDKITE_TAG" ]; then cp operator/bin/kotsadm-operator operator/deploy/bin/kotsadm-operator; fi
       - if [ ! -z "$BUILDKITE_TAG" ]; then chmod +x operator/deploy/bin/kotsadm-operator; fi
       - if [ ! -z "$BUILDKITE_TAG" ]; then make -C operator build-release; fi
+
+  - label: "kurl_proxy alpha release"
+    commands:
+      - mkdir -p kurl_proxy/bin
+      - buildkite-agent artifact download kurl_proxy/bin/* . --step build-kurl_proxy
+      - chmod +x kurl_proxy/bin/kurl_proxy
+      - make -C kurl_proxy build-alpha
+    branches: "master"
+
+  - label: "kurl_proxy tagged release"
+    commands:
+      - if [ ! -z "$BUILDKITE_TAG" ]; then mkdir -p kurl_proxy/bin kurl_proxy/bin; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then buildkite-agent artifact download kurl_proxy/bin/* . --step build-kurl_proxy; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then chmod +x kurl_proxy/bin/kurl_proxy; fi
+      - if [ ! -z "$BUILDKITE_TAG" ]; then make -C kurl_proxy build-release; fi
 
   - label: "minio alpha release"
     commands:

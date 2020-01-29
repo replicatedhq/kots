@@ -1,0 +1,11 @@
+apiVersion: skaffold/v1beta13
+kind: Config
+build:
+  artifacts:
+    - image: kurl/proxy
+      context: "."
+      docker:
+        dockerfile: Dockerfile.skaffold
+deploy:
+  kustomize:
+    path: "./kustomize"
