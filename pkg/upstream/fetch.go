@@ -22,6 +22,7 @@ type FetchOptions struct {
 	Airgap              *kotsv1beta1.Airgap
 	EncryptionKey       string
 	CurrentCursor       string
+	CurrentChannel      string
 	CurrentVersionLabel string
 }
 
@@ -75,9 +76,15 @@ func pickVersionLabel(fetchOptions *FetchOptions) string {
 	return fetchOptions.CurrentVersionLabel
 }
 
-func pickCursor(fetchOptions *FetchOptions) string {
+func pickCursor(fetchOptions *FetchOptions) ReplicatedCursor {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.UpdateCursor != "" {
-		return fetchOptions.Airgap.Spec.UpdateCursor
+		return ReplicatedCursor{
+			ChannelName: fetchOptions.Airgap.Spec.ChannelName,
+			Cursor:      fetchOptions.Airgap.Spec.UpdateCursor,
+		}
 	}
-	return fetchOptions.CurrentCursor
+	return ReplicatedCursor{
+		ChannelName: fetchOptions.CurrentChannel,
+		Cursor:      fetchOptions.CurrentCursor,
+	}
 }

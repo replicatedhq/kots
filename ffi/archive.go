@@ -7,6 +7,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/upstream"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -24,15 +25,18 @@ func extractArchive(rootPath, fromArchivePath string) (*archiver.TarGz, error) {
 	return tarGz, nil
 }
 
-func readCursorFromPath(installationFilePath string) (string, error) {
+func readCursorFromPath(installationFilePath string) (upstream.ReplicatedCursor, error) {
 	installation, err := loadInstallationFromPath(installationFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return "", nil
+			return upstream.ReplicatedCursor{}, nil
 		}
-		return "", errors.Wrap(err, "failed to read installation file")
+		return upstream.ReplicatedCursor{}, errors.Wrap(err, "failed to read installation file")
 	}
-	return installation.Spec.UpdateCursor, nil
+	return upstream.ReplicatedCursor{
+		ChannelName: installation.Spec.ChannelName,
+		Cursor:      installation.Spec.UpdateCursor,
+	}, nil
 }
 
 func loadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {

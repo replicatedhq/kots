@@ -7,12 +7,13 @@ import (
 )
 
 type GetUpdatesOptions struct {
-	HelmRepoURI   string
-	Namespace     string
-	LocalPath     string
-	LicenseFile   string
-	CurrentCursor string
-	Silent        bool
+	HelmRepoURI    string
+	Namespace      string
+	LocalPath      string
+	LicenseFile    string
+	CurrentCursor  string
+	CurrentChannel string
+	Silent         bool
 }
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
@@ -30,6 +31,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
+	fetchOptions.CurrentChannel = getUpdatesOptions.CurrentChannel
 
 	if getUpdatesOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(getUpdatesOptions.LicenseFile)

@@ -120,3 +120,11 @@ func CompareStringArrays(arr1, arr2 []string) bool {
 	}
 	return true
 }
+
+type ActionableError struct {
+	Message string
+}
+
+func (e ActionableError) Error() string {
+	return fmt.Sprintf("%s", e.Message)
+}

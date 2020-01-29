@@ -325,7 +325,13 @@ func Test_getRequest(t *testing.T) {
 		r := &ReplicatedUpstream{
 			Channel: test.channel,
 		}
-		request, err := r.getRequest("GET", license, test.channelSequence)
+		cursor := ReplicatedCursor{
+			Cursor: test.channelSequence,
+		}
+		if test.channel != nil {
+			cursor.ChannelName = *test.channel
+		}
+		request, err := r.getRequest("GET", license, cursor)
 		req.NoError(err)
 		assert.Equal(t, test.expectedURL, request.URL.String())
 	}
