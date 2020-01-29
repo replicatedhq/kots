@@ -110,7 +110,7 @@ export class UserStore {
     }
 
     // Ship
-    q = `select email, first_name, last_name, password_bcrypt from ship_user_local where user_id = $1`;
+    q = `select email, first_name, last_name from ship_user_local where user_id = $1`;
     v = [id];
     result = await this.pool.query(q, v);
     if (result.rowCount > 0) {
@@ -118,7 +118,6 @@ export class UserStore {
         firstName: result.rows[0].first_name,
         lastName: result.rows[0].last_name,
         email: result.rows[0].email,
-        passwordCrypt: result.rows[0].password_bcrypt,
       };
     }
 
@@ -162,41 +161,6 @@ export class UserStore {
     }
   }
 
-  public async createPasswordUser(email: string, password: string, firstName: string, lastName: string): Promise<User> {
-    const id = randomstring.generate({ capitalization: "lowercase" });
-    const pg = await this.pool.connect();
-
-    try {
-      await pg.query("begin");
-
-      let q = `insert into ship_user (id, created_at, last_login) values ($1, $2, $3)`;
-      let v = [
-          id,
-          new Date(),
-          new Date(),
-      ];
-      await pg.query(q, v);
-
-      q = `insert into ship_user_local (user_id, password_bcrypt, first_name, last_name, email) values ($1, $2, $3, $4, $5)`;
-      v = [
-        id,
-        await bcrypt.hash(password, 10),
-        firstName,
-        lastName,
-        email,
-      ];
-      await pg.query(q, v);
-
-      await pg.query("commit");
-
-      return this.getUser(id);
-    } catch(err) {
-      await pg.query("rollback");
-      throw err;
-    } finally {
-      pg.release();
-    }
-  }
 
   async trackScmLead(preference: string, email: string, provider: string): Promise<string> {
     const id = randomstring.generate({ capitalization: "lowercase" });
