@@ -18,7 +18,8 @@ const KotsadmAuthstringSecretKey = "kotsadm-authstring"
 
 var authSlugCache string
 
-// ThisIsATest disables secret fetch/creation in the auth package
+// SetAuthSlugCache sets the auth slug to be used instead of querying kubernetes
+// this improves run speed by reducing the number of queries, and also allows testing without a kubernetes cluster available
 func SetAuthSlugCache(newval string) {
 	authSlugCache = newval
 }
