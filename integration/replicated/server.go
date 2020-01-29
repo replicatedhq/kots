@@ -2,15 +2,25 @@ package replicated
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
-func StartMockServer(endpoint string, appSlug string, licenseID string, archive []byte) (chan bool, error) {
+func StartMockServer(endpoint string, appSlug string, licenseID string, archive, license []byte) (chan bool, error) {
 	stopCh := make(chan bool)
 
 	srv := &http.Server{Addr: ":3000"}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/release/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("handling URL %s with release tarball\n", r.URL)
 		w.Write(archive)
+	})
+	http.HandleFunc("/license/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("handling URL %s with license file\n", r.URL)
+		w.Write(license)
+	})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("WARNING! unable to handle url %s", r.URL)
+		w.WriteHeader(501)
 	})
 
 	go func() {
