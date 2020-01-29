@@ -44,7 +44,7 @@ function kots() {
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString, GoString]],
     PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString, GoString]],
-    ListUpdates: ["void", [GoString, GoString, GoString]],
+    ListUpdates: ["void", [GoString, GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoBool, GoString]],
@@ -62,7 +62,7 @@ export interface Update {
   versionLabel: string;
 }
 
-export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string): Promise<Update[]> {
+export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string, currentChannel: string): Promise<Update[]> {
   // We need to include the last archive because if there is an update, the ffi function will update it
   const tmpDir = tmp.dirSync();
 
@@ -82,9 +82,13 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
     currentCursorParam["p"] = currentCursor ? currentCursor : "";
     currentCursorParam["n"] = currentCursor ? currentCursor.length : 0;
 
+    const currentChannelParam = new GoString();
+    currentChannelParam["p"] = currentChannel ? currentChannel : "";
+    currentChannelParam["n"] = currentChannel ? currentChannel.length : 0;
+
     console.log(`Check for updates current cursor = ${currentCursor}`);
 
-    kots().ListUpdates(socketParam, licenseDataParam, currentCursorParam);
+    kots().ListUpdates(socketParam, licenseDataParam, currentCursorParam, currentChannelParam);
 
     await statusServer.connection();
     const update: Update[] = await statusServer.termination((resolve, reject, obj): boolean => {
@@ -92,7 +96,7 @@ export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string
         if (obj.exit_code === 0) {
           resolve(JSON.parse(obj.data) as Update[]);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -166,7 +170,7 @@ export async function kotsAppDownloadUpdate(cursor: string, app: KotsApp, regist
         if (obj.exit_code !== -1) {
           resolve(obj.exit_code);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -231,7 +235,7 @@ export async function kotsAppDownloadUpdateFromAirgap(airgapFile: string, app: K
         if (obj.exit_code !== -1) {
           resolve(obj.exit_code);
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -281,7 +285,7 @@ export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string
         if (obj.exit_code !== -1) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -330,7 +334,7 @@ export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp,
         if (obj.exit_code !== -1) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -381,6 +385,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
     installationSpec.versionLabel,
     installationSpec.releaseNotes,
     installationSpec.cursor,
+    installationSpec.channelName,
     installationSpec.encryptionKey,
     supportBundleSpec,
     analyzersSpec,
@@ -479,7 +484,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
         if (obj.exit_code === 0) {
           resolve();
         } else {
-          reject(new Error(`process failed: ${obj.display_message}`));
+          reject(new Error(obj.display_message));
         }
         return true;
       }
@@ -519,6 +524,7 @@ export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, 
       installationSpec.versionLabel,
       installationSpec.releaseNotes,
       installationSpec.cursor,
+      installationSpec.channelName,
       installationSpec.encryptionKey,
       supportBundleSpec,
       analyzersSpec,
@@ -646,6 +652,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     installationSpec.versionLabel,
     installationSpec.releaseNotes,
     installationSpec.cursor,
+    installationSpec.channelName,
     installationSpec.encryptionKey,
     supportBundleSpec,
     analyzersSpec,

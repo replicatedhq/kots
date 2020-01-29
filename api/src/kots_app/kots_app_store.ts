@@ -18,6 +18,11 @@ export enum UndeployStatus {
   Failed = "failed",
 }
 
+interface UpdateCursor {
+  cursor: string;
+  channelName: string;
+}
+
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 
@@ -521,6 +526,7 @@ export class KotsAppStore {
     versionLabel: string,
     releaseNotes: string,
     updateCursor: string,
+    channelName: string,
     encryptionKey: string,
     supportBundleSpec: any,
     analyzersSpec: any,
@@ -534,14 +540,15 @@ export class KotsAppStore {
     appIcon: string | null,
     backupSpec: any,
   ): Promise<void> {
-    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, encryption_key,
+    const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
         supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       ON CONFLICT(app_id, sequence) DO UPDATE SET
       created_at = EXCLUDED.created_at,
       version_label = EXCLUDED.version_label,
       release_notes = EXCLUDED.release_notes,
       update_cursor = EXCLUDED.update_cursor,
+      channel_name = EXCLUDED.channel_name,
       encryption_key = EXCLUDED.encryption_key,
       supportbundle_spec = EXCLUDED.supportbundle_spec,
       analyzer_spec = EXCLUDED.analyzer_spec,
@@ -560,6 +567,7 @@ export class KotsAppStore {
       versionLabel,
       releaseNotes,
       updateCursor,
+      channelName,
       encryptionKey,
       supportBundleSpec,
       analyzersSpec,
@@ -873,7 +881,7 @@ order by sequence desc`;
     ];
     let result = await this.pool.query(q, v);
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`No current version found`);
+      throw new ReplicatedError(`No current downstream version found`);
     }
     const sequence = result.rows[0].current_sequence;
 
@@ -1088,8 +1096,8 @@ order by adv.sequence desc`;
     return parseInt(result.rows[0].sequence);
   }
 
-  async getMidstreamUpdateCursor(appId: string): Promise<string> {
-    const q = `select update_cursor from app_version where app_id = $1 order by sequence desc limit 1`;
+  async getMidstreamUpdateCursor(appId: string): Promise<UpdateCursor> {
+    const q = `select update_cursor, channel_name from app_version where app_id = $1 order by sequence desc limit 1`;
     const v = [
       appId,
     ];
@@ -1097,10 +1105,16 @@ order by adv.sequence desc`;
     const result = await this.pool.query(q, v);
 
     if (result.rows.length === 0) {
-      return "";
+      return {
+        cursor: "",
+        channelName: "",
+      };
     }
 
-    return result.rows[0].update_cursor;
+    return {
+      cursor: result.rows[0].update_cursor,
+      channelName: result.rows[0].channel_name,
+    };
   }
 
   async getReleaseNotes(appId: string, sequence: number): Promise<string | undefined> {

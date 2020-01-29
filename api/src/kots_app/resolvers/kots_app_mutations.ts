@@ -8,10 +8,10 @@ import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { uploadUpdate } from "../../controllers/kots/KotsAPI";
+import { uploadUpdate, syncLicense } from "../../controllers/kots/KotsAPI";
 import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteVersion, kotsAppDownloadUpdates } from "../kots_ffi";
 import { Update } from "../kots_ffi";
-import { KotsAppRegistryDetails } from "../kots_app"
+import { KotsAppRegistryDetails, KotsApp } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
 import { kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
@@ -54,15 +54,12 @@ export function KotsMutations(stores: Stores) {
     },
 
     async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
-      const { appId } = args;
-
-      const app = await context.getApp(appId);
-      const cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
-
       const updateStatus = await stores.kotsAppStore.getUpdateDownloadStatus();
       if (updateStatus.status === "running") {
         return 0;
       }
+
+      const { appId } = args;
 
       const liveness = new Repeater(() => {
         return new Promise((resolve) => {
@@ -72,13 +69,22 @@ export function KotsMutations(stores: Stores) {
         });
       }, 1000);
 
+      let app: KotsApp;
+      let cursor: any;
+
       let updatesAvailable: Update[];
       try {
-        await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
-
         liveness.start();
 
-        updatesAvailable = await kotsAppCheckForUpdates(app, cursor);
+        app = await context.getApp(appId);
+        await stores.kotsAppStore.setUpdateDownloadStatus("Syncing license...", "running");
+        await syncLicense(stores, app, null);
+
+        app = await context.getApp(appId);
+        cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);  
+
+        await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
+        updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
       } catch(err) {
         liveness.stop();
         await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
