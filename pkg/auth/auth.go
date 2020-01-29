@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -31,6 +33,7 @@ func GetOrCreateAuthSlug(namespace string) (string, error) {
 	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(KotsadmAuthstringSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
+			fmt.Printf("\nUnable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.\n\n", namespace)
 			return "", errors.Wrap(err, "failed to check for existing kotsadm authstring secret")
 		}
 
