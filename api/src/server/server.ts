@@ -125,7 +125,7 @@ export class Server extends ServerLoader {
       kurlStore: new KurlStore(pool, params),
       metricStore: new MetricStore(pool, params, paramsStore),
       paramsStore: new ParamsStore(pool, params),
-    }
+    };
 
     logger.info({msg: "ensuring a local cluster exists"});
     if (!process.env["AUTO_CREATE_CLUSTER_TOKEN"]) {
