@@ -11,10 +11,13 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsclientset "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/template"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 //export RenderFile
@@ -69,6 +72,20 @@ func RenderFile(socket string, filePath string, archivePath string) {
 			}
 			cipher = c
 		}
+
+		cfg, err := k8sconfig.GetConfig()
+		if err != nil {
+			ffiResult = NewFFIResult(-1).WithError(errors.Wrap(err, "failed to create kotsv1beta1 config"))
+			return
+		}
+		clientset, err := kotsclientset.NewForConfigOrDie(cfg)
+		if err != nil {
+			ffiResult = NewFFIResult(-1).WithError(errors.Wrap(err, "failed to create kotsv1beta1 clientset"))
+			return
+		}
+
+		kurlValueses := clientset.KurlValueses("default")
+		_, err = kurlValueses.Get("demo", metav1.GetOptions{})
 
 		if config != nil {
 			templateContextValues := make(map[string]template.ItemValue)

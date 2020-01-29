@@ -20,6 +20,7 @@ package v1beta1
 import (
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -31,6 +32,7 @@ type KotsV1beta1Interface interface {
 	ConfigValuesesGetter
 	HelmChartsGetter
 	InstallationsGetter
+	KurlValuesesGetter
 	LicensesGetter
 }
 
@@ -61,6 +63,10 @@ func (c *KotsV1beta1Client) HelmCharts(namespace string) HelmChartInterface {
 
 func (c *KotsV1beta1Client) Installations(namespace string) InstallationInterface {
 	return newInstallations(c, namespace)
+}
+
+func (c *KotsV1beta1Client) KurlValueses(namespace string) KurlValuesInterface {
+	return newKurlValueses(c, namespace)
 }
 
 func (c *KotsV1beta1Client) Licenses(namespace string) LicenseInterface {
@@ -99,7 +105,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1beta1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()

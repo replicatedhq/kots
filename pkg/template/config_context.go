@@ -97,6 +97,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionData":      ctx.configOptionData,
 		"ConfigOptionEquals":    ctx.configOptionEquals,
 		"ConfigOptionNotEquals": ctx.configOptionNotEquals,
+		"Mike":                  ctx.mike,
 	}
 }
 
@@ -106,6 +107,26 @@ func (ctx ConfigCtx) configOption(name string) string {
 		return ""
 	}
 	return v
+}
+
+func (ctx ConfigCtx) mike() string {
+
+	// keys := make([]string, len(ctx.ItemValues))
+	// i := 0
+	// for item := range ctx.ItemValues {
+	// 	keys[i] = item
+	// 	i++
+	// }
+	// keys := strings.Join(keys, "|")
+
+	// // values := make([]string, len(keys))
+	// var val string
+	// for i, thing := range keys {
+	// 	val += keys[i]
+	// 	val += "|"
+	// }
+	return "mike"
+
 }
 
 func (ctx ConfigCtx) configOptionIndex(name string) string {

@@ -29,4 +29,6 @@ type HelmChartExpansion interface{}
 
 type InstallationExpansion interface{}
 
+type KurlValuesExpansion interface{}
+
 type LicenseExpansion interface{}
