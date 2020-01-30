@@ -161,6 +161,7 @@ class UploadAirgapBundle extends React.Component {
     }
 
     xhr.open("POST", url);
+    xhr.setRequestHeader("Authorization", Utilities.getToken());
     xhr.send(formData);
   }
 

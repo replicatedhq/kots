@@ -78,7 +78,8 @@ export function KotsMutations(stores: Stores) {
 
         app = await context.getApp(appId);
         await stores.kotsAppStore.setUpdateDownloadStatus("Syncing license...", "running");
-        await syncLicense(stores, app, null);
+
+        await syncLicense(stores, app, "");
 
         app = await context.getApp(appId);
         cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);  

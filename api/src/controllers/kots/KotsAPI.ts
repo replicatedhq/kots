@@ -33,6 +33,7 @@ import {
   Update,
   kotsAppCheckForUpdates,
   kotsAppDownloadUpdates,
+  kotsRewriteVersion,
   kotsAppDownloadUpdateFromAirgap
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
@@ -688,7 +689,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   };
 }
 
-export async function syncLicense(stores, app, airgapLicense) {
+export async function syncLicense(stores, app, airgapLicense: string) {
   const license = await stores.kotsLicenseStore.getAppLicenseSpec(app.id);
 
   if (!license) {
@@ -696,12 +697,15 @@ export async function syncLicense(stores, app, airgapLicense) {
   }
 
   let latestLicense;
-  if (airgapLicense && airgapLicense !== "") {
-    if (!app.isAirgap) {
-      throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is not airgap enabled`);
+  if (app.isAirgap) {
+    if (airgapLicense === "") {
+      throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is airgap enabled and no license data supplied`);
     }
     latestLicense = await verifyAirgapLicense(airgapLicense)
   } else {
+    if (airgapLicense !== "") {
+        throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is not airgap enabled`);
+    }
     latestLicense = await getLatestLicense(license);
   }
 
@@ -752,7 +756,21 @@ export async function syncLicense(stores, app, airgapLicense) {
   const bundlePacker = new TarballPacker();
   const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
 
-  await uploadUpdate(stores, app.slug, tarGzBuffer, "License Update");
+  const tmpDir = tmp.dirSync();
+  try {
+    const inputArchivePath = path.join(tmpDir.name, "input.tar.gz");
+    const outputArchive = path.join(tmpDir.name, "output.tar.gz");
+    fs.writeFileSync(inputArchivePath, tarGzBuffer);
+
+    const downstreams = await stores.kotsAppStore.listDownstreamsForApp(app.id);
+    const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(app.id);
+    await kotsRewriteVersion(app, inputArchivePath, downstreams, registrySettings, false, outputArchive, stores, "");
+    const outputTgzBuffer = fs.readFileSync(outputArchive);
+    await uploadUpdate(stores, app.slug, outputTgzBuffer, "License Update");
+
+  } finally {
+    tmpDir.removeCallback();
+  }
 
   return getLicenseInfoFromYaml(latestLicense);
 }
