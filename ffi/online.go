@@ -64,6 +64,7 @@ func PullFromLicense(socket string, licenseData string, downstream string, names
 			RootDir:             tmpRoot,
 			ExcludeAdminConsole: true,
 			CreateAppDir:        false,
+			ReportWriter:        statusClient.getOutputWriter(),
 		}
 
 		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {

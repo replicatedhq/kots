@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -101,6 +102,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	log.Initialize()
 
+	if pullOptions.ReportWriter == nil {
+		pullOptions.ReportWriter = ioutil.Discard
+	}
+
 	uri, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse uri")
@@ -158,6 +163,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
+	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -187,6 +193,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		Log:               log,
 	}
 	log.ActionWithSpinner("Creating base")
+	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
 	b, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
@@ -210,6 +217,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.RewriteImages {
 
 		log.ActionWithSpinner("Copying private images")
+		io.WriteString(pullOptions.ReportWriter, "Copying private images\n")
 
 		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
@@ -344,6 +352,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	log.ActionWithSpinner("Creating midstream")
+	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
 
 	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
 	if err != nil {
@@ -361,6 +370,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	for _, downstreamName := range pullOptions.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
+		io.WriteString(pullOptions.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
 		d, err := downstream.CreateDownstream(m, downstreamName)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create downstream")
