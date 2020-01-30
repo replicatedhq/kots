@@ -18,6 +18,11 @@ spec:
         selector: 
           - app=kotsadm-postgres
         timeout: 10s
+    - logs:
+        collectorName: kotsadm-postgres-db
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-postgres 
     - logs: 
         collectorName: kotsadm-api
         name: kots/admin_console
