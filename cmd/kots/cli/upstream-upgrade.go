@@ -71,7 +71,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			authSlug, err := auth.GetOrCreateAuthSlug(v.GetString("namespace"))
 			if err != nil {
 				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to get kotsadm auth slug")
+				log.Info("Unable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.", v.GetString("namespace"))
+				if v.GetBool("debug") {
+					return errors.Wrap(err, "failed to get kotsadm auth slug")
+				}
+				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
 			newReq, err := http.NewRequest("POST", updateCheckURI, strings.NewReader("{}"))
@@ -146,6 +150,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version downloads")
+
+	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")
+	cmd.Flags().MarkHidden("debug")
 
 	return cmd
 }
