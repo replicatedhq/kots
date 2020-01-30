@@ -49,13 +49,6 @@ class UploadAirgapBundle extends React.Component {
   uploadAirgapBundle = async () => {
     const { match, showRegistry } = this.props;
 
-    this.setState({
-      fileUploading: true,
-      errorMessage: "",
-      showSupportBundleCommand: false,
-      onlineInstallErrorMessage: ""
-    });
-
     // Reset the airgap upload state
     const resetUrl = `${window.env.API_ENDPOINT}/kots/airgap/reset/${match.params.slug}`;
     try {
@@ -76,6 +69,13 @@ class UploadAirgapBundle extends React.Component {
       });
       return;
     }
+
+    this.setState({
+      fileUploading: true,
+      errorMessage: "",
+      showSupportBundleCommand: false,
+      onlineInstallErrorMessage: "",
+    });
 
     if (showRegistry) {
       const { slug } = this.props.match.params;
