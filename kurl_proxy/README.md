@@ -15,14 +15,4 @@ Run `make up` to start the proxy on port 8800 while watching for changes to `ass
 
 `assets/` is a static directory that also has some html templates. From the insecure page link to files with `/assets/styles.css` and from the `/tls` page with `/tls/assets/styles.css`.
 
-The proxy will not serve until a secret named kotsadm-tls exists.
-Create a self-signed cert/key pair in the `kotsadm-tls` secret:
-
-```
-source addons/kotsadm/0.9.12/install.sh
-PRIVATE_ADDRESS=<private ip> kotsadm_tls_secret
-```
-
-Delete the secret and run `kotsadm_tls_secret` again to return to a state where uploads are accepted.
-
-For development the upstream is set to itself so it will redirect to the http landing page after a successful upload rather than kotsadm web.
+Delete the secret to return to a state where uploads are accepted.

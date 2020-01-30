@@ -1,0 +1,8 @@
+bases:
+  - ../../base
+
+resources:
+  - ./secret.yaml
+
+patchesStrategicMerge:
+  - ./deployment.yaml

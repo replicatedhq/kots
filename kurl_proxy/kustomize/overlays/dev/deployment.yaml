@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kurl-proxy
+spec:
+  template:
+    spec:
+      containers:
+      - name: proxy
+        env:
+        - name: UPSTREAM_ORIGIN
+          value: http://kotsadm-web:8000

@@ -8,4 +8,4 @@ build:
         dockerfile: Dockerfile.skaffold
 deploy:
   kustomize:
-    path: "./kustomize"
+    path: "./kustomize/overlays/dev"
