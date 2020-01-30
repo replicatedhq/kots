@@ -6,16 +6,16 @@ spec:
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
-    - exec: 
-        args: 
+    - exec:
+        args:
           - "-U"
           - kotsadm
         collectorName: kotsadm-postgres-db
-        command: 
+        command:
           - pg_dump
         containerName: kotsadm-postgres
         name: kots/admin_console
-        selector: 
+        selector:
           - app=kotsadm-postgres
         timeout: 10s
     - logs:
@@ -23,17 +23,22 @@ spec:
         name: kots/admin_console
         selector:
           - app=kotsadm-postgres 
-    - logs: 
+    - logs:
         collectorName: kotsadm-api
         name: kots/admin_console
-        selector: 
+        selector:
           - app=kotsadm-api
-    - logs: 
+    - logs:
         collectorName: kotsadm-operator
         name: kots/admin_console
-        selector: 
+        selector:
           - app=kotsadm-operator
-    - secret: 
+    - logs:
+        collectorName: kotsadm
+        name: kots/admin_console
+        selector:
+          - app=kotsadm
+    - secret:
         collectorName: kotsadm-replicated-registry
         includeValue: false
         key: .dockerconfigjson
