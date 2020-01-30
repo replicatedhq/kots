@@ -1,0 +1,43 @@
+apiVersion: troubleshoot.replicated.com/v1beta1
+kind: Troubleshoot
+metadata:
+  name: support-io
+spec:
+  uploadResultsTo: https://hookb.in/Z26mz8R9VpC7q7eYrWob
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.13.0"
+              message: Sorry, support.io requires at least Kubernetes 1.14.0. Please update your Kubernetes cluster before installing.
+              uri: https://enterprise.support.io/install/requirements/kubernetes
+          - warn:
+              when: "< 1.15.0"
+              message: The version of Kubernetes you are running meets the minimum requirements to run support.io. It's recommended to run Kubernetes 1.15.0 or later.
+              uri: https://enterprise.support.io/install/requirements/kubernetes
+          - pass:
+              when: ">= 1.15.0"
+              message: The version of Kubernetes you have installed meets the required and recommended versions.
+    - storageClass:
+        checkName: Required storage classes
+        storageClassName: "microk8s-hostpath"
+        outcomes:
+          - fail:
+              message: The required storage class was not found in the cluster.
+          - pass:
+              message: The required storage class was found in the cluster.
+    - ingress:
+        namespace: default
+        ingressName: my-app-ingress
+        outcomes:
+          - fail:
+              message: Expected to find an ingress named "my-app-ingress".
+          - pass:
+              message: Expected ingress was found.
+    - customResourceDefinitionName:
+        customResourceDefinitionName: rook
+        outcomes:
+          - fail:
+              message: Rook is required for Support.io. Rook was not found in the cluster.
+          - pass:
+              message: Found a supported version of Rook installed and running in the cluster.
