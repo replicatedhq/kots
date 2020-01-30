@@ -191,6 +191,15 @@ func getHttpServer(fingerprint string) *http.Server {
 			"fingerprintSHA1": fingerprint,
 		})
 	})
+	r.NoRoute(func(c *gin.Context) {
+		target := url.URL{
+			Scheme:   "https",
+			Host:     c.Request.Host,
+			Path:     c.Request.URL.Path,
+			RawQuery: c.Request.URL.RawQuery,
+		}
+		c.Redirect(http.StatusMovedPermanently, target.String())
+	})
 
 	return &http.Server{
 		Handler: r,
