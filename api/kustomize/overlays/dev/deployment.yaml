@@ -51,6 +51,8 @@ spec:
               value: "1"
             - name: SHARED_PASSWORD_BCRYPT
               value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
+            - name: KURL_UTIL_IMAGE
+              value: replicated/kurl-util:alpha
           volumeMounts:
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet

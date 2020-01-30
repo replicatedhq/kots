@@ -462,7 +462,13 @@ async function generateAddNodeCommand(master: boolean): Promise<Command> {
   };
 }
 
+// tslint:disable-next-line cyclomatic-complexity
 async function runKurlUtilJobAndWait(command: string[]) {
+  const kurlUtilImage = process.env["KURL_UTIL_IMAGE"]
+  if (!kurlUtilImage) {
+    throw new Error("Cannot run kurl util job, KURL_UTIL_IMAGE environment variable not set");
+  }
+
   const kc = new KubeConfig();
   kc.loadFromDefault();
 
@@ -493,7 +499,7 @@ async function runKurlUtilJobAndWait(command: string[]) {
             activeDeadlineSeconds: 120,
             containers: [{
               name: "kurl-util-join",
-              image: "replicated/kurl-util:latest",
+              image: kurlUtilImage,
               imagePullPolicy: "IfNotPresent",
               command: command,
               volumeMounts: [{
