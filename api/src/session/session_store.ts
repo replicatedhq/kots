@@ -74,7 +74,7 @@ export class SessionStore {
 
   public async decode(token: string): Promise<Session> {
     //tslint:disable-next-line possible-timing-attack
-    if (token.length > 0 && token !== "null") {
+    if (token && token.length > 0 && token !== "null") {
       try {
         if (token.startsWith("Bearer ")) {
           token = token.split(" ")[1];
