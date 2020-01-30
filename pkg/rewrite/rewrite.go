@@ -50,8 +50,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	log.Initialize()
 
-	if pullOptions.ReportWriter == nil {
-		pullOptions.ReportWriter = ioutil.Discard
+	if rewriteOptions.ReportWriter == nil {
+		rewriteOptions.ReportWriter = ioutil.Discard
 	}
 
 	fetchOptions := &upstream.FetchOptions{
@@ -64,7 +64,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
-	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
+	io.WriteString(rewriteOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(rewriteOptions.UpstreamURI, fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -92,7 +92,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		Log:               log,
 	}
 	log.ActionWithSpinner("Creating base")
-	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
+	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
 	b, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
@@ -208,7 +208,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	log.ActionWithSpinner("Creating midstream")
-	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
+	io.WriteString(rewriteOptions.ReportWriter, "Creating midstream\n")
 
 	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
 	if err != nil {
@@ -226,7 +226,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	for _, downstreamName := range rewriteOptions.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
-		io.WriteString(pullOptions.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
+		io.WriteString(rewriteOptions.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
 		d, err := downstream.CreateDownstream(m, downstreamName)
 		if err != nil {
 			return errors.Wrap(err, "failed to create downstream")
