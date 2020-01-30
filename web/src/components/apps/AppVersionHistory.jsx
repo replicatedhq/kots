@@ -57,7 +57,7 @@ class AppVersionHistory extends Component {
   }
 
   componentDidMount() {
-    this.triggerStatusUpdates();
+    this.state.updateChecker.start(this.updateStatus, 1000);
 
     const url = window.location.pathname;
     if (url.includes("/diff")) {
@@ -275,14 +275,14 @@ class AppVersionHistory extends Component {
             "u-color--red": version.status === "failed" || preflightsFailed
           })}>
             {Utilities.toTitleCase(
-              version.status === "pending_preflight" 
-                ? "Running checks" 
+              version.status === "pending_preflight"
+                ? "Running checks"
                 : preflightsFailed
                   ? "Checks failed"
                   : version.status === "pending"
-                    ? "Ready to deploy" 
+                    ? "Ready to deploy"
                     : version.status
-              ).replace("_", " ")}
+            ).replace("_", " ")}
           </span>
         </div>
         {preflightBlock}
@@ -415,27 +415,6 @@ class AppVersionHistory extends Component {
     }
   }
 
-  triggerStatusUpdates = () => {
-    this.props.client.query({
-      query: getUpdateDownloadStatus,
-      variables: {},
-      fetchPolicy: "no-cache",
-    }).then((res) => {
-      this.setState({
-        checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
-      });
-      if (res.data.getUpdateDownloadStatus.status !== "running") {
-        return;
-      }
-      this.state.updateChecker.start(this.updateStatus, 1000);
-      this.setState({
-        checkingForUpdates: true,
-      });
-    }).catch((err) => {
-      console.log("failed to get rewrite status", err);
-    });
-  }
-
   updateStatus = () => {
     return new Promise((resolve, reject) => {
       this.props.client.query({
@@ -444,16 +423,16 @@ class AppVersionHistory extends Component {
       }).then((res) => {
 
         this.setState({
-          checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
+          checkingForUpdates: true,
+          checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage,
         });
 
-        if (res.data.getUpdateDownloadStatus.status !== "running") {
-
+        if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
           this.state.updateChecker.stop();
           this.setState({
             checkingForUpdates: false,
             checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed",
-            checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage
+            checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage
           });
 
           if (this.props.updateCallback) {
@@ -496,6 +475,8 @@ class AppVersionHistory extends Component {
       airgapUploadError: null
     });
 
+    this.props.toggleIsBundleUploading(true);
+
     const formData = new FormData();
     formData.append("file", files[0]);
     formData.append("appId", this.props.app.id);
@@ -505,14 +486,13 @@ class AppVersionHistory extends Component {
     xhr.open("POST", url);
 
     xhr.setRequestHeader("Authorization", Utilities.getToken())
-
     xhr.upload.onprogress = event => {
       const total = event.total;
       const sent = event.loaded;
 
       this.setState({
         uploadSent: sent,
-        uploadTotal: total
+        uploadTotal: total,
       });
     }
 
@@ -524,6 +504,7 @@ class AppVersionHistory extends Component {
         uploadTotal: 0,
         airgapUploadError: "Error uploading bundle, please try again"
       });
+      this.props.toggleIsBundleUploading(false);
     }
 
     xhr.onloadend = async () => {
@@ -540,6 +521,7 @@ class AppVersionHistory extends Component {
           airgapUploadError: `Error uploading airgap bundle: ${response}`
         });
       }
+      this.props.toggleIsBundleUploading(false);
     }
 
     xhr.send(formData);
@@ -657,6 +639,7 @@ class AppVersionHistory extends Component {
       app,
       data,
       match,
+      isBundleUploading
     } = this.props;
 
     const {
@@ -702,27 +685,33 @@ class AppVersionHistory extends Component {
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{airgapUploadError}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{airgapUploadError}</p>;
+    } else if (uploadingAirgapFile) {
+      updateText = (
+        <AirgapUploadProgress
+          total={uploadTotal}
+          sent={uploadSent}
+          onProgressError={this.onProgressError}
+          smallSize={true}
+        />
+      );
+    } else if (isBundleUploading) {
+      updateText = (
+        <AirgapUploadProgress
+          unkownProgress={true}
+          onProgressError={this.onProgressError}
+          smallSize={true}
+        />);
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
-      if (app.isAirgap && uploadingAirgapFile) {
-        updateText = (
-          <AirgapUploadProgress
-            total={uploadTotal}
-            sent={uploadSent}
-            onProgressError={this.onProgressError}
-            smallSize={true}
-          />
-        );
-      } else {
-        updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
-      }
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (!app.lastUpdateCheck) {
       updateText = null;
     }
 
-    const isAirgap = app.isAirgap;
+    const showAirgapUI = app.isAirgap && !isBundleUploading;
+    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
     const downstream = app.downstreams.length && app.downstreams[0];
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
@@ -733,6 +722,7 @@ class AppVersionHistory extends Component {
     } else if (has(data, "stopPolling")) {
       data?.stopPolling();
     }
+
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -760,9 +750,9 @@ class AppVersionHistory extends Component {
             </div>
             {!app.cluster &&
               <div className="flex-auto flex-column alignItems--center justifyContent--center">
-                {checkingForUpdates
+                {checkingForUpdates && !isBundleUploading
                   ? <Loader size="32" />
-                  : isAirgap
+                  : showAirgapUI
                     ?
                     <Dropzone
                       className="Dropzone-wrapper"
@@ -772,8 +762,9 @@ class AppVersionHistory extends Component {
                     >
                       <button className="btn secondary blue">Upload new version</button>
                     </Dropzone>
-                    :
-                    <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                    : showOnlineUI ?
+                      <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                      : null
                 }
                 {updateText}
               </div>
@@ -781,11 +772,11 @@ class AppVersionHistory extends Component {
           </div>
         </div>
         {this.state.checkingForUpdateError &&
-        <div className="flex-column flex-auto u-marginBottom--30">
-          <div className="checking-update-error-wrapper">
-            <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{this.state.checkingUpdateText}</p>
+          <div className="flex-column flex-auto u-marginBottom--30">
+            <div className="checking-update-error-wrapper">
+              <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{this.state.checkingUpdateText}</p>
+            </div>
           </div>
-        </div>
         }
         <div className="flex-column flex1">
           <div className="flex flex1">

@@ -1,6 +1,7 @@
 import React from "react"
 import { withRouter } from "react-router-dom";
-import { compose, withApollo, graphql} from "react-apollo";
+import { compose, withApollo, graphql } from "react-apollo";
+import Loader from "./shared/Loader";
 import { getAirgapInstallStatus } from "../queries/AppsQueries";
 import { formatByteSize } from "@src/utilities/utilities";
 import "@src/scss/components/AirgapUploadProgress.scss";
@@ -30,6 +31,17 @@ function AirgapUploadProgress(props) {
     return null;
   }
 
+  if (props.unkownProgress) {
+    return (
+      <div>
+        <Loader className="flex justifyContent--center" size="32" />
+        <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium" style={{ maxWidth: 200 }}>
+          This may take a while depending on your network connection and size of your bundle
+         </p>
+      </div>
+    )
+  }
+
   let progressBar;
   let percentage;
 
@@ -57,11 +69,11 @@ function AirgapUploadProgress(props) {
     <div
       className={`u-marginTop--20 u-color--dustyGray u-fontWeight--bold u-lineHeight--medium u-textAlign--center`}
     >
-      {statusMsg} <br/>
+      {statusMsg} <br />
       This may take a while depending on your network connection and size of your bundle
     </div>
   );
-  
+
   if (smallSize) {
     statusDiv = statusMsg && (
       <div

@@ -46,7 +46,8 @@ class AppDetailPage extends Component {
       selectedWatchName: "",
       watchToEdit: {},
       existingDeploymentClusters: [],
-      displayDownloadCommandModal: false
+      displayDownloadCommandModal: false,
+      isBundleUploading: false
     }
   }
 
@@ -93,6 +94,10 @@ class AppDetailPage extends Component {
 
   toggleDisplayDownloadModal = () => {
     this.setState({ displayDownloadCommandModal: !this.state.displayDownloadCommandModal });
+  }
+
+  toggleIsBundleUploading = (isUploading) => {
+    this.setState({ isBundleUploading: isUploading });
   }
 
   createDownstreamForCluster = () => {
@@ -154,7 +159,8 @@ class AppDetailPage extends Component {
       appName
     } = this.props;
     const {
-      displayDownloadCommandModal
+      displayDownloadCommandModal,
+      isBundleUploading
     } = this.state;
 
     const centeredLoader = (
@@ -180,6 +186,7 @@ class AppDetailPage extends Component {
     } else if (has(getKotsAppQuery, "stopPolling")) {
       getKotsAppQuery?.stopPolling();
     }
+
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -238,6 +245,8 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchGraphQLData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        isBundleUploading={isBundleUploading}
                       />}
                     />
 
@@ -249,6 +258,8 @@ class AppDetailPage extends Component {
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
                         updateCallback={this.refetchGraphQLData}
+                        toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        isBundleUploading={isBundleUploading}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
