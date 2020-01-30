@@ -22,6 +22,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
+
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	kotsclientset "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
@@ -50,6 +55,41 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		cipher = c
 	}
 
+	cfg, err := k8sconfig.GetConfig()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get config")
+	}
+
+	clientset := kotsclientset.NewForConfigOrDie(cfg)
+
+	kurlValueses := clientset.KurlValueses("default")
+
+	testtest := &kotsv1beta1.KurlValues{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "mike-test",
+		},
+		Spec: kotsv1beta1.KurlValuesSpec{
+			IsAirgapped:         true,
+			IsKurl:              false,
+			IsKurlHA:            true,
+			LoadBalancerAddress: "localhost",
+		},
+		Status: kotsv1beta1.KurlValuesStatus{},
+	}
+
+	_, err = kurlValueses.Create(testtest)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not creat kurl value Object")
+	}
+
+	_, err = kurlValueses.Get("mike-test", metav1.GetOptions{})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not retrieve kurl value Object")
+	}
+
 	baseFiles := []BaseFile{}
 
 	builder := template.Builder{}
@@ -60,6 +100,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create config context")
 		}
+		var val template.ItemValue
+
+		val = template.ItemValue{
+			Value:   "builder",
+			Default: "default",
+		}
+
+		configCtx.ItemValues["base"] = val
+
 		builder.AddCtx(configCtx)
 	}
 
@@ -450,4 +499,8 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
+}
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
 }

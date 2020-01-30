@@ -3,6 +3,7 @@ package template
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -47,7 +48,6 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templ
 			configCtx.ItemValues[configItem.Name] = itemValue
 		}
 	}
-
 	return configCtx, nil
 }
 
@@ -97,7 +97,36 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionData":      ctx.configOptionData,
 		"ConfigOptionEquals":    ctx.configOptionEquals,
 		"ConfigOptionNotEquals": ctx.configOptionNotEquals,
+		"Mike":                  ctx.mike,
 	}
+}
+
+func (ctx ConfigCtx) mike() string {
+	// address, ok := ctx.ItemValues["mike"]
+	// if !ok {
+	// 	return "no mike found"
+	// }
+	// if address.HasValue() {
+	// 	return address.ValueStr()
+	// }
+	// return "no value"
+
+	keys := make([]string, len(ctx.ItemValues))
+	i := 0
+	for item := range ctx.ItemValues {
+		keys[i] = item
+		i++
+	}
+	key := strings.Join(keys, "|")
+
+	// // values := make([]string, len(keys))
+	// var val string
+	// for i, thing := range keys {
+	// 	val += keys[i]
+	// 	val += "|"
+	// }
+
+	return key
 }
 
 func (ctx ConfigCtx) configOption(name string) string {

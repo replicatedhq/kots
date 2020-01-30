@@ -22,10 +22,10 @@ import (
 
 // KurlValuesSpec defines the desired state of KurlValuesSpec
 type KurlValuesSpec struct {
-	isAirgapped bool `json:"isAirgapped,omitempty"`
-	isKurl bool `json:"isAirgapped,omitempty"`
-	isKurlHA bool `json:"isAirgapped,omitempty"`
-	loadBalancerAddress string `json:"releaseNotes,omitempty"`
+	IsAirgapped bool `json:"isAirgapped,omitempty"`
+	IsKurl bool `json:"isKurl,omitempty"`
+	IsKurlHA bool `json:"isKurlHA,omitempty"`
+	LoadBalancerAddress string `json:"LoadBalancerAddress,omitempty"`
 }
 
 // KurlValuesStatus defines the observed state of KurlValues

@@ -94,3 +94,5 @@ replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-
 replace github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 
 replace github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
+
+replace github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1 => /home/michael/go/src/github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta
