@@ -59,7 +59,7 @@ spec:
       - name: is_airgap
         type: boolean
         default: "false"
-      - name: snapshot_ttl
+      - name: snapshot_ttl_new
         type: text
         default: '720h'
         constraints:
