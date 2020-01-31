@@ -112,7 +112,7 @@ class Dashboard extends Component {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
 
-    this.triggerStatusUpdates();
+    this.state.updateChecker.start(this.updateStatus, 1000);
 
     if (app) {
       this.setWatchState(app);
@@ -144,27 +144,6 @@ class Dashboard extends Component {
     });
   }
 
-  triggerStatusUpdates = () => {
-    this.props.client.query({
-      query: getUpdateDownloadStatus,
-      variables: {},
-      fetchPolicy: "no-cache",
-    }).then((res) => {
-      this.setState({
-        checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
-      });
-      if (res.data.getUpdateDownloadStatus.status !== "running") {
-        return;
-      }
-      this.state.updateChecker.start(this.updateStatus, 1000);
-      this.setState({
-        checkingForUpdates: true,
-      });
-    }).catch((err) => {
-      console.log("failed to get rewrite status", err);
-    });
-  }
-
   updateStatus = () => {
     return new Promise((resolve, reject) => {
       this.props.client.query({
@@ -173,10 +152,11 @@ class Dashboard extends Component {
       }).then((res) => {
 
         this.setState({
+          checkingForUpdates: true,
           checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
         });
 
-        if (res.data.getUpdateDownloadStatus.status !== "running") {
+        if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
 
           this.state.updateChecker.stop();
           this.setState({
@@ -204,6 +184,7 @@ class Dashboard extends Component {
   }
 
   onDropBundle = async files => {
+    this.props.toggleIsBundleUploading(true);
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
@@ -240,6 +221,7 @@ class Dashboard extends Component {
         uploadTotal: 0,
         airgapUploadError: "Error uploading bundle, please try again"
       });
+      this.props.toggleIsBundleUploading(false);
     }
 
     xhr.onloadend = async () => {
@@ -256,6 +238,7 @@ class Dashboard extends Component {
           airgapUploadError: `Error uploading airgap bundle: ${response}`
         });
       }
+      this.props.toggleIsBundleUploading(false);
     }
 
     xhr.send(formData);
@@ -404,7 +387,7 @@ class Dashboard extends Component {
       savingPromValue
     } = this.state;
 
-    const { app } = this.props;
+    const { app, isBundleUploading } = this.props;
 
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
     const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
@@ -417,6 +400,7 @@ class Dashboard extends Component {
         </div>
       );
     }
+
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -466,6 +450,7 @@ class Dashboard extends Component {
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 redirectToDiff={() => this.redirectToDiff(currentSequence, latestSequence)}
+                isBundleUploading={isBundleUploading}
               />
               {app.allowSnapshots ?
                 <div className="small-dashboard-wrapper flex-column flex">

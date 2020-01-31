@@ -103,7 +103,7 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff } = this.props;
+    const { app, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
     const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
@@ -124,6 +124,13 @@ export default class DashboardCard extends React.Component {
           smallSize={true}
         />
       );
+    } else if (isBundleUploading) {
+      updateText = (
+        <AirgapUploadProgress
+          unkownProgress={true}
+          onProgressError={this.onProgressError}
+          smallSize={true}
+        />);
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
@@ -132,8 +139,9 @@ export default class DashboardCard extends React.Component {
       updateText = null;
     }
 
-    const showAirgapUI = app.isAirgap && !this.props.uploadingAirgapFile && !checkingForUpdates;
+    const showAirgapUI = app.isAirgap && !isBundleUploading;
     const showOnlineUI = !app.isAirgap && !checkingForUpdates;
+
 
     return (
       <div>
@@ -141,19 +149,22 @@ export default class DashboardCard extends React.Component {
         <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
 
         <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
-        {checkingForUpdates && <Loader size="32" className="flex justifyContent--center u-marginTop--10" />}
-        {showAirgapUI && <Dropzone
-            className="Dropzone-wrapper"
-            accept=".airgap"
-            onDropAccepted={this.props.onDropBundle}
-            multiple={false}
-          >
-            <button className="btn secondary blue">Upload new version</button>
-          </Dropzone>}
-        {showOnlineUI && <button className="btn primary lightBlue u-marginTop--10"
-          onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>
-            {isUpdateAvailable ? "Show Update" : "Check for update"}
-          </button>}
+        {checkingForUpdates && !isBundleUploading
+          ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
+          : showAirgapUI
+            ?
+            <Dropzone
+              className="Dropzone-wrapper"
+              accept=".airgap"
+              onDropAccepted={this.props.onDropBundle}
+              multiple={false}
+            >
+              <button className="btn secondary blue">Upload new version</button>
+            </Dropzone>
+            : showOnlineUI ?
+              <button className="btn primary lightBlie blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
+              : null
+        }
         {updateText}
       </div>
     )
@@ -207,8 +218,8 @@ export default class DashboardCard extends React.Component {
                 size(appLicense) > 0 ?
                   <Link to={`${url}/license`} className="card-link"> View license details </Link>
                   : isSnapshotAllowed ?
-                  <Link to={`${url}/snapshots`} className="card-link"> View snapshot details </Link>
-                  : null
+                    <Link to={`${url}/snapshots`} className="card-link"> View snapshot details </Link>
+                    : null
             }
             <div className="u-marginTop--15">
               <div className="flex flex1">
@@ -217,10 +228,10 @@ export default class DashboardCard extends React.Component {
                   : versionHistory ?
                     this.renderVersionHistoryCard()
                     : license ?
-                    this.renderLicenseCard()
-                    : isSnapshotAllowed ?
-                    null
-                    : null
+                      this.renderLicenseCard()
+                      : isSnapshotAllowed ?
+                        null
+                        : null
                 }
               </div>
             </div>
