@@ -1,15 +1,20 @@
 import _ from "lodash";
 import { Params } from "../server/params";
-import { parse } from "pg-connection-string"
+import { parse } from "pg-connection-string";
 
 export class Collector {
   public spec: String;
 }
 
+const POD_NAMESPACE_ENV = "POD_NAMESPACE"
+const DEV_NAMESPACE_ENV = "DEV_NAMESPACE"
+
 export function injectKotsCollectors(params: Params, parsedSpec: any, licenseData: string): any {
   let spec = parsedSpec;
   spec = injectDBCollector(params, spec);
+  spec = injectDBLogsCollector(spec);
   spec = injectLicenseCollector(spec, licenseData);
+  spec = injectKotsadmCollector(spec);
   spec = injectAPICollector(spec);
   spec = injectOperatorCollector(spec);
   spec = injectReplicatedPullSecretCollector(spec);
@@ -24,13 +29,13 @@ function injectDBCollector(params: Params, parsedSpec: any): any {
   const uri = params.postgresUri;
   const pgConfig = parse(uri);
 
-  let collectorNameBase = "kotsadm-postgres-db";
+  const collectorNameBase = "kotsadm-postgres-db";
   const pgDumpCollector = {
     exec: {
       collectorName: collectorNameBase,
       selector: [`app=${pgConfig.host}`],
       containerName: pgConfig.host,
-      namespace: process.env["POD_NAMESPACE"],
+      namespace: process.env[POD_NAMESPACE_ENV],
       name: "kots/admin_console",
       command: ["pg_dump"],
       args: ["-U", pgConfig.user],
@@ -38,10 +43,10 @@ function injectDBCollector(params: Params, parsedSpec: any): any {
     },
   };
 
-  let collectors = _.get(parsedSpec, "spec.collectors", []) as any[];
+  const collectors = _.get(parsedSpec, "spec.collectors", []) as any[];
 
   let nameCounter = 1;
-  for (let i = 0; i < collectors.length; i++) {
+  for (let i = 0; i < collectors.length; i+=1) {
     const collector = collectors[i];
     const name = _.get(collector, "exec.collectorName");
     if (!name) {
@@ -49,13 +54,32 @@ function injectDBCollector(params: Params, parsedSpec: any): any {
     }
     if (name === pgDumpCollector.exec.collectorName) {
       pgDumpCollector.exec.collectorName = `${collectorNameBase}_${nameCounter}`;
-      nameCounter++;
+      nameCounter+=1;
       i = 0;
       continue;
     }
   }
 
   collectors.push(pgDumpCollector);
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectDBLogsCollector(parsedSpec: any): any {
+  const newCollector = {
+    logs: {
+      collectorName: "kotsadm-postgres",
+      selector: ["app=kotsadm-postgres"],
+      namespace: process.env[POD_NAMESPACE_ENV],
+      name: "kots/admin_console",
+    },
+  };
+
+  const collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
   _.set(parsedSpec, "spec.collectors", collectors);
 
   return parsedSpec;
@@ -74,7 +98,26 @@ function injectLicenseCollector(parsedSpec: any, licenseData: string): any {
     },
   };
 
-  let collectors = _.concat(
+  const collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectKotsadmCollector(parsedSpec: any): any {
+  const newCollector = {
+    logs: {
+      collectorName: "kotsadm",
+      selector: ["app=kotsadm"],
+      namespace: process.env[POD_NAMESPACE_ENV],
+      name: "kots/admin_console",
+    },
+  };
+
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     [newCollector],
   );
@@ -88,12 +131,12 @@ function injectAPICollector(parsedSpec: any): any {
     logs: {
       collectorName: "kotsadm-api",
       selector: ["app=kotsadm-api"],
-      namespace: process.env["POD_NAMESPACE"],
+      namespace: process.env[POD_NAMESPACE_ENV],
       name: "kots/admin_console",
     },
   };
 
-  let collectors = _.concat(
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     [newCollector],
   );
@@ -107,12 +150,12 @@ function injectOperatorCollector(parsedSpec: any): any {
     logs: {
       collectorName: "kotsadm-operator",
       selector: ["app=kotsadm-operator"],
-      namespace: process.env["POD_NAMESPACE"],
+      namespace: process.env[POD_NAMESPACE_ENV],
       name: "kots/admin_console",
     },
   };
 
-  let collectors = _.concat(
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     [newCollector],
   );
@@ -132,7 +175,7 @@ function injectReplicatedPullSecretCollector(parsedSpec: any): any {
     },
   };
 
-  let collectors = _.concat(
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     [newCollector],
   );
@@ -164,7 +207,7 @@ function injectRookCollectors(parsedSpec: any): any {
     };
   });
 
-  let collectors = _.concat(
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     newCollectors,
   );
@@ -188,7 +231,7 @@ function injectKurlCollectors(parsedSpec: any): any {
     };
   });
 
-  let collectors = _.concat(
+  const collectors = _.concat(
     _.get(parsedSpec, "spec.collectors", []) as any[],
     newCollectors,
   );
@@ -198,37 +241,37 @@ function injectKurlCollectors(parsedSpec: any): any {
 }
 
 export async function setKotsCollectorsNamespaces(parsedSpec: any): Promise<any> {
-  let collectors = _.get(parsedSpec, "spec.collectors") as any[];
+  const collectors = _.get(parsedSpec, "spec.collectors") as any[];
   if (!collectors) {
     return parsedSpec;
   }
 
-  for (let collector of collectors) {
-    let secret = _.get(collector, "secret");
+  for (const collector of collectors) {
+    const secret = _.get(collector, "secret");
     if (secret) {
       _.set(secret, "namespace", getCollectorNamespace());
       continue;
     }
 
-    let run = _.get(collector, "run");
+    const run = _.get(collector, "run");
     if (run) {
       _.set(run, "namespace", getCollectorNamespace());
       continue;
     }
 
-    let logs = _.get(collector, "logs");
+    const logs = _.get(collector, "logs");
     if (logs) {
       _.set(logs, "namespace", getCollectorNamespace());
       continue;
     }
 
-    let exec = _.get(collector, "exec");
+    const exec = _.get(collector, "exec");
     if (exec) {
       _.set(exec, "namespace", getCollectorNamespace());
       continue;
     }
 
-    let copy = _.get(collector, "copy");
+    const copy = _.get(collector, "copy");
     if (copy) {
       _.set(copy, "namespace", getCollectorNamespace());
       continue;
@@ -239,11 +282,11 @@ export async function setKotsCollectorsNamespaces(parsedSpec: any): Promise<any>
 }
 
 export function getCollectorNamespace(): String {
-  if (process.env["DEV_NAMESPACE"]) {
-    return String(process.env["DEV_NAMESPACE"]);
+  if (process.env[DEV_NAMESPACE_ENV]) {
+    return String(process.env[DEV_NAMESPACE_ENV]);
   }
-  if (process.env["POD_NAMESPACE"]) {
-    return String(process.env["POD_NAMESPACE"]);
+  if (process.env[POD_NAMESPACE_ENV]) {
+    return String(process.env[POD_NAMESPACE_ENV]);
   }
   return "default";
 }
