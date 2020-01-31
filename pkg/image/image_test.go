@@ -7,7 +7,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
@@ -67,8 +66,6 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			image, err := ImageInfoFromFile(registryOps, test.parts)
 			if test.isError {
 				assert.Error(t, err)
@@ -122,8 +119,6 @@ func TestDestRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			if got := DestRef(tt.args.registry, tt.args.srcImage); got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
 			}
@@ -253,8 +248,6 @@ func Test_buildImageAlts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 			got, err := buildImageAlts(tt.destRegistry, tt.image)
 			req.NoError(err)
@@ -302,8 +295,6 @@ func Test_stripImageTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			if got := stripImageTag(tt.image); got != tt.want {
 				t.Errorf("stripImageTag() = %v, want %v", got, tt.want)
 			}
