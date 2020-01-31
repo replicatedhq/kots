@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestStaticContext_kubeSeal_badCert(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	req := require.New(t)
 
 	ctx := StaticCtx{}
@@ -21,6 +24,8 @@ SPA=
 }
 
 func TestStaticContext_kubeSeal_goodCert(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	req := require.New(t)
 
 	ctx := StaticCtx{}
@@ -60,6 +65,8 @@ yw==
 }
 
 func TestSprigRandom(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	req := require.New(t)
 
 	builder := Builder{}

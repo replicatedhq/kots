@@ -5,9 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_CommonSlicePrefix(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name     string
 		first    []string
@@ -43,6 +46,8 @@ func Test_CommonSlicePrefix(t *testing.T) {
 }
 
 func Test_SplitStringOnLen(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name     string
 		in       string
@@ -82,6 +87,8 @@ func Test_SplitStringOnLen(t *testing.T) {
 }
 
 func TestIntPointer(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name string
 		x    int
@@ -118,6 +125,8 @@ func TestIntPointer(t *testing.T) {
 }
 
 func TestGenPassword(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name   string
 		length int
@@ -145,6 +154,8 @@ func TestGenPassword(t *testing.T) {
 }
 
 func TestCompareStringArrays(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name string
 		arr1 []string

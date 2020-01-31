@@ -7,11 +7,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
 	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
 )
 
 func Test_ImageNameFromNameParts(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -78,6 +81,8 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 }
 
 func TestDestRef(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -127,6 +132,8 @@ func TestDestRef(t *testing.T) {
 }
 
 func Test_buildImageAlts(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name         string
 		destRegistry registry.RegistryOptions
@@ -257,6 +264,8 @@ func Test_buildImageAlts(t *testing.T) {
 }
 
 func Test_stripImageTag(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name  string
 		image string

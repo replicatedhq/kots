@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 type testContext struct {
@@ -100,6 +101,8 @@ func (c boolcase) runTest(t *testing.T, builder Builder) {
 }
 
 func TestBuildStrings(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	// "Now"
 	// "NowFmt"
 	cases := []testcase{

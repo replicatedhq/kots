@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 var (
@@ -30,6 +31,8 @@ metadata:
 )
 
 func Test_DeduplicateOnContent(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name              string
 		files             []BaseFile

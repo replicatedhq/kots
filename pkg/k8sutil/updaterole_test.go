@@ -4,11 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpdateRole(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name          string
 		existingRole  *rbacv1.Role

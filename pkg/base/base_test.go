@@ -5,9 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_transpileHelmHooksToKotsHooks(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name     string
 		content  string
@@ -120,10 +123,11 @@ spec:
 			assert.Equal(t, test.expected, string(b.Content))
 		})
 	}
-
 }
 
 func Test_ShouldBeIncludedInBaseKustomization(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name             string
 		path             string

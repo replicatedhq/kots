@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestVersion(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name string
 		want string
@@ -37,6 +40,8 @@ func TestVersion(t *testing.T) {
 }
 
 func TestGitSHA(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name string
 		sha  string
@@ -77,6 +82,8 @@ func TestGitSHA(t *testing.T) {
 }
 
 func TestBuildTime(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	req := require.New(t)
 	aTime, err := time.Parse(time.RFC3339, "2019-06-26T18:53:19Z")
 	req.NoError(err, "parse constant time")
@@ -111,6 +118,8 @@ func TestBuildTime(t *testing.T) {
 }
 
 func TestGetBuild(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name      string
 		gitSHA    string
@@ -145,6 +154,8 @@ func TestGetBuild(t *testing.T) {
 }
 
 func TestIsLatestRelease(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name            string
 		version         string

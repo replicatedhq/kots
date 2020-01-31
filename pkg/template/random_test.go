@@ -8,9 +8,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	_ "github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestGenerateRandomString(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	ctx := &StaticCtx{}
 	str := ctx.RandomString(100)
 	assert.Len(t, str, 100)
@@ -18,6 +21,8 @@ func TestGenerateRandomString(t *testing.T) {
 }
 
 func TestGenerateRandomStringTemplates(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name           string
 		length         int

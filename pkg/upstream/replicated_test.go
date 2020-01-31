@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,6 +19,8 @@ var (
 )
 
 func Test_parseReplicatedURL(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name                 string
 		uri                  string
@@ -71,6 +74,8 @@ func Test_parseReplicatedURL(t *testing.T) {
 }
 
 func Test_releaseToFiles(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	tests := []struct {
 		name     string
 		release  *Release
@@ -153,6 +158,8 @@ func Test_releaseToFiles(t *testing.T) {
 }
 
 func Test_createConfigValues(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	applicationName := "Test App"
 
 	config := &kotsv1beta1.Config{
@@ -282,6 +289,8 @@ func Test_createConfigValues(t *testing.T) {
 }
 
 func Test_getRequest(t *testing.T) {
+	test := scopeagent.StartTest(t)
+	defer test.End()
 	beta := "beta"
 	unstable := "unstable"
 	tests := []struct {
