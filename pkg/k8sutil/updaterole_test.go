@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -145,8 +144,6 @@ func TestUpdateRole(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 			UpdateRole(tt.existingRole, tt.desiredRole)
 			req.ElementsMatch(tt.existingRole.Rules, tt.expectedRules)

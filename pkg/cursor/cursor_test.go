@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_Comparable(t *testing.T) {
@@ -51,8 +50,6 @@ func Test_Comparable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			c1, err := NewCursor(test.c1)
 			if test.c1Error {
 				assert.Error(t, err)

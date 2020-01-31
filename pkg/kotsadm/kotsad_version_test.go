@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_kotsadmRegistry(t *testing.T) {
@@ -34,8 +33,6 @@ func Test_kotsadmRegistry(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			OverrideVersion = test.overrideVersion
 			OverrideRegistry = test.overrideRegistry
 			OverrideNamespace = test.overrideNamespace

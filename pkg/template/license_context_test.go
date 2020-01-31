@@ -5,12 +5,9 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestLicenseContext_dockercfg(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	ctx := LicenseCtx{
 		License: &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{

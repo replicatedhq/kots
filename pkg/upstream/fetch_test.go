@@ -10,13 +10,10 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_downloadUpstream(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	req := require.New(t)
 
 	srcDir, err := ioutil.TempDir("", "downloadUpstream")
