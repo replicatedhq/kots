@@ -120,8 +120,10 @@ export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: Ko
       await stores.kotsAppStore.setUpdateDownloadStatus(`Downloading release ${update.versionLabel}`, "running");
       await kotsAppDownloadUpdate(update.cursor, app, registryInfo, stores);
     } catch (err) {
-      console.error(`Failed to download release ${update.cursor}: ${err}`);
-      throw err;
+      if (i === updatesAvailable.length - 1) {
+        console.error(`Failed to download release ${update.cursor}: ${err}`);
+        throw err;
+      }
     }
   }
 }
