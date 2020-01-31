@@ -13,3 +13,6 @@
 
 bin/
 vendor
+
+# scope test logs
+scope-go-*.log

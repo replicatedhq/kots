@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestRewriteUpstream(t *testing.T) {
@@ -26,6 +27,8 @@ func TestRewriteUpstream(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.upstreamURI, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			actual := RewriteUpstream(test.upstreamURI)
 			assert.Equal(t, actual, test.expected)
 		})

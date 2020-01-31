@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_transpileHelmHooksToKotsHooks(t *testing.T) {
@@ -108,6 +109,8 @@ spec:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			b := BaseFile{
@@ -120,7 +123,6 @@ spec:
 			assert.Equal(t, test.expected, string(b.Content))
 		})
 	}
-
 }
 
 func Test_ShouldBeIncludedInBaseKustomization(t *testing.T) {
@@ -398,6 +400,8 @@ spec:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			b := BaseFile{

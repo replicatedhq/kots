@@ -32,7 +32,6 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/frankban/quicktest v1.4.1 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/gofuzz v1.0.0
 	github.com/google/uuid v1.1.1
@@ -73,11 +72,12 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	go.undefinedlabs.com/scopeagent v0.1.6
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
-	golang.org/x/sys v0.0.0-20190801041406-cbf593c0f2f3 // indirect
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v0.0.0-20190624233834-05ebafbffc79 // indirect
+	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
 	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
 	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible

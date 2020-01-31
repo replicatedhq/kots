@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestVersion(t *testing.T) {
@@ -25,6 +26,8 @@ func TestVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			version = tt.want
@@ -65,6 +68,8 @@ func TestGitSHA(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			gitSHA = tt.sha
@@ -99,6 +104,8 @@ func TestBuildTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			buildTime = tt.timestring
@@ -129,6 +136,8 @@ func TestGetBuild(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			version = tt.version
@@ -177,6 +186,8 @@ func TestIsLatestRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
