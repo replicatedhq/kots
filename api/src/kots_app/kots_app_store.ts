@@ -1350,7 +1350,7 @@ order by adv.sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl, snapshot_schedule, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -1386,7 +1386,7 @@ order by adv.sequence desc`;
     // has not been created yet
     kotsApp.hasPreflight = !!rr.rows[0] && !!rr.rows[0].preflight_spec;
     kotsApp.isConfigurable = !!rr.rows[0] && !!rr.rows[0].config_spec;
-    kotsApp.snapshotTTL = row.snapshot_ttl;
+    kotsApp.snapshotTTL = row.snapshot_ttl_new;
     kotsApp.snapshotSchedule = row.snapshot_schedule;
     kotsApp.restoreInProgressName = row.restore_in_progress_name;
     kotsApp.restoreUndeployStatus = row.restore_undeploy_status;
@@ -1629,7 +1629,7 @@ order by adv.sequence desc`;
   }
 
   async updateAppSnapshotTTL(appId: string, snapshotTTL: string): Promise<void> {
-    const q = `update app set snapshot_ttl = $1 where id = $2`;
+    const q = `update app set snapshot_ttl_new = $1 where id = $2`;
     const v = [snapshotTTL, appId];
     await this.pool.query(q, v);
   }
