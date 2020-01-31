@@ -25,7 +25,7 @@ RUN /install-krew.sh
 ENV PATH="/root/.krew/bin:$PATH"
 
 # Install our plugins
-ENV TROUBLESHOOT_VERSION=0.9.19
+ENV TROUBLESHOOT_VERSION=0.9.21
 RUN kubectl krew install preflight
 RUN kubectl krew install support-bundle
 
