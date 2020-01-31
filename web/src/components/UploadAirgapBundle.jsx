@@ -9,14 +9,16 @@ import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { resumeInstallOnline } from "../mutations/AppsMutations";
-import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
-import "../scss/components/Login.scss";
+import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import Loader from "./shared/Loader";
 import { validateRegistryInfo } from "../queries/UserQueries";
 import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
 import { getKotsApp } from "../queries/AppsQueries";
+
+import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
+import "../scss/components/Login.scss";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -315,7 +317,7 @@ class UploadAirgapBundle extends React.Component {
         <Helmet>
           <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20">
+        <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
               <div className="flex">
@@ -326,6 +328,14 @@ class UploadAirgapBundle extends React.Component {
                 }
                 <span className="icon airgapBundleIcon" />
               </div>
+            </div>
+            {preparingOnlineInstall ?
+              <div className="flex-column alignItems--center u-marginTop--30">
+                <Loader size="40" />
+                <LicenseUploadProgress />
+              </div>
+            :
+            <div>
               <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
                 {showRegistry ?
@@ -334,8 +344,7 @@ class UploadAirgapBundle extends React.Component {
                   `To install on an airgapped network, the images ${appName ? `in ${appName}` : ""} will be uploaded from the bundle you provide to the cluster.`
                 }
               </p>
-            </div>
-            {showRegistry &&
+              {showRegistry &&
               <div className="u-marginTop--30">
                 <AirgapRegistrySettings
                   app={null}
@@ -347,84 +356,84 @@ class UploadAirgapBundle extends React.Component {
                   showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
                 />
               </div>
-            }
-            <div className="u-marginTop--20 flex">
-              <div className={classNames("FileUpload-wrapper", "flex1", {
-                "has-file": hasFile,
-                "has-error": errorMessage
-              })}>
-                <Dropzone
-                  className="Dropzone-wrapper"
-                  accept=".airgap"
-                  onDropAccepted={this.onDrop}
-                  multiple={false}
-                >
-                  {hasFile ?
-                    <div className="has-file-wrapper">
-                      <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
-                    </div>
-                    :
-                    <div className="u-textAlign--center">
-                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
-                    </div>
-                  }
-                </Dropzone>
-              </div>
-              {hasFile &&
-                <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
-                  <button
-                    type="button"
-                    className="btn primary large flex-auto"
-                    onClick={this.uploadAirgapBundle}
-                    disabled={fileUploading || !hasFile}
-                  >
-                    {fileUploading ? "Uploading" : "Upload airgap bundle"}
-                  </button>
-                </div>
               }
-            </div>
-            {errorMessage && (
-              <div className="u-marginTop--10">
-                <span className="u-color--chestnut">{errorMessage}</span>
-                {this.state.showSupportBundleCommand ?
-                  <div className="u-marginTop--10">
-                    <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
-                    <CodeSnippet
-                      language="bash"
-                      canCopy={true}
-                      onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              <div className="u-marginTop--20 flex">
+                <div className={classNames("FileUpload-wrapper", "flex1", {
+                  "has-file": hasFile,
+                  "has-error": errorMessage
+                })}>
+                  <Dropzone
+                    className="Dropzone-wrapper"
+                    accept=".airgap"
+                    onDropAccepted={this.onDrop}
+                    multiple={false}
+                  >
+                    {hasFile ?
+                      <div className="has-file-wrapper">
+                        <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
+                      </div>
+                      :
+                      <div className="u-textAlign--center">
+                        <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
+                      </div>
+                    }
+                  </Dropzone>
+                </div>
+                {hasFile &&
+                  <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
+                    <button
+                      type="button"
+                      className="btn primary large flex-auto"
+                      onClick={this.uploadAirgapBundle}
+                      disabled={fileUploading || !hasFile}
                     >
-                      {this.state.supportBundleCommand.split("\n")}
-                    </CodeSnippet>
-                  </div>
-                  :
-                  <div>
-                    <div className="u-marginTop--10">
-                      <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
-                    </div>
+                      {fileUploading ? "Uploading" : "Upload airgap bundle"}
+                    </button>
                   </div>
                 }
               </div>
-            )}
-            {hasFile &&
-              <div className="u-marginTop--10">
-                <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
-              </div>
+              {errorMessage && (
+                <div className="u-marginTop--10">
+                  <span className="u-color--chestnut">{errorMessage}</span>
+                  {this.state.showSupportBundleCommand ?
+                    <div className="u-marginTop--10">
+                      <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                      <CodeSnippet
+                        language="bash"
+                        canCopy={true}
+                        onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                      >
+                        {this.state.supportBundleCommand.split("\n")}
+                      </CodeSnippet>
+                    </div>
+                    :
+                    <div>
+                      <div className="u-marginTop--10">
+                        <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
+                      </div>
+                    </div>
+                  }
+                </div>
+              )}
+              {hasFile &&
+                <div className="u-marginTop--10">
+                  <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
+                </div>
+              }
+            </div>
             }
+            
           </div>
         </div>
-        <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage })}>
-          {preparingOnlineInstall
-            ? <Loader size="40" />
-            : <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
-          }
+        <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage }, {"u-display--none": preparingOnlineInstall})}>
+          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
         </div>
         {onlineInstallErrorMessage && (
           <div className="u-marginTop--10 u-marginBottom--20">
             <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
             <span
-              className="u-fontSize--small u-color--astral u-cursor--pointer u-fontWeight--bold u-textDecoration--underline"
+              className="u-fontSize--small replicated-link"
               onClick={this.toggleViewOnlineInstallErrorMessage}>
               view more
             </span>

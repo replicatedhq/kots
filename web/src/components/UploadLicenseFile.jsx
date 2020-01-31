@@ -8,6 +8,7 @@ import Modal from "react-modal";
 import { uploadKotsLicense } from "../mutations/AppsMutations";
 import { getFileContent } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
+import LicenseUploadProgress from "./LicenseUploadProgress";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -29,11 +30,14 @@ class UploadLicenseFile extends React.Component {
     const { onUploadSuccess, history } = this.props;
     const { licenseValue } = this.state;
 
-    this.setState({ fileUploading: true, errorMessage: "" });
+    this.setState({
+      fileUploading: true,
+      errorMessage: "",
+    });
+
     try {
       const resp = await this.props.uploadKotsLicense(licenseValue);
       const data = resp.data.uploadKotsLicense;
-
       // When successful, refetch all the user's apps with onUploadSuccess
       onUploadSuccess().then(() => {
         if (data?.isAirgap) {
@@ -105,55 +109,61 @@ class UploadLicenseFile extends React.Component {
               : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Upload your license file</p>
             </div>
-            <div className="u-marginTop--30 flex">
-              <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
-                <Dropzone
-                  className="Dropzone-wrapper"
-                  accept={["application/x-yaml", ".yaml", ".yml"]}
-                  onDropAccepted={this.onDrop}
-                  multiple={false}
-                >
-                  {hasFile ?
-                    <div className="has-file-wrapper">
-                      <p className="u-fontSize--normal u-fontWeight--medium">{licenseFile.name}</p>
-                    </div>
-                    :
-                    <div className="u-textAlign--center">
-                      <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                      <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Please contact your account rep if you are unable to locate your license file.</p>
+            {!fileUploading ? 
+              <div className="flex-column">
+                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center">Upload your license file</p>
+                <div className="u-marginTop--30 flex">
+                  <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept={["application/x-yaml", ".yaml", ".yml"]}
+                      onDropAccepted={this.onDrop}
+                      multiple={false}
+                    >
+                      {hasFile ?
+                        <div className="has-file-wrapper">
+                          <p className="u-fontSize--normal u-fontWeight--medium">{licenseFile.name}</p>
+                        </div>
+                        :
+                        <div className="u-textAlign--center">
+                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Please contact your account rep if you are unable to locate your license file.</p>
+                        </div>
+                      }
+                    </Dropzone>
+                  </div>
+                  {hasFile &&
+                    <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
+                      <button
+                        type="button"
+                        className="btn primary large flex-auto"
+                        onClick={this.uploadLicenseFile}
+                        disabled={fileUploading || !hasFile}
+                      >
+                        {fileUploading ? "Uploading" : "Upload license"}
+                      </button>
                     </div>
                   }
-                </Dropzone>
-              </div>
-              {hasFile &&
-                <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
-                  <button
-                    type="button"
-                    className="btn primary large flex-auto"
-                    onClick={this.uploadLicenseFile}
-                    disabled={fileUploading || !hasFile}
-                  >
-                    {fileUploading ? "Uploading" : "Upload license"}
-                  </button>
                 </div>
-              }
-            </div>
-            {errorMessage && (
-              <div className="u-marginTop--10">
-                <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
-                <span
-                  className="u-fontSize--small u-color--astral u-cursor--pointer u-fontWeight--bold u-textDecoration--underline"
-                  onClick={this.toggleViewErrorMessage}>
-                  view more
-                </span>
+                {errorMessage && (
+                  <div className="u-marginTop--10">
+                    <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
+                    <span
+                      className="u-fontSize--small replicated-link"
+                      onClick={this.toggleViewErrorMessage}>
+                      view more
+                    </span>
+                  </div>
+                )}
+                {hasFile &&
+                  <div className="u-marginTop--10">
+                    <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
+                  </div>
+                }
               </div>
-            )}
-            {hasFile &&
-              <div className="u-marginTop--10">
-                <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
-              </div>
+              :
+              <div><LicenseUploadProgress /></div>
             }
           </div>
         </div>

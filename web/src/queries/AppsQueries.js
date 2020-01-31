@@ -287,6 +287,16 @@ export const getAirgapInstallStatusRaw = `
 `;
 export const getAirgapInstallStatus = gql(getAirgapInstallStatusRaw);
 
+export const getOnlineInstallStatusRaw = `
+  query getOnlineInstallStatus {
+    getOnlineInstallStatus {
+      installStatus
+      currentMessage
+    }
+  }
+`;
+export const getOnlineInstallStatus = gql(getOnlineInstallStatusRaw);
+
 export const getImageRewriteStatusRaw = `
   query getImageRewriteStatus {
     getImageRewriteStatus {

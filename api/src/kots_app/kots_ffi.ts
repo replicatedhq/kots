@@ -422,149 +422,116 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
   }
 }
 
-export async function kotsAppFromLicenseData(licenseData: string, name: string, downstreamName: string, stores: Stores): Promise<KotsApp> {
-  const parsedLicense = yaml.safeLoad(licenseData);
-  if (parsedLicense.apiVersion === "kots.io/v1beta1" && parsedLicense.kind === "License") {
-    if (parsedLicense.spec.isAirgapSupported) {
-      try {
-        const kotsApp = await stores.kotsAppStore.getPendingKotsAirgapApp();
-        await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, licenseData);
-        return kotsApp;
-      } catch (e) {
-        console.log("no pending airgap install found, creating a new app");
-      }
+export async function kotsPullFromLicense(socket: string, out: string, kotsApp: KotsApp, downstreamName: string, stores: Stores) {
+  const namespace = getK8sNamespace();
 
-      const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, parsedLicense.spec.isAirgapSupported);
-      return kotsApp;
-    }
+  const socketParam = new GoString();
+  socketParam["p"] = socket;
+  socketParam["n"] = socket.length;
 
-    const kotsApp = await stores.kotsAppStore.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, !!parsedLicense.spec.isAirgapSupported);
-    await kotsFinalizeApp(kotsApp, downstreamName, stores);
-    return kotsApp;
-  } else {
-    throw new ReplicatedError("Uploaded license file is invalid")
-  }
+  const licenseDataParam = new GoString();
+  licenseDataParam["p"] = kotsApp.license;
+  licenseDataParam["n"] = String(kotsApp.license).length;
+
+  const downstreamParam = new GoString();
+  downstreamParam["p"] = downstreamName;
+  downstreamParam["n"] = downstreamName.length;
+
+  const namespaceParam = new GoString();
+  namespaceParam["p"] = namespace;
+  namespaceParam["n"] = namespace.length;
+
+  const outParam = new GoString();
+  outParam["p"] = out;
+  outParam["n"] = out.length;
+
+  kots().PullFromLicense(socketParam, licenseDataParam, downstreamParam, namespaceParam, outParam);
+
+  // args are returned so they are not garbage collected before native code is done
+  return {
+    socketParam,
+    licenseDataParam,
+    downstreamParam,
+    namespaceParam,
+    outParam,
+  };
 }
 
-export async function kotsFinalizeApp(kotsApp: KotsApp, downstreamName: string, stores: Stores) {
-  const tmpDir = tmp.dirSync();
+export async function kotsAppFromData(out: string, kotsApp: KotsApp, stores: Stores): Promise<{ hasPreflight: boolean, isConfigurable: boolean }> {
+  const params = await Params.getParams();
+  const buffer = fs.readFileSync(out);
 
-  try {
-    const namespace = getK8sNamespace();
+  const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
+  await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
-    const statusServer = new StatusServer();
-    await statusServer.start(tmpDir.name);
+  const installationSpec = await extractInstallationSpecFromTarball(buffer);
 
-    const socketParam = new GoString();
-    socketParam["p"] = statusServer.socketFilename;
-    socketParam["n"] = statusServer.socketFilename.length;
+  const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
+  const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
+  const preflightSpec = await extractPreflightSpecFromTarball(buffer);
+  const appSpec = await extractAppSpecFromTarball(buffer);
+  const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
+  const appTitle = await extractAppTitleFromTarball(buffer);
+  const appIcon = await extractAppIconFromTarball(buffer);
+  const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
+  const configSpec = await extractConfigSpecFromTarball(buffer);
+  const configValues = await extractConfigValuesFromTarball(buffer);
+  kotsApp.isConfigurable = !!configSpec;
+  kotsApp.hasPreflight = !!preflightSpec;
+  const backupSpec = await extractBackupSpecFromTarball(buffer);
 
-    const licenseDataParam = new GoString();
-    licenseDataParam["p"] = kotsApp.license;
-    licenseDataParam["n"] = String(kotsApp.license).length;
+  if (kotsAppLicense) {
+    // update kots app with latest license
+    await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, kotsAppLicense);
+  }
 
-    const downstreamParam = new GoString();
-    downstreamParam["p"] = downstreamName;
-    downstreamParam["n"] = downstreamName.length;
+  await stores.kotsAppStore.createMidstreamVersion(
+    kotsApp.id,
+    0,
+    installationSpec.versionLabel,
+    installationSpec.releaseNotes,
+    installationSpec.cursor,
+    installationSpec.channelName,
+    installationSpec.encryptionKey,
+    supportBundleSpec,
+    analyzersSpec,
+    preflightSpec,
+    appSpec,
+    kotsAppSpec,
+    kotsAppLicense,
+    configSpec,
+    configValues,
+    appTitle,
+    appIcon,
+    backupSpec
+  );
 
-    const namespaceParam = new GoString();
-    namespaceParam["p"] = namespace;
-    namespaceParam["n"] = namespace.length;
+  const downstreams = await extractDownstreamNamesFromTarball(buffer);
+  const clusters = await stores.clusterStore.listAllUsersClusters();
 
-    const out = path.join(tmpDir.name, "archive.tar.gz");
-    const outParam = new GoString();
-    outParam["p"] = out;
-    outParam["n"] = out.length;
-
-    kots().PullFromLicense(socketParam, licenseDataParam, downstreamParam, namespaceParam, outParam);
-    await statusServer.connection();
-    await statusServer.termination((resolve, reject, obj): boolean => {
-      // Return true if completed
-      if (obj.status === "terminated") {
-        if (obj.exit_code === 0) {
-          resolve();
-        } else {
-          reject(new Error(obj.display_message));
-        }
-        return true;
-      }
-      return false;
+  for (const downstream of downstreams) {
+    const cluster = _.find(clusters, (c: Cluster) => {
+      return c.title === downstream;
     });
 
-    const params = await Params.getParams();
-    const buffer = fs.readFileSync(out);
-
-    const objectStorePath = path.join(params.shipOutputBucket.trim(), kotsApp.id, "0.tar.gz");
-    await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
-
-    const installationSpec = await extractInstallationSpecFromTarball(buffer);
-
-    const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
-    const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
-    const preflightSpec = await extractPreflightSpecFromTarball(buffer);
-    const appSpec = await extractAppSpecFromTarball(buffer);
-    const kotsAppSpec = await extractKotsAppSpecFromTarball(buffer);
-    const appTitle = await extractAppTitleFromTarball(buffer);
-    const appIcon = await extractAppIconFromTarball(buffer);
-    const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
-    const configSpec = await extractConfigSpecFromTarball(buffer);
-    const configValues = await extractConfigValuesFromTarball(buffer);
-    kotsApp.isConfigurable = !!configSpec;
-    kotsApp.hasPreflight = !!preflightSpec;
-    const backupSpec = await extractBackupSpecFromTarball(buffer);
-
-    if (kotsAppLicense) {
-      // update kots app with latest license
-      await stores.kotsAppStore.updateKotsAppLicense(kotsApp.id, kotsAppLicense);
+    if (!cluster) {
+      continue;
     }
 
-    await stores.kotsAppStore.createMidstreamVersion(
-      kotsApp.id,
-      0,
-      installationSpec.versionLabel,
-      installationSpec.releaseNotes,
-      installationSpec.cursor,
-      installationSpec.channelName,
-      installationSpec.encryptionKey,
-      supportBundleSpec,
-      analyzersSpec,
-      preflightSpec,
-      appSpec,
-      kotsAppSpec,
-      kotsAppLicense,
-      configSpec,
-      configValues,
-      appTitle,
-      appIcon,
-      backupSpec
-    );
+    const downstreamState = kotsApp.isConfigurable
+      ? "pending_config"
+      : kotsApp.hasPreflight
+        ? "pending_preflight"
+        : "deployed";
 
-    const downstreams = await extractDownstreamNamesFromTarball(buffer);
-    const clusters = await stores.clusterStore.listAllUsersClusters();
-
-    for (const downstream of downstreams) {
-      const cluster = _.find(clusters, (c: Cluster) => {
-        return c.title === downstream;
-      });
-
-      if (!cluster) {
-        continue;
-      }
-
-      const downstreamState = kotsApp.isConfigurable
-        ? "pending_config"
-        : kotsApp.hasPreflight
-          ? "pending_preflight"
-          : "deployed";
-
-      await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "", false);
-    }
-
-    return kotsApp;
-  } finally {
-    tmpDir.removeCallback();
+    await stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, downstreamState, "Kots Install", "", "", false);
   }
+
+  return {
+    isConfigurable: kotsApp.isConfigurable,
+    hasPreflight: kotsApp.hasPreflight,
+  };
 }
 
 export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string, username: string, password: string): any {
@@ -627,7 +594,7 @@ export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, li
   };
 }
 
-export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: Boolean, isConfigurable: Boolean }> {
+export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: Stores): Promise<{ hasPreflight: boolean, isConfigurable: boolean }> {
   const params = await Params.getParams();
   const buffer = fs.readFileSync(out);
   const objectStorePath = path.join(params.shipOutputBucket.trim(), app.id, "0.tar.gz");

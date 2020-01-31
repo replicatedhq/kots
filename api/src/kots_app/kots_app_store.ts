@@ -1512,6 +1512,27 @@ order by adv.sequence desc`;
     return result.rows[0].id;
   }
 
+  async kotsAppFromLicenseData(licenseData: string, name: string): Promise<KotsApp> {
+    const parsedLicense = yaml.safeLoad(licenseData);
+    if (parsedLicense.apiVersion === "kots.io/v1beta1" && parsedLicense.kind === "License") {
+      if (parsedLicense.spec.isAirgapSupported) {
+        try {
+          const kotsApp = await this.getPendingKotsAirgapApp();
+          await this.updateKotsAppLicense(kotsApp.id, licenseData);
+          return kotsApp;
+        } catch (e) {
+          console.log("no pending airgap install found, creating a new app");
+        }
+  
+        return await this.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, true);
+      }
+  
+      return await this.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, false);
+    } else {
+      throw new ReplicatedError("Uploaded license file is invalid")
+    }
+  }
+
   async createKotsApp(name: string, upstreamURI: string, license: string, airgapEnabled: boolean, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
@@ -1555,7 +1576,7 @@ order by adv.sequence desc`;
         upstreamURI,
         license,
         !userId,
-        airgapEnabled ? "airgap_upload_pending" : "installed"
+        airgapEnabled ? "airgap_upload_pending" : "online_upload_pending",
       ];
 
       await pg.query(q, v);
@@ -1713,20 +1734,53 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
     };
   }
 
+  async getOnlineInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
+    const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
+    const result = await this.pool.query(q);
+    if (result.rows.length !== 1) {
+      throw new Error("Could not find any kots app in getOnlineInstallStatus()");
+    }
+
+    const taskStatus = await this.getApiTaskStatus("online-install");
+
+    return {
+      installStatus: result.rows[0].install_state,
+      currentMessage: taskStatus.currentMessage,
+    };
+  }
+
   async clearAirgapInstallInProgress(): Promise<void> {
     await this.clearApiTaskStatus("airgap-install");
+  }
+
+  async clearOnlineInstallInProgress(): Promise<void> {
+    await this.clearApiTaskStatus("online-install");
   }
 
   async setAirgapInstallStatus(msg: string, status: string): Promise<void> {
     await this.setApiTaskStatus("airgap-install", msg, status);
   }
 
+  async setOnlineInstallStatus(msg: string, status: string): Promise<void> {
+    await this.setApiTaskStatus("online-install", msg, status);
+  }
+
   async updateAirgapInstallLiveness(): Promise<void> {
     await this.updateApiTaskStatusLiveness("airgap-install");
   }
 
+  async updateOnlineInstallLiveness(): Promise<void> {
+    await this.updateApiTaskStatusLiveness("online-install");
+  }
+
   async setAirgapInstallFailed(appId: string): Promise<void> {
     const q = `update app set install_state = 'airgap_upload_error' where id = $1`;
+    const v = [appId];
+    await this.pool.query(q, v);
+  }
+
+  async setOnineInstallFailed(appId: string): Promise<void> {
+    const q = `update app set install_state = 'online_upload_error' where id = $1`;
     const v = [appId];
     await this.pool.query(q, v);
   }
@@ -1737,6 +1791,14 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
     await this.pool.query(q, v);
 
     await this.clearApiTaskStatus("airgap-install");
+  }
+
+  async resetOnlineInstallInProgress(appId: string): Promise<void> {
+    const q = `update app set install_state = 'online_upload_in_progress' where id = $1`;
+    const v = [appId];
+    await this.pool.query(q, v);
+
+    await this.clearApiTaskStatus("online-install");
   }
 
   async getImageRewriteStatus(): Promise<{ currentMessage: string, status: string }> {

@@ -50,7 +50,8 @@ export const Query = `
     getLatestKotsPreflightResult: PreflightResult
     getPreflightCommand(appSlug: String, clusterSlug: String, sequence: String): String
 
-    getAirgapInstallStatus: AirgapInstallStatus
+    getAirgapInstallStatus: InstallStatus
+    getOnlineInstallStatus: InstallStatus
     getImageRewriteStatus: ImageRewriteStatus
     getUpdateDownloadStatus: UpdateDownloadStatus
 

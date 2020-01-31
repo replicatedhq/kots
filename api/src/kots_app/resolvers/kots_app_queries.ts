@@ -6,6 +6,7 @@ import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsConfigGroup, KotsDown
 import { Cluster } from "../../cluster";
 import { Params } from "../../server/params";
 
+// tslint:disable-next-line max-func-body-length cyclomatic-complexity
 export function KotsQueries(stores: Stores, params: Params) {
   return {
     async getKotsApp(root: any, args: any, context: Context): Promise<KotsApp> {
@@ -122,6 +123,10 @@ export function KotsQueries(stores: Stores, params: Params) {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await context.getApp(appId);
       return await app.getAppConfigGroups(stores, app.id, args.sequence);
+    },
+
+    async getOnlineInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
+      return await stores.kotsAppStore.getOnlineInstallStatus();
     },
 
     async getAirgapInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {

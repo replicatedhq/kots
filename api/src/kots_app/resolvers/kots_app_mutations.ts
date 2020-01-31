@@ -9,15 +9,23 @@ import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
 import { uploadUpdate, syncLicense } from "../../controllers/kots/KotsAPI";
-import { kotsAppFromLicenseData, kotsFinalizeApp, kotsAppCheckForUpdates, kotsRewriteVersion, kotsAppDownloadUpdates } from "../kots_ffi";
-import { Update } from "../kots_ffi";
+import {
+  kotsPullFromLicense,
+  kotsAppFromData,
+  kotsAppCheckForUpdates,
+  kotsRewriteVersion,
+  kotsAppDownloadUpdates,
+  Update,
+  kotsDecryptString,
+} from "../kots_ffi";
 import { KotsAppRegistryDetails, KotsApp } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
-import { kotsDecryptString } from "../kots_ffi"
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { sendInitialGitCommitsForAppDownstream } from "../gitops";
+import { StatusServer } from "../../airgap/status";
 
+// tslint:disable-next-line max-func-body-length cyclomatic-complexity
 export function KotsMutations(stores: Stores) {
   return {
     async updateAppGitOps(root: any, args: any, context: Context): Promise<boolean> {
@@ -92,7 +100,7 @@ export function KotsMutations(stores: Stores) {
         throw err;
       }
 
-      let downloadUpdates = async function() {
+      const downloadUpdates = async (): Promise<void> => {
         try {
           await kotsAppDownloadUpdates(updatesAvailable, app, stores);
 
@@ -143,6 +151,7 @@ export function KotsMutations(stores: Stores) {
         if (clusterIDs.length === 0) {
           throw new Error("no clusters to transition for application");
         }
+        // NOTE (ethan): this is asyncronous but i didn't write the code
         sendInitialGitCommitsForAppDownstream(stores, appId, clusterIDs[0]);
 
         return true;
@@ -173,6 +182,7 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
+    // tslint:disable-next-line cyclomatic-complexity
     async uploadKotsLicense(root: any, args: any, context: Context) {
       const { value } = args;
       const parsedLicense = yaml.safeLoad(value);
@@ -188,7 +198,17 @@ export function KotsMutations(stores: Stores) {
           }
         }
         const name = parsedLicense.spec.appSlug.replace("-", " ");
-        const kotsApp = await kotsAppFromLicenseData(value, name, downstream.title, stores);
+        let kotsApp = await stores.kotsAppStore.kotsAppFromLicenseData(value, name);
+
+        await createKotsApp(stores, kotsApp, downstream.title);
+
+        if (!parsedLicense.spec.isAirgapSupported) {
+          // If airgap is supported and we choose to install the kots app online,
+          // this will be set in resumeInstallOnline.
+          await stores.kotsAppStore.setKotsAppInstallState(kotsApp.id, "installed");
+        }
+
+        kotsApp = await stores.kotsAppStore.getApp(kotsApp.id);
 
         // Carefully now, peek at registry credentials to see if we need to prompt for them
         let needsRegistry = true;
@@ -202,22 +222,17 @@ export function KotsMutations(stores: Stores) {
           }
 
         } catch {
-          /* no need to handle, rbac problem or not a path we can read registry */
+          // no need to handle, rbac problem or not a path we can read registry
         }
 
         return {
           hasPreflight: kotsApp.hasPreflight,
-          isAirgap: parsedLicense.spec.isAirgapSupported,
+          isAirgap: !!parsedLicense.spec.isAirgapSupported,
           needsRegistry,
           slug: kotsApp.slug,
           isConfigurable: kotsApp.isConfigurable
-        }
+        };
       } catch(err) {
-        try {
-          await stores.kotsAppStore.updateFailedInstallState(parsedLicense.spec.appSlug);
-        } catch(nestedErr) {
-          console.log(`unable to update failed install state: ${nestedErr.message}\n`);
-        }
         throw new ReplicatedError(err.message);
       }
     },
@@ -249,7 +264,7 @@ export function KotsMutations(stores: Stores) {
       }, 1000);
       liveness.start();
 
-      const updateFunc = async function(): Promise<void> {
+      const updateFunc = async (): Promise<void> => {
         try {
           if (downstreams.length > 0) {
             const tmpDir = tmp.dirSync();
@@ -304,9 +319,11 @@ export function KotsMutations(stores: Stores) {
             downstream = cluster;
           }
         }
-        const kotsApp = await kotsFinalizeApp(app, downstream.title, stores);
+
+        await createKotsApp(stores, app, downstream.title);
         await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-        return kotsApp;
+
+        return await stores.kotsAppStore.getApp(app.id);
       } catch(err) {
         throw new ReplicatedError(err.message);
       }
@@ -360,5 +377,72 @@ export function KotsMutations(stores: Stores) {
       await stores.kotsAppStore.updateDownstreamsStatus(app.id, sequence, status, "");
       return true;
     },
+  }
+}
+
+// tslint:disable-next-line cyclomatic-complexity
+async function createKotsApp(stores: Stores, kotsApp: KotsApp, downstreamName: string): Promise<{ hasPreflight: boolean, isConfigurable: boolean }> {
+  const liveness = new Repeater(() => {
+    return new Promise((resolve) => {
+      stores.kotsAppStore.updateOnlineInstallLiveness().finally(() => {
+        resolve();
+      });
+    });
+  }, 1000);
+  liveness.start();
+
+  const dstDir = tmp.dirSync();
+
+  try {
+    await stores.kotsAppStore.resetOnlineInstallInProgress(kotsApp.id);
+
+    const tmpDstDir = tmp.dirSync();
+    try {
+      await stores.kotsAppStore.setOnlineInstallStatus("Uploading license...", "running");
+
+      const out = path.join(tmpDstDir.name, "archive.tar.gz");
+
+      const statusServer = new StatusServer();
+      await statusServer.start(dstDir.name);
+      // DO NOT DELETE: args are returned so they are not garbage collected before native code is done
+      const garbage = await kotsPullFromLicense(statusServer.socketFilename, out, kotsApp, downstreamName, stores);
+
+      await statusServer.connection();
+      await statusServer.termination((resolve, reject, obj): boolean => {
+        // Return true if completed
+        if (obj.status === "running") {
+          // do we need to await?
+          stores.kotsAppStore.setOnlineInstallStatus(obj.display_message, "running");
+          return false;
+        } else if (obj.status === "terminated") {
+          if (obj.exit_code === 0) {
+            resolve();
+          } else {
+            reject(new Error(obj.display_message));
+          }
+          return true;
+        }
+        return false;
+      });
+
+      const response = await kotsAppFromData(out, kotsApp, stores);
+
+      await stores.kotsAppStore.clearOnlineInstallInProgress();
+
+      return response;
+    } finally {
+      tmpDstDir.removeCallback();
+    }
+
+  } catch(err) {
+
+    await stores.kotsAppStore.setOnlineInstallStatus(String(err), "failed");
+    await stores.kotsAppStore.setOnineInstallFailed(kotsApp.id);
+    await stores.kotsAppStore.updateFailedInstallState(kotsApp.slug);
+    throw(err);
+
+  } finally {
+    liveness.stop();
+    dstDir.removeCallback();
   }
 }

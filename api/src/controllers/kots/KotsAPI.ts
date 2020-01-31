@@ -23,7 +23,7 @@ import {
   extractBackupSpecFromTarball
 } from "../../util/tar";
 import { Cluster } from "../../cluster";
-import { KotsApp, kotsAppFromLicenseData } from "../../kots_app";
+import { KotsApp } from "../../kots_app";
 import { extractFromTgzStream } from "../../airgap/archive";
 import { StatusServer } from "../../airgap/status";
 import {
@@ -34,7 +34,7 @@ import {
   kotsAppCheckForUpdates,
   kotsAppDownloadUpdates,
   kotsRewriteVersion,
-  kotsAppDownloadUpdateFromAirgap
+  kotsAppDownloadUpdateFromAirgap,
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import { getDiffSummary } from "../../util/utilities";
@@ -200,7 +200,7 @@ export class KotsAPI {
       throw err;
     }
 
-    const downloadUpdates = async function() {
+    const downloadUpdates = async () => {
       try {
         await kotsAppDownloadUpdates(updatesAvailable, app, request.app.locals.stores);
 
@@ -229,47 +229,6 @@ export class KotsAPI {
     response.status(200);
     return {
       updatesAvailable: updatesAvailable.length,
-    };
-  }
-
-  @Post("/license")
-  async kotsUploadLicense(
-    @BodyParams("") body: UploadLicenseBody,
-    @Req() request: Request,
-    @Res() response: Response,
-    @HeaderParams("Authorization") auth: string,
-  ): Promise<any> {
-
-    // Intentionally not processing registry settings here because empty strings don't
-    // necessarily mean existing info should be deleted.
-
-    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
-    if (!session || !session.userId) {
-      response.status(401);
-      return {};
-    }
-
-    const clusters = await request.app.locals.stores.clusterStore.listAllUsersClusters();
-    let downstream;
-    for (const cluster of clusters) {
-      if (cluster.title === "this-cluster") {
-        downstream = cluster;
-      }
-    }
-
-    const kotsApp = await kotsAppFromLicenseData(body.license, body.name, downstream.title, request.app.locals.stores);
-    if (!kotsApp) {
-      await request.app.locals.stores.kotsAppStore.updateFailedInstallState(body.appSlug);
-      response.status(500);
-      return {
-        error: "failed to create app",
-      };
-    }
-
-    const params = await Params.getParams();
-    response.status(201);
-    return {
-      uri: `${params.shipApiEndpoint}/app/${kotsApp!.slug}`,
     };
   }
 
@@ -689,6 +648,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   };
 }
 
+// tslint:disable-next-line cyclomatic-complexity
 export async function syncLicense(stores, app, airgapLicense: string) {
   const license = await stores.kotsLicenseStore.getAppLicenseSpec(app.id);
 

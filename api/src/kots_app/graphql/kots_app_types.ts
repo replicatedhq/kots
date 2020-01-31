@@ -119,8 +119,8 @@ const KotsAppRegistryDetails = `
   }
 `;
 
-const AirgapInstallStatus = `
-  type AirgapInstallStatus {
+const InstallStatus = `
+  type InstallStatus {
     installStatus: String
     currentMessage: String
   }
@@ -274,7 +274,7 @@ export default [
 
   AppRegistryDetails,
   KotsAppRegistryDetails,
-  AirgapInstallStatus,
+  InstallStatus,
   ImageRewriteStatus,
   UpdateDownloadStatus,
 
