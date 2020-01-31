@@ -101,8 +101,6 @@ func (c boolcase) runTest(t *testing.T, builder Builder) {
 }
 
 func TestBuildStrings(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	// "Now"
 	// "NowFmt"
 	cases := []testcase{
@@ -214,17 +212,23 @@ func TestBuildStrings(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name(), func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			test.runTest(t, builder)
 		})
 	}
 
 	t.Run("Test bad values", func(t *testing.T) {
+		scopetest := scopeagent.StartTest(t)
+		defer scopetest.End()
 		built, err := builder.String("{{repl ParseBool True}}")
 		require.New(t).Error(err)
 		require.New(t).Equal("", built)
 	})
 
 	t.Run("Test broken template syntax", func(t *testing.T) {
+		scopetest := scopeagent.StartTest(t)
+		defer scopetest.End()
 		built, err := builder.String("{{repl SomeFunc")
 		require.New(t).Error(err)
 		require.New(t).Equal("", built)

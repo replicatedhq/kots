@@ -8,8 +8,6 @@ import (
 )
 
 func Test_kotsadmRegistry(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name              string
 		overrideVersion   string
@@ -36,6 +34,8 @@ func Test_kotsadmRegistry(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			OverrideVersion = test.overrideVersion
 			OverrideRegistry = test.overrideRegistry
 			OverrideNamespace = test.overrideNamespace

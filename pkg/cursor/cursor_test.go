@@ -8,8 +8,6 @@ import (
 )
 
 func Test_Comparable(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name    string
 		c1      string
@@ -53,6 +51,8 @@ func Test_Comparable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			c1, err := NewCursor(test.c1)
 			if test.c1Error {
 				assert.Error(t, err)

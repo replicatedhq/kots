@@ -13,8 +13,6 @@ import (
 )
 
 func Test_ImageNameFromNameParts(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -69,6 +67,8 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			image, err := ImageInfoFromFile(registryOps, test.parts)
 			if test.isError {
 				assert.Error(t, err)
@@ -81,8 +81,6 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 }
 
 func TestDestRef(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -124,6 +122,8 @@ func TestDestRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			if got := DestRef(tt.args.registry, tt.args.srcImage); got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
 			}
@@ -132,8 +132,6 @@ func TestDestRef(t *testing.T) {
 }
 
 func Test_buildImageAlts(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name         string
 		destRegistry registry.RegistryOptions
@@ -255,6 +253,8 @@ func Test_buildImageAlts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 			got, err := buildImageAlts(tt.destRegistry, tt.image)
 			req.NoError(err)
@@ -264,8 +264,6 @@ func Test_buildImageAlts(t *testing.T) {
 }
 
 func Test_stripImageTag(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name  string
 		image string
@@ -304,6 +302,8 @@ func Test_stripImageTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			if got := stripImageTag(tt.image); got != tt.want {
 				t.Errorf("stripImageTag() = %v, want %v", got, tt.want)
 			}

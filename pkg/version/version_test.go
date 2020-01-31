@@ -11,8 +11,6 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name string
 		want string
@@ -28,6 +26,8 @@ func TestVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			version = tt.want
@@ -40,8 +40,6 @@ func TestVersion(t *testing.T) {
 }
 
 func TestGitSHA(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name string
 		sha  string
@@ -70,6 +68,8 @@ func TestGitSHA(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			gitSHA = tt.sha
@@ -82,8 +82,6 @@ func TestGitSHA(t *testing.T) {
 }
 
 func TestBuildTime(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	req := require.New(t)
 	aTime, err := time.Parse(time.RFC3339, "2019-06-26T18:53:19Z")
 	req.NoError(err, "parse constant time")
@@ -106,6 +104,8 @@ func TestBuildTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			buildTime = tt.timestring
@@ -118,8 +118,6 @@ func TestBuildTime(t *testing.T) {
 }
 
 func TestGetBuild(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name      string
 		gitSHA    string
@@ -138,6 +136,8 @@ func TestGetBuild(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			version = tt.version
@@ -154,8 +154,6 @@ func TestGetBuild(t *testing.T) {
 }
 
 func TestIsLatestRelease(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name            string
 		version         string
@@ -188,6 +186,8 @@ func TestIsLatestRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

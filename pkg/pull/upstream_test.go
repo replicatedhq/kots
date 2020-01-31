@@ -8,8 +8,6 @@ import (
 )
 
 func TestRewriteUpstream(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		upstreamURI string
 		expected    string
@@ -29,6 +27,8 @@ func TestRewriteUpstream(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.upstreamURI, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			actual := RewriteUpstream(test.upstreamURI)
 			assert.Equal(t, actual, test.expected)
 		})

@@ -21,8 +21,6 @@ func TestGenerateRandomString(t *testing.T) {
 }
 
 func TestGenerateRandomStringTemplates(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name           string
 		length         int
@@ -69,6 +67,8 @@ func TestGenerateRandomStringTemplates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			// TODO
 
 			// req := require.New(t)

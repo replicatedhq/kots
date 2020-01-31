@@ -10,8 +10,6 @@ import (
 )
 
 func TestUpdateRole(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name          string
 		existingRole  *rbacv1.Role
@@ -147,6 +145,8 @@ func TestUpdateRole(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 			UpdateRole(tt.existingRole, tt.desiredRole)
 			req.ElementsMatch(tt.existingRole.Rules, tt.expectedRules)
