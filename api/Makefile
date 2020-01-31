@@ -79,3 +79,8 @@ build-release: build_and_push
 build_and_push:
 	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" .
 	docker push ${IMAGE}
+
+.PHONY: no-yarn
+no-yarn:
+	# fail the build if a yarn.lock exists, as this project uses package-lock.json
+	if [ -e yarn.lock ]; then exit 1; fi

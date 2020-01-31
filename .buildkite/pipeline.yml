@@ -139,7 +139,7 @@ steps:
       - docker-compose -f api/test/docker-compose.yml down --remove-orphans
   - label: "build typescript api"
     commands:
-      - make -C api deps build
+      - make -C api no-yarn deps build
     plugins:
       - docker#v3.5.0:
           always-pull: true
