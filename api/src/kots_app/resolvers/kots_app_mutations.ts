@@ -200,9 +200,9 @@ export function KotsMutations(stores: Stores) {
         const name = parsedLicense.spec.appSlug.replace("-", " ");
         let kotsApp = await stores.kotsAppStore.kotsAppFromLicenseData(value, name);
 
-        await createKotsApp(stores, kotsApp, downstream.title);
-
         if (!parsedLicense.spec.isAirgapSupported) {
+          await createKotsApp(stores, kotsApp, downstream.title);
+
           // If airgap is supported and we choose to install the kots app online,
           // this will be set in resumeInstallOnline.
           await stores.kotsAppStore.setKotsAppInstallState(kotsApp.id, "installed");
