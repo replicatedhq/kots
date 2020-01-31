@@ -125,6 +125,7 @@ func ensureKotsadmRole(namespace string, clientset *kubernetes.Clientset) error 
 		if err != nil {
 			return errors.Wrap(err, "failed to create role")
 		}
+		return nil
 	}
 
 	// we have now changed the role, so an upgrade is required
