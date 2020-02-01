@@ -29,10 +29,11 @@ type Upstream struct {
 }
 
 type WriteOptions struct {
-	RootDir             string
-	CreateAppDir        bool
-	IncludeAdminConsole bool
-	SharedPassword      string
+	RootDir                 string
+	CreateAppDir            bool
+	IncludeAdminConsole     bool
+	SharedPassword          string
+	AdminConsoleHostNetwork bool
 }
 
 func (u *Upstream) GetBaseDir(options WriteOptions) string {

@@ -24,4 +24,5 @@ type DeployOptions struct {
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool // true if the application is being deployed to an OpenShift cluster
+	HostNetwork            bool // host-network flag was passed on CLI or in kURL
 }

@@ -24,7 +24,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	renderDir = path.Join(renderDir, "upstream")
 
 	if options.IncludeAdminConsole {
-		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir, options.SharedPassword)
+		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir, options.SharedPassword, options.AdminConsoleHostNetwork)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate admin console")
 		}

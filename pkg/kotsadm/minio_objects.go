@@ -123,6 +123,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
+					HostNetwork:     deployOptions.HostNetwork,
 					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{

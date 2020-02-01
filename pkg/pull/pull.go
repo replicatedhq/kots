@@ -24,25 +24,26 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI         string
-	RootDir             string
-	Namespace           string
-	Downstreams         []string
-	LocalPath           string
-	LicenseFile         string
-	InstallationFile    string
-	AirgapRoot          string
-	ConfigFile          string
-	UpdateCursor        string
-	ExcludeKotsKinds    bool
-	ExcludeAdminConsole bool
-	SharedPassword      string
-	CreateAppDir        bool
-	Silent              bool
-	RewriteImages       bool
-	RewriteImageOptions RewriteImageOptions
-	HelmOptions         []string
-	ReportWriter        io.Writer
+	HelmRepoURI             string
+	RootDir                 string
+	Namespace               string
+	Downstreams             []string
+	LocalPath               string
+	LicenseFile             string
+	InstallationFile        string
+	AirgapRoot              string
+	ConfigFile              string
+	UpdateCursor            string
+	ExcludeKotsKinds        bool
+	ExcludeAdminConsole     bool
+	SharedPassword          string
+	CreateAppDir            bool
+	Silent                  bool
+	RewriteImages           bool
+	RewriteImageOptions     RewriteImageOptions
+	HelmOptions             []string
+	ReportWriter            io.Writer
+	AdminConsoleHostNetwork bool
 }
 
 type RewriteImageOptions struct {
@@ -173,10 +174,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
-		RootDir:             pullOptions.RootDir,
-		CreateAppDir:        pullOptions.CreateAppDir,
-		IncludeAdminConsole: includeAdminConsole,
-		SharedPassword:      pullOptions.SharedPassword,
+		RootDir:                 pullOptions.RootDir,
+		CreateAppDir:            pullOptions.CreateAppDir,
+		IncludeAdminConsole:     includeAdminConsole,
+		SharedPassword:          pullOptions.SharedPassword,
+		AdminConsoleHostNetwork: pullOptions.AdminConsoleHostNetwork,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

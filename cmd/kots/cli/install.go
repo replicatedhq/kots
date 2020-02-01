@@ -123,6 +123,7 @@ func InstallCmd() *cobra.Command {
 				ServiceType:         v.GetString("service-type"),
 				NodePort:            v.GetInt32("node-port"),
 				Hostname:            v.GetString("hostname"),
+				HostNetwork:         v.GetBool("admin-console-host-network"),
 				ApplicationMetadata: applicationMetadata,
 			}
 
@@ -227,6 +228,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().StringP("namespace", "n", "", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
+	cmd.Flags().Bool("admin-console-host-network", false, "if set to true, kotsadm manifests will use the host network instead of a pod network. This will require specific ports to be available on the host. See https://kots.io/kots-cli/install/ for more info.")
 	cmd.Flags().String("shared-password", "", "shared password to apply")
 	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
@@ -244,6 +246,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-registry")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
+	cmd.Flags().MarkHidden("admin-console-host-network") // hide for now
 
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")

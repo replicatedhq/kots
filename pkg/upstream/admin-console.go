@@ -18,6 +18,7 @@ import (
 
 type UpstreamSettings struct {
 	SharedPassword       string
+	HostNetwork          bool
 	SharedPasswordBcrypt string
 	S3AccessKey          string
 	S3SecretKey          string
@@ -28,10 +29,11 @@ type UpstreamSettings struct {
 	AutoCreateClusterToken string
 }
 
-func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]types.UpstreamFile, error) {
+func generateAdminConsoleFiles(renderDir string, sharedPassword string, hostNetwork bool) ([]types.UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
 		settings := &UpstreamSettings{
 			SharedPassword:         sharedPassword,
+			HostNetwork:            hostNetwork,
 			AutoCreateClusterToken: uuid.New().String(),
 		}
 		return generateNewAdminConsoleFiles(settings)
@@ -115,6 +117,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
+		HostNetwork:            settings.HostNetwork,
 		Hostname:               "localhost:8800",
 	}
 

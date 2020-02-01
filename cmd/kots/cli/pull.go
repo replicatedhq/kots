@@ -32,18 +32,19 @@ func PullCmd() *cobra.Command {
 			// strip it if included or else the rewrite images will fail
 
 			pullOptions := pull.PullOptions{
-				HelmRepoURI:         v.GetString("repo"),
-				RootDir:             ExpandDir(v.GetString("rootdir")),
-				Namespace:           v.GetString("namespace"),
-				Downstreams:         v.GetStringSlice("downstream"),
-				LocalPath:           ExpandDir(v.GetString("local-path")),
-				LicenseFile:         ExpandDir(v.GetString("license-file")),
-				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
-				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
-				SharedPassword:      v.GetString("shared-password"),
-				CreateAppDir:        true,
-				HelmOptions:         v.GetStringSlice("set"),
-				RewriteImages:       v.GetBool("rewrite-images"),
+				HelmRepoURI:             v.GetString("repo"),
+				RootDir:                 ExpandDir(v.GetString("rootdir")),
+				Namespace:               v.GetString("namespace"),
+				Downstreams:             v.GetStringSlice("downstream"),
+				LocalPath:               ExpandDir(v.GetString("local-path")),
+				LicenseFile:             ExpandDir(v.GetString("license-file")),
+				ExcludeKotsKinds:        v.GetBool("exclude-kots-kinds"),
+				ExcludeAdminConsole:     v.GetBool("exclude-admin-console"),
+				SharedPassword:          v.GetString("shared-password"),
+				CreateAppDir:            true,
+				HelmOptions:             v.GetStringSlice("set"),
+				RewriteImages:           v.GetBool("rewrite-images"),
+				AdminConsoleHostNetwork: v.GetBool("admin-console-host-network"),
 				RewriteImageOptions: pull.RewriteImageOptions{
 					Host:      v.GetString("registry-endpoint"),
 					Namespace: v.GetString("image-namespace"),
@@ -84,6 +85,9 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
+	cmd.Flags().Bool("admin-console-host-network", false, "if set to true, kotsadm manifests will use the host network instead of a pod network. This will require specific ports to be available on the host. See https://kots.io/kots-cli/install/ for more info.")
+
+	cmd.Flags().MarkHidden("admin-console-host-network") // hide for now
 
 	return cmd
 }
