@@ -3,7 +3,6 @@ package template
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -102,31 +101,14 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx ConfigCtx) mike() string {
-	// address, ok := ctx.ItemValues["mike"]
-	// if !ok {
-	// 	return "no mike found"
-	// }
-	// if address.HasValue() {
-	// 	return address.ValueStr()
-	// }
-	// return "no value"
-
-	keys := make([]string, len(ctx.ItemValues))
-	i := 0
-	for item := range ctx.ItemValues {
-		keys[i] = item
-		i++
+	result, ok := ctx.ItemValues["mike"]
+	if !ok {
+		return "no mike found"
 	}
-	key := strings.Join(keys, "|")
-
-	// // values := make([]string, len(keys))
-	// var val string
-	// for i, thing := range keys {
-	// 	val += keys[i]
-	// 	val += "|"
-	// }
-
-	return key
+	if result.HasValue() {
+		return result.ValueStr()
+	}
+	return "no value"
 }
 
 func (ctx ConfigCtx) configOption(name string) string {

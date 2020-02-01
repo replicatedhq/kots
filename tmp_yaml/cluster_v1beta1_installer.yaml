@@ -1,0 +1,140 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: installers.kots.io
+spec:
+  group: kots.io 
+  names:
+    kind: Installer
+    plural: installers
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            contour:
+              properties:
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            docker:
+              properties:
+                bypassStorageDriverWarning:
+                  type: boolean
+                hardFailOnLoopBack:
+                  type: boolean
+                noCEOnEE:
+                  type: boolean
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            fluentd:
+              properties:
+                efkStack:
+                  type: boolean
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            kotsadm:
+              properties:
+                applicationSlug:
+                  type: string
+                uiBindPort:
+                  format: int64
+                  type: integer
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            kubernetes:
+              properties:
+                serviceCIDR:
+                  type: string
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            prometheus:
+              properties:
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            registry:
+              properties:
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            rook:
+              properties:
+                cephPoolReplicas:
+                  format: int64
+                  type: integer
+                storageClass:
+                  type: string
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            velero:
+              properties:
+                installCLI:
+                  type: boolean
+                namespace:
+                  type: string
+                useREstic:
+                  type: boolean
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+            weave:
+              properties:
+                IPAllocRange:
+                  type: string
+                encryptNetwork:
+                  type: boolean
+                version:
+                  type: string
+              required:
+              - version
+              type: object
+          type: object
+        status:
+          type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

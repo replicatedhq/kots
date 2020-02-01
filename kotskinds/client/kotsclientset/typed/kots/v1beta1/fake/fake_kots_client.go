@@ -51,8 +51,8 @@ func (c *FakeKotsV1beta1) Installations(namespace string) v1beta1.InstallationIn
 	return &FakeInstallations{c, namespace}
 }
 
-func (c *FakeKotsV1beta1) KurlValueses(namespace string) v1beta1.KurlValuesInterface {
-	return &FakeKurlValueses{c, namespace}
+func (c *FakeKotsV1beta1) Installers(namespace string) v1beta1.InstallerInterface {
+	return &FakeInstallers{c, namespace}
 }
 
 func (c *FakeKotsV1beta1) Licenses(namespace string) v1beta1.LicenseInterface {

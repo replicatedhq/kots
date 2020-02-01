@@ -23,7 +23,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
 
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	kotsclientset "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/typed/kots/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -61,30 +60,31 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, errors.Wrap(err, "could not get config")
 	}
 
+	_ = cfg
+
 	clientset := kotsclientset.NewForConfigOrDie(cfg)
 
-	kurlValueses := clientset.KurlValueses("default")
+	installers := clientset.Installers("default")
 
-	testtest := &kotsv1beta1.KurlValues{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "mike-test",
-		},
-		Spec: kotsv1beta1.KurlValuesSpec{
-			IsAirgapped:         true,
-			IsKurl:              false,
-			IsKurlHA:            true,
-			LoadBalancerAddress: "localhost",
-		},
-		Status: kotsv1beta1.KurlValuesStatus{},
-	}
+	//	testtest := &kotsv1beta1.Installer{
+	//		ObjectMeta: metav1.ObjectMeta{
+	//			Name: "test",
+	//		},
+	//		Spec: kotsv1beta1.InstallerSpec{
+	//			Kubernetes: kotsv1beta1.Kubernetes{
+	//				Version: "test",
+	//			},
+	//		},
+	//		Status: kotsv1beta1.InstallerStatus{},
+	//	}
+	//
+	//	_, err = installers.Create(testtest)
+	//
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "could not creat kurl value Object")
+	//	}
 
-	_, err = kurlValueses.Create(testtest)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "could not creat kurl value Object")
-	}
-
-	_, err = kurlValueses.Get("mike-test", metav1.GetOptions{})
+	retrieved, err := installers.Get("test", metav1.GetOptions{})
 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not retrieve kurl value Object")
@@ -102,12 +102,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 		var val template.ItemValue
 
+		result := retrieved.Spec.Kotsadm.UiBindPort
+
 		val = template.ItemValue{
-			Value:   "builder",
+			Value:   result,
 			Default: "default",
 		}
 
-		configCtx.ItemValues["base"] = val
+		configCtx.ItemValues["mike"] = val
 
 		builder.AddCtx(configCtx)
 	}
@@ -499,8 +501,4 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
-}
-
-func init() {
-	kotsscheme.AddToScheme(scheme.Scheme)
 }

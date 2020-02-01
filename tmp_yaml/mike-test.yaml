@@ -1,0 +1,40 @@
+apiVersion: "kots.io/v1beta1"
+kind: "Installer"
+metadata: 
+  name: "test"
+spec:
+  kubernetes:
+    version: latest
+    serviceCIDR: 10.96.0.0/12
+  docker:
+    version: latest
+    bypassStorageDriverWarnings: false
+    hardFailOnLoopback: false
+    noCEOnEE: false
+  weave:
+    version: latest
+    encryptNetwork: true
+    IPAllocRange: 10.32.0.0/12
+  contour:
+    version: latest
+  rook:
+    version: latest
+    storageClass: default
+    cephPoolReplicas: 1
+  registry:
+    version: latest
+  prometheus:
+    version: latest
+  fluentd:
+    version: latest
+    efkStack: true
+  kotsadm:
+    version: latest
+    applicationSlug: sentry
+    uiBindPort: 8800
+  velero:
+    version: latest
+    namespace: velero
+    installCLI: false
+    useRestic: false
+

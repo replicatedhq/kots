@@ -32,7 +32,7 @@ type KotsV1beta1Interface interface {
 	ConfigValuesesGetter
 	HelmChartsGetter
 	InstallationsGetter
-	KurlValuesesGetter
+	InstallersGetter
 	LicensesGetter
 }
 
@@ -65,8 +65,8 @@ func (c *KotsV1beta1Client) Installations(namespace string) InstallationInterfac
 	return newInstallations(c, namespace)
 }
 
-func (c *KotsV1beta1Client) KurlValueses(namespace string) KurlValuesInterface {
-	return newKurlValueses(c, namespace)
+func (c *KotsV1beta1Client) Installers(namespace string) InstallerInterface {
+	return newInstallers(c, namespace)
 }
 
 func (c *KotsV1beta1Client) Licenses(namespace string) LicenseInterface {
