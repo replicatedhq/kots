@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -19,7 +20,7 @@ type WriteOptions struct {
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
-	renderDir := options.BaseDir
+	renderDir := filepath.Join(options.BaseDir, b.Path)
 
 	_, err := os.Stat(renderDir)
 	if err == nil {
@@ -45,6 +46,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	kustomizeResources := []string{}
 	kustomizePatches := []kustomizetypes.PatchStrategicMerge{}
+	kustomizeBases := []string{}
 
 	for _, file := range resources {
 		fileRenderPath := path.Join(renderDir, file.Path)
@@ -78,6 +80,16 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
 	}
 
+	for _, base := range b.Bases {
+		if base.Path == "" {
+			return errors.New("kustomize sub-base path cannot be empty")
+		}
+		if err := base.WriteBase(options); err != nil {
+			return errors.Wrapf(err, "failed to render base %q", base.Path)
+		}
+		kustomizeBases = append(kustomizeBases, base.Path)
+	}
+
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
@@ -85,6 +97,10 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		},
 		Resources:             kustomizeResources,
 		PatchesStrategicMerge: kustomizePatches,
+		Bases:                 kustomizeBases,
+	}
+	if b.Namespace != "" {
+		kustomization.Namespace = b.Namespace
 	}
 
 	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
