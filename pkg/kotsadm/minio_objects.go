@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/kotsadm/hostnetwork"
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -13,8 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var minioPVSize = resource.MustParse("4Gi")
+
 func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size := resource.MustParse("4Gi")
+	size := minioPVSize
 
 	if deployOptions.LimitRange != nil {
 		var allowedMax *resource.Quantity
@@ -22,12 +25,12 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 
 		for _, limit := range deployOptions.LimitRange.Spec.Limits {
 			if limit.Type == corev1.LimitTypePersistentVolumeClaim {
-				max, ok := limit.Max["storage"]
+				max, ok := limit.Max[corev1.ResourceStorage]
 				if ok {
 					allowedMax = &max
 				}
 
-				min, ok := limit.Min["storage"]
+				min, ok := limit.Min[corev1.ResourceStorage]
 				if ok {
 					allowedMin = &min
 				}
@@ -141,6 +144,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 							},
 						},
 					},
+					Tolerations: hostnetwork.Tolerations(deployOptions.HostNetwork),
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
@@ -155,6 +159,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 								{
 									Name:          "service",
 									ContainerPort: 9000,
+									HostPort:      hostnetwork.MaybeHostPortMap(deployOptions.HostNetwork).MinioMinio,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -263,4 +268,43 @@ func minioService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+// this is a pretty egregious hack to enable development against
+// clusters without storage classes ready. This is primarily for
+// delivering/managing CNI impls with kotsadm, since any non-cloud-specific
+// volume provisioner (e.g. rook/ceph, gluster) will probably require
+// a functioning pod network.
+//
+// Repeat: using a throwaway PV is really dangerous, but it enables
+// us to get kots up and running on a single node without a pod network.
+//
+// somebody please make this better :)
+func minioHostpathVolume() *corev1.PersistentVolume {
+	return &corev1.PersistentVolume{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolume",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-minio-host-pv",
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+			},
+		},
+		Spec: corev1.PersistentVolumeSpec{
+			Capacity: corev1.ResourceList{
+				corev1.ResourceStorage: minioPVSize,
+			},
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+			},
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/opt/kotsadm/minio-pv",
+				},
+			},
+		},
+	}
+
 }

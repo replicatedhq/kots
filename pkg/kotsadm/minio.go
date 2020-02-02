@@ -2,7 +2,6 @@ package kotsadm
 
 import (
 	"bytes"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +20,14 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 		return nil, errors.Wrap(err, "failed to marshal minio statefulset")
 	}
 	docs["minio-statefulset.yaml"] = statefulset.Bytes()
+
+	var hostpathVolume bytes.Buffer
+	if deployOptions.HostNetwork {
+		if err := s.Encode(minioHostpathVolume(), &hostpathVolume); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal minio hostPath persistent volume")
+		}
+		docs["minio-pv.yaml"] = hostpathVolume.Bytes()
+	}
 
 	var service bytes.Buffer
 	if err := s.Encode(minioService(deployOptions.Namespace), &service); err != nil {
@@ -57,6 +64,14 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(minioStatefulset(deployOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
+		}
+
+		if deployOptions.HostNetwork {
+			_, err := clientset.CoreV1().PersistentVolumes().Create(minioHostpathVolume())
+			if err != nil {
+				return errors.Wrap(err, "failed to create minio hostpath persistentvolume")
+			}
+
 		}
 	}
 
