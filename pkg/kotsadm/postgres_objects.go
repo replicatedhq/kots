@@ -12,8 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var postgresPVSize = resource.MustParse("1Gi")
 func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size := resource.MustParse("1Gi")
+	size :=  postgresPVSize
 
 	if deployOptions.LimitRange != nil {
 		var allowedMax *resource.Quantity
@@ -217,4 +218,42 @@ func postgresService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+// this is a pretty egregious hack to enable development against
+// clusters without storage classes ready. This is primarily for
+// delivering/managing CNI impls with kotsadm, since any non-cloud-specific
+// volume provisioner (e.g. rook/ceph, gluster) will probably require
+// a functioning pod network.
+//
+// Repeat: using a throwaway PV is really dangerous, but it enables
+// us to get kots up and running on a single node without a pod network.
+//
+// somebody please make this better :)
+func postgresHostpathVolume() *corev1.PersistentVolume {
+	return &corev1.PersistentVolume{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolume",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-postgres-host-pv",
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+			},
+		},
+		Spec: corev1.PersistentVolumeSpec{
+			Capacity: corev1.ResourceList{
+				corev1.ResourceStorage: postgresPVSize,
+			},
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+			},
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/opt/kotsadm/postgres-pv",
+				},
+			},
+		},
+	}
 }

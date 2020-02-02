@@ -71,7 +71,6 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 			if err != nil {
 				return errors.Wrap(err, "failed to create minio hostpath persistentvolume")
 			}
-
 		}
 	}
 
