@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/kotsadm/hostnetwork"
 
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -143,6 +144,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 				},
 				Spec: corev1.PodSpec{
+					Tolerations:        hostnetwork.Tolerations(deployOptions.UseHostNetwork),
+					HostNetwork:        deployOptions.UseHostNetwork,
 					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
@@ -154,7 +157,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
-									ContainerPort: 3000,
+									ContainerPort: hostnetwork.ContainerPorts(deployOptions.UseHostNetwork).KotsadmKotsadm,
+									HostPort:      hostnetwork.HostPorts(deployOptions.UseHostNetwork).KotsadmKotsadm,
 								},
 							},
 							ReadinessProbe: &corev1.Probe{

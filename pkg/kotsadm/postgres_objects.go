@@ -123,8 +123,8 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "postgres",
-									ContainerPort: 5432,
-									HostPort:      hostnetwork.PortMap(deployOptions.UseHostNetwork).PostgresPostgres,
+									ContainerPort: hostnetwork.ContainerPorts(deployOptions.UseHostNetwork).PostgresPostgres,
+									HostPort:      hostnetwork.HostPorts(deployOptions.UseHostNetwork).PostgresPostgres,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

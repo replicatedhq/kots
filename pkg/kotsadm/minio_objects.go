@@ -44,13 +44,10 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 
 		size = *newSize
 	}
-	overrideSecurityContext :=
-		!deployOptions.IsOpenShift && // Openshift will set the context for us
-			!deployOptions.UseHostNetwork // hack to help us use hostpath volumes, need to be able to chown
 
 	var securityContext corev1.PodSecurityContext
 	var initContainers []corev1.Container
-	if overrideSecurityContext {
+	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(1001),
 			FSGroup:   util.IntPointer(1001),
@@ -129,7 +126,6 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
-					HostNetwork:     deployOptions.UseHostNetwork,
 					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{
@@ -148,6 +144,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 						},
 					},
 					Tolerations: hostnetwork.Tolerations(deployOptions.UseHostNetwork),
+					HostNetwork: deployOptions.UseHostNetwork,
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
@@ -161,8 +158,8 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "service",
-									ContainerPort: 9000,
-									HostPort:      hostnetwork.PortMap(deployOptions.UseHostNetwork).MinioMinio,
+									ContainerPort: hostnetwork.ContainerPorts(deployOptions.UseHostNetwork).MinioMinio,
+									HostPort:      hostnetwork.HostPorts(deployOptions.UseHostNetwork).MinioMinio,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

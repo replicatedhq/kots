@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/kotsadm/hostnetwork"
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -34,6 +35,8 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			},
 		},
 		Spec: corev1.PodSpec{
+			Tolerations:     hostnetwork.Tolerations(deployOptions.UseHostNetwork),
+			HostNetwork:     deployOptions.UseHostNetwork,
 			SecurityContext: &securityContext,
 			RestartPolicy:   corev1.RestartPolicyOnFailure,
 			Containers: []corev1.Container{

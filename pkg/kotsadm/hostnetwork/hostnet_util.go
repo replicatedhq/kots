@@ -2,25 +2,44 @@ package hostnetwork
 
 import v1 "k8s.io/api/core/v1"
 
-type HostPortMap struct {
-	MinioMinio       int32
-	PostgresPostgres int32
+type PortMapping struct {
+	MinioMinio        int32
+	PostgresPostgres  int32
+	KotsadmKotsadmAPI int32
+	KotsadmKotsadm    int32
 }
 
 var (
-	hostnetPorts = HostPortMap{
-		MinioMinio:       9000,
-		PostgresPostgres: 5432,
+	hostnetPorts = PortMapping{
+		MinioMinio:        9000,
+		PostgresPostgres:  5432,
+		KotsadmKotsadm:    3000,
+		KotsadmKotsadmAPI: 3000, // todo this conflicts, need to fix which port the container exposes. Maybe there's an env var.
+	}
+	containerPorts = PortMapping{
+		MinioMinio:        9000,
+		PostgresPostgres:  5432,
+		KotsadmKotsadm:    3000,
+		KotsadmKotsadmAPI: 3000,
 	}
 )
 
 // Return a port map with either all zeroes (do not set HostPort fields)
 // or one with specific ports for each service we ship
-func PortMap(useHostNetwork bool) HostPortMap {
+func HostPorts(useHostNetwork bool) PortMapping {
 	if useHostNetwork {
 		return hostnetPorts
 	}
-	return HostPortMap{}
+	return PortMapping{}
+}
+
+// Return a port map with either all zeroes (do not set HostPort fields)
+// or one with specific ports for each service we ship
+func ContainerPorts(useHostNetwork bool) PortMapping {
+	if useHostNetwork {
+		return hostnetPorts
+	}
+	return containerPorts
 }
 
 // Adds a NoSchedule toleration so that we can run kotsadm stack
@@ -43,12 +62,6 @@ func PortMap(useHostNetwork bool) HostPortMap {
 //   docker:
 //     version: "latest"
 //
-// toleration spec is borrowed from weave-net bootstrap YAML:
-//
-//           tolerations:
-//            - effect: NoSchedule
-//              operator: Exist
-//
 func Tolerations(useHostNetwork bool) []v1.Toleration {
 	if !useHostNetwork {
 		return nil
@@ -56,8 +69,8 @@ func Tolerations(useHostNetwork bool) []v1.Toleration {
 
 	return []v1.Toleration{
 		{
-			Effect:   v1.TaintEffectNoSchedule,
-			Key:      "node.kubernetes.io/not-ready",
+			Effect: v1.TaintEffectNoSchedule,
+			//Key:      "node.kubernetes.io/not-ready",
 			Operator: v1.TolerationOpExists,
 		},
 	}

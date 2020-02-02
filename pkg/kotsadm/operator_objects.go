@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/kotsadm/hostnetwork"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -237,6 +238,8 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-operator",
 					RestartPolicy:      corev1.RestartPolicyAlways,
+					Tolerations:        hostnetwork.Tolerations(deployOptions.UseHostNetwork),
+					HostNetwork:        deployOptions.UseHostNetwork,
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(), kotsadmTag()),
