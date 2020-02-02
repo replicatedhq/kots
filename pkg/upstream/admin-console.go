@@ -117,7 +117,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
-		HostNetwork:            settings.HostNetwork,
+		UseHostNetwork:         settings.HostNetwork,
 		Hostname:               "localhost:8800",
 	}
 

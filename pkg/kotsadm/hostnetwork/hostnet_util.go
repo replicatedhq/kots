@@ -16,11 +16,11 @@ var (
 
 // Return a port map with either all zeroes (do not set HostPort fields)
 // or one with specific ports for each service we ship
-func MaybeHostPortMap(useHostNetwork bool) HostPortMap {
+func PortMap(useHostNetwork bool) HostPortMap {
 	if useHostNetwork {
 		return hostnetPorts
 	}
-	return HostPortMap{} // all zeroes
+	return HostPortMap{}
 }
 
 // Adds a NoSchedule toleration so that we can run kotsadm stack

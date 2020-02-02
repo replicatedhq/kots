@@ -123,7 +123,7 @@ func InstallCmd() *cobra.Command {
 				ServiceType:         v.GetString("service-type"),
 				NodePort:            v.GetInt32("node-port"),
 				Hostname:            v.GetString("hostname"),
-				HostNetwork:         v.GetBool("admin-console-host-network"),
+				UseHostNetwork:      v.GetBool("admin-console-host-network"),
 				ApplicationMetadata: applicationMetadata,
 			}
 

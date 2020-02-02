@@ -44,8 +44,12 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 		size = *newSize
 	}
 
+	overrideSecurityContext :=
+		!deployOptions.IsOpenShift && // Openshift will set the context for us
+			!deployOptions.UseHostNetwork // hack to help us use hostpath volumes, need to be able to chown
+
 	var securityContext corev1.PodSecurityContext
-	if !deployOptions.IsOpenShift {
+	if overrideSecurityContext {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(999),
 			FSGroup:   util.IntPointer(999),
@@ -84,7 +88,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 						},
 						Resources: corev1.ResourceRequirements{
 							Requests: corev1.ResourceList{
-								corev1.ResourceName(corev1.ResourceStorage): size,
+								corev1.ResourceStorage: size,
 							},
 						},
 					},
@@ -109,8 +113,8 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 							},
 						},
 					},
-					HostNetwork: deployOptions.HostNetwork,
-					Tolerations: hostnetwork.Tolerations(deployOptions.HostNetwork),
+					HostNetwork: deployOptions.UseHostNetwork,
+					Tolerations: hostnetwork.Tolerations(deployOptions.UseHostNetwork),
 					Containers: []corev1.Container{
 						{
 							Image:           "postgres:10.7",
@@ -120,7 +124,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 								{
 									Name:          "postgres",
 									ContainerPort: 5432,
-									HostPort:      hostnetwork.MaybeHostPortMap(deployOptions.HostNetwork).PostgresPostgres,
+									HostPort:      hostnetwork.PortMap(deployOptions.UseHostNetwork).PostgresPostgres,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

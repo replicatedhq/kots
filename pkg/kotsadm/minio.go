@@ -22,7 +22,7 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 	docs["minio-statefulset.yaml"] = statefulset.Bytes()
 
 	var hostpathVolume bytes.Buffer
-	if deployOptions.HostNetwork {
+	if deployOptions.UseHostNetwork {
 		if err := s.Encode(minioHostpathVolume(), &hostpathVolume); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal minio hostPath persistent volume")
 		}
@@ -66,7 +66,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}
 
-		if deployOptions.HostNetwork {
+		if deployOptions.UseHostNetwork {
 			_, err := clientset.CoreV1().PersistentVolumes().Create(minioHostpathVolume())
 			if err != nil {
 				return errors.Wrap(err, "failed to create minio hostpath persistentvolume")

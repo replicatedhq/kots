@@ -33,7 +33,7 @@ func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 	docs["postgres-service.yaml"] = service.Bytes()
 
 	var hostpathVolume bytes.Buffer
-	if deployOptions.HostNetwork {
+	if deployOptions.UseHostNetwork {
 		if err := s.Encode(postgresHostpathVolume(), &hostpathVolume); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal postgres hostPath persistent volume")
 		}
@@ -71,7 +71,7 @@ func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kub
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}
 
-		if deployOptions.HostNetwork {
+		if deployOptions.UseHostNetwork {
 			_, err := clientset.CoreV1().PersistentVolumes().Create(postgresHostpathVolume())
 			if err != nil {
 				return errors.Wrap(err, "failed to create postgres hostpath persistentvolume")
