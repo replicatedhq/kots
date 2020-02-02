@@ -1,6 +1,7 @@
 package kotsadm
 
 import (
+	"github.com/replicatedhq/kots/pkg/kotsadm/hostnetwork"
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -13,8 +14,9 @@ import (
 )
 
 var postgresPVSize = resource.MustParse("1Gi")
+
 func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size :=  postgresPVSize
+	size := postgresPVSize
 
 	if deployOptions.LimitRange != nil {
 		var allowedMax *resource.Quantity
@@ -107,6 +109,8 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 							},
 						},
 					},
+					HostNetwork: deployOptions.HostNetwork,
+					Tolerations: hostnetwork.Tolerations(deployOptions.HostNetwork),
 					Containers: []corev1.Container{
 						{
 							Image:           "postgres:10.7",
@@ -116,6 +120,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 								{
 									Name:          "postgres",
 									ContainerPort: 5432,
+									HostPort:      hostnetwork.MaybeHostPortMap(deployOptions.HostNetwork).PostgresPostgres,
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{

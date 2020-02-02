@@ -3,15 +3,14 @@ package hostnetwork
 import v1 "k8s.io/api/core/v1"
 
 type HostPortMap struct {
-	MinioMinio int32
+	MinioMinio       int32
+	PostgresPostgres int32
 }
 
 var (
-	podnetPorts = HostPortMap{
-		MinioMinio: 0,
-	}
 	hostnetPorts = HostPortMap{
-		MinioMinio: 9000,
+		MinioMinio:       9000,
+		PostgresPostgres: 5432,
 	}
 )
 
@@ -21,7 +20,7 @@ func MaybeHostPortMap(useHostNetwork bool) HostPortMap {
 	if useHostNetwork {
 		return hostnetPorts
 	}
-	return podnetPorts
+	return HostPortMap{} // all zeroes
 }
 
 // Adds a NoSchedule toleration so that we can run kotsadm stack
