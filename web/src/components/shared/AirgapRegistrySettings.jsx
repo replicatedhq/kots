@@ -87,6 +87,7 @@ class AirgapRegistrySettings extends Component {
           testInProgress: false,
           testMessage: result.data.validateRegistryInfo,
           testFailed: true,
+          lastSync: new Date(),
         });
       } else {
         this.setState({
@@ -97,10 +98,13 @@ class AirgapRegistrySettings extends Component {
         });
       }
     }).catch(err => {
-      this.setState({
-        testInProgress: false,
-        testMessage: String(err),
-        testFailed: true,
+      err.graphQLErrors.map(({ msg }) => {
+        this.setState({
+          testInProgress: false,
+          testMessage: msg,
+          testFailed: true,
+          lastSync: new Date(),
+        });
       });
     });
   }
@@ -233,10 +237,10 @@ class AirgapRegistrySettings extends Component {
                   </div>
                 }
               </div>
-              {testFailed ?
-                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{testStatusText}</p>
+              {testFailed && !testInProgress ?
+                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
               :
-                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{testStatusText}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
               }
             </div>
           }
