@@ -134,7 +134,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 			return 0, nil, forwardErr
 		}
 
-		response, err := quickClient.Get(fmt.Sprintf("http://localhost:%d", localPort))
+		response, err := quickClient.Get(fmt.Sprintf("http://localhost:%d/healthz", localPort))
 		if err == nil && response.StatusCode == http.StatusOK {
 			break
 		}
