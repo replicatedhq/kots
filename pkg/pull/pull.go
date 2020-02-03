@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/kustomize/v3/pkg/image"
@@ -159,7 +160,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
 
+		airgapAppFiles, err := ioutil.TempDir("", "airgap-kots")
+		if err != nil {
+			return "", errors.Wrap(err, "failed to create temp airgap dir")
+		}
+		defer os.RemoveAll()
+
+		err = util.ExtractTGZArchive(filepath.Join(pullOptions.AirgapRoot, "app.tar.gz"), airgapAppFiles)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to extract app files")
+		}
+
 		fetchOptions.Airgap = airgap
+		fetchOptions.LocalPath = airgapAppFiles
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

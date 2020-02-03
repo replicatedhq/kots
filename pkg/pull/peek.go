@@ -52,7 +52,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	v, err := upstream.GetUpdatesUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to fetch upstream")
+		return nil, errors.Wrap(err, "failed to peek upstream")
 	}
 
 	return v, nil
