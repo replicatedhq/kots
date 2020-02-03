@@ -17,7 +17,6 @@ export class SupportBundleAnalysis extends React.Component {
     super();
     this.state = {
       activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : "bundleAnalysis",
-      fullscreenTree: false,
       filterTiles: "0",
       displayShareBundleModal: false
     };
@@ -86,19 +85,6 @@ export class SupportBundleAnalysis extends React.Component {
     });
   }
 
-  toggleFullscreen = () => {
-    this.setState({
-      fullscreenTree: !this.state.fullscreenTree
-    });
-  }
-
-  handleEscClose = (e) => {
-    if (e.keyCode == 27 && this.state.fullscreenTree) {
-      e.preventDefault();
-      this.toggleFullscreen();
-    }
-  }
-
   renderSharedContext = () => {
     // const sharedIds = bundle.teamShareIds || [];
     // const isShared = sharedIds.length;
@@ -115,16 +101,6 @@ export class SupportBundleAnalysis extends React.Component {
     //   shareContext = <button className="btn secondary flex-auto u-marginRight--10" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
     // }
     return shareContext;
-  }
-
-  componentDidUpdate(lastState) {
-    if (this.state.fullscreenTree !== lastState.fullscreenTree && this.state.fullscreenTree) {
-      window.addEventListener("keydown", this.handleEscClose);
-    }
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener("keydown", this.handleEscClose);
   }
 
   render() {
