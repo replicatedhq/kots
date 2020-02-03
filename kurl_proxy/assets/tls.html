@@ -12,7 +12,6 @@
 </head>
 
 <body>
-  {{if .Enabled}}
   <div class="u-minHeight--full u-width--full flex-column flex1">
     <div class="flex-1-auto flex u-width--full justifyContent--center alignItems--center">
       <div class="flex flex-column justifyContent--center alignItems--center">
@@ -73,15 +72,6 @@
       </div>
     </div>
   </div>
-  {{else}}
-
-  <div class="tlsContent--wrapper">
-    <div class="notification is-info">
-      <p>Anonymous uploads have been disabled. Set acceptAnonymousUploads to 1 in the {{ .Secret }} secret to re-enable.
-      </p>
-    </div>
-  </div>
-  {{end}}
 </body>
 
 </html>

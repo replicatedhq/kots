@@ -95,7 +95,7 @@ func main() {
 		}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
 
-		httpServer = getHttpServer(cert.fingerprint)
+		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads)
 		go httpServer.Serve(m.Match(cmux.Any()))
 
 		log.Println("Kurl Proxy listening on :8800")
@@ -180,13 +180,25 @@ func getFingerprint(certData []byte) (string, error) {
 	return strings.ToUpper(strings.Replace(fmt.Sprintf("% x", sha1.Sum(x509Cert.Raw)), " ", ":", -1)), nil
 }
 
-func getHttpServer(fingerprint string) *http.Server {
+func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server {
 	r := gin.Default()
 
 	r.StaticFS("/assets", http.Dir("/assets"))
 	r.LoadHTMLGlob("/assets/*.html")
 
 	r.GET("/", func(c *gin.Context) {
+		if !acceptAnonymousUploads {
+			log.Println("TLS certs already uploaded, redirecting to https")
+			target := url.URL{
+				Scheme:   "https",
+				Host:     c.Request.Host,
+				Path:     c.Request.URL.Path,
+				RawQuery: c.Request.URL.RawQuery,
+			}
+			// Returns StatusFound (302) to avoid browser caching
+			c.Redirect(http.StatusFound, target.String())
+			return
+		}
 		c.HTML(http.StatusOK, "insecure.html", gin.H{
 			"fingerprintSHA1": fingerprint,
 		})
@@ -215,12 +227,16 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 	r.LoadHTMLGlob("/assets/*.html")
 
 	r.GET("/tls", func(c *gin.Context) {
+		if !acceptAnonymousUploads {
+			c.AbortWithStatus(403)
+			return
+		}
+
 		app, err := kotsadmApplication()
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
 		c.HTML(http.StatusOK, "tls.html", gin.H{
-			"Enabled":  acceptAnonymousUploads,
 			"Secret":   tlsSecretName,
 			"AppIcon":  app.Spec.Icon,
 			"AppTitle": app.Spec.Title,
