@@ -82,7 +82,6 @@ class AirgapRegistrySettings extends Component {
         org: this.state.namespace,
       }
     }).then(result => {
-      console.log(result);
       if (result.data.validateRegistryInfo) {
         this.setState({
           testInProgress: false,
