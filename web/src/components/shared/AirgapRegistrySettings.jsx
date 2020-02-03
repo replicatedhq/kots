@@ -107,11 +107,6 @@ class AirgapRegistrySettings extends Component {
           lastSync: new Date(),
         });
       });
-      // this.setState({
-      //   testInProgress: false,
-      //   testMessage: String(err),
-      //   testFailed: true,
-      // });
     });
   }
 
