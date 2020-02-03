@@ -1563,6 +1563,12 @@ order by adv.sequence desc`;
 
     const pg = await this.pool.connect();
 
+    let installState: string;
+    if (!upstreamURI.toLowerCase().startsWith("replicated://")) {
+      installState = "installed";
+    } else {
+      installState = airgapEnabled ? "airgap_upload_pending" : "online_upload_pending";
+    }
     try {
       await pg.query("begin");
       const q = `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state)
@@ -1576,7 +1582,7 @@ order by adv.sequence desc`;
         upstreamURI,
         license,
         !userId,
-        airgapEnabled ? "airgap_upload_pending" : "online_upload_pending",
+        installState,
       ];
 
       await pg.query(q, v);
