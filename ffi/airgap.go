@@ -15,6 +15,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 //export PullFromAirgap
@@ -198,7 +199,7 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 		if file.IsDir() { // TODO: support nested dirs?
 			continue
 		}
-		err := extractOneArchive(filepath.Join(airgapDir, file.Name()), destDir)
+		err := util.ExtractTGZArchive(filepath.Join(airgapDir, file.Name()), destDir)
 		if err != nil {
 			fmt.Printf("ignoring file %q: %v\n", file.Name(), err)
 			continue
@@ -211,60 +212,4 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 	}
 
 	return destDir, nil
-}
-
-func extractOneArchive(tgzFile string, destDir string) error {
-	fileReader, err := os.Open(tgzFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to open release file")
-	}
-
-	gzReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		return errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	tarReader := tar.NewReader(gzReader)
-	for {
-		hdr, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "failed to read release tar")
-		}
-
-		if hdr.Typeflag != tar.TypeReg {
-			continue
-		}
-
-		err = func() error {
-			fileName := filepath.Join(destDir, hdr.Name)
-
-			filePath, _ := filepath.Split(fileName)
-			err := os.MkdirAll(filePath, 0755)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create directory %q", filePath)
-			}
-
-			fileWriter, err := os.Create(fileName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create file %q", hdr.Name)
-			}
-
-			defer fileWriter.Close()
-
-			_, err = io.Copy(fileWriter, tarReader)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write file %q", hdr.Name)
-			}
-
-			return nil
-		}()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
