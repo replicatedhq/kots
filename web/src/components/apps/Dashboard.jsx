@@ -130,7 +130,7 @@ class Dashboard extends Component {
   onCheckForUpdates = async () => {
     const { client, app } = this.props;
 
-    this.setState({ checkingForUpdates: true });
+    this.setState({ checkingForUpdates: true,  checkingForUpdateError: false });
 
     await client.mutate({
       mutation: checkForKotsUpdates,
@@ -161,7 +161,8 @@ class Dashboard extends Component {
           this.state.updateChecker.stop();
           this.setState({
             checkingForUpdates: false,
-            checkingUpdateText: "Checking for updates"
+            checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage,
+            checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed"
           });
 
           if (this.props.updateCallback) {
@@ -451,6 +452,7 @@ class Dashboard extends Component {
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 redirectToDiff={() => this.redirectToDiff(currentSequence, latestSequence)}
                 isBundleUploading={isBundleUploading}
+                checkingForUpdateError={this.state.checkingForUpdateError}
               />
               {app.allowSnapshots ?
                 <div className="small-dashboard-wrapper flex-column flex">
