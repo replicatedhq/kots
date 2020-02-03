@@ -6,6 +6,7 @@ import (
 	imagedocker "github.com/containers/image/docker"
 	dockerref "github.com/containers/image/docker/reference"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -16,20 +17,28 @@ type FindPrivateImagesOptions struct {
 	BaseDir            string
 	AppSlug            string
 	ReplicatedRegistry registry.RegistryOptions
+	Installation       *kotsv1beta1.Installation
 }
 
-func FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image, []*k8sdoc.Doc, error) {
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir)
+type FindPrivateImagesResult struct {
+	Images        []kustomizeimage.Image          // images to be rewritten
+	Docs          []*k8sdoc.Doc                   // docs that have rewritten images
+	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
+}
+
+func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
+	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to list upstream images")
+		return nil, errors.Wrap(err, "failed to list upstream images")
 	}
 
-	result := make([]kustomizeimage.Image, 0)
+	kustomizeImages := make([]kustomizeimage.Image, 0)
 	for _, upstreamImage := range upstreamImages {
 		// ParseReference requires the // prefix
 		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", upstreamImage))
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to parse image ref:%s", upstreamImage)
+			return nil, errors.Wrapf(err, "failed to parse image ref:%s", upstreamImage)
 		}
 
 		registryHost := dockerref.Domain(ref.DockerReference())
@@ -42,10 +51,14 @@ func FindPrivateImages(options FindPrivateImagesOptions) ([]kustomizeimage.Image
 			Name:    upstreamImage,
 			NewName: registry.MakeProxiedImageURL(options.ReplicatedRegistry.ProxyEndpoint, options.AppSlug, upstreamImage),
 		}
-		result = append(result, image)
+		kustomizeImages = append(kustomizeImages, image)
 	}
 
-	return result, objects, nil
+	return &FindPrivateImagesResult{
+		Images:        kustomizeImages,
+		Docs:          objects,
+		CheckedImages: makeInstallationImages(checkedImages),
+	}, nil
 }
 
 type FindObjectsWithImagesOptions struct {
@@ -59,4 +72,25 @@ func FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc,
 	}
 
 	return objects, nil
+}
+
+func makeImageInfoMap(images []kotsv1beta1.InstallationImage) map[string]image.ImageInfo {
+	result := make(map[string]image.ImageInfo)
+	for _, i := range images {
+		result[i.Image] = image.ImageInfo{
+			IsPrivate: i.IsPrivate,
+		}
+	}
+	return result
+}
+
+func makeInstallationImages(images map[string]image.ImageInfo) []kotsv1beta1.InstallationImage {
+	result := make([]kotsv1beta1.InstallationImage, 0)
+	for image, info := range images {
+		result = append(result, kotsv1beta1.InstallationImage{
+			Image:     image,
+			IsPrivate: info.IsPrivate,
+		})
+	}
+	return result
 }
