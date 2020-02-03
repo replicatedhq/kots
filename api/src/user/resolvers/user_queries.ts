@@ -1,5 +1,6 @@
 import { Stores } from "../../schema/stores";
 import { Context } from "../../context";
+import { ReplicatedError } from "../../server/errors";
 import { kotsTestRegistryCredentials } from "../../kots_app/kots_ffi";
 
 export function UserQueries(stores: Stores) {
@@ -10,9 +11,12 @@ export function UserQueries(stores: Stores) {
         const details = await stores.kotsAppStore.getAppRegistryDetails(appId);
         password = details.registryPassword;
       }
-
-      const errorText = await kotsTestRegistryCredentials(endpoint, username, password, org);
-      return errorText;
+      try {
+        const errorText = await kotsTestRegistryCredentials(endpoint, username, password, org);
+        return errorText;
+      } catch (err) {
+        throw new ReplicatedError(`Error: ${err}`);
+      }
     },
   }
 }
