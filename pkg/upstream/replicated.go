@@ -285,6 +285,10 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 		return nil, errors.New("license was not accepted")
 	}
 
+	if headResp.StatusCode == 403 {
+		return nil, util.ActionableError{Message: "License is expired"}
+	}
+
 	if headResp.StatusCode >= 400 {
 		return nil, errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
 	}
