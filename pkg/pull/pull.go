@@ -164,7 +164,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create temp airgap dir")
 		}
-		defer os.RemoveAll()
+		defer os.RemoveAll(airgapAppFiles)
 
 		err = util.ExtractTGZArchive(filepath.Join(pullOptions.AirgapRoot, "app.tar.gz"), airgapAppFiles)
 		if err != nil {
