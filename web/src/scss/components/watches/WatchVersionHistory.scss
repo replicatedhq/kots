@@ -64,6 +64,15 @@ $cell-width: 140px;
   margin: 0 auto;
 }
 
+.airgap-upload-error-wrapper {
+  background-color: #FBECEA;
+  border-radius: 4px;
+  padding: 0px 5px 0px 5px;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
 .watch-cell {
   width: $cell-width;
 }

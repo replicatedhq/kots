@@ -103,7 +103,7 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, checkingForUpdates, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
+    const { app, currentVersion, downstreams, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
     const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
@@ -166,6 +166,12 @@ export default class DashboardCard extends React.Component {
               : null
         }
         {updateText}
+        {checkingForUpdateError &&
+          <div className="flex-column flex-auto u-marginTop--5">
+            <div className="airgap-upload-error-wrapper">
+              <p className="u-color--chestnut u-fontSize--small u-lineHeight--normal">{checkingUpdateText}</p>
+            </div>
+          </div>}
       </div>
     )
   }
