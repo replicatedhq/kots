@@ -25,7 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
 var imagePolicy = []byte(`{

@@ -7,8 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/kustomize/v3/pkg/image"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func Test_ImageNameFromNameParts(t *testing.T) {
@@ -20,19 +19,19 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	tests := []struct {
 		name     string
 		parts    []string
-		expected image.Image
+		expected kustomizetypes.Image
 		isError  bool
 	}{
 		{
 			name:     "bad name format",
 			parts:    []string{"quay.io", "latest"},
-			expected: image.Image{},
+			expected: kustomizetypes.Image{},
 			isError:  true,
 		},
 		{
 			name:  "ECR style image",
 			parts: []string{"411111111111.dkr.ecr.us-west-1.amazonaws.com", "myrepo", "v0.0.1"},
-			expected: image.Image{
+			expected: kustomizetypes.Image{
 				Name:    "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo:v0.0.1",
 				NewName: fmt.Sprintf("%s/%s/myrepo", registryOps.Endpoint, registryOps.Namespace),
 				NewTag:  "v0.0.1",
@@ -43,7 +42,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "four parts with tag",
 			parts: []string{"quay.io", "someorg", "debian", "0.1"},
-			expected: image.Image{
+			expected: kustomizetypes.Image{
 				Name:    "quay.io/someorg/debian:0.1",
 				NewName: fmt.Sprintf("%s/%s/debian", registryOps.Endpoint, registryOps.Namespace),
 				NewTag:  "0.1",
@@ -54,7 +53,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "five parts with sha",
 			parts: []string{"quay.io", "someorg", "debian", "sha256", "1234567890abcdef"},
-			expected: image.Image{
+			expected: kustomizetypes.Image{
 				Name:    "quay.io/someorg/debian@sha256:1234567890abcdef",
 				NewName: fmt.Sprintf("%s/%s/debian", registryOps.Endpoint, registryOps.Namespace),
 				NewTag:  "",
@@ -131,7 +130,7 @@ func Test_buildImageAlts(t *testing.T) {
 		name         string
 		destRegistry registry.RegistryOptions
 		image        string
-		want         []kustomizeimage.Image
+		want         []kustomizetypes.Image
 	}{
 		{
 			name: "naked image",
@@ -140,7 +139,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "redis",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "redis",
 					NewName: "localhost:5000/somebigbank/redis",
@@ -156,7 +155,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "redis:v1",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "redis",
 					NewName: "localhost:5000/somebigbank/redis",
@@ -172,7 +171,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somesmallcorp",
 			},
 			image: "redis@sha256:mytestdigest",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "redis",
 					NewName: "localhost:5000/somesmallcorp/redis",
@@ -188,7 +187,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "library/redis:v1",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "library/redis",
 					NewName: "localhost:5000/somebigbank/redis",
@@ -204,7 +203,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "quay.io/library/redis:v1",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "quay.io/library/redis",
 					NewName: "localhost:5000/somebigbank/redis",
@@ -220,7 +219,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "example.com:5000/library/redis:v1",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "example.com:5000/library/redis",
 					NewName: "localhost:5000/somebigbank/redis",
@@ -236,7 +235,7 @@ func Test_buildImageAlts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			image: "example.com:5000/library/redis",
-			want: []kustomizeimage.Image{
+			want: []kustomizetypes.Image{
 				{
 					Name:    "example.com:5000/library/redis",
 					NewName: "localhost:5000/somebigbank/redis",

@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
 )
 

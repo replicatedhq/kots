@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
 func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizeimage.Image, error) {

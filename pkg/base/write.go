@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type WriteOptions struct {

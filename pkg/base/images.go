@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
 type FindPrivateImagesOptions struct {

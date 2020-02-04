@@ -17,7 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type RewriteOptions struct {
@@ -110,7 +110,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	var pullSecret *corev1.Secret
-	var images []image.Image
+	var images []kustomizetypes.Image
 	var objects []*k8sdoc.Doc
 
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
