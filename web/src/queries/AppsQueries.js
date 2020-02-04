@@ -18,6 +18,7 @@ export const listAppsRaw = `
         slug
         currentSequence
         isGitOpsSupported
+        licenseType
         currentVersion {
           title
           status
@@ -449,12 +450,6 @@ export const getKotsAppDashboard = gql`
 export const getPrometheusAddress = gql`
   query getPrometheusAddress {
     getPrometheusAddress
-  }
-`;
-
-export const getKotsLicenseType = gql`
-  query getKotsLicenseType($slug: String!) {
-    getKotsLicenseType(slug: $slug)
   }
 `;
 

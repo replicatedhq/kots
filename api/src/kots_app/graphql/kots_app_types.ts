@@ -29,6 +29,7 @@ const KotsApp = `
     allowRollback: Boolean
     kubectlVersion: String
     allowSnapshots: Boolean
+    licenseType: String
   }
 `;
 
