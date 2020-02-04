@@ -6,7 +6,6 @@ import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
 import { listClusters } from "@src/queries/ClusterQueries";
-import { getKotsLicenseType } from "@src/queries/AppsQueries";
 import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
 
@@ -17,7 +16,6 @@ export class NavBar extends PureComponent {
     super(props);
 
     this.state = {
-      licenseType: "",
       selectedTab: ""
     };
   }
@@ -40,7 +38,6 @@ export class NavBar extends PureComponent {
     const { pathname } = this.props.location;
     if (pathname !== lastProps.location.pathname) {
       this.setSelectedTab();
-      this.getKotsLicenseType();
     }
   }
 
@@ -59,26 +56,6 @@ export class NavBar extends PureComponent {
       selectedTab = "dashboard"
     }
     this.setState({ selectedTab });
-  }
-
-  getKotsLicenseType = () => {
-    const { location } = this.props;
-    const pathname = location.pathname.split("/");
-    if (pathname.length > 2 && pathname[1] === "app") {
-      this.props.client.query({
-        query: getKotsLicenseType,
-        fetchPolicy: "no-cache",
-        variables: {
-          slug: pathname[2],
-        }
-      })
-        .then(response => {
-          this.setState({ licenseType: response.data.getKotsLicenseType });
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-    }
   }
 
   handleGoToGitOps = () => {
@@ -109,15 +86,19 @@ export class NavBar extends PureComponent {
 
   render() {
     const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location } = this.props;
-    const { user, licenseType, selectedTab } = this.state;
+    const { user, selectedTab } = this.state;
+    
     const pathname = location.pathname.split("/");
     let selectedApp;
     let appLogo;
+    let licenseType;
     if (pathname.length > 2 && pathname[1] === "app") {
       selectedApp = listApps.find(app => app.slug === pathname[2]);
       appLogo = selectedApp?.iconUri; 
+      licenseType = selectedApp?.licenseType;
     } else {
       appLogo = logo;
+      licenseType = "";
     }
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
