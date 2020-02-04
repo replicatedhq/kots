@@ -13,16 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Kubectl
-ENV KUBECTL_VERSION=v1.16.1
-ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_SHA256SUM=69cfb3eeaa0b77cc4923428855acdfc9ca9786544eeaff9c21913be830869d29
-RUN curl -fsSLO "${KUBECTL_URL}" \
-	&& echo "${KUBECTL_SHA256SUM}  kubectl" | sha256sum -c - \
-	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_VERSION}" \
-	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_VERSION}" /usr/local/bin/kubectl
-
 # Install kustomize
 RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/v2.0.3/kustomize_2.0.3_linux_amd64" > /tmp/kustomize && \
   chmod a+x /tmp/kustomize && \
