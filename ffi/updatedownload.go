@@ -224,10 +224,11 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			ReportWriter:        statusClient.getOutputWriter(),
 			RewriteImages:       true,
 			RewriteImageOptions: pull.RewriteImageOptions{
-				Host:      registryInfo.Host,
-				Namespace: registryInfo.Namespace,
-				Username:  registryInfo.Username,
-				Password:  registryInfo.Password,
+				ImageFiles: filepath.Join(airgapRoot, "images"),
+				Host:       registryInfo.Host,
+				Namespace:  registryInfo.Namespace,
+				Username:   registryInfo.Username,
+				Password:   registryInfo.Password,
 			},
 		}
 
