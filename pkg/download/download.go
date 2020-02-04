@@ -60,7 +60,8 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
-	newRequest, err := http.NewRequest("get", fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug), nil)
+	url := fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug)
+	newRequest, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create download request")
@@ -73,6 +74,11 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		return errors.Wrap(err, "failed to get from kotsadm")
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.FinishSpinnerWithError()
+		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
+	}
 
 	tmpFile, err := ioutil.TempFile("", "kots")
 	if err != nil {
