@@ -32,7 +32,12 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
 
 			log := logger.NewLogger()
-			log.ActionWithoutSpinner("Upgrading Admin Console")
+
+			if upgradeOptions.Namespace != "default" {
+				log.ActionWithoutSpinner("Upgrading Admin Console")
+			} else {
+				log.ActionWithoutSpinner("Upgrading Admin Console in the default namespace")
+			}
 			if err := kotsadm.Upgrade(upgradeOptions); err != nil {
 				return errors.Wrap(err, "failed to upgrade")
 			}

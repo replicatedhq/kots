@@ -72,6 +72,12 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	}
 	docs["secret-s3.yaml"] = s3.Bytes()
 
+	var secret bytes.Buffer
+	if err := s.Encode(apiClusterTokenSecret(*deployOptions), &secret); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal api cluster token secret")
+	}
+	docs["secret-api-cluster-token.yaml"] = secret.Bytes()
+
 	return docs, nil
 }
 
@@ -96,6 +102,10 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 
 	if err := ensureAPIEncryptionSecret(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure s3 secret")
+	}
+
+	if err := ensureAPIClusterTokenSecret(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api cluster token secret")
 	}
 
 	return nil
@@ -306,4 +316,40 @@ func getAPIEncryptionSecret(namespace string, clientset *kubernetes.Clientset) (
 	}
 
 	return apiSecret, nil
+}
+
+func ensureAPIClusterTokenSecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(types.ClusterTokenSecret, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing cluster token secret")
+		}
+
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(apiClusterTokenSecret(deployOptions))
+		if err != nil {
+			return errors.Wrap(err, "Failed to create cluster token secret")
+		}
+	}
+
+	// We have never changed the api cluster token secret. We created it in 1.12.x
+
+	return nil
+}
+
+func getAPIClusterToken(namespace string, clientset *kubernetes.Clientset) (string, error) {
+	apiSecret, err := clientset.CoreV1().Secrets(namespace).Get(types.ClusterTokenSecret, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return "", nil
+		}
+
+		return "", errors.Wrap(err, "failed to get api cluster token secret from cluster")
+	}
+
+	tokenBytes, ok := apiSecret.Data[types.ClusterTokenSecret]
+	if !ok {
+		return "", nil
+	}
+
+	return string(tokenBytes), nil
 }

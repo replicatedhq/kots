@@ -248,8 +248,15 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									Value: fmt.Sprintf("http://kotsadm-api-node.%s.svc.cluster.local:3000", deployOptions.Namespace),
 								},
 								{
-									Name:  "KOTSADM_TOKEN",
-									Value: deployOptions.AutoCreateClusterToken,
+									Name: "KOTSADM_TOKEN",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: types.ClusterTokenSecret,
+											},
+											Key: types.ClusterTokenSecret,
+										},
+									},
 								},
 								{
 									Name: "KOTSADM_TARGET_NAMESPACE",

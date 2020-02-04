@@ -123,3 +123,19 @@ func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 
 	return secret
 }
+
+func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "core/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: deployOptions.Namespace,
+			Name:      types.ClusterTokenSecret,
+		},
+		StringData: map[string]string{
+			types.ClusterTokenSecret: deployOptions.AutoCreateClusterToken,
+		},
+	}
+}

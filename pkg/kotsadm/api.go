@@ -220,6 +220,13 @@ func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
 }
 
 func getAPIAutoCreateClusterToken(namespace string, clientset *kubernetes.Clientset) (string, error) {
+	autoCreateClusterTokenSecretVal, err := getAPIClusterToken(namespace, clientset)
+	if err != nil {
+		return "", errors.Wrap(err, "get autocreate cluter token from secret")
+	} else if autoCreateClusterTokenSecretVal != "" {
+		return autoCreateClusterTokenSecretVal, nil
+	}
+
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get("kotsadm-api", metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read deployment")

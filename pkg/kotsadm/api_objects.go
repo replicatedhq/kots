@@ -238,8 +238,15 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 								{
-									Name:  "AUTO_CREATE_CLUSTER_TOKEN",
-									Value: deployOptions.AutoCreateClusterToken,
+									Name: "AUTO_CREATE_CLUSTER_TOKEN",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: types.ClusterTokenSecret,
+											},
+											Key: types.ClusterTokenSecret,
+										},
+									},
 								},
 								{
 									Name:  "SHIP_API_ENDPOINT",
