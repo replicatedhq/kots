@@ -181,6 +181,7 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
+		return nil
 	}
 
 	if err = updateKotsadmDeployment(existingDeployment, deployOptions); err != nil {
