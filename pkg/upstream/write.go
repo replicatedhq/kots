@@ -62,6 +62,17 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		}
 	}
 
+	var prevInstallation *kotsv1beta1.Installation
+	if previousInstallationContent != nil {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+
+		prevObj, _, err := decode(previousInstallationContent, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode previous installation")
+		}
+		prevInstallation = prevObj.(*kotsv1beta1.Installation)
+	}
+
 	for _, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
@@ -101,10 +112,18 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 
 	// Write the installation status (update cursor, etc)
 	// but preserving the encryption key, if there already is one
-	encryptionKey, err := getEncryptionKey(previousInstallationContent)
+	encryptionKey, err := getEncryptionKey(prevInstallation)
 	if err != nil {
 		return errors.Wrap(err, "failed to get encryption key")
 	}
+
+	var channelName string
+	if prevInstallation != nil && options.PreserveInstallation {
+		channelName = prevInstallation.Spec.ChannelName
+	} else {
+		channelName = u.ChannelName
+	}
+
 	installation := kotsv1beta1.Installation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",
@@ -115,7 +134,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		},
 		Spec: kotsv1beta1.InstallationSpec{
 			UpdateCursor:  u.UpdateCursor,
-			ChannelName:   u.ChannelName,
+			ChannelName:   channelName,
 			VersionLabel:  u.VersionLabel,
 			ReleaseNotes:  u.ReleaseNotes,
 			EncryptionKey: encryptionKey,
@@ -134,8 +153,8 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	return nil
 }
 
-func getEncryptionKey(previousInstallationContent []byte) (string, error) {
-	if previousInstallationContent == nil {
+func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error) {
+	if prevInstallation == nil {
 		cipher, err := crypto.NewAESCipher()
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create new AES cipher")
@@ -144,15 +163,7 @@ func getEncryptionKey(previousInstallationContent []byte) (string, error) {
 		return cipher.ToString(), nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	prevObj, _, err := decode(previousInstallationContent, nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode previous installation")
-	}
-	installation := prevObj.(*kotsv1beta1.Installation)
-
-	return installation.Spec.EncryptionKey, nil
+	return prevInstallation.Spec.EncryptionKey, nil
 }
 
 func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]byte, error) {

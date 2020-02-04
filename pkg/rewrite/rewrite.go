@@ -74,9 +74,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	includeAdminConsole := false
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
-		RootDir:             rewriteOptions.RootDir,
-		CreateAppDir:        rewriteOptions.CreateAppDir,
-		IncludeAdminConsole: includeAdminConsole,
+		RootDir:              rewriteOptions.RootDir,
+		CreateAppDir:         rewriteOptions.CreateAppDir,
+		IncludeAdminConsole:  includeAdminConsole,
+		PreserveInstallation: true,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
