@@ -32,7 +32,11 @@ type WriteOptions struct {
 	RootDir             string
 	CreateAppDir        bool
 	IncludeAdminConsole bool
-	SharedPassword      string
+	// This should be set to true when updating due to license sync, config update, registry settings update.
+	// and should be false when it's an upstream update.
+	// When true, the channel name in Installation yaml will not be changed.
+	PreserveInstallation bool
+	SharedPassword       string
 }
 
 func (u *Upstream) GetBaseDir(options WriteOptions) string {
