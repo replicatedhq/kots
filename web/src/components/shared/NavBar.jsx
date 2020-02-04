@@ -45,7 +45,6 @@ export class NavBar extends PureComponent {
   }
 
   componentDidMount() {
-
     this.setSelectedTab();
   }
 
@@ -109,8 +108,17 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, logo, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps } = this.props;
+    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location } = this.props;
     const { user, licenseType, selectedTab } = this.state;
+    const pathname = location.pathname.split("/");
+    let selectedApp;
+    let appLogo;
+    if (pathname.length > 2 && pathname[1] === "app") {
+      selectedApp = listApps.find(app => app.slug === pathname[2]);
+      appLogo = selectedApp?.iconUri; 
+    } else {
+      appLogo = logo;
+    }
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
     return (
@@ -124,8 +132,8 @@ export class NavBar extends PureComponent {
                 <div className="flex alignItems--center flex1 flex-verticalCenter u-position--relative u-marginRight--20">
                   <div className="HeaderLogo">
                     <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
-                      {logo
-                        ? <span className="watch-logo clickable" style={{ backgroundImage: `url(${logo})` }} />
+                      {appLogo
+                        ? <span className="watch-logo clickable" style={{ backgroundImage: `url(${appLogo})` }} />
                         : !fetchingMetadata ? <span className="logo icon clickable" />
                           : <span style={{ width: "30px", height: "30px" }} />
                       }
