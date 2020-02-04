@@ -87,14 +87,14 @@ export class NavBar extends PureComponent {
   render() {
     const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location } = this.props;
     const { user, selectedTab } = this.state;
-    
+
     const pathname = location.pathname.split("/");
     let selectedApp;
     let appLogo;
     let licenseType;
     if (pathname.length > 2 && pathname[1] === "app") {
       selectedApp = listApps.find(app => app.slug === pathname[2]);
-      appLogo = selectedApp?.iconUri; 
+      appLogo = selectedApp?.iconUri;
       licenseType = selectedApp?.licenseType;
     } else {
       appLogo = logo;
@@ -154,11 +154,13 @@ export class NavBar extends PureComponent {
               </div>
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
-                  <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
-                    <Link className="btn secondary blue rounded" to="/upload-license">
-                      Add a new application
+                  {pathname[1] === "upload-license" || pathname[2] === "airgap" ?
+                    null :
+                    <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
+                      <Link className="btn secondary blue rounded" to="/upload-license">
+                        Add a new application
                     </Link>
-                  </div>
+                    </div>}
                   <div className="flex-column flex-auto justifyContent--center">
                     <p data-qa="Navbar--logOutButton" className="NavItem" onClick={this.handleLogOut}>Log out</p>
                   </div>
