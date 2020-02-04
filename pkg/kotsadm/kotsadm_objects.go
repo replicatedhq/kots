@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -107,6 +108,47 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	}
 
 	return serviceAccount
+}
+
+func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
+	desiredDeployment := kotsadmDeployment(deployOptions)
+
+	containerIdx := -1
+	for idx, c := range deployment.Spec.Template.Spec.Containers {
+		if c.Name == "kotsadm" {
+			containerIdx = idx
+		}
+	}
+
+	if containerIdx == -1 {
+		return errors.New("failed to find kotsadm container in deployment")
+	}
+
+	// image
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag())
+
+	// copy the env vars from the desired to existing. this could undo a change that the user had.
+	// we don't know which env vars we set and which are user edited. this method avoids deleting
+	// env vars that the user added, but doesn't handle edited vars
+	mergedEnvs := []corev1.EnvVar{}
+	for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+		mergedEnvs = append(mergedEnvs, env)
+	}
+	for _, existingEnv := range deployment.Spec.Template.Spec.Containers[containerIdx].Env {
+		isUnxpected := true
+		for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+			if env.Name == existingEnv.Name {
+				isUnxpected = false
+			}
+		}
+
+		if isUnxpected {
+			mergedEnvs = append(mergedEnvs, existingEnv)
+		}
+	}
+	deployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+
+	return nil
 }
 
 func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
