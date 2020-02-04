@@ -171,7 +171,7 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 }
 
 func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
@@ -181,6 +181,15 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
+	}
+
+	if err = updateKotsadmDeployment(existingDeployment, deployOptions); err != nil {
+		return errors.Wrap(err, "failed to merge deployments")
+	}
+
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(existingDeployment)
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm deployment")
 	}
 
 	return nil
