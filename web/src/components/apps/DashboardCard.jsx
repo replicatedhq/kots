@@ -104,7 +104,7 @@ export default class DashboardCard extends React.Component {
 
   renderVersionHistoryCard = () => {
     const { app, currentVersion, downstreams, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
-    const updatesText = downstreams?.pendingVersions?.length > 0 ? null : "No updates available.";
+    const updatesText = downstreams?.pendingVersions?.length > 0 || app.isAirgap ? null : "No updates available.";
     const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
 
     let checkingUpdateTextShort = checkingUpdateText;
