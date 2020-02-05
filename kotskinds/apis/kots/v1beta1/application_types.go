@@ -52,6 +52,7 @@ type ApplicationSpec struct {
 	StatusInformers  []string          `json:"statusInformers,omitempty"`
 	Graphs           []MetricGraph     `json:"graphs,omitempty"`
 	KubectlVersion   string            `json:"kubectlVersion,omitempty"`
+	KustomizeVersion string            `json:"kustomizeVersion,omitempty"`
 }
 
 type ApplicationPort struct {
