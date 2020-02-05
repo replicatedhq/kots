@@ -8,6 +8,7 @@ export interface ApplicationSpec {
   statusInformers?: string[];
   graphs?: MetricGraph[];
   kubectlVersion?: string;
+  kustomizeVersion?: string;
 }
 
 export interface ApplicationPort {

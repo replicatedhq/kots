@@ -28,6 +28,7 @@ const KotsApp = `
     isGitOpsSupported: Boolean
     allowRollback: Boolean
     kubectlVersion: String
+    kustomizeVersion: String
     allowSnapshots: Boolean
     licenseType: String
   }

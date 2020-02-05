@@ -40,7 +40,9 @@ export async function createGitCommitForVersion(stores: Stores, appId: string, c
   const gitOpsCreds = await stores.kotsAppStore.getGitOpsCreds(app.id, cluster.id);
   const downstreamGitOps = await stores.kotsAppStore.getDownstreamGitOps(appId, clusterId);
 
-  const rendered = await app.render(`${parentSequence}`, `overlays/downstreams/${cluster.title}`);
+  const kotsApp = await stores.kotsAppStore.getKotsAppSpec(appId, app.currentSequence!);
+
+  const rendered = await app.render(`${parentSequence}`, `overlays/downstreams/${cluster.title}`, kotsApp ? kotsApp.kustomizeVersion : "");
 
   let filename = "";
   if (downstreamGitOps.path) {
