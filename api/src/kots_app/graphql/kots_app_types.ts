@@ -30,6 +30,7 @@ const KotsApp = `
     kubectlVersion: String
     kustomizeVersion: String
     allowSnapshots: Boolean
+    licenseType: String
   }
 `;
 

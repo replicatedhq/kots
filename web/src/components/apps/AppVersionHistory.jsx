@@ -279,7 +279,7 @@ class AppVersionHistory extends Component {
                 ? "Running checks"
                 : preflightsFailed
                   ? "Checks failed"
-                  : version.status === "pending"
+                  : version.status === "pending" || version.status === "pending_config"
                     ? "Ready to deploy"
                     : version.status
             ).replace("_", " ")}

@@ -26,6 +26,12 @@ class UploadLicenseFile extends React.Component {
     this.setState({ licenseFile: {}, licenseValue: "", errorMessage: "", viewErrorMessage: false });
   }
 
+  moveBar = (count) => {
+    const elem = document.getElementById("myBar");
+    const percent = count > 3 ? 96 : count * 30;
+    elem.style.width = percent + "%";
+  }
+
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
     const { licenseValue } = this.state;
@@ -34,42 +40,52 @@ class UploadLicenseFile extends React.Component {
       fileUploading: true,
       errorMessage: "",
     });
-
-    try {
-      const resp = await this.props.uploadKotsLicense(licenseValue);
-      const data = resp.data.uploadKotsLicense;
-      // When successful, refetch all the user's apps with onUploadSuccess
-      onUploadSuccess().then(() => {
-        if (data?.isAirgap) {
-          if (data?.needsRegistry) {
-            history.replace(`/${data.slug}/airgap`);
-          } else {
-            history.replace(`/${data.slug}/airgap-bundle`);
-          }
-          return;
-        }
-
-        if (data?.isConfigurable) {
-          history.replace(`/${data.slug}/config`);
-          return;
-        }
-
-        if (data?.hasPreflight) {
-          history.replace("/preflight");
-          return;
-        }
-
-        // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
-        if (data) {
-          history.replace(`/app/${data.slug}`);
-        }
-      });
-    } catch (err) {
-      console.log(err);
+    let data;
+    this.props.uploadKotsLicense(licenseValue)
+    .then((resp) => {
+      data = resp.data.uploadKotsLicense;
+    })
+    .catch((err) => {
       err.graphQLErrors.map(({ msg }) => {
         this.setState({ fileUploading: false, errorMessage: msg });
       });
-    }
+    });
+    let count = 0;
+    const interval = setInterval(() => {
+      count++
+      this.moveBar(count);
+      if (count > 3) {
+        if (data) {
+          clearInterval(interval);
+          // When successful, refetch all the user's apps with onUploadSuccess
+          onUploadSuccess().then(() => {
+            if (data.isAirgap) {
+              if (data.needsRegistry) {
+                history.replace(`/${data.slug}/airgap`);
+              } else {
+                history.replace(`/${data.slug}/airgap-bundle`);
+              }
+              return;
+            }
+
+            if (data.isConfigurable) {
+              history.replace(`/${data.slug}/config`);
+              return;
+            }
+
+            if (data.hasPreflight) {
+              history.replace("/preflight");
+              return;
+            }
+
+            // No airgap, config or preflight? Go to the kotsApp detail view that was just uploaded
+            if (data) {
+              history.replace(`/app/${data.slug}`);
+            }
+          });
+        }
+      }
+    }, 1000);
   }
 
   onDrop = async (files) => {

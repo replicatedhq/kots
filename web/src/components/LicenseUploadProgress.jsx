@@ -12,16 +12,21 @@ function LicenseUploadProgress(props) {
   const statusMsg = getOnlineInstallStatus?.currentMessage;
 
   let statusDiv = (
-    <div className={`u-marginTop--20 u-lineHeight--medium u-textAlign--center`}>
+    <div className={`u-marginTop--10 u-lineHeight--medium u-textAlign--center`}>
       <p className="u-color--tundora u-fontSize--normal u-fontWeight--bold u-marginBottom--10 u-paddingBottom--5">{statusMsg}</p>
-      <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection and size of your bundle</p>
+      <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection.</p>
     </div>
   );
 
   return (
     <div className="AirgapUploadProgress--wrapper flex1 flex-column alignItems--center justifyContent--center">
       <div className="flex1 flex-column alignItems--center justifyContent--center u-color--tuna">
-        <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Installing your license</p>
+        <p className="u-marginTop--10 u-paddingTop--5 u-marginBottom--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Installing your license</p>
+        <div className="u-marginTop--20">
+          <div className="progressbar medium">
+            <div id="myBar" className="progressbar-meter" style={{width: "0%"}}></div>
+          </div>
+        </div>
         {statusDiv}
       </div>
     </div>

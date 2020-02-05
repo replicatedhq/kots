@@ -529,6 +529,12 @@ export class KotsApp {
     return false;
   }
 
+  private async getKotsLicenseType(stores: Stores): Promise<string> {
+    const id = await stores.kotsAppStore.getIdFromSlug(this.slug);
+    const sequence = await stores.kotsAppStore.getMaxSequence(id);
+    return await stores.kotsAppStore.getKotsAppLicenseType(id, sequence);
+  }
+
   private readFile(s: NodeJS.ReadableStream): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let contents = ``;
@@ -559,6 +565,7 @@ export class KotsApp {
       allowRollback: () => this.isAllowRollback(stores),
       allowSnapshots: () => this.isAllowSnapshots(stores),
       currentVersion: () => this.getCurrentAppVersion(stores),
+      licenseType: () => this.getKotsLicenseType(stores),
       downstreams: _.map(downstreams, (downstream) => {
         const kotsSchemaCluster = downstream.toKotsAppSchema(this.id, stores);
         return {

@@ -1,6 +1,5 @@
 .AirgapUploadProgress--wrapper {
-
-
+  
   .progressbar {
     height: 8px;
     width:  600px;
@@ -10,6 +9,10 @@
 
     &.small {
       width: 100px;
+    }
+
+    &.medium {
+      width: 380px;
     }
   }
 
