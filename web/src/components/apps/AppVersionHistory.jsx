@@ -453,7 +453,7 @@ class AppVersionHistory extends Component {
   onCheckForUpdates = async () => {
     const { client, app } = this.props;
 
-    this.setState({ checkingForUpdates: true, checkingForUpdateError: false });
+    this.setState({ checkingForUpdates: true, checkingForUpdateError: false, errorCheckingUpdate: false });
 
     await client.mutate({
       mutation: checkForKotsUpdates,

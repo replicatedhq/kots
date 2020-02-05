@@ -102,31 +102,11 @@ class AnalyzerFileTree extends React.Component {
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
       this.setFileTree();
     }
-    if (this.props.isFullscreen !== lastProps.isFullscreen) {
-      if (this.refAceEditor) {
-        this.refAceEditor.editor.resize(); // ace editor needs to resize itself so that content does not get cut off
-      }
-    }
     if (bundle !== lastProps.bundle && bundle) {
       this.setState({
         bundleId: bundle.id,
         fileTree: bundle.treeIndex
       });
-      if (this.props.location) {
-        if (this.props.location.pathname) {
-          this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
-        }
-        if (this.props.location.hash) {
-          let newMarker = [];
-          newMarker.push({
-            startRow: parseInt(this.props.location.hash.substring(2)) - 1,
-            endRow: parseInt(this.props.location.hash.substring(2)),
-            className: "active-highlight",
-            type: "background"
-          })
-          this.setState({ activeMarkers: newMarker })
-        }
-      }
 
       if (this.props.location !== lastProps.location && this.props.location) {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
@@ -150,6 +130,7 @@ class AnalyzerFileTree extends React.Component {
     if (this.state.fileTree) {
       this.setFileTree();
     }
+
     if (bundle) {
       this.setState({
         bundleId: bundle.id,
@@ -158,7 +139,7 @@ class AnalyzerFileTree extends React.Component {
       if (this.props.location) {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
-        if (this.props.location.hash) {
+        if (this.props.location.hash ) {
           let newMarker = [];
           newMarker.push({
             startRow: parseInt(this.props.location.hash.substring(2)) - 1,
@@ -173,7 +154,7 @@ class AnalyzerFileTree extends React.Component {
   }
 
   onSelectionChange = (selection) => {
-    if (selection.anchor.column === 0) {
+    if (selection.anchor.column === 0 && this.props.history?.location?.hash !== "#L0") {
       this.setState({ line: selection.anchor.row });
       let newMarker = [];
       newMarker.push({
@@ -222,7 +203,7 @@ class AnalyzerFileTree extends React.Component {
           </div>
           :
           <div className="flex flex1">
-            <div className={`flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay ${this.props.isFullscreen ? "fs-mode" : ""}`}>
+            <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
               <div className="u-overflow--auto dirtree">
                 <FileTree
                   files={files}
@@ -233,9 +214,6 @@ class AnalyzerFileTree extends React.Component {
               </div>
             </div>
             <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
-              <div className="fullscreen-icon-wrapper" onClick={() => this.props.toggleFullscreen()}>
-                <span className={`icon u-fullscreen${this.props.isFullscreen ? "Close" : "Open"}Icon clickable`}></span>
-              </div>
               {selectedFile === "" || selectedFile === "/" ?
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
