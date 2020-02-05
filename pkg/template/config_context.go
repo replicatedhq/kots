@@ -97,7 +97,23 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionData":      ctx.configOptionData,
 		"ConfigOptionEquals":    ctx.configOptionEquals,
 		"ConfigOptionNotEquals": ctx.configOptionNotEquals,
+		"Mike":                  ctx.mike,
 	}
+}
+
+func (ctx ConfigCtx) mike(name string) string {
+
+	result, ok := ctx.ItemValues["mike"]
+
+	if !ok {
+		return "no mike found"
+	}
+
+	if result.HasValue() {
+		return result.ValueStr()
+	}
+
+	return "no value"
 }
 
 func (ctx ConfigCtx) configOption(name string) string {

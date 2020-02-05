@@ -22,6 +22,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
+
+	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
@@ -50,6 +54,22 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		cipher = c
 	}
 
+	cfg, err := k8sconfig.GetConfig()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get config")
+	}
+
+	clientset := kurlclientset.NewForConfigOrDie(cfg)
+
+	installers := clientset.Installers("default")
+
+	retrieved, err := installers.Get("yaboi", metav1.GetOptions{})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not retrive installer crd object")
+	}
+
 	base := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
@@ -63,6 +83,16 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create config context")
 		}
+
+		result := retrieved.Spec.Kotsadm.UiBindPort
+
+		val := template.ItemValue{
+			Value:   result,
+			Default: "default",
+		}
+
+		configCtx.ItemValues["mike"] = val
+
 		builder.AddCtx(configCtx)
 	}
 
