@@ -60,22 +60,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		cipher = c
 	}
 
-	cfg, err := k8sconfig.GetConfig()
-
-	if err != nil {
-		return nil, errors.Wrap(err, "could not get config")
-	}
-
-	clientset := kurlclientset.NewForConfigOrDie(cfg)
-
-	installers := clientset.Installers("default")
-
-	retrieved, err := installers.Get("yaboi", metav1.GetOptions{})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "could not retrive installer crd object")
-	}
-
 	base := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
@@ -95,14 +79,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
 	}
-
-	if config != nil {
-		configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create config context")
-		}
-
+	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create config context")
 	}
+	builder.AddCtx(configCtx)
 
 	if license != nil {
 		licenseCtx := template.LicenseCtx{
@@ -110,13 +91,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 		builder.AddCtx(licenseCtx)
 	}
-
-	kurlCtx, err := template.NewKurlContext("base", "default")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kurl context")
-	}
-
-	builder.AddCtx(kurlCtx)
 
 	for _, upstreamFile := range u.Files {
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
