@@ -14,7 +14,7 @@ function LicenseUploadProgress(props) {
   let statusDiv = (
     <div className={`u-marginTop--10 u-lineHeight--medium u-textAlign--center`}>
       <p className="u-color--tundora u-fontSize--normal u-fontWeight--bold u-marginBottom--10 u-paddingBottom--5">{statusMsg}</p>
-      <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection and size of your bundle</p>
+      <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection.</p>
     </div>
   );
 

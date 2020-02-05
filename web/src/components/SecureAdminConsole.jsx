@@ -45,7 +45,7 @@ class SecureAdminConsole extends React.Component {
   loginToConsole = async () => {
     const { password } = this.state;
     if (this.validatePassword()) {
-      this.setState({ authLoading: true });
+      this.setState({ authLoading: true, passwordErr: false, passwordErrMessage: "" });
       fetch(`${window.env.API_ENDPOINT}/login`, {
         headers: {
           "Content-Type": "application/json",
@@ -67,7 +67,9 @@ class SecureAdminConsole extends React.Component {
         this.completeLogin(await res.json());
       })
       .catch((err) => {
-        console.error(err);
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({ authLoading: false, passwordErr: true, passwordErrMessage: msg });
+        });
       });
     }
   }
