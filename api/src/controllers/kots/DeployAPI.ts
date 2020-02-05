@@ -88,7 +88,7 @@ export class DeployAPI {
         const desiredNamespace = ".";
         const kotsAppSpec = await app.getKotsAppSpec(cluster.id, request.app.locals.stores.kotsAppStore);
 
-        const rendered = await app.render(`${app.currentSequence}`, `overlays/downstreams/${cluster.title}`, kotsAppSpec?.kubectlVersion);
+        const rendered = await app.render(`${app.currentSequence}`, `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kubectlVersion : "");
         const b = new Buffer(rendered);
 
 
