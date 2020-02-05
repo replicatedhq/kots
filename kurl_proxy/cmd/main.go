@@ -249,6 +249,14 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			return
 		}
 
+		hostString, success := c.GetPostForm("hostname")
+		if success != true {
+			log.Println("Invalid hostname")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		log.Printf("hostname=%v", hostString)
+
 		secret, err := secrets.Get(tlsSecretName, metav1.GetOptions{})
 		if err != nil {
 			log.Print(err)
@@ -258,6 +266,13 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 
 		go func() {
 			<-c.Request.Context().Done()
+
+			if len(secret.StringData) == 0 {
+				log.Println("jacdebug initializing")
+				secret.StringData = make(map[string]string)
+			}
+			secret.StringData["hostname"] = hostString
+
 			if secret.Type == "Opaque" {
 				// Old version version of secret was type 'Opaque'
 				delete(secret.Data, "acceptAnonymousUploads")
@@ -293,6 +308,14 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			return
 		}
 
+		hostString, success := c.GetPostForm("hostname")
+		if success != true {
+			log.Println("Invalid hostname")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		log.Printf("hostname=%v", hostString)
+
 		secret, err := secrets.Get(tlsSecretName, metav1.GetOptions{})
 		if err != nil {
 			log.Print(err)
@@ -304,12 +327,19 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			<-c.Request.Context().Done()
 			secret.Data["tls.crt"] = certData
 			secret.Data["tls.key"] = keyData
+
+			if len(secret.StringData) == 0 {
+				secret.StringData = make(map[string]string)
+			}
+			secret.StringData["hostname"] = hostString
+
 			if secret.Type == "Opaque" {
 				// Old version version of secret was type 'Opaque'
 				delete(secret.Data, "acceptAnonymousUploads")
 			} else {
 				delete(secret.Annotations, "acceptAnonymousUploads")
 			}
+
 			_, err = secrets.Update(secret)
 			if err != nil {
 				log.Print(err)
