@@ -48,7 +48,9 @@ $cell-width: 140px;
   .watch-icon {
     width: 48px;
     height: 48px;
-    background-size: cover;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
     border-radius: 40px;
     box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
   }
