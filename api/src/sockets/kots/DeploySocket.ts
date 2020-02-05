@@ -163,10 +163,11 @@ export class KotsDeploySocketService {
     logger.info(`Starting restore, undeploying app ${app.name}`);
 
     const desiredNamespace = ".";
-    const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
+    const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+
+    const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
     const b = new Buffer(rendered);
 
-    const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
     // make operator prune everything
     const args = {
@@ -279,10 +280,11 @@ export class KotsDeploySocketService {
             const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
             try {
               const desiredNamespace = ".";
-              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`);
+              const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
+
+              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
               const b = new Buffer(rendered);
 
-              const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
               const args = {
                 app_id: app.id,
@@ -296,7 +298,7 @@ export class KotsDeploySocketService {
 
               const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence);
               if (previousSequence !== undefined) {
-                const previousRendered = await app.render(previousSequence.toString(), `overlays/downstreams/${cluster.title}`);
+                const previousRendered = await app.render(previousSequence.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
                 const bb = new Buffer(previousRendered);
                 args.previous_manifests = bb.toString("base64");
               }

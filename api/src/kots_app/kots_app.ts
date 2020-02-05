@@ -437,7 +437,7 @@ export class KotsApp {
     return result.Body;
   }
 
-  async render(sequence: string, overlayPath: string): Promise<string> {
+  async render(sequence: string, overlayPath: string, kustomizeVersion: string|undefined): Promise<string> {
     const replicatedParams = await Params.getParams();
     const params = {
       Bucket: replicatedParams.shipOutputBucket,
@@ -473,8 +473,15 @@ export class KotsApp {
       });
 
       extract.on("finish", () => {
+        // Choose kustomize binary
+        let kustomizeString = "kustomize3.5.4";
+        if (kustomizeVersion && kustomizeVersion !== "") {
+          if (kustomizeVersion !== "latest") {
+            kustomizeString = `kustomize${kustomizeVersion}`;
+          }
+        }
         // Run kustomize
-        exec(`kustomize build ${path.join(tmpDir.name, overlayPath)}`, { maxBuffer: 1024 * 5000 }, (err, stdout, stderr) => {
+        exec(`${kustomizeString} build ${path.join(tmpDir.name, overlayPath)}`, { maxBuffer: 1024 * 5000 }, (err, stdout, stderr) => {
           tmpDir.removeCallback();
           if (err) {
             // logger.error({ msg: "err running kustomize", err, stderr })
