@@ -437,7 +437,7 @@ export class KotsApp {
     return result.Body;
   }
 
-  async render(sequence: string, overlayPath: string, kubectlVersion: string|undefined): Promise<string> {
+  async render(sequence: string, overlayPath: string, kustomizeVersion: string|undefined): Promise<string> {
     const replicatedParams = await Params.getParams();
     const params = {
       Bucket: replicatedParams.shipOutputBucket,
@@ -475,9 +475,9 @@ export class KotsApp {
       extract.on("finish", () => {
         // Choose kustomize binary
         let kustomizeString = "kustomize3.5.4";
-        if (kubectlVersion && kubectlVersion !== "") {
-          if (kubectlVersion !== "latest") {
-            kustomizeString = `kustomize${kubectlVersion}`;
+        if (kustomizeVersion && kustomizeVersion !== "") {
+          if (kustomizeVersion !== "latest") {
+            kustomizeString = `kustomize${kustomizeVersion}`;
           }
         }
         // Run kustomize

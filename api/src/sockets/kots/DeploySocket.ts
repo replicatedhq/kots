@@ -165,7 +165,7 @@ export class KotsDeploySocketService {
     const desiredNamespace = ".";
     const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-    const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kubectlVersion : "");
+    const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
     const b = new Buffer(rendered);
 
 
@@ -282,7 +282,7 @@ export class KotsDeploySocketService {
               const desiredNamespace = ".";
               const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kubectlVersion : "");
+              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
               const b = new Buffer(rendered);
 
 
@@ -298,7 +298,7 @@ export class KotsDeploySocketService {
 
               const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence);
               if (previousSequence !== undefined) {
-                const previousRendered = await app.render(previousSequence.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kubectlVersion : "");
+                const previousRendered = await app.render(previousSequence.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
                 const bb = new Buffer(previousRendered);
                 args.previous_manifests = bb.toString("base64");
               }
