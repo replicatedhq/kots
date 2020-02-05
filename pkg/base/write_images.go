@@ -7,7 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
 type WriteUpstreamImageOptions struct {

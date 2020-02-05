@@ -13,7 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
-	kustomizeimage "sigs.k8s.io/kustomize/v3/pkg/image"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type PushUpstreamImageOptions struct {
@@ -26,13 +26,13 @@ type PushUpstreamImageOptions struct {
 	DestinationRegistry registry.RegistryOptions
 }
 
-func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOptions) ([]kustomizeimage.Image, error) {
+func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOptions) ([]kustomizetypes.Image, error) {
 	formatDirs, err := ioutil.ReadDir(options.ImagesDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read images dir")
 	}
 
-	images := []kustomizeimage.Image{}
+	images := []kustomizetypes.Image{}
 	for _, f := range formatDirs {
 		if !f.IsDir() {
 			continue
@@ -81,7 +81,7 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 				rewrittenName := rewrittenImage.Name
 				if strings.HasPrefix(rewrittenName, "docker.io/library/") {
 					rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/library/")
-					images = append(images, kustomizeimage.Image{
+					images = append(images, kustomizetypes.Image{
 						Name:    rewrittenName,
 						NewName: rewrittenImage.NewName,
 						NewTag:  rewrittenImage.NewTag,
@@ -91,7 +91,7 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 
 				if strings.HasSuffix(rewrittenName, ":latest") {
 					rewrittenName = strings.TrimSuffix(rewrittenName, ":latest")
-					images = append(images, kustomizeimage.Image{
+					images = append(images, kustomizetypes.Image{
 						Name:    rewrittenName,
 						NewName: rewrittenImage.NewName,
 						NewTag:  rewrittenImage.NewTag,

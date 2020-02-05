@@ -2,7 +2,7 @@ package downstream
 
 import (
 	"github.com/replicatedhq/kots/pkg/midstream"
-	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type Downstream struct {

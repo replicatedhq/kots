@@ -1,12 +1,11 @@
 package midstream
 
 import (
-	"sigs.k8s.io/kustomize/v3/pkg/image"
-	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-func removeExistingImages(new []image.Image, existing []image.Image) []image.Image {
-	filteredImages := make([]image.Image, 0)
+func removeExistingImages(new []kustomizetypes.Image, existing []kustomizetypes.Image) []kustomizetypes.Image {
+	filteredImages := make([]kustomizetypes.Image, 0)
 	names := make(map[string]bool)
 
 	for _, n := range new {

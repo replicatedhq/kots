@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	kustomizetypes "sigs.k8s.io/kustomize/v3/pkg/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
 )
 
