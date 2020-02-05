@@ -26,7 +26,14 @@ RUN curl -fsSLO "${KUBECTL_URL}" \
 # Install kustomize
 RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/v2.0.3/kustomize_2.0.3_linux_amd64" > /tmp/kustomize && \
   chmod a+x /tmp/kustomize && \
-  mv /tmp/kustomize /usr/local/bin
+  mv /tmp/kustomize "/usr/local/bin/kustomize2.0.3"
+
+# Install kustomize 3
+RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz" > /tmp/kustomize.tar.gz && \
+  tar -xzvf /tmp/kustomize.tar.gz && \
+  rm /tmp/kustomize.tar.gz && \
+  chmod a+x kustomize && \
+  mv kustomize "/usr/local/bin/kustomize3.5.4"
 
 # Install kots.so
 RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v1.12.0/kots.so_linux_amd64.tar.gz" > /tmp/kots.tar.gz && \
