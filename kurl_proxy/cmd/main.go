@@ -268,7 +268,6 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			<-c.Request.Context().Done()
 
 			if len(secret.StringData) == 0 {
-				log.Println("jacdebug initializing")
 				secret.StringData = make(map[string]string)
 			}
 			secret.StringData["hostname"] = hostString
@@ -339,7 +338,6 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			} else {
 				delete(secret.Annotations, "acceptAnonymousUploads")
 			}
-
 			_, err = secrets.Update(secret)
 			if err != nil {
 				log.Print(err)
