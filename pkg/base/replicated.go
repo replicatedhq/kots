@@ -24,6 +24,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
 	"sigs.k8s.io/yaml"
+
+	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Document struct {
@@ -58,6 +62,22 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrap(err, "failed to create cipher")
 		}
 		cipher = c
+	}
+
+	cfg, err := k8sconfig.GetConfig()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get config")
+	}
+
+	clientset := kurlclientset.NewForConfigOrDie(cfg)
+
+	installers := clientset.Installers("default")
+
+	retrieved, err := installers.Get("yaboi", metav1.GetOptions{})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not retrive installer crd object")
 	}
 
 	base := Base{
