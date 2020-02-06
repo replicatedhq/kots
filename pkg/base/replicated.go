@@ -72,7 +72,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
-<<<<<<< HEAD
 	configGroups := []kotsv1beta1.ConfigGroup{}
 	if config != nil {
 		configGroups = config.Spec.Groups
@@ -83,9 +82,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Namespace: renderOptions.LocalRegistryNamespace,
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
-=======
+
 	kurlCtx, _ := template.NewKurlContext()
-	builder.AddCtx(kurlCtx)
+
+	if kurlCtx != nil {
+		builder.AddCtx(kurlCtx)
+	}
 
 	if config != nil {
 		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
@@ -94,7 +96,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 
 		builder.AddCtx(configCtx)
->>>>>>> c8ab1f0... ADD basic functionality for kurl context functions
 	}
 	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
 	if err != nil {
