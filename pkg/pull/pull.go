@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -155,6 +156,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
+		if expired, err := licenseIsExpired(fetchOptions.License); err != nil {
+			return "", errors.Wrap(err, "failed to check license expiration")
+		} else if expired {
+			return "", util.ActionableError{Message: "License is expired"}
+		}
+
 		airgap, err := findAirgapMetaInDir(pullOptions.AirgapRoot)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse license from file")
@@ -577,4 +584,23 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	}
 
 	return nil
+}
+
+func licenseIsExpired(license *kotsv1beta1.License) (bool, error) {
+	val, found := license.Spec.Entitlements["expires_at"]
+	if !found {
+		return false, nil
+	}
+	if val.ValueType != "" && val.ValueType != "String" {
+		return false, errors.Errorf("expires_at must be type String: %s", val.ValueType)
+	}
+	if val.Value.StrVal == "" {
+		return false, nil
+	}
+
+	partsed, err := time.Parse(time.RFC3339, val.Value.StrVal)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to parse expiration time")
+	}
+	return partsed.Before(time.Now()), nil
 }
