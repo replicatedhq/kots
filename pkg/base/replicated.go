@@ -58,8 +58,13 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
+	// _, _ = template.NewKurlContext()
+
 	kurlCtx, _ := template.NewKurlContext()
-	builder.AddCtx(kurlCtx)
+
+	if kurlCtx != nil {
+		builder.AddCtx(kurlCtx)
+	}
 
 	if config != nil {
 		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
