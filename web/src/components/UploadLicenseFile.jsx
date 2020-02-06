@@ -29,7 +29,9 @@ class UploadLicenseFile extends React.Component {
   moveBar = (count) => {
     const elem = document.getElementById("myBar");
     const percent = count > 3 ? 96 : count * 30;
-    elem.style.width = percent + "%";
+    if (elem) {
+      elem.style.width = percent + "%";
+    }
   }
 
   uploadLicenseFile = async () => {
@@ -52,6 +54,9 @@ class UploadLicenseFile extends React.Component {
     });
     let count = 0;
     const interval = setInterval(() => {
+      if (this.state.errorMessage.length) {
+        clearInterval(interval);
+      }
       count++
       this.moveBar(count);
       if (count > 3) {
