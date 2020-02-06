@@ -2,20 +2,29 @@ package template
 
 import (
 	"fmt"
-	_ "regexp"
+	"regexp"
 	"testing"
-	_ "unicode/utf8"
+	"unicode/utf8"
 
-	"github.com/stretchr/testify/assert"
-	_ "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestGenerateRandomString(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+
+	req := require.New(t)
 	ctx := &StaticCtx{}
-	str := ctx.RandomString(100)
-	assert.Len(t, str, 100)
-	assert.Regexp(t, DefaultCharset, str)
+	seenStrings := map[string]struct{}{}
+	for i := 0; i < 100; i++ {
+		str := ctx.RandomString(100)
+		req.Len(str, 100)
+		req.Regexp(DefaultCharset, str)
+		_, ok := seenStrings[str]
+		req.Falsef(ok, "string %q matched an earlier random string of length 100 on iteration %d", str, i)
+		seenStrings[str] = struct{}{}
+	}
 }
 
 func TestGenerateRandomStringTemplates(t *testing.T) {
@@ -67,29 +76,25 @@ func TestGenerateRandomStringTemplates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scopetest := scopeagent.StartTest(t)
 			defer scopetest.End()
-			// TODO
+			req := require.New(t)
 
-			// req := require.New(t)
+			builder := Builder{}
+			builder.AddCtx(StaticCtx{})
 
-			// builderBuilder := &BuilderBuilder{
-			// 	Logger: &logger.TestLogger{T: t},
-			// 	Viper:  viper.New(),
-			// }
+			seenStrings := map[string]struct{}{}
+			for i := 0; i < 100; i++ {
+				outputString, err := builder.String(tt.templateString)
+				req.NoError(err)
 
-			// builder := builderBuilder.NewBuilder(
-			// 	builderBuilder.NewStaticContext(),
-			// )
+				req.Equal(utf8.RuneCountInString(outputString), tt.length, "%q should have length %d", outputString, tt.length)
 
-			// outputString, err := builder.String(tt.templateString)
-			// req.NoError(err)
+				matcher := regexp.MustCompile(fmt.Sprintf("^%s+$", tt.outputRegex))
+				req.Regexp(matcher, outputString)
 
-			// req.Equal(utf8.RuneCountInString(outputString), tt.length, "%q should have length %d", outputString, tt.length)
-
-			// tt.outputRegex = fmt.Sprintf("^%s+$", tt.outputRegex)
-
-			// matcher := regexp.MustCompile(tt.outputRegex)
-
-			// req.True(matcher.MatchString(outputString), "String %q must match %q", outputString, tt.outputRegex)
+				_, ok := seenStrings[outputString]
+				req.Falsef(ok, "string %q matched an earlier random string of length 100 on iteration %d", outputString, i)
+				seenStrings[outputString] = struct{}{}
+			}
 		})
 	}
 }
