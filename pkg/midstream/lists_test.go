@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_findNewStrings(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
 	tests := []struct {
 		existingList []string
 		newList      []string

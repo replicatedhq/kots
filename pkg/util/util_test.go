@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_CommonSlicePrefix(t *testing.T) {
@@ -36,6 +37,8 @@ func Test_CommonSlicePrefix(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			common := CommonSlicePrefix(test.first, test.second)
 			assert.Equal(t, test.expected, common)
 		})
@@ -71,6 +74,8 @@ func Test_SplitStringOnLen(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 
 			parts, err := SplitStringOnLen(test.in, test.max)
@@ -110,6 +115,8 @@ func TestIntPointer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 			got := IntPointer(tt.x)
 			req.Equal(tt.want, *got)
@@ -137,6 +144,8 @@ func TestGenPassword(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 			got := GenPassword(tt.length)
 			req.Len(got, tt.length)
@@ -178,6 +187,8 @@ func TestCompareStringArrays(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
 			req := require.New(t)
 			req.Equal(CompareStringArrays(tt.arr1, tt.arr2), tt.want)
 		})

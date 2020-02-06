@@ -10,6 +10,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -76,7 +77,8 @@ ACgAAA==`,
 				},
 			},
 		}
-
+		scopetest := scopeagent.StartTest(t)
+		defer scopetest.End()
 		u, err := FetchUpstream("replicated://app-slug", fetchOptions)
 		req.NoError(err)
 		assert.Equal(t, test.expectedLabel, u.VersionLabel)
