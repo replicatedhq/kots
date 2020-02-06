@@ -11,6 +11,7 @@ require (
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.25.18
+	github.com/chzyer/logex v1.1.11-0.20160617073814-96a4d311aa9b // indirect
 	github.com/containerd/continuity v0.0.0-20191127005431-f65d91d395eb // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.15.8 // indirect
@@ -32,6 +33,7 @@ require (
 	github.com/huandu/xstrings v1.2.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/manifoldco/promptui v0.3.2
+	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect
