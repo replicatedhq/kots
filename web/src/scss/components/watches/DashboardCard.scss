@@ -8,11 +8,7 @@
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 4px;
   padding: 12px 12px 0px 12px;
-  margin-right: 30px;
-
-  &:nth-child(3n) {
-    margin-right: 0;
-  }
+  margin-bottom: 30px;
 
   &.graph {
     min-width: 455px;
@@ -29,22 +25,19 @@
   }
 
   &.emptyGraph {
-    min-width: 455px;
     min-height: 255px;
-    max-width: 455px;
     max-height: 255px;
     height: 255px;
 
     &:nth-child(2n) {
       margin-right: 0;
-      min-width: 463px;
-      max-width: 463px;
     }
   }
 
   &.absolute-button {
     position: absolute;
-    left: 415px;
+    left: 50%;
+    margin-left: -73px;
     top: 100px;
     padding: 5px;
     min-width: 146px;
@@ -144,5 +137,40 @@
 
   &:first-child {
     margin-bottom: 20px;
+  }
+}
+
+@media screen and (min-width: 642px) {
+  .dashboard-card {
+    margin-right: 30px;
+    &:nth-child(2n),
+    &:nth-child(3n) {
+      margin-right: 0;
+    }
+  }
+}
+
+@media screen and (min-width: 960px) {
+  .dashboard-card {
+    margin-bottom: 0;
+    &:nth-child(2n) {
+      margin-right: 30px;
+    }
+  }
+}
+
+@media screen and (min-width: 1040px) {
+  &.emptyGraph {
+    min-width: 455px;
+    min-height: 255px;
+    max-width: 455px;
+    max-height: 255px;
+    height: 255px;
+
+    &:nth-child(2n) {
+      margin-right: 0;
+      min-width: 463px;
+      max-width: 463px;
+    }
   }
 }

@@ -34,6 +34,7 @@ class UploadAirgapBundle extends React.Component {
     preparingOnlineInstall: false,
     supportBundleCommand: undefined,
     showSupportBundleCommand: false,
+    missingNamespaceError: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false
   }
@@ -50,6 +51,12 @@ class UploadAirgapBundle extends React.Component {
 
   uploadAirgapBundle = async () => {
     const { match, showRegistry } = this.props;
+    const { registryDetails } = this.state;
+
+    this.setState({ showMissingNamespaceError: false });
+    if (!registryDetails.namespace || !registryDetails.namespace.length || registryDetails.namespace.trim() === "") {
+      return this.setState({ showMissingNamespaceError: true });
+    }
 
     // Reset the airgap upload state
     const resetUrl = `${window.env.API_ENDPOINT}/kots/airgap/reset/${match.params.slug}`;
@@ -353,6 +360,7 @@ class UploadAirgapBundle extends React.Component {
                   hideTestConnection={true}
                   namespaceDescription="What namespace do you want the application images pushed to?"
                   gatherDetails={this.getRegistryDetails}
+                  showNamespaceError={this.state.showMissingNamespaceError}
                   registryDetails={registryDetails}
                   showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
                 />
