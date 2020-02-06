@@ -126,8 +126,6 @@ spec:
 }
 
 func Test_ShouldBeIncludedInBaseKustomization(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	tests := []struct {
 		name             string
 		path             string
