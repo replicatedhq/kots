@@ -236,18 +236,22 @@ class AppVersionHistory extends Component {
     }
 
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
-    if (isPastVersion && isPastVersion.status !== "failed") {
-      return null;
-    }
     const clusterSlug = downstream.cluster?.slug;
-
     let preflightBlock = null;
+
+    if (isPastVersion && app.hasPreflight) {
+      if (preflightsFailed) {
+        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
+      } else {
+        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
+      }
+    }
     if (version.status === "pending_preflight") {
       preflightBlock = (
         <span className="flex u-marginLeft--5 alignItems--center">
           <Loader size="20" />
         </span>);
-    } else if (app.hasPreflight && version.status === "pending") {
+    } else if (app.hasPreflight) {
       if (preflightsFailed) {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
       } else {
@@ -255,42 +259,78 @@ class AppVersionHistory extends Component {
       }
     }
 
-    return (
-      <div className="flex alignItems--center" style={{ position: "relative", top: "-2px" }}>
+    if (!isPastVersion) {
+      return (
         <div className="flex alignItems--center">
-          <div
-            data-tip={`${version.title}-${version.sequence}`}
-            data-for={`${version.title}-${version.sequence}`}
-            className={classNames("icon", {
-              "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
-              "exclamationMark--icon": version.status === "opened",
-              "grayCircleMinus--icon": version.status === "closed",
-              "error-small": version.status === "failed" || preflightsFailed
-            })}
-          />
-          <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-            "u-color--nevada": version.status === "deployed" || version.status === "merged",
-            "u-color--orange": version.status === "opened",
-            "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-color--red": version.status === "failed" || preflightsFailed
-          })}>
-            {Utilities.toTitleCase(
-              version.status === "pending_preflight"
-                ? "Running checks"
-                : preflightsFailed
-                  ? "Checks failed"
-                  : version.status === "pending" || version.status === "pending_config"
-                    ? "Ready to deploy"
-                    : version.status
-            ).replace("_", " ")}
-          </span>
+          <div className="flex alignItems--center">
+            <div
+              data-tip={`${version.title}-${version.sequence}`}
+              data-for={`${version.title}-${version.sequence}`}
+              className={classNames("icon", {
+                "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
+                "exclamationMark--icon": version.status === "opened",
+                "grayCircleMinus--icon": version.status === "closed",
+                "error-small": version.status === "failed" || preflightsFailed
+              })}
+            />
+            <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
+              "u-color--nevada": version.status === "deployed" || version.status === "merged",
+              "u-color--orange": version.status === "opened",
+              "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
+              "u-color--red": version.status === "failed" || preflightsFailed
+            })}>
+              {Utilities.toTitleCase(
+                version.status === "pending_preflight"
+                  ? "Running checks"
+                  : preflightsFailed
+                    ? "Checks failed"
+                    : version.status === "pending"
+                      ? "Ready to deploy"
+                      : version.status
+              ).replace("_", " ")}
+            </span>
+          </div>
+          {preflightBlock}
+          {version.status === "failed" &&
+            <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version)}>View logs</span>
+          }
         </div>
-        {preflightBlock}
-        {version.status === "failed" &&
-          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version)}>View logs</span>
-        }
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div className="flex alignItems--center">
+          <div className="flex alignItems--center">
+            <div
+              data-tip={`${version.title}-${version.sequence}`}
+              data-for={`${version.title}-${version.sequence}`}
+              className={classNames("icon", {
+                "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
+                "exclamationMark--icon": version.status === "opened",
+                "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
+                "error-small": version.status === "failed"
+              })}
+            />
+            <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
+              "u-color--nevada": version.status === "deployed" || version.status === "merged",
+              "u-color--orange": version.status === "opened",
+              "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
+              "u-color--red": version.status === "failed"
+            })}>
+              {version.status === "deployed" ?
+                "Previously Deployed" :
+                version.status === "pending" ?
+                  "Skipped" :
+                  version.status === "failed" ?
+                    "Failed" : ""}
+            </span>
+          </div>
+          {preflightBlock}
+          {version.status === "failed" &&
+            <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version)}>View logs</span>
+          }
+        </div>
+      );
+    }
   }
 
   renderLogsTabs = () => {
@@ -801,7 +841,7 @@ class AppVersionHistory extends Component {
                         <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.source}</span></p>
                         <div className="u-fontSize--small u-marginTop--10 u-color--dustyGray">{this.renderSourceAndDiff(currentDownstreamVersion)}</div>
                       </div>
-                      <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15">Status:<span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(currentDownstreamVersion) : this.renderVersionStatus(currentDownstreamVersion)}</span></div>
+                      <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status:<span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(currentDownstreamVersion) : this.renderVersionStatus(currentDownstreamVersion)}</span></div>
                     </div>
                     <div className="flex-column flex1 alignItems--flexEnd">
                       <div className="flex alignItems--center">
@@ -845,7 +885,7 @@ class AppVersionHistory extends Component {
                             <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{version.source}</span></p>
                             <div className="u-fontSize--small u-marginTop--10 u-color--dustyGray">{this.renderSourceAndDiff(version)}</div>
                           </div>
-                          <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
+                          <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
                         </div>
                         <div className="flex-column flex1 alignItems--flexEnd">
                           <div>
