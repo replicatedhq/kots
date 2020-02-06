@@ -1,15 +1,13 @@
 package config
 
 import (
-	"bytes"
-
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -17,7 +15,7 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
-	// 3. re-marshal it
+	// 3. re-marshal it (with an unlimited line length)
 	// 4. put new config yaml through templating engine
 	// This process will re-order items and discard comments, so it should not be saved.
 
@@ -45,29 +43,19 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	}
 
 	ApplyValuesToConfig(config, configCtx.ItemValues)
-	configDocWithData, err := marshalConfig(config)
+	configDocWithData, err := util.MarshalIndent(2, config)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config")
 	}
 
 	builder.AddCtx(configCtx)
 
-	rendered, err := builder.RenderTemplate("config", configDocWithData)
+	rendered, err := builder.RenderTemplate("config", string(configDocWithData))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render config template")
 	}
 
 	return rendered, nil
-}
-
-func marshalConfig(config *kotsv1beta1.Config) (string, error) {
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	var marshalled bytes.Buffer
-	if err := s.Encode(config, &marshalled); err != nil {
-		return "", errors.Wrap(err, "failed to marshal api role")
-	}
-	return string(marshalled.Bytes()), nil
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
