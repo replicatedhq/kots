@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -19,13 +20,23 @@ type WriteUpstreamImageOptions struct {
 	IsAirgap       bool
 	Log            *logger.Logger
 	ReportWriter   io.Writer
+	Installation   *kotsv1beta1.Installation
 }
 
-func CopyUpstreamImages(options WriteUpstreamImageOptions) ([]kustomizeimage.Image, error) {
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.DryRun, options.IsAirgap)
+type WriteUpstreamImageResult struct {
+	Images        []kustomizeimage.Image          // images to be rewritten
+	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
+}
+
+func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
+	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.DryRun, options.IsAirgap, checkedImages)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
 
-	return newImages, nil
+	return &WriteUpstreamImageResult{
+		Images:        newImages,
+		CheckedImages: makeInstallationImages(checkedImages),
+	}, nil
 }

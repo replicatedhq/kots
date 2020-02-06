@@ -119,6 +119,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	fetchOptions.LocalPath = pullOptions.LocalPath
 	fetchOptions.CurrentCursor = pullOptions.UpdateCursor
 
+	var installation *kotsv1beta1.Installation
+
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
@@ -141,10 +143,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.ConfigValues = config
 	}
 	if pullOptions.InstallationFile != "" {
-		installation, err := parseInstallationFromFile(pullOptions.InstallationFile)
+		i, err := parseInstallationFromFile(pullOptions.InstallationFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse installation from file")
 		}
+
+		installation = i
 		if installation != nil {
 			fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
 		}
@@ -234,6 +238,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
+			newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+			if err != nil {
+				return "", errors.Wrap(err, "failed to load installation")
+			}
+
 			writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
 				BaseDir: writeBaseOptions.BaseDir,
 				Log:     log,
@@ -242,6 +251,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
 				},
 				ReportWriter: pullOptions.ReportWriter,
+				Installation: newInstallation,
 			}
 			if fetchOptions.License != nil {
 				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
@@ -258,11 +268,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			newImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
+			copyResult, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
 			}
-			images = newImages
+			images = copyResult.Images
+
+			newInstallation.Spec.KnownImages = copyResult.CheckedImages
+			err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+			if err != nil {
+				return "", errors.Wrap(err, "failed to save installation")
+			}
 		}
 
 		// If the request includes a rewrite image options host name, then also
@@ -333,6 +349,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	} else if fetchOptions.License != nil {
 
+		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load installation")
+		}
+
 		// Rewrite private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
 			BaseDir: writeBaseOptions.BaseDir,
@@ -341,15 +362,22 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
+			Installation: newInstallation,
 		}
-		rewrittenImages, affectedObjects, err := base.FindPrivateImages(findPrivateImagesOptions)
+		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to find private images")
 		}
 
+		newInstallation.Spec.KnownImages = findResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return "", errors.Wrap(err, "failed to save installation")
+		}
+
 		// Note that there maybe no rewritten images if only replicated private images are being used.
 		// We still need to create the secret in that case.
-		if len(affectedObjects) > 0 {
+		if len(findResult.Docs) > 0 {
 			pullSecret, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				fetchOptions.License.Spec.LicenseID,
@@ -360,8 +388,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				return "", errors.Wrap(err, "create pull secret")
 			}
 		}
-		images = rewrittenImages
-		objects = affectedObjects
+		images = findResult.Images
+		objects = findResult.Docs
 	}
 
 	log.ActionWithSpinner("Creating midstream")

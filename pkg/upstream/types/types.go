@@ -39,6 +39,15 @@ type WriteOptions struct {
 	SharedPassword       string
 }
 
+func (u *Upstream) GetUpstreamDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "upstream")
+}
+
 func (u *Upstream) GetBaseDir(options WriteOptions) string {
 	renderDir := options.RootDir
 	if options.CreateAppDir {

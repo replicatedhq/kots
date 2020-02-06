@@ -118,6 +118,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		// settings to create secrets for all objects that have images.
 		// When only registry endpoint is set, we don't need to copy images, but still
 		// need to rewrite them and create secrets.
+
+		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to load installation")
+		}
 		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
 			BaseDir:      writeBaseOptions.BaseDir,
 			ReportWriter: rewriteOptions.ReportWriter,
@@ -132,8 +137,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Username:  rewriteOptions.RegistryUsername,
 				Password:  rewriteOptions.RegistryPassword,
 			},
-			DryRun:   !rewriteOptions.CopyImages,
-			IsAirgap: rewriteOptions.IsAirgap,
+			Installation: newInstallation,
+			DryRun:       !rewriteOptions.CopyImages,
+			IsAirgap:     rewriteOptions.IsAirgap,
 		}
 		if fetchOptions.License != nil {
 			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
@@ -141,9 +147,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
 
-		rewrittenImages, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
+		copyResult, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to write upstream images")
+		}
+
+		newInstallation.Spec.KnownImages = copyResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to save installation")
 		}
 
 		findObjectsOptions := base.FindObjectsWithImagesOptions{
@@ -173,7 +185,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrap(err, "failed to create private registry pull secret")
 		}
 
-		images = rewrittenImages
+		images = copyResult.Images
 		objects = affectedObjects
 	} else {
 		// When CopyImages is not set, we only rewrite private images and use license to create secrets
@@ -185,13 +197,24 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
+			Installation: rewriteOptions.Installation,
 		}
-		rewrittenImages, affectedObjects, err := base.FindPrivateImages(findPrivateImagesOptions)
+		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to find private images")
 		}
 
-		if len(affectedObjects) > 0 {
+		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to load installation")
+		}
+		newInstallation.Spec.KnownImages = findResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to save installation")
+		}
+
+		if len(findResult.Docs) > 0 {
 			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 			pullSecret, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
@@ -204,8 +227,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			}
 		}
 
-		images = rewrittenImages
-		objects = affectedObjects
+		images = findResult.Images
+		objects = findResult.Docs
 	}
 
 	log.ActionWithSpinner("Creating midstream")
