@@ -16,6 +16,7 @@ export function injectKotsCollectors(params: Params, parsedSpec: any, licenseDat
   spec = injectLicenseCollector(spec, licenseData);
   spec = injectKotsadmCollector(spec);
   spec = injectAPICollector(spec);
+  spec = injectProxyCollector(spec);
   spec = injectOperatorCollector(spec);
   spec = injectReplicatedPullSecretCollector(spec);
   if (params.enableKurl) {
@@ -131,6 +132,25 @@ function injectAPICollector(parsedSpec: any): any {
     logs: {
       collectorName: "kotsadm-api",
       selector: ["app=kotsadm-api"],
+      namespace: process.env[POD_NAMESPACE_ENV],
+      name: "kots/admin_console",
+    },
+  };
+
+  const collectors = _.concat(
+    _.get(parsedSpec, "spec.collectors", []) as any[],
+    [newCollector],
+  );
+  _.set(parsedSpec, "spec.collectors", collectors);
+
+  return parsedSpec;
+}
+
+function injectProxyCollector(parsedSpec: any): any {
+  const newCollector = {
+    logs: {
+      collectorName: "kurl-proxy-kotsadm",
+      selector: ["app=kurl-proxy-kotsadm"],
       namespace: process.env[POD_NAMESPACE_ENV],
       name: "kots/admin_console",
     },
