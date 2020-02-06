@@ -79,6 +79,18 @@ func (boolstr BoolOrString) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// MarshalYAML implements the yaml.Marshaller interface https://godoc.org/gopkg.in/yaml.v3#Marshaler
+func (boolstr BoolOrString) MarshalYAML() (interface{}, error) {
+	switch boolstr.Type {
+	case Bool:
+		return boolstr.BoolVal, nil
+	case String:
+		return boolstr.StrVal, nil
+	default:
+		return []byte{}, fmt.Errorf("impossible BoolOrString.Type")
+	}
+}
+
 // OpenAPISchemaType is used by the kube-openapi generator when constructing
 // the OpenAPI spec of this type.
 //
