@@ -8,7 +8,15 @@ steps:
           always-pull: true
           mount-checkout: true
           workdir: /go/src/github.com/replicatedhq/kots
-
+          environment:
+            - SCOPE_DSN
+            - BUILDKITE_REPO
+            - BUILDKITE_COMMIT
+            - BUILDKITE_BUILD_ID
+            - BUILDKITE_BUILD_NUMBER
+            - BUILDKITE_BUILD_URL
+            - BUILDKITE_BUILD_CHECKOUT_PATH
+            - BUILDKITE
 
   - label: snapshot-release
     commands:

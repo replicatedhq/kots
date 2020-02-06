@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_findNewStrings(t *testing.T) {
@@ -30,6 +31,8 @@ func Test_findNewStrings(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		scopetest := scopeagent.StartTest(t)
+		defer scopetest.End()
 		diff := findNewStrings(test.newList, test.existingList)
 		assert.Equal(t, test.expected, diff)
 	}
