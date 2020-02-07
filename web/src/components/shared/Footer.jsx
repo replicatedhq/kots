@@ -9,11 +9,11 @@ export class Footer extends React.Component {
     return [
       {
         label: "Terms",
-        linkTo: "/terms",
+        href: "https://www.replicated.com/terms",
       },
       {
         label: "Privacy",
-        linkTo: "/privacy",
+        href: "https://www.replicated.com/privacy",
       },
       {
         label: getBuildVersion()
