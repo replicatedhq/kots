@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,10 +23,19 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
+	"sigs.k8s.io/yaml"
 )
 
+type Document struct {
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+}
+
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	config, configValues, license := findConfig(u, renderOptions.Log)
+	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
+	if err != nil {
+		return nil, err
+	}
 
 	var templateContext map[string]template.ItemValue
 	if configValues != nil {
@@ -58,13 +68,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
+	configGroups := []kotsv1beta1.ConfigGroup{}
 	if config != nil {
-		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create config context")
-		}
-		builder.AddCtx(configCtx)
+		configGroups = config.Spec.Groups
 	}
+	configCtx, err := builder.NewConfigContext(configGroups, templateContext, cipher)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create config context")
+	}
+	builder.AddCtx(configCtx)
 
 	if license != nil {
 		licenseCtx := template.LicenseCtx{
@@ -313,15 +325,25 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License) {
+func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
 
 	for _, file := range u.Files {
+		document := &Document{}
+		if err := yaml.Unmarshal(file.Content, document); err != nil {
+			errMessage := fmt.Sprintf("Invalid yaml in file %s", file.Path)
+			return nil, nil, nil, errors.Wrap(err, errMessage)
+		}
+
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(file.Content, nil, nil)
 		if err != nil {
+			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
+				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
+				return nil, nil, nil, errors.Wrap(err, errMessage)
+			}
 			continue
 		}
 
@@ -333,7 +355,8 @@ func findConfig(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Con
 			license = obj.(*kotsv1beta1.License)
 		}
 	}
-	return config, values, license
+
+	return config, values, license, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
