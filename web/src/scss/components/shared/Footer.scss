@@ -8,7 +8,8 @@
 .FooterItem-wrapper a:hover {
   text-decoration: underline;
 }
-.FooterItem {
+.FooterItem,
+a.FooterItem {
   font-size: 12px;
   padding: 0 10px;
   position: relative;
