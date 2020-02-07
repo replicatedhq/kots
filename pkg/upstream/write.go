@@ -131,38 +131,6 @@ func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error
 	return prevInstallation.Spec.EncryptionKey, nil
 }
 
-func mergeValues(previousValues []byte, applicationDeliveredValues []byte) ([]byte, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	prevObj, _, err := decode(previousValues, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode previous values")
-	}
-	prevValues := prevObj.(*kotsv1beta1.ConfigValues)
-
-	applicationValuesObj, _, err := decode(applicationDeliveredValues, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode application delivered values")
-	}
-	applicationValues := applicationValuesObj.(*kotsv1beta1.ConfigValues)
-
-	for name, value := range applicationValues.Spec.Values {
-		_, ok := prevValues.Spec.Values[name]
-		if !ok {
-			prevValues.Spec.Values[name] = value
-		}
-	}
-
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	var b bytes.Buffer
-	if err := s.Encode(prevValues, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode merged values")
-	}
-
-	return b.Bytes(), nil
-}
-
 func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
