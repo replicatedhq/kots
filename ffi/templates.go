@@ -70,27 +70,31 @@ func RenderFile(socket string, filePath string, archivePath string) {
 			cipher = c
 		}
 
-		if config != nil {
-			templateContextValues := make(map[string]template.ItemValue)
-
-			if values != nil {
-				for k, v := range values.Spec.Values {
-					templateContextValues[k] = template.ItemValue{
-						Value:   v.Value,
-						Default: v.Default,
-					}
+		templateContextValues := make(map[string]template.ItemValue)
+		if values != nil {
+			for k, v := range values.Spec.Values {
+				templateContextValues[k] = template.ItemValue{
+					Value:   v.Value,
+					Default: v.Default,
 				}
 			}
+		}
 
-			configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
-			if err != nil {
-				fmt.Printf("failed to create config context %s\n", err.Error())
-				ffiResult = NewFFIResult(1).WithError(err)
-				return
-			}
+		configGroups := []kotsv1beta1.ConfigGroup{}
+		if config != nil {
+			configGroups = config.Spec.Groups
+		}
 
-			builder.AddCtx(configCtx)
+		configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, cipher)
+		if err != nil {
+			fmt.Printf("failed to create config context %s\n", err.Error())
+			ffiResult = NewFFIResult(1).WithError(err)
+			return
+		}
 
+		builder.AddCtx(configCtx)
+
+		if config != nil {
 			kotsconfig.ApplyValuesToConfig(config, configCtx.ItemValues)
 		}
 

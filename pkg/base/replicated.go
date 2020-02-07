@@ -68,13 +68,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
+	configGroups := []kotsv1beta1.ConfigGroup{}
 	if config != nil {
-		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create config context")
-		}
-		builder.AddCtx(configCtx)
+		configGroups = config.Spec.Groups
 	}
+	configCtx, err := builder.NewConfigContext(configGroups, templateContext, cipher)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create config context")
+	}
+	builder.AddCtx(configCtx)
 
 	if license != nil {
 		licenseCtx := template.LicenseCtx{
