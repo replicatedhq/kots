@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
-	yaml "gopkg.in/laverya/yaml.v3" // using laverya/yaml.v3 because that allows setting line length
+	yaml "github.com/replicatedhq/yaml/v3" // using replicatedhq/yaml/v3 because that allows setting line length
 )
 
 func MarshalIndent(indent int, in interface{}) ([]byte, error) {
