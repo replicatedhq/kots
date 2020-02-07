@@ -1,12 +1,28 @@
 package config
 
 import (
+	"bytes"
 	"testing"
 
+	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/stretchr/testify/require"
 	"go.undefinedlabs.com/scopeagent"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+// the old config marshal function, preserved to allow validation
+func oldMarshalConfig(config *kotsv1beta1.Config) (string, error) {
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var marshalled bytes.Buffer
+	if err := s.Encode(config, &marshalled); err != nil {
+		return "", errors.Wrap(err, "failed to marshal config")
+	}
+	return string(marshalled.Bytes()), nil
+}
 
 func TestTemplateConfig(t *testing.T) {
 	log := logger.NewLogger()
@@ -17,6 +33,7 @@ func TestTemplateConfig(t *testing.T) {
 		configSpecData   string
 		configValuesData string
 		want             string
+		expectOldFail    bool
 	}{
 		{
 			name: "basic, no template functions",
@@ -46,21 +63,23 @@ spec:
       value: "xyz789"
 status: {}
 `,
-			want: `kind: Config
-apiVersion: kots.io/v1beta1
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
 metadata:
+  creationTimestamp: null
   name: test-app
 spec:
   groups:
-  - name: example_settings
-    title: My Example Config
-    description: Configuration to serve as an example for creating your own
+  - description: Configuration to serve as an example for creating your own
     items:
-    - name: a_string
-      type: string
+    - default: ""
+      name: a_string
       title: a string field
-      default: ""
+      type: string
       value: xyz789
+    name: example_settings
+    title: My Example Config
+status: {}
 `,
 		},
 		{
@@ -95,33 +114,38 @@ spec:
   values: {}
 status: {}
 `,
-			want: `kind: Config
-apiVersion: kots.io/v1beta1
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
 metadata:
+  creationTimestamp: null
   name: test-app
 spec:
   groups:
-  - name: database_settings_group
-    title: ""
-    items:
-    - name: db_type
-      type: select_one
-      default: embedded
-      value: ""
+  - items:
+    - default: embedded
       items:
-      - name: external
+      - Value: false
+        default: false
+        name: external
         title: External
-        value: false
-      - name: embedded
+      - Value: false
+        default: false
+        name: embedded
         title: Embedded DB
-        value: false
-    - name: database_password
-      type: password
+      name: db_type
+      type: select_one
+      value: ""
+    - default: ""
+      name: database_password
       title: Database Password
-      default: ""
+      type: password
       value: ""
       when: 'true'
+    name: database_settings_group
+    title: ""
+status: {}
 `,
+			expectOldFail: true,
 		},
 	}
 	for _, tt := range tests {
@@ -131,10 +155,19 @@ spec:
 
 			req := require.New(t)
 
-			got, err := TemplateConfig(log, tt.configSpecData, tt.configValuesData)
+			got, err := TemplateConfig(log, tt.configSpecData, tt.configValuesData, MarshalConfig)
 			req.NoError(err)
 
 			req.Equal(tt.want, got)
+
+			// compare with oldMarshalConfig results
+			got, err = TemplateConfig(log, tt.configSpecData, tt.configValuesData, oldMarshalConfig)
+			if !tt.expectOldFail {
+				req.NoError(err)
+				req.Equal(tt.want, got)
+			} else {
+				req.Error(err)
+			}
 		})
 	}
 }

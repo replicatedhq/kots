@@ -11,7 +11,7 @@ import (
 
 //export TemplateConfig
 func TemplateConfig(configSpecData string, configValuesData string) *C.char {
-	rendered, err := config.TemplateConfig(logger.NewLogger(), configSpecData, configValuesData)
+	rendered, err := config.TemplateConfig(logger.NewLogger(), configSpecData, configValuesData, config.MarshalConfig)
 	if err != nil {
 		fmt.Printf("failed to apply templates to config: %s\n", err.Error())
 		return C.CString("")
