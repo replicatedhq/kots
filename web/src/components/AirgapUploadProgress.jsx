@@ -5,6 +5,7 @@ import Loader from "./shared/Loader";
 import { getAirgapInstallStatus } from "../queries/AppsQueries";
 import { formatByteSize } from "@src/utilities/utilities";
 import "@src/scss/components/AirgapUploadProgress.scss";
+import get from "lodash/get";
 
 function AirgapUploadProgress(props) {
   const { total, sent, onProgressError, onProgressSuccess, smallSize } = props;
@@ -63,7 +64,18 @@ function AirgapUploadProgress(props) {
 
   props.data?.startPolling(2000);
 
-  const statusMsg = getAirgapInstallStatus?.currentMessage;
+  let statusMsg = getAirgapInstallStatus?.currentMessage;
+  try {
+    // Some of these messages will be JSON formatted progress reports.
+    const jsonMessage = JSON.parse(statusMsg);
+    const type = get(jsonMessage, "type");
+    if (type === "progressReport") {
+      statusMsg = jsonMessage.compatibilityMessage;
+      // TODO: handle image upload progress here
+    }
+  } catch {
+    // empty
+  }
 
   let statusDiv = (
     <div
