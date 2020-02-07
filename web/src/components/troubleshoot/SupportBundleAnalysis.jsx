@@ -159,7 +159,7 @@ export class SupportBundleAnalysis extends React.Component {
                       <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
                     </div>
                     <div className="flex justifyContent--flexEnd">
-                      <button className="btn secondary lightBlue"> Learn more about Community Licenses </button>
+                      <a href="https://kots.io/vendor/entitlements/community-licenses/" target="_blank" rel="noopener noreferrer" className="btn secondary lightBlue"> Learn more about Community Licenses </a>
                     </div>
                   </div>
                 </div>}
