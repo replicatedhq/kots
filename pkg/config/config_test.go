@@ -147,6 +147,59 @@ status: {}
 `,
 			expectOldFail: true,
 		},
+		{
+			name: "one long 'value' template function",
+			configSpecData: `
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test-app
+spec:
+  groups:
+   - name: test_value
+     items:
+     - name: test_title
+       type: label
+       title: repl{{ ConfigOption "other" }}
+     - name: other
+       title: other
+       type: string
+       default: 'val1'`,
+			configValuesData: `
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values: 
+    other:
+      value: "xyz789"
+status: {}
+`,
+			want: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: test-app
+spec:
+  groups:
+  - items:
+    - default: ""
+      name: test_title
+      title: xyz789
+      type: label
+      value: ""
+    - default: ""
+      name: other
+      title: other
+      type: string
+      value: xyz789
+    name: test_value
+    title: ""
+status: {}
+`,
+			expectOldFail: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
