@@ -32,21 +32,9 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		u.Files = append(u.Files, adminConsoleFiles...)
 	}
 
-	var previousValuesContent []byte
 	var previousInstallationContent []byte
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		// if there's already a config values yaml, we need to save
-		_, err := os.Stat(path.Join(renderDir, "userdata", "config.yaml"))
-		if err == nil {
-			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "config.yaml"))
-			if err != nil {
-				return errors.Wrap(err, "failed to read existing config values")
-			}
-
-			previousValuesContent = c
-		}
-
 		_, err = os.Stat(path.Join(renderDir, "userdata", "installation.yaml"))
 		if err == nil {
 			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
@@ -84,29 +72,6 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
-		}
-	}
-
-	if previousValuesContent != nil {
-		for i, f := range u.Files {
-			if f.Path == path.Join("userdata", "config.yaml") {
-				mergedValues, err := mergeValues(previousValuesContent, f.Content)
-				if err != nil {
-					return errors.Wrap(err, "failed to merge config values")
-				}
-
-				err = ioutil.WriteFile(path.Join(renderDir, "userdata", "config.yaml"), mergedValues, 0644)
-				if err != nil {
-					return errors.Wrap(err, "failed to replace configg values with previous config values")
-				}
-
-				updatedValues := types.UpstreamFile{
-					Path:    f.Path,
-					Content: mergedValues,
-				}
-
-				u.Files[i] = updatedValues
-			}
 		}
 	}
 
