@@ -50,7 +50,7 @@ spec:
       items:
         - name: a_string
           title: a string field
-          type: string
+          type: text
           default: "abc123"`,
 			configValuesData: `
 apiVersion: kots.io/v1beta1
@@ -75,7 +75,7 @@ spec:
     - default: ""
       name: a_string
       title: a string field
-      type: string
+      type: text
       value: xyz789
     name: example_settings
     title: My Example Config
@@ -161,9 +161,13 @@ spec:
      - name: test_title
        type: label
        title: repl{{ ConfigOption "other" }}
+     - name: test_text
+       type: text
+       title: repl{{ ConfigOption "other" }}
+       value: repl{{ ConfigOption "other" }}
      - name: other
        title: other
-       type: string
+       type: text
        default: 'val1'`,
 			configValuesData: `
 apiVersion: kots.io/v1beta1
@@ -190,9 +194,14 @@ spec:
       type: label
       value: ""
     - default: ""
+      name: test_text
+      title: xyz789
+      type: text
+      value: ""
+    - default: ""
       name: other
       title: other
-      type: string
+      type: text
       value: xyz789
     name: test_value
     title: ""
@@ -208,13 +217,13 @@ status: {}
 
 			req := require.New(t)
 
-			got, err := TemplateConfig(log, tt.configSpecData, tt.configValuesData, MarshalConfig)
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, MarshalConfig)
 			req.NoError(err)
 
 			req.Equal(tt.want, got)
 
 			// compare with oldMarshalConfig results
-			got, err = TemplateConfig(log, tt.configSpecData, tt.configValuesData, oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 				req.Equal(tt.want, got)

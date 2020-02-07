@@ -15,7 +15,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData string) (string, error) {
+	return templateConfig(log, configSpecData, configValuesData, MarshalConfig)
+}
+func templateConfig(log *logger.Logger, configSpecData string, configValuesData string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
