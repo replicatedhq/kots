@@ -103,6 +103,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 		},
 		{
 			name: "chained configOptionValue failure", // this isn't really the desired behavior, test just demonstrates it
+			// ideally, the items further down the chain would include configOption values from their parents
 			args: args{
 				configGroups: []kotsv1beta1.ConfigGroup{
 					{
@@ -125,7 +126,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 								Type: "text",
 								Default: multitype.BoolOrString{
 									Type:   multitype.String,
-									StrVal: `repl{{ ConfigOption "abcItem" }}`,
+									StrVal: `hello world repl{{ ConfigOption "abcItem" }}`,
 								},
 								Value: multitype.BoolOrString{},
 							},
@@ -134,7 +135,16 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 								Type: "text",
 								Default: multitype.BoolOrString{
 									Type:   multitype.String,
-									StrVal: `there should be something here repl{{ ConfigOption "childItem1" }}`,
+									StrVal: `there should be something here repl{{ ConfigOption "childItem3" }}`, // this test case refers to item #3 to ensure that we aren't just rendering top to bottom, we build a dependency graph
+								},
+								Value: multitype.BoolOrString{},
+							},
+							{
+								Name: "childItem3",
+								Type: "text",
+								Default: multitype.BoolOrString{
+									Type:   multitype.String,
+									StrVal: `this is a middle value repl{{ ConfigOption "childItem1" }}`,
 								},
 								Value: multitype.BoolOrString{},
 							},
@@ -155,11 +165,18 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 					},
 					"childItem1": {
 						Value:   "",
-						Default: "",
+						Default: "", // this is the current value
+						// Default: "hello world replacedAbcItemValue", // this is the desired value
 					},
 					"childItem2": {
 						Value:   "",
-						Default: "",
+						Default: "", // this is the current value
+						// Default: "there should be something here this is a middle value hello world replacedAbcItemValue", // this is the desired value
+					},
+					"childItem3": {
+						Value:   "",
+						Default: "", // this is the current value
+						// Default: "this is a middle value hello world replacedAbcItemValue", // this is the desired value
 					},
 				},
 			},
