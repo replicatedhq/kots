@@ -104,6 +104,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 		{
 			name: "chained configOptionValue failure", // this isn't really the desired behavior, test just demonstrates it
 			// ideally, the items further down the chain would include configOption values from their parents
+			// for reference, ship calculated this outside of the config.builder function, but it might be worthwhile to bring things inside here
+			// ship code: https://github.com/replicatedhq/ship/blob/1c68827add9e81979e12ef2a041710b1ff7f47e5/pkg/lifecycle/render/config/resolve/api.go#L109-L193
 			args: args{
 				configGroups: []kotsv1beta1.ConfigGroup{
 					{
