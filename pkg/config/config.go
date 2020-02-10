@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -8,10 +10,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
+	yaml "github.com/replicatedhq/yaml/v3"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData string) (string, error) {
+	return templateConfig(log, configSpecData, configValuesData, MarshalConfig)
+}
+func templateConfig(log *logger.Logger, configSpecData string, configValuesData string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
@@ -43,7 +50,7 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	}
 
 	ApplyValuesToConfig(config, configCtx.ItemValues)
-	configDocWithData, err := util.MarshalIndent(2, config)
+	configDocWithData, err := marshalFunc(config)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config")
 	}
@@ -75,4 +82,34 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 			}
 		}
 	}
+}
+
+// MarshalConfig runs the same code path as the k8s json->yaml serializer, but uses a different yaml library for those parts
+// first, the object is marshalled to json
+// second, the json is unmarshalled to an object as yaml
+// third, the object is marshalled as yaml
+func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
+	s := json.NewSerializerWithOptions(
+		json.DefaultMetaFactory,
+		scheme.Scheme,
+		scheme.Scheme,
+		json.SerializerOptions{Yaml: false, Pretty: true, Strict: false},
+	)
+
+	var marshalledJSON bytes.Buffer
+	if err := s.Encode(config, &marshalledJSON); err != nil {
+		return "", errors.Wrap(err, "failed to marshal config as json")
+	}
+
+	var unmarshalledYAML interface{}
+	if err := yaml.Unmarshal(marshalledJSON.Bytes(), &unmarshalledYAML); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal config as yaml")
+	}
+
+	marshalledYAML, err := util.MarshalIndent(2, unmarshalledYAML)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal config as yaml")
+	}
+
+	return string(marshalledYAML), nil
 }
