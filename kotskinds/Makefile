@@ -9,7 +9,7 @@ generate: controller-gen client-gen
 	controller-gen \
 		crd \
 		+output:dir=./config/crds \
-		paths=./apis/kots/v1beta1
+		paths=./apis/kots/v1beta1/...
 	client-gen \
 		--output-package=github.com/replicatedhq/kots/kotskinds/client \
 		--clientset-name kotsclientset \

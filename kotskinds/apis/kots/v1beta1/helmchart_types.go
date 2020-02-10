@@ -27,7 +27,7 @@ import (
 )
 
 type MappedChartValue struct {
-	Value string `json:",inline"`
+	Value string `json:"-"`
 
 	valueType string `json:"-"`
 
