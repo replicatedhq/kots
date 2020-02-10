@@ -333,8 +333,7 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 	for _, file := range u.Files {
 		document := &Document{}
 		if err := yaml.Unmarshal(file.Content, document); err != nil {
-			errMessage := fmt.Sprintf("Invalid yaml in file %s", file.Path)
-			return nil, nil, nil, errors.Wrap(err, errMessage)
+			continue
 		}
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
