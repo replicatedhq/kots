@@ -123,7 +123,7 @@ export function getAddKeyUri(gitUri, provider, ownerRepo) {
 }
 
 export function requiresHostname(provider) {
-  return provider === "gitlab_enterprise" || provider === "github_enterprise" || provider === "bitbucket_server";
+  return provider === "gitlab_enterprise" || provider === "github_enterprise" || provider === "bitbucket_server" || provider === "other";
 }
 
 /**

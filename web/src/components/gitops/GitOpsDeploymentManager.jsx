@@ -65,7 +65,6 @@ class GitOpsDeploymentManager extends React.Component {
     hostname: "",
     services: SERVICES,
     selectedService: SERVICES[0],
-    otherService: "",
     providerError: null,
     finishingSetup: false,
   }
@@ -103,7 +102,7 @@ class GitOpsDeploymentManager extends React.Component {
     return !this.providerChanged() && requiresHostname(provider) && hostname !== savedHostname;
   }
 
-  getGitOpsInput = (provider, uri, branch, path, format, action, hostname, otherService) => {
+  getGitOpsInput = (provider, uri, branch, path, format, action, hostname) => {
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
     gitOpsInput.uri = uri;
@@ -113,9 +112,6 @@ class GitOpsDeploymentManager extends React.Component {
     gitOpsInput.action = action;
     if (requiresHostname(provider)) {
       gitOpsInput.hostname = hostname;
-    }
-    if (provider === "other") {
-      gitOpsInput.otherServiceName = otherService;
     }
 
     return gitOpsInput;
@@ -134,14 +130,13 @@ class GitOpsDeploymentManager extends React.Component {
 
     const {
       hostname,
-      otherService,
       selectedService
     } = this.state;
 
     const provider = selectedService.value;
     const serviceSite = getServiceSite(provider);
     const repoUri = this.isSingleApp() ? `https://${serviceSite}/${ownerRepo}` : "";
-    const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname, otherService);
+    const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
       const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
@@ -206,8 +201,7 @@ class GitOpsDeploymentManager extends React.Component {
     const path = "";
     const format = "single";
     const action = "commit";
-    const otherService = ""; // TODO: update this?
-    const gitOpsInput = this.getGitOpsInput(provider, uri, branch, path, format, action, hostname, otherService);
+    const gitOpsInput = this.getGitOpsInput(provider, uri, branch, path, format, action, hostname);
 
     try {
       const clusterId = downstream?.cluster?.id;
@@ -221,30 +215,19 @@ class GitOpsDeploymentManager extends React.Component {
   validStep = (step) => {
     const {
       selectedService,
-      otherService,
       hostname,
     } = this.state;
 
     this.setState({ providerError: null });
     if (step === "provider") {
       const provider = selectedService.value;
-      if (provider === "other" && !otherService.length) {
+      if (requiresHostname(provider) && !hostname.length) {
         this.setState({
           providerError: {
-            field: "other"
+            field: "hostname"
           }
         });
         return false;
-      }
-      if (provider !== "other") {
-        if (provider === "github_enterprise" && !hostname.length) {
-          this.setState({
-            providerError: {
-              field: "hostname"
-            }
-          });
-          return false;
-        }
       }
     }
 
@@ -310,7 +293,7 @@ class GitOpsDeploymentManager extends React.Component {
     return (
       <div className="flex flex1 flex-column u-marginLeft--10">
         <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Hostname</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Hostname of your Enterprise server.</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Hostname of your GitOps server.</p>
         <input type="text" className={`Input ${providerError?.field === "hostname" && "has-error"}`} placeholder="hostname" value={hostname} onChange={(e) => this.setState({ hostname: e.target.value })} />
         {providerError?.field === "hostname" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A hostname must be provided</p>}
       </div>
@@ -347,14 +330,7 @@ class GitOpsDeploymentManager extends React.Component {
             <div className="flex-column u-textAlign--left u-marginBottom--30">
               <div className="flex flex1">
                 {this.renderGitOpsProviderSelector(services, selectedService)}
-                {selectedService?.value === "other" ?
-                  <div className="flex flex1 flex-column u-marginLeft--10">
-                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">What GitOps service do you use?</p>
-                    <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Not all services are supported.</p>
-                    <input type="text" className={`Input ${providerError?.field === "other" && "has-error"}`} placeholder="What service would you like to use" value={otherService} onChange={(e) => this.setState({ otherService: e.target.value })} />
-                    {providerError?.field === "other" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A GitOps service name must be provided</p>}
-                  </div>
-                : this.renderHostName(selectedService?.value, hostname, providerError)}
+                {this.renderHostName(selectedService?.value, hostname, providerError)}
               </div>
             </div>
             <div>

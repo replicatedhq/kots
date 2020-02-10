@@ -11,7 +11,6 @@ class GitOpsRepoDetails extends React.Component {
     ownerRepo: PropTypes.string,
     branch: PropTypes.string,
     path: PropTypes.string,
-    otherService: PropTypes.string,
     action: PropTypes.string,
     format: PropTypes.string,
     stepTitle: PropTypes.string,
@@ -21,7 +20,6 @@ class GitOpsRepoDetails extends React.Component {
     ownerRepo: "",
     branch: "",
     path: "",
-    otherService: "",
     action: "commit",
     format: "single"
   }
@@ -35,7 +33,6 @@ class GitOpsRepoDetails extends React.Component {
       ownerRepo = "",
       branch = "",
       path = "",
-      otherService = "",
       action = "commit",
       format = "single",
     } = this.props;
@@ -47,7 +44,6 @@ class GitOpsRepoDetails extends React.Component {
       ownerRepo,
       branch,
       path,
-      otherService,
       action,
       format,
       finishingSetup: false
@@ -73,8 +69,9 @@ class GitOpsRepoDetails extends React.Component {
   }
 
   isValid = () => {
-    const { ownerRepo } = this.state;
-    if (!ownerRepo.length) {
+    const { ownerRepo, selectedService } = this.state;
+    const provider = selectedService?.value;
+    if (provider !== "other" && !ownerRepo.length) {
       this.setState({
         providerError: {
           field: "ownerRepo"
@@ -96,7 +93,6 @@ class GitOpsRepoDetails extends React.Component {
       ownerRepo: this.state.ownerRepo,
       branch: this.state.branch,
       path: this.state.path,
-      otherService: this.state.otherService,
       action: this.state.action,
       format: this.state.format,
     };
@@ -113,10 +109,15 @@ class GitOpsRepoDetails extends React.Component {
       branch,
       path,
       action,
-      format
+      format,
+      selectedService
     } = this.state;
-
-    return ownerRepo !== this.props.ownerRepo || branch !== this.props.branch || path !== this.props.path || action !== this.props.action || format !== this.props.format;
+    const provider = selectedService?.value;
+    if (provider === "other") {
+      return true;
+    }
+    const isAllowed = ownerRepo !== this.props.ownerRepo || branch !== this.props.branch || path !== this.props.path || action !== this.props.action || format !== this.props.format;
+    return isAllowed;
   }
 
   render() {
@@ -127,7 +128,6 @@ class GitOpsRepoDetails extends React.Component {
       ownerRepo,
       branch,
       path,
-      otherService,
       action,
       format,
       finishingSetup,
@@ -168,7 +168,7 @@ class GitOpsRepoDetails extends React.Component {
               }
             </div>
 
-            <p className="step-sub">When an update is available{appName ? ` to ${appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService.label === "Other" ? otherService : serviceSite}?</p>
+            <p className="step-sub">When an update is available{appName ? ` to ${appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService.label === "Other" ? "your GitOps provider" : serviceSite}?</p>
             <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
               <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
                 <div className={`BoxedCheckbox flex-auto flex ${action === "commit" ? "is-active" : ""}`}>
