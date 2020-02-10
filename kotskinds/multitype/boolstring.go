@@ -17,6 +17,7 @@ import (
 // +protobuf=true
 // +protobuf.options.(gogoproto.goproto_stringer)=false
 // +k8s:openapi-gen=true
+// +kubebuilder:validation:Type=BoolString
 type BoolOrString struct {
 	Type    BoolOrStringType `protobuf:"varbool,1,opt,name=type,casttype=Type" json:"-"`
 	BoolVal bool             `protobuf:"varbool,2,opt,name=boolVal" json:"-"`

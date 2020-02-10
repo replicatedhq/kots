@@ -54,7 +54,7 @@ spec:
                             unmarshalling, it produces or consumes the inner type.  This
                             allows you to have, for example, a JSON field that can
                             accept a booolean string or raw bool.
-                          type: object
+                          type: BoolString
                         help_text:
                           type: string
                         hidden:
@@ -69,7 +69,7 @@ spec:
                                   the inner type.  This allows you to have, for example,
                                   a JSON field that can accept a booolean string or
                                   raw bool.
-                                type: object
+                                type: BoolString
                               name:
                                 type: string
                               recommended:
@@ -83,7 +83,7 @@ spec:
                                   the inner type.  This allows you to have, for example,
                                   a JSON field that can accept a booolean string or
                                   raw bool.
-                                type: object
+                                type: BoolString
                             required:
                             - name
                             - title
@@ -113,7 +113,7 @@ spec:
                             unmarshalling, it produces or consumes the inner type.  This
                             allows you to have, for example, a JSON field that can
                             accept a booolean string or raw bool.
-                          type: object
+                          type: BoolString
                         when:
                           type: string
                         write_once:

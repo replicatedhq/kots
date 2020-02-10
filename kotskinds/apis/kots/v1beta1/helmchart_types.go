@@ -229,7 +229,9 @@ func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]stri
 }
 
 type OptionalValue struct {
-	When   string                      `json:"when"`
+	When string `json:"when"`
+
+	// +type ma[string]any
 	Values map[string]MappedChartValue `json:"values,omitempty"`
 }
 
