@@ -1,0 +1,152 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: configs.kots.io
+spec:
+  group: kots.io
+  names:
+    kind: Config
+    listKind: ConfigList
+    plural: configs
+    singular: config
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Config is the Schema for the config API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ConfigSpec defines the desired state of ConfigSpec
+          properties:
+            groups:
+              items:
+                properties:
+                  description:
+                    type: string
+                  items:
+                    items:
+                      properties:
+                        affix:
+                          type: string
+                        data:
+                          type: string
+                        default:
+                          description: BoolOrString is a type that can hold an bool
+                            or a string.  When used in JSON or YAML marshalling and
+                            unmarshalling, it produces or consumes the inner type.  This
+                            allows you to have, for example, a JSON field that can
+                            accept a booolean string or raw bool.
+                          type: object
+                        help_text:
+                          type: string
+                        hidden:
+                          type: boolean
+                        items:
+                          items:
+                            properties:
+                              default:
+                                description: BoolOrString is a type that can hold
+                                  an bool or a string.  When used in JSON or YAML
+                                  marshalling and unmarshalling, it produces or consumes
+                                  the inner type.  This allows you to have, for example,
+                                  a JSON field that can accept a booolean string or
+                                  raw bool.
+                                type: object
+                              name:
+                                type: string
+                              recommended:
+                                type: boolean
+                              title:
+                                type: string
+                              value:
+                                description: BoolOrString is a type that can hold
+                                  an bool or a string.  When used in JSON or YAML
+                                  marshalling and unmarshalling, it produces or consumes
+                                  the inner type.  This allows you to have, for example,
+                                  a JSON field that can accept a booolean string or
+                                  raw bool.
+                                type: object
+                            required:
+                            - name
+                            - title
+                            type: object
+                          type: array
+                        multi_value:
+                          items:
+                            type: string
+                          type: array
+                        multiple:
+                          type: boolean
+                        name:
+                          type: string
+                        readonly:
+                          type: boolean
+                        recommended:
+                          type: boolean
+                        required:
+                          type: boolean
+                        title:
+                          type: string
+                        type:
+                          type: string
+                        value:
+                          description: BoolOrString is a type that can hold an bool
+                            or a string.  When used in JSON or YAML marshalling and
+                            unmarshalling, it produces or consumes the inner type.  This
+                            allows you to have, for example, a JSON field that can
+                            accept a booolean string or raw bool.
+                          type: object
+                        when:
+                          type: string
+                        write_once:
+                          type: boolean
+                      required:
+                      - name
+                      - type
+                      type: object
+                    type: array
+                  name:
+                    type: string
+                  title:
+                    type: string
+                required:
+                - name
+                - title
+                type: object
+              type: array
+          required:
+          - groups
+          type: object
+        status:
+          description: ConfigStatus defines the observed state of Config
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

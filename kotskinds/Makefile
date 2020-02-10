@@ -20,12 +20,16 @@ generate: controller-gen client-gen
 
 .PHONY: openapischema
 openapischema: controller-gen
-	controller-gen crd +output:dir=./config/crds  paths=./pkg/apis/troubleshoot/v1beta1
+	controller-gen crd +output:dir=./config/crds  paths=./apis/kos/v1beta1
 
 .PHONY: schemas
-schemas: fmt vet generate
-	go build ${LDFLAGS} -o bin/schemagen github.com/replicatedhq/troubleshoot/cmd/schemagen
+schemas: fmt generate
+	go build ${LDFLAGS} -o bin/schemagen github.com/replicatedhq/kots/kotskinds/schemagen
 	./bin/schemagen --output-dir ./schemas
+
+.PHONY: fmt
+fmt:
+	go fmt ./...
 
 # find or download controller-gen
 # download controller-gen if necessary
