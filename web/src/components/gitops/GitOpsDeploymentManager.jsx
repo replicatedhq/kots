@@ -305,7 +305,6 @@ class GitOpsDeploymentManager extends React.Component {
       hostname,
       services,
       selectedService,
-      otherService,
       providerError,
       finishingSetup,
     } = this.state;
@@ -355,7 +354,6 @@ class GitOpsDeploymentManager extends React.Component {
           <GitOpsRepoDetails
             appName={this.props.appName}
             selectedService={selectedService}
-            otherService={otherService}
             onFinishSetup={this.finishSetup}
           />
         );
