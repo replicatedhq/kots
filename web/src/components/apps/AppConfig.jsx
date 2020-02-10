@@ -26,7 +26,8 @@ class AppConfig extends Component {
       configGroups: [],
       savingConfig: false,
       changed: false,
-      showNextStepModal: false
+      showNextStepModal: false,
+      unsetRequiredFields: []
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -72,12 +73,35 @@ class AppConfig extends Component {
     return app.slug;
   }
 
+  getUnsetRequiredFields = () => {
+    const unsetRequiredFields = [];
+    const configGroups = this.state.configGroups;
+    for (let c = 0; c < configGroups.length; c++) {
+      const configGroup = configGroups[c];
+      if (configGroup?.items) {
+        for (let i = 0; i < configGroup.items.length; i++) {
+          const item = configGroup.items[i];
+          if (item.required && !item.value && !item.default) {
+            unsetRequiredFields.push(item);
+          }
+        }
+      }
+    }
+    return unsetRequiredFields;
+  }
+
   handleSave = async () => {
-    this.setState({ savingConfig: true });
+    this.setState({ savingConfig: true, unsetRequiredFields: [] });
 
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
+
+    const unsetRequiredFields = this.getUnsetRequiredFields();
+    if (unsetRequiredFields.length) {
+      this.setState({ savingConfig: false, unsetRequiredFields });
+      return;
+    }
 
     try {
       await this.props.updateAppConfig(slug, sequence, this.state.configGroups, !fromLicenseFlow);
@@ -171,7 +195,7 @@ class AppConfig extends Component {
   }
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredFields } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -184,6 +208,7 @@ class AppConfig extends Component {
 
     const app = this.props.app || getKotsApp?.getKotsApp;
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+    const unsetRequiredFieldsNames = unsetRequiredFields.map(field => field.name);
 
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
@@ -200,7 +225,14 @@ class AppConfig extends Component {
             <Loader size="30" />
           </div>
         :
-          <button className="btn secondary blue u-marginTop--20 u-marginBottom--auto" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+          <div className="UnsetRequiredFields--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
+            {unsetRequiredFieldsNames.length > 0 && (
+              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">Please fill required field{unsetRequiredFieldsNames.length > 1 ? "s" : ""}: 
+                <span className="u-fontWeight--bold"> {unsetRequiredFieldsNames.join(", ")}</span>
+              </p>
+            )}
+            <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+          </div>
         }
 
         {!fromLicenseFlow &&
