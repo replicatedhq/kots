@@ -35,10 +35,10 @@ const (
 type Type int
 
 type EntitlementValue struct {
-	Type    Type
-	IntVal  int64
-	StrVal  string
-	BoolVal bool
+	Type    Type   `json:"-"`
+	IntVal  int64  `json:"-"`
+	StrVal  string `json:"-"`
+	BoolVal bool   `json:"-"`
 }
 
 func (entitlementValue *EntitlementValue) Value() interface{} {

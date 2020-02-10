@@ -27,7 +27,7 @@ type ConfigChildItem struct {
 	Title       string                 `json:"title"`
 	Recommended bool                   `json:"recommended,omitempty"`
 	Default     multitype.BoolOrString `json:"default,omitempty"`
-	Value       multitype.BoolOrString `son:"value,omitempty"`
+	Value       multitype.BoolOrString `json:"value,omitempty"`
 }
 
 type ConfigItem struct {

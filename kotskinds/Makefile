@@ -6,12 +6,26 @@ generate: controller-gen client-gen
 	controller-gen \
 		object:headerFile=./hack/boilerplate.go.txt \
 		paths=./apis/...
+	controller-gen \
+		crd \
+		+output:dir=./config/crds \
+		paths=./apis/kots/v1beta1
 	client-gen \
 		--output-package=github.com/replicatedhq/kots/kotskinds/client \
 		--clientset-name kotsclientset \
 		--input-base github.com/replicatedhq/kots/kotskinds/apis \
 		--input kots/v1beta1 \
 		-h ./hack/boilerplate.go.txt
+
+
+.PHONY: openapischema
+openapischema: controller-gen
+	controller-gen crd +output:dir=./config/crds  paths=./pkg/apis/troubleshoot/v1beta1
+
+.PHONY: schemas
+schemas: fmt vet generate
+	go build ${LDFLAGS} -o bin/schemagen github.com/replicatedhq/troubleshoot/cmd/schemagen
+	./bin/schemagen --output-dir ./schemas
 
 # find or download controller-gen
 # download controller-gen if necessary

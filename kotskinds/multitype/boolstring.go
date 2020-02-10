@@ -18,9 +18,9 @@ import (
 // +protobuf.options.(gogoproto.goproto_stringer)=false
 // +k8s:openapi-gen=true
 type BoolOrString struct {
-	Type    BoolOrStringType `protobuf:"varbool,1,opt,name=type,casttype=Type"`
-	BoolVal bool             `protobuf:"varbool,2,opt,name=boolVal"`
-	StrVal  string           `protobuf:"bytes,3,opt,name=strVal"`
+	Type    BoolOrStringType `protobuf:"varbool,1,opt,name=type,casttype=Type" json:"-"`
+	BoolVal bool             `protobuf:"varbool,2,opt,name=boolVal" json:"-"`
+	StrVal  string           `protobuf:"bytes,3,opt,name=strVal" json:"-"`
 }
 
 // Type represents the stored type of BoolOrString.
