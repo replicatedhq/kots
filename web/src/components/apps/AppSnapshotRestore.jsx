@@ -5,13 +5,43 @@ import Helmet from "react-helmet";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { restoreDetail } from "../../queries/SnapshotQueries";
+import { cancelRestore } from "../../mutations/SnapshotMutations";
 
 class AppSnapshotRestore extends Component {
+  state = {
+    cancelingRestore: false,
+    cancelRestoreErr: "",
+    cancelRestoreErrorMsg: ""
+  }
+
   componentDidMount() {
     this.props.restoreDetail.startPolling(2000);
   }
 
+  onCancelRestore = () => {
+    const { app } = this.props;
+    this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
+    this.props.cancelRestore(app.id)
+      .then(() => {
+        this.setState({ cancelingRestore: false });
+        this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
+      })
+      .catch(err => {
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({
+            cancelingRestore: false,
+            cancelRestoreErr: true,
+            cancelRestoreErrorMsg: msg,
+          });
+        })
+      })
+      .finally(() => {
+        this.setState({ cancelingRestore: false });
+      });
+  }
+
   render() {
+    const { cancelingRestore } = this.state;
     const { restoreDetail } = this.props;
 
     if (restoreDetail?.loading) {
@@ -63,8 +93,7 @@ class AppSnapshotRestore extends Component {
             );
           })}
         </div>
-        <div>
-        </div>
+        <button className="btn primary blue u-marginTop--20" onClick={this.onCancelRestore} disabled={cancelingRestore}>{cancelingRestore ? "Canceling..." : "Cancel restoring"}</button>
       </div>
     );
   }
@@ -84,4 +113,9 @@ export default compose(
       }
     }
   }),
+  graphql(cancelRestore, {
+    props: ({ mutate }) => ({
+      cancelRestore: (appId) => mutate({ variables: { appId } })
+    })
+  })
 )(AppSnapshotRestore);
