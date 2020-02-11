@@ -29,6 +29,8 @@ export default function KotsSidebarItem(props) {
     versionsBehindText = `${isBehind} ${isBehind >= 2 || typeof isBehind === 'string' ? "versions" : "version"} behind`
   }
 
+  const gitopsEnabled = app.downstreams?.length > 0 && app.downstreams[0].gitops?.enabled;
+
   return (
     <div className={classNames('sidebar-link', className)}>
       <Link
@@ -36,21 +38,23 @@ export default function KotsSidebarItem(props) {
         to={`/app/${slug}`}>
           <span className="sidebar-link-icon" style={{ backgroundImage: `url(${iconUri})` }}></span>
           <div className="flex-column">
-            <p className="u-color--tuna u-fontWeight--bold u-marginBottom--10">{name}</p>
-            <div className="flex alignItems--center">
-              <div className={classNames("icon", {
-                "checkmark-icon": !isBehind,
-                "exclamationMark--icon": isBehind,
-                "grayCircleMinus--icon": !app.downstreams?.length
-              })}
-              />
-              <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {
-                "u-color--dustyGray": !isBehind,
-                "u-color--orange": isBehind
-              })}>
-                {versionsBehindText}
-              </span>
-            </div>
+            <p className={classNames("u-color--tuna u-fontWeight--bold", { "u-marginBottom--10": !gitopsEnabled })}>{name}</p>
+            {!gitopsEnabled &&
+              <div className="flex alignItems--center">
+                <div className={classNames("icon", {
+                  "checkmark-icon": !isBehind,
+                  "exclamationMark--icon": isBehind,
+                  "grayCircleMinus--icon": !app.downstreams?.length
+                })}
+                />
+                <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {
+                  "u-color--dustyGray": !isBehind,
+                  "u-color--orange": isBehind
+                })}>
+                  {versionsBehindText}
+                </span>
+              </div>
+            }
           </div>
       </Link>
     </div>
