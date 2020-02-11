@@ -168,7 +168,7 @@ class GitOpsRepoDetails extends React.Component {
               }
             </div>
 
-            <p className="step-sub">When an update is available{appName ? ` to ${appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService.label === "Other" ? "your GitOps provider" : serviceSite}?</p>
+            <p className="step-sub">When an update is available{appName ? ` to ${appName} ` : ""}, how should the updates YAML be delivered to&nbsp;{selectedService?.label === "Other" ? "your GitOps provider" : serviceSite}?</p>
             <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
               <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
                 <div className={`BoxedCheckbox flex-auto flex ${action === "commit" ? "is-active" : ""}`}>

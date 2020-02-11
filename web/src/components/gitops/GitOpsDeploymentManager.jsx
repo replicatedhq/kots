@@ -76,7 +76,7 @@ class GitOpsDeploymentManager extends React.Component {
       if (enabled) {
         const selectedService = find(SERVICES, service => service.value === provider);
         this.setState({
-          selectedService: selectedService,
+          selectedService: selectedService ? selectedService : this.state.selectedService,
           hostname: hostname || ""
         });
       }
