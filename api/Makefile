@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 PROJECT_NAME ?= kotsadm-api
+CURRENT_USER := $(shell id -u -n)
 
 .PHONY: deps
 deps:
@@ -66,6 +67,10 @@ test: deps
 	@-sleep 1
 	docker stop kotsadm-fixtures
 	@-docker rm -f kotsadm-fixtures > /dev/null 2>&1 || :
+
+.PHONY: build-ttl.sh
+build-ttl.sh: IMAGE = ttl.sh/${CURRENT_USER}/${PROJECT_NAME}:12h
+build-ttl.sh: build_and_push
 
 .PHONY: build-alpha
 build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha

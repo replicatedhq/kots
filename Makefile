@@ -1,4 +1,5 @@
 SHELL := /bin/bash -o pipefail
+CURRENT_USER := $(shell id -u -n)
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
@@ -17,6 +18,11 @@ vet:
 .PHONY: test
 test: fmt vet
 	go test ./pkg/... ./cmd/...
+
+.PHONY: build-ttl.sh
+build-ttl.sh:
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
+	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
 .PHONY: build-alpha
 build-alpha:
