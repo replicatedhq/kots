@@ -115,6 +115,25 @@ export function getCronFrequency(schedule) {
   }
 }
 
+export function calculateTimeDifference(start, end) {
+  const date1 = dayjs(start);
+  const date2 = dayjs(end);
+  const millis = date2.diff(date1);
+  const seconds = Math.floor((millis / 1000) % 60);
+  let formattedDiff;
+  if (seconds >= 3600) {
+    const hourDiff = Math.floor((millis / (1000 * 60 * 60)) % 24);
+    formattedDiff = `${hourDiff} hour${hourDiff === 1 ? "" : "s"}`;
+  } else if (seconds >= 60) {
+    const minuteDiff = Math.floor((millis / (1000 * 60)) % 60);
+    formattedDiff = `${minuteDiff} minute${minuteDiff === 1 ? "" : "s"}`;
+  } else {
+    formattedDiff = `${seconds} second${seconds === 1 ? "" : "s"}`;
+  }
+
+  return formattedDiff;
+}
+
 export function getReadableCronDescriptor(expression) {
   return cronstrue.toString(expression);
 }
