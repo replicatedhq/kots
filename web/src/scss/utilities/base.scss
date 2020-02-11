@@ -70,6 +70,9 @@ body a {
   &.reclaimed::before {
     background-color: #4999AD;
   }
+  &.partiallyfailed::before {
+    background-color: #F1843C;
+  }
   &.deleting::before {
     background-color: #F7B500;
   }
