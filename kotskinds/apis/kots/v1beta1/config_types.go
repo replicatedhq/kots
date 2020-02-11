@@ -59,6 +59,7 @@ type ConfigGroup struct {
 	Name        string       `json:"name"`
 	Title       string       `json:"title"`
 	Description string       `json:"description,omitempty"`
+	When        string       `json:"when,omitempty"`
 	Items       []ConfigItem `json:"items,omitempty"`
 }
 
