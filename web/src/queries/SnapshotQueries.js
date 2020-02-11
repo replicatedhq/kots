@@ -126,8 +126,8 @@ export const snapshotDetailRaw = `
 export const snapshotDetail = gql(snapshotDetailRaw);
 
 export const restoreDetail = gql`
-query restoreDetail($appId: String!) {
-  restoreDetail(appId: $appId) {
+query restoreDetail($appId: String!, $restoreName: String!) {
+  restoreDetail(appId: $appId, restoreName: $restoreName) {
     name
     phase
     volumes {

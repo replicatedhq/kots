@@ -200,7 +200,11 @@ export function SnapshotMutations(stores: Stores) {
       // TODO most queries and mutations should be unavailable when this is set
       await stores.kotsAppStore.updateAppRestoreInProgressName(appId, restoreName);
 
-      return { name: restoreName, phase: Phase.New, volumes: [], errors: [], warnings: [] };
+      return { name: restoreName, phase: Phase.New, active: true, volumes: [], errors: [], warnings: [] };
+    },
+
+    async cancelRestore(root: any, args: any, context: Context): Promise<void> {
+      await stores.kotsAppStore.updateAppRestoreReset(args.appId);
     },
 
     async deleteSnapshot(root: any, args: any, context: Context): Promise<void> {

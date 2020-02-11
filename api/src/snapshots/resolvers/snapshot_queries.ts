@@ -73,16 +73,15 @@ export function SnapshotQueries(stores: Stores, params: Params) {
     async restoreDetail(root: any, args: any, context: Context): Promise<RestoreDetail> {
       context.requireSingleTenantSession();
 
-      const { appId } = args;
-      const { restoreInProgressName: name } = await stores.kotsAppStore.getApp(appId);
-      if (!name) {
-        throw new ReplicatedError("No restore is in progress");
-      }
+      const { appId, restoreName: name } = args;
+      const { restoreInProgressName } = await stores.kotsAppStore.getApp(appId);
+      const active = !!restoreInProgressName && restoreInProgressName === name;
       const velero = new VeleroClient("velero"); // TODO namespace
       const restore = await velero.readRestore(name);
       if (!restore) {
         return {
           name,
+          active,
           phase: Phase.New,
           volumes: [],
           errors: [],
@@ -93,6 +92,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       const volumes = await velero.listRestoreVolumes(name);
       const detail: RestoreDetail = {
         name,
+        active,
         phase: restore.status ? restore.status.phase : Phase.New,
         volumes,
         errors: [],

@@ -82,6 +82,7 @@ export interface RestoreDetail {
   volumes: RestoreVolume[];
   errors: SnapshotError[];
   warnings: SnapshotError[];
+  active: boolean;
 }
 
 export interface RestoreVolume {

@@ -142,6 +142,7 @@ const RestoreDetail = `
     volumes: [RestoreVolume]
     errors: [SnapshotError]
     warnings: [SnapshotError]
+    active: Boolean
   }
 `;
 
