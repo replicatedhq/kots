@@ -69,6 +69,7 @@ func AdminConsoleCmd() *cobra.Command {
 	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 
 	cmd.AddCommand(AdminConsoleUpgradeCmd())
+	cmd.AddCommand(AdminConsoleAllowNamespace())
 
 	return cmd
 }
