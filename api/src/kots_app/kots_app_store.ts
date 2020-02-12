@@ -2,7 +2,6 @@ import pg from "pg";
 import { Params } from "../server/params";
 import { KotsApp, KotsVersion, KotsAppRegistryDetails, KotsDownstreamOutput, ConfigData } from "./";
 import { ReplicatedError } from "../server/errors";
-import { signGetRequest } from "../util/s3";
 import randomstring from "randomstring";
 import slugify from "slugify";
 import * as k8s from "@kubernetes/client-node";
@@ -11,6 +10,7 @@ import _ from "lodash";
 import yaml from "js-yaml";
 import { base64Decode, getPreflightResultState, base64Encode } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
+import { logger } from "../server/logger";
 
 export enum UndeployStatus {
   InProcess = "in_process",
@@ -178,7 +178,8 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
     } catch (err) {
-      throw new ReplicatedError(`Error updating gitops secret: ${err.response || err}`);
+      logger.info(err);
+      throw new ReplicatedError("Error updating gitops secret");
     }
   }
 
@@ -209,7 +210,8 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
     } catch (err) {
-      throw new ReplicatedError(`Failed to set gitops error ${err.response || err}`)
+      logger.info(err);
+      throw new ReplicatedError("Failed to set gitops error");
     }
   }
 
@@ -235,7 +237,8 @@ export class KotsAppStore {
         // config map does not exist
       }
     } catch (err) {
-      throw new ReplicatedError(`Failed to reset gitops data, ${err.response || err}`);
+      logger.info(err);
+      throw new ReplicatedError("Failed to reset gitops data");
     }
   }
 
@@ -263,7 +266,8 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
     } catch (err) {
-      throw new ReplicatedError(`Failed to disable gitops for app with id ${appId}, ${err.response || err}`)
+      logger.info(err);
+      throw new ReplicatedError(`Failed to disable gitops for app with id ${appId}`);
     }
   }
 
@@ -847,7 +851,8 @@ order by sequence desc`;
         lastError: configMapData.lastError
       }
     } catch (err) {
-      throw new ReplicatedError(`Failed to get gitops info ${err.response || err}`);
+      logger.info(err);
+      throw new ReplicatedError("Failed to get gitops info");
     }
   }
 
@@ -867,6 +872,7 @@ order by sequence desc`;
         isConnected: gitopsInfo.lastError === "",
       }
     } catch (err) {
+      console.log(err);
       return {
         enabled: false
       };
