@@ -121,6 +121,16 @@ func CompareStringArrays(arr1, arr2 []string) bool {
 	return true
 }
 
+func IsInList(val string, arr []string) bool {
+	for _, item := range arr {
+		if item == val {
+			return true
+		}
+	}
+
+	return false
+}
+
 type ActionableError struct {
 	Message string
 }

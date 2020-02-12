@@ -25,11 +25,13 @@ This is useful when using snapshots on existing clusters when velero is install 
 			log := logger.NewLogger()
 
 			log.ActionWithSpinner("Reconciling Kubernetes RBAC policies")
-			err := kotsadm.EnsureAdditionalNamespaces(v.GetStringSlice("additional-namespace"), v.GetString("namespace"), v.GetBool("prune"))
+			err := kotsadm.EnsureAdditionalNamespaces(log, v.GetStringSlice("additional-namespace"), v.GetString("namespace"), v.GetBool("prune"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to find kotsadm pod")
 			}
+			log.FinishSpinner()
+
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("The Admin Console role has been updated to include permissions in the additional namespaces")
 			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))

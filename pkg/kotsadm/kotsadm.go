@@ -28,7 +28,7 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	docs["kotsadm-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(kotsadmRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+	if err := s.Encode(kotsadmRoleBinding(deployOptions.Namespace, deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
 	}
 	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
@@ -103,7 +103,7 @@ func ensureKotsadmRBAC(namespace string, clientset *kubernetes.Clientset) error 
 		return errors.Wrap(err, "failed to ensure kotsadm role")
 	}
 
-	if err := ensureKotsadmRoleBinding(namespace, clientset); err != nil {
+	if err := ensureKotsadmRoleBinding(namespace, namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role binding")
 	}
 
@@ -138,14 +138,30 @@ func ensureKotsadmRole(namespace string, clientset *kubernetes.Clientset) error 
 	return nil
 }
 
-func ensureKotsadmRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
+func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().ClusterRoles().Get("kotsadm-role", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get clusterrole")
+		}
+
+		_, err := clientset.RbacV1().ClusterRoles().Create(kotsadmClusterRole())
+		if err != nil {
+			return errors.Wrap(err, "failed to create clusterrole")
+		}
+	}
+
+	return nil
+}
+
+func ensureKotsadmRoleBinding(namespace string, serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
 	_, err := clientset.RbacV1().RoleBindings(namespace).Get("kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get rolebinding")
 		}
 
-		_, err := clientset.RbacV1().RoleBindings(namespace).Create(kotsadmRoleBinding(namespace))
+		_, err := clientset.RbacV1().RoleBindings(namespace).Create(kotsadmRoleBinding(namespace, serviceAccountNamespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
 		}

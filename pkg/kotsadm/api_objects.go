@@ -14,6 +14,71 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func apiClusterRole() *rbacv1.ClusterRole {
+	clusterRole := &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-api-role",
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+			},
+		},
+		// creation cannot be restricted by name
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"configmaps"},
+				ResourceNames: []string{"kotsadm-application-metadata", "kotsadm-gitops"},
+				Verbs:         metav1.Verbs{"get", "delete", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				ResourceNames: []string{
+					"kotsadm-encryption",
+					"kotsadm-gitops",
+					"kotsadm-password",
+					auth.KotsadmAuthstringSecretName,
+				},
+				Verbs: metav1.Verbs{"get", "update"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{"velero.io"},
+				Resources: []string{
+					"backups",
+					"podvolumebackups",
+					"downloadrequests",
+					"backupstoragelocations",
+					"deletebackuprequests",
+					"restores",
+				},
+				Verbs: metav1.Verbs{
+					"create",
+					"list",
+					"get",
+					"update",
+					"delete",
+				},
+			},
+		},
+	}
+
+	return clusterRole
+}
+
 func apiRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
@@ -57,7 +122,7 @@ func apiRole(namespace string) *rbacv1.Role {
 	return role
 }
 
-func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
+func apiRoleBinding(namespace string, serviceAccountNamespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -74,7 +139,7 @@ func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      "kotsadm-api",
-				Namespace: namespace,
+				Namespace: serviceAccountNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

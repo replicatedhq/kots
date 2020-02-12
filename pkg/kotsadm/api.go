@@ -28,7 +28,7 @@ func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs["api-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(apiRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+	if err := s.Encode(apiRoleBinding(deployOptions.Namespace, deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api role binding")
 	}
 	docs["api-rolebinding.yaml"] = roleBinding.Bytes()
@@ -103,12 +103,36 @@ func ensureApiRBAC(namespace string, clientset *kubernetes.Clientset) error {
 		return errors.Wrap(err, "failed to ensure api role")
 	}
 
-	if err := ensureApiRoleBinding(namespace, clientset); err != nil {
+	if err := ensureApiRoleBinding(namespace, namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api role binding")
 	}
 
 	if err := ensureApiServiceAccount(namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api service account")
+	}
+
+	return nil
+}
+
+func ensureApiClusterRole(clientset *kubernetes.Clientset) error {
+	currentRole, err := clientset.RbacV1().ClusterRoles().Get("kotsadm-api-role", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get clusterrole")
+		}
+
+		_, err := clientset.RbacV1().ClusterRoles().Create(apiClusterRole())
+		if err != nil {
+			return errors.Wrap(err, "failed to create clusterrole")
+		}
+		return nil
+	}
+
+	// we have now changed the role, so an upgrade is required
+	k8sutil.UpdateClusterRole(currentRole, apiClusterRole())
+	_, err = clientset.RbacV1().ClusterRoles().Update(currentRole)
+	if err != nil {
+		return errors.Wrap(err, "failed to update clusterrole")
 	}
 
 	return nil
@@ -138,14 +162,14 @@ func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
 	return nil
 }
 
-func ensureApiRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
+func ensureApiRoleBinding(namespace string, serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
 	_, err := clientset.RbacV1().RoleBindings(namespace).Get("kotsadm-api-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get rolebinding")
 		}
 
-		_, err := clientset.RbacV1().RoleBindings(namespace).Create(apiRoleBinding(namespace))
+		_, err := clientset.RbacV1().RoleBindings(namespace).Create(apiRoleBinding(namespace, serviceAccountNamespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
 		}
