@@ -7,35 +7,6 @@ import { formatByteSize, calculateTimeDifference } from "@src/utilities/utilitie
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
 let processingImages = null;
-// let processingImages = [
-//   {
-//     displayName: "postgres:9.6",
-//     status: "uploading",
-//     error: "",
-//     current: 10,
-//     total: 14,
-//     startTime: "2020-02-12T17:07:23.23680431Z",
-//     endTime: "0001-01-01T00:00:00Z"
-//   },
-//   {
-//     displayName: "sentry:9.1.1",
-//     status: "uploaded",
-//     error: "",
-//     current: 14,
-//     total: 14,
-//     startTime: "2020-02-12T17:07:11.035982223Z",
-//     endTime: "2020-02-12T17:07:17.97516815Z"
-//   },
-//   {
-//     displayName: "redis:4.0.11-debian-9",
-//     status: "uploaded",
-//     error: "",
-//     current: 8,
-//     total: 8,
-//     startTime: "2020-02-12T17:07:17.975486345Z",
-//     endTime: "2020-02-12T17:07:23.236629032Z"
-//   }
-// ];
 
 function AirgapUploadProgress(props) {
   const { total, sent, onProgressError, onProgressSuccess, smallSize } = props;
