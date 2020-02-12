@@ -6,6 +6,36 @@ import { getAirgapInstallStatus } from "../queries/AppsQueries";
 import { formatByteSize, calculateTimeDifference } from "@src/utilities/utilities";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
+let processingImages = null;
+// let processingImages = [
+//   {
+//     displayName: "postgres:9.6",
+//     status: "uploading",
+//     error: "",
+//     current: 10,
+//     total: 14,
+//     startTime: "2020-02-12T17:07:23.23680431Z",
+//     endTime: "0001-01-01T00:00:00Z"
+//   },
+//   {
+//     displayName: "sentry:9.1.1",
+//     status: "uploaded",
+//     error: "",
+//     current: 14,
+//     total: 14,
+//     startTime: "2020-02-12T17:07:11.035982223Z",
+//     endTime: "2020-02-12T17:07:17.97516815Z"
+//   },
+//   {
+//     displayName: "redis:4.0.11-debian-9",
+//     status: "uploaded",
+//     error: "",
+//     current: 8,
+//     total: 8,
+//     startTime: "2020-02-12T17:07:17.975486345Z",
+//     endTime: "2020-02-12T17:07:23.236629032Z"
+//   }
+// ];
 
 function AirgapUploadProgress(props) {
   const { total, sent, onProgressError, onProgressSuccess, smallSize } = props;
@@ -67,28 +97,24 @@ function AirgapUploadProgress(props) {
   props.data?.startPolling(1000);
   
   let statusMsg = getAirgapInstallStatus?.currentMessage;
-  let processingImages = null;
-
+  let jsonMessage;
   try {
     // Some of these messages will be JSON formatted progress reports.
-    const jsonMessage = JSON.parse(statusMsg);
+    jsonMessage = JSON.parse(statusMsg);
     const type = get(jsonMessage, "type");
-    console.log("jsonMessage ", jsonMessage);
     if (type === "progressReport") {
       try {
         const parsedMsg = JSON.parse(jsonMessage.compatibilityMessage);
         statusMsg = parsedMsg.compatibilityMessage;
-        processingImages = parsedMsg.images;
+        processingImages = parsedMsg.images.sort((a, b) => (a.status > b.status) ? -1 : 1);
+        console.log(processingImages)
       } catch {
         statusMsg = jsonMessage.compatibilityMessage;
       }
     }
   } catch {
-    console.log(statusMsg);
     // empty
   }
-
-  // console.log(processingImages)
 
   let statusDiv = (
     <div
@@ -115,51 +141,53 @@ function AirgapUploadProgress(props) {
       <div className="flex1 flex-column u-color--tuna">
         {processingImages ?
           <div className="flex1 flex-column alignItems--center justifyContent--center">
-            <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10">
-              Pushing {processingImages?.length} image{processingImages?.length === 1 ? "" : "s"} to your registry
-            </h1>
-            {processingImages?.map((image, i) => {
-              let imageProgressBar;
-              let percentage;
-            
-              if (image.total > 0 && image.current > 0) {
-                percentage = Math.floor((image.current / image.total) * 100).toFixed() + "%";
-                imageProgressBar = (
-                  <div className="progressbar">
-                    <div className={`progressbar-meter ${image.status === "uploaded" ? "complete" : ""}`} style={{ width: `${(image.current / image.total) * (600)}px` }} />
-                  </div>
-                );
-              } else {
-                percentage = "0%";
-                imageProgressBar = (
-                  <div className="progressbar u-opacity--half">
-                    <div className={`progressbar-meter ${image.status === "uploaded" ? "complete" : ""}`} style={{ width: "0px" }} />
-                  </div>
-                );
-              }
-              let currentMessage = "Waiting to start";
-              if (image.error !== "") {
-                currentMessage = image.error;
-              } else if (image.status === "uploaded") {
-                const completedTime = calculateTimeDifference(image.startTime, image.endTime);
-                currentMessage = `Completed in ${completedTime}`;
-              } else if (image.status === "uploading") {
-                currentMessage = statusMsg;
-              }
+            <div className="flex-auto">
+              <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10 u-textAlign--center">
+                Pushing {processingImages?.length} image{processingImages?.length === 1 ? "" : "s"} to your registry
+              </h1>
+              {processingImages?.map((image, i) => {
+                let imageProgressBar;
+                let percentage;
+              
+                if (image.total > 0 && image.current > 0) {
+                  percentage = Math.floor((image.current / image.total) * 100).toFixed() + "%";
+                  imageProgressBar = (
+                    <div className="progressbar">
+                      <div className={`progressbar-meter ${image.status === "uploaded" ? "complete" : ""}`} style={{ width: `${(image.current / image.total) * (600)}px` }} />
+                    </div>
+                  );
+                } else {
+                  percentage = "0%";
+                  imageProgressBar = (
+                    <div className="progressbar u-opacity--half">
+                      <div className={`progressbar-meter ${image.status === "uploaded" ? "complete" : ""}`} style={{ width: "0px" }} />
+                    </div>
+                  );
+                }
+                let currentMessage = "Waiting to start";
+                if (image.error !== "") {
+                  currentMessage = image.error;
+                } else if (image.status === "uploaded") {
+                  const completedTime = calculateTimeDifference(image.startTime, image.endTime);
+                  currentMessage = `Completed in ${completedTime}`;
+                } else if (image.status === "uploading") {
+                  currentMessage = statusMsg;
+                }
 
-              return (
-                <div key={`${image.displayName}-${i}`} className="u-marginTop--20">
-                  <div className="flex alignItems--center">
-                    <p className={`u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10 ${image.status === "queued" ? "u-opacity--half" : ""}`}>{image.displayName}</p>
-                    {imageProgressBar}
-                    {image.status === "uploaded" ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{percentage}</span>}
+                return (
+                  <div key={`${image.displayName}-${i}`} className="flex1 u-marginTop--20">
+                    <div className="flex flex1 alignItems--center">
+                      <p className={`u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10 u-textAlign--right flex1 ${image.status === "queued" ? "u-opacity--half" : ""}`}>{image.displayName}</p>
+                      {imageProgressBar}
+                      {image.status === "uploaded" ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{percentage}</span>}
+                    </div>
+                    <div className="u-marginTop--5">
+                      {currentMessage ? <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-color--dustyGray">{currentMessage}</p> : <p className="u-fontSize--small"></p>}
+                    </div>
                   </div>
-                  <div className="u-marginTop--5">
-                    <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-color--dustyGray">{currentMessage}</p>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         :
           <div className="flex1 flex-column alignItems--center justifyContent--center">
