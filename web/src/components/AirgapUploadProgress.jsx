@@ -68,9 +68,9 @@ function AirgapUploadProgress(props) {
   props.data?.startPolling(1000);
   
   let statusMsg = getAirgapInstallStatus?.currentMessage;
-  let jsonMessage;
   try {
     // Some of these messages will be JSON formatted progress reports.
+    let jsonMessage;
     jsonMessage = JSON.parse(statusMsg);
     const type = get(jsonMessage, "type");
     if (type === "progressReport") {
@@ -78,7 +78,6 @@ function AirgapUploadProgress(props) {
         const parsedMsg = JSON.parse(jsonMessage.compatibilityMessage);
         statusMsg = parsedMsg.compatibilityMessage;
         processingImages = parsedMsg.images.sort((a, b) => (a.status > b.status) ? -1 : 1);
-        console.log(processingImages)
       } catch {
         statusMsg = jsonMessage.compatibilityMessage;
       }
