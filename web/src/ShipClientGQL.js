@@ -9,6 +9,7 @@ import { withClientState } from "apollo-link-state";
 import { Utilities } from "./utilities/utilities";
 import fetch from "node-fetch";
 
+
 export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetcher) {
   const cache = new InMemoryCache({
     addTypename: false,
@@ -17,9 +18,16 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
   const stateLink = withClientState({
     cache
   });
+  
+  let newGraphqlEndpoint;
+  if (window.env.ENVIRONMENT === "development") {
+    newGraphqlEndpoint = graphqlEndpoint;
+  } else {
+    newGraphqlEndpoint = window.location.origin + graphqlEndpoint;
+  }
 
   const httpLink = createHttpLink({
-    uri: graphqlEndpoint,
+    uri: newGraphqlEndpoint,
     fetch: fetcher ? fetcher : fetch,
   });
 
