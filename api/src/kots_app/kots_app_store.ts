@@ -178,7 +178,7 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       throw new ReplicatedError("Error updating gitops secret");
     }
   }
@@ -210,7 +210,7 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       throw new ReplicatedError("Failed to set gitops error");
     }
   }
@@ -237,7 +237,7 @@ export class KotsAppStore {
         // config map does not exist
       }
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       throw new ReplicatedError("Failed to reset gitops data");
     }
   }
@@ -266,7 +266,7 @@ export class KotsAppStore {
 
       await k8sApi.replaceNamespacedConfigMap(configMapName, namespace, configMapObj);
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       throw new ReplicatedError(`Failed to disable gitops for app with id ${appId}`);
     }
   }
@@ -851,7 +851,7 @@ order by sequence desc`;
         lastError: configMapData.lastError
       }
     } catch (err) {
-      logger.info(err);
+      logger.error(err);
       throw new ReplicatedError("Failed to get gitops info");
     }
   }
