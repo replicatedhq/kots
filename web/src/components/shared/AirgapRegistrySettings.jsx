@@ -31,7 +31,6 @@ class AirgapRegistrySettings extends Component {
       testInProgress: false,
       testFailed: false,
       testMessage: "",
-      showNamespaceError: false,
 
       updateChecker: new Repeater(),
       rewriteStatus: "",
@@ -56,12 +55,6 @@ class AirgapRegistrySettings extends Component {
     } = this.state;
     const { slug } = this.props.match.params;
     const appSlug = slug;
-
-    this.setState({ showNamespaceError: false });
-    if (!namespace.length || namespace.trim() === "") {
-      return this.setState({ showNamespaceError: true });
-    }
-
     try {
       await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
       await this.props.getKotsAppRegistryQuery.refetch();
@@ -268,9 +261,6 @@ class AirgapRegistrySettings extends Component {
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
               <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }}/>
-              {this.props.showNamespaceError || this.state.showNamespaceError ? 
-                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10 u-lineHeight--normal">A namespace must be provided.</p>
-              : null}
             </div>
           </div>
         </form>
