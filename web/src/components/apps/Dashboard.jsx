@@ -4,6 +4,7 @@ import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import size from "lodash/size";
+import get from "lodash/get";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
@@ -35,7 +36,7 @@ class Dashboard extends Component {
     downstreams: [],
     links: [],
     checkingForUpdates: false,
-    checkingUpdateText: "Checking for updates",
+    checkingUpdateMessage: "Checking for updates",
     errorCheckingUpdate: false,
     appLicense: null,
     showConfigureGraphs: false,
@@ -153,7 +154,7 @@ class Dashboard extends Component {
 
         this.setState({
           checkingForUpdates: true,
-          checkingUpdateText: res.data.getUpdateDownloadStatus.currentMessage,
+          checkingUpdateMessage: res.data.getUpdateDownloadStatus.currentMessage,
         });
 
         if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
@@ -161,7 +162,7 @@ class Dashboard extends Component {
           this.state.updateChecker.stop();
           this.setState({
             checkingForUpdates: false,
-            checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage,
+            checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
             checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed"
           });
 
@@ -378,7 +379,7 @@ class Dashboard extends Component {
       downstreams,
       links,
       checkingForUpdates,
-      checkingUpdateText,
+      checkingUpdateMessage,
       errorCheckingUpdate,
       uploadingAirgapFile,
       airgapUploadError,
@@ -394,6 +395,18 @@ class Dashboard extends Component {
     const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
     const currentSequence = currentVersion ? currentVersion.sequence : 0;
 
+    let checkingUpdateText = checkingUpdateMessage;
+    try {
+      const jsonMessage = JSON.parse(checkingUpdateText);
+      const type = get(jsonMessage, "type");
+      if (type === "progressReport") {
+        checkingUpdateText = jsonMessage.compatibilityMessage;
+        // TODO: handle image upload progress here
+      }
+    } catch {
+      // empty
+    }
+  
     if (!app || !appLicense) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">

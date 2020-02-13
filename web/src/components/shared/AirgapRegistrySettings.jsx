@@ -6,7 +6,7 @@ import { getAppRegistryDetails, getImageRewriteStatus } from "../../queries/Apps
 import { validateRegistryInfo } from "@src/queries/UserQueries";
 import { updateRegistryDetails } from "@src/mutations/AppsMutations";
 import { Repeater } from "../../utilities/repeater";
-
+import get from "lodash/get";
 import "../../scss/components/watches/WatchDetailPage.scss";
 
 class AirgapRegistrySettings extends Component {
@@ -188,6 +188,18 @@ class AirgapRegistrySettings extends Component {
     const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
+    let statusText = rewriteMessage;
+    try {
+      const jsonMessage = JSON.parse(statusText);
+      const type = get(jsonMessage, "type");
+      if (type === "progressReport") {
+        statusText = jsonMessage.compatibilityMessage;
+        // TODO: handle image upload progress here
+      }
+    } catch {
+      // empty
+    }
+
     if (getKotsAppRegistryQuery?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -267,13 +279,13 @@ class AirgapRegistrySettings extends Component {
             { showProgress ?
               <div className="u-marginTop--20">
                 <Loader size="30" />
-                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{rewriteMessage}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{statusText}</p>
               </div>
             :
               null
             }
             { showStatusError ?
-              <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{rewriteMessage}</p>
+              <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{statusText}</p>
             :
               null
             }

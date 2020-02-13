@@ -20,6 +20,7 @@ import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
+import get from "lodash/get";
 
 import "@src/scss/components/watches/WatchVersionHistory.scss";
 dayjs.extend(relativeTime);
@@ -45,7 +46,7 @@ class AppVersionHistory extends Component {
     diffHovered: false,
     uploadingAirgapFile: false,
     checkingForUpdates: false,
-    checkingUpdateText: "Checking for updates",
+    checkingUpdateMessage: "Checking for updates",
     errorCheckingUpdate: false,
     airgapUploadError: null,
     showDiffOverlay: false,
@@ -464,7 +465,7 @@ class AppVersionHistory extends Component {
 
         this.setState({
           checkingForUpdates: true,
-          checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage,
+          checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
         });
 
         if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
@@ -472,7 +473,7 @@ class AppVersionHistory extends Component {
           this.setState({
             checkingForUpdates: false,
             checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed",
-            checkingUpdateText: res.data.getUpdateDownloadStatus?.currentMessage
+            checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage
           });
 
           if (this.props.updateCallback) {
@@ -694,7 +695,7 @@ class AppVersionHistory extends Component {
       selectedDiffReleases,
       checkedReleasesToDiff,
       checkingForUpdates,
-      checkingUpdateText,
+      checkingUpdateMessage,
       errorCheckingUpdate,
       airgapUploadError,
       showDiffOverlay,
@@ -707,6 +708,18 @@ class AppVersionHistory extends Component {
 
     if (!app) {
       return null;
+    }
+
+    let checkingUpdateText = checkingUpdateMessage;
+    try {
+      const jsonMessage = JSON.parse(checkingUpdateText);
+      const type = get(jsonMessage, "type");
+      if (type === "progressReport") {
+        checkingUpdateText = jsonMessage.compatibilityMessage;
+        // TODO: handle image upload progress here
+      }
+    } catch {
+      // empty
     }
 
     let checkingUpdateTextShort = checkingUpdateText;
