@@ -33,7 +33,7 @@ require (
 	github.com/huandu/xstrings v1.2.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/manifoldco/promptui v0.3.2
-	github.com/mattn/go-isatty v0.0.9 // indirect
+	github.com/mattn/go-isatty v0.0.9
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect

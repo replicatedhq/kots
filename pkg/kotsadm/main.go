@@ -128,7 +128,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 	}
 
 	log := logger.NewLogger()
-
 	namespace := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

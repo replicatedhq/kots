@@ -1,0 +1,52 @@
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  build-kots:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: "1.12.14"
+
+      - name: setup env
+        run: |
+          echo "::set-env name=GOPATH::$(go env GOPATH)"
+          echo "::add-path::$(go env GOPATH)/bin"
+        shell: bash
+
+      - uses: actions/checkout@master
+
+      - run: make ci-test kots
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: kots
+          path: bin/kots
+
+  validate:
+    runs-on: ubuntu-18.04
+    needs: build-kots
+    steps:
+      - name: download kots binary
+        uses: actions/download-artifact@v1
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: get digitalocean kubeconfig
+        uses: digitalocean/action-doctl@master
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        with:
+          args: kubernetes cluster kubeconfig show marc-qa > $GITHUB_WORKSPACE/.kubeconfig
+
+      - name: install qa app
+        run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password

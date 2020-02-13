@@ -209,20 +209,26 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner("Press Ctrl+C to exit")
-			log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
-			log.ActionWithoutSpinner("")
+			if v.GetBool("port-forward") {
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("Press Ctrl+C to exit")
+				log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
+				log.ActionWithoutSpinner("")
 
-			signalChan := make(chan os.Signal, 1)
-			signal.Notify(signalChan, os.Interrupt)
+				signalChan := make(chan os.Signal, 1)
+				signal.Notify(signalChan, os.Interrupt)
 
-			<-signalChan
+				<-signalChan
 
-			log.ActionWithoutSpinner("Cleaning up")
-			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
-			log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("Cleaning up")
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
+				log.ActionWithoutSpinner("")
+			} else {
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
+				log.ActionWithoutSpinner("")
+			}
 
 			return nil
 		},
@@ -237,6 +243,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
