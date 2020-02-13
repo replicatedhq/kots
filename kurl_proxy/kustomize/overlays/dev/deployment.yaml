@@ -10,3 +10,11 @@ spec:
         env:
         - name: UPSTREAM_ORIGIN
           value: http://kotsadm-web:8000
+        volumeMounts:
+        - name: kotsadm-config
+          mountPath: /etc/kotsadm
+      volumes:
+      - name: kotsadm-config
+        configMap:
+          name: kotsadm-application-metadata
+          optional: true
