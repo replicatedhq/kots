@@ -59,6 +59,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
+	k8s.io/cli-runtime v0.17.0
 	k8s.io/client-go v0.17.2
 	k8s.io/helm v2.14.3+incompatible
 	sigs.k8s.io/controller-runtime v0.4.0

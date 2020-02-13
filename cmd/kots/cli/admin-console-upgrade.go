@@ -23,8 +23,8 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			v := viper.GetViper()
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
-				Namespace:  v.GetString("namespace"),
-				Kubeconfig: v.GetString("kubeconfig"),
+				Namespace:             v.GetString("namespace"),
+				KubernetesConfigFlags: kubernetesConfigFlags,
 			}
 
 			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")

@@ -4,6 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+)
+
+var (
+	kubernetesConfigFlags *genericclioptions.ConfigFlags
 )
 
 func ExpandDir(input string) string {

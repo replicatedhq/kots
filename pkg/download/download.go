@@ -12,13 +12,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type DownloadOptions struct {
-	Namespace  string
-	Kubeconfig string
-	Overwrite  bool
-	Silent     bool
+	Namespace             string
+	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	Overwrite             bool
+	Silent                bool
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
@@ -29,7 +30,13 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 
 	log.ActionWithSpinner("Connecting to cluster")
 
-	podName, err := k8sutil.FindKotsadm(downloadOptions.Namespace)
+	clientset, err := k8sutil.GetClientset(downloadOptions.KubernetesConfigFlags)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	podName, err := k8sutil.FindKotsadm(clientset, downloadOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -38,7 +45,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	_, errChan, err := k8sutil.PortForward(downloadOptions.Kubeconfig, 3000, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
+	_, errChan, err := k8sutil.PortForward(downloadOptions.KubernetesConfigFlags, 3000, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -54,7 +61,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(downloadOptions.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(downloadOptions.KubernetesConfigFlags, downloadOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get kotsadm auth slug")

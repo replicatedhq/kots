@@ -31,9 +31,9 @@ func DownloadCmd() *cobra.Command {
 			appSlug := args[0]
 
 			downloadOptions := download.DownloadOptions{
-				Namespace:  v.GetString("namespace"),
-				Kubeconfig: v.GetString("kubeconfig"),
-				Overwrite:  v.GetBool("overwrite"),
+				Namespace:             v.GetString("namespace"),
+				KubernetesConfigFlags: kubernetesConfigFlags,
+				Overwrite:             v.GetBool("overwrite"),
 			}
 
 			if err := download.Download(appSlug, ExpandDir(v.GetString("dest")), downloadOptions); err != nil {

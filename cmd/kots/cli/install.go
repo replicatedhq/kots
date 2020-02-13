@@ -114,16 +114,16 @@ func InstallCmd() *cobra.Command {
 			}
 
 			deployOptions := kotsadmtypes.DeployOptions{
-				Namespace:           namespace,
-				Kubeconfig:          v.GetString("kubeconfig"),
-				Context:             v.GetString("context"),
-				IncludeShip:         v.GetBool("include-ship"),
-				IncludeGitHub:       v.GetBool("include-github"),
-				SharedPassword:      v.GetString("shared-password"),
-				ServiceType:         v.GetString("service-type"),
-				NodePort:            v.GetInt32("node-port"),
-				Hostname:            v.GetString("hostname"),
-				ApplicationMetadata: applicationMetadata,
+				Namespace:             namespace,
+				KubernetesConfigFlags: kubernetesConfigFlags,
+				Context:               v.GetString("context"),
+				IncludeShip:           v.GetBool("include-ship"),
+				IncludeGitHub:         v.GetBool("include-github"),
+				SharedPassword:        v.GetString("shared-password"),
+				ServiceType:           v.GetString("service-type"),
+				NodePort:              v.GetInt32("node-port"),
+				Hostname:              v.GetString("hostname"),
+				ApplicationMetadata:   applicationMetadata,
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -133,11 +133,11 @@ func InstallCmd() *cobra.Command {
 
 			// upload the kots app to kotsadm
 			uploadOptions := upload.UploadOptions{
-				Namespace:   namespace,
-				Kubeconfig:  v.GetString("kubeconfig"),
-				NewAppName:  v.GetString("name"),
-				UpstreamURI: upstream,
-				Endpoint:    "http://localhost:3000",
+				Namespace:             namespace,
+				KubernetesConfigFlags: kubernetesConfigFlags,
+				NewAppName:            v.GetString("name"),
+				UpstreamURI:           upstream,
+				Endpoint:              "http://localhost:3000",
 				RegistryOptions: registry.RegistryOptions{
 					Endpoint:  v.GetString("registry-endpoint"),
 					Namespace: v.GetString("image-namespace"),
@@ -157,7 +157,7 @@ func InstallCmd() *cobra.Command {
 				stopCh := make(chan struct{})
 				defer close(stopCh)
 
-				localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh, log)
+				localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, kubernetesConfigFlags, stopCh, log)
 				if err != nil {
 					return err
 				}
@@ -180,7 +180,12 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			podName, err := k8sutil.WaitForKotsadm(namespace, time.Minute*3)
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, time.Minute*3)
 			if err != nil {
 				return errors.Wrap(err, "failed to wait for web")
 			}
@@ -188,7 +193,7 @@ func InstallCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			_, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, namespace, podName, true, stopCh, log)
+			_, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}

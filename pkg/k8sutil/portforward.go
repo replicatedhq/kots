@@ -21,8 +21,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
@@ -51,7 +52,7 @@ func IsPortAvailable(port int) bool {
 	return true
 }
 
-func PortForward(kubeContext string, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.Logger) (int, <-chan error, error) {
+func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.Logger) (int, <-chan error, error) {
 	if localPort == 0 {
 		freePort, err := freeport.GetFreePort()
 		if err != nil {
@@ -66,20 +67,20 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	}
 
 	// port forward
-	config, err := clientcmd.BuildConfigFromFlags("", kubeContext)
+	cfg, err := kubernetesConfigFlags.ToRESTConfig()
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
-	roundTripper, upgrader, err := spdy.RoundTripperFor(config)
+	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
 		return 0, nil, err
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
-	hostIP := config.Host
+	hostIP := cfg.Host
 
-	u, err := url.Parse(config.Host)
+	u, err := url.Parse(cfg.Host)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -180,7 +181,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 				}
 				req.Header.Set("Accept", "application/json")
 
-				authSlug, err := auth.GetOrCreateAuthSlug(namespace)
+				authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
 				if err != nil {
 					runtime.HandleError(errors.Wrap(err, "failed to get kotsadm auth slug"))
 					continue
@@ -220,7 +221,7 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 						continue
 					}
 
-					serviceStopCh, err := ServiceForward(kubeContext, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
+					serviceStopCh, err := ServiceForward(cfg, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
 						runtime.HandleError(errors.Wrap(err, "failed to forward port"))
 						continue // try again
@@ -242,18 +243,12 @@ func PortForward(kubeContext string, localPort int, remotePort int, namespace st
 	return localPort, errChan, nil
 }
 
-func ServiceForward(kubeContext string, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
+func ServiceForward(cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
 	if !IsPortAvailable(localPort) {
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
 
-	// port forward
-	config, err := clientcmd.BuildConfigFromFlags("", kubeContext)
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
@@ -274,15 +269,15 @@ func ServiceForward(kubeContext string, localPort int, remotePort int, namespace
 		return nil, nil
 	}
 
-	roundTripper, upgrader, err := spdy.RoundTripperFor(config)
+	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
 		return nil, err
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
-	hostIP := config.Host
+	hostIP := cfg.Host
 
-	u, err := url.Parse(config.Host)
+	u, err := url.Parse(cfg.Host)
 	if err != nil {
 		return nil, err
 	}

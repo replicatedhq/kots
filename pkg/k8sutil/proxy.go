@@ -7,20 +7,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func WaitForKotsadm(namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
+func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
 	start := time.Now()
 
 	for {
