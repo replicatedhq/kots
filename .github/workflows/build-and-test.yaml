@@ -1,7 +1,7 @@
 on:
-  push:
+  pull_request:
     branches:
-      - github-actions
+      - master
 
 jobs:
   build-kots:
