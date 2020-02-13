@@ -2,9 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/tj/go-spin"
 )
 
@@ -98,29 +100,32 @@ func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 		return
 	}
 
-	s := spin.New()
-
 	fmt.Printf("  • ")
 	fmt.Printf(msg, args...)
-	fmt.Printf(" %s", s.Next())
 
-	l.spinnerStopCh = make(chan bool)
-	l.spinnerMsg = msg
-	l.spinnerArgs = args
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		s := spin.New()
 
-	go func() {
-		for {
-			select {
-			case <-l.spinnerStopCh:
-				return
-			case <-time.After(time.Millisecond * 100):
-				fmt.Printf("\r")
-				fmt.Printf("  • ")
-				fmt.Printf(msg, args...)
-				fmt.Printf(" %s", s.Next())
+		fmt.Printf(" %s", s.Next())
+
+		l.spinnerStopCh = make(chan bool)
+		l.spinnerMsg = msg
+		l.spinnerArgs = args
+
+		go func() {
+			for {
+				select {
+				case <-l.spinnerStopCh:
+					return
+				case <-time.After(time.Millisecond * 100):
+					fmt.Printf("\r")
+					fmt.Printf("  • ")
+					fmt.Printf(msg, args...)
+					fmt.Printf(" %s", s.Next())
+				}
 			}
-		}
-	}()
+		}()
+	}
 }
 
 func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
@@ -128,29 +133,32 @@ func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
 		return
 	}
 
-	s := spin.New()
-
 	fmt.Printf("    • ")
 	fmt.Printf(msg, args...)
-	fmt.Printf(" %s", s.Next())
 
-	l.spinnerStopCh = make(chan bool)
-	l.spinnerMsg = msg
-	l.spinnerArgs = args
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		s := spin.New()
 
-	go func() {
-		for {
-			select {
-			case <-l.spinnerStopCh:
-				return
-			case <-time.After(time.Millisecond * 100):
-				fmt.Printf("\r")
-				fmt.Printf("    • ")
-				fmt.Printf(msg, args...)
-				fmt.Printf(" %s", s.Next())
+		fmt.Printf(" %s", s.Next())
+
+		l.spinnerStopCh = make(chan bool)
+		l.spinnerMsg = msg
+		l.spinnerArgs = args
+
+		go func() {
+			for {
+				select {
+				case <-l.spinnerStopCh:
+					return
+				case <-time.After(time.Millisecond * 100):
+					fmt.Printf("\r")
+					fmt.Printf("    • ")
+					fmt.Printf(msg, args...)
+					fmt.Printf(" %s", s.Next())
+				}
 			}
-		}
-	}()
+		}()
+	}
 }
 
 func (l *Logger) FinishChildSpinner() {
@@ -166,8 +174,10 @@ func (l *Logger) FinishChildSpinner() {
 	green.Printf(" ✓")
 	fmt.Printf("  \n")
 
-	l.spinnerStopCh <- true
-	close(l.spinnerStopCh)
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		l.spinnerStopCh <- true
+		close(l.spinnerStopCh)
+	}
 }
 
 func (l *Logger) FinishSpinner() {
@@ -183,8 +193,10 @@ func (l *Logger) FinishSpinner() {
 	green.Printf(" ✓")
 	fmt.Printf("  \n")
 
-	l.spinnerStopCh <- true
-	close(l.spinnerStopCh)
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		l.spinnerStopCh <- true
+		close(l.spinnerStopCh)
+	}
 }
 
 func (l *Logger) FinishSpinnerWithError() {
@@ -200,8 +212,10 @@ func (l *Logger) FinishSpinnerWithError() {
 	red.Printf(" ✗")
 	fmt.Printf("  \n")
 
-	l.spinnerStopCh <- true
-	close(l.spinnerStopCh)
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		l.spinnerStopCh <- true
+		close(l.spinnerStopCh)
+	}
 }
 
 func (l *Logger) Error(err error) {

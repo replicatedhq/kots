@@ -33,6 +33,7 @@ func runSchemaHeroMigrations(deployOptions types.DeployOptions, clientset *kuber
 
 	// find a ready postgres container
 	log := logger.NewLogger()
+
 	log.ChildActionWithSpinner("Waiting for datastore to be ready")
 	_, err := waitForHealthyPostgres(deployOptions.Namespace, clientset)
 	if err != nil {
