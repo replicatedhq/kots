@@ -168,21 +168,30 @@ class AppSnapshotSettings extends Component {
     this.setState({ gcsServiceAccount: value });
   }
 
-  onSubmit = (e) => {
+  onSubmit = (e, snapshotAction) => {
+    const { app } = this.props;
+    
     e.preventDefault();
     switch (this.state.selectedDestination.value) {
-    case "aws":
-      this.snapshotProviderAWS();
-      break;
-    case "azure":
-      this.snapshotProviderAzure();
-      break;
-    case "google":
-      this.snapshotProviderGoogle();
-      break;
-    case "s3compatible":
-      this.snapshotProviderS3Compatible();
-      break;
+      case "aws":
+        this.snapshotProviderAWS();
+        break;
+      case "azure":
+        this.snapshotProviderAzure();
+        break;
+      case "google":
+        this.snapshotProviderGoogle();
+        break;
+      case "s3compatible":
+        this.snapshotProviderS3Compatible();
+        break;
+    }
+
+    if (snapshotAction === "start") {
+      this.props.refetchSnapshotSettings;
+      this.props.startManualSnapshot();
+    } else {
+      this.props.history.push(`/app/${app.slug}/snapshots/schedule`)
     }
   }
 
@@ -197,7 +206,7 @@ class AppSnapshotSettings extends Component {
     ).then(() => {
       this.setState({ updatingSettings: false });
     })
-    .catch(err => {
+      .catch(err => {
         console.log(err);
         err.graphQLErrors.map(({ msg }) => {
           this.setState({
@@ -224,7 +233,7 @@ class AppSnapshotSettings extends Component {
     ).then(() => {
       this.setState({ updatingSettings: false });
     })
-    .catch(err => {
+      .catch(err => {
         console.log(err);
         err.graphQLErrors.map(({ msg }) => {
           this.setState({
@@ -245,7 +254,7 @@ class AppSnapshotSettings extends Component {
     ).then(() => {
       this.setState({ updatingSettings: false })
     })
-    .catch(err => {
+      .catch(err => {
         console.log(err);
         err.graphQLErrors.map(({ msg }) => {
           this.setState({
@@ -269,7 +278,7 @@ class AppSnapshotSettings extends Component {
     ).then(() => {
       this.setState({ updatingSettings: false });
     })
-    .catch(err => {
+      .catch(err => {
         console.log(err);
         err.graphQLErrors.map(({ msg }) => {
           this.setState({
@@ -310,17 +319,17 @@ class AppSnapshotSettings extends Component {
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
-                <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3bucket} onChange={(e) => { this.handleFormChange("s3bucket", e) }}/>
+                <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3bucket} onChange={(e) => { this.handleFormChange("s3bucket", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
-                <input type="text" className="Input" placeholder="Bucket region" value={this.state.s3Region} onChange={(e) => { this.handleFormChange("s3Region", e) }}/>
+                <input type="text" className="Input" placeholder="Bucket region" value={this.state.s3Region} onChange={(e) => { this.handleFormChange("s3Region", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3Path} onChange={(e) => { this.handleFormChange("s3Path", e) }}/>
+                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3Path} onChange={(e) => { this.handleFormChange("s3Path", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">&nbsp;</p>
@@ -347,11 +356,11 @@ class AppSnapshotSettings extends Component {
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
-                  <input type="text" className="Input" placeholder="key ID" value={this.state.s3KeyId} onChange={(e) => { this.handleFormChange("s3KeyId", e) }}/>
+                  <input type="text" className="Input" placeholder="key ID" value={this.state.s3KeyId} onChange={(e) => { this.handleFormChange("s3KeyId", e) }} />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
-                  <input type="text" className="Input" placeholder="access key" value={this.state.s3KeySecret} onChange={(e) => { this.handleFormChange("s3KeySecret", e) }}/>
+                  <input type="text" className="Input" placeholder="access key" value={this.state.s3KeySecret} onChange={(e) => { this.handleFormChange("s3KeySecret", e) }} />
                 </div>
               </div>
             }
@@ -363,32 +372,32 @@ class AppSnapshotSettings extends Component {
           <div>
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
-              <input type="text" className="Input" placeholder="Bucket name" value={this.state.azureBucket} onChange={(e) => { this.handleFormChange("azureBucket", e) }}/>
+              <input type="text" className="Input" placeholder="Bucket name" value={this.state.azureBucket} onChange={(e) => { this.handleFormChange("azureBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.azurePath} onChange={(e) => { this.handleFormChange("azurePath", e) }}/>
+                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.azurePath} onChange={(e) => { this.handleFormChange("azurePath", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Subscription ID</p>
-                <input type="text" className="Input" placeholder="Subscription ID" value={this.state.azureSubscriptionId} onChange={(e) => { this.handleFormChange("azureSubscriptionId", e) }}/>
+                <input type="text" className="Input" placeholder="Subscription ID" value={this.state.azureSubscriptionId} onChange={(e) => { this.handleFormChange("azureSubscriptionId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Tenant ID</p>
-                <input type="text" className="Input" placeholder="Tenant ID" value={this.state.azureTenantId} onChange={(e) => { this.handleFormChange("azureTenantId", e) }}/>
+                <input type="text" className="Input" placeholder="Tenant ID" value={this.state.azureTenantId} onChange={(e) => { this.handleFormChange("azureTenantId", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client ID</p>
-                <input type="text" className="Input" placeholder="Client ID" value={this.state.azureClientId} onChange={(e) => { this.handleFormChange("azureClientId", e) }}/>
+                <input type="text" className="Input" placeholder="Client ID" value={this.state.azureClientId} onChange={(e) => { this.handleFormChange("azureClientId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client Secret</p>
-                <input type="text" className="Input" placeholder="Client Secret" value={this.state.azureClientSecret} onChange={(e) => { this.handleFormChange("azureClientSecret", e) }}/>
+                <input type="text" className="Input" placeholder="Client Secret" value={this.state.azureClientSecret} onChange={(e) => { this.handleFormChange("azureClientSecret", e) }} />
               </div>
             </div>
 
@@ -411,11 +420,11 @@ class AppSnapshotSettings extends Component {
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Resource Group Name</p>
-                <input type="text" className="Input" placeholder="Resource Group Name" value={this.state.azureResourceGroupName} onChange={(e) => { this.handleFormChange("azureResourceGroupName", e) }}/>
+                <input type="text" className="Input" placeholder="Resource Group Name" value={this.state.azureResourceGroupName} onChange={(e) => { this.handleFormChange("azureResourceGroupName", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Storage Account ID</p>
-                <input type="text" className="Input" placeholder="Storage Account ID" value={this.state.azureStorageAccountId} onChange={(e) => { this.handleFormChange("azureStorageAccountId", e) }}/>
+                <input type="text" className="Input" placeholder="Storage Account ID" value={this.state.azureStorageAccountId} onChange={(e) => { this.handleFormChange("azureStorageAccountId", e) }} />
               </div>
             </div>
           </div>
@@ -426,12 +435,12 @@ class AppSnapshotSettings extends Component {
           <div>
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
-              <input type="text" className="Input" placeholder="Bucket name" value={this.state.gcsBucket} onChange={(e) => { this.handleFormChange("gcsBucket", e) }}/>
+              <input type="text" className="Input" placeholder="Bucket name" value={this.state.gcsBucket} onChange={(e) => { this.handleFormChange("gcsBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.gcsPath} onChange={(e) => { this.handleFormChange("gcsPath", e) }}/>
+                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.gcsPath} onChange={(e) => { this.handleFormChange("gcsPath", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
@@ -464,32 +473,32 @@ class AppSnapshotSettings extends Component {
           <div>
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
-              <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3CompatibleBucket} onChange={(e) => { this.handleFormChange("s3CompatibleBucket", e) }}/>
+              <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3CompatibleBucket} onChange={(e) => { this.handleFormChange("s3CompatibleBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatiblePath} onChange={(e) => { this.handleFormChange("s3CompatiblePath", e) }}/>
+                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatiblePath} onChange={(e) => { this.handleFormChange("s3CompatiblePath", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
-                <input type="text" className="Input" placeholder="key ID" value={this.state.s3CompatibleKeyId} onChange={(e) => { this.handleFormChange("s3CompatibleKeyId", e) }}/>
+                <input type="text" className="Input" placeholder="key ID" value={this.state.s3CompatibleKeyId} onChange={(e) => { this.handleFormChange("s3CompatibleKeyId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
-                <input type="text" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }}/>
+                <input type="text" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Endpoint</p>
-                <input type="text" className="Input" placeholder="endpoint" value={this.state.s3CompatibleEndpoint} onChange={(e) => { this.handleFormChange("s3CompatibleEndpoint", e) }}/>
+                <input type="text" className="Input" placeholder="endpoint" value={this.state.s3CompatibleEndpoint} onChange={(e) => { this.handleFormChange("s3CompatibleEndpoint", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatibleRegion} onChange={(e) => { this.handleFormChange("s3CompatibleRegion", e) }}/>
+                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatibleRegion} onChange={(e) => { this.handleFormChange("s3CompatibleRegion", e) }} />
               </div>
             </div>
           </div>
@@ -516,23 +525,32 @@ class AppSnapshotSettings extends Component {
 
   render() {
     const { updatingSettings } = this.state;
-    const { app } = this.props;
+    const { app, noSnapshotsView } = this.props;
+
     const selectedDestination = DESTINATIONS.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        {noSnapshotsView ?
+          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
+            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure snapshots</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">To begin with snapshots you need to configure where you want them to be stored. Snapshots can be stored on Amazon S3, Google Cloud Storage, Azure Blob Storage, and other S3 compatible storage providers.</p>
+          </div>
+          : null}
         <div className="snapshot-form-wrapper">
-          <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
-            <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-            <span className="u-color--dustyGray"> > </span>
-            Settings
-          </p>
+          {noSnapshotsView ? null :
+            <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
+              <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
+              <span className="u-color--dustyGray"> > </span>
+              Settings
+          </p>}
           <form>
-            <div className="flex1 u-marginBottom--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
-            </div>
+            {noSnapshotsView ? null :
+              <div className="flex1 u-marginBottom--30">
+                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
+                <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
+              </div>}
             <div className="flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               <div className="flex1">
@@ -553,14 +571,24 @@ class AppSnapshotSettings extends Component {
             {!this.state.determiningDestination &&
               <div>
                 {this.renderDestinationFields()}
-                <div className="flex u-marginBottom--30">
-                  <div className="u-marginRight--10">
-                    <Link to={`/app/${app?.slug}/snapshots`} className="btn secondary">Cancel</Link>
+                {noSnapshotsView ?
+                  <div className="flex justifyContent--center">
+                    <div className="flex-auto u-marginRight--20">
+                      <button className="btn secondary blue" onClick={(e) => this.onSubmit(e, "start")}> Save & start a snapshot </button>
+                    </div>
+                    <div className="flex-auto">
+                      <button className="btn primary blue" onClick={(e) => this.onSubmit(e, "schedule")}>Save & schedule snapshots</button>
+                    </div>
                   </div>
-                  <div>
-                    <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
-                  </div>
-                </div>
+                  :
+                  <div className="flex u-marginBottom--30">
+                    <div className="u-marginRight--10">
+                      <Link to={`/app/${app?.slug}/snapshots`} className="btn secondary">Cancel</Link>
+                    </div>
+                    <div>
+                      <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
+                    </div>
+                  </div>}
               </div>
             }
           </form>
@@ -595,7 +623,7 @@ export default compose(
   }),
   graphql(snapshotProviderGoogle, {
     props: ({ mutate }) => ({
-      snapshotProviderGoogle: (bucket, prefix, serviceAccount) => mutate({ variables: { bucket, prefix, serviceAccount } } )
+      snapshotProviderGoogle: (bucket, prefix, serviceAccount) => mutate({ variables: { bucket, prefix, serviceAccount } })
     })
   }),
   graphql(snapshotProviderAzure, {
