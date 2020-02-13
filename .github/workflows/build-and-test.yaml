@@ -46,4 +46,4 @@ jobs:
           args: kubernetes cluster kubeconfig show marc-qa > $GITHUB_WORKSPACE/.kubeconfig
 
       - name: install qa app
-        run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated --shared-password password
+        run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
