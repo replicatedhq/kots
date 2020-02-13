@@ -228,8 +228,6 @@ func InstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "", "the namespace to deploy to")
 	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
 	cmd.Flags().Bool("include-github", false, "set up for github login")
 	cmd.Flags().String("shared-password", "", "shared password to apply")

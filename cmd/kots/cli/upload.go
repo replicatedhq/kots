@@ -73,8 +73,6 @@ func UploadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace to upload to")
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
 	cmd.Flags().String("upstream-uri", "", "the upstream uri that can be used to check for updates")

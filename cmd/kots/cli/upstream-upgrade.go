@@ -153,8 +153,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version downloads")
 
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")

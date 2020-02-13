@@ -26,10 +26,3 @@ func homeDir() string {
 	}
 	return os.Getenv("USERPROFILE")
 }
-
-func defaultKubeConfig() string {
-	if len(os.Getenv("KUBECONFIG")) > 0 {
-		return os.Getenv("KUBECONFIG")
-	}
-	return filepath.Join(homeDir(), ".kube", "config")
-}

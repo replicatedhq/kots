@@ -88,8 +88,6 @@ func ResetPasswordCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-
 	return cmd
 }
 

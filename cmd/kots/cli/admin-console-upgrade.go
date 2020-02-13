@@ -51,9 +51,6 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
-
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
