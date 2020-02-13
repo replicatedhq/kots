@@ -7,7 +7,6 @@ import { kotsTemplateConfig, kotsEncryptString, kotsRewriteVersion } from "./kot
 import { ReplicatedError } from "../server/errors";
 import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
-import { logger } from "../server/logger";
 import tmp from "tmp";
 import fs from "fs";
 import path from "path";
@@ -19,6 +18,7 @@ import { putObject } from "../util/s3";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 import { ApplicationSpec } from "./kots_app_spec";
+import { extractConfigValuesFromTarball } from "../util/tar";
 
 export class KotsApp {
   id: string;
@@ -221,7 +221,9 @@ export class KotsApp {
     specConfigGroups.forEach(group => {
       group.items.forEach(item => {
         if (item.type === "password") {
-          item.value = this.getPasswordMask();
+          if (item.value) {
+            item.value = this.getPasswordMask();
+          }
         } else if (item.name in specConfigValues) {
           item.value = specConfigValues[item.name].value;
         }
@@ -248,7 +250,7 @@ export class KotsApp {
       const paths: string[] = await this.getFilesPaths(sequence);
       const files: FilesAsBuffers = await this.getFiles(sequence, paths);
 
-      const { configSpec, configValues, configValuesPath } = await this.getConfigDataFromFiles(files);
+      const { configSpec, configValues } = await this.getConfigDataFromFiles(files);
 
       const parsedConfig = yaml.safeLoad(configSpec);
       const parsedConfigValues = yaml.safeLoad(configValues);
@@ -266,23 +268,19 @@ export class KotsApp {
         for (let i = 0; i < group.items.length; i++) {
           const item = group.items[i];
           if (this.shouldUpdateConfigValues(specConfigGroups, specConfigValues, item)) {
-            if (item.type === "password") {
-              const passwordValue = encryptionKey !== "" ? await kotsEncryptString(encryptionKey, item.value) : item.value;
-              const configVal = {
-                value: passwordValue,
-              };
-              specConfigValues[item.name] = configVal;
-            } else {
-              // these are "omitempty" in Go, but TS adds "null" strings in.
-              let configVal = {};
-              if (item.value) {
-                configVal["value"] = item.value;
+            // these are "omitempty" in Go, but TS adds "null" strings in.
+            let configVal = {};
+            if (item.value) {
+              let value = item.value;
+              if (item.type === "password" && encryptionKey !== "") {
+                value = await kotsEncryptString(encryptionKey, item.value);
               }
-              if (item.default) {
-                configVal["default"] = item.default;
-              }
-              specConfigValues[item.name] = configVal;
+              configVal["value"] = value;
             }
+            if (item.default) {
+              configVal["default"] = item.default;
+            }
+            specConfigValues[item.name] = configVal;
           }
         }
       }
@@ -303,7 +301,8 @@ export class KotsApp {
         const params = await Params.getParams();
         const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
         await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
-        await stores.kotsAppStore.updateAppConfigValues(appId, sequence, updatedConfigValues);
+        const bufferConfigValues = await extractConfigValuesFromTarball(outputTgzBuffer);
+        await stores.kotsAppStore.updateAppConfigValues(appId, sequence, bufferConfigValues!);
       } else {
         await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
       }
