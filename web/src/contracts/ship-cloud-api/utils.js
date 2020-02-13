@@ -18,8 +18,8 @@ export function createSessionToken(sessionId) {
 
 export function getShipClient(sessionId) {
   return ShipClientGQL(
-    `http://localhost:${MOCK_SERVER_PORT}/graphql`,
-    `http://localhost:${MOCK_SERVER_PORT}/api`,
+    `:${MOCK_SERVER_PORT}/graphql`,
+    `:${MOCK_SERVER_PORT}/api`,
     () => {
       if (!sessionId) {
         return "";
