@@ -851,7 +851,9 @@ order by sequence desc`;
         lastError: configMapData.lastError
       }
     } catch (err) {
-      logger.error(err);
+      if (err && (!err.response || err.response.statusCode !== 404)) {
+        logger.error(err);
+      }
       throw new ReplicatedError("Failed to get gitops info");
     }
   }
@@ -872,7 +874,6 @@ order by sequence desc`;
         isConnected: gitopsInfo.lastError === "",
       }
     } catch (err) {
-      console.log(err);
       return {
         enabled: false
       };
