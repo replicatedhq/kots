@@ -210,7 +210,7 @@ func reportWriterWithProgress(files map[string]*ImageFile, reportWriter io.Write
 				continue
 			} else {
 				currentLine = line
-				fmt.Fprintf(reportWriter, "%s\n", currentLine)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			}
 		}
