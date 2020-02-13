@@ -255,17 +255,19 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		sourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
 
-	isPrivate := false
+	isPrivate := isAirgap // rewrite all images with airgap
 	if i, ok := checkedImages[image]; ok {
 		isPrivate = i.IsPrivate
 	} else {
-		p, err := isPrivateImage(image)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if image is private")
+		if !isAirgap {
+			p, err := isPrivateImage(image)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to check if image is private")
+			}
+			isPrivate = p
 		}
-		isPrivate = p
 		checkedImages[image] = ImageInfo{
-			IsPrivate: p,
+			IsPrivate: isPrivate,
 		}
 	}
 
