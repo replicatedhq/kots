@@ -40,13 +40,19 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			podName, err := k8sutil.FindKotsadm(v.GetString("namespace"))
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				log.FinishSpinnerWithError()
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			podName, err := k8sutil.FindKotsadm(clientset, v.GetString("namespace"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to find kotsadm pod")
 			}
 
-			localPort, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 0, 3000, v.GetString("namespace"), podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, v.GetString("namespace"), podName, false, stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to start port forwarding")
@@ -68,7 +74,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				updateCheckURI = fmt.Sprintf("%s?deploy=true", updateCheckURI)
 			}
 
-			authSlug, err := auth.GetOrCreateAuthSlug(v.GetString("namespace"))
+			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, v.GetString("namespace"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				log.Info("Unable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.", v.GetString("namespace"))
@@ -147,8 +153,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version downloads")
 
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")

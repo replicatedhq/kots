@@ -10,12 +10,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type UploadLicenseOptions struct {
-	Namespace  string
-	Kubeconfig string
-	NewAppName string
+	Namespace             string
+	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	NewAppName            string
 }
 
 func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error {
@@ -39,7 +40,13 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Uploading license to Admin Console")
 
-	podName, err := k8sutil.FindKotsadm(uploadLicenseOptions.Namespace)
+	clientset, err := k8sutil.GetClientset(uploadLicenseOptions.KubernetesConfigFlags)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to get clisnetset")
+	}
+
+	podName, err := k8sutil.FindKotsadm(clientset, uploadLicenseOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -48,7 +55,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	_, errChan, err := k8sutil.PortForward(uploadLicenseOptions.Kubeconfig, 3000, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
+	_, errChan, err := k8sutil.PortForward(uploadLicenseOptions.KubernetesConfigFlags, 3000, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -112,7 +119,7 @@ func createUploadLicenseRequest(license string, uploadLicenseOptions UploadLicen
 		return nil, errors.Wrap(err, "failed to marshal json")
 	}
 
-	authSlug, err := auth.GetOrCreateAuthSlug(uploadLicenseOptions.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(uploadLicenseOptions.KubernetesConfigFlags, uploadLicenseOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm auth slug")
 	}

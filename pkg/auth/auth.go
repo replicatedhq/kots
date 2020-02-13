@@ -9,8 +9,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const KotsadmAuthstringSecretName = "kotsadm-authstring"
@@ -27,14 +27,14 @@ func SetAuthSlugCache(newval string) {
 // GetOrCreateAuthSlug will check for an authslug secret in the provided namespace
 // if one exists, it will return the value from that secret
 // if none exists, it will create one and return that value
-func GetOrCreateAuthSlug(namespace string) (string, error) {
+func GetOrCreateAuthSlug(kubernetesConfigFlags *genericclioptions.ConfigFlags, namespace string) (string, error) {
 	if authSlugCache != "" {
 		return authSlugCache, nil
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := kubernetesConfigFlags.ToRESTConfig()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
+		return "", errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)

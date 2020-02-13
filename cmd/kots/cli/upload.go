@@ -37,18 +37,18 @@ func UploadCmd() *cobra.Command {
 			}
 
 			uploadOptions := upload.UploadOptions{
-				Namespace:       v.GetString("namespace"),
-				Kubeconfig:      v.GetString("kubeconfig"),
-				ExistingAppSlug: v.GetString("slug"),
-				NewAppName:      v.GetString("name"),
-				UpstreamURI:     v.GetString("upstream-uri"),
-				Endpoint:        "http://localhost:3000",
+				Namespace:             v.GetString("namespace"),
+				KubernetesConfigFlags: kubernetesConfigFlags,
+				ExistingAppSlug:       v.GetString("slug"),
+				NewAppName:            v.GetString("name"),
+				UpstreamURI:           v.GetString("upstream-uri"),
+				Endpoint:              "http://localhost:3000",
 			}
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, uploadOptions.Kubeconfig, stopCh, log)
+			localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, kubernetesConfigFlags, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
@@ -73,8 +73,6 @@ func UploadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace to upload to")
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
 	cmd.Flags().String("upstream-uri", "", "the upstream uri that can be used to check for updates")

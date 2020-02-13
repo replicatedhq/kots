@@ -5,6 +5,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -12,8 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func ResetPasswordCmd() *cobra.Command {
@@ -46,12 +45,7 @@ func ResetPasswordCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create encrypt password")
 			}
 
-			cfg, err := config.GetConfig()
-			if err != nil {
-				return errors.Wrap(err, "failed to load config")
-			}
-
-			clientset, err := kubernetes.NewForConfig(cfg)
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
 				return errors.Wrap(err, "failed to create k8s client")
 			}
@@ -93,8 +87,6 @@ func ResetPasswordCmd() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
 
 	return cmd
 }

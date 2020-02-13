@@ -27,7 +27,12 @@ func AdminConsoleCmd() *cobra.Command {
 
 			log := logger.NewLogger()
 
-			podName, err := k8sutil.WaitForKotsadm(v.GetString("namespace"), time.Second*5)
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed get to get clientset")
+			}
+
+			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*5)
 			if err != nil {
 				return errors.Wrap(err, "failed to wait for web")
 			}
@@ -35,7 +40,7 @@ func AdminConsoleCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			_, errChan, err := k8sutil.PortForward(v.GetString("kubeconfig"), 8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
+			_, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
@@ -64,9 +69,6 @@ func AdminConsoleCmd() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace where the admin console is running")
 
 	cmd.AddCommand(AdminConsoleUpgradeCmd())
 

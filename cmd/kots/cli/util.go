@@ -4,6 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+)
+
+var (
+	kubernetesConfigFlags *genericclioptions.ConfigFlags
 )
 
 func ExpandDir(input string) string {
@@ -19,11 +25,4 @@ func homeDir() string {
 		return h
 	}
 	return os.Getenv("USERPROFILE")
-}
-
-func defaultKubeConfig() string {
-	if len(os.Getenv("KUBECONFIG")) > 0 {
-		return os.Getenv("KUBECONFIG")
-	}
-	return filepath.Join(homeDir(), ".kube", "config")
 }

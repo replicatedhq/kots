@@ -3,13 +3,14 @@ package kotsadm
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // YAML will return a map containing the YAML needed to run the admin console
@@ -90,14 +91,9 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 }
 
 func Upgrade(upgradeOptions types.UpgradeOptions) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset(upgradeOptions.KubernetesConfigFlags)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
 	log := logger.NewLogger()
@@ -109,7 +105,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 		return err
 	}
 
-	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, upgradeOptions.Kubeconfig, clientset)
+	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, upgradeOptions.KubernetesConfigFlags, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to read deploy options")
 	}
@@ -126,14 +122,9 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 }
 
 func Deploy(deployOptions types.DeployOptions) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
 	log := logger.NewLogger()
@@ -239,14 +230,14 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	return nil
 }
 
-func readDeployOptionsFromCluster(namespace string, kubeconfig string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
+func readDeployOptionsFromCluster(namespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
-		Namespace:     namespace,
-		Kubeconfig:    kubeconfig,
-		IncludeShip:   false,
-		IncludeGitHub: false,
-		ServiceType:   "ClusterIP",
-		Hostname:      "localhost:8800",
+		Namespace:             namespace,
+		KubernetesConfigFlags: kubernetesConfigFlags,
+		IncludeShip:           false,
+		IncludeGitHub:         false,
+		ServiceType:           "ClusterIP",
+		Hostname:              "localhost:8800",
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value

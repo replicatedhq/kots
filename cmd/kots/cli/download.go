@@ -31,9 +31,9 @@ func DownloadCmd() *cobra.Command {
 			appSlug := args[0]
 
 			downloadOptions := download.DownloadOptions{
-				Namespace:  v.GetString("namespace"),
-				Kubeconfig: v.GetString("kubeconfig"),
-				Overwrite:  v.GetBool("overwrite"),
+				Namespace:             v.GetString("namespace"),
+				KubernetesConfigFlags: kubernetesConfigFlags,
+				Overwrite:             v.GetBool("overwrite"),
 			}
 
 			if err := download.Download(appSlug, ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
@@ -50,8 +50,6 @@ func DownloadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("kubeconfig", defaultKubeConfig(), "the kubeconfig to use")
-	cmd.Flags().StringP("namespace", "n", "default", "the namespace to download from")
 	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
 

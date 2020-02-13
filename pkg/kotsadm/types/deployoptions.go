@@ -2,11 +2,12 @@ package types
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type DeployOptions struct {
 	Namespace              string
-	Kubeconfig             string
+	KubernetesConfigFlags  *genericclioptions.ConfigFlags
 	Context                string
 	IncludeShip            bool
 	IncludeGitHub          bool

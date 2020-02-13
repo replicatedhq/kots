@@ -5,20 +5,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func FindKotsadm(namespace string) (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
+func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, error) {
 	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
