@@ -50,3 +50,6 @@ jobs:
 
       - name: install qa app
         run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
+
+      - name: delete namespace
+        run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns automated-$GITHUB_RUN_ID
