@@ -313,6 +313,11 @@ class UploadAirgapBundle extends React.Component {
       );
     }
 
+    let supportBundleCommand = this.state.supportBundleCommand;
+    if (supportBundleCommand) {
+      supportBundleCommand = supportBundleCommand.replace("API_ADDRESS", window.location.origin);
+    }
+
     return (
       <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
         <Helmet>
@@ -405,7 +410,7 @@ class UploadAirgapBundle extends React.Component {
                         canCopy={true}
                         onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                       >
-                        {this.state.supportBundleCommand.split("\n")}
+                        {supportBundleCommand.split("\n")}
                       </CodeSnippet>
                     </div>
                     :

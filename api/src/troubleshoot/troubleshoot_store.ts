@@ -288,7 +288,7 @@ spec:
   }
 
   async getSupportBundleCommand(watchSlug?: string): Promise<string> {
-    let url = `${this.params.apiAdvertiseEndpoint}/api/v1/troubleshoot`;
+    let url = `API_ADDRESS/api/v1/troubleshoot`;
     if (watchSlug) {
       url = `${url}/${watchSlug}`;
     }

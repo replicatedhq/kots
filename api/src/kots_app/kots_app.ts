@@ -551,7 +551,7 @@ export class KotsApp {
     const params = await Params.getParams();
     const bundleCommand = `
       curl https://krew.sh/support-bundle | bash
-      kubectl support-bundle ${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${watchSlug}
+      kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/${watchSlug}
     `;
     return bundleCommand;
   }

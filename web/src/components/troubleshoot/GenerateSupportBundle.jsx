@@ -147,6 +147,11 @@ class GenerateSupportBundle extends React.Component {
     const watchClusters = watch.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
     const appTitle = watch.watchName || watch.name;
+
+    let command = selectedWatch?.bundleCommand || watch.bundleCommand;
+    if (command) {
+      command = command.replace("API_ADDRESS", window.location.origin);
+    }
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
@@ -184,7 +189,7 @@ class GenerateSupportBundle extends React.Component {
                       canCopy={true}
                       onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                     >
-                      {selectedWatch?.bundleCommand?.split("\n") || watch.bundleCommand?.split("\n")}
+                      {command?.split("\n")}
                     </CodeSnippet>
                   </div>
                   <div className="u-marginTop--15">
