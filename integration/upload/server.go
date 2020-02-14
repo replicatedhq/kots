@@ -2,7 +2,9 @@ package upload
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"time"
 )
 
 func StartMockServer(endpoint string, method string, expectedUpdateCursor string, expectedVersionLabel string, expectedLicense string, archive []byte) (chan bool, error) {
@@ -16,6 +18,9 @@ func StartMockServer(endpoint string, method string, expectedUpdateCursor string
 		}
 		w.Write([]byte(`{"uri": "integratin"}`))
 	})
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{}`))
+	})
 
 	go func() {
 		srv.ListenAndServe()
@@ -25,6 +30,23 @@ func StartMockServer(endpoint string, method string, expectedUpdateCursor string
 		<-stopCh
 		srv.Shutdown(context.TODO())
 	}()
+
+	// for the the http server to be ready
+	quickClient := &http.Client{
+		Timeout: time.Millisecond * 100,
+	}
+	start := time.Now()
+	for {
+		response, err := quickClient.Get("http://localhost:3001/healthz")
+		if err == nil && response.StatusCode == http.StatusOK {
+			break
+		}
+		if time.Now().Sub(start) > time.Duration(time.Second*5) {
+			return nil, errors.New("mock server failed to start in the allocated time")
+		}
+
+		time.Sleep(time.Millisecond * 10)
+	}
 
 	return stopCh, nil
 }
