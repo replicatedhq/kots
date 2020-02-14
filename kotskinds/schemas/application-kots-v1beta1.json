@@ -17,9 +17,16 @@
       "description": "ApplicationSpec defines the desired state of ApplicationSpec",
       "type": "object",
       "required": [
+        "additionalImages",
         "title"
       ],
       "properties": {
+        "additionalImages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "allowRollback": {
           "type": "boolean"
         },
