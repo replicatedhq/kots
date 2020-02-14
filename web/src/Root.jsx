@@ -17,6 +17,7 @@ import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
+import RestoreCompleted from "./components/RestoreCompleted";
 
 import { ping, getKotsMetadata, listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
@@ -304,6 +305,7 @@ class Root extends Component {
                         )
                       }
                     />
+                    <Route exact path="/restore-completed" render={props => <RestoreCompleted {...props} logo={this.state.appLogo} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <Route component={NotFound} />
                   </Switch>
                 </div>

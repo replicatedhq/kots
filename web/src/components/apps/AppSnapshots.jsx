@@ -6,11 +6,12 @@ import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import Modal from "react-modal";
-import { listSnapshots } from "../../queries/SnapshotQueries";
+import { listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
 import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+import AppSnapshotSettings from "./AppSnapshotSettings";
 
 class AppSnapshots extends Component {
   state = {
@@ -153,11 +154,11 @@ class AppSnapshots extends Component {
       restoreErr,
       restoreErrorMsg
     } = this.state;
-    const { app, snapshots } = this.props;
+    const { app, snapshots, snapshotSettings } = this.props;
     const appTitle = app.name;
     const veleroInstalled = true;
 
-    if (snapshots?.loading) {
+    if (snapshots?.loading ||snapshotSettings?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -176,6 +177,12 @@ class AppSnapshots extends Component {
             </div>
           </div>
         </div>
+      )
+    }
+
+    if (!snapshotSettings.snapshotConfig?.store) {
+      return (
+        <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch()} />
       )
     }
 
@@ -281,6 +288,16 @@ export default compose(
   withRouter,
   graphql(listSnapshots, {
     name: "snapshots",
+    options: ({ match }) => {
+      const slug = match.params.slug;
+      return {
+        variables: { slug },
+        fetchPolicy: "no-cache"
+      }
+    }
+  }),
+  graphql(snapshotSettings, {
+    name: "snapshotSettings",
     options: ({ match }) => {
       const slug = match.params.slug;
       return {
