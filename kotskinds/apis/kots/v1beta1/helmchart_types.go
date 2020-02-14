@@ -27,7 +27,7 @@ import (
 )
 
 type MappedChartValue struct {
-	Value string `json:",inline"`
+	Value string `json:"-"`
 
 	valueType string `json:"-"`
 
@@ -229,7 +229,8 @@ func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]stri
 }
 
 type OptionalValue struct {
-	When   string                      `json:"when"`
+	When string `json:"when"`
+
 	Values map[string]MappedChartValue `json:"values,omitempty"`
 }
 
