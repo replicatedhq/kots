@@ -158,7 +158,7 @@ class PreflightResultPage extends Component {
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
-            <div className="u-minWidth--full u-minHeight--full u-marginTop--20 u-overflow--auto">
+            <div className="u-minWidth--full u-minHeight--full u-marginTop--20 u-overflow--hidden">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
