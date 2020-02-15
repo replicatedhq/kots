@@ -19,9 +19,7 @@ func VersionCmd() *cobra.Command {
 
 			// check if this is the latest release, and display possible upgrade instructions
 			isLatest, latestVer, err := version.IsLatestRelease()
-			if err != nil {
-				fmt.Printf("\nUnable to check for newer releases: %s\n", err.Error())
-			} else if !isLatest {
+			if err == nil && !isLatest {
 				fmt.Printf("\nVersion %s is available for kots. To install updates, run\n  $ curl https://kots.io/install | bash\n", latestVer)
 			}
 
