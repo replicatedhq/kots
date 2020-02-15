@@ -98,9 +98,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 
 	log := logger.NewLogger()
 
-	_, err = clientset.CoreV1().Namespaces().Get(upgradeOptions.Namespace, metav1.GetOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		err := errors.New("The namespace cannot be found or accessed")
+	if err := canUpgrade(upgradeOptions, clientset, log); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -163,6 +161,38 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
+	}
+
+	return nil
+}
+
+func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	_, err := clientset.CoreV1().Namespaces().Get(upgradeOptions.Namespace, metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		err := errors.New("The namespace cannot be found or accessed")
+		return err
+	}
+
+	if upgradeOptions.ForceUpgradeKurl {
+		return nil
+	}
+
+	// don't upgrade kurl clusters.  kurl only installs into default namespace.
+	if upgradeOptions.Namespace != "" && upgradeOptions.Namespace != "default" {
+		return nil
+	}
+
+	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to list nodes")
+	}
+
+	for _, node := range nodes.Items {
+		for k, v := range node.Labels {
+			if k == "kurl.sh/cluster" && v == "true" {
+				return errors.New("upgrading kURL clusters is not supported")
+			}
+		}
 	}
 
 	return nil

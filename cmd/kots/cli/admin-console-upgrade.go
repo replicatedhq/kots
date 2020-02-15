@@ -1,6 +1,11 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -22,9 +27,30 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
+			if v.GetBool("force-upgrade-kurl") {
+				prompt := promptui.Prompt{
+					Label:     fmt.Sprintf("Upgrading a kotsadm instance created by kURL can result in data loss. Do you want to continue"),
+					IsConfirm: true,
+				}
+
+				for {
+					resp, err := prompt.Run()
+					if err == promptui.ErrInterrupt {
+						os.Exit(-1)
+					}
+					if strings.ToLower(resp) == "n" {
+						os.Exit(-1)
+					}
+					if strings.ToLower(resp) == "y" {
+						break
+					}
+				}
+			}
+
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
+				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
 			}
 
 			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
@@ -51,9 +77,11 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().Bool("force-upgrade-kurl", false, "set to force upgrade even if this is a kurl cluster")
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-registry")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
