@@ -24,7 +24,10 @@ class AppSnapshotDetail extends Component {
     options: {
       chart: {
         height: 110,
-        type: "rangeBar"
+        type: "rangeBar",
+        toolbar: {
+          show: false
+        }
       },
       plotOptions: {
         bar: {
