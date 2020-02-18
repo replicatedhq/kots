@@ -59,7 +59,7 @@ export function getBuildVersion() {
 
 export function parseIconUri(uri) {
   const splitUri = uri.split("?");
-  if (!splitUri.length) {
+  if (splitUri.length < 2) {
     return {
       uri: "https://troubleshoot.sh/images/analyzer-icons/gray-checkmark.svg",
       dimensions: {
