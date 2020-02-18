@@ -180,7 +180,7 @@ export class AnalyzerInsights extends React.Component {
                         <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
                           <div className="flex justifyContent--center u-marginBottom--10">
                             {tile.icon ?
-                              <span className="tile-icon" style={{ backgroundImage: `url(${iconObj.uri})`, width: `${iconObj.dimensions.w}px`, height: `${iconObj.dimensions.h}px` }}></span>
+                              <span className="tile-icon" style={{ backgroundImage: `url(${iconObj.uri})`, width: `${iconObj.dimensions?.w}px`, height: `${iconObj.dimensions?.h}px` }}></span>
                               : tile.icon_key ?
                                 <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
                                 :
