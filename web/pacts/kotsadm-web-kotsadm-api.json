@@ -136,7 +136,7 @@
               "isAirgap": false,
               "currentVersion": null,
               "lastUpdateCheckAt": "date",
-              "bundleCommand": "\n      curl https://krew.sh/support-bundle | bash\n      kubectl support-bundle undefined/api/v1/troubleshoot/kots-app-slug\n    ",
+              "bundleCommand": "\n      curl https://krew.sh/support-bundle | bash\n      kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/kots-app-slug\n    ",
               "downstreams": [
 
               ]
