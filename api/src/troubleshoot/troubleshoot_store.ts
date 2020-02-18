@@ -146,7 +146,7 @@ spec:
         insight.severity = marshaledInsight.severity;
         insight.primary = marshaledInsight.insight.primary;
         insight.detail = marshaledInsight.insight.detail;
-        insight.icon = marshaledInsight.labels.icon;
+        insight.icon = marshaledInsight.labels.iconUri;
         insight.iconKey = marshaledInsight.labels.iconKey;
         insight.desiredPosition = marshaledInsight.labels.desiredPosition;
 
