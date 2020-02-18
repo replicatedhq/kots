@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 export CURRENT_USER=`id -u -n`
 
