@@ -20,17 +20,21 @@
 .RestoreWarning--wrapper {
   background-color: #FFF1DA;
   color: #DB9016;
-  padding: 15px;
+  padding-bottom: 15px;
+  padding-top: 15px;
   text-align: center;
-  max-width: 1000px;
-  width: 100%;
-  margin:0 auto;
   border-top: 1px solid #DFDFDF;
   border-right: 1px solid #DFDFDF;
   border-left: 1px solid #DFDFDF;
   &:last-child {
     border-bottom: 1px solid #DFDFDF;
   }
+}
+
+.FailedRestore--wrapper {
+  max-width: 1000px;
+  width: 100%;
+  margin:0 auto;
 }
 
 .RestoreError--wrapper {

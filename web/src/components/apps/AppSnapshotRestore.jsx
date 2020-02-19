@@ -52,9 +52,11 @@ class AppSnapshotRestore extends Component {
   renderErrors = (errors) => {
     return (
       errors.map((error, i) => (
-        <div className="RestoreError--wrapper flex flex1 u-border--gray alignItems--center" key={`${error.title}-${i}`}>
-          <span className="icon error-small">
-          </span><p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-marginLeft--5">{error.message}</p>
+        <div className="RestoreError--wrapper flex justifyContent--space-between alignItems--center" key={`${error.title}-${i}`}>
+          <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10"> </div>
+          <div className="flex1">
+            <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
+          </div>
         </div>
       ))
     );
@@ -63,9 +65,11 @@ class AppSnapshotRestore extends Component {
   renderWarnings = (warnings) => {
     return (
       warnings.map((warning, i) => (
-        <div className="RestoreWarning--wrapper flex flex1 alignItems--center" key={`${warning.title}-${i}`}>
-          <span className="icon exclamationMark--icon">
-          </span><p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-marginLeft--5">{warning.message}</p>
+        <div className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center" key={`${warning.title}-${i}`}>
+          <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10"> </div>
+          <div className="flex1">
+            <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
+          </div>
         </div>
       ))
     );
@@ -73,7 +77,7 @@ class AppSnapshotRestore extends Component {
 
   renderFailedRestoreView = (detail) => {
     return (
-      <div>
+      <div className="FailedRestore--wrapper">
         <div className="flex flex-column alignItems--center">
           <span className="icon u-superWarning--large"></span>
           <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">

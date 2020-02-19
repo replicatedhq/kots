@@ -154,13 +154,24 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   getPaths = (files) => {
+    const { app } = this.props;
+
+    const downstream = app.downstreams?.length && app.downstreams[0];
+    const gitopsEnabled = downstream?.gitops?.enabled;
+
     let paths = [];
     files.map(file => {
       if (file.children.length) {
         const subPaths = this.getPaths(file.children);
         paths = paths.concat(subPaths);
       } else {
-        paths.push(file.path);
+        if (!gitopsEnabled) {
+          if (!file.path.includes("upstream/")) {
+            paths.push(file.path);
+          }
+        } else {
+          paths.push(file.path);
+        }
       }
     });
     return paths;
