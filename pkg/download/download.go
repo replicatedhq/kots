@@ -110,7 +110,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		} else {
 			log.FinishSpinner()
 			log.ActionWithoutSpinner("")
-			log.Info("Directory %s already exists. You can re-run this command with --overwrite to automatically overwrite it", path)
+			log.Error(errors.Errorf("Directory %s already exists. You can re-run this command with --overwrite to automatically overwrite it", path))
 			log.ActionWithoutSpinner("")
 			return errors.Errorf("directory already exists at %s", path)
 		}
