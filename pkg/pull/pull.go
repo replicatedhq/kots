@@ -122,6 +122,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	var installation *kotsv1beta1.Installation
 
+	_, localConfigValues, localLicense, localInstallation, err := findConfig(pullOptions.LocalPath)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to find config files in local path")
+	}
+
 	if pullOptions.LicenseFile != "" {
 		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
@@ -135,23 +140,36 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		fetchOptions.License = license
+	} else {
+		fetchOptions.License = localLicense
 	}
+
 	if pullOptions.ConfigFile != "" {
 		config, err := parseConfigValuesFromFile(pullOptions.ConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 		fetchOptions.ConfigValues = config
+	} else {
+		fetchOptions.ConfigValues = localConfigValues
 	}
+
 	if pullOptions.InstallationFile != "" {
 		i, err := parseInstallationFromFile(pullOptions.InstallationFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse installation from file")
 		}
-
 		installation = i
-		if installation != nil {
-			fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
+	} else {
+		installation = localInstallation
+	}
+
+	if installation != nil {
+		fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
+		fetchOptions.CurrentVersionLabel = installation.Spec.VersionLabel
+		fetchOptions.CurrentChannel = installation.Spec.ChannelName
+		if fetchOptions.CurrentCursor == "" {
+			fetchOptions.CurrentCursor = installation.Spec.UpdateCursor
 		}
 	}
 
@@ -603,4 +621,55 @@ func licenseIsExpired(license *kotsv1beta1.License) (bool, error) {
 		return false, errors.Wrap(err, "failed to parse expiration time")
 	}
 	return partsed.Before(time.Now()), nil
+}
+
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
+	if localPath == "" {
+		return nil, nil, nil, nil, nil
+	}
+
+	var config *kotsv1beta1.Config
+	var values *kotsv1beta1.ConfigValues
+	var license *kotsv1beta1.License
+	var installation *kotsv1beta1.Installation
+
+	err := filepath.Walk(localPath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			content, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, gvk, err := decode(content, nil, nil)
+			if err != nil {
+				return nil
+			}
+
+			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
+				config = obj.(*kotsv1beta1.Config)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
+				values = obj.(*kotsv1beta1.ConfigValues)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
+				license = obj.(*kotsv1beta1.License)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
+				installation = obj.(*kotsv1beta1.Installation)
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
+	}
+
+	return config, values, license, installation, nil
 }
