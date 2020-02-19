@@ -43,6 +43,9 @@ function uploadAndWait(e) {
       return;
     }
 
+    var resp = JSON.parse(xhr.response);
+    setErrorMsg(resp.error)
+
     showError();
     enableForm();
   }
@@ -115,6 +118,11 @@ function redirectAfterRestart(hostname, n) {
       window.location = url;
     };
   }, 400);
+}
+
+function setErrorMsg(errorMsg) {
+    document.getElementById("tls-error-msg").innerHTML = 
+       "The certficate and key pair you uploaded are invalid. Cause:<br><br>" + errorMsg;
 }
 
 function hideError() {
