@@ -3,7 +3,7 @@ import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
-import { sortAnalyzers } from "../../utilities/utilities";
+import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -170,23 +170,29 @@ export class AnalyzerInsights extends React.Component {
               :
               <div className="flex-column flex1 u-overflow--auto">
                   <div className="flex flex-auto flexWrap--wrap">
-                  {filteredInsights && filteredInsights.map((tile, i) => (
-                    <div key={i} className="insight-tile-wrapper flex-column">
-                      <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
-                        <div className="flex justifyContent--center u-marginBottom--10">
-                          {tile.icon_key ?
-                            <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
-                            : tile.icon ?
-                              <span className="tile-icon" style={{ backgroundImage: `url(${tile.icon})` }}></span>
-                              :
-                              <span className={`icon analysis tile-icon`}></span>
-                          }
+                  {filteredInsights && filteredInsights.map((tile, i) => {
+                    let iconObj;
+                    if (tile.icon) {
+                      iconObj = parseIconUri(tile.icon);
+                    }
+                    return (
+                      <div key={i} className="insight-tile-wrapper flex-column">
+                        <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
+                          <div className="flex justifyContent--center u-marginBottom--10">
+                            {tile.icon ?
+                              <span className="tile-icon" style={{ backgroundImage: `url(${iconObj.uri})`, width: `${iconObj.dimensions?.w}px`, height: `${iconObj.dimensions?.h}px` }}></span>
+                              : tile.icon_key ?
+                                <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
+                                :
+                                <span className={`icon analysis tile-icon`}></span>
+                            }
+                          </div>
+                          <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold" : "u-color--tuna u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
+                          <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
                         </div>
-                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold" : "u-color--tuna u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
-                        <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             }

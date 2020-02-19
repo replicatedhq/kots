@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
+import queryString from "query-string";
 import sortBy from "lodash/sortBy";
 import jwt from "jsonwebtoken";
 import cronstrue from "cronstrue";
@@ -54,6 +55,23 @@ export function getApplicationType(watch) {
  */
 export function getBuildVersion() {
   return window.env.SHIP_CLUSTER_BUILD_VERSION;
+}
+
+export function parseIconUri(uri) {
+  const splitUri = uri.split("?");
+  if (splitUri.length < 2) {
+    return {
+      uri: "https://troubleshoot.sh/images/analyzer-icons/gray-checkmark.svg",
+      dimensions: {
+        w: 17,
+        h: 17
+      }
+    };
+  }
+  return {
+    uri: splitUri[0],
+    dimensions: queryString.parse(splitUri[1])
+  };
 }
 
 export function sortAnalyzers(bundleInsight) {
