@@ -1,4 +1,5 @@
 import { hot } from "react-hot-loader/root";
+import Favicon from "react-favicon";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
@@ -252,6 +253,9 @@ class Root extends Component {
           <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
+          {this.state.appLogo &&
+            <link rel="shortcut icon" href={this.state.appLogo} />
+          }
         </Helmet>
         <ApolloProvider client={GraphQLClient}>
           <ThemeContext.Provider value={{
