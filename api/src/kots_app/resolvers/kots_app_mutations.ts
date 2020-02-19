@@ -2,7 +2,6 @@ import _ from "lodash";
 import { Context } from "../../context";
 import path from "path";
 import tmp from "tmp";
-import fs from "fs";
 import yaml from "js-yaml";
 import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
@@ -13,12 +12,11 @@ import {
   kotsPullFromLicense,
   kotsAppFromData,
   kotsAppCheckForUpdates,
-  kotsRewriteVersion,
   kotsAppDownloadUpdates,
   Update,
   kotsDecryptString,
 } from "../kots_ffi";
-import { KotsAppRegistryDetails, KotsApp } from "../kots_app"
+import { KotsApp } from "../kots_app"
 import * as k8s from "@kubernetes/client-node";
 import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
@@ -90,11 +88,11 @@ export function KotsMutations(stores: Stores) {
         await syncLicense(stores, app, "");
 
         app = await context.getApp(appId);
-        cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);  
+        cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
 
         await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
         updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
-      } catch(err) {
+      } catch (err) {
         liveness.stop();
         await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
         throw err;
@@ -105,7 +103,7 @@ export function KotsMutations(stores: Stores) {
           await kotsAppDownloadUpdates(updatesAvailable, app, stores);
 
           await stores.kotsAppStore.clearUpdateDownloadStatus();
-        } catch(err) {
+        } catch (err) {
           await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
           throw err;
         } finally {
@@ -232,79 +230,9 @@ export function KotsMutations(stores: Stores) {
           slug: kotsApp.slug,
           isConfigurable: kotsApp.isConfigurable
         };
-      } catch(err) {
+      } catch (err) {
         throw new ReplicatedError(err.message);
       }
-    },
-
-    async updateRegistryDetails(root: any, args: any, context: Context) {
-      context.requireSingleTenantSession();
-
-      await stores.kotsAppStore.clearImageRewriteStatus();
-
-      const { appSlug, hostname, username, password, namespace } = args.registryDetails;
-      const appId = await stores.kotsAppStore.getIdFromSlug(appSlug);
-
-      const downstreams = await stores.kotsAppStore.listDownstreamsForApp(appId);
-
-      const currentSettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
-      if (currentSettings.registryHostname === hostname && currentSettings.namespace === namespace) {
-        await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
-        return true;
-      }
-
-      await stores.kotsAppStore.setImageRewriteStatus("Updating registry settings", "running");
-
-      const liveness = new Repeater(() => {
-        return new Promise((resolve) => {
-          stores.kotsAppStore.updateImageRewriteStatusLiveness().finally(() => {
-            resolve();
-          })
-        });
-      }, 1000);
-      liveness.start();
-
-      const updateFunc = async (): Promise<void> => {
-        try {
-          if (downstreams.length > 0) {
-            const tmpDir = tmp.dirSync();
-            try {
-              const outputArchive = path.join(tmpDir.name, "output.tar.gz");
-              const app = await stores.kotsAppStore.getApp(appId);
-
-              const inputArchive = path.join(tmpDir.name, "input.tar.gz");
-              fs.writeFileSync(inputArchive, await app.getArchive(""+(app.currentSequence!)));
-
-              const registryInfo: KotsAppRegistryDetails = {
-                registryHostname: hostname,
-                registryUsername: username,
-                registryPassword: password,
-                registryPasswordEnc: "",
-                lastSyncedAt: "",
-                namespace: namespace,
-              }
-              await kotsRewriteVersion(app, inputArchive, downstreams, registryInfo, true, outputArchive, stores, "");
-
-              await stores.kotsAppStore.setImageRewriteStatus("Generating new version", "running");
-
-              const tarGzBuffer = fs.readFileSync(outputArchive);
-              await uploadUpdate(stores, app.slug, tarGzBuffer, "Registry Change")
-
-              await stores.kotsAppStore.clearImageRewriteStatus();
-
-            } finally {
-              tmpDir.removeCallback();
-            }
-          }
-        } finally {
-          liveness.stop();
-        }
-        await stores.kotsAppStore.updateRegistryDetails(appId, hostname, username, password, namespace);
-      };
-
-      updateFunc(); // rewrite images asyncronously
-
-      return true;
     },
 
     async resumeInstallOnline(root: any, args: any, context: Context) {
@@ -324,7 +252,7 @@ export function KotsMutations(stores: Stores) {
         await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
 
         return await stores.kotsAppStore.getApp(app.id);
-      } catch(err) {
+      } catch (err) {
         throw new ReplicatedError(err.message);
       }
     },
@@ -434,12 +362,12 @@ async function createKotsApp(stores: Stores, kotsApp: KotsApp, downstreamName: s
       tmpDstDir.removeCallback();
     }
 
-  } catch(err) {
+  } catch (err) {
 
     await stores.kotsAppStore.setOnlineInstallStatus(String(err), "failed");
     await stores.kotsAppStore.setOnineInstallFailed(kotsApp.id);
     await stores.kotsAppStore.updateFailedInstallState(kotsApp.slug);
-    throw(err);
+    throw (err);
 
   } finally {
     liveness.stop();

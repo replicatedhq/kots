@@ -3,9 +3,11 @@ CURRENT_USER := $(shell id -u -n)
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
+BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+
 .PHONY: kotsadm
 kotsadm:
-	go build -o bin/kotsadm github.com/replicatedhq/kotsadm/cmd/kotsadm
+	go build -tags "$(BUILDTAGS)" -o bin/kotsadm github.com/replicatedhq/kotsadm/cmd/kotsadm
 
 .PHONY: fmt
 fmt:
@@ -17,7 +19,7 @@ vet:
 
 .PHONY: test
 test: fmt vet
-	go test ./pkg/... ./cmd/...
+	go test -tags "$(BUILDTAGS)" ./pkg/... ./cmd/...
 
 .PHONY: build-ttl.sh
 build-ttl.sh:

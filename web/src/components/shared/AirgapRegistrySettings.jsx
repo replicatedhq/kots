@@ -4,10 +4,10 @@ import { graphql, compose, withApollo } from "react-apollo";
 import Loader from "../shared/Loader";
 import { getAppRegistryDetails, getImageRewriteStatus } from "../../queries/AppsQueries";
 import { validateRegistryInfo } from "@src/queries/UserQueries";
-import { updateRegistryDetails } from "@src/mutations/AppsMutations";
 import { Repeater } from "../../utilities/repeater";
 import get from "lodash/get";
 import "../../scss/components/watches/WatchDetailPage.scss";
+import { Utilities } from "../../utilities/utilities";
 
 class AirgapRegistrySettings extends Component {
 
@@ -15,7 +15,7 @@ class AirgapRegistrySettings extends Component {
     super(props);
 
     const {
-      hostname =  "",
+      hostname = "",
       username = "",
       password = "",
       namespace = props.app ? props.app.slug : ""
@@ -54,15 +54,28 @@ class AirgapRegistrySettings extends Component {
       namespace,
     } = this.state;
     const { slug } = this.props.match.params;
-    const appSlug = slug;
-    try {
-      await this.props.updateRegistryDetails({ appSlug, hostname, username, password, namespace });
-      await this.props.getKotsAppRegistryQuery.refetch();
 
-      this.state.updateChecker.start(this.updateStatus, 1000);
-    } catch (error) {
-      console.log(error);
-    }
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        hostname,
+        username,
+        password,
+        namespace,
+      })
+    })
+      .then(res => res.json())
+      .then((registryDetails) => {
+        console.log(registryDetails);
+        this.state.updateChecker.start(this.updateStatus, 1000);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
 
   testRegistryConnection = () => {
@@ -224,17 +237,17 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-              <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }}/>
+              <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
             </div>
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Username</p>
-              <input type="text" className="Input" placeholder="username" value={username || ""} autoComplete="username" onChange={(e) => { this.handleFormChange("username", e.target.value) }}/>
+              <input type="text" className="Input" placeholder="username" value={username || ""} autoComplete="username" onChange={(e) => { this.handleFormChange("username", e.target.value) }} />
             </div>
             <div className="flex1 u-paddingLeft--5">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
-              <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password || ""} onChange={(e) => { this.handleFormChange("password", e.target.value) }}/>
+              <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password || ""} onChange={(e) => { this.handleFormChange("password", e.target.value) }} />
             </div>
           </div>
           {hideTestConnection ? null :
@@ -251,7 +264,7 @@ class AirgapRegistrySettings extends Component {
               </div>
               {testFailed && !testInProgress ?
                 <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
-              :
+                :
                 <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
               }
             </div>
@@ -260,23 +273,23 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
-              <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }}/>
+              <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
             </div>
           </div>
         </form>
         {hideCta ? null :
-          <div>          
-            { showProgress ?
+          <div>
+            {showProgress ?
               <div className="u-marginTop--20">
                 <Loader size="30" />
                 <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{statusText}</p>
               </div>
-            :
+              :
               null
             }
-            { showStatusError ?
+            {showStatusError ?
               <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{statusText}</p>
-            :
+              :
               null
             }
             <div className="u-marginTop--20">
@@ -309,10 +322,5 @@ export default compose(
         }
       }
     }
-  }),
-  graphql(updateRegistryDetails, {
-    props: ({ mutate }) => ({
-      updateRegistryDetails: (registryDetails) => mutate({ variables: { registryDetails } })
-    })
   }),
 )(AirgapRegistrySettings);

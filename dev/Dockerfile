@@ -1,5 +1,14 @@
 FROM golang:1.12 as deps
 
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm
+WORKDIR $PROJECTPATH
+ADD Makefile $PROJECTPATH/
+ADD go.mod $PROJECTPATH/
+ADD go.sum $PROJECTPATH/
+
+ENV GO111MODULE=on
+RUN go mod download
+
 # Install Kubectl 1.14
 ENV KUBECTL_1_14_VERSION=v1.14.9
 ENV KUBECTL_1_14_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_14_VERSION}/bin/linux/amd64/kubectl
@@ -36,13 +45,9 @@ RUN kubectl krew install support-bundle
 ##  cd /tmp && tar xzvf preflight.tar.gz && \
 ## mv /tmp/preflight /usr/local/bin/preflight
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm
-WORKDIR $PROJECTPATH
-ADD Makefile $PROJECTPATH/
-ADD go.mod $PROJECTPATH/
-ADD go.sum $PROJECTPATH/
 ADD cmd $PROJECTPATH/cmd
 ADD pkg $PROJECTPATH/pkg
 # ADD web/dist $PROJECTPATH/web/dist
 RUN make kotsadm
+
 ENTRYPOINT ["./bin/kotsadm", "api"]

@@ -38,7 +38,7 @@ ADD ./src /src/src
 
 RUN make build
 
-# COPY ./kots.so /lib/kots.so
+COPY ./kots.so /lib/kots.so
 # COPY ./troubleshoot.so /lib/troubleshoot.so
 
 ENTRYPOINT ["node", "--no-deprecation", "/src/build/server/index.js"]
