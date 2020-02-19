@@ -23,7 +23,7 @@ func DownloadCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			if len(args) == 0 {
+			if len(args) != 1 {
 				cmd.Help()
 				os.Exit(1)
 			}
