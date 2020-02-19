@@ -923,6 +923,7 @@ class AppVersionHistory extends Component {
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
+                      app={this.props.app}
                     />
                   </div>
                 }
