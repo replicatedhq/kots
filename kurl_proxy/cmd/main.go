@@ -315,6 +315,13 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 		}
 		log.Printf("hostname=%v", hostString)
 
+		err = validateCerts(certData, keyData, hostString)
+		if err != nil {
+			log.Printf("POST /tls: %v", err)
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
 		secret, err := secrets.Get(tlsSecretName, metav1.GetOptions{})
 		if err != nil {
 			log.Print(err)
@@ -390,13 +397,38 @@ func getUploadedCerts(c *gin.Context) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "read key file")
 	}
 
-	// validate
-	_, err = tls.X509KeyPair(certData, keyData)
+	return certData, keyData, nil
+}
+
+func validateCerts(certData []byte, keyData []byte, hostString string) error {
+	// Validates if Cert & Key match
+	c, err := tls.X509KeyPair(certData, keyData)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "validate uploaded cert/key pair")
+		return errors.Wrapf(err, "validate uploaded cert/key pair")
 	}
 
-	return certData, keyData, nil
+	// Validates cert expiration
+	cert, err := x509.ParseCertificate(c.Certificate[0])
+	if err != nil {
+		return errors.Wrapf(err, "parsing cert/key pair")
+	}
+	startdate := cert.NotBefore
+	enddate := cert.NotAfter
+	now := time.Now()
+	log.Printf("x509 cert expirations: \nstart=%v\nend=%v\nnow=%v", startdate, enddate, now)
+	if now.Before(startdate) || now.After(enddate) {
+		return errors.New("Expired certificate")
+	}
+
+	// Validates hostname matches cert (if hostname was specified)
+	if len(hostString) > 0 {
+		err := cert.VerifyHostname(hostString)
+		if err != nil {
+			return errors.Wrapf(err, "verify hostname")
+		}
+	}
+
+	return nil
 }
 
 type kotsadmAppSpec struct {
