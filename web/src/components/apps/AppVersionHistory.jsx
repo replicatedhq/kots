@@ -696,6 +696,7 @@ class AppVersionHistory extends Component {
       checkedReleasesToDiff,
       checkingForUpdates,
       checkingUpdateMessage,
+      checkingForUpdateError,
       errorCheckingUpdate,
       airgapUploadError,
       showDiffOverlay,
@@ -723,7 +724,7 @@ class AppVersionHistory extends Component {
     }
 
     let checkingUpdateTextShort = checkingUpdateText;
-    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
+    if (!checkingForUpdateError && checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
     }
 
@@ -824,10 +825,10 @@ class AppVersionHistory extends Component {
             }
           </div>
         </div>
-        {this.state.checkingForUpdateError &&
+        {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginBottom--30">
             <div className="checking-update-error-wrapper">
-              <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{this.state.checkingUpdateText}</p>
+              <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{checkingUpdateTextShort}</p>
             </div>
           </div>
         }
