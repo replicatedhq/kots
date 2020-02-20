@@ -249,6 +249,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			if err != nil {
 				return "", errors.Wrap(err, "failed to load installation")
 			}
+			newApplication, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
+			if err != nil {
+				return "", errors.Wrap(err, "failed to load application")
+			}
 
 			writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
 				BaseDir: writeBaseOptions.BaseDir,
@@ -259,6 +263,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				},
 				ReportWriter: pullOptions.ReportWriter,
 				Installation: newInstallation,
+				Application:  newApplication,
 			}
 			if fetchOptions.License != nil {
 				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug

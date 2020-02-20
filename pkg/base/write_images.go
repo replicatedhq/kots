@@ -21,6 +21,7 @@ type WriteUpstreamImageOptions struct {
 	Log            *logger.Logger
 	ReportWriter   io.Writer
 	Installation   *kotsv1beta1.Installation
+	Application    *kotsv1beta1.Application
 }
 
 type WriteUpstreamImageResult struct {
@@ -30,7 +31,7 @@ type WriteUpstreamImageResult struct {
 
 func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.DryRun, options.IsAirgap, checkedImages)
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.Application.Spec.AdditionalImages, options.DryRun, options.IsAirgap, checkedImages)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}

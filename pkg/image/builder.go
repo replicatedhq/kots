@@ -48,7 +48,7 @@ type ImageInfo struct {
 	IsPrivate bool
 }
 
-func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string, additionalImages []string, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 
 	err := filepath.Walk(upstreamDir,
@@ -66,7 +66,7 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 				return err
 			}
 
-			newImagesSubset, err := copyImagesBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, dryRun, isAirgap, checkedImages)
+			newImagesSubset, err := copyImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, dryRun, isAirgap, checkedImages, newImages)
 			if err != nil {
 				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
@@ -77,6 +77,14 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	for _, additionalImage := range additionalImages {
+		newImagesSubset, err := copyImageBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, additionalImage, dryRun, isAirgap, checkedImages)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to addditional image: %s", additionalImage)
+		}
+		newImages = append(newImages, newImagesSubset...)
 	}
 
 	return newImages, nil
@@ -180,9 +188,24 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func copyImagesBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imageName string, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+	newImage, err := copyOneImage(srcRegistry, destRegistry, imageName, appSlug, reportWriter, log, dryRun, isAirgap, checkedImages)
+	if err != nil {
+		log.FinishChildSpinner()
+		return nil, errors.Wrapf(err, "failed to transfer image %s", imageName)
+	}
+
+	return newImage, nil
+}
+
+func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, dryRun, isAirgap bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
 	savedImages := make(map[string]bool)
 	newImages := []kustomizeimage.Image{}
+
+	for _, image := range alreadyPushedImagesFromOtherFiles {
+		savedImages[fmt.Sprintf("%s:%s", image.Name, image.NewTag)] = true
+	}
+
 	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
 		for _, image := range images {
 			if _, saved := savedImages[image]; saved {
