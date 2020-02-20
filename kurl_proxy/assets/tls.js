@@ -23,11 +23,11 @@ function uploadAndWait(e) {
 
   var certInput = document.getElementById("cert");
   var keyInput = document.getElementById("key");
-  var hostnameInput = document.getElementById("hostname").value;
+  var hostnameInput = document.getElementById("hostname");
 
   formData.append("cert", certInput.files[0]);
   formData.append("key", keyInput.files[0]);
-  formData.append("hostname", hostnameInput);
+  formData.append("hostname", hostnameInput.value);
 
   var xhr = new XMLHttpRequest();
 
@@ -57,10 +57,10 @@ function skipAndWait(e) {
   e.stopPropagation();
   e.preventDefault();
 
-  var hostnameInput = document.getElementById("hostname").value;
+  var hostnameInput = document.getElementById("hostname");
 
   var formData = new FormData();
-  formData.append("hostname", hostnameInput)
+  formData.append("hostname", hostnameInput.value)
 
   var xhr = new XMLHttpRequest();
 
