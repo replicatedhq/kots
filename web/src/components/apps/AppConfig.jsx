@@ -81,7 +81,8 @@ class AppConfig extends Component {
       if (configGroup?.items) {
         for (let i = 0; i < configGroup.items.length; i++) {
           const item = configGroup.items[i];
-          if (item.required && !item.value && !item.default) {
+          const isHidden = item.hidden || item.when === "false";
+          if (item.required && !item.value && !item.default && !isHidden) {
             unsetRequiredFields.push(item);
           }
         }
