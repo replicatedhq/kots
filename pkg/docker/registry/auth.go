@@ -54,12 +54,15 @@ func TestPushAccess(endpoint, username, password, org string) error {
 		scope = org // ECR has no concept of organization and it should be an empty string
 	}
 
-	// TODO: Support http
 	pingURL := fmt.Sprintf("https://%s/v2/", endpoint)
-
 	resp, err := insecureClient.Get(pingURL)
 	if err != nil {
-		return errors.Wrap(err, "failed to ping registry")
+		// attempt with http
+		pingURL = fmt.Sprintf("http://%s/v2/", endpoint)
+		resp, err = insecureClient.Get(pingURL)
+		if err != nil {
+			return errors.Wrap(err, "failed to ping registry")
+		}
 	}
 
 	if resp.StatusCode == http.StatusOK {
