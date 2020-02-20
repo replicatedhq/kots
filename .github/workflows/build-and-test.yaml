@@ -20,7 +20,7 @@ jobs:
           echo "::add-path::$(go env GOPATH)/bin"
         shell: bash
 
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
 
       - run: make ci-test kots
 
