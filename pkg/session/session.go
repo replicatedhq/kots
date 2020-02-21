@@ -1,7 +1,9 @@
 package session
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -32,6 +34,38 @@ func Create(forUser *user.User) (*Session, error) {
 	}
 
 	return get(id)
+}
+
+func Parse(signedToken string) (*Session, error) {
+	if signedToken == "" {
+		return nil, errors.New("missing token")
+	}
+	tokenParts := strings.Split(signedToken, " ")
+	if len(tokenParts) != 2 {
+		return nil, errors.New("invalid number of components in authorization header")
+	}
+	if tokenParts[0] != "Bearer" {
+		return nil, errors.New("expected bearer token")
+	}
+
+	token, err := jwt.Parse(tokenParts[1], func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+		return []byte(os.Getenv("SESSION_KEY")), nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse jwt token")
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return get(claims["sessionId"].(string))
+	}
+
+	return nil, errors.New("not a valid jwttoken")
 }
 
 func get(id string) (*Session, error) {

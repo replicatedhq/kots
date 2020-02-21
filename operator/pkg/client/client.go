@@ -96,7 +96,7 @@ func (c *Client) runAppStateMonitor() error {
 			m[appStatus.AppID] = throttled
 		}
 		throttled(func() {
-			log.Printf("Sending app status %#v", appStatus)
+			// log.Printf("Sending app status %#v", appStatus)
 			if err := c.sendAppStatus(appStatus); err != nil {
 				log.Printf("error sending app status: %v", err)
 			}
