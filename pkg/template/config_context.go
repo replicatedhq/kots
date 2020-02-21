@@ -97,6 +97,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionData":      ctx.configOptionData,
 		"ConfigOptionEquals":    ctx.configOptionEquals,
 		"ConfigOptionNotEquals": ctx.configOptionNotEquals,
+		"LocalRegistryAddress":  ctx.localRegistryAddress,
 	}
 }
 
@@ -142,6 +143,10 @@ func (ctx ConfigCtx) configOptionNotEquals(name string, value string) bool {
 	}
 
 	return value != val
+}
+
+func (ctx ConfigCtx) localRegistryAddress() string {
+	return ""
 }
 
 func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {

@@ -123,6 +123,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to load installation")
 		}
+		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to load application")
+		}
+
 		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
 			BaseDir:      writeBaseOptions.BaseDir,
 			ReportWriter: rewriteOptions.ReportWriter,
@@ -138,6 +143,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Password:  rewriteOptions.RegistryPassword,
 			},
 			Installation: newInstallation,
+			Application:  application,
 			DryRun:       !rewriteOptions.CopyImages,
 			IsAirgap:     rewriteOptions.IsAirgap,
 		}
