@@ -38,7 +38,9 @@ class UploadAirgapBundle extends React.Component {
     viewOnlineInstallErrorMessage: false
   }
 
+  emptyRequiredFields = "Please enter a value for \"Hostname\" and \"Namespace\" fields"
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
+  emptyNamespaceField = "Please enter a value for \"Namespace\" field"
 
   clearFile = () => {
     this.setState({ bundleFile: {} });
@@ -81,12 +83,30 @@ class UploadAirgapBundle extends React.Component {
 
     if (showRegistry) {
       const { slug } = this.props.match.params;
+      if (isEmpty(this.state.registryDetails.hostname) && isEmpty(this.state.registryDetails.namespace)) {
+        this.setState({
+          fileUploading: false,
+          uploadSent: 0,
+          uploadTotal: 0,
+          errorMessage: this.emptyRequiredFields,
+        });
+        return;
+      }
       if (isEmpty(this.state.registryDetails.hostname)) {
         this.setState({
           fileUploading: false,
           uploadSent: 0,
           uploadTotal: 0,
           errorMessage: this.emptyHostnameErrMessage,
+        });
+        return;
+      }
+      if (isEmpty(this.state.registryDetails.namespace)) {
+        this.setState({
+          fileUploading: false,
+          uploadSent: 0,
+          uploadTotal: 0,
+          errorMessage: this.emptyNamespaceField,
         });
         return;
       }
@@ -359,7 +379,9 @@ class UploadAirgapBundle extends React.Component {
                   namespaceDescription="What namespace do you want the application images pushed to?"
                   gatherDetails={this.getRegistryDetails}
                   registryDetails={registryDetails}
+                  showRequiredFields={errorMessage === this.emptyRequiredFields}
                   showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
+                  showNamespaceAsRequired={errorMessage === this.emptyNamespaceField}
                 />
               </div>
               }
