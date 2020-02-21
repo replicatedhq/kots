@@ -1,6 +1,7 @@
 
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
+export SCOPE_LOG_ROOT_PATH=/dev/null
 
 SHELL := /bin/bash -o pipefail
 VERSION_PACKAGE = github.com/replicatedhq/kots/pkg/version
