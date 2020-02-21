@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -116,7 +117,9 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, 
 
 	foundGVKNames := [][]byte{}
 
-	for _, file := range files {
+	singleDocs := convertToSingleDocs(files)
+
+	for _, file := range singleDocs {
 		writeToKustomization, err := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to check if file should be included")
@@ -147,6 +150,37 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, 
 	}
 
 	return resources, patches, nil
+}
+
+func convertToSingleDocs(files []BaseFile) []BaseFile {
+	singleDocs := []BaseFile{}
+	for _, file := range files {
+		docs := bytes.Split(file.Content, []byte("\n---\n"))
+		if len(docs) == 1 {
+			singleDocs = append(singleDocs, file)
+			continue
+		}
+
+		for idx, doc := range docs {
+			if len(bytes.TrimSpace(doc)) == 0 {
+				continue
+			}
+
+			filename := file.Path
+			if idx > 0 {
+				filename = strings.TrimSuffix(file.Path, filepath.Ext(file.Path))
+				filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(file.Path))
+			}
+
+			baseFile := BaseFile{
+				Path:    filename,
+				Content: doc,
+			}
+
+			singleDocs = append(singleDocs, baseFile)
+		}
+	}
+	return singleDocs
 }
 
 func (b *Base) GetOverlaysDir(options WriteOptions) string {
