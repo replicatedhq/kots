@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bufio"
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -76,6 +78,16 @@ func diffAppVersionsForDownstreams(downstreamName string, archive string, diffBa
 			}
 
 			pathInDiffBase := filepath.Join(diffBasePath, path[len(archive):])
+
+			if _, err := os.Stat(pathInDiffBase); os.IsNotExist(err) {
+				// the entire file is a addition
+				scanner := bufio.NewScanner(bytes.NewReader(contentA))
+				for scanner.Scan() {
+					diff.LinesAdded++
+				}
+				return nil
+			}
+
 			contentB, err := ioutil.ReadFile(pathInDiffBase)
 			if err != nil {
 				return err
@@ -99,6 +111,8 @@ func diffAppVersionsForDownstreams(downstreamName string, archive string, diffBa
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to diff")
 	}
+
+	// TODO walk base looking for files that were removed from updated
 
 	return &diff, nil
 }
