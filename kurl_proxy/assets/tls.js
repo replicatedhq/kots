@@ -122,7 +122,7 @@ function redirectAfterRestart(hostname, n) {
 
 function setErrorMsg(errorMsg) {
     document.getElementById("tls-error-msg").innerHTML = 
-       "The certficate and key pair you uploaded are invalid. <br><br>Cause:<br>" + errorMsg;
+       "The certificate and key pair you uploaded are invalid. <br><br>Cause:<br>" + errorMsg;
 }
 
 function hideError() {
