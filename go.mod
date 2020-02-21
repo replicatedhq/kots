@@ -18,6 +18,7 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.12.3-0.20200221022115-9cc0a8b3591c
+	github.com/replicatedhq/kotsadm/kurl_proxy v0.0.0-20200221174232-bf8603192877 // indirect
 	github.com/replicatedhq/kotsadm/operator v0.0.0-20200102212257-90833373b196
 	github.com/replicatedhq/troubleshoot v0.9.21
 	github.com/rogpeppe/fastuuid v1.1.0 // indirect

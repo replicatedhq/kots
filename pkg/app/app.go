@@ -216,9 +216,15 @@ backup_spec = EXCLUDED.backup_spec`
 		return int64(0), errors.Wrap(err, "failed to get previous archive")
 	}
 
-	fmt.Printf("downstream = %#v\n", a.Downstreams)
 	for _, downstream := range a.Downstreams {
-		// TODO support gitops downstrweams
+		downstreamGitOps, err := GetDownstreamGitOps(a.ID, downstream.ClusterID)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get downstream gitops")
+		}
+		if downstreamGitOps != nil {
+			fmt.Printf("%#v\n", downstreamGitOps)
+			// TODO make the commit
+		}
 
 		// diff this release from the last release
 		diff, err := diffAppVersionsForDownstreams(downstream.Name, filesInDir, previousArchiveDir)
@@ -230,7 +236,6 @@ backup_spec = EXCLUDED.backup_spec`
 			return int64(0), errors.Wrap(err, "failed to marshal diff")
 		}
 
-		fmt.Printf("diff = %#v\n", diff)
 		commitURL := ""
 		isGitDeployable := false
 
