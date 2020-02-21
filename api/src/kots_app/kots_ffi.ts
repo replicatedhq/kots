@@ -51,8 +51,6 @@ function kots() {
     TemplateConfig: [GoString, [GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
-    GetLatestLicense: [GoString, [GoString, GoString]],
-    VerifyAirgapLicense: [GoString, [GoString]],
     RenderFile: ["void", [GoString, GoString, GoString]],
   });
 }
@@ -765,44 +763,6 @@ export async function kotsDecryptString(cipherString: string, message: string): 
   return decrypted["p"];
 }
 
-export async function getLatestLicense(licenseData: string): Promise<string> {
-  const tmpDir = tmp.dirSync();
-  try {
-    const statusServer = new StatusServer();
-    await statusServer.start(tmpDir.name);
-
-    const socketParam = new GoString();
-    socketParam["p"] = statusServer.socketFilename;
-    socketParam["n"] = statusServer.socketFilename.length;
-
-    const licenseDataParam = new GoString();
-    licenseDataParam["p"] = licenseData;
-    licenseDataParam["n"] = String(licenseData).length;
-
-    kots().GetLatestLicense(socketParam, licenseDataParam);
-
-    let license = "";
-    await statusServer.connection();
-    await statusServer.termination((resolve, reject, obj): boolean => {
-      // Return true if completed
-      if (obj.status === "terminated") {
-        license = obj.data;
-        if (obj.exit_code !== -1) {
-          resolve();
-        } else {
-          reject(new ReplicatedError("failed to get latest license"));
-        }
-        return true;
-      }
-      return false;
-    });
-
-    return license;
-  } finally {
-    tmpDir.removeCallback();
-  }
-}
-
 export async function kotsRewriteVersion(app: KotsApp, archive: string, downstreams: string[], registryInfo: KotsAppRegistryDetails, copyImages: boolean, outputFile: string, stores: Stores, updatedConfigValues: string): Promise<string> {
   const tmpDir = tmp.dirSync();
   try {
@@ -872,19 +832,6 @@ export async function kotsRewriteVersion(app: KotsApp, archive: string, downstre
   } finally {
     tmpDir.removeCallback();
   }
-}
-
-export async function verifyAirgapLicense(licenseData: string): Promise<string> {
-  const licenseDataParam = new GoString();
-  licenseDataParam["p"] = licenseData;
-  licenseDataParam["n"] = String(licenseData).length;
-
-  const license = kots().VerifyAirgapLicense(licenseDataParam);
-  if (license == "" || license["p"] == null) {
-    throw new ReplicatedError("failed to verify airgap license signature");
-  }
-
-  return license["p"];
 }
 
 export function getK8sNamespace(): string {

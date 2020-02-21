@@ -11,10 +11,9 @@ import {
   getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { getAppLicense } from "@src/queries/AppsQueries";
-import { syncAppLicense } from "@src/mutations/AppsMutations";
-import { getFileContent } from "../../utilities/utilities";
+import { getFileContent, Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
 import "@src/scss/components/apps/AppLicense.scss";
@@ -80,13 +79,29 @@ class AppLicense extends Component {
     this.syncAppLicense(content);
   }
 
-  syncAppLicense = (airgapLicense = "") => {
-    this.setState({ loading: true, message: "", messageType: "info" });
+  syncAppLicense = (licenseData) => {
+    this.setState({
+      loading: true,
+      message: "",
+      messageType: "info",
+    });
 
     const { app } = this.props;
-    this.props.syncAppLicense(app.slug, app.isAirgap ? airgapLicense : "")
-      .then(response => {
-        const latestLicense = response.data.syncAppLicense;
+
+    const payload = {
+      licenseData,
+    };
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(async (latestLicense) => {
         const currentLicense = this.state.appLicense;
 
         let message;
@@ -98,7 +113,7 @@ class AppLicense extends Component {
           message = "License synced successfully"
         }
 
-        this.setState({ 
+        this.setState({
           appLicense: latestLicense,
           message,
           messageType: "info",
@@ -185,15 +200,15 @@ class AppLicense extends Component {
               })}
               {app.isAirgap ?
                 <Dropzone
-                    className="Dropzone-wrapper"
-                    accept={["application/x-yaml", ".yaml", ".yml"]}
-                    onDropAccepted={this.onDrop}
-                    multiple={false}
-                  >
+                  className="Dropzone-wrapper"
+                  accept={["application/x-yaml", ".yaml", ".yml"]}
+                  onDropAccepted={this.onDrop}
+                  multiple={false}
+                >
                   <button className="btn secondary blue u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
-                </Dropzone> 
+                </Dropzone>
                 :
-                <button className="btn secondary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense}>{loading ? "Syncing" : "Sync license"}</button>
+                <button className="btn secondary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
               }
               {message &&
                 <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
@@ -204,7 +219,7 @@ class AppLicense extends Component {
             </div>
           </div>
           :
-          <div> 
+          <div>
             <p className="u-fontSize--large u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
           </div>
         }
@@ -246,9 +261,4 @@ class AppLicense extends Component {
 
 export default compose(
   withApollo,
-  graphql(syncAppLicense, {
-    props: ({ mutate }) => ({
-      syncAppLicense: (appSlug, airgapLicense) => mutate({ variables: { appSlug, airgapLicense } })
-    })
-  })
 )(AppLicense);
