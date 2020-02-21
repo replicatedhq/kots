@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/session"
 )
 
 type UpdateAppRegistryRequest struct {
@@ -24,11 +23,10 @@ type UpdateAppRegistryResponse struct {
 }
 
 func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+	CORSHeaders(w, r)
 
 	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -39,16 +37,8 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -96,24 +86,15 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+	CORSHeaders(w, r)
 
 	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	sess, err := session.Parse("")
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 

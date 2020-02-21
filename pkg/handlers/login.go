@@ -19,11 +19,8 @@ type LoginResponse struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept")
-
 	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+		CORSHeaders(w, r)
 		return
 	}
 

@@ -8,7 +8,8 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { kurl } from "../../queries/KurlQueries";
-import { drainNode, deleteNode, generateWorkerAddNodeCommand, generateMasterAddNodeCommand } from "../../mutations/KurlMutations"
+import { drainNode, deleteNode } from "../../mutations/KurlMutations"
+import { Utilities } from "../../utilities/utilities";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
 
@@ -40,12 +41,19 @@ export class ClusterNodes extends Component {
     }
   }
 
-  generateWorkerAddNodeCommand = () => {
+  generateWorkerAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    this.props.generateWorkerAddNodeCommand()
-      .then((resp) => {
-        const data = resp.data.generateWorkerAddNodeCommand;
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-worker`, {
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        const data = await res.json();
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
@@ -55,12 +63,19 @@ export class ClusterNodes extends Component {
       });
   }
 
-  generateMasterAddNodeCommand = () => {
+  generateMasterAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    this.props.generateMasterAddNodeCommand()
-      .then((resp) => {
-        const data = resp.data.generateMasterAddNodeCommand;
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-master`, {
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        const data = await res.json();
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
@@ -73,8 +88,8 @@ export class ClusterNodes extends Component {
   onAddNodeClick = () => {
     this.setState({
       displayAddNode: true
-    }, () => {
-      this.generateWorkerAddNodeCommand();
+    }, async () => {
+      await this.generateWorkerAddNodeCommand();
     });
   }
   
@@ -82,11 +97,11 @@ export class ClusterNodes extends Component {
     const value = event.currentTarget.value;
     this.setState({
       selectedNodeType: value
-    }, () => {
+    }, async () => {
       if (this.state.selectedNodeType === "worker") {
-        this.generateWorkerAddNodeCommand();
+        await this.generateWorkerAddNodeCommand();
       } else {
-        this.generateMasterAddNodeCommand();
+        await this.generateMasterAddNodeCommand();
       }
     });
   }
@@ -249,14 +264,4 @@ export default compose(
       deleteNode: (name) => mutate({ variables: { name } })
     })
   }),
-  graphql(generateWorkerAddNodeCommand, {
-    props: ({ mutate }) => ({
-      generateWorkerAddNodeCommand: () => mutate()
-    })
-  }),
-  graphql(generateMasterAddNodeCommand, {
-    props: ({ mutate }) => ({
-      generateMasterAddNodeCommand: () => mutate()
-    })
-  })
 )(ClusterNodes);

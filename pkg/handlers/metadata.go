@@ -6,12 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type MetadataResponse struct {
@@ -22,24 +22,16 @@ type MetadataResponse struct {
 }
 
 func Metadata(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept")
+	CORSHeaders(w, r)
 
 	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	// This is not an authenticated request
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -47,7 +39,8 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isKurlEnabled := false
-	_, err = clientset.CoreV1().ConfigMaps("kube-system").Get("kurl-config", metav1.GetOptions{})
+
+	_, err = kurl.ReadConfigMap(clientset)
 	if err == nil {
 		isKurlEnabled = true
 	}

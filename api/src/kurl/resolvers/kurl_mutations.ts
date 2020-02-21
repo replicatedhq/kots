@@ -1,4 +1,3 @@
-import { inspect } from "util";
 import fs from "fs";
 import * as _ from "lodash";
 import { Stores } from "../../schema/stores";
@@ -15,18 +14,10 @@ import {
   V1OwnerReference,
   V1Pod,
   V1Status,
-  BatchV1Api,
-  V1Job,
-  V1PodSpec,
-  V1Container,
-  VersionApi,
-  V1JobSpec,
 } from "@kubernetes/client-node";
 import { logger } from "../../server/logger";
-import { IncomingMessage } from "http";
 import { Etcd3 } from "etcd3";
 import * as yaml from "js-yaml";
-import { readKurlConfigMap } from "./readKurlConfigMap";
 
 export function KurlMutations(stores: Stores, params: Params) {
   return {
@@ -45,14 +36,6 @@ export function KurlMutations(stores: Stores, params: Params) {
 
       return false;
     },
-
-    async generateWorkerAddNodeCommand(root: any, args: any, context: Context): Promise<Command> {
-      return await generateAddNodeCommand(false);
-    },
-
-    async generateMasterAddNodeCommand(root: any, args: any, context: Context): Promise<Command> {
-      return await generateAddNodeCommand(true);
-    }
   }
 }
 
@@ -359,191 +342,4 @@ async function purgeOSD(coreV1Client: CoreV1Api, appsV1Client: AppsV1Api, exec: 
       },
     );
   })
-}
-
-function readAll(stream: IncomingMessage): Promise<string> {
-  const chunks: Array<any> = [];
-
-  return new Promise((resolve, reject) => {
-    stream.on('data', chunk => chunks.push(chunk));
-    stream.on('error', reject);
-    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-  });
-}
-
-export interface Command {
-  command: string[];
-  expiry: number;
-}
-
-// master: airgap kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION cert-key=${CERT_KEY} control-plane ${dockerRegistryIP}
-
-// worker: kubernetes-master-address=${KUBERNETES_API_ADDRESS} kubeadm-token=${BOOTSTRAP_TOKEN} kubeadm-token-ca-hash=$KUBEADM_TOKEN_CA_HASH kubernetes-version=$KUBERNETES_VERSION ${dockerRegistryIP}
-
-async function generateAddNodeCommand(master: boolean): Promise<Command> {
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-
-  const versionClient: VersionApi = kc.makeApiClient(VersionApi);
-  const versionInfo = await versionClient.getCode();
-
-  const kubernetesVersion = versionInfo.body.gitVersion;
-
-  let data = await readKurlConfigMap();
-
-  const flags: Array<string> = [];
-  // if the token expires withing the period, regenerate it
-  const regeneratePeriod = 10 * 60 * 1000; // 10 minutes
-  const nowUnix = (new Date()).getTime();
-
-  let bootstrapTokenExpiration = Date.parse(data.bootstrap_token_expiration);
-  if (isNaN(bootstrapTokenExpiration)) {
-    console.log(`Failed to parse bootstrap_token_expiration ${data.bootstrap_token_expiration}`);
-    bootstrapTokenExpiration = 0;
-  }
-  if (nowUnix + regeneratePeriod > bootstrapTokenExpiration) {
-    console.log(`Bootstrap token expired ${new Date(bootstrapTokenExpiration)}, regenerating`);
-    flags.push("--bootstrap-token");
-  }
-
-  if (master) {
-    let certsExpiration = Date.parse(data.upload_certs_expiration);
-    if (isNaN(certsExpiration)) {
-      console.log(`Failed to parse upload_certs_expiration ${data.upload_certs_expiration}`);
-      certsExpiration = 0;
-    }
-    if (nowUnix + regeneratePeriod > certsExpiration) {
-      console.log(`Certs secret expired ${new Date(certsExpiration)}, uploading`);
-      flags.push("--upload-certs");
-    }
-  }
-
-  if (flags.length) {
-    try {
-      await runKurlUtilJobAndWait(["/usr/local/bin/join"].concat(flags));
-      data = await readKurlConfigMap();
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
-    bootstrapTokenExpiration = Date.parse(data.bootstrap_token_expiration);
-  }
-
-  // data.airgap
-  // data.bootstrap_token
-  // data.ca_hash
-  // data.cert_key
-  // data.docker_registry_ip
-  // data.ha
-  // data.installer_id
-  // data.kubernetes_api_address
-  // data.kurl_url
-  // data.upload_certs_expiration
-
-  const command = [
-    data.airgap ? "cat join.sh | sudo bash -s airgap" : `curl -sSL ${data.kurl_url}/${data.installer_id}/join.sh | sudo bash -s`,
-    `kubernetes-master-address=${data.kubernetes_api_address}`,
-    `kubeadm-token=${data.bootstrap_token}`,
-    `kubeadm-token-ca-hash=${data.ca_hash}`,
-    `docker-registry-ip=${data.docker_registry_ip}`,
-    `kubernetes-version=${kubernetesVersion}`,
-  ];
-
-  if (master) {
-    command.push(`cert-key=${data.cert_key}`);
-    command.push("control-plane");
-  }
-
-  console.log("Generated node join command", command);
-
-  return {
-    command: command,
-    expiry: bootstrapTokenExpiration / 1000,
-  };
-}
-
-// tslint:disable-next-line cyclomatic-complexity
-async function runKurlUtilJobAndWait(command: string[]) {
-  const kurlUtilImage = process.env["KURL_UTIL_IMAGE"]
-  if (!kurlUtilImage) {
-    throw new Error("Cannot run kurl util job, KURL_UTIL_IMAGE environment variable not set");
-  }
-
-  const kc = new KubeConfig();
-  kc.loadFromDefault();
-
-  const batchV1Client: BatchV1Api = kc.makeApiClient(BatchV1Api);
-
-  let job: V1Job;
-  try {
-    ({ body: job } = await batchV1Client.createNamespacedJob("default", {
-      apiVersion: "batch/v1",
-      kind: "Job",
-      metadata: {
-        generateName: "kurl-util-join-",
-      },
-      spec: {
-        completions: 1,
-        backoffLimit: 3,
-        ttlSecondsAfterFinished: 60,
-        template: {
-          metadata: {
-            labels: {
-              "app": "kurl-util-join",
-            },
-          },
-          spec: {
-            // nodeSelector: {"node-role.kubernetes.io/master": ""}, // TODO: this is needed for master join
-            serviceAccountName: "kurl-join",
-            restartPolicy: "Never",
-            activeDeadlineSeconds: 120,
-            containers: [{
-              name: "kurl-util-join",
-              image: kurlUtilImage,
-              imagePullPolicy: "IfNotPresent",
-              command: command,
-              volumeMounts: [{
-                name: "etc-kubernetes",
-                mountPath: "/etc/kubernetes",
-              }],
-            }] as V1Container[],
-            volumes: [{
-              name: "etc-kubernetes",
-              hostPath: {
-                path: "/etc/kubernetes",
-              },
-            }],
-          } as V1PodSpec,
-        },
-      } as V1JobSpec,
-    }));
-  } catch (err) {
-    throw new ReplicatedError(`Failed to create job ${err.response && err.response.body ? err.response.body.message : ""}`);
-  }
-
-  if (!job.metadata || !job.metadata.name || !job.metadata.namespace) {
-    throw new ReplicatedError("Job creation failed");
-  }
-
-  for (let i = 0; i < 60; i++) {
-    try {
-      let { body: jobStatus } = await batchV1Client.readNamespacedJobStatus(job.metadata.name, job.metadata.namespace);
-      if (jobStatus.status) {
-        if (jobStatus.status.succeeded) {
-          console.log(`Job ${job.metadata.name} creation succeeded`);
-          return;
-        } else if (jobStatus.status.failed) {
-          throw new ReplicatedError("job failed");
-        }
-      }
-    } catch( err ) {
-      console.log(`Failed to read job status ${err.response && err.response.body ? err.response.body.message : ""}`);
-    }
-    await sleep(2); // sleep 2 seconds
-  }
-  throw new ReplicatedError("Timed out waiting for job to complete");
-}
-
-async function sleep(seconds): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }

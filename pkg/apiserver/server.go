@@ -56,6 +56,12 @@ func Start() {
 
 	// KURL
 	r.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
+	r.Path("/api/v1/kurl/generate-node-join-command-worker").
+		Methods("OPTIONS", "POST").
+		HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
+	r.Path("/api/v1/kurl/generate-node-join-command-master").
+		Methods("OPTIONS", "POST").
+		HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
 
 	// Prom
 	r.HandleFunc("/api/v1/prometheus", handlers.NotImplemented)
