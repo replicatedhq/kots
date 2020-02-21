@@ -10,33 +10,56 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 )
 
-func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templateContext map[string]ItemValue, cipher *crypto.AESCipher) (*ConfigCtx, error) {
+func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, cipher *crypto.AESCipher) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
-		ItemValues: templateContext,
+		ItemValues: existingValues,
 	}
 
+	builder := Builder{
+		Ctx: []Ctx{
+			configCtx,
+			StaticCtx{},
+		},
+	}
+
+	configItemsByName := make(map[string]kotsv1beta1.ConfigItem)
 	for _, configGroup := range configGroups {
 		for _, configItem := range configGroup.Items {
-			// if the pending value is different from the built, then use the pending every time
-			// We have to ignore errors here because we only have the static context loaded
-			// for rendering. some items have templates that need the config context,
-			// so we can ignore these.
+			configItemsByName[configItem.Name] = configItem
+		}
+	}
 
-			var itemValue ItemValue
-			if v, ok := templateContext[configItem.Name]; ok {
-				itemValue = ItemValue{
-					Value:   v.Value,
-					Default: v.Default,
-				}
-			} else {
-				builtDefault, _ := b.String(configItem.Default.String())
-				builtValue, _ := b.String(configItem.Value.String())
-				itemValue = ItemValue{
-					Value:   builtValue,
-					Default: builtDefault,
+	deps := depGraph{}
+	err := deps.ParseConfigGroup(configGroups) // this updates the 'deps' object to include a dependency graph
+	if err != nil {
+		return nil, errors.Wrap(err, "generate config groups dep graph")
+	}
+
+	var headNodes []string
+	headNodes, err = deps.GetHeadNodes() // get the list of config items that do not depend on unresolved config items
+	for (len(headNodes) > 0) && (err == nil) {
+		for _, node := range headNodes {
+			deps.ResolveDep(node)
+
+			configItem := configItemsByName[node]
+
+			if !isReadOnly(configItem) {
+				// if item is editable and the live state is valid, skip the rest of this -
+				val, ok := configCtx.ItemValues[node]
+				if ok && val.HasValue() {
+					continue
 				}
 			}
 
+			// build "default" and "value"
+			builtDefault, _ := builder.String(configItem.Default.String())
+			builtValue, _ := builder.String(configItem.Value.String())
+			itemValue := ItemValue{
+				Value:   builtValue,
+				Default: builtDefault,
+			}
+
+			//
 			if configItem.Type == "password" && itemValue.HasValue() {
 				// FIXME: this temporarily ignores errors and falls back on old behavior
 				val, err := decrypt(itemValue.ValueStr(), cipher)
@@ -46,9 +69,41 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, templ
 			}
 			configCtx.ItemValues[configItem.Name] = itemValue
 		}
+
+		// update headNodes list for next loop iteration
+		headNodes, err = deps.GetHeadNodes()
+	}
+	if err != nil {
+		// dependencies could not be resolved for some reason
+		// return the empty config
+		// TODO: Better error messaging
+		return &ConfigCtx{}, err
+	}
+	return configCtx, nil
+}
+
+// isReadOnly checks to see if it should be possible to edit a field
+// for instance, it should not be possible to edit the value of a label
+func isReadOnly(item kotsv1beta1.ConfigItem) bool {
+	if item.ReadOnly {
+		return true
 	}
 
-	return configCtx, nil
+	// "" is an editable type because the default type is "text"
+	var EditableItemTypes = map[string]struct{}{
+		"":            {},
+		"bool":        {},
+		"file":        {},
+		"password":    {},
+		"select":      {},
+		"select_many": {},
+		"select_one":  {},
+		"text":        {},
+		"textarea":    {},
+	}
+
+	_, editable := EditableItemTypes[item.Type]
+	return !editable
 }
 
 // ConfigCtx is the context for builder functions before the application has started.
