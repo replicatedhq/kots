@@ -70,7 +70,6 @@ class AirgapRegistrySettings extends Component {
     })
       .then(res => res.json())
       .then((registryDetails) => {
-        console.log(registryDetails);
         this.state.updateChecker.start(this.updateStatus, 1000);
       })
       .catch((err) => {

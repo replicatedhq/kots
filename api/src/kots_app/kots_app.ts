@@ -67,8 +67,8 @@ export class KotsApp {
     return kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
   }
   public async getDownstreamGitOps(clusterId: string, stores: Stores): Promise<any> {
-      const gitops = await stores.kotsAppStore.getDownstreamGitOps(this.id, clusterId);
-      return gitops;
+    const gitops = await stores.kotsAppStore.getDownstreamGitOps(this.id, clusterId);
+    return gitops;
   }
   public async getRealizedLinksFromAppSpec(clusterId: string, stores: Stores): Promise<KotsAppLink[]> {
     const activeDownstream = await stores.kotsAppStore.getCurrentVersion(this.id, clusterId);
@@ -96,7 +96,7 @@ export class KotsApp {
             return port.applicationUrl === unrealizedLink.url;
           });
           if (mapped) {
-            rewrittenUrl = parsedAppSpec ? `http://localhost:${mapped.localPort}`: unrealizedLink;
+            rewrittenUrl = parsedAppSpec ? `http://localhost:${mapped.localPort}` : unrealizedLink;
           }
         }
 
@@ -154,8 +154,8 @@ export class KotsApp {
 
   private async getConfigDataFromFiles(files: FilesAsBuffers): Promise<ConfigData> {
     let configSpec: string = "",
-        configValues: string = "",
-        configValuesPath: string = "";
+      configValues: string = "",
+      configValuesPath: string = "";
 
     for (const path in files.files) {
       try {
@@ -238,76 +238,8 @@ export class KotsApp {
       const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
       const { configSpec, configValues } = configData!;
       return await this.applyConfigValues(configSpec, configValues);
-    } catch(err) {
+    } catch (err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
-    }
-  }
-
-  // TODO this function needs to be rewritten to simply use the archive and let kots do the work
-  async updateAppConfig(stores: Stores, slug: string, sequence: string, updatedConfigGroups: KotsConfigGroup[], createNewVersion: boolean): Promise<void> {
-    const tmpDir = tmp.dirSync();
-    try {
-      const paths: string[] = await this.getFilesPaths(sequence);
-      const files: FilesAsBuffers = await this.getFiles(sequence, paths);
-
-      const { configSpec, configValues } = await this.getConfigDataFromFiles(files);
-
-      const parsedConfig = yaml.safeLoad(configSpec);
-      const parsedConfigValues = yaml.safeLoad(configValues);
-
-      const specConfigValues = parsedConfigValues.spec.values;
-      const specConfigGroups = parsedConfig.spec.groups;
-
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const encryptionKey = await stores.kotsAppStore.getAppEncryptionKey(appId, sequence);
-
-      const downstreams = await stores.kotsAppStore.listDownstreamsForApp(appId);
-
-      for (let g = 0; g < updatedConfigGroups.length; g++) {
-        const group = updatedConfigGroups[g];
-        for (let i = 0; i < group.items.length; i++) {
-          const item = group.items[i];
-          if (this.shouldUpdateConfigValues(specConfigGroups, specConfigValues, item)) {
-            // these are "omitempty" in Go, but TS adds "null" strings in.
-            let configVal = {};
-            if (item.value) {
-              let value = item.value;
-              if (item.type === "password" && encryptionKey !== "") {
-                value = await kotsEncryptString(encryptionKey, item.value);
-              }
-              configVal["value"] = value;
-            }
-            if (item.default) {
-              configVal["default"] = item.default;
-            }
-            specConfigValues[item.name] = configVal;
-          }
-        }
-      }
-
-      const updatedConfigValues = yaml.safeDump(parsedConfigValues);
-
-      // Get a fresh copy of the archive
-      fs.writeFileSync(path.join(tmpDir.name, "input.tar.gz"), await this.getArchive(sequence));
-
-      const inputArchive = path.join(tmpDir.name, "input.tar.gz");
-      const outputArchive = path.join(tmpDir.name, "output.tar.gz");
-
-      const app = await stores.kotsAppStore.getApp(appId);
-      const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(appId);
-      await kotsRewriteVersion(app, inputArchive, downstreams, registrySettings, false, outputArchive, stores, updatedConfigValues);
-      const outputTgzBuffer = fs.readFileSync(outputArchive);
-      if (!createNewVersion) {
-        const params = await Params.getParams();
-        const objectStorePath = path.join(params.shipOutputBucket.trim(), appId, `${sequence}.tar.gz`);
-        await putObject(params, objectStorePath, outputTgzBuffer, params.shipOutputBucket);
-        const bufferConfigValues = await extractConfigValuesFromTarball(outputTgzBuffer);
-        await stores.kotsAppStore.updateAppConfigValues(appId, sequence, bufferConfigValues!);
-      } else {
-        await uploadUpdate(stores, slug, outputTgzBuffer, "Config Change");
-      }
-    } finally {
-      tmpDir.removeCallback();
     }
   }
 
@@ -436,7 +368,7 @@ export class KotsApp {
     return result.Body;
   }
 
-  async render(sequence: string, overlayPath: string, kustomizeVersion: string|undefined): Promise<string> {
+  async render(sequence: string, overlayPath: string, kustomizeVersion: string | undefined): Promise<string> {
     const replicatedParams = await Params.getParams();
     const params = {
       Bucket: replicatedParams.shipOutputBucket,

@@ -9,9 +9,10 @@ import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import { getAppConfigGroups, getKotsApp, templateConfigGroups } from "../../queries/AppsQueries";
-import { updateAppConfig, updateDownstreamsStatus } from "../../mutations/AppsMutations";
+import { updateDownstreamsStatus } from "../../mutations/AppsMutations";
 
 import "../../scss/components/watches/WatchConfig.scss";
+import { Utilities } from "../../utilities/utilities";
 
 class AppConfig extends Component {
   static propTypes = {
@@ -117,28 +118,44 @@ class AppConfig extends Component {
     }
 
     try {
-      await this.props.updateAppConfig(slug, sequence, this.state.configGroups, !fromLicenseFlow);
-
-      if (this.props.refreshAppData) {
-        this.props.refreshAppData();
-      }
-
-      if (fromLicenseFlow) {
-        const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
-        const status = hasPreflight ? "pending_preflight" : "deployed";
-        await this.props.updateDownstreamsStatus(slug, sequence, status);
-        if (hasPreflight) {
-          history.replace("/preflight");
-        } else {
-          if (this.props.refetchListApps) {
-            await this.props.refetchListApps();
+      fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `${Utilities.getToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          configGroups: this.state.configGroups,
+          sequence,
+          createNewVersion: !fromLicenseFlow,
+        })
+      })
+        .then(res => res.json())
+        .then(async (result) => {
+          if (this.props.refreshAppData) {
+            this.props.refreshAppData();
           }
-          history.replace(`/app/${slug}`);
-        }
-      } else {
-        this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
-      }
-    } catch(error) {
+
+          if (fromLicenseFlow) {
+            const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
+            const status = hasPreflight ? "pending_preflight" : "deployed";
+            await this.props.updateDownstreamsStatus(slug, sequence, status);
+            if (hasPreflight) {
+              history.replace("/preflight");
+            } else {
+              if (this.props.refetchListApps) {
+                await this.props.refetchListApps();
+              }
+              history.replace(`/app/${slug}`);
+            }
+          } else {
+            this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (error) {
       console.log(error);
       this.setState({ savingConfig: false });
     }
@@ -226,7 +243,7 @@ class AppConfig extends Component {
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
-        <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow } )}>
+        <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
           <div className="ConfigInnerWrapper flex1 u-padding--15">
             <div className="flex1">
               <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
@@ -237,10 +254,10 @@ class AppConfig extends Component {
           <div className="u-marginTop--20 u-marginBottom--auto">
             <Loader size="30" />
           </div>
-        :
+          :
           <div className="UnsetRequiredItems--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
             {unsetRequiredItemsNames.length > 0 && (
-              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : "is"} required: 
+              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : "is"} required:
                 <span className="u-fontWeight--bold"> {unsetRequiredItemsNames.join(", ")}</span>
               </p>
             )}
@@ -322,11 +339,6 @@ export default withRouter(compose(
         fetchPolicy: "no-cache"
       }
     }
-  }),
-  graphql(updateAppConfig, {
-    props: ({ mutate }) => ({
-      updateAppConfig: (slug, sequence, configGroups, createNewVersion) => mutate({ variables: { slug, sequence, configGroups, createNewVersion } })
-    })
   }),
   graphql(updateDownstreamsStatus, {
     props: ({ mutate }) => ({
