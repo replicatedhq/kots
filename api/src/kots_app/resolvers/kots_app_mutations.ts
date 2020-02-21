@@ -7,7 +7,7 @@ import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { uploadUpdate, syncLicense } from "../../controllers/kots/KotsAPI";
+import { uploadUpdate } from "../../controllers/kots/KotsAPI";
 import {
   kotsPullFromLicense,
   kotsAppFromData,
@@ -85,7 +85,8 @@ export function KotsMutations(stores: Stores) {
         app = await context.getApp(appId);
         await stores.kotsAppStore.setUpdateDownloadStatus("Syncing license...", "running");
 
-        await syncLicense(stores, app, "");
+        // TODO sync license here
+        // that's moved to the GO API....
 
         app = await context.getApp(appId);
         cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);

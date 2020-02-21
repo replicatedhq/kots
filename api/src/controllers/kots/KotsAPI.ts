@@ -33,7 +33,6 @@ import {
   Update,
   kotsAppCheckForUpdates,
   kotsAppDownloadUpdates,
-  kotsRewriteVersion,
   kotsAppDownloadUpdateFromAirgap,
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
@@ -44,10 +43,6 @@ import { base64Decode } from "../../util/utilities";
 import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 import { createGitCommitForVersion } from "../../kots_app/gitops";
-import { getLatestLicense, verifyAirgapLicense } from "../../kots_app/kots_ffi";
-import { ReplicatedError } from "../../server/errors";
-import { FilesAsBuffers, TarballPacker } from "../../troubleshoot/util";
-import { getLicenseInfoFromYaml } from "../../util/utilities";
 
 interface CreateAppBody {
   metadata: string;
@@ -147,7 +142,7 @@ export class KotsAPI {
 
     response.header("Content-Type", "application/gzip");
     response.status(200);
-    response.send(await app.getArchive(''+app.currentSequence));
+    response.send(await app.getArchive('' + app.currentSequence));
   }
 
 
@@ -194,7 +189,7 @@ export class KotsAPI {
       await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
       liveness.start();
       updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
-    } catch(err) {
+    } catch (err) {
       liveness.stop();
       await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
       throw err;
@@ -217,7 +212,7 @@ export class KotsAPI {
         }
 
         await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
-      } catch(err) {
+      } catch (err) {
         await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
         throw err;
       } finally {
@@ -462,11 +457,11 @@ export class KotsAPI {
 
         await request.app.locals.stores.kotsAppStore.clearAirgapInstallInProgress();
 
-      } catch(err) {
+      } catch (err) {
 
         await request.app.locals.stores.kotsAppStore.setAirgapInstallStatus(String(err), "failed");
         await request.app.locals.stores.kotsAppStore.setAirgapInstallFailed(app.id);
-        throw(err);
+        throw (err);
 
       } finally {
         liveness.stop();
@@ -517,10 +512,10 @@ export class KotsAPI {
 
         await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
 
-      } catch(err) {
+      } catch (err) {
 
         await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
-        throw(err);
+        throw (err);
 
       } finally {
         liveness.stop();
@@ -574,7 +569,7 @@ export class KotsAPI {
     } else {
       response.status(401);
     }
-    return {error: testError};
+    return { error: testError };
   }
 }
 
@@ -646,91 +641,4 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   return {
     uri: `${params.shipApiEndpoint}/app/${kotsApp.slug}`,
   };
-}
-
-// tslint:disable-next-line cyclomatic-complexity
-export async function syncLicense(stores, app, airgapLicense: string) {
-  const license = await stores.kotsLicenseStore.getAppLicenseSpec(app.id);
-
-  if (!license) {
-    throw new ReplicatedError(`License not found for app with an ID of ${app.id}`);
-  }
-
-  let latestLicense;
-  if (app.isAirgap) {
-    if (airgapLicense === "") {
-      throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is airgap enabled and no license data supplied`);
-    }
-    latestLicense = await verifyAirgapLicense(airgapLicense)
-  } else {
-    if (airgapLicense !== "") {
-        throw new ReplicatedError(`Failed to sync license, app with id ${app.id} is not airgap enabled`);
-    }
-    latestLicense = await getLatestLicense(license);
-  }
-
-  try {
-    // check if any updates are available
-    const currentLicenseSequence = yaml.safeLoad(license).spec.licenseSequence;
-    const latestLicenseSequence = yaml.safeLoad(latestLicense).spec.licenseSequence;
-    if (currentLicenseSequence === latestLicenseSequence) {
-      // no changes detected, return current license
-      return getLicenseInfoFromYaml(license);
-    }
-  } catch(err) {
-    throw new ReplicatedError(`Failed to parse license: ${err}`)
-  }
-
-  await stores.kotsAppStore.updateKotsAppLicense(app.id, latestLicense);
-
-  const paths: string[] = await app.getFilesPaths(`${app.currentSequence!}`);
-  const files: FilesAsBuffers = await app.getFiles(`${app.currentSequence!}`, paths);
-
-  let licenseFilePath = "";
-  for (const path in files.files) {
-    try {
-      const content = files.files[path];
-      const parsedContent = yaml.safeLoad(content.toString());
-      if (!parsedContent) {
-        continue;
-      }
-      if (parsedContent.kind === "License" && parsedContent.apiVersion === "kots.io/v1beta1") {
-        licenseFilePath = path;
-        break;
-      }
-    } catch {
-      // TODO: this will happen on multi-doc files.
-    }
-  }
-
-  if (licenseFilePath === "") {
-    throw new ReplicatedError(`License file not found in bundle for app id ${app.id}`);
-  }
-
-  if (files.files[licenseFilePath] === latestLicense) {
-    throw new ReplicatedError("No license changes found");
-  }
-
-  files.files[licenseFilePath] = latestLicense;
-
-  const bundlePacker = new TarballPacker();
-  const tarGzBuffer: Buffer = await bundlePacker.packFiles(files);
-
-  const tmpDir = tmp.dirSync();
-  try {
-    const inputArchivePath = path.join(tmpDir.name, "input.tar.gz");
-    const outputArchive = path.join(tmpDir.name, "output.tar.gz");
-    fs.writeFileSync(inputArchivePath, tarGzBuffer);
-
-    const downstreams = await stores.kotsAppStore.listDownstreamsForApp(app.id);
-    const registrySettings = await stores.kotsAppStore.getAppRegistryDetails(app.id);
-    await kotsRewriteVersion(app, inputArchivePath, downstreams, registrySettings, false, outputArchive, stores, "");
-    const outputTgzBuffer = fs.readFileSync(outputArchive);
-    await uploadUpdate(stores, app.slug, outputTgzBuffer, "License Update");
-
-  } finally {
-    tmpDir.removeCallback();
-  }
-
-  return getLicenseInfoFromYaml(latestLicense);
 }

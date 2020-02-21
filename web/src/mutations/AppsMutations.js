@@ -119,23 +119,6 @@ export const setPrometheusAddress = gql`
   }
 `;
 
-export const syncAppLicense = gql`
-  mutation syncAppLicense($appSlug: String!, $airgapLicense: String) {
-    syncAppLicense(appSlug: $appSlug, airgapLicense: $airgapLicense) {
-      id
-      expiresAt
-      channelName
-      licenseSequence
-      licenseType
-      entitlements {
-        title
-        value
-        label
-      }
-    }
-  }
-`;
-
 export const testGitOpsConnectionRaw = `
   mutation testGitOpsConnection($appId: String!, $clusterId: String!) {
     testGitOpsConnection(appId: $appId, clusterId: $clusterId)
