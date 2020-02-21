@@ -19,6 +19,7 @@ export class ClusterNodes extends Component {
     expiry: null,
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
+    generateCommandErrMsg: ""
   }
 
   drainNode = (name) => {
@@ -40,30 +41,32 @@ export class ClusterNodes extends Component {
   }
 
   generateWorkerAddNodeCommand = () => {
-    this.setState({ generating: true, command: "", expiry: null });
+    this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
     this.props.generateWorkerAddNodeCommand()
       .then((resp) => {
         const data = resp.data.generateWorkerAddNodeCommand;
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
-      .catch((error) => {
-        this.setState({ generating: false });
-        console.log(error);
+      .catch((err) => {
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({ generating: false, generateCommandErrMsg: msg });
+        });
       });
   }
 
   generateMasterAddNodeCommand = () => {
-    this.setState({ generating: true, command: "", expiry: null });
+    this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
     this.props.generateMasterAddNodeCommand()
       .then((resp) => {
         const data = resp.data.generateMasterAddNodeCommand;
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
-      .catch((error) => {
-        this.setState({ generating: false });
-        console.log(error);
+      .catch((err) => {
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({ generating: false, generateCommandErrMsg: msg });
+        });
       });
   }
 
@@ -90,7 +93,7 @@ export class ClusterNodes extends Component {
 
   render() {
     const { kurl } = this.props.data;
-    const { displayAddNode } = this.state;
+    const { displayAddNode, generateCommandErrMsg } = this.state;
 
     if (!kurl) {
       return (
@@ -209,7 +212,11 @@ export class ClusterNodes extends Component {
                       )
                       : (
                         <Fragment>
-                          This feature is not yet available
+                          {generateCommandErrMsg &&
+                            <div className="alignSelf--center u-marginTop--15">
+                              <span className="u-color--chestnut">{generateCommandErrMsg}</span>
+                            </div>
+                          }
                         </Fragment>
                       )
                     }
