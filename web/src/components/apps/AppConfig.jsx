@@ -27,7 +27,7 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
-      unsetRequiredFields: []
+      unsetRequiredItems: []
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -73,8 +73,17 @@ class AppConfig extends Component {
     return app.slug;
   }
 
-  getUnsetRequiredFields = () => {
-    const unsetRequiredFields = [];
+  resetUnsetRequiredItems = () => {
+    const unsetRequiredItems = this.state.unsetRequiredItems;
+    for (let f = 0; f < unsetRequiredItems.length; f++) {
+      const item = unsetRequiredItems[f];
+      item.error = null;
+    }
+    this.setState({ unsetRequiredItems: [] });
+  }
+
+  getUnsetRequiredItems = () => {
+    const unsetRequiredItems = [];
     const configGroups = this.state.configGroups;
     for (let c = 0; c < configGroups.length; c++) {
       const configGroup = configGroups[c];
@@ -83,24 +92,27 @@ class AppConfig extends Component {
           const item = configGroup.items[i];
           const isHidden = item.hidden || item.when === "false";
           if (item.required && !item.value && !item.default && !isHidden) {
-            unsetRequiredFields.push(item);
+            item.error = "This field is required";
+            unsetRequiredItems.push(item);
           }
         }
       }
     }
-    return unsetRequiredFields;
+    return unsetRequiredItems;
   }
 
   handleSave = async () => {
-    this.setState({ savingConfig: true, unsetRequiredFields: [] });
+    this.setState({ savingConfig: true, unsetRequiredItems: [] });
 
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    const unsetRequiredFields = this.getUnsetRequiredFields();
-    if (unsetRequiredFields.length) {
-      this.setState({ savingConfig: false, unsetRequiredFields });
+    this.resetUnsetRequiredItems();
+    const unsetRequiredItems = this.getUnsetRequiredItems();
+
+    if (unsetRequiredItems.length) {
+      this.setState({ savingConfig: false, unsetRequiredItems });
       return;
     }
 
@@ -196,7 +208,7 @@ class AppConfig extends Component {
   }
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredFields } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredItems } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -209,7 +221,7 @@ class AppConfig extends Component {
 
     const app = this.props.app || getKotsApp?.getKotsApp;
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
-    const unsetRequiredFieldsNames = unsetRequiredFields.map(field => field.name);
+    const unsetRequiredItemsNames = unsetRequiredItems.map(item => item.title || item.name);
 
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
@@ -226,10 +238,10 @@ class AppConfig extends Component {
             <Loader size="30" />
           </div>
         :
-          <div className="UnsetRequiredFields--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
-            {unsetRequiredFieldsNames.length > 0 && (
-              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">Please fill required field{unsetRequiredFieldsNames.length > 1 ? "s" : ""}: 
-                <span className="u-fontWeight--bold"> {unsetRequiredFieldsNames.join(", ")}</span>
+          <div className="UnsetRequiredItems--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
+            {unsetRequiredItemsNames.length > 0 && (
+              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : "is"} required: 
+                <span className="u-fontWeight--bold"> {unsetRequiredItemsNames.join(", ")}</span>
               </p>
             )}
             <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
