@@ -73,12 +73,6 @@ export const resumeInstallOnlineRaw = `
 
 export const resumeInstallOnline = gql(resumeInstallOnlineRaw);
 
-export const updateAppConfig = gql`
-  mutation updateAppConfig($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!, $createNewVersion: Boolean) {
-    updateAppConfig(slug: $slug, sequence: $sequence, configGroups: $configGroups, createNewVersion: $createNewVersion)
-  }
-`;
-
 export const updateDownstreamsStatus = gql`
   mutation updateDownstreamsStatus($slug: String!, $sequence: Int!, $status: String!) {
     updateDownstreamsStatus(slug: $slug, sequence: $sequence, status: $status)

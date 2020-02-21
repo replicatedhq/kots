@@ -284,14 +284,6 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
-    async updateAppConfig(root: any, args: any, context: Context) {
-      const { slug, sequence, configGroups, createNewVersion } = args;
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await context.getApp(appId);
-      await app.updateAppConfig(stores, slug, sequence, configGroups, createNewVersion);
-      return true;
-    },
-
     async updateKotsApp(root: any, args: any, context: Context): Promise<Boolean> {
       const app = await context.getApp(args.appId);
       await stores.kotsAppStore.updateApp(app.id, args.appName, args.iconUri);

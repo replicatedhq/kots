@@ -101,7 +101,7 @@ func GetFromSlug(slug string) (*App, error) {
 
 // CreateVersion creates a new version of the app in the database, but the caller
 // is responsible for uploading the archive to s3
-func (a App) CreateVersion(filesInDir string) (int64, error) {
+func (a App) CreateVersion(filesInDir string, source string) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -250,7 +250,7 @@ backup_spec = EXCLUDED.backup_spec`
 
 		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 		_, err = tx.Exec(query, a.ID, downstream.ClusterID, newSequence, a.CurrentSequence+1, time.Now(),
-			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, "Registry Change",
+			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
 			string(diffSummary), commitURL, isGitDeployable)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")

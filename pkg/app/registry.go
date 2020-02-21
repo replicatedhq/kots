@@ -163,7 +163,7 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 		return errors.Wrap(err, "failed to rewrite images")
 	}
 
-	newSequence, err := a.CreateVersion(appDir)
+	newSequence, err := a.CreateVersion(appDir, "Registry Change")
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create new version")
