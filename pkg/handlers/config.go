@@ -150,7 +150,11 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// TODO
+		if err := app.CreateAppVersionArchive(foundApp.ID, int64(foundApp.CurrentSequence), archiveDir); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 	}
 
 	updateAppConfigResponse := UpdateAppConfigResponse{
