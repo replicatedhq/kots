@@ -55,7 +55,7 @@ func Get(id string) (*App, error) {
 		registrySettings := RegistrySettings{
 			Hostname:    registryHostname.String,
 			Username:    registryUsername.String,
-			HasPassword: registryPasswordEnc.Valid,
+			PasswordEnc: registryPasswordEnc.String,
 			Namespace:   registryNamespace.String,
 		}
 

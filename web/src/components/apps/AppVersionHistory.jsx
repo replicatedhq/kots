@@ -16,7 +16,6 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
-import { checkForKotsUpdates } from "../../mutations/AppsMutations";
 import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
@@ -492,21 +491,30 @@ class AppVersionHistory extends Component {
   }
 
   onCheckForUpdates = async () => {
-    const { client, app } = this.props;
+    const { app } = this.props;
 
-    this.setState({ checkingForUpdates: true, checkingForUpdateError: false, errorCheckingUpdate: false });
-
-    await client.mutate({
-      mutation: checkForKotsUpdates,
-      variables: {
-        appId: app.id,
-      }
-    }).catch((err) => {
-      this.setState({ errorCheckingUpdate: true });
-      console.log(err);
-    }).finally(() => {
-      this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      checkingForUpdates: true,
+      checkingForUpdateError: false,
+      errorCheckingUpdate: false,
     });
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        this.state.updateChecker.start(this.updateStatus, 1000);
+      })
+      .catch((err) => {
+        this.setState({
+          errorCheckingUpdate: true,
+          checkingForUpdates: false,
+        });
+      });
   }
 
   onDropBundle = async files => {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/pkg/errors"
@@ -42,4 +43,21 @@ func ClearTaskStatus(id string) error {
 	}
 
 	return nil
+}
+
+func GetTaskStatus(id string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select status from api_task_status where id = $1`
+
+	row := db.QueryRow(query, id)
+	status := ""
+	if err := row.Scan(&status); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+
+		return "", errors.Wrap(err, "failed to scan task status")
+	}
+
+	return status, nil
 }
