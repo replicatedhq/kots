@@ -671,8 +671,13 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H6VI=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
+github.com/replicatedhq/kots v1.12.2 h1:e+nyUeuHW0M4H42pI9iMX7+Xh+8gqZSuQitQiqvcb0c=
 github.com/replicatedhq/kots v1.12.3-0.20200221022115-9cc0a8b3591c h1:JxBO/Ay/cCEvAnd95t0e5KUwRVStnuQDxz1PNa23F9A=
 github.com/replicatedhq/kots v1.12.3-0.20200221022115-9cc0a8b3591c/go.mod h1:g/f6kjmHvIBSuDNjCkaAoWFkpVH6oXCDt8KVXsCvNPw=
+github.com/replicatedhq/kots v1.13.0-beta.0.20200221224316-18e8689dd40b h1:u5NjI64H+b8x6GAWypfeF31g0jgn1G4+z9AsQelwyp4=
+github.com/replicatedhq/kots v1.13.0-beta.0.20200221224316-18e8689dd40b/go.mod h1:g/f6kjmHvIBSuDNjCkaAoWFkpVH6oXCDt8KVXsCvNPw=
+github.com/replicatedhq/kots v1.13.0-beta.0.20200222012128-5044b77301c9 h1:Gg4NT9AGlXxvOiSqE+nYMwlZokjNUo1+zJCrrmDYlnA=
+github.com/replicatedhq/kots v1.13.0-beta.0.20200222012128-5044b77301c9/go.mod h1:g/f6kjmHvIBSuDNjCkaAoWFkpVH6oXCDt8KVXsCvNPw=
 github.com/replicatedhq/troubleshoot v0.9.21 h1:u7q932Bi0t2jVtyRlKmMNlXndr/Bxt4rTzFFF1i53Kg=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=

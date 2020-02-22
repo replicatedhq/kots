@@ -210,25 +210,7 @@ export class KotsApp {
       throw new ReplicatedError("Config groups not found");
     }
 
-    const parsedConfigValues = yaml.safeLoad(configValues);
-    if (!parsedConfigValues.spec || !parsedConfigValues.spec.values) {
-      throw new ReplicatedError("Config values not found");
-    }
-
     const specConfigGroups = templatedConfig.spec.groups;
-    const specConfigValues = parsedConfigValues.spec.values;
-
-    specConfigGroups.forEach(group => {
-      group.items.forEach(item => {
-        if (item.type === "password") {
-          if (item.value) {
-            item.value = this.getPasswordMask();
-          }
-        } else if (item.name in specConfigValues) {
-          item.value = specConfigValues[item.name].value;
-        }
-      });
-    });
 
     return specConfigGroups;
   }
