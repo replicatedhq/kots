@@ -22,7 +22,6 @@ type Mutation {
   createGitOpsRepo(gitOpsInput: KotsGitOpsInput!): Boolean
   updateGitOpsRepo(gitOpsInput: KotsGitOpsInput!, uriToUpdate: String): Boolean
   updateAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): Boolean
-  syncAppLicense(appSlug: String!, airgapLicense: String): KLicense
   testGitOpsConnection(appId: String!, clusterId: String!): Boolean
   disableAppGitops(appId: String!, clusterId: String!): Boolean
   ignorePreflightPermissionErrors(appSlug: String, clusterSlug: String, sequence: Int): Boolean

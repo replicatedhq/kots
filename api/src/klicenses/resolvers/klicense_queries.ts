@@ -1,8 +1,5 @@
 import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
-import { ReplicatedError } from "../../server/errors";
-import { getLatestLicense } from "../../kots_app/kots_ffi";
-import yaml from "js-yaml";
 
 export function KotsLicenseQueries(stores: Stores) {
   return {
