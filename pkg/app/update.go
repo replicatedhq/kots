@@ -80,9 +80,9 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 	if a.RegistrySettings != nil {
 		pullOptions.RewriteImages = true
 
-		cipher, err := crypto.AESCipherFromString(beforeKotsKinds.Installation.Spec.EncryptionKey)
+		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 		if err != nil {
-			return errors.Wrap(err, "failed to create cipher")
+			return errors.Wrap(err, "failed to create aes cipher")
 		}
 
 		decodedPassword, err := base64.StdEncoding.DecodeString(a.RegistrySettings.PasswordEnc)
