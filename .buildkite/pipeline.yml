@@ -98,7 +98,7 @@ steps:
     plugins:
       - docker#v3.5.0:
           always-pull: true
-          image: replicated/gitops-builder:buildkite
+          image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
       - "operator/bin/**/*"
@@ -109,7 +109,7 @@ steps:
     plugins:
       - docker#v3.5.0:
           always-pull: true
-          image: replicated/gitops-builder:buildkite
+          image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
       - "kurl_proxy/bin/**/*"
@@ -124,7 +124,7 @@ steps:
     plugins:
       - docker#v3.5.0:
           always-pull: true
-          image: replicated/gitops-builder:buildkite
+          image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
     artifact_paths:
       - "./bin/**/*"
