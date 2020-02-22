@@ -1,25 +1,16 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kotsadm/pkg/license"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/session"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes/scheme")
+)
 
 type SyncLicenseRequest struct {
 	LicenseData string `json:"licenseData"`
@@ -76,84 +67,11 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := app.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
+	latestLicense, err := license.Sync(foundApp, syncLicenseRequest.LicenseData)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
-	}
-	defer os.RemoveAll(archiveDir)
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	if kotsKinds.License == nil {
-		logger.Error(errors.New("app does not have a license"))
-		w.WriteHeader(500)
-		return
-	}
-
-	latestLicense := kotsKinds.License
-	if syncLicenseRequest.LicenseData != "" {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(syncLicenseRequest.LicenseData), nil, nil)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-
-		unverifiedLicense := obj.(*kotsv1beta1.License)
-		verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-
-		latestLicense = verifiedLicense
-	} else {
-		// get from the api
-		updatedLicense, err := kotslicense.GetLatestLicense(kotsKinds.License)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-		latestLicense = updatedLicense
-	}
-
-	// Save and make a new version if the sequence has changed
-	if latestLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
-		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-		var b bytes.Buffer
-		if err := s.Encode(latestLicense, &b); err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), b.Bytes(), 0644); err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-
-		newSequence, err := foundApp.CreateVersion(archiveDir, "License Change")
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
-
-		if err := app.CreateAppVersionArchive(foundApp.ID, newSequence, archiveDir); err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
 	}
 
 	syncLicenseResponse := SyncLicenseResponse{

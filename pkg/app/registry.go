@@ -22,7 +22,7 @@ import (
 type RegistrySettings struct {
 	Hostname    string
 	Username    string
-	HasPassword bool
+	PasswordEnc string
 	Namespace   string
 }
 

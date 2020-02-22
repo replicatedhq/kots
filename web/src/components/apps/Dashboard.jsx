@@ -11,7 +11,7 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
-import { checkForKotsUpdates, setPrometheusAddress } from "@src/mutations/AppsMutations";
+import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -129,20 +129,26 @@ class Dashboard extends Component {
   }
 
   onCheckForUpdates = async () => {
-    const { client, app } = this.props;
+    const { app } = this.props;
 
-    this.setState({ checkingForUpdates: true,  checkingForUpdateError: false });
-
-    await client.mutate({
-      mutation: checkForKotsUpdates,
-      variables: {
-        appId: app.id,
-      }
-    }).catch(() => {
-      this.setState({ errorCheckingUpdate: true });
-    }).finally(() => {
-      this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      checkingForUpdates: true,
+      checkingForUpdateError: false,
     });
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        this.state.updateChecker.start(this.updateStatus, 1000);
+      })
+      .catch((err) => {
+        this.setState({ errorCheckingUpdate: true });
+      });
   }
 
   updateStatus = () => {
@@ -406,7 +412,7 @@ class Dashboard extends Component {
     } catch {
       // empty
     }
-  
+
     if (!app || !appLicense) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
