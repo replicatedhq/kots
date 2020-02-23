@@ -11,7 +11,6 @@ import { uploadUpdate } from "../../controllers/kots/KotsAPI";
 import {
   kotsPullFromLicense,
   kotsAppFromData,
-  kotsAppCheckForUpdates,
   kotsAppDownloadUpdates,
   Update,
   kotsDecryptString,
@@ -57,62 +56,6 @@ export function KotsMutations(stores: Stores) {
       const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
       await stores.kotsAppStore.retryPreflights(appId, clusterId, sequence);
       return true;
-    },
-
-    async checkForKotsUpdates(root: any, args: any, context: Context): Promise<number> {
-      const updateStatus = await stores.kotsAppStore.getUpdateDownloadStatus();
-      if (updateStatus.status === "running") {
-        return 0;
-      }
-
-      const { appId } = args;
-
-      const liveness = new Repeater(() => {
-        return new Promise((resolve) => {
-          stores.kotsAppStore.updateUpdateDownloadStatusLiveness().finally(() => {
-            resolve();
-          })
-        });
-      }, 1000);
-
-      let app: KotsApp;
-      let cursor: any;
-
-      let updatesAvailable: Update[];
-      try {
-        liveness.start();
-
-        app = await context.getApp(appId);
-        await stores.kotsAppStore.setUpdateDownloadStatus("Syncing license...", "running");
-
-        // TODO sync license here
-        // that's moved to the GO API....
-
-        app = await context.getApp(appId);
-        cursor = await stores.kotsAppStore.getMidstreamUpdateCursor(app.id);
-
-        await stores.kotsAppStore.setUpdateDownloadStatus("Checking for updates...", "running");
-        updatesAvailable = await kotsAppCheckForUpdates(app, cursor.cursor, cursor.channelName);
-      } catch (err) {
-        liveness.stop();
-        await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
-        throw err;
-      }
-
-      const downloadUpdates = async (): Promise<void> => {
-        try {
-          await kotsAppDownloadUpdates(updatesAvailable, app, stores);
-
-          await stores.kotsAppStore.clearUpdateDownloadStatus();
-        } catch (err) {
-          await stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
-          throw err;
-        } finally {
-          liveness.stop();
-        }
-      }
-      downloadUpdates(); // download asyncronously
-      return updatesAvailable.length;
     },
 
     async testGitOpsConnection(root: any, args: any, context: Context) {

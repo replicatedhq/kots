@@ -53,6 +53,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SyncLicense)
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)
+	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateAppFromAirgap)
 
 	// TODO
 

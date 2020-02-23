@@ -18,7 +18,7 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
   const stateLink = withClientState({
     cache
   });
-  
+
   let newGraphqlEndpoint;
   if (window.env.ENVIRONMENT === "development") {
     newGraphqlEndpoint = graphqlEndpoint;
@@ -48,7 +48,6 @@ export function ShipClientGQL(graphqlEndpoint, restEndpoint, tokenFunction, fetc
       headers: {
         ...headers,
         authorization: await tokenFunction(),
-        "X-Replicated-Client": "kotsadm",
       },
     };
   });

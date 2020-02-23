@@ -3,9 +3,8 @@ import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsBuffers, TarballUnpacker, isTgzByName } from "../troubleshoot/util";
-import { kotsTemplateConfig, kotsEncryptString, kotsRewriteVersion } from "./kots_ffi";
+import { kotsTemplateConfig } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
-import { uploadUpdate } from "../controllers/kots/KotsAPI";
 import { getS3 } from "../util/s3";
 import tmp from "tmp";
 import fs from "fs";
@@ -14,11 +13,9 @@ import tar from "tar-stream";
 import mkdirp from "mkdirp";
 import { exec } from "child_process";
 import { Cluster } from "../cluster";
-import { putObject } from "../util/s3";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 import { ApplicationSpec } from "./kots_app_spec";
-import { extractConfigValuesFromTarball } from "../util/tar";
 
 export class KotsApp {
   id: string;
