@@ -257,7 +257,7 @@ class AppConfig extends Component {
           :
           <div className="UnsetRequiredItems--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
             {unsetRequiredItemsNames.length > 0 && (
-              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : "is"} required:
+              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : " is"} required:
                 <span className="u-fontWeight--bold"> {unsetRequiredItemsNames.join(", ")}</span>
               </p>
             )}
