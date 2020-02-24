@@ -94,6 +94,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryNamespace: rewriteOptions.RegistryNamespace,
 		LocalRegistryUsername:  rewriteOptions.RegistryUsername,
 		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
+		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
 		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")

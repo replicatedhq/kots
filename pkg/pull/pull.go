@@ -236,6 +236,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
 		LocalRegistryUsername:  pullOptions.RewriteImageOptions.Username,
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
+		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
 		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")
