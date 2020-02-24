@@ -98,7 +98,16 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
-		base.Files = append(base.Files, baseFile)
+		baseFiles := convertToSingleDocs([]BaseFile{baseFile})
+		for _, f := range baseFiles {
+			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to check if base file %s should be included", f.Path)
+			}
+			if include {
+				base.Files = append(base.Files, f)
+			}
+		}
 	}
 
 	// render helm charts that were specified
@@ -186,6 +195,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			SplitMultiDocYAML: true,
 			Namespace:         namespace,
 			HelmOptions:       localValues,
+			ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
 			Log:               nil,
 		})
 		if err != nil {
