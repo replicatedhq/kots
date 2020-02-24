@@ -29,16 +29,16 @@ export default function PreflightRenderer(props) {
             icon = "checkmark-icon";
           }
           return (
-            <div key={idx} className="flex justifyContent--space-between preflight-check-row u-paddingTop--10 u-paddingBottom--10">
+            <div key={idx} className="flex justifyContent--space-between preflight-check-row">
               <div className={classNames("flex-auto icon", icon, "u-marginRight--10")} />
               <div className="flex1">
                 <p className="u-color--tuna u-fontSize--larger u-fontWeight--bold">{row.title}</p>
-                <div className="PreflightMessageRow u-marginTop--5">
+                <div className="PreflightMessageRow u-marginTop--10">
                   <Markdown source={row.message}/>
                 </div>
               </div>
               {row.uri &&
-              <div className="flex-column flex justifyContent--flexEnd u-marginRight--20 alignItems--center">
+              <div className="flex-column flex justifyContent--center">
                 <a href={row.uri} target="_blank" rel="noopener noreferrer" className="btn secondary lightBlue"> Learn more </a>
               </div>}
             </div>
