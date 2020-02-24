@@ -197,11 +197,13 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		Password: ctx.LocalRegistry.Password,
 	}
 
-	dockerConfig := credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
-		ctx.LocalRegistry.Host: dockerConfigEntry,
-	})
+	dockerConfigJSON := credentialprovider.DockerConfigJson{
+		Auths: credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
+			ctx.LocalRegistry.Host: dockerConfigEntry,
+		}),
+	}
 
-	b, err := json.Marshal(dockerConfig)
+	b, err := json.Marshal(dockerConfigJSON)
 	if err != nil {
 		fmt.Printf("%#v\n", err)
 		return ""
