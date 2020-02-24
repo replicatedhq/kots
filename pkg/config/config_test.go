@@ -198,7 +198,7 @@ spec:
       name: test_text
       title: xyz789
       type: text
-      value: ""
+      value: "xyz789"
     - default: ""
       name: other
       title: other

@@ -23,8 +23,9 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
-	// 3. re-marshal it (with an unlimited line length)
-	// 4. put new config yaml through templating engine
+	// 3. evaluate the dependency graph for config values (template function chaining)
+	// 4. re-marshal it (with an unlimited line length)
+	// 5. put new config yaml through templating engine
 	// This process will re-order items and discard comments, so it should not be saved.
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
