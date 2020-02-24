@@ -318,7 +318,13 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 		err = validateCerts(certData, keyData, hostString)
 		if err != nil {
 			log.Printf("POST /tls: %v", err)
-			c.AbortWithStatus(http.StatusBadRequest)
+			data := map[string]interface{}{
+				// TODO we're still using Go v1.12
+				// Go v1.13 has Unwrap() and this would reduce to:
+				// "error": errors.Unwrap(err),
+				"error": errors.Cause(err).Error(),
+			}
+			c.JSON(http.StatusBadRequest, data)
 			return
 		}
 
@@ -404,7 +410,7 @@ func validateCerts(certData []byte, keyData []byte, hostString string) error {
 	// Validates if Cert & Key match
 	c, err := tls.X509KeyPair(certData, keyData)
 	if err != nil {
-		return errors.Wrapf(err, "validate uploaded cert/key pair")
+		return errors.Wrapf(err, "Cert/key pair verification failed")
 	}
 
 	// Validates cert expiration
@@ -417,14 +423,14 @@ func validateCerts(certData []byte, keyData []byte, hostString string) error {
 	now := time.Now()
 	log.Printf("x509 cert expirations: \nstart=%v\nend=%v\nnow=%v", startdate, enddate, now)
 	if now.Before(startdate) || now.After(enddate) {
-		return errors.New("Expired certificate")
+		return errors.New("Certificate expired")
 	}
 
 	// Validates hostname matches cert (if hostname was specified)
 	if len(hostString) > 0 {
 		err := cert.VerifyHostname(hostString)
 		if err != nil {
-			return errors.Wrapf(err, "verify hostname")
+			return errors.Wrapf(err, "Hostname verification failed")
 		}
 	}
 
