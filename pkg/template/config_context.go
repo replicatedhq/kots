@@ -116,6 +116,8 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionEquals":           ctx.configOptionEquals,
 		"ConfigOptionNotEquals":        ctx.configOptionNotEquals,
 		"LocalRegistryAddress":         ctx.localRegistryAddress,
+		"LocalRegistryHost":            ctx.localRegistryHost,
+		"LocalRegistryNamespace":       ctx.localRegistryNamespace,
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
 		"HasLocalRegistry":             ctx.hasLocalRegistry,
@@ -172,6 +174,14 @@ func (ctx ConfigCtx) localRegistryAddress() string {
 	}
 
 	return fmt.Sprintf("%s/%s", ctx.LocalRegistry.Host, ctx.LocalRegistry.Namespace)
+}
+
+func (ctx ConfigCtx) localRegistryHost() string {
+	return ctx.LocalRegistry.Host
+}
+
+func (ctx ConfigCtx) localRegistryNamespace() string {
+	return ctx.LocalRegistry.Namespace
 }
 
 func (ctx ConfigCtx) localImageName(image string) string {
