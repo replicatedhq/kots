@@ -261,7 +261,6 @@ func createGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to read current file")
 	}
 	if string(currentRevision) == string(out) {
-		fmt.Printf("--> no changes \n")
 		return "", nil
 	}
 

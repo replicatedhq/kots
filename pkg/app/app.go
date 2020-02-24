@@ -3,7 +3,6 @@ package app
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -281,7 +280,6 @@ backup_spec = EXCLUDED.backup_spec`
 				return int64(0), errors.Wrap(err, "failed to create gitops commit")
 			}
 
-			fmt.Printf("---> %s\n", createdCommitURL)
 			commitURL = createdCommitURL
 		}
 
