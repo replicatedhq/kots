@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.13.0-beta
+	github.com/replicatedhq/kots v1.13.0-beta.0.20200224211048-9df633936d70
 	github.com/replicatedhq/kotsadm/operator v0.0.0-20200222155401-e17065fb6ad0 // indirect
 	github.com/replicatedhq/troubleshoot v0.9.22
 	github.com/segmentio/ksuid v1.0.2
@@ -26,6 +26,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
 	golang.org/x/time v0.0.0-20191023065245-6d3f0bb11be5 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
+	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible

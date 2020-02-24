@@ -246,16 +246,6 @@ backup_spec = EXCLUDED.backup_spec`
 	}
 
 	for _, downstream := range a.Downstreams {
-		downstreamGitOps, err := GetDownstreamGitOps(a.ID, downstream.ClusterID)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get downstream gitops")
-		}
-		if downstreamGitOps != nil {
-			fmt.Printf("%#v\n", downstreamGitOps)
-			// TODO make the commit
-			// TODO 1.13.0 Regression
-		}
-
 		diffSummary := ""
 		if !isFirstVersion {
 			// diff this release from the last release
@@ -272,8 +262,6 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 
 		commitURL := ""
-		isGitDeployable := false
-
 		query = `select max(sequence) from app_downstream_version where app_id = $1 and cluster_id = $2`
 		row := tx.QueryRow(query, a.ID, downstream.ClusterID)
 
@@ -283,10 +271,24 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 		newSequence := lastDownstreamSequence + 1
 
+		downstreamGitOps, err := GetDownstreamGitOps(a.ID, downstream.ClusterID)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get downstream gitops")
+		}
+		if downstreamGitOps != nil {
+			createdCommitURL, err := createGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstream.Name)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to create gitops commit")
+			}
+
+			fmt.Printf("---> %s\n", createdCommitURL)
+			commitURL = createdCommitURL
+		}
+
 		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 		_, err = tx.Exec(query, a.ID, downstream.ClusterID, newSequence, newSequence, time.Now(),
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, commitURL, isGitDeployable)
+			diffSummary, commitURL, commitURL != "")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
