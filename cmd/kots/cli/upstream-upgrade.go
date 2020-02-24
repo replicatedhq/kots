@@ -69,7 +69,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}()
 
 			appSlug := args[0]
-			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/kots/%s/update-check", localPort, appSlug)
+			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck", localPort, appSlug)
 			if viper.GetBool("deploy") {
 				updateCheckURI = fmt.Sprintf("%s?deploy=true", updateCheckURI)
 			}

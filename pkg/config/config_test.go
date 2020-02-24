@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/stretchr/testify/require"
 	"go.undefinedlabs.com/scopeagent"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -221,7 +222,8 @@ status: {}
 			wantObj, _, err := decode([]byte(tt.want), nil, nil)
 			req.NoError(err)
 
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, MarshalConfig)
+			localRegistry := template.LocalRegistry{}
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, localRegistry, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -230,7 +232,7 @@ status: {}
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, localRegistry, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

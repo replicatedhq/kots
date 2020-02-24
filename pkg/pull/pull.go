@@ -229,10 +229,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(fetchOptions.License)
 
 	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML: true,
-		Namespace:         pullOptions.Namespace,
-		HelmOptions:       pullOptions.HelmOptions,
-		Log:               log,
+		SplitMultiDocYAML:      true,
+		Namespace:              pullOptions.Namespace,
+		HelmOptions:            pullOptions.HelmOptions,
+		LocalRegistryHost:      pullOptions.RewriteImageOptions.Host,
+		LocalRegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
+		LocalRegistryUsername:  pullOptions.RewriteImageOptions.Username,
+		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
+		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")

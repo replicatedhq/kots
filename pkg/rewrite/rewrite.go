@@ -88,9 +88,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 
 	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML: true,
-		Namespace:         rewriteOptions.K8sNamespace,
-		Log:               log,
+		SplitMultiDocYAML:      true,
+		Namespace:              rewriteOptions.K8sNamespace,
+		LocalRegistryHost:      rewriteOptions.RegistryEndpoint,
+		LocalRegistryNamespace: rewriteOptions.RegistryNamespace,
+		LocalRegistryUsername:  rewriteOptions.RegistryUsername,
+		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
+		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
