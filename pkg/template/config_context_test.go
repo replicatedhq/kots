@@ -194,7 +194,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder := Builder{}
 			builder.AddCtx(StaticCtx{})
 
-			got, err := builder.NewConfigContext(tt.args.configGroups, tt.args.templateContext, tt.args.cipher)
+			localRegistry := LocalRegistry{}
+			got, err := builder.NewConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

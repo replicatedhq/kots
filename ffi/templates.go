@@ -18,7 +18,7 @@ import (
 )
 
 //export RenderFile
-func RenderFile(socket string, filePath string, archivePath string) {
+func RenderFile(socket string, filePath string, archivePath string, registryHost string, registryNamespace string, registryUsername string, registryPassword string) {
 	go func() {
 		var ffiResult *FFIResult
 
@@ -85,7 +85,14 @@ func RenderFile(socket string, filePath string, archivePath string) {
 			configGroups = config.Spec.Groups
 		}
 
-		configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, cipher)
+		localRegistry := template.LocalRegistry{
+			Host:      registryHost,
+			Namespace: registryNamespace,
+			Username:  registryUsername,
+			Password:  registryPassword,
+		}
+
+		configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, localRegistry, cipher)
 		if err != nil {
 			fmt.Printf("failed to create config context %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)

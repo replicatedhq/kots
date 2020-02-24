@@ -517,7 +517,11 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	builder := template.Builder{}
 	builder.AddCtx(template.StaticCtx{})
 
-	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, cipher)
+	// Today, these aren't needed in this function
+	// They are needed in rendering the base
+	// We should get this supported before 1.13.0 ships
+	localRegistry := template.LocalRegistry{}
+	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContextValues, localRegistry, cipher)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}
