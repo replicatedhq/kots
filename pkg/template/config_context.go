@@ -2,6 +2,7 @@ package template
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"k8s.io/kubernetes/pkg/credentialprovider"
 )
 
 var (
@@ -116,6 +118,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"LocalRegistryAddress":         ctx.localRegistryAddress,
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
+		"HasLocalRegistry":             ctx.hasLocalRegistry,
 	}
 }
 
@@ -172,6 +175,10 @@ func (ctx ConfigCtx) localRegistryAddress() string {
 }
 
 func (ctx ConfigCtx) localImageName(image string) string {
+	if ctx.LocalRegistry.Host == "" {
+		return image
+	}
+
 	_, _, imageName, tag, err := parseImageName(image)
 	if err != nil {
 		return ""
@@ -180,8 +187,28 @@ func (ctx ConfigCtx) localImageName(image string) string {
 	return fmt.Sprintf("%s/%s:%s", ctx.localRegistryAddress(), imageName, tag)
 }
 
+func (ctx ConfigCtx) hasLocalRegistry() bool {
+	return ctx.LocalRegistry.Host != ""
+}
+
 func (ctx ConfigCtx) localRegistryImagePullSecret() string {
-	return ""
+	dockerConfigEntry := credentialprovider.DockerConfigEntry{
+		Username: ctx.LocalRegistry.Username,
+		Password: ctx.LocalRegistry.Password,
+	}
+
+	dockerConfig := credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
+		ctx.LocalRegistry.Host: dockerConfigEntry,
+	})
+
+	b, err := json.Marshal(dockerConfig)
+	if err != nil {
+		fmt.Printf("%#v\n", err)
+		return ""
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(b)
+	return encoded
 }
 
 func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {
