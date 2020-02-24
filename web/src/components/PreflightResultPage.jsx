@@ -152,7 +152,7 @@ class PreflightResultPage extends Component {
           <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
         <div className="flex1 flex u-overflow--auto">
-          <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30 u-overflow--hidden">
+          <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30">
             {this.props.history.location.pathname.includes("version-history") &&
             <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />

@@ -44,7 +44,7 @@ export default class ErrorBoundaryComponent extends React.Component {
               <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-color--tundora">Oops, something went wrong.</p>
               <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-color--dustyGray u-fontSize--normal u-lineHeight--normal"> Click the button below to try again. </p>
               <div className="flex alignItems--center alignSelf--center u-marginTop--20">
-                <button className="btn secondary gray" onClick={() => this.backToAdminConsole()}> Back to Admin Console </button>
+                <button className="btn secondary" onClick={() => this.backToAdminConsole()}> Back to Admin Console </button>
               </div>
             </div>
           </div>

@@ -1,29 +1,5 @@
 .Login-wrapper {
   position: relative;
-
-  &::before,
-  &::after {
-    content: "";
-    position: fixed;
-    width: 50%;
-    height: 100%;
-    background-repeat: no-repeat;
-    background-size: cover;
-    opacity: 0.5;
-    background-position: left;
-    z-index: -1;
-    display: none;
-  }
-
-  &::before {
-    left: 0;
-    background-image: url("../../images/backgrounds/login-left@2x.png");
-  }
-
-  &::after {
-    right: 0;
-    background-image: url("../../images/backgrounds/login-right@2x.png");
-  }
 }
 .LoginBox-wrapper {
   background-color: #ffffff;
@@ -82,10 +58,6 @@
 
 /* ≥ 768px */
 @media screen and (min-width: 48em) {
-  .Login-wrapper::before,
-  .Login-wrapper::after {
-    display: block;
-  }
   .LoginBox-wrapper p.login-text {
     font-size: 36px;
     line-height: 46px;

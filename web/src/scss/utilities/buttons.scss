@@ -9,8 +9,7 @@
   }
 }
 
-.btn,
-#ship-init-component .btn {
+.btn {
   cursor: pointer;
   padding: 7px 12px 8px;
   font-size: 12px;
@@ -56,7 +55,7 @@
   }
 
   &.primary {
-    background-color: #44BB66;
+    background-color: #326DE6;
     border-width: 1px;
     border-style: solid;
     border-color: transparent;
@@ -66,8 +65,18 @@
     box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
 
     &:not(:disabled):hover {
-      background-color: rgb(72, 177, 102);
+      background-color: #265BC7;
     }
+  }
+
+  &.primary.is-disabled,
+  &.primary.is-disabled:hover,
+  &.primary:disabled,
+  &.primary[disabled] {
+    cursor: not-allowed;
+    border-color: #A3D3E9;
+    color: #ffffff;
+    background-color: #A3D3E9;
   }
 
   &.primary.red {
@@ -85,23 +94,6 @@
     }
   }
 
-  &.primary.disabled-link {
-    pointer-events: none;
-    border-color: rgb(177, 243, 196);
-    color: #ffffff;
-    background-color: rgb(177, 243, 196);
-  }
-
-  &.primary.is-disabled,
-  &.primary.is-disabled:hover,
-  &.primary:disabled,
-  &.primary[disabled] {
-    cursor: not-allowed;
-    border-color: rgb(177, 243, 196);
-    color: #ffffff;
-    background-color: rgb(177, 243, 196);
-  }
-
   &.primary.red.is-disabled,
   &.primary.red.is-disabled:hover,
   &.primary.red:disabled,
@@ -112,67 +104,17 @@
     background-color: #DDA3A8;
   }
 
-  &.primary.blue {
-    background-color: #326DE6;
-    border-width: 1px;
-    border-style: solid;
-    border-color: transparent;
-    color: #ffffff;
-    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-
-    &:not(:disabled):hover {
-      background-color: #265BC7;
-    }
-  }
-
-  &.primary.blue.is-disabled,
-  &.primary.blue.is-disabled:hover,
-  &.primary.blue:disabled,
-  &.primary.blue[disabled] {
-    cursor: not-allowed;
-    border-color: #A3D3E9;
-    color: #ffffff;
-    background-color: #A3D3E9;
-  }
-
-  &.primary.lightBlue {
-    background-color: #326DE6;
-    border-width: 1px;
-    border-style: solid;
-    border-color: transparent;
-    color: #ffffff;
-    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-
-    &:not(:disabled):hover {
-      background-color: #154FC6;
-    }
-  }
-
-  &.primary.lightBlue.is-disabled,
-  &.primary.lightBlue.is-disabled:hover,
-  &.primary.lightBlue:disabled,
-  &.primary.lightBlue[disabled] {
-    cursor: not-allowed;
-    border-color: #A3D3E9;
-    color: #ffffff;
-    background-color: #A3D3E9;
-  }
-
   &.secondary {
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: #6D7278;
-    color: #6D7278;
+    border-color: #9B9B9B;
+    color: #9B9B9B;
     box-shadow: none;
 
     &:not(:disabled):hover {
-      border-color: #484F57;
-      color: #484F57;
+      border-color: #717171;
+      color: #717171;
     }
   }
 
@@ -188,20 +130,6 @@
     }
   }
 
-  &.secondary.green {
-    background-color: #ffffff;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #44bb66;
-    color: #44bb66;
-    box-shadow: none;
-
-    &:not(:disabled):hover {
-      border-color: #2F8D4A;
-      color: #2F8D4A;
-    }
-  }
-
   &.secondary.blue {
     background-color: #ffffff;
     border-width: 1px;
@@ -213,34 +141,6 @@
     &:not(:disabled):hover {
       border-color: #2158CA;
       color: #2158CA;
-    }
-  }
-
-  &.secondary.gray {
-    background-color: #ffffff;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #9B9B9B;
-    color: #9B9B9B;
-    box-shadow: none;
-
-    &:not(:disabled):hover {
-      border-color: #717171;
-      color: #717171;
-    }
-  }
-
-  &.secondary.lightBlue {
-    background-color: #ffffff;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #326DE6;
-    color: #326DE6;
-    box-shadow: none;
-
-    &:not(:disabled):hover {
-      border-color: #154FC6;
-      color: #154FC6;
     }
   }
 

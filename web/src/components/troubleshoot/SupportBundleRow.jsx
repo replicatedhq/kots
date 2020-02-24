@@ -59,7 +59,7 @@ class SupportBundleRow extends React.Component {
       if (bundle.status === "uploaded" || bundle.status === "analyzing") {
         noInsightsMessage = (
           <div className="flex">
-            <Loader size="14" color="#44bb66" />
+            <Loader size="14" />
             <p className="u-fontSize--small u-fontWeight--medium u-marginLeft--5 u-color--doveGray">We are still analyzing your bundle</p>
           </div>
         )

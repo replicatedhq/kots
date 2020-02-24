@@ -92,7 +92,7 @@ export default class DashboardCard extends React.Component {
               </div>
               :
               <div className="u-marginTop--15">
-                <a href={selectedAction?.uri} target="_blank" rel="noopener noreferrer" className="btn secondary gray"> {selectedAction.title} </a>
+                <a href={selectedAction?.uri} target="_blank" rel="noopener noreferrer" className="btn secondary"> {selectedAction.title} </a>
               </div>
             }
           </div>

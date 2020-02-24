@@ -206,37 +206,59 @@ class UploadAirgapBundle extends React.Component {
     });
   }
 
+  moveBar = (count) => {
+    const elem = document.getElementById("myBar");
+    const percent = count > 3 ? 96 : count * 30;
+    if (elem) {
+      elem.style.width = percent + "%";
+    }
+  }
+
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
     this.setState({
       preparingOnlineInstall: true,
       onlineInstallErrorMessage: ""
     });
-    try {
-      const resp = await this.props.resumeInstallOnline(slug);
-      const app = resp?.data?.resumeInstallOnline;
-      const hasPreflight = app?.hasPreflight;
-      const isConfigurable = app?.isConfigurable;
-
-      await this.props.onUploadSuccess();
-
-      if (isConfigurable) {
-        this.props.history.replace(`/${slug}/config`);
-      } else if (hasPreflight) {
-        this.props.history.replace("/preflight");
-      } else {
-        this.props.history.replace(`/app/${slug}`);
-      }
-
-    } catch (err) {
-      console.log(err);
+    let app;
+    this.props.resumeInstallOnline(slug)
+    .then((resp) => {
+      app = resp.data?.resumeInstallOnline;
+    })
+    .catch((err) => {
       err.graphQLErrors.map(({ msg }) => {
         this.setState({
           preparingOnlineInstall: false,
           onlineInstallErrorMessage: msg
         });
       });
-    }
+    });
+    let count = 0;
+    const interval = setInterval(() => {
+      if (this.state.onlineInstallErrorMessage.length) {
+        clearInterval(interval);
+      }
+      count++
+      this.moveBar(count);
+      if (count > 3) {
+        if (app) {
+          clearInterval(interval);
+          this.props.onUploadSuccess().then(() => {
+            // When successful, refetch all the user's apps with onUploadSuccess
+            const hasPreflight = app.hasPreflight;
+            const isConfigurable = app.isConfigurable;
+            if (isConfigurable) {
+              this.props.history.replace(`/${slug}/config`);
+            } else if (hasPreflight) {
+              this.props.history.replace("/preflight");
+            } else {
+              this.props.history.replace(`/app/${slug}`);
+            }
+          });
+
+        }
+      }
+    }, 1000);
   }
 
   onProgressError = async (errorMessage) => {
@@ -357,8 +379,7 @@ class UploadAirgapBundle extends React.Component {
             </div>
             {preparingOnlineInstall ?
               <div className="flex-column alignItems--center u-marginTop--30">
-                <Loader size="40" />
-                <LicenseUploadProgress />
+                <LicenseUploadProgress hideProgressBar={true} />
               </div>
               :
               <div>
