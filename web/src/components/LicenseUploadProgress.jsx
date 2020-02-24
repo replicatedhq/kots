@@ -5,7 +5,6 @@ import { getOnlineInstallStatus } from "../queries/AppsQueries";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
 function LicenseUploadProgress(props) {
-  const { total, sent } = props;
   const { getOnlineInstallStatus } = props.data;
 
   props.data?.startPolling(2000);
