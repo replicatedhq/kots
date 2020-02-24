@@ -152,13 +152,13 @@ class PreflightResultPage extends Component {
           <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
         <div className="flex1 flex u-overflow--auto">
-          <div className="PreflightChecks--wrapper flex flex-column u-paddingTop--30 u-overflow--hidden">
+          <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30 u-overflow--hidden">
             {this.props.history.location.pathname.includes("version-history") &&
             <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
-            <div className="u-minWidth--full u-minHeight--full u-marginTop--20 u-overflow--hidden">
+            <div className="u-minWidth--full u-marginTop--20 flex-column flex1">
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
@@ -166,7 +166,7 @@ class PreflightResultPage extends Component {
                 Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements you can still proceed, but understand that things might not work properly.
               </p>
               {(!stopPolling) && (
-                <div className="flex-column justifyContent--center alignItems--center u-minHeight--full u-minWidth--full">
+                <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                   <Loader size="60" />
                 </div>
               )}
