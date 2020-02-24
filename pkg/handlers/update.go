@@ -103,7 +103,6 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	fmt.Printf("%#v\n", updates)
 
 	// if there are updates, go routine it
 	if len(updates) == 0 {

@@ -132,3 +132,21 @@ func GetAppVersionArchive(appID string, sequence int) (string, error) {
 
 	return tmpDir, nil
 }
+
+func ExtractArchiveToTempDirectory(archiveFilename string) (string, error) {
+	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(archiveFilename, tmpDir); err != nil {
+		return "", errors.Wrap(err, "failed to unarchive")
+	}
+
+	return tmpDir, nil
+}

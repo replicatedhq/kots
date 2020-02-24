@@ -11,7 +11,6 @@ type Mutation {
   createKotsDownstream(appId: String!, clusterId: String!): Boolean
   deleteKotsDownstream(slug: String!, clusterId: String!): Boolean
   deleteKotsApp(slug: String!): Boolean
-  checkForKotsUpdates(appId: ID!): Int
   uploadKotsLicense(value: String!): KotsAppUpload
   deployKotsVersion(upstreamSlug: String!, sequence: Int!, clusterSlug: String!): Boolean
   updateRegistryDetails(registryDetails: AppRegistryDetails!): Boolean
