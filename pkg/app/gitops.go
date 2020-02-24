@@ -223,6 +223,7 @@ func createGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
+	defer os.RemoveAll(workDir)
 
 	cloned, err := git.PlainClone(workDir, false, &git.CloneOptions{
 		URL:               gitOpsConfig.CloneURL(),
