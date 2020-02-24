@@ -650,6 +650,8 @@ github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uY
 github.com/replicatedhq/kots v1.12.2 h1:e+nyUeuHW0M4H42pI9iMX7+Xh+8gqZSuQitQiqvcb0c=
 github.com/replicatedhq/kots v1.12.3-0.20200221022115-9cc0a8b3591c h1:JxBO/Ay/cCEvAnd95t0e5KUwRVStnuQDxz1PNa23F9A=
 github.com/replicatedhq/kots v1.12.3-0.20200221022115-9cc0a8b3591c/go.mod h1:g/f6kjmHvIBSuDNjCkaAoWFkpVH6oXCDt8KVXsCvNPw=
+github.com/replicatedhq/kots v1.13.0-beta h1:9Nyylro5BXJn4KGpjFBjVQEfEjW9H440tsy54U1Svto=
+github.com/replicatedhq/kots v1.13.0-beta/go.mod h1:3zNa1XsHLQAMhCKOW9dyaD7LvHp41f/sInWRM0CVL58=
 github.com/replicatedhq/kots v1.13.0-beta.0.20200221224316-18e8689dd40b h1:u5NjI64H+b8x6GAWypfeF31g0jgn1G4+z9AsQelwyp4=
 github.com/replicatedhq/kots v1.13.0-beta.0.20200221224316-18e8689dd40b/go.mod h1:g/f6kjmHvIBSuDNjCkaAoWFkpVH6oXCDt8KVXsCvNPw=
 github.com/replicatedhq/kots v1.13.0-beta.0.20200222012128-5044b77301c9 h1:Gg4NT9AGlXxvOiSqE+nYMwlZokjNUo1+zJCrrmDYlnA=
