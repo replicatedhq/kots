@@ -7,10 +7,14 @@ import (
 )
 
 type RenderOptions struct {
-	SplitMultiDocYAML bool
-	Namespace         string
-	HelmOptions       []string
-	Log               *logger.Logger
+	SplitMultiDocYAML      bool
+	Namespace              string
+	HelmOptions            []string
+	LocalRegistryHost      string
+	LocalRegistryNamespace string
+	LocalRegistryUsername  string
+	LocalRegistryPassword  string
+	Log                    *logger.Logger
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required
