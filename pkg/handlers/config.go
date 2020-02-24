@@ -24,7 +24,7 @@ import (
 )
 
 type UpdateAppConfigRequest struct {
-	Sequence         int                        `json:"seqeunce"`
+	Sequence         int                        `json:"sequence"`
 	CreateNewVersion bool                       `json:"createNewVersion"`
 	ConfigGroups     []*kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
