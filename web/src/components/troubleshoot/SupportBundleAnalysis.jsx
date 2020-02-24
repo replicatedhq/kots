@@ -110,7 +110,7 @@ export class SupportBundleAnalysis extends React.Component {
     if (getSupportBundle.loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
-          <Loader size="60" color="#44bb66" />
+          <Loader size="60" />
         </div>
       )
     }

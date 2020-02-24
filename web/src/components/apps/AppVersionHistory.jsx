@@ -603,7 +603,7 @@ class AppVersionHistory extends Component {
     return (
       versionHistory.length && selectedDiffReleases ?
         <div className="flex">
-          <button className="btn secondary gray small u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
+          <button className="btn secondary small u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
           <button
             className="btn primary small blue"
             disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}

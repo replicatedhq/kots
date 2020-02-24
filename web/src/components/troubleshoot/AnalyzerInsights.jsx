@@ -118,7 +118,7 @@ export class AnalyzerInsights extends React.Component {
       if (status === "uploaded" || status === "analyzing") {
         noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
-            <Loader size="40" color="#44bb66" />
+            <Loader size="40" />
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
             {hasAnalysisError && this.renderAnalysisError()}

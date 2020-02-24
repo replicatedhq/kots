@@ -273,7 +273,7 @@ class AppGitops extends Component {
                 </p>
                 <div className="flex justifyContent--center">
                   <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.disableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
-                  <button className="btn secondary lightBlue" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
+                  <button className="btn secondary blue" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
               </div>
               :
@@ -301,7 +301,7 @@ class AppGitops extends Component {
 
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
-                    <button className="btn secondary lightBlue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
+                    <button className="btn secondary blue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
                     <button className="btn primary blue" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
                   </div>
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>

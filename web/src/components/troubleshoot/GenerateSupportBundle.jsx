@@ -173,7 +173,7 @@ class GenerateSupportBundle extends React.Component {
             <div>
               {isGeneratingBundle ?
                 <div className="flex1 flex-column justifyContent--center alignItems--center">
-                  <Loader size="60" color="#44bb66" />
+                  <Loader size="60" />
                 </div>
               :
                 <div>

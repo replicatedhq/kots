@@ -166,7 +166,7 @@ class KotsApplicationTree extends React.Component {
                 </div>
                 : fileLoading || !fileToView ?
                   <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <Loader size="50" color="#44bb66" />
+                    <Loader size="50" />
                   </div>
                   :
                   <MonacoEditor

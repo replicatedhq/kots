@@ -25,7 +25,7 @@ class SupportBundleList extends React.Component {
     if (loading) {
       return (
         <div className="flex1 flex-column justifyContent--center alignItems--center">
-          <Loader size="60" color="#44bb66" />
+          <Loader size="60" />
         </div>
       );
     }

@@ -523,7 +523,7 @@ class Dashboard extends Component {
                     </div>
                   </div>
                   <div className="dashboard-card absolute-button  flex flex1 alignItems--center justifyContent--center alignSelf--center">
-                    <button className="btn secondary lightBlue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
+                    <button className="btn secondary blue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
                   </div>
                 </div>
               }
