@@ -45,8 +45,9 @@ func Get(id string) (*App, error) {
 	var registryUsername sql.NullString
 	var registryPasswordEnc sql.NullString
 	var registryNamespace sql.NullString
+	var currentSequence sql.NullInt64
 
-	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &app.CurrentSequence, &app.IsAirgap,
+	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap,
 		&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
@@ -55,11 +56,17 @@ func Get(id string) (*App, error) {
 		registrySettings := RegistrySettings{
 			Hostname:    registryHostname.String,
 			Username:    registryUsername.String,
-			HasPassword: registryPasswordEnc.Valid,
+			PasswordEnc: registryPasswordEnc.String,
 			Namespace:   registryNamespace.String,
 		}
 
 		app.RegistrySettings = &registrySettings
+	}
+
+	if currentSequence.Valid {
+		app.CurrentSequence = int(currentSequence.Int64)
+	} else {
+		app.CurrentSequence = -1
 	}
 
 	query = `select cluster_id, downstream_name from app_downstream where app_id = $1`
@@ -90,7 +97,7 @@ func GetFromSlug(slug string) (*App, error) {
 	query := `select id from app where slug = $1`
 	row := db.QueryRow(query, slug)
 
-	id := "'"
+	id := ""
 
 	if err := row.Scan(&id); err != nil {
 		return nil, errors.Wrap(err, "failed to scan id")
@@ -99,9 +106,21 @@ func GetFromSlug(slug string) (*App, error) {
 	return Get(id)
 }
 
+// CreateFirstVersion works much likst CreateVersion except that it assumes version 0
+// and never attempts to calculate a diff, or look at previous versions
+func (a App) CreateFirstVersion(filesInDir string, source string) (int64, error) {
+	return a.createVersion(filesInDir, source, true)
+}
+
 // CreateVersion creates a new version of the app in the database, but the caller
 // is responsible for uploading the archive to s3
 func (a App) CreateVersion(filesInDir string, source string) (int64, error) {
+	return a.createVersion(filesInDir, source, false)
+}
+
+// this is the common, internal function to create an app version, used in both
+// new and updates to apps
+func (a App) createVersion(filesInDir string, source string, isFirstVersion bool) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -154,6 +173,11 @@ func (a App) CreateVersion(filesInDir string, source string) (int64, error) {
 	}
 	defer tx.Rollback()
 
+	newSequence := 0
+	if !isFirstVersion {
+		newSequence = a.CurrentSequence + 1
+	}
+
 	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
 supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
@@ -173,7 +197,7 @@ kots_license = EXCLUDED.kots_license,
 config_spec = EXCLUDED.config_spec,
 config_values = EXCLUDED.config_values,
 backup_spec = EXCLUDED.backup_spec`
-	_, err = tx.Exec(query, a.ID, a.CurrentSequence+1, time.Now(),
+	_, err = tx.Exec(query, a.ID, newSequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
 		kotsKinds.Installation.Spec.ReleaseNotes,
 		kotsKinds.Installation.Spec.UpdateCursor,
@@ -210,10 +234,15 @@ backup_spec = EXCLUDED.backup_spec`
 		downstreamStatus = "pending"
 	}
 
-	// Get the previous archive, we need this to calculate the diff
-	previousArchiveDir, err := GetAppVersionArchive(a.ID, a.CurrentSequence)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get previous archive")
+	previousArchiveDir := ""
+	if !isFirstVersion {
+		// Get the previous archive, we need this to calculate the diff
+		previousDir, err := GetAppVersionArchive(a.ID, a.CurrentSequence)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get previous archive")
+		}
+
+		previousArchiveDir = previousDir
 	}
 
 	for _, downstream := range a.Downstreams {
@@ -224,16 +253,22 @@ backup_spec = EXCLUDED.backup_spec`
 		if downstreamGitOps != nil {
 			fmt.Printf("%#v\n", downstreamGitOps)
 			// TODO make the commit
+			// TODO 1.13.0 Regression
 		}
 
-		// diff this release from the last release
-		diff, err := diffAppVersionsForDownstreams(downstream.Name, filesInDir, previousArchiveDir)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to diff")
-		}
-		diffSummary, err := json.Marshal(diff)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal diff")
+		diffSummary := ""
+		if !isFirstVersion {
+			// diff this release from the last release
+			diff, err := diffAppVersionsForDownstreams(downstream.Name, filesInDir, previousArchiveDir)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to diff")
+			}
+			b, err := json.Marshal(diff)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal diff")
+			}
+
+			diffSummary = string(b)
 		}
 
 		commitURL := ""
@@ -244,14 +279,14 @@ backup_spec = EXCLUDED.backup_spec`
 
 		lastDownstreamSequence := int64(-1)
 		if err := row.Scan(&lastDownstreamSequence); err != nil {
-			// continue
+			// continue, it's 0
 		}
 		newSequence := lastDownstreamSequence + 1
 
 		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
-		_, err = tx.Exec(query, a.ID, downstream.ClusterID, newSequence, a.CurrentSequence+1, time.Now(),
+		_, err = tx.Exec(query, a.ID, downstream.ClusterID, newSequence, newSequence, time.Now(),
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			string(diffSummary), commitURL, isGitDeployable)
+			diffSummary, commitURL, isGitDeployable)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
@@ -261,5 +296,5 @@ backup_spec = EXCLUDED.backup_spec`
 		return int64(0), errors.Wrap(err, "failed to commit")
 	}
 
-	return int64(a.CurrentSequence + 1), nil
+	return int64(newSequence), nil
 }

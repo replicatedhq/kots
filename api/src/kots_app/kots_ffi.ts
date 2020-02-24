@@ -42,9 +42,7 @@ function kots() {
   return ffi.Library("/lib/kots.so", {
     TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
     PullFromLicense: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    PullFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString, GoString]],
-    ListUpdates: ["void", [GoString, GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoBool, GoString]],
@@ -58,56 +56,6 @@ function kots() {
 export interface Update {
   cursor: string;
   versionLabel: string;
-}
-
-export async function kotsAppCheckForUpdates(app: KotsApp, currentCursor: string, currentChannel: string): Promise<Update[]> {
-  // We need to include the last archive because if there is an update, the ffi function will update it
-  const tmpDir = tmp.dirSync();
-
-  try {
-    const statusServer = new StatusServer();
-    await statusServer.start(tmpDir.name);
-
-    const socketParam = new GoString();
-    socketParam["p"] = statusServer.socketFilename;
-    socketParam["n"] = statusServer.socketFilename.length;
-
-    const licenseDataParam = new GoString();
-    licenseDataParam["p"] = app.license;
-    licenseDataParam["n"] = String(app.license).length;
-
-    const currentCursorParam = new GoString();
-    currentCursorParam["p"] = currentCursor ? currentCursor : "";
-    currentCursorParam["n"] = currentCursor ? currentCursor.length : 0;
-
-    const currentChannelParam = new GoString();
-    currentChannelParam["p"] = currentChannel ? currentChannel : "";
-    currentChannelParam["n"] = currentChannel ? currentChannel.length : 0;
-
-    console.log(`Check for updates current cursor = ${currentCursor}`);
-
-    kots().ListUpdates(socketParam, licenseDataParam, currentCursorParam, currentChannelParam);
-
-    await statusServer.connection();
-    const update: Update[] = await statusServer.termination((resolve, reject, obj): boolean => {
-      if (obj.status === "terminated") {
-        if (obj.exit_code === 0) {
-          resolve(JSON.parse(obj.data) as Update[]);
-        } else {
-          reject(new Error(obj.display_message));
-        }
-        return true;
-      }
-      return false;
-    });
-    if (update) {
-      console.log(`Check for updates got updates ${JSON.stringify(update)}`);
-      return update;
-    }
-    return [];
-  } finally {
-    tmpDir.removeCallback();
-  }
 }
 
 export async function kotsAppDownloadUpdates(updatesAvailable: Update[], app: KotsApp, stores: Stores): Promise<void> {
@@ -299,63 +247,6 @@ export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string
   }
 }
 
-export async function kotsAppCheckForUpdate(currentCursor: string, app: KotsApp, stores: Stores): Promise<boolean> {
-  // We need to include the last archive because if there is an update, the ffi function will update it
-  const tmpDir = tmp.dirSync();
-  const archive = path.join(tmpDir.name, "archive.tar.gz");
-
-  try {
-    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
-
-    const namespace = getK8sNamespace();
-    let isUpdateAvailable = -1;
-
-    const statusServer = new StatusServer();
-    await statusServer.start(tmpDir.name);
-
-    const socketParam = new GoString();
-    socketParam["p"] = statusServer.socketFilename;
-    socketParam["n"] = statusServer.socketFilename.length;
-
-    const archiveParam = new GoString();
-    archiveParam["p"] = archive;
-    archiveParam["n"] = archive.length;
-
-    const namespaceParam = new GoString();
-    namespaceParam["p"] = namespace;
-    namespaceParam["n"] = namespace.length;
-
-    kots().UpdateCheck(socketParam, archiveParam, namespaceParam);
-    await statusServer.connection();
-    await statusServer.termination((resolve, reject, obj): boolean => {
-      // Return true if completed
-      if (obj.status === "terminated") {
-        isUpdateAvailable = obj.exit_code;
-        if (obj.exit_code !== -1) {
-          resolve();
-        } else {
-          reject(new Error(obj.display_message));
-        }
-        return true;
-      }
-      return false;
-    });
-
-    if (isUpdateAvailable < 0) {
-      console.log("error checking for updates")
-      return false;
-    }
-
-    if (isUpdateAvailable > 0) {
-      await saveUpdateVersion(archive, app, stores, "Upstream Update");
-    }
-
-    return isUpdateAvailable > 0;
-  } finally {
-    tmpDir.removeCallback();
-  }
-}
-
 async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, updateSource: string) {
   // if there was an update available, expect that the new archive is in the smae place as the one we pased in
   const params = await Params.getParams();
@@ -531,66 +422,6 @@ export async function kotsAppFromData(out: string, kotsApp: KotsApp, stores: Sto
   return {
     isConfigurable: kotsApp.isConfigurable,
     hasPreflight: kotsApp.hasPreflight,
-  };
-}
-
-export function kotsPullFromAirgap(socket: string, out: string, app: KotsApp, licenseData: string, airgapDir: string, downstreamName: string, stores: Stores, registryHost: string, registryNamespace: string, username: string, password: string): any {
-  const namespace = getK8sNamespace();
-
-  const socketParam = new GoString();
-  socketParam["p"] = socket;
-  socketParam["n"] = socket.length;
-
-  const licenseDataParam = new GoString();
-  licenseDataParam["p"] = licenseData;
-  licenseDataParam["n"] = licenseData.length;
-
-  const downstreamParam = new GoString();
-  downstreamParam["p"] = downstreamName;
-  downstreamParam["n"] = downstreamName.length;
-
-  const namespaceParam = new GoString();
-  namespaceParam["p"] = namespace;
-  namespaceParam["n"] = namespace.length;
-
-  const airgapDirParam = new GoString();
-  airgapDirParam["p"] = airgapDir;
-  airgapDirParam["n"] = airgapDir.length;
-
-  const outParam = new GoString();
-  outParam["p"] = out;
-  outParam["n"] = out.length;
-
-  const registryHostParam = new GoString();
-  registryHostParam["p"] = registryHost;
-  registryHostParam["n"] = registryHost.length;
-
-  const registryNamespaceParam = new GoString();
-  registryNamespaceParam["p"] = registryNamespace;
-  registryNamespaceParam["n"] = registryNamespace.length;
-
-  const usernameParam = new GoString();
-  usernameParam["p"] = username;
-  usernameParam["n"] = username.length;
-
-  const passwordParam = new GoString();
-  passwordParam["p"] = password;
-  passwordParam["n"] = password.length;
-
-  kots().PullFromAirgap(socketParam, licenseDataParam, airgapDirParam, downstreamParam, namespaceParam, outParam, registryHostParam, registryNamespaceParam, usernameParam, passwordParam);
-
-  // args are returned so they are not garbage collected before native code is done
-  return {
-    socketParam,
-    licenseDataParam,
-    downstreamParam,
-    namespaceParam,
-    airgapDirParam,
-    outParam,
-    registryHostParam,
-    registryNamespaceParam,
-    usernameParam,
-    passwordParam,
   };
 }
 

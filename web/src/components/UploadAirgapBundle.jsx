@@ -152,7 +152,7 @@ class UploadAirgapBundle extends React.Component {
       formData.append("password", this.state.registryDetails.password);
     }
 
-    const url = `${window.env.API_ENDPOINT}/kots/airgap`;
+    const url = `${window.env.API_ENDPOINT}/app/airgap`;
     const xhr = new XMLHttpRequest();
 
     xhr.upload.onprogress = event => {
@@ -219,7 +219,7 @@ class UploadAirgapBundle extends React.Component {
       const isConfigurable = app?.isConfigurable;
 
       await this.props.onUploadSuccess();
-      
+
       if (isConfigurable) {
         this.props.history.replace(`/${slug}/config`);
       } else if (hasPreflight) {
@@ -360,101 +360,101 @@ class UploadAirgapBundle extends React.Component {
                 <Loader size="40" />
                 <LicenseUploadProgress />
               </div>
-            :
-            <div>
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
-              <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
-                {showRegistry ?
-                  `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${appName ? `in ${appName}` : ""} will be retagged and pushed to the registry that you provide here.`
-                  :
-                  `To install on an airgapped network, the images ${appName ? `in ${appName}` : ""} will be uploaded from the bundle you provide to the cluster.`
-                }
-              </p>
-              {showRegistry &&
-              <div className="u-marginTop--30">
-                <AirgapRegistrySettings
-                  app={null}
-                  hideCta={true}
-                  hideTestConnection={true}
-                  namespaceDescription="What namespace do you want the application images pushed to?"
-                  gatherDetails={this.getRegistryDetails}
-                  registryDetails={registryDetails}
-                  showRequiredFields={errorMessage === this.emptyRequiredFields}
-                  showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
-                  showNamespaceAsRequired={errorMessage === this.emptyNamespaceField}
-                />
-              </div>
-              }
-              <div className="u-marginTop--20 flex">
-                <div className={classNames("FileUpload-wrapper", "flex1", {
-                  "has-file": hasFile,
-                  "has-error": errorMessage
-                })}>
-                  <Dropzone
-                    className="Dropzone-wrapper"
-                    accept=".airgap"
-                    onDropAccepted={this.onDrop}
-                    multiple={false}
-                  >
-                    {hasFile ?
-                      <div className="has-file-wrapper">
-                        <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
-                      </div>
-                      :
-                      <div className="u-textAlign--center">
-                        <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
-                      </div>
-                    }
-                  </Dropzone>
-                </div>
-                {hasFile &&
-                  <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
-                    <button
-                      type="button"
-                      className="btn primary large flex-auto"
-                      onClick={this.uploadAirgapBundle}
-                      disabled={fileUploading || !hasFile}
-                    >
-                      {fileUploading ? "Uploading" : "Upload airgap bundle"}
-                    </button>
+              :
+              <div>
+                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
+                <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+                  {showRegistry ?
+                    `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${appName ? `in ${appName}` : ""} will be retagged and pushed to the registry that you provide here.`
+                    :
+                    `To install on an airgapped network, the images ${appName ? `in ${appName}` : ""} will be uploaded from the bundle you provide to the cluster.`
+                  }
+                </p>
+                {showRegistry &&
+                  <div className="u-marginTop--30">
+                    <AirgapRegistrySettings
+                      app={null}
+                      hideCta={true}
+                      hideTestConnection={true}
+                      namespaceDescription="What namespace do you want the application images pushed to?"
+                      gatherDetails={this.getRegistryDetails}
+                      registryDetails={registryDetails}
+                      showRequiredFields={errorMessage === this.emptyRequiredFields}
+                      showHostnameAsRequired={errorMessage === this.emptyHostnameErrMessage}
+                      showNamespaceAsRequired={errorMessage === this.emptyNamespaceField}
+                    />
                   </div>
                 }
-              </div>
-              {errorMessage && (
-                <div className="u-marginTop--10">
-                  <span className="u-color--chestnut">{errorMessage}</span>
-                  {this.state.showSupportBundleCommand ?
-                    <div className="u-marginTop--10">
-                      <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
-                      <CodeSnippet
-                        language="bash"
-                        canCopy={true}
-                        onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                <div className="u-marginTop--20 flex">
+                  <div className={classNames("FileUpload-wrapper", "flex1", {
+                    "has-file": hasFile,
+                    "has-error": errorMessage
+                  })}>
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept=".airgap"
+                      onDropAccepted={this.onDrop}
+                      multiple={false}
+                    >
+                      {hasFile ?
+                        <div className="has-file-wrapper">
+                          <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
+                        </div>
+                        :
+                        <div className="u-textAlign--center">
+                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
+                        </div>
+                      }
+                    </Dropzone>
+                  </div>
+                  {hasFile &&
+                    <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
+                      <button
+                        type="button"
+                        className="btn primary large flex-auto"
+                        onClick={this.uploadAirgapBundle}
+                        disabled={fileUploading || !hasFile}
                       >
-                        {supportBundleCommand.split("\n")}
-                      </CodeSnippet>
-                    </div>
-                    :
-                    <div>
-                      <div className="u-marginTop--10">
-                        <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
-                      </div>
+                        {fileUploading ? "Uploading" : "Upload airgap bundle"}
+                      </button>
                     </div>
                   }
                 </div>
-              )}
-              {hasFile &&
-                <div className="u-marginTop--10">
-                  <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
-                </div>
-              }
-            </div>
+                {errorMessage && (
+                  <div className="u-marginTop--10">
+                    <span className="u-color--chestnut">{errorMessage}</span>
+                    {this.state.showSupportBundleCommand ?
+                      <div className="u-marginTop--10">
+                        <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                        <CodeSnippet
+                          language="bash"
+                          canCopy={true}
+                          onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                        >
+                          {supportBundleCommand.split("\n")}
+                        </CodeSnippet>
+                      </div>
+                      :
+                      <div>
+                        <div className="u-marginTop--10">
+                          <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
+                      </div>
+                      </div>
+                    }
+                  </div>
+                )}
+                {hasFile &&
+                  <div className="u-marginTop--10">
+                    <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different bundle</span>
+                  </div>
+                }
+              </div>
             }
-            
+
           </div>
         </div>
-        <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage }, {"u-display--none": preparingOnlineInstall})}>
+        <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage }, { "u-display--none": preparingOnlineInstall })}>
           <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
         </div>
         {onlineInstallErrorMessage && (
