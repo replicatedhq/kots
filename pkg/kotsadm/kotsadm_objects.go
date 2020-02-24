@@ -254,6 +254,10 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 								{
+									Name:  "S3_ENDPOINT",
+									Value: "http://kotsadm-minio:9000",
+								},
+								{
 									Name:  "S3_BUCKET_NAME",
 									Value: "kotsadm",
 								},
