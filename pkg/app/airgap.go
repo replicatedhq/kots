@@ -198,6 +198,8 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		finalError = err
 		return errors.Wrap(err, "failed to query clusters")
 	}
+	defer rows.Close()
+
 	clusterIDs := map[string]string{}
 	for rows.Next() {
 		clusterID := ""
