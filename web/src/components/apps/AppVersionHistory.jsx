@@ -889,7 +889,7 @@ class AppVersionHistory extends Component {
                   {/* Downstream version history */}
                   {versionHistory.length >= 1 ? versionHistory.map((version) => {
                     const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
-                    const isNew = secondsAgo(version.createdOn) <= 10;
+                    const isNew = secondsAgo(version.createdOn) < 10;
                     return (
                       <div
                         key={version.sequence}
