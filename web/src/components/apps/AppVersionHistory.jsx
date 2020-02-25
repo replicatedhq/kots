@@ -561,13 +561,17 @@ class AppVersionHistory extends Component {
       if (xhr.status === 202) {
         this.state.updateChecker.start(this.updateStatus, 1000);
         this.setState({
-          uploadingAirgapFile: false
+          uploadingAirgapFile: false,
+          uploadSent: 0,
+          uploadTotal: 0,
         });
       } else {
         this.setState({
           uploadingAirgapFile: false,
           checkingForUpdates: false,
-          airgapUploadError: `Error uploading airgap bundle: ${response}`
+          airgapUploadError: `Error uploading airgap bundle: ${response}`,
+          uploadSent: 0,
+          uploadTotal: 0,
         });
       }
       this.props.toggleIsBundleUploading(false);
