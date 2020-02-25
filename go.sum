@@ -694,6 +694,8 @@ github.com/replicatedhq/kots v1.13.0-beta h1:9Nyylro5BXJn4KGpjFBjVQEfEjW9H440tsy
 github.com/replicatedhq/kots v1.13.0-beta/go.mod h1:3zNa1XsHLQAMhCKOW9dyaD7LvHp41f/sInWRM0CVL58=
 github.com/replicatedhq/kots v1.13.0-beta.0.20200224211048-9df633936d70 h1:QQYzy/jr3pwLw+25tn9MUg/3xzOtu5d4o3vryDqfOds=
 github.com/replicatedhq/kots v1.13.0-beta.0.20200224211048-9df633936d70/go.mod h1:3zNa1XsHLQAMhCKOW9dyaD7LvHp41f/sInWRM0CVL58=
+github.com/replicatedhq/kots v1.13.0 h1:8d6kUx09qfar/EsqW7p49L5T6RRRSQHM/M2YHD+eLoc=
+github.com/replicatedhq/kots v1.13.0/go.mod h1:3zNa1XsHLQAMhCKOW9dyaD7LvHp41f/sInWRM0CVL58=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.22 h1:rPnjb7BXJOx0Z6r+W+I5nzq2cDzT69zqcLaiQNWcSPc=
 github.com/replicatedhq/troubleshoot v0.9.22/go.mod h1:o/7PaQGCntybrPOZbK0WR3wgcvoD2frKCEqCmOSv82M=
