@@ -76,14 +76,29 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	defer func() {
 		if finalError == nil {
 			if err := ClearTaskStatus("airgap-install"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "faild to clear install task status"))
+			}
+			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
 			}
 		} else {
 			if err := SetTaskStatus("airgap-install", finalError.Error(), "failed"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
+			}
+			if err := setAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to set app status to error"))
 			}
 		}
 	}()
+
+	db := persistence.MustGetPGSession()
+
+	query := `update app set is_airgap=true where id = $1`
+	_, err := db.Exec(query, pendingApp.ID)
+	if err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to set app airgap flag")
+	}
 
 	// save the file
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
@@ -196,8 +211,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	// copying this from typescript ...
 	// i'll leave this next line
 	// TODO: refactor this entire function to be testable, reliable and less monolithic
-	db := persistence.MustGetPGSession()
-	query := `select id, title from cluster`
+	query = `select id, title from cluster`
 	rows, err := db.Query(query)
 	if err != nil {
 		finalError = err
@@ -252,6 +266,18 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	if err := CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
+	}
+
+	return nil
+}
+
+func setAppInstallState(appID, status string) error {
+	db := persistence.MustGetPGSession()
+
+	query := `update app set install_state = $2 where id = $1`
+	_, err := db.Exec(query, appID, status)
+	if err != nil {
+		return errors.Wrap(err, "failed to update app install state")
 	}
 
 	return nil
