@@ -1735,8 +1735,12 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
   async getAirgapInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
+
     if (result.rows.length !== 1) {
-      throw new Error("Could not find any kots app in getAirgapInstallStatus()");
+      return {
+        installStatus: "not_installed",
+        currentMessage: "",
+      }
     }
 
     const taskStatus = await this.getApiTaskStatus("airgap-install");
@@ -1750,8 +1754,12 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
   async getOnlineInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
+    
     if (result.rows.length !== 1) {
-      throw new Error("Could not find any kots app in getOnlineInstallStatus()");
+      return {
+        installStatus: "not_installed",
+        currentMessage: "",
+      }
     }
 
     const taskStatus = await this.getApiTaskStatus("online-install");
