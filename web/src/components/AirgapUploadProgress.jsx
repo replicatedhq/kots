@@ -71,7 +71,6 @@ function AirgapUploadProgress(props) {
   try {
     // Some of these messages will be JSON formatted progress reports.
     const jsonMessage = JSON.parse(statusMsg);
-    console.log(jsonMessage);
     const type = get(jsonMessage, "type");
     if (type === "progressReport") {
       statusMsg = jsonMessage.compatibilityMessage;
