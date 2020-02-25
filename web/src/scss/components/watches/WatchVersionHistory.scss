@@ -8,6 +8,7 @@ $cell-width: 140px;
   border-top: none;
   border-right: none;
   border-left: none;
+  background-color: #ffffff;
 
   &.active-deploy-row {
     border-top-width: 1px;
@@ -34,6 +35,14 @@ $cell-width: 140px;
     .lines-removed {
       color: #BC4752;
     }
+  }
+
+  &.is-new {
+    -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
+    -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
+    -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
+    animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
+    animation:         newVersion 9s ease forwards;
   }
   
 }
@@ -246,3 +255,22 @@ $cell-width: 140px;
 .checkbox.disabled {
   border: solid 1px #C4C7CA;
 }
+
+
+@-webkit-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@-moz-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@-o-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+
