@@ -47,9 +47,9 @@ func ClearTaskStatus(id string) error {
 
 func GetTaskStatus(id string) (string, error) {
 	db := persistence.MustGetPGSession()
-	query := `select status from api_task_status where id = $1`
+	query := `select status, current_message from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`
 
-	row := db.QueryRow(query, id)
+	row := db.QueryRow(query, id, time.Now())
 	status := ""
 	if err := row.Scan(&status); err != nil {
 		if err == sql.ErrNoRows {

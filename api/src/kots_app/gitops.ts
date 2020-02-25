@@ -17,7 +17,7 @@ interface commitTree {
 export async function sendInitialGitCommitsForAppDownstream(stores: Stores, appId: string, clusterId: string): Promise<any> {
   const app = await stores.kotsAppStore.getApp(appId);
   const downstreamGitOps = await stores.kotsAppStore.getDownstreamGitOps(appId, clusterId);
-  
+
   const currentVersion = await stores.kotsAppStore.getCurrentVersion(appId, clusterId);
   if (currentVersion) {
     if (downstreamGitOps.format === "single") {

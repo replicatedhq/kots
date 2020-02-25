@@ -97,6 +97,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		CurrentChannel: kotsKinds.Installation.Spec.ChannelName,
 		Silent:         false,
 	}
+
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		logger.Error(err)
@@ -118,8 +119,6 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			// the latest version is in archive dir
 			if err := app.DownloadUpdate(foundApp, archiveDir, update.Cursor); err != nil {
 				logger.Error(err)
-				w.WriteHeader(500)
-				return
 			}
 
 		}
