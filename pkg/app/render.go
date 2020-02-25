@@ -44,23 +44,19 @@ func (a *App) RenderDir(archiveDir string) error {
 	}
 
 	reOptions := rewrite.RewriteOptions{
-		RootDir:           archiveDir,
-		UpstreamURI:       fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:      filepath.Join(archiveDir, "upstream"),
-		Installation:      installation,
-		Downstreams:       downstreams,
-		Silent:            true,
-		CreateAppDir:      false,
-		ExcludeKotsKinds:  true,
-		License:           license,
-		ConfigValues:      configValues,
-		K8sNamespace:      k8sNamespace,
-		CopyImages:        false,
-		IsAirgap:          a.IsAirgap,
-		RegistryEndpoint:  a.RegistrySettings.Hostname,
-		RegistryUsername:  a.RegistrySettings.Username,
-		RegistryPassword:  a.RegistrySettings.PasswordEnc,
-		RegistryNamespace: a.RegistrySettings.Namespace,
+		RootDir:          archiveDir,
+		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
+		Installation:     installation,
+		Downstreams:      downstreams,
+		Silent:           true,
+		CreateAppDir:     false,
+		ExcludeKotsKinds: true,
+		License:          license,
+		ConfigValues:     configValues,
+		K8sNamespace:     k8sNamespace,
+		CopyImages:       false,
+		IsAirgap:         a.IsAirgap,
 	}
 
 	if a.RegistrySettings != nil {
