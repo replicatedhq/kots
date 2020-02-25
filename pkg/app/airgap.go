@@ -162,10 +162,15 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("DEV_NAMESPACE") != "" {
+		appNamespace = os.Getenv("DEV_NAMESPACE")
+	}
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
-		Namespace:           namespace,
+		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
 		AirgapRoot:          archiveDir,
 		ExcludeKotsKinds:    true,

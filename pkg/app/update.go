@@ -66,7 +66,7 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 
 	pullOptions := kotspull.PullOptions{
 		LicenseFile:         filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
-		Namespace:           os.Getenv("POD_NAMESPACE"),
+		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        toCursor,
