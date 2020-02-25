@@ -3,17 +3,19 @@ module github.com/replicatedhq/kotsadm
 go 1.12
 
 require (
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.0
+	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.13.0-beta.0.20200224211048-9df633936d70
-	github.com/replicatedhq/kotsadm/operator v0.0.0-20200222155401-e17065fb6ad0 // indirect
+	github.com/replicatedhq/kots v1.13.0-beta
 	github.com/replicatedhq/troubleshoot v0.9.22
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
