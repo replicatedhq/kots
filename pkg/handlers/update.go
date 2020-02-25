@@ -63,7 +63,14 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if currentStatus == "running" {
+		logger.Debug("update-download is already running, not starting a new one")
 		JSON(w, 200, appUpdateCheckResponse)
+		return
+	}
+
+	if err := app.ClearTaskStatus("update-download"); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
 		return
 	}
 
