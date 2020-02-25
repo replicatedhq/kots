@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
@@ -19,8 +18,6 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/session"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UpdateAppConfigRequest struct {
@@ -123,20 +120,27 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	kotsKinds.ConfigValues.Spec.Values = values
 
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(kotsKinds.ConfigValues, &b); err != nil {
+	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), b.Bytes(), 0644); err != nil {
+
+	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
 	if updateAppConfigRequest.CreateNewVersion {
+		err := foundApp.RenderDir(archiveDir)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
 		newSequence, err := foundApp.CreateVersion(archiveDir, "Config Change")
 		if err != nil {
 			logger.Error(err)
