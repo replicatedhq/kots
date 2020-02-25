@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 )
@@ -40,6 +41,25 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
+		return
+	}
+
+	currentStatus, err := app.GetTaskStatus("image-rewrite")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if currentStatus == "running" {
+		logger.Error(errors.New("image-rewrite is already running, not starting a new one"))
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := app.ClearTaskStatus("update-download"); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
 		return
 	}
 
