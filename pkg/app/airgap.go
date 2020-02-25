@@ -226,6 +226,11 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		return errors.Wrap(err, "failed to get app from pending app")
 	}
 
+	if err := UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to update registyry")
+	}
+
 	query = `update app set install_state = 'installed', is_airgap=true where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
