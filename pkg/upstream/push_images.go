@@ -116,11 +116,12 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 			numTries := 0
 			var imageError error
 			for numTries < 5 {
+				numTries++
+
 				imageFile.UploadStart = time.Now()
 				reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
 				err = image.CopyFromFileToRegistry(imageFile.FilePath, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter)
 				if err != nil {
-					numTries++
 					time.Sleep(time.Second * 5)
 					imageError = err
 					continue
@@ -128,6 +129,8 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 				options.Log.FinishChildSpinner()
 				imageFile.UploadEnd = time.Now()
 				reportWriter.Write([]byte(fmt.Sprintf("+file.end:%s\n", imageFile.FilePath)))
+
+				break
 			}
 			if imageError != nil {
 				reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
