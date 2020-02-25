@@ -5,6 +5,7 @@ package template
 */
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -25,6 +26,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 	certUtil "k8s.io/client-go/util/cert"
 )
 
@@ -34,6 +36,13 @@ type Ctx interface {
 
 type StaticCtx struct {
 }
+
+type TLSPair struct {
+	Cert string
+	Key  string
+}
+
+var tlsMap = map[string]TLSPair{}
 
 func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap := sprig.TxtFuncMap()
@@ -60,6 +69,22 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["HumanSize"] = ctx.humanSize
 	funcMap["KubeSeal"] = ctx.kubeSeal
 	funcMap["Namespace"] = ctx.namespace
+
+	funcMap["GetTLSCert"] = func(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
+		if p, ok := tlsMap[certName]; ok {
+			return p.Cert
+		}
+
+		p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
+		tlsMap[certName] = p
+		return p.Cert
+	}
+	funcMap["GetTLSKey"] = func(certName string) string {
+		if p, ok := tlsMap[certName]; ok {
+			return p.Key
+		}
+		return ""
+	}
 
 	return funcMap
 }
@@ -310,4 +335,56 @@ func (ctx StaticCtx) namespace() string {
 	}
 
 	return os.Getenv("POD_NAMESPACE")
+}
+
+func genSelfSignedCert(cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) TLSPair {
+	tmplate := `cert: {{ $i := genSelfSignedCert %q %s %s %d }}{{ $i.Cert | b64enc }}
+key: {{ $i.Key | b64enc }}`
+
+	ipList := arrayToTemplateList(ips)
+	nameList := arrayToTemplateList(alternateDNS)
+	templated := fmt.Sprintf(tmplate, cn, ipList, nameList, daysValid)
+
+	parsed, err := template.New("cn").Funcs(sprig.GenericFuncMap()).Parse(templated)
+	if err != nil {
+		fmt.Printf("Failed to evaluate cert template: %v\n", err)
+		return TLSPair{}
+	}
+
+	var buff bytes.Buffer
+	if err = parsed.Execute(&buff, nil); err != nil {
+		fmt.Printf("Failed to execute cert template: %v\n", err)
+		return TLSPair{}
+	}
+
+	result := TLSPair{}
+	if err := yaml.Unmarshal(buff.Bytes(), &result); err != nil {
+		fmt.Printf("Failed to unmarshal cert template result: %v\n", err)
+		return TLSPair{}
+	}
+
+	cert, err := base64.StdEncoding.DecodeString(result.Cert)
+	if err != nil {
+		fmt.Printf("Failed to decode generated cert: %v\n", err)
+		return TLSPair{}
+	}
+	result.Cert = string(cert)
+
+	key, err := base64.StdEncoding.DecodeString(result.Key)
+	if err != nil {
+		fmt.Printf("Failed to decode generated key: %v\n", err)
+		return TLSPair{}
+	}
+	result.Key = string(key)
+
+	return result
+}
+
+func arrayToTemplateList(items []interface{}) string {
+	s := "(list"
+	for _, i := range items {
+		s = s + fmt.Sprintf(" %q", i)
+	}
+	s = s + ")"
+	return s
 }
