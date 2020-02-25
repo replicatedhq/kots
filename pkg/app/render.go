@@ -12,7 +12,8 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 )
 
-// renderDir renders an app archive dir
+// RenderDir renders an app archive dir
+// this is useful for when the license/config have updated, and template functions need to be evaluated again
 func (a *App) RenderDir(archiveDir string) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
@@ -84,5 +85,9 @@ func (a *App) RenderDir(archiveDir string) error {
 		reOptions.RegistryPassword = string(decryptedPassword)
 	}
 
-	return errors.Wrap(rewrite.Rewrite(reOptions), "rewrite directory")
+	err = rewrite.Rewrite(reOptions)
+	if err != nil {
+		return errors.Wrap(err, "rewrite directory")
+	}
+	return nil
 }
