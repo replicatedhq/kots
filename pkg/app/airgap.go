@@ -226,7 +226,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		return errors.Wrap(err, "failed to get app from pending app")
 	}
 
-	query = `update app set install_state = 'installed' where id = $1`
+	query = `update app set install_state = 'installed', is_airgap=true where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
 		finalError = err
