@@ -171,6 +171,7 @@ const KotsConfigItem = `
     recommended: Boolean
     default: String
     value: String
+    error: String
     data: String
     multi_value: [String]
     readonly: Boolean
@@ -194,6 +195,7 @@ const KotsConfigItemInput = `
     recommended: Boolean
     default: String
     value: String
+    error: String
     data: String
     multi_value: [String]
     readonly: Boolean
