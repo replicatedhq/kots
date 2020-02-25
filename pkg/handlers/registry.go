@@ -57,7 +57,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.ClearTaskStatus("update-download"); err != nil {
+	if err := app.ClearTaskStatus("image-rewrite"); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
