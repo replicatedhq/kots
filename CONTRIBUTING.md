@@ -18,3 +18,5 @@ To start, build and run all server components in the Kubernetes cluster with:
 ```
 skaffold dev
 ```
+
+Go code will not be rebuilt automatically.  Run `make kotsadm` to make the new binary and restart the pod.

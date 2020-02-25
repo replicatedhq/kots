@@ -7,7 +7,6 @@ ADD go.mod $PROJECTPATH/
 ADD go.sum $PROJECTPATH/
 
 ENV GO111MODULE=on
-RUN go mod download
 
 # Install Kubectl 1.14
 ENV KUBECTL_1_14_VERSION=v1.14.9
@@ -48,6 +47,6 @@ RUN kubectl krew install support-bundle
 ADD cmd $PROJECTPATH/cmd
 ADD pkg $PROJECTPATH/pkg
 # ADD web/dist $PROJECTPATH/web/dist
-RUN make kotsadm
+ADD ./bin/kotsadm ./bin/kotsadm
 
 ENTRYPOINT ["./bin/kotsadm", "api"]
