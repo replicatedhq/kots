@@ -57,7 +57,7 @@ class AppDetailPage extends Component {
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(lastProps) {
     const { getThemeState, setThemeState, match, listApps, history } = this.props;
     const slug = `${match.params.owner}/${match.params.slug}`;
     const currentWatch = listApps?.find(w => w.slug === slug);
@@ -79,6 +79,18 @@ class AppDetailPage extends Component {
       this.checkForFirstApp();
     }
 
+    // enforce initial app configuration (if exists)
+    const { getKotsAppQuery } = this.props;
+    if (getKotsAppQuery?.getKotsApp !== lastProps?.getKotsAppQuery?.getKotsApp && getKotsAppQuery?.getKotsApp) {
+      const app = getKotsAppQuery?.getKotsApp;
+      const downstream = app.downstreams?.length && app.downstreams[0];
+      if (downstream?.pendingVersions?.length) {
+        const firstVersion = downstream.pendingVersions.find(version => version?.sequence === 0);
+        if (firstVersion?.status === "pending_config") {
+          this.props.history.push(`/${app.slug}/config`);
+        }
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -146,7 +158,6 @@ class AppDetailPage extends Component {
     if (history.location.pathname === "/apps") {
       return this.checkForFirstApp();
     }
-
   }
 
   render() {
