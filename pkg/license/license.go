@@ -67,6 +67,10 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to write new license")
 		}
 
+		if err := a.RenderDir(archiveDir); err != nil {
+			return nil, errors.Wrap(err, "failed to render new version")
+		}
+
 		newSequence, err := a.CreateVersion(archiveDir, "License Change")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new version")
