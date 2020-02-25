@@ -64,6 +64,11 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("DEV_NAMESPACE") != "" {
+		appNamespace = os.Getenv("DEV_NAMESPACE")
+	}
+
 	pullOptions := kotspull.PullOptions{
 		LicenseFile:         filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
 		Namespace:           appNamespace,
