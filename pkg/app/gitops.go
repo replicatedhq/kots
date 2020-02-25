@@ -54,8 +54,6 @@ func (g *GitOpsConfig) CommitURL(hash string) string {
 	default:
 		return fmt.Sprintf("%s/commit/%s", g.RepoURI, hash)
 	}
-
-	return ""
 }
 
 func (g *GitOpsConfig) CloneURL() string {
