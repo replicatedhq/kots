@@ -71,15 +71,11 @@ function AirgapUploadProgress(props) {
   try {
     // Some of these messages will be JSON formatted progress reports.
     const jsonMessage = JSON.parse(statusMsg);
+    console.log(jsonMessage);
     const type = get(jsonMessage, "type");
     if (type === "progressReport") {
-      try {
-        const parsedMsg = JSON.parse(jsonMessage.compatibilityMessage);
-        statusMsg = parsedMsg.compatibilityMessage;
-        processingImages = parsedMsg.images.sort((a, b) => (a.status > b.status) ? -1 : 1);
-      } catch {
-        statusMsg = jsonMessage.compatibilityMessage;
-      }
+      statusMsg = jsonMessage.compatibilityMessage;
+      processingImages = jsonMessage.images.sort((a, b) => (a.status > b.status) ? -1 : 1);
     }
   } catch {
     // empty
