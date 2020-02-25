@@ -70,7 +70,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["KubeSeal"] = ctx.kubeSeal
 	funcMap["Namespace"] = ctx.namespace
 
-	funcMap["GetTLSCert"] = func(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
+	funcMap["TLSCert"] = func(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
 		if p, ok := tlsMap[certName]; ok {
 			return p.Cert
 		}
@@ -79,7 +79,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 		tlsMap[certName] = p
 		return p.Cert
 	}
-	funcMap["GetTLSKey"] = func(certName string) string {
+	funcMap["TLSKey"] = func(certName string) string {
 		if p, ok := tlsMap[certName]; ok {
 			return p.Key
 		}
