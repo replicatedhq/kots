@@ -15,7 +15,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.13.0-beta
+	github.com/replicatedhq/kots v1.13.0
 	github.com/replicatedhq/troubleshoot v0.9.22
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
