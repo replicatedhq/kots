@@ -127,7 +127,7 @@ class AppConfig extends Component {
         body: JSON.stringify({
           configGroups: this.state.configGroups,
           sequence,
-          createNewVersion: fromLicenseFlow,
+          createNewVersion: !fromLicenseFlow,
         })
       })
         .then(res => res.json())
