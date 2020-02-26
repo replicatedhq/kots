@@ -82,6 +82,20 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 	for _, configGroup := range configGroups {
 		for _, configItem := range configGroup.Items {
 			configItemsByName[configItem.Name] = configItem
+
+			// decrypt password if it exists
+			if configItem.Type == "password" {
+				existingVal, ok := existingValues[configItem.Name]
+				if ok && existingVal.HasValue() {
+					val, err := decrypt(existingVal.ValueStr(), cipher)
+					if err == nil {
+						existingVal.Value = val
+						existingValues[configItem.Name] = existingVal
+					} else {
+						fmt.Printf("\nfailed to decrypt password for item %s - %q: %s\n", configItem.Name, existingVal.ValueStr(), err.Error())
+					}
+				}
+			}
 		}
 	}
 
@@ -115,14 +129,6 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 				Default: builtDefault,
 			}
 
-			//
-			if configItem.Type == "password" && itemValue.HasValue() {
-				// FIXME: this temporarily ignores errors and falls back on old behavior
-				val, err := decrypt(itemValue.ValueStr(), cipher)
-				if err == nil {
-					itemValue.Value = val
-				}
-			}
 			configCtx.ItemValues[configItem.Name] = itemValue
 		}
 
