@@ -115,7 +115,7 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 
 			imageFile.UploadStart = time.Now()
 			reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
-			err = image.CopyFromFileToRegistry(imageFile.FilePath, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter, options.Log)
+			err = image.CopyFromFileToRegistry(imageFile.FilePath, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter, options.Log, options.DestinationRegistry.Endpoint)
 			if err != nil {
 				reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
 				options.Log.FinishChildSpinner()

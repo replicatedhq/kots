@@ -428,7 +428,7 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 	return filepath.Join(path...)
 }
 
-func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer, log *logger.Logger) error {
+func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer, log *logger.Logger, registryEndpoint string) error {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return errors.Wrap(err, "failed to read default policy")
@@ -471,6 +471,30 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	}
 
 	for i := 0; i < 5; i++ {
+		if i > 0 {
+			// check if the registry is even up
+			quickClient := &http.Client{
+				Timeout: time.Millisecond * 200,
+			}
+
+			start := time.Now()
+			for {
+				// TODO should this support http registry also?
+				response, err := quickClient.Get(fmt.Sprintf("https://%s/v2/", registryEndpoint))
+				if err == nil && response.StatusCode < 500 {
+					break
+				}
+				if time.Now().Sub(start) > time.Duration(time.Second*5) {
+					return errors.Wrap(err, "unable to connect to registry")
+				}
+
+				time.Sleep(time.Millisecond * 100)
+				if quickClient.Timeout < time.Second {
+					quickClient.Timeout = quickClient.Timeout + time.Millisecond*100
+				}
+			}
+		}
+
 		_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 			RemoveSignatures:      true,
 			SignBy:                "",
