@@ -3,8 +3,8 @@ FROM golang:1.12 as deps
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm
 WORKDIR $PROJECTPATH
 ADD Makefile $PROJECTPATH/
-ADD go.mod $PROJECTPATH/
-ADD go.sum $PROJECTPATH/
+# ADD go.mod $PROJECTPATH/
+# ADD go.sum $PROJECTPATH/
 
 ENV GO111MODULE=on
 
@@ -44,8 +44,8 @@ RUN kubectl krew install support-bundle
 ##  cd /tmp && tar xzvf preflight.tar.gz && \
 ## mv /tmp/preflight /usr/local/bin/preflight
 
-ADD cmd $PROJECTPATH/cmd
-ADD pkg $PROJECTPATH/pkg
+# ADD cmd $PROJECTPATH/cmd
+# ADD pkg $PROJECTPATH/pkg
 # ADD web/dist $PROJECTPATH/web/dist
 ADD ./bin/kotsadm ./bin/kotsadm
 
