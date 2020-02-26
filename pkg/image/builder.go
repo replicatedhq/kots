@@ -473,6 +473,8 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 
 	for i := 0; i < 5; i++ {
 		if i > 0 {
+			time.Sleep(time.Second * 10)
+
 			// check if the registry is even up
 			quickClient := &http.Client{
 				Timeout: time.Millisecond * 200,
@@ -494,8 +496,8 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 					return errors.Wrap(err, "unable to connect to registry")
 				}
 
-				time.Sleep(time.Millisecond * 100)
 				if quickClient.Timeout < time.Second {
+					time.Sleep(time.Millisecond * 100)
 					quickClient.Timeout = quickClient.Timeout + time.Millisecond*100
 				}
 			}
@@ -514,7 +516,6 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 
 		log.ChildActionWithoutSpinner("encountered error (#%d) copying image, waiting 10s before trying again: %s", i+1, err.Error())
-		time.Sleep(time.Second * 10)
 	}
 	if err != nil {
 		return errors.Wrap(err, "repeatedly failed to copy image")
