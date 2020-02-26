@@ -4,12 +4,18 @@ import { Utilities } from "../utilities/utilities";
 import "../scss/components/Login.scss";
 
 class SecureAdminConsole extends React.Component {
+  constructor(props) {
+    super(props);
 
-  state = {
-    password: "",
-    passwordErr: false,
-    passwordErrMessage: "",
-    authLoading: false,
+    this.state = {
+      password: "",
+      passwordErr: false,
+      passwordErrMessage: "",
+      authLoading: false,
+    }
+
+    this.hiddenText = React.createRef();
+    this.loginText = React.createRef();
   }
 
   completeLogin = (data) => {
@@ -83,6 +89,30 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
+  sizeLoginFont = () => {
+    let size;
+    const loginText = this.loginText;
+    let resizer = this.hiddenText;
+
+    while(resizer.current.clientWidth > loginText.current.clientWidth) {
+    size = parseInt(resizer.current.style.fontSize, 10);
+      resizer.current.style.fontSize = `${size - 1}px`;
+    }
+    
+    // Font size needs to be 1px smaller than the last calculated
+    // size to fully fit in the container
+    loginText.current.style.fontSize = `${size - 1}px`;
+  }
+
+  componentDidUpdate(lastProps) {
+    const { appName } = this.props;
+    if (appName && appName !== lastProps.appName) {
+      if (this.loginText) {
+        this.sizeLoginFont();
+      }
+    }
+  }
+
   componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
   }
@@ -105,12 +135,13 @@ class SecureAdminConsole extends React.Component {
     } = this.state;
 
     if (fetchingMetadata) { return null; }
-
+    
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
           <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
+        <p ref={this.hiddenText} style={{ visibility: "hidden", zIndex: "-1", position: "absolute", fontSize: "32px" }} className="u-fontWeight--bold">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
@@ -119,7 +150,7 @@ class SecureAdminConsole extends React.Component {
               : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
+              <p ref={this.loginText} style={{ fontSize: "32px" }} className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-color--tuna u-fontWeight--bold u-width--full u-textAlign--center">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
             </div>
             <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Enter the password to access the {appName} admin console.
