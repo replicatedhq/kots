@@ -52,7 +52,6 @@ require (
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
-	go.uber.org/multierr v1.5.0
 	go.undefinedlabs.com/scopeagent v0.1.7
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
