@@ -16,7 +16,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
-import { Utilities, isAwaitingResults, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
 import get from "lodash/get";
@@ -889,10 +889,11 @@ class AppVersionHistory extends Component {
                   {/* Downstream version history */}
                   {versionHistory.length >= 1 ? versionHistory.map((version) => {
                     const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
+                    const isNew = secondsAgo(version.createdOn) < 10;
                     return (
                       <div
                         key={version.sequence}
-                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "selected": isChecked })}
+                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "selected": isChecked, "is-new": isNew })}
                         onClick={() => selectedDiffReleases && this.handleSelectReleasesToDiff(version, !isChecked)}
                       >
                         {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": isChecked })} />}

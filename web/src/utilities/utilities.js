@@ -74,6 +74,11 @@ export function parseIconUri(uri) {
   };
 }
 
+export function secondsAgo(time) {
+  const date1 = dayjs(time);
+  return dayjs().diff(date1, "s");
+}
+
 export function sortAnalyzers(bundleInsight) {
   return sortBy(bundleInsight, (item) => {
     switch (item.severity) {
