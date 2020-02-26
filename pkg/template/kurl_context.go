@@ -31,18 +31,30 @@ func getKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, err
 	return retrieved, nil
 }
 
+<<<<<<< HEAD
 func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
+=======
+func NewKurlContext() (*KurlCtx, error) {
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
 	kurlCtx := &KurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
+<<<<<<< HEAD
 	retrieved, err := getKurlValues(installerName, nameSpace)
+=======
+	retrieved, err := getKurlValues("yaboi", "default")
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not retrieve kurl values")
 	}
 
+<<<<<<< HEAD
 	kurlCtx.KurlValues["UI"] = retrieved.Spec.Kotsadm.UiBindPort
+=======
+	kurlCtx.KurlValues["U"] = retrieved.Spec.Kotsadm.UiBindPort
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
 
 	return kurlCtx, nil
 }
@@ -59,7 +71,11 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx KurlCtx) kurlMike() int {
+<<<<<<< HEAD
 	result, ok := ctx.KurlValues["UI"]
+=======
+	result, ok := ctx.KurlValues["U"]
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
 
 	if !ok {
 		return 420
