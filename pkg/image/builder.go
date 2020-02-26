@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/containers/image/copy"
 	imagedocker "github.com/containers/image/docker"
@@ -24,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"go.uber.org/multierr"
 	"gopkg.in/yaml.v2"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
@@ -469,15 +471,25 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 	}
 
-	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
-		RemoveSignatures:      true,
-		SignBy:                "",
-		ReportWriter:          reportWriter,
-		SourceCtx:             nil,
-		DestinationCtx:        destCtx,
-		ForceManifestMIMEType: "",
-	})
-	if err != nil {
+	var imageError error
+	for i := 0; i < 5; i++ {
+		_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+			RemoveSignatures:      true,
+			SignBy:                "",
+			ReportWriter:          reportWriter,
+			SourceCtx:             nil,
+			DestinationCtx:        destCtx,
+			ForceManifestMIMEType: "",
+		})
+		if err == nil {
+			imageError = nil
+			break
+		}
+
+		imageError = multierr.Combine(imageError, err)
+		time.Sleep(time.Second * 5)
+	}
+	if imageError != nil {
 		return errors.Wrap(err, "failed to copy image")
 	}
 
