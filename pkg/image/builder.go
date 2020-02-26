@@ -25,7 +25,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"go.uber.org/multierr"
 	"gopkg.in/yaml.v2"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
@@ -429,7 +428,7 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 	return filepath.Join(path...)
 }
 
-func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
+func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer, log *logger.Logger) error {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return errors.Wrap(err, "failed to read default policy")
@@ -471,7 +470,6 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 	}
 
-	var imageError error
 	for i := 0; i < 5; i++ {
 		_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 			RemoveSignatures:      true,
@@ -482,15 +480,14 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 			ForceManifestMIMEType: "",
 		})
 		if err == nil {
-			imageError = nil
 			break
 		}
 
-		imageError = multierr.Combine(imageError, err)
-		time.Sleep(time.Second * 5)
+		log.ChildActionWithoutSpinner("encountered error (#%d) copying image, waiting 10s before trying again: %s", i+1, err.Error())
+		time.Sleep(time.Second * 10)
 	}
-	if imageError != nil {
-		return errors.Wrap(err, "failed to copy image")
+	if err != nil {
+		return errors.Wrap(err, "repeatedly failed to copy image")
 	}
 
 	return nil
