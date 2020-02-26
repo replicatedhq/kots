@@ -102,7 +102,11 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 
-					updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+					// if the decryption succeeds, don't encrypt again
+					_, err = decrypt(updatedValue, cipher)
+					if err != nil {
+						updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+					}
 				}
 
 				v := values[item.Name]
@@ -166,4 +170,22 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, updateAppConfigResponse)
+}
+
+func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
+	if cipher == nil {
+		return "", errors.New("cipher not defined")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to base64 decode")
+	}
+
+	decrypted, err := cipher.Decrypt(decoded)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decrypt")
+	}
+
+	return string(decrypted), nil
 }
