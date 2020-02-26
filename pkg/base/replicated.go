@@ -92,7 +92,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		builder.AddCtx(licenseCtx)
 	}
 
-	kurlCtx, err := builder.NewKurlContext("base", "default")
+	kurlCtx, err := template.NewKurlContext("base", "default")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kurl context")
 	}
