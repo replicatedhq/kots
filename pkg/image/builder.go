@@ -3,6 +3,7 @@ package image
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -475,6 +476,11 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 			// check if the registry is even up
 			quickClient := &http.Client{
 				Timeout: time.Millisecond * 200,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: true,
+					},
+				},
 			}
 
 			start := time.Now()
