@@ -4,3 +4,4 @@ supportbundle.tar.gz
 /kots.so
 vendor
 bin
+kustomize/overlays/github/
