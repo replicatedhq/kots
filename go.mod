@@ -15,7 +15,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.12.3-0.20200226011511-41ba57934594
+	github.com/replicatedhq/kots v1.13.1-0.20200226022756-bb36f861b74c
 	github.com/replicatedhq/troubleshoot v0.9.22
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
@@ -24,6 +24,7 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.4.0
 	github.com/vmware-tanzu/velero v1.2.0
+	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
 	golang.org/x/time v0.0.0-20191023065245-6d3f0bb11be5 // indirect
