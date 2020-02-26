@@ -147,6 +147,7 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 // FuncMap represents the available functions in the ConfigCtx.
 func (ctx ConfigCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
+<<<<<<< HEAD
 		"ConfigOption":                 ctx.configOption,
 		"ConfigOptionIndex":            ctx.configOptionIndex,
 		"ConfigOptionData":             ctx.configOptionData,
@@ -179,10 +180,33 @@ func isReadOnly(item kotsv1beta1.ConfigItem) bool {
 		"select_one":  {},
 		"text":        {},
 		"textarea":    {},
+=======
+		"ConfigOption":          ctx.configOption,
+		"ConfigOptionIndex":     ctx.configOptionIndex,
+		"ConfigOptionData":      ctx.configOptionData,
+		"ConfigOptionEquals":    ctx.configOptionEquals,
+		"ConfigOptionNotEquals": ctx.configOptionNotEquals,
+		"Mike":                  ctx.mike,
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
 	}
 
 	_, editable := EditableItemTypes[item.Type]
 	return !editable
+}
+
+func (ctx ConfigCtx) mike(name string) string {
+
+	result, ok := ctx.ItemValues["mike"]
+
+	if !ok {
+		return "no mike found"
+	}
+
+	if result.HasValue() {
+		return result.ValueStr()
+	}
+
+	return "no value"
 }
 
 func (ctx ConfigCtx) configOption(name string) string {

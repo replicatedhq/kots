@@ -14,11 +14,23 @@ require (
 	github.com/appscode/jsonpatch v1.0.1 // indirect
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/beorn7/perks v1.0.1 // indirect
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	github.com/chzyer/logex v1.1.11-0.20160617073814-96a4d311aa9b // indirect
 	github.com/containerd/continuity v0.0.0-20191127005431-f65d91d395eb // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.15.8 // indirect
 	github.com/coreos/etcd v3.3.15+incompatible // indirect
+<<<<<<< HEAD
+=======
+=======
+	github.com/containerd/continuity v0.0.0-20191127005431-f65d91d395eb // indirect
+	github.com/containers/image v3.0.2+incompatible
+	github.com/containers/storage v1.15.8 // indirect
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
@@ -31,8 +43,16 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/zapr v0.1.1 // indirect
+<<<<<<< HEAD
 	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
+=======
+<<<<<<< HEAD
+	github.com/gobuffalo/flect v0.2.0 // indirect
+=======
+	github.com/gogo/protobuf v1.3.1 // indirect
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/google/gofuzz v1.1.0
@@ -49,8 +69,14 @@ require (
 	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/manifoldco/promptui v0.3.2
+<<<<<<< HEAD
 	github.com/mattn/go-isatty v0.0.9
+<<<<<<< HEAD
 	github.com/manifoldco/promptui v0.3.2
+=======
+=======
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect
@@ -62,11 +88,19 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.9.1 // indirect
 	github.com/prometheus/procfs v0.0.8 // indirect
+<<<<<<< HEAD
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200226193951-fe4b4890a55f
 	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7 // indirect
 	github.com/prometheus/common v0.9.1 // indirect
 	github.com/prometheus/procfs v0.0.8 // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200204234401-41c1aca353bb
+=======
+<<<<<<< HEAD
+	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200226193951-fe4b4890a55f
+=======
+	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200204234401-41c1aca353bb
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	github.com/replicatedhq/troubleshoot v0.9.21
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5
@@ -79,10 +113,19 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect
+<<<<<<< HEAD
 	go.undefinedlabs.com/scopeagent v0.1.7
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
 	golang.org/x/crypto v0.0.0-20200128174031-69ecbb4d6d5d
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72 //
+=======
+<<<<<<< HEAD
+	go.undefinedlabs.com/scopeagent v0.1.7
+	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+=======
+	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72 //
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
@@ -90,6 +133,7 @@ require (
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2
+<<<<<<< HEAD
 	k8s.io/apiextensions-apiserver v0.17.2
 	k8s.io/apimachinery v0.17.3
 	k8s.io/cli-runtime v0.17.0
@@ -97,11 +141,19 @@ require (
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kube-openapi v0.0.0-20200130172213-cdac1c71ff9f // indirect
 	k8s.io/kubernetes v1.13.0
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	k8s.io/apiextensions-apiserver v0.17.2 // indirect
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kube-openapi v0.0.0-20200130172213-cdac1c71ff9f // indirect
+<<<<<<< HEAD
+=======
+>>>>>>> 23f99362268c737414473c3108adcee8c4f64077
+>>>>>>> d4df317273d2f238a8ba8b715eec36d82269794a
 	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0

@@ -43,7 +43,6 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 	}
 
 	kurlCtx.KurlValues["UI"] = retrieved.Spec.Kotsadm.UiBindPort
-
 	return kurlCtx, nil
 }
 
