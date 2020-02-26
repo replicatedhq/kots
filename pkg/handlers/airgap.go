@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -92,10 +91,6 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	// kURL registry secret is always in default namespace
 	secret, err := clientset.CoreV1().Secrets("default").Get("registry-creds", metav1.GetOptions{})
 	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return
-		}
-		finalErr = errors.Wrap(err, "failed to find registry-creds secret")
 		return
 	}
 
