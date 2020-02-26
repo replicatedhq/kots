@@ -74,32 +74,19 @@ class AppConfig extends Component {
     return app.slug;
   }
 
-  resetUnsetRequiredItems = () => {
-    const unsetRequiredItems = this.state.unsetRequiredItems;
-    for (let f = 0; f < unsetRequiredItems.length; f++) {
-      const item = unsetRequiredItems[f];
-      item.error = null;
-    }
-    this.setState({ unsetRequiredItems: [] });
-  }
-
-  getUnsetRequiredItems = () => {
+  markRequiredItems = requiredItems => {
     const unsetRequiredItems = [];
-    const configGroups = this.state.configGroups;
-    for (let c = 0; c < configGroups.length; c++) {
-      const configGroup = configGroups[c];
-      if (configGroup?.items) {
-        for (let i = 0; i < configGroup.items.length; i++) {
-          const item = configGroup.items[i];
-          const isHidden = item.hidden || item.when === "false";
-          if (item.required && !item.value && !item.default && !isHidden) {
-            item.error = "This field is required";
-            unsetRequiredItems.push(item);
-          }
+    const configGroups = this.state.configGroups.slice();
+    requiredItems.forEach(requiredItem => {
+      configGroups.forEach(configGroup => {
+        const item = configGroup.items.find(item => item.name === requiredItem);
+        if (item) {
+          item.error = "This item is required";
+          unsetRequiredItems.push(item);
         }
-      }
-    }
-    return unsetRequiredItems;
+      });
+    });
+    this.setState({ configGroups, unsetRequiredItems });
   }
 
   handleSave = async () => {
@@ -108,14 +95,6 @@ class AppConfig extends Component {
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-
-    this.resetUnsetRequiredItems();
-    const unsetRequiredItems = this.getUnsetRequiredItems();
-
-    if (unsetRequiredItems.length) {
-      this.setState({ savingConfig: false, unsetRequiredItems });
-      return;
-    }
 
     try {
       fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
@@ -132,6 +111,13 @@ class AppConfig extends Component {
       })
         .then(res => res.json())
         .then(async (result) => {
+          this.setState({ savingConfig: false });
+          
+          if (!result.success) {
+            this.markRequiredItems(result.requiredItems);
+            return;
+          }
+
           if (this.props.refreshAppData) {
             this.props.refreshAppData();
           }
@@ -149,7 +135,7 @@ class AppConfig extends Component {
               history.replace(`/app/${slug}`);
             }
           } else {
-            this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
+            this.setState({ changed: false, showNextStepModal: true });
           }
         })
         .catch((err) => {
