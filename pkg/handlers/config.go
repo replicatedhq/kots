@@ -133,7 +133,11 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 
-					updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+					// if the decryption succeeds, don't encrypt again
+					_, err = decrypt(updatedValue, cipher)
+					if err != nil {
+						updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+					}
 				}
 
 				v := values[item.Name]
@@ -164,14 +168,14 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if updateAppConfigRequest.CreateNewVersion {
-		err := foundApp.RenderDir(archiveDir)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
+	err = foundApp.RenderDir(archiveDir)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 
+	if updateAppConfigRequest.CreateNewVersion {
 		newSequence, err := foundApp.CreateVersion(archiveDir, "Config Change")
 		if err != nil {
 			logger.Error(err)
@@ -185,6 +189,13 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		err := foundApp.UpdateConfigValuesInDB(archiveDir)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
 		if err := app.CreateAppVersionArchive(foundApp.ID, int64(foundApp.CurrentSequence), archiveDir); err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)
@@ -197,4 +208,22 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, updateAppConfigResponse)
+}
+
+func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
+	if cipher == nil {
+		return "", errors.New("cipher not defined")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to base64 decode")
+	}
+
+	decrypted, err := cipher.Decrypt(decoded)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decrypt")
+	}
+
+	return string(decrypted), nil
 }
