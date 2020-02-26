@@ -115,7 +115,15 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 
 			imageFile.UploadStart = time.Now()
 			reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
-			err = image.CopyFromFileToRegistry(imageFile.FilePath, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter, options.Log)
+			for i := 0; i < 5; i++ {
+				err = image.CopyFromFileToRegistry(imageFile.FilePath, rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter)
+				if err == nil {
+					break // image copy succeeded, exit the retry loop
+				} else {
+					options.Log.ChildActionWithoutSpinner("encountered error (#%d) copying image, waiting 10s before trying again: %s", i+1, err.Error())
+					time.Sleep(time.Second * 10)
+				}
+			}
 			if err != nil {
 				reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
 				options.Log.FinishChildSpinner()

@@ -11,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/containers/image/copy"
 	imagedocker "github.com/containers/image/docker"
@@ -428,7 +427,7 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 	return filepath.Join(path...)
 }
 
-func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer, log *logger.Logger) error {
+func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return errors.Wrap(err, "failed to read default policy")
@@ -470,24 +469,16 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 	}
 
-	for i := 0; i < 5; i++ {
-		_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
-			RemoveSignatures:      true,
-			SignBy:                "",
-			ReportWriter:          reportWriter,
-			SourceCtx:             nil,
-			DestinationCtx:        destCtx,
-			ForceManifestMIMEType: "",
-		})
-		if err == nil {
-			break
-		}
-
-		log.ChildActionWithoutSpinner("encountered error (#%d) copying image, waiting 10s before trying again: %s", i+1, err.Error())
-		time.Sleep(time.Second * 10)
-	}
+	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+		RemoveSignatures:      true,
+		SignBy:                "",
+		ReportWriter:          reportWriter,
+		SourceCtx:             nil,
+		DestinationCtx:        destCtx,
+		ForceManifestMIMEType: "",
+	})
 	if err != nil {
-		return errors.Wrap(err, "repeatedly failed to copy image")
+		return errors.Wrap(err, "failed to copy image")
 	}
 
 	return nil
