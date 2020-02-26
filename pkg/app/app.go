@@ -105,6 +105,30 @@ func GetFromSlug(slug string) (*App, error) {
 	return Get(id)
 }
 
+// UpdateConfigValuesInDB it gets the config values from filesInDir and
+// updates the current sequence config values in the db
+// THIS SHOULD ONLY BE CALLED ON APP INSTALLS (WHEN CREATING THE FIRST VERSION)
+func (a App) UpdateConfigValuesInDB(filesInDir string) error {
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to read kots kinds")
+	}
+
+	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal configvalues spec")
+	}
+
+	db := persistence.MustGetPGSession()
+	query := `update app_version set config_values = $1 where app_id = $2 and sequence = $3`
+	_, err = db.Exec(query, configValuesSpec, a.ID, a.CurrentSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to update config values in d")
+	}
+
+	return nil
+}
+
 // CreateFirstVersion works much likst CreateVersion except that it assumes version 0
 // and never attempts to calculate a diff, or look at previous versions
 func (a App) CreateFirstVersion(filesInDir string, source string) (int64, error) {

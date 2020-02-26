@@ -137,14 +137,14 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if updateAppConfigRequest.CreateNewVersion {
-		err := foundApp.RenderDir(archiveDir)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
+	err = foundApp.RenderDir(archiveDir)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 
+	if updateAppConfigRequest.CreateNewVersion {
 		newSequence, err := foundApp.CreateVersion(archiveDir, "Config Change")
 		if err != nil {
 			logger.Error(err)
@@ -158,6 +158,13 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		err := foundApp.UpdateConfigValuesInDB(archiveDir)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
 		if err := app.CreateAppVersionArchive(foundApp.ID, int64(foundApp.CurrentSequence), archiveDir); err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)
