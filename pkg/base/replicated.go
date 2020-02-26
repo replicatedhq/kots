@@ -24,10 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/helm/pkg/chartutil"
 	"sigs.k8s.io/yaml"
-
-	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Document struct {
@@ -82,26 +78,16 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Namespace: renderOptions.LocalRegistryNamespace,
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
-
-	kurlCtx, _ := template.NewKurlContext()
-
-	if kurlCtx != nil {
-		builder.AddCtx(kurlCtx)
 	}
 
 	if config != nil {
-		configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, cipher)
+		configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create config context")
 		}
 
 		builder.AddCtx(configCtx)
 	}
-	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create config context")
-	}
-	builder.AddCtx(configCtx)
 
 	if license != nil {
 		licenseCtx := template.LicenseCtx{
@@ -109,6 +95,13 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 		builder.AddCtx(licenseCtx)
 	}
+
+	kurlCtx, err := template.NewKurlContext("base", "default")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kurl context")
+	}
+
+	builder.AddCtx(kurlCtx)
 
 	for _, upstreamFile := range u.Files {
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
