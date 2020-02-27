@@ -100,7 +100,6 @@ export class NavBar extends PureComponent {
       appLogo = logo;
       licenseType = "";
     }
-    
 
     const isClusterScope = this.props.location.pathname.includes("/clusterscope");
     return (

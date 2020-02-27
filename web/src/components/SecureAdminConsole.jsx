@@ -14,7 +14,6 @@ class SecureAdminConsole extends React.Component {
       authLoading: false,
     }
 
-    this.hiddenText = React.createRef();
     this.loginText = React.createRef();
   }
 
@@ -89,7 +88,7 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  sizeLoginFont = () => {
+  resizeLoginFont = () => {
     const newFontSize = dynamicallyResizeText(this.loginText.current.innerHTML, this.loginText.current.clientWidth, "32px");
     this.loginText.current.style.fontSize = newFontSize;
   }
@@ -98,7 +97,7 @@ class SecureAdminConsole extends React.Component {
     const { appName } = this.props;
     if (appName && appName !== lastProps.appName) {
       if (this.loginText) {
-        this.sizeLoginFont();
+        this.resizeLoginFont();
       }
     }
   }
@@ -125,7 +124,7 @@ class SecureAdminConsole extends React.Component {
     } = this.state;
 
     if (fetchingMetadata) { return null; }
-    
+
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
