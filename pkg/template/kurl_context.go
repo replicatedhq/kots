@@ -44,19 +44,6 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 		return nil, errors.Wrap(err, "could not retrieve kurl values")
 	}
 
-	// v := reflect.ValueOf(retrieved.Spec.Kotsadm)
-
-	// typeOf := v.Type()
-
-	// for i := 0; i < v.NumField(); i++ {
-	// 	kurlCtx.KurlValues["Kotsadm" + "." + typeOf.Field(i).Name] = v.Field(i).Interface()
-	// }
-
-	// 	return kurlCtx, nil
-	// }
-
-	// func (ctx.KurlCtx) ValuesToMap(retrieved *kurlv1beta1.installer) {
-
 	Spec := reflect.ValueOf(retrieved.Spec)
 
 	for i := 0; i < Spec.NumField(); i++ {
@@ -73,11 +60,8 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 				kurlCtx.KurlValues[CategoryName+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
 			}
 		}
-
 	}
-
 	return kurlCtx, nil
-
 }
 
 type KurlCtx struct {
@@ -91,31 +75,44 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 	}
 }
 
+func (ctx KurlCtx) kurlBool(yamlPath string) bool {
+	result, ok := ctx.KurlValues[yamlPath]
+
+	if !ok {
+		return false
+	}
+
+	return result.(bool)
+}
+
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	result, ok := ctx.KurlValues[yamlPath]
 
 	if !ok {
-		return -37
+		return -29399483948
 	}
 
 	return result.(int)
 }
 
-func (ctx KurlCtx) kurlString(yamlPath string) string {
+func (ctx KurlCtx) kurlString(yamlPath string) (string, error) {
 	result, ok := ctx.KurlValues[yamlPath]
 
 	if !ok {
-		keys := make([]string, len(ctx.KurlValues))
-
-		i := 0
-
-		for k, _ := range ctx.KurlValues {
-			keys[i] = k
-			i++
-		}
-
-		return strings.Join(keys, " ")
+		return "", errors.New("Error, key {yamlPath} not found in map")
 	}
 
-	return result.(string)
+	return result.(string), nil
+}
+func (ctx KurlCtx) AllMapKeys() string {
+	keys := make([]string, len(ctx.KurlValues))
+
+	i := 0
+
+	for k, _ := range ctx.KurlValues {
+		keys[i] = k
+		i++
+	}
+
+	return strings.Join(keys, " ")
 }
