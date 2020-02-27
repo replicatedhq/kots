@@ -91,8 +91,6 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 					if err == nil {
 						existingVal.Value = val
 						existingValues[configItem.Name] = existingVal
-					} else {
-						fmt.Printf("\nfailed to decrypt password for item %s - %q: %s\n", configItem.Name, existingVal.ValueStr(), err.Error())
 					}
 				}
 			}
