@@ -60,7 +60,7 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 	Spec := reflect.ValueOf(retrieved.Spec)
 
 	for i := 0; i < Spec.NumField(); i++ {
-		Category := reflect.ValueOf(Spec.Field(i))
+		Category := reflect.ValueOf(Spec.Field(i).Interface())
 
 		TypeOfCategory := Category.Type()
 
