@@ -2,6 +2,7 @@ package template
 
 import (
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -74,6 +75,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 		"KurlString": ctx.kurlString,
 		"KurlInt":    ctx.kurlInt,
 		"KurlBool":   ctx.kurlBool,
+		"KurlAll:":   ctx.kurlAll,
 	}
 }
 
@@ -113,7 +115,7 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
 		//TODO: log that key was not found
-		return ctx.AllMapKeys()
+		return ""
 	}
 
 	s, ok := result.(string)
@@ -125,7 +127,7 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	return s
 }
 
-func (ctx KurlCtx) AllMapKeys() string {
+func (ctx KurlCtx) kurlAll() string {
 	keys := make([]string, len(ctx.KurlValues))
 
 	i := 0
@@ -141,6 +143,8 @@ func (ctx KurlCtx) AllMapKeys() string {
 		}
 		i++
 	}
+
+	sort.Strings(keys)
 
 	return strings.Join(keys, " ")
 }
