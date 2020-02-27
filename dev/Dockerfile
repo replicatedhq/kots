@@ -44,16 +44,8 @@ RUN /install-krew.sh
 ENV PATH="/root/.krew/bin:$PATH"
 
 # Install our plugins
-ENV TROUBLESHOOT_VERSION=0.9.21
 RUN kubectl krew install preflight
 RUN kubectl krew install support-bundle
-
-# ADD support-bundle /usr/local/bin/kubectl-support_bundle
-
-## This is used when we aren't on a release of preflight
-## RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.14/preflight_linux_amd64.tar.gz" > /tmp/preflight.tar.gz && \
-##  cd /tmp && tar xzvf preflight.tar.gz && \
-## mv /tmp/preflight /usr/local/bin/preflight
 
 # ADD cmd $PROJECTPATH/cmd
 # ADD pkg $PROJECTPATH/pkg
