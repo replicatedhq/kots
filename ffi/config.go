@@ -11,7 +11,7 @@ import (
 )
 
 //export TemplateConfig
-func TemplateConfig(configSpecData string, configValuesData string, registryHost string, registryNamespace string, registryUsername string, registryPassword string) *C.char {
+func TemplateConfig(configSpecData string, configValuesData string, licenseYaml string, registryHost string, registryNamespace string, registryUsername string, registryPassword string) *C.char {
 	localRegistry := template.LocalRegistry{
 		Host:      registryHost,
 		Namespace: registryNamespace,
@@ -19,7 +19,7 @@ func TemplateConfig(configSpecData string, configValuesData string, registryHost
 		Password:  registryPassword,
 	}
 
-	rendered, err := config.TemplateConfig(logger.NewLogger(), configSpecData, configValuesData, localRegistry)
+	rendered, err := config.TemplateConfig(logger.NewLogger(), configSpecData, configValuesData, licenseYaml, localRegistry)
 	if err != nil {
 		fmt.Printf("failed to apply templates to config: %s\n", err.Error())
 		return C.CString("")

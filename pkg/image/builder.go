@@ -117,7 +117,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo) ([
 					if i, ok := checkedImages[image]; ok {
 						isPrivate = i.IsPrivate
 					} else {
-						p, err := isPrivateImage(image)
+						p, err := IsPrivateImage(image)
 						if err != nil {
 							return errors.Wrap(err, "failed to check if image is private")
 						}
@@ -283,7 +283,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		isPrivate = i.IsPrivate
 	} else {
 		if !isAirgap {
-			p, err := isPrivateImage(image)
+			p, err := IsPrivateImage(image)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to check if image is private")
 			}
@@ -301,7 +301,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 			Username: srcRegistry.Username,
 			Password: srcRegistry.Password,
 		}
-		rewritten, err := rewritePrivateImage(srcRegistry, image, appSlug)
+		rewritten, err := RewritePrivateImage(srcRegistry, image, appSlug)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite private image")
 		}
@@ -388,7 +388,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 	return buildImageAlts(destRegistry, image)
 }
 
-func imageRefImage(image string) (*ImageRef, error) {
+func RefFromImage(image string) (*ImageRef, error) {
 	ref := &ImageRef{}
 
 	// named, err := reference.ParseNormalizedNamed(image)
@@ -425,6 +425,20 @@ func (ref *ImageRef) pathInBundle(formatPrefix string) string {
 		path = append(path, digestParts...)
 	}
 	return filepath.Join(path...)
+}
+
+func (ref *ImageRef) NameBase() string {
+	return path.Base(ref.Name)
+}
+
+func (ref *ImageRef) String() string {
+	refStr := ref.Name
+	if ref.Tag != "" {
+		refStr = fmt.Sprintf("%s:%s", refStr, ref.Tag)
+	} else if ref.Domain != "" {
+		refStr = fmt.Sprintf("%s@%s", refStr, ref.Digest)
+	}
+	return refStr
 }
 
 func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
@@ -484,7 +498,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	return nil
 }
 
-func isPrivateImage(image string) (bool, error) {
+func IsPrivateImage(image string) (bool, error) {
 	// ParseReference requires the // prefix
 	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 	if err != nil {
@@ -518,7 +532,7 @@ func isPrivateImage(image string) (bool, error) {
 	return true, nil
 }
 
-func rewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
+func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
 	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse image ref:%s", image)

@@ -29,6 +29,37 @@ func TestTemplateConfig(t *testing.T) {
 	log := logger.NewLogger()
 	log.Silence()
 
+	licenseData := `
+apiVersion: kots.io/v1beta1
+kind: License
+metadata:
+  name: local
+spec:
+  licenseID: abcdef
+  appSlug: my-app
+  endpoint: 'http://localhost:30016'
+  entitlements:
+    expires_at:
+      title: Expiration
+      description: License Expiration
+      value: ""
+    has-product-2:
+      title: Has Product 2
+      value: "test"
+    is_vip:
+      title: Is VIP
+      value: false
+    num_seats:
+      title: Number Of Seats
+      value: 10
+    sdzf:
+      title: sdf
+      value: 1
+    test:
+      title: test
+      value: "123asd"
+  signature: IA==`
+
 	tests := []struct {
 		name             string
 		configSpecData   string
@@ -223,7 +254,7 @@ status: {}
 			req.NoError(err)
 
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, localRegistry, MarshalConfig)
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, localRegistry, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -232,7 +263,7 @@ status: {}
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, localRegistry, oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, localRegistry, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

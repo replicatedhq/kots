@@ -296,9 +296,87 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.NewConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher)
+			got, err := builder.NewConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, nil)
 			req.NoError(err)
 			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_localImageName(t *testing.T) {
+	ctxWithRegistry := ConfigCtx{
+		LocalRegistry: LocalRegistry{
+			Host:      "my.registry.com",
+			Namespace: "my_namespace",
+			Username:  "my_user",
+			Password:  "my_password",
+		},
+
+		license: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				Endpoint: "replicated.registry.com",
+			},
+		},
+	}
+
+	ctxWithoutRegistry := ConfigCtx{
+		LocalRegistry: LocalRegistry{},
+
+		license: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				AppSlug:  "myslug",
+				Endpoint: "replicated.registry.com",
+			},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		ctx      ConfigCtx
+		image    string
+		expected string
+	}{
+		{
+			name:     "rewrite public image to local",
+			ctx:      ctxWithRegistry,
+			image:    "nginx:latest",
+			expected: "my.registry.com/my_namespace/nginx:latest",
+		},
+		{
+			name:     "rewrite private image to local",
+			ctx:      ctxWithRegistry,
+			image:    "registry.replicated.com/kots/myimage:abcd123",
+			expected: "my.registry.com/my_namespace/myimage:abcd123",
+		},
+		{
+			name:     "do not rewrite public image",
+			ctx:      ctxWithoutRegistry,
+			image:    "redis:latest",
+			expected: "redis:latest",
+		},
+		{
+			name:     "rewrite private image to proxy",
+			ctx:      ctxWithoutRegistry,
+			image:    "quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			expected: "proxy.replicated.com/proxy/myslug/quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+		},
+		{
+			name:     "do not rewrite private replicated image to proxy",
+			ctx:      ctxWithoutRegistry,
+			image:    "registry.replicated.com/kots/myimage:v1.13.0",
+			expected: "registry.replicated.com/kots/myimage:v1.13.0",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
+
+			req := require.New(t)
+
+			newName := test.ctx.localImageName(test.image)
+			req.Equal(test.expected, newName)
 		})
 	}
 }
