@@ -23,7 +23,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/Masterminds/sprig/v3"
+	sprig "github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -70,21 +70,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["KubeSeal"] = ctx.kubeSeal
 	funcMap["Namespace"] = ctx.namespace
 
-	funcMap["TLSCert"] = func(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
-		if p, ok := tlsMap[certName]; ok {
-			return p.Cert
-		}
-
-		p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
-		tlsMap[certName] = p
-		return p.Cert
-	}
-	funcMap["TLSKey"] = func(certName string) string {
-		if p, ok := tlsMap[certName]; ok {
-			return p.Key
-		}
-		return ""
-	}
+	funcMap["TLSCert"] = ctx.tlsCert
+	funcMap["TLSKey"] = ctx.tlsKey
 
 	return funcMap
 }
@@ -335,6 +322,23 @@ func (ctx StaticCtx) namespace() string {
 	}
 
 	return os.Getenv("POD_NAMESPACE")
+}
+
+func (ctx StaticCtx) tlsCert(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
+	if p, ok := tlsMap[certName]; ok {
+		return p.Cert
+	}
+
+	p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
+	tlsMap[certName] = p
+	return p.Cert
+}
+
+func (ctx StaticCtx) tlsKey(certName string) string {
+	if p, ok := tlsMap[certName]; ok {
+		return p.Key
+	}
+	return ""
 }
 
 func genSelfSignedCert(cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) TLSPair {
