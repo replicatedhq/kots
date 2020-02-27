@@ -49,7 +49,7 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 	typeOf := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
-		kurlCtx.KurlValues[typeOf.Field(i).Name] = v.Field(i).Interface()
+		kurlCtx.KurlValues[v.String()+"."+typeOf.Field(i).Name] = v.Field(i).Interface()
 	}
 
 	return kurlCtx, nil
