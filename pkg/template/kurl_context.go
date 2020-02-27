@@ -75,7 +75,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 		"KurlString": ctx.kurlString,
 		"KurlInt":    ctx.kurlInt,
 		"KurlBool":   ctx.kurlBool,
-		"KurlAll:":   ctx.kurlAll,
+		"KurlAll":    ctx.kurlAll,
 	}
 }
 
