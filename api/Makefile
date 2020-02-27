@@ -82,7 +82,7 @@ build-release: build_and_push
 
 .PHONY: build_and_push
 build_and_push:
-	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" .
+	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" --no-cache .
 	docker push ${IMAGE}
 
 .PHONY: no-yarn

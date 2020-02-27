@@ -28,7 +28,8 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
-      unsetRequiredItems: []
+      unsetRequiredItems: [],
+      savingConfigError: ""
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -90,61 +91,63 @@ class AppConfig extends Component {
   }
 
   handleSave = async () => {
-    this.setState({ savingConfig: true, unsetRequiredItems: [] });
+    this.setState({ savingConfig: true, savingConfigError: "", unsetRequiredItems: [] });
 
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    try {
-      fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `${Utilities.getToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          configGroups: this.state.configGroups,
-          sequence,
-          createNewVersion: !fromLicenseFlow,
-        })
-      })
-        .then(res => res.json())
-        .then(async (result) => {
-          this.setState({ savingConfig: false });
-          
-          if (!result.success) {
-            this.markRequiredItems(result.requiredItems);
-            return;
-          }
+    this.resetUnsetRequiredItems();
+    const unsetRequiredItems = this.getUnsetRequiredItems();
 
-          if (this.props.refreshAppData) {
-            this.props.refreshAppData();
-          }
-
-          if (fromLicenseFlow) {
-            const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
-            const status = hasPreflight ? "pending_preflight" : "deployed";
-            await this.props.updateDownstreamsStatus(slug, sequence, status);
-            if (hasPreflight) {
-              history.replace("/preflight");
-            } else {
-              if (this.props.refetchListApps) {
-                await this.props.refetchListApps();
-              }
-              history.replace(`/app/${slug}`);
-            }
-          } else {
-            this.setState({ changed: false, showNextStepModal: true });
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    } catch (error) {
-      console.log(error);
-      this.setState({ savingConfig: false });
+    if (unsetRequiredItems.length) {
+      this.setState({ savingConfig: false, unsetRequiredItems });
+      return;
     }
+
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        configGroups: this.state.configGroups,
+        sequence,
+        createNewVersion: !fromLicenseFlow,
+      })
+    })
+      .then(res => res.json())
+      .then(async (result) => {
+        if (!result.success) {
+          this.setState({ savingConfig: false, savingConfigError: result.error });
+          return;
+        }
+
+        if (this.props.refreshAppData) {
+          this.props.refreshAppData();
+        }
+
+        if (fromLicenseFlow) {
+          const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
+          const status = hasPreflight ? "pending_preflight" : "deployed";
+          await this.props.updateDownstreamsStatus(slug, sequence, status);
+          if (hasPreflight) {
+            history.replace("/preflight");
+          } else {
+            if (this.props.refetchListApps) {
+              await this.props.refetchListApps();
+            }
+            history.replace(`/app/${slug}`);
+          }
+        } else {
+          this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        this.setState({ savingConfig: false });
+      });
   }
 
   isConfigChanged = newGroups => {
@@ -211,7 +214,7 @@ class AppConfig extends Component {
   }
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredItems } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredItems, savingConfigError } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -247,6 +250,7 @@ class AppConfig extends Component {
                 <span className="u-fontWeight--bold"> {unsetRequiredItemsNames.join(", ")}</span>
               </p>
             )}
+            {savingConfigError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{savingConfigError}</span>}
             <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
           </div>
         }

@@ -220,7 +220,7 @@ export class ClusterNodes extends Component {
                           </CodeSnippet>
                           {this.state.expiry && (
                             <div className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-color--tuna">
-                              {`Expires on ${moment.unix(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
+                              {`Expires on ${moment(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
                             </div>
                           )}
                         </Fragment>

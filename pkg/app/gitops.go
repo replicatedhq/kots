@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
+	go_git_config "gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
@@ -237,6 +238,14 @@ func createGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to get worktree")
 	}
 
+	err = cloned.Fetch(&git.FetchOptions{
+		RefSpecs: []go_git_config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		Auth:     auth,
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to fetch from repo")
+	}
+
 	// try to check out the branch if it exists
 	err = workTree.Checkout(&git.CheckoutOptions{
 		Create: false,
@@ -268,7 +277,7 @@ func createGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to write updated app yaml")
 	}
 
-	_, err = workTree.Add(filepath.Join(gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)))
+	_, err = workTree.Add(strings.TrimPrefix(filepath.Join(gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), "/"))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to add to worktree")
 	}
