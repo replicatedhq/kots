@@ -1,6 +1,6 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import { Utilities } from "../utilities/utilities";
+import { Utilities, dynamicallyResizeText } from "../utilities/utilities";
 import "../scss/components/Login.scss";
 
 class SecureAdminConsole extends React.Component {
@@ -90,18 +90,8 @@ class SecureAdminConsole extends React.Component {
   }
 
   sizeLoginFont = () => {
-    let size;
-    const loginText = this.loginText;
-    let resizer = this.hiddenText;
-
-    while(resizer.current.clientWidth > loginText.current.clientWidth) {
-    size = parseInt(resizer.current.style.fontSize, 10);
-      resizer.current.style.fontSize = `${size - 1}px`;
-    }
-    
-    // Font size needs to be 1px smaller than the last calculated
-    // size to fully fit in the container
-    loginText.current.style.fontSize = `${size - 1}px`;
+    const newFontSize = dynamicallyResizeText(this.loginText.current.innerHTML, this.loginText.current.clientWidth, "32px");
+    this.loginText.current.style.fontSize = newFontSize;
   }
 
   componentDidUpdate(lastProps) {
@@ -141,7 +131,6 @@ class SecureAdminConsole extends React.Component {
         <Helmet>
           <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <p ref={this.hiddenText} style={{ visibility: "hidden", zIndex: "-1", position: "absolute", fontSize: "32px" }} className="u-fontWeight--bold">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">

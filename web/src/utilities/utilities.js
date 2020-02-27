@@ -79,6 +79,38 @@ export function secondsAgo(time) {
   return dayjs().diff(date1, "s");
 }
 
+/**
+ * Retrieves the type of application via a watched app's metadata
+ *
+ * @param {String} text The string you're checking to see if it needs resizing
+ * @param {Int}    maxWidth The maximum width of the texts container
+ * @param {String} defaultFontSize The default font-size of the string (ex 32px)
+ * @return {String} new font-size for text to fit one line (ex 28px)
+ */
+export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
+  let size;
+  let resizerElm = document.createElement("p");
+  resizerElm.textContent = text;
+  resizerElm.setAttribute("class", "u-fontWeight--bold");
+  resizerElm.setAttribute("style", "visibility: hidden; z-index: -1; position: absolute; font-size: 32px");
+  document.body.appendChild(resizerElm);
+
+  if (resizerElm.getBoundingClientRect().width < maxWidth) {
+    resizerElm.remove();
+    return defaultFontSize;
+  }
+
+  while(resizerElm.getBoundingClientRect().width > maxWidth) {
+    size = parseInt(resizerElm.style.fontSize, 10);
+    resizerElm.style.fontSize = `${size - 1}px`;
+  }
+  
+  resizerElm.remove();
+  
+  // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
+  return `${size - 1}px`;
+}
+
 export function sortAnalyzers(bundleInsight) {
   return sortBy(bundleInsight, (item) => {
     switch (item.severity) {
