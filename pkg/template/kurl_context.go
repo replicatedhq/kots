@@ -12,7 +12,7 @@ import (
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func getKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, error) {
+func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, error) {
 
 	cfg, err := k8sconfig.GetConfig()
 
@@ -38,21 +38,40 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 		KurlValues: make(map[string]interface{}),
 	}
 
-	retrieved, err := getKurlValues(installerName, nameSpace)
+	retrieved, err := GetKurlValues(installerName, nameSpace)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not retrieve kurl values")
 	}
 
-	v := reflect.ValueOf(retrieved.Spec.Kotsadm)
+	// v := reflect.ValueOf(retrieved.Spec.Kotsadm)
 
-	typeOf := v.Type()
+	// typeOf := v.Type()
 
-	for i := 0; i < v.NumField(); i++ {
-		kurlCtx.KurlValues[v.String()+"."+typeOf.Field(i).Name] = v.Field(i).Interface()
+	// for i := 0; i < v.NumField(); i++ {
+	// 	kurlCtx.KurlValues["Kotsadm" + "." + typeOf.Field(i).Name] = v.Field(i).Interface()
+	// }
+
+	// 	return kurlCtx, nil
+	// }
+
+	// func (ctx.KurlCtx) ValuesToMap(retrieved *kurlv1beta1.installer) {
+
+	spec := reflect.ValueOf(retrieved.Spec)
+
+	for i := 0; i < spec.NumField(); i++ {
+		category := reflect.ValueOf(spec.Field(i))
+
+		typeOfCategory := category.Type()
+
+		for i := 0; i < category.NumField(); i++ {
+			kurlCtx.KurlValues[category.String()+"."+typeOfCategory.Field(i).Name] = category.Field(i).Interface()
+		}
+
 	}
 
 	return kurlCtx, nil
+
 }
 
 type KurlCtx struct {
