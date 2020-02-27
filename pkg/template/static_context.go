@@ -70,6 +70,10 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["KubeSeal"] = ctx.kubeSeal
 	funcMap["Namespace"] = ctx.namespace
 
+	funcMap["Mike"] = func() string {
+		return "mike"
+	}
+
 	funcMap["TLSCert"] = func(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
 		if p, ok := tlsMap[certName]; ok {
 			return p.Cert
