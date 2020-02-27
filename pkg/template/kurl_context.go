@@ -65,7 +65,9 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 		TypeOfCategory := Category.Type()
 
 		for i := 0; i < Category.NumField(); i++ {
-			kurlCtx.KurlValues[Category.String()+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
+			if Category.Field(i).CanInterface() {
+				kurlCtx.KurlValues[Category.String()+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
+			}
 		}
 
 	}
