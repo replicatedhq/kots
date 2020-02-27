@@ -103,6 +103,7 @@ class AppSnapshotRestore extends Component {
 
     const hasNoErrorsOrWarnings = restoreDetail?.restoreDetail?.warnings?.length === 0 && restoreDetail?.restoreDetail?.errors?.length === 0;
     const restoreCompleted = restoreDetail?.restoreDetail?.phase === "Completed";
+    const restoreFailing = restoreDetail?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.restoreDetail?.phase === "Failed";
 
     if (restoreDetail?.loading) {
       return (
@@ -122,7 +123,7 @@ class AppSnapshotRestore extends Component {
         <Helmet>
           <title>{`${this.props.app.name} Snapshots Restore`}</title>
         </Helmet>
-        {!restoreCompleted ?
+        {!restoreCompleted && !restoreFailing ?
           <div className="flex1 flex-column alignItems--center">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>

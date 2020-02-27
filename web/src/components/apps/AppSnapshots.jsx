@@ -32,7 +32,9 @@ class AppSnapshots extends Component {
   };
 
   componentDidMount() {
-    this.props.snapshots.startPolling(2000);
+    if (this.props.snapshots?.length) {
+      this.props.snapshots.startPolling(2000);
+    }
   }
 
   toggleScheduleSnapshotModal = () => {
@@ -180,7 +182,7 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (!snapshotSettings.snapshotConfig?.store) {
+    if (!snapshotSettings?.snapshotConfig || !snapshotSettings?.snapshotConfig?.store) {
       return (
         <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch()} />
       )
