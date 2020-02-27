@@ -13,7 +13,7 @@ func TestReleaseStartNum(t *testing.T) {
 	var err error
 	var ref *ImageRef
 
-	ref, err = imageRefImage("debian:2.5")
+	ref, err = RefFromImage("debian:2.5")
 	require.NoError(t, err)
 	require.Equal(t, &ImageRef{
 		Domain: "docker.io",
@@ -24,7 +24,7 @@ func TestReleaseStartNum(t *testing.T) {
 		"docker-archive/docker.io/library/debian/2.5",
 		ref.pathInBundle("docker-archive"))
 
-	ref, err = imageRefImage("debian")
+	ref, err = RefFromImage("debian")
 	require.NoError(t, err)
 	require.Equal(t, &ImageRef{
 		Domain: "docker.io",
@@ -35,7 +35,7 @@ func TestReleaseStartNum(t *testing.T) {
 		"oci-archive/docker.io/library/debian/latest",
 		ref.pathInBundle("oci-archive"))
 
-	ref, err = imageRefImage("quay.io/replicated/debian:2.5")
+	ref, err = RefFromImage("quay.io/replicated/debian:2.5")
 	require.NoError(t, err)
 	require.Equal(t, &ImageRef{
 		Domain: "quay.io",
@@ -46,7 +46,7 @@ func TestReleaseStartNum(t *testing.T) {
 		"docker-archive/quay.io/replicated/debian/2.5",
 		ref.pathInBundle("docker-archive"))
 
-	ref, err = imageRefImage("myorg/ubuntu:14")
+	ref, err = RefFromImage("myorg/ubuntu:14")
 	require.NoError(t, err)
 	require.Equal(t, &ImageRef{
 		Domain: "docker.io",
@@ -57,7 +57,7 @@ func TestReleaseStartNum(t *testing.T) {
 		"docker-archive/docker.io/myorg/ubuntu/14",
 		ref.pathInBundle("docker-archive"))
 
-	ref, err = imageRefImage("myorg/ubuntu@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2")
+	ref, err = RefFromImage("myorg/ubuntu@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2")
 	require.NoError(t, err)
 	require.Equal(t, &ImageRef{
 		Domain: "docker.io",

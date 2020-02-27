@@ -79,7 +79,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
 	}
-	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher)
+	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}
