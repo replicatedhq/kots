@@ -57,15 +57,15 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 
 	// func (ctx.KurlCtx) ValuesToMap(retrieved *kurlv1beta1.installer) {
 
-	spec := reflect.ValueOf(retrieved.Spec)
+	Spec := reflect.ValueOf(retrieved.Spec)
 
-	for i := 0; i < spec.NumField(); i++ {
-		category := reflect.ValueOf(spec.Field(i))
+	for i := 0; i < Spec.NumField(); i++ {
+		Category := reflect.ValueOf(Spec.Field(i))
 
-		typeOfCategory := category.Type()
+		TypeOfCategory := Category.Type()
 
-		for i := 0; i < category.NumField(); i++ {
-			kurlCtx.KurlValues[category.String()+"."+typeOfCategory.Field(i).Name] = category.Field(i).Interface()
+		for i := 0; i < Category.NumField(); i++ {
+			kurlCtx.KurlValues[Category.String()+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
 		}
 
 	}
