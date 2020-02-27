@@ -1,6 +1,7 @@
 package template
 
 import (
+	"reflect"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,14 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 		return nil, errors.Wrap(err, "could not retrieve kurl values")
 	}
 
-	kurlCtx.KurlValues["UI"] = retrieved.Spec.Kotsadm.UiBindPort
+	v := reflect.ValueOf(retrieved.Spec.Kotsadm)
+
+	typeOf := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		kurlCtx.KurlValues[typeOf.Field(i).Name] = v.Field(i).Interface()
+	}
+
 	return kurlCtx, nil
 }
 
@@ -50,19 +58,27 @@ type KurlCtx struct {
 	KurlValues map[string]interface{}
 }
 
-// FuncMap represents the available functions in the ConfigCtx.
 func (ctx KurlCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"KurlMike": ctx.kurlMike,
+		"KurlInt":  ctx.kurlInt,
 	}
 }
 
-func (ctx KurlCtx) kurlMike() int {
-	result, ok := ctx.KurlValues["UI"]
+func (ctx KurlCtx) kurlInt(yamlPath string) int {
+	// TODO: 1. check path exists
+	// TODO: 2. check type is correct at path
+	// TODO: 3. return what is at path
+
+	return 1
+}
+
+func (ctx KurlCtx) kurlMike() string {
+	result, ok := ctx.KurlValues["version"]
 
 	if !ok {
-		return 420
+		return "nope"
 	}
 
-	return result.(int)
+	return result.(string)
 }
