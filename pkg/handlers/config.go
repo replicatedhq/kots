@@ -27,7 +27,8 @@ type UpdateAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success bool `json:"success"`
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
 }
 
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -39,37 +40,46 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	updateAppConfigResponse := UpdateAppConfigResponse{
+		Success: false,
+	}
+
 	updateAppConfigRequest := UpdateAppConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppConfigRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to decode request body"
+		JSON(w, 400, updateAppConfigResponse)
 		return
 	}
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, updateAppConfigResponse)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
+		updateAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, updateAppConfigResponse)
 		return
 	}
 
 	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
 	archiveDir, err := app.GetAppVersionArchive(foundApp.ID, updateAppConfigRequest.Sequence)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to get app version archive"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 	defer os.RemoveAll(archiveDir)
@@ -77,7 +87,8 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to load kots kinds from path"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
@@ -98,7 +109,8 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 					cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 					if err != nil {
 						logger.Error(err)
-						w.WriteHeader(500)
+						updateAppConfigResponse.Error = "failed to get encryption cipher"
+						JSON(w, 500, updateAppConfigResponse)
 						return
 					}
 
@@ -118,7 +130,8 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	if kotsKinds.ConfigValues == nil {
 		logger.Error(errors.New("no config values found"))
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "no config values found"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
@@ -127,20 +140,23 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to marshal config values spec"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
 	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
 	err = foundApp.RenderDir(archiveDir)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		updateAppConfigResponse.Error = "failed to render archive directory"
+		JSON(w, 500, updateAppConfigResponse)
 		return
 	}
 
@@ -148,33 +164,35 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		newSequence, err := foundApp.CreateVersion(archiveDir, "Config Change")
 		if err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			updateAppConfigResponse.Error = "failed to create an app version"
+			JSON(w, 500, updateAppConfigResponse)
 			return
 		}
 
 		if err := app.CreateAppVersionArchive(foundApp.ID, newSequence, archiveDir); err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			updateAppConfigResponse.Error = "failed to create an app version archive"
+			JSON(w, 500, updateAppConfigResponse)
 			return
 		}
 	} else {
 		err := foundApp.UpdateConfigValuesInDB(archiveDir)
 		if err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			updateAppConfigResponse.Error = "failed to update config values in db"
+			JSON(w, 500, updateAppConfigResponse)
 			return
 		}
 
 		if err := app.CreateAppVersionArchive(foundApp.ID, int64(foundApp.CurrentSequence), archiveDir); err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			updateAppConfigResponse.Error = "failed to create app version archive"
+			JSON(w, 500, updateAppConfigResponse)
 			return
 		}
 	}
 
-	updateAppConfigResponse := UpdateAppConfigResponse{
-		Success: true,
-	}
+	updateAppConfigResponse.Success = true
 
 	JSON(w, 200, updateAppConfigResponse)
 }
