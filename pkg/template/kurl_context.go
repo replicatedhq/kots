@@ -2,6 +2,7 @@ package template
 
 import (
 	"reflect"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -60,8 +61,8 @@ type KurlCtx struct {
 
 func (ctx KurlCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
-		"KurlMike": ctx.kurlMike,
-		"KurlInt":  ctx.kurlInt,
+		"KurlString": ctx.kurlString,
+		"KurlInt":    ctx.kurlInt,
 	}
 }
 
@@ -79,11 +80,11 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	result, ok := ctx.KurlValues[yamlPath]
 
 	if !ok {
-		keys := make([]int, len(ctx.KurlValues))
+		keys := make([]string, len(ctx.KurlValues))
 
 		i := 0
 
-		for k := range ctx.KurlValues {
+		for k, _ := range ctx.KurlValues {
 			keys[i] = k
 			i++
 		}
