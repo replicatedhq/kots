@@ -1,15 +1,20 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import { Utilities } from "../utilities/utilities";
+import { Utilities, dynamicallyResizeText } from "../utilities/utilities";
 import "../scss/components/Login.scss";
 
 class SecureAdminConsole extends React.Component {
+  constructor(props) {
+    super(props);
 
-  state = {
-    password: "",
-    passwordErr: false,
-    passwordErrMessage: "",
-    authLoading: false,
+    this.state = {
+      password: "",
+      passwordErr: false,
+      passwordErrMessage: "",
+      authLoading: false,
+    }
+
+    this.loginText = React.createRef();
   }
 
   completeLogin = (data) => {
@@ -83,6 +88,20 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
+  resizeLoginFont = () => {
+    const newFontSize = dynamicallyResizeText(this.loginText.current.innerHTML, this.loginText.current.clientWidth, "32px");
+    this.loginText.current.style.fontSize = newFontSize;
+  }
+
+  componentDidUpdate(lastProps) {
+    const { appName } = this.props;
+    if (appName && appName !== lastProps.appName) {
+      if (this.loginText) {
+        this.resizeLoginFont();
+      }
+    }
+  }
+
   componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
   }
@@ -119,7 +138,7 @@ class SecureAdminConsole extends React.Component {
               : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
-              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-lineHeight--more u-color--tuna u-fontWeight--bold">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
+              <p ref={this.loginText} style={{ fontSize: "32px" }} className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-color--tuna u-fontWeight--bold u-width--full u-textAlign--center">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
             </div>
             <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Enter the password to access the {appName} admin console.
