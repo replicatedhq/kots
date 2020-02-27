@@ -66,18 +66,29 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
-	// TODO: 1. check path exists
-	// TODO: 2. check type is correct at path
-	// TODO: 3. return what is at path
-
-	return 1
-}
-
-func (ctx KurlCtx) kurlMike() string {
-	result, ok := ctx.KurlValues["version"]
+	result, ok := ctx.KurlValues[yamlPath]
 
 	if !ok {
-		return "nope"
+		return -37
+	}
+
+	return result.(int)
+}
+
+func (ctx KurlCtx) kurlString(yamlPath string) string {
+	result, ok := ctx.KurlValues[yamlPath]
+
+	if !ok {
+		keys := make([]int, len(ctx.KurlValues))
+
+		i := 0
+
+		for k := range ctx.KurlValues {
+			keys[i] = k
+			i++
+		}
+
+		return strings.Join(keys, " ")
 	}
 
 	return result.(string)
