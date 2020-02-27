@@ -75,32 +75,19 @@ class AppConfig extends Component {
     return app.slug;
   }
 
-  resetUnsetRequiredItems = () => {
-    const unsetRequiredItems = this.state.unsetRequiredItems;
-    for (let f = 0; f < unsetRequiredItems.length; f++) {
-      const item = unsetRequiredItems[f];
-      item.error = null;
-    }
-    this.setState({ unsetRequiredItems: [] });
-  }
-
-  getUnsetRequiredItems = () => {
+  markRequiredItems = requiredItems => {
     const unsetRequiredItems = [];
-    const configGroups = this.state.configGroups;
-    for (let c = 0; c < configGroups.length; c++) {
-      const configGroup = configGroups[c];
-      if (configGroup?.items) {
-        for (let i = 0; i < configGroup.items.length; i++) {
-          const item = configGroup.items[i];
-          const isHidden = item.hidden || item.when === "false";
-          if (item.required && !item.value && !item.default && !isHidden) {
-            item.error = "This field is required";
-            unsetRequiredItems.push(item);
-          }
+    const configGroups = this.state.configGroups.slice();
+    requiredItems.forEach(requiredItem => {
+      configGroups.forEach(configGroup => {
+        const item = configGroup.items.find(item => item.name === requiredItem);
+        if (item) {
+          item.error = "This item is required";
+          unsetRequiredItems.push(item);
         }
-      }
-    }
-    return unsetRequiredItems;
+      });
+    });
+    this.setState({ configGroups, unsetRequiredItems });
   }
 
   handleSave = async () => {

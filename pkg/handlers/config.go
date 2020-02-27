@@ -27,8 +27,9 @@ type UpdateAppConfigRequest struct {
 }
 
 type UpdateAppConfigResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success       bool     `json:"success"`
+	Error         string   `json:"error,omitempty"`
+	RequiredItems []string `json:"requiredItems,omitempty"`
 }
 
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +90,36 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		JSON(w, 500, updateAppConfigResponse)
+		return
+	}
+
+	// check for unset required items
+	unsetRequiredItems := make([]string, 0, 0)
+	for _, group := range updateAppConfigRequest.ConfigGroups {
+		for _, item := range group.Items {
+			if !item.Required {
+				continue
+			}
+			if item.Hidden || item.When == "false" {
+				continue
+			}
+			if !(item.Value.Type == multitype.String && item.Value.String() == "") {
+				continue
+			}
+			if !(item.Default.Type == multitype.String && item.Default.String() == "") {
+				continue
+			}
+			unsetRequiredItems = append(unsetRequiredItems, item.Name)
+		}
+	}
+
+	if len(unsetRequiredItems) > 0 {
+		logger.Error(errors.New("One or more required fields are not set"))
+		updateAppConfigResponse := UpdateAppConfigResponse{
+			Success:       false,
+			RequiredItems: unsetRequiredItems,
+		}
+		JSON(w, 400, updateAppConfigResponse)
 		return
 	}
 
