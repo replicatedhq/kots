@@ -28,7 +28,6 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
-      unsetRequiredItems: [],
       savingConfigError: ""
     }
 
@@ -76,34 +75,24 @@ class AppConfig extends Component {
   }
 
   markRequiredItems = requiredItems => {
-    const unsetRequiredItems = [];
     const configGroups = this.state.configGroups.slice();
     requiredItems.forEach(requiredItem => {
       configGroups.forEach(configGroup => {
         const item = configGroup.items.find(item => item.name === requiredItem);
         if (item) {
           item.error = "This item is required";
-          unsetRequiredItems.push(item);
         }
       });
     });
-    this.setState({ configGroups, unsetRequiredItems });
+    this.setState({ configGroups });
   }
 
   handleSave = async () => {
-    this.setState({ savingConfig: true, savingConfigError: "", unsetRequiredItems: [] });
+    this.setState({ savingConfig: true, savingConfigError: "" });
 
     const { fromLicenseFlow, history, getKotsApp } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-
-    this.resetUnsetRequiredItems();
-    const unsetRequiredItems = this.getUnsetRequiredItems();
-
-    if (unsetRequiredItems.length) {
-      this.setState({ savingConfig: false, unsetRequiredItems });
-      return;
-    }
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
@@ -119,8 +108,15 @@ class AppConfig extends Component {
     })
       .then(res => res.json())
       .then(async (result) => {
+        this.setState({ savingConfig: false });
+
         if (!result.success) {
-          this.setState({ savingConfig: false, savingConfigError: result.error });
+          if (result.requiredItems?.length) {
+            this.markRequiredItems(result.requiredItems);
+          }
+          if (result.error) {
+            this.setState({ savingConfigError: result.error });
+          }
           return;
         }
 
@@ -214,7 +210,7 @@ class AppConfig extends Component {
   }
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, unsetRequiredItems, savingConfigError } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal, savingConfigError } = this.state;
     const { fromLicenseFlow, getKotsApp } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
@@ -227,7 +223,6 @@ class AppConfig extends Component {
 
     const app = this.props.app || getKotsApp?.getKotsApp;
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
-    const unsetRequiredItemsNames = unsetRequiredItems.map(item => item.title || item.name);
 
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
@@ -244,12 +239,7 @@ class AppConfig extends Component {
             <Loader size="30" />
           </div>
           :
-          <div className="UnsetRequiredItems--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
-            {unsetRequiredItemsNames.length > 0 && (
-              <p className="u-color--chestnut u-marginBottom--20 u-textAlign--center">The following field{unsetRequiredItemsNames.length > 1 ? "s are" : " is"} required:
-                <span className="u-fontWeight--bold"> {unsetRequiredItemsNames.join(", ")}</span>
-              </p>
-            )}
+          <div className="ConfigError--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
             {savingConfigError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{savingConfigError}</span>}
             <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
           </div>

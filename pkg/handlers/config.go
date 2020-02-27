@@ -3,11 +3,13 @@ package handlers
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -114,9 +116,11 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(unsetRequiredItems) > 0 {
-		logger.Error(errors.New("One or more required fields are not set"))
+		errMsg := fmt.Sprintf("The following fields are required: %s", strings.Join(unsetRequiredItems, ", "))
+		logger.Error(errors.New(errMsg))
 		updateAppConfigResponse := UpdateAppConfigResponse{
 			Success:       false,
+			Error:         errMsg,
 			RequiredItems: unsetRequiredItems,
 		}
 		JSON(w, 400, updateAppConfigResponse)
