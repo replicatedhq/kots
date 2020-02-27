@@ -57,7 +57,7 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 
 		for i := 0; i < Category.NumField(); i++ {
 			if Category.Field(i).CanInterface() {
-				kurlCtx.KurlValues[CategoryName+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
+				kurlCtx.KurlValues[CategoryName + "." + TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
 			}
 		}
 	}
@@ -72,6 +72,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"KurlString": ctx.kurlString,
 		"KurlInt":    ctx.kurlInt,
+		"KurlBool":    ctx.kurlBool,
 	}
 }
 
@@ -85,7 +86,7 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 	b, ok := result.(bool)
 	if !ok {
 		//TODO: log that type was bad
-		return false
+	   return false
 	}
 
 	return b
@@ -101,7 +102,7 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	i, ok := result.(int)
 	if !ok {
 		//TODO: log that type was bad
-		return 0
+	   return 0
 	}
 
 	return i
@@ -117,20 +118,20 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	s, ok := result.(string)
 	if !ok {
 		//TODO: log that type was bad
-		return ""
+	   return ""
 	}
 
 	return s
 }
 func (ctx KurlCtx) AllMapKeys() string {
-	keys := make([]string, len(ctx.KurlValues))
+		keys := make([]string, len(ctx.KurlValues))
 
-	i := 0
+		i := 0
 
-	for k, _ := range ctx.KurlValues {
-		keys[i] = k
-		i++
-	}
+		for k, _ := range ctx.KurlValues {
+			keys[i] = k
+			i++
+		}
 
-	return strings.Join(keys, " ")
+		return strings.Join(keys, " ")
 }
