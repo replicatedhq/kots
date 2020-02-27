@@ -30,8 +30,12 @@ type WriteUpstreamImageResult struct {
 }
 
 func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
+	additionalImages := make([]string, 0)
+	if options.Application != nil {
+		additionalImages = options.Application.Spec.AdditionalImages
+	}
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, options.Application.Spec.AdditionalImages, options.DryRun, options.IsAirgap, checkedImages)
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.DryRun, options.IsAirgap, checkedImages)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
