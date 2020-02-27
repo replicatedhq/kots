@@ -27,7 +27,10 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	certUtil "k8s.io/client-go/util/cert"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Ctx interface {
@@ -72,6 +75,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["TLSCert"] = ctx.tlsCert
 	funcMap["TLSKey"] = ctx.tlsKey
+
+	funcMap["IsKurl"] = ctx.isKurl
 
 	return funcMap
 }
@@ -391,4 +396,27 @@ func arrayToTemplateList(items []interface{}) string {
 	}
 	s = s + ")"
 	return s
+}
+
+const kurlConfigMapName = "kurl-config"
+const kurlConfigMapNamespace = "kube-system"
+
+// checks if this is running in a kurl cluster, by checking for the existence of a configmap 'kurl-config'
+func (ctx StaticCtx) isKurl() bool {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return false
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(kurlConfigMapNamespace).Get(kurlConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	return configMap != nil
 }
