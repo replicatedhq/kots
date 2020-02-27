@@ -77,32 +77,50 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 
 func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 	result, ok := ctx.KurlValues[yamlPath]
-
 	if !ok {
+		//TODO: log that key was not found
 		return false
 	}
 
-	return result.(bool)
+	b, ok := result.(bool)
+	if !ok {
+		//TODO: log that type was bad
+		return false
+	}
+
+	return b
 }
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	result, ok := ctx.KurlValues[yamlPath]
-
 	if !ok {
-		return -29399483948
+		//TODO: log that key was not found
+		return 0
 	}
 
-	return result.(int)
+	i, ok := result.(int)
+	if !ok {
+		//TODO: log that type was bad
+		return 0
+	}
+
+	return i
 }
 
-func (ctx KurlCtx) kurlString(yamlPath string) (string, error) {
+func (ctx KurlCtx) kurlString(yamlPath string) string {
 	result, ok := ctx.KurlValues[yamlPath]
-
 	if !ok {
-		return "", errors.New("Error, key {yamlPath} not found in map")
+		//TODO: log that key was not found
+		return ""
 	}
 
-	return result.(string), nil
+	s, ok := result.(string)
+	if !ok {
+		//TODO: log that type was bad
+		return ""
+	}
+
+	return s
 }
 func (ctx KurlCtx) AllMapKeys() string {
 	keys := make([]string, len(ctx.KurlValues))
