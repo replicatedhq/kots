@@ -46,10 +46,10 @@ function kots() {
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],
     RewriteVersion: ["void", [GoString, GoString, GoString, GoString, GoString, GoString, GoBool, GoBool, GoString]],
-    TemplateConfig: [GoString, [GoString, GoString]],
+    TemplateConfig: [GoString, [GoString, GoString, GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
-    RenderFile: ["void", [GoString, GoString, GoString]],
+    RenderFile: ["void", [GoString, GoString, GoString, GoString]],
   });
 }
 
@@ -199,7 +199,7 @@ export async function kotsAppDownloadUpdateFromAirgap(airgapFile: string, app: K
   }
 }
 
-export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string): Promise<string> {
+export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string, registryInfo: KotsAppRegistryDetails): Promise<string> {
   const filename = tmp.tmpNameSync();
   fs.writeFileSync(filename, input);
 
@@ -225,7 +225,12 @@ export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string
     archivePathParam["p"] = archive;
     archivePathParam["n"] = archive.length;
 
-    kots().RenderFile(socketParam, filepathParam, archivePathParam);
+    const registryJson = JSON.stringify(registryInfo)
+    const registryJsonParam = new GoString();
+    registryJsonParam["p"] = registryJson;
+    registryJsonParam["n"] = registryJson.length;
+
+    kots().RenderFile(socketParam, filepathParam, archivePathParam, registryJsonParam);
     await statusServer.connection();
     await statusServer.termination((resolve, reject, obj): boolean => {
       // Return true if completed
@@ -537,7 +542,7 @@ export async function kotsTestRegistryCredentials(endpoint: string, username: st
   }
 }
 
-export async function kotsTemplateConfig(configSpec: string, configValues: string): Promise<any> {
+export async function kotsTemplateConfig(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<any> {
   const configDataParam = new GoString();
   configDataParam["p"] = configSpec;
   configDataParam["n"] = String(configSpec).length;
@@ -546,7 +551,16 @@ export async function kotsTemplateConfig(configSpec: string, configValues: strin
   configValuesDataParam["p"] = configValues;
   configValuesDataParam["n"] = String(configValues).length;
 
-  const templatedConfig = kots().TemplateConfig(configDataParam, configValuesDataParam);
+  const licenseParam = new GoString();
+  licenseParam["p"] = license;
+  licenseParam["n"] = String(license).length;
+
+  const registryJson = JSON.stringify(registryInfo)
+  const registryJsonParam = new GoString();
+  registryJsonParam["p"] = registryJson;
+  registryJsonParam["n"] = registryJson.length;
+
+  const templatedConfig = kots().TemplateConfig(configDataParam, configValuesDataParam, licenseParam, registryJsonParam);
   if (templatedConfig == "" || templatedConfig["p"] == "") {
     throw new ReplicatedError("failed to template config");
   }

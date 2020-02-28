@@ -19,6 +19,7 @@ import { logger } from "../server/logger";
 // tslint:disable-next-line cyclomatic-complexity
 export async function backup(stores: Stores, appId: string, scheduled: boolean): Promise<Backup> {
   const app = await stores.kotsAppStore.getApp(appId);
+  const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(appId);
   const kotsVersion = await stores.kotsAppStore.getCurrentAppVersion(appId);
   if (!kotsVersion) {
     throw new ReplicatedError("App does not have a current version");
@@ -35,7 +36,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean):
   }
 
   const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, kotsVersion.sequence);
-  const rendered = await kotsRenderFile(app, stores, tmpl);
+  const rendered = await kotsRenderFile(app, stores, tmpl, registryInfo);
   const base = yaml.safeLoad(rendered) as Backup;
   const spec = (base && base.spec) || {};
 

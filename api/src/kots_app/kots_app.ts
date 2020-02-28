@@ -200,8 +200,8 @@ export class KotsApp {
     return false;
   }
 
-  async applyConfigValues(configSpec: string, configValues: string): Promise<KotsConfigGroup[]> {
-    const templatedConfig = await kotsTemplateConfig(configSpec, configValues);
+  async applyConfigValues(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<KotsConfigGroup[]> {
+    const templatedConfig = await kotsTemplateConfig(configSpec, configValues, license, registryInfo);
 
     if (!templatedConfig.spec || !templatedConfig.spec.groups) {
       throw new ReplicatedError("Config groups not found");
@@ -214,15 +214,18 @@ export class KotsApp {
 
   async getAppConfigGroups(stores: Stores, appId: string, sequence: string): Promise<KotsConfigGroup[]> {
     try {
+      const app = await stores.kotsAppStore.getApp(appId);
+      const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
       const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
       const { configSpec, configValues } = configData!;
-      return await this.applyConfigValues(configSpec, configValues);
+      return await this.applyConfigValues(configSpec, configValues, String(app.license), registryInfo);
     } catch (err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
     }
   }
 
   async templateConfigGroups(stores: Stores, appId: string, sequence: string, configGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
+    const app = await stores.kotsAppStore.getApp(appId);
     const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
     const { configSpec, configValues } = configData!;
 
@@ -248,7 +251,8 @@ export class KotsApp {
     });
 
     const updatedConfigValues = yaml.safeDump(parsedConfigValues);
-    return await this.applyConfigValues(configSpec, updatedConfigValues);
+    const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
+    return await this.applyConfigValues(configSpec, updatedConfigValues, String(app.license), registryInfo);
   }
 
   // Source files

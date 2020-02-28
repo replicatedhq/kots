@@ -25,6 +25,7 @@ export class PreflightAPI {
       // Fetch YAML from the database and return to client with injected key
       const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(appSlug);
       const app = await request.app.locals.stores.kotsAppStore.getApp(appId);
+      const registryInfo = await request.app.locals.stores.kotsAppStore.getAppRegistryDetails(appId);
 
       const preflightSpecYaml = await request.app.locals.stores.preflightStore.getKotsPreflightSpec(appId, seqInt);
 
@@ -35,7 +36,7 @@ export class PreflightAPI {
       }
 
       // render the yaml with the full context
-      const renderedSpecYaml = await kotsRenderFile(app, request.app.locals.stores, preflightSpecYaml);
+      const renderedSpecYaml = await kotsRenderFile(app, request.app.locals.stores, preflightSpecYaml, registryInfo);
 
       const specJson = jsYaml.load(renderedSpecYaml);
 
