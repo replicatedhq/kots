@@ -48,23 +48,6 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 
 	ctx.AddValuesToKurlContext(retrieved)
 
-	// Spec := reflect.ValueOf(retrieved.Spec)
-
-	// for i := 0; i < Spec.NumField(); i++ {
-	// 	Category := reflect.ValueOf(Spec.Field(i).Interface())
-
-	// 	TypeOfCategory := Category.Type()
-
-	// 	RawCategoryName := Category.String()
-	// 	TrimmedRight := strings.Split(RawCategoryName, ".")[1]
-	// 	CategoryName := strings.Split(TrimmedRight, " ")[0]
-
-	// 	for i := 0; i < Category.NumField(); i++ {
-	// 		if Category.Field(i).CanInterface() {
-	// 			kurlCtx.KurlValues[CategoryName+"."+TypeOfCategory.Field(i).Name] = Category.Field(i).Interface()
-	// 		}
-	// 	}
-	// }
 	return ctx, nil
 }
 
