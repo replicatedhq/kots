@@ -96,7 +96,8 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check for unset required items
-	unsetRequiredItems := make([]string, 0, 0)
+	requiredItems := make([]string, 0, 0)
+	requiredItemsTitles := make([]string, 0, 0)
 	for _, group := range updateAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
 			if !item.Required {
@@ -111,17 +112,22 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			if !(item.Default.Type == multitype.String && item.Default.String() == "") {
 				continue
 			}
-			unsetRequiredItems = append(unsetRequiredItems, item.Name)
+			requiredItems = append(requiredItems, item.Name)
+			if item.Title != "" {
+				requiredItemsTitles = append(requiredItemsTitles, item.Title)
+			} else {
+				requiredItemsTitles = append(requiredItemsTitles, item.Name)
+			}
 		}
 	}
 
-	if len(unsetRequiredItems) > 0 {
-		errMsg := fmt.Sprintf("The following fields are required: %s", strings.Join(unsetRequiredItems, ", "))
+	if len(requiredItems) > 0 {
+		errMsg := fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
 		logger.Error(errors.New(errMsg))
 		updateAppConfigResponse := UpdateAppConfigResponse{
 			Success:       false,
 			Error:         errMsg,
-			RequiredItems: unsetRequiredItems,
+			RequiredItems: requiredItems,
 		}
 		JSON(w, 400, updateAppConfigResponse)
 		return
