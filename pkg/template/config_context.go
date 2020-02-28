@@ -117,8 +117,8 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 			if !isReadOnly(configItem) {
 				// if item is editable and the live state is valid, skip the rest of this -
-				val, ok := configCtx.ItemValues[node]
-				if ok && val.HasValue() {
+				_, ok := configCtx.ItemValues[node]
+				if ok {
 					continue
 				}
 			}
