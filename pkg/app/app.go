@@ -252,11 +252,6 @@ backup_spec = EXCLUDED.backup_spec`
 		return int64(0), errors.Wrap(err, "failed to update app")
 	}
 
-	downstreamStatus := "pending_preflight"
-	if kotsKinds.Preflight == nil {
-		downstreamStatus = "pending"
-	}
-
 	previousArchiveDir := ""
 	if !isFirstVersion {
 		// Get the previous archive, we need this to calculate the diff
@@ -269,6 +264,13 @@ backup_spec = EXCLUDED.backup_spec`
 	}
 
 	for _, downstream := range a.Downstreams {
+		downstreamStatus := "pending"
+		if isFirstVersion && kotsKinds.Config != nil {
+			downstreamStatus = "pending_config"
+		} else if kotsKinds.Preflight != nil {
+			downstreamStatus = "pending_preflight"
+		}
+
 		diffSummary := ""
 		if !isFirstVersion {
 			// diff this release from the last release
