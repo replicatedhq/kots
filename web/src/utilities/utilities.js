@@ -74,6 +74,24 @@ export function parseIconUri(uri) {
   };
 }
 
+export function calculateTimeDifference(start, end) {
+  const date1 = dayjs(start);
+  const date2 = dayjs(end);
+  const seconds = date2.diff(date1, "s");
+  let formattedDiff;
+  if (seconds >= 3600) {
+    const hourDiff = date2.diff(date1, "h");
+    formattedDiff = `${hourDiff} hour${hourDiff === 1 ? "" : "s"}`;
+  } else if (seconds >= 60) {
+    const minuteDiff = date2.diff(date1, "m");
+    formattedDiff = `${minuteDiff} minute${minuteDiff === 1 ? "" : "s"}`;
+  } else {
+    formattedDiff = `${seconds} second${seconds === 1 ? "" : "s"}`;
+  }
+
+  return formattedDiff;
+}
+
 export function secondsAgo(time) {
   const date1 = dayjs(time);
   return dayjs().diff(date1, "s");
@@ -92,7 +110,7 @@ export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
   let resizerElm = document.createElement("p");
   resizerElm.textContent = text;
   resizerElm.setAttribute("class", "u-fontWeight--bold");
-  resizerElm.setAttribute("style", "visibility: hidden; z-index: -1; position: absolute; font-size: 32px");
+  resizerElm.setAttribute("style", `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`);
   document.body.appendChild(resizerElm);
 
   if (resizerElm.getBoundingClientRect().width < maxWidth) {
@@ -150,25 +168,6 @@ export function getCronFrequency(schedule) {
     default:
       return "0 0 * * MON";
   }
-}
-
-export function calculateTimeDifference(start, end) {
-  const date1 = dayjs(start);
-  const date2 = dayjs(end);
-  const millis = date2.diff(date1);
-  const seconds = Math.floor((millis / 1000) % 60);
-  let formattedDiff;
-  if (seconds >= 3600) {
-    const hourDiff = Math.floor((millis / (1000 * 60 * 60)) % 24);
-    formattedDiff = `${hourDiff} hour${hourDiff === 1 ? "" : "s"}`;
-  } else if (seconds >= 60) {
-    const minuteDiff = Math.floor((millis / (1000 * 60)) % 60);
-    formattedDiff = `${minuteDiff} minute${minuteDiff === 1 ? "" : "s"}`;
-  } else {
-    formattedDiff = `${seconds} second${seconds === 1 ? "" : "s"}`;
-  }
-
-  return formattedDiff;
 }
 
 export function getReadableCronDescriptor(expression) {
