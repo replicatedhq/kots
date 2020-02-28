@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/manifoldco/promptui"
@@ -26,15 +27,20 @@ func ResetPasswordCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
 
 			log := logger.NewLogger()
 
-			if len(args) == 0 {
-				cmd.Help()
+			// use namespace-as-arg if provided, else use namespace from -n/--namespace
+			namespace := v.GetString("namespace")
+			if len(args) == 1 {
+				namespace = args[0]
+			} else if len(args) > 1 {
+				fmt.Printf("more than one argument supplied: %+v\n", args)
 				os.Exit(1)
 			}
 
-			log.ActionWithoutSpinner("Reset the admin console password for %s", args[0])
+			log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
 			newPassword, err := promptForNewPassword()
 			if err != nil {
 				os.Exit(1)
@@ -50,7 +56,7 @@ func ResetPasswordCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create k8s client")
 			}
 
-			existingSecret, err := clientset.CoreV1().Secrets(args[0]).Get("kotsadm-password", metav1.GetOptions{})
+			existingSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-password", metav1.GetOptions{})
 			if err != nil {
 				if !kuberneteserrors.IsNotFound(err) {
 					return errors.Wrap(err, "failed to lookup secret")
@@ -63,21 +69,21 @@ func ResetPasswordCmd() *cobra.Command {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kotsadm-password",
-						Namespace: args[0],
+						Namespace: namespace,
 					},
 					Data: map[string][]byte{
 						"passwordBcrypt": []byte(bcryptPassword),
 					},
 				}
 
-				_, err := clientset.CoreV1().Secrets(args[0]).Create(newSecret)
+				_, err := clientset.CoreV1().Secrets(namespace).Create(newSecret)
 				if err != nil {
 					return errors.Wrap(err, "failed to create secret")
 				}
 			} else {
 				existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
 
-				_, err := clientset.CoreV1().Secrets(args[0]).Update(existingSecret)
+				_, err := clientset.CoreV1().Secrets(namespace).Update(existingSecret)
 				if err != nil {
 					return errors.Wrap(err, "failed to update secret")
 				}
