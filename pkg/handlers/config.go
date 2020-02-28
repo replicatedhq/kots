@@ -123,7 +123,6 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	if len(requiredItems) > 0 {
 		errMsg := fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
-		logger.Error(errors.New(errMsg))
 		updateAppConfigResponse := UpdateAppConfigResponse{
 			Success:       false,
 			Error:         errMsg,
