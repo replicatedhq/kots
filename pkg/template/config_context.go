@@ -2,7 +2,6 @@ package template
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"path"
 	"regexp"
@@ -13,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
-	"k8s.io/kubernetes/pkg/credentialprovider"
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -292,25 +291,37 @@ func (ctx ConfigCtx) hasLocalRegistry() bool {
 }
 
 func (ctx ConfigCtx) localRegistryImagePullSecret() string {
-	dockerConfigEntry := credentialprovider.DockerConfigEntry{
-		Username: ctx.LocalRegistry.Username,
-		Password: ctx.LocalRegistry.Password,
+	var secret *corev1.Secret
+	if ctx.LocalRegistry.Host != "" {
+		s, err := registry.PullSecretForRegistries(
+			[]string{ctx.LocalRegistry.Host},
+			ctx.LocalRegistry.Username,
+			ctx.LocalRegistry.Password,
+			"default", // this value doesn't matter
+		)
+		if err != nil {
+			return ""
+		}
+		secret = s
+	} else {
+		proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
+		s, err := registry.PullSecretForRegistries(
+			proxyInfo.ToSlice(),
+			ctx.license.Spec.LicenseID,
+			ctx.license.Spec.LicenseID,
+			"default", // this value doesn't matter
+		)
+		if err != nil {
+			return ""
+		}
+		secret = s
 	}
-
-	dockerConfigJSON := credentialprovider.DockerConfigJson{
-		Auths: credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
-			ctx.LocalRegistry.Host: dockerConfigEntry,
-		}),
-	}
-
-	b, err := json.Marshal(dockerConfigJSON)
-	if err != nil {
-		fmt.Printf("%#v\n", err)
+	dockerConfig, found := secret.Data[".dockerconfigjson"]
+	if !found {
 		return ""
 	}
 
-	encoded := base64.StdEncoding.EncodeToString(b)
-	return encoded
+	return base64.StdEncoding.EncodeToString(dockerConfig)
 }
 
 func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {
