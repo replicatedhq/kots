@@ -40,6 +40,11 @@ func ResetPasswordCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			if namespace == "" {
+				fmt.Printf("a namespace must be provided as an argument or via -n/--namespace\n")
+				os.Exit(1)
+			}
+
 			log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
 			newPassword, err := promptForNewPassword()
 			if err != nil {
