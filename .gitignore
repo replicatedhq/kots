@@ -13,6 +13,7 @@
 
 bin/
 vendor
+.idea/
 
 # scope test logs
 scope-go-*.log
