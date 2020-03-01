@@ -22,10 +22,14 @@ func (ctx LicenseCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx LicenseCtx) licenseFieldValue(name string) string {
-	for key, entitlement := range ctx.License.Spec.Entitlements {
-		if key == name {
-			return fmt.Sprintf("%v", entitlement.Value.Value())
-		}
+	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
+	if ctx.License == nil {
+		return ""
+	}
+
+	entitlement, ok := ctx.License.Spec.Entitlements[name]
+	if ok {
+		return fmt.Sprintf("%v", entitlement.Value.Value())
 	}
 	return ""
 }

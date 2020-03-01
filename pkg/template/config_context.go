@@ -79,6 +79,7 @@ func (b *Builder) NewConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		Ctx: []Ctx{
 			configCtx,
 			StaticCtx{},
+			&LicenseCtx{License: license},
 		},
 	}
 
