@@ -95,9 +95,21 @@ func TestDepGraph(t *testing.T) {
 			resolveOrder: []string{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet", "kilo", "lima", "mike"},
 			name:         "pyramid",
 		},
+		{
+			dependencies: map[string][]string{
+				"alpha": {},
+				"bravo": {},
+			},
+			resolveOrder: []string{"alpha", "bravo"},
+			expectError:  false,
+			name:         "not referenced", // items should eventually be resolved even if nothing depends on them
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
+
 			graph := depGraph{}
 			for source, deps := range test.dependencies {
 				graph.AddNode(source)

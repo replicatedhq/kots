@@ -8,13 +8,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.0.2
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.0.1
+	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/chzyer/logex v1.1.11-0.20160617073814-96a4d311aa9b // indirect
 	github.com/containerd/continuity v0.0.0-20191127005431-f65d91d395eb // indirect
 	github.com/containers/image v3.0.2+incompatible
-	github.com/containers/storage v1.15.8 // indirect
+	github.com/containers/storage v1.16.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
