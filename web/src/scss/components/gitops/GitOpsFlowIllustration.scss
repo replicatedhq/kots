@@ -3,22 +3,22 @@
   margin-bottom: 30px;
 }
 #movement-orb-gray {
-  animation: grayOrbStraight 1.2s infinite;
+  animation: grayOrbStraight 1.2s ease;
 }
 #movement-orb-blue {
-  animation: darkBlueOrbAngleUp 1.2s infinite;
+  animation: darkBlueOrbAngleUp 1.2s ease;
 }
 #movement-orb-green {
-  animation: greenOrbAngleDown 1.2s infinite;
+  animation: greenOrbAngleDown 1.2s ease;
 }
 #movement-orb-blue-straight {
-  animation: blueOrbStraight 1.2s infinite;
+  animation: blueOrbStraight 1.2s ease;
 }
 #movement-orb-blue-angle-down {
-  animation: blueOrbAngleDown 1.2s infinite;
+  animation: blueOrbAngleDown 1.2s ease;
 }
 #movement-orb-blue-angle-up {
-  animation: blueOrbAngleUp 1.2s infinite;
+  animation: blueOrbAngleUp 1.2s ease;
 }
 
 @keyframes blueOrbStraight {
