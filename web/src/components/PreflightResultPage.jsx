@@ -267,7 +267,8 @@ export default compose(
           appSlug: match.params.slug,
           clusterSlug: match.params.downstreamSlug,
           sequence: match.params.sequence
-        }
+        },
+        fetchPolicy: "no-cache"
       };
     }
   }),
@@ -279,7 +280,8 @@ export default compose(
     },
     options: () => {
       return {
-        pollInterval: 2000
+        pollInterval: 2000,
+        fetchPolicy: "no-cache"
       }
     }
   }),

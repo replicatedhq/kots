@@ -100,32 +100,21 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	requiredItemsTitles := make([]string, 0, 0)
 	for _, group := range updateAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
-			if !item.Required {
-				continue
-			}
-			if item.Hidden || item.When == "false" {
-				continue
-			}
-			if !(item.Value.Type == multitype.String && item.Value.String() == "") {
-				continue
-			}
-			if !(item.Default.Type == multitype.String && item.Default.String() == "") {
-				continue
-			}
-			requiredItems = append(requiredItems, item.Name)
-			if item.Title != "" {
-				requiredItemsTitles = append(requiredItemsTitles, item.Title)
-			} else {
-				requiredItemsTitles = append(requiredItemsTitles, item.Name)
+			if app.IsRequiredItem(item) && app.IsUnsetItem(item) {
+				requiredItems = append(requiredItems, item.Name)
+				if item.Title != "" {
+					requiredItemsTitles = append(requiredItemsTitles, item.Title)
+				} else {
+					requiredItemsTitles = append(requiredItemsTitles, item.Name)
+				}
 			}
 		}
 	}
 
 	if len(requiredItems) > 0 {
-		errMsg := fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
 		updateAppConfigResponse := UpdateAppConfigResponse{
 			Success:       false,
-			Error:         errMsg,
+			Error:         fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", ")),
 			RequiredItems: requiredItems,
 		}
 		JSON(w, 400, updateAppConfigResponse)
@@ -216,7 +205,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err := foundApp.UpdateConfigValuesInDB(archiveDir)
+		err := app.UpdateConfigValuesInDB(archiveDir, foundApp.ID, int64(updateAppConfigRequest.Sequence))
 		if err != nil {
 			logger.Error(err)
 			updateAppConfigResponse.Error = "failed to update config values in db"
@@ -224,7 +213,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := app.CreateAppVersionArchive(foundApp.ID, int64(foundApp.CurrentSequence), archiveDir); err != nil {
+		if err := app.CreateAppVersionArchive(foundApp.ID, int64(updateAppConfigRequest.Sequence), archiveDir); err != nil {
 			logger.Error(err)
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			JSON(w, 500, updateAppConfigResponse)

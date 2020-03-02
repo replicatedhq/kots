@@ -60,8 +60,8 @@ class AppConfig extends Component {
     if (fromLicenseFlow) {
       return 0;
     }
-    if (match.params.sequence !== undefined) {
-      return match.params.sequence;
+    if (match.params.sequence != undefined) {
+      return parseInt(match.params.sequence);
     }
     return app.currentSequence;
   }
@@ -75,7 +75,7 @@ class AppConfig extends Component {
   }
 
   markRequiredItems = requiredItems => {
-    const configGroups = this.state.configGroups.slice();
+    const configGroups = this.state.configGroups;
     requiredItems.forEach(requiredItem => {
       configGroups.forEach(configGroup => {
         const item = configGroup.items.find(item => item.name === requiredItem);
@@ -90,9 +90,10 @@ class AppConfig extends Component {
   handleSave = async () => {
     this.setState({ savingConfig: true, savingConfigError: "" });
 
-    const { fromLicenseFlow, history, getKotsApp } = this.props;
+    const { fromLicenseFlow, history, getKotsApp, match } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
+    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
@@ -103,7 +104,7 @@ class AppConfig extends Component {
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
-        createNewVersion: !fromLicenseFlow,
+        createNewVersion,
       })
     })
       .then(res => res.json())
@@ -124,10 +125,14 @@ class AppConfig extends Component {
           this.props.refreshAppData();
         }
 
-        if (fromLicenseFlow) {
-          const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
-          const status = hasPreflight ? "pending_preflight" : "deployed";
+        const hasPreflight = fromLicenseFlow ? getKotsApp?.getKotsApp?.hasPreflight : this.props.app?.hasPreflight;
+
+        if (!createNewVersion) {
+          const status = hasPreflight ? "pending_preflight" : "pending";
           await this.props.updateDownstreamsStatus(slug, sequence, status);
+        }
+
+        if (fromLicenseFlow) {
           if (hasPreflight) {
             history.replace("/preflight");
           } else {
@@ -211,7 +216,7 @@ class AppConfig extends Component {
 
   render() {
     const { configGroups, savingConfig, changed, showNextStepModal, savingConfigError } = this.state;
-    const { fromLicenseFlow, getKotsApp } = this.props;
+    const { fromLicenseFlow, getKotsApp, match } = this.props;
 
     if (!configGroups.length || getKotsApp?.loading) {
       return (
@@ -223,6 +228,7 @@ class AppConfig extends Component {
 
     const app = this.props.app || getKotsApp?.getKotsApp;
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+    const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
@@ -245,39 +251,43 @@ class AppConfig extends Component {
           </div>
         }
 
-        {!fromLicenseFlow &&
-          <Modal
-            isOpen={showNextStepModal}
-            onRequestClose={this.hideNextStepModal}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Next step"
-            ariaHideApp={false}
-            className="Modal MediumSize"
-          >
-            {gitops?.enabled ?
-              <div className="Modal-body">
-                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
-                  The config for {app.name} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
-                </p>
-                <div className="flex justifyContent--flexEnd">
-                  <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
-                </div>
+        <Modal
+          isOpen={showNextStepModal}
+          onRequestClose={this.hideNextStepModal}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Next step"
+          ariaHideApp={false}
+          className="Modal MediumSize"
+        >
+          {gitops?.enabled ?
+            <div className="Modal-body">
+              {<p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                The config for {app.name} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
+              </p>}
+              <div className="flex justifyContent--flexEnd">
+                <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
               </div>
-              :
-              <div className="Modal-body">
+            </div>
+            :
+            <div className="Modal-body">
+              {isNewVersion ? 
                 <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated. A new version is available on the version history page with these changes.
                 </p>
-                <div className="flex justifyContent--flexEnd">
-                  <button type="button" className="btn blue secondary u-marginRight--10" onClick={this.hideNextStepModal}>Continue editing</button>
-                  <Link to={`/app/${app?.slug}/version-history`}>
-                    <button type="button" className="btn blue primary">Go to new version</button>
-                  </Link>
-                </div>
+                :
+                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated.
+                </p>
+              }
+              <div className="flex justifyContent--flexEnd">
+                <button type="button" className="btn blue secondary u-marginRight--10" onClick={this.hideNextStepModal}>Continue editing</button>
+                <Link to={`/app/${app?.slug}/version-history`}>
+                  <button type="button" className="btn blue primary">{isNewVersion ? "Go to new version" : "Go to updated version"}</button>
+                </Link>
               </div>
-            }
-          </Modal>
-        }
+            </div>
+          }
+        </Modal>
       </div>
     )
   }

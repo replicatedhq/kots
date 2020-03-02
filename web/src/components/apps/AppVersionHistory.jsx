@@ -174,35 +174,29 @@ class AppVersionHistory extends Component {
       );
     }
 
-    if (downstream.currentVersion?.sequence == undefined) {
-      // no current version found
-      return (
-        <button
-          className="btn primary blue"
-          onClick={() => this.deployVersion(version)}
-        >
-          Deploy
-        </button>
-      );
-    }
-
     const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+    const needsConfiguration = version.status === "pending_config";
     const showActions = !isPastVersion || app.allowRollback;
+    const isSecondaryBtn = isPastVersion || needsConfiguration;
 
     return (
       <div>
         {showActions &&
           <button
-            className={classNames("btn", { "secondary blue": isPastVersion, "primary blue": !isPastVersion })}
+            className={classNames("btn", { "secondary blue": isSecondaryBtn, "primary blue": !isSecondaryBtn })}
             disabled={isCurrentVersion}
-            onClick={() => this.deployVersion(version)}
+            onClick={() => needsConfiguration ? this.props.history.push(`/app/${app.slug}/config/${version.sequence}`) : this.deployVersion(version)}
           >
-            {isPastVersion ?
-              "Rollback" :
-              isCurrentVersion ?
-                "Deployed" :
-                "Deploy"
+            {needsConfiguration ?
+              "Configure" :
+              downstream.currentVersion?.sequence == undefined ?
+                "Deploy" :
+                isPastVersion ?
+                  "Rollback" :
+                  isCurrentVersion ?
+                    "Deployed" :
+                    "Deploy"
             }
           </button>
         }
@@ -242,7 +236,7 @@ class AppVersionHistory extends Component {
     if (isPastVersion && app.hasPreflight) {
       if (preflightsFailed) {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
-      } else {
+      } else if(version.status !== "pending_config") {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
       }
     }
@@ -254,7 +248,7 @@ class AppVersionHistory extends Component {
     } else if (app.hasPreflight) {
       if (preflightsFailed) {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
-      } else {
+      } else if(version.status !== "pending_config") {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
       }
     }
