@@ -355,6 +355,8 @@ class GitOpsDeploymentManager extends React.Component {
             appName={this.props.appName}
             selectedService={selectedService}
             onFinishSetup={this.finishSetup}
+            ctaLoadingText="Finishing setup"
+            ctaText="Finish setup"
           />
         );
       default:
@@ -397,7 +399,10 @@ class GitOpsDeploymentManager extends React.Component {
             <div key={app.id} className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--30">
               <div className="flex alignItems--center">
                 <div style={{ backgroundImage: `url(${app.iconUri})` }} className="appIcon u-position--relative" />
-                <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-marginLeft--10">{app.name}</p>
+                <div className="u-marginLeft--10">
+                  <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-marginBottom--5">{app.name}</p>
+                  {gitopsEnabled && <Link to={`/app/${app.slug}/gitops`} className="gitops-action-link">Manage settings</Link>}
+                </div>
               </div>
               <div className="flex-column alignItems--flexEnd">
                 <div className="flex alignItems--center u-marginBottom--5">

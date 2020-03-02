@@ -20,24 +20,28 @@
 }
 
 .GitopsSettings-noRepoAccess {
-  border: 1px solid #BC4752;
-  border-radius: 2px;
-  background: #FBECEA;
   padding: 10px;
   text-align: center;
-  max-width: 350px;
-  margin: 0 auto;
-  margin-bottom: 30px;
+  margin: 0 auto 30px;
 
   .title {
-    font-size: 14px;
+    font-size: 20px;
     font-weight: bold;
-    color: #BC4752;
-    margin-bottom: 8px;
+    color: #323232;
+    margin-bottom: 12px;
   }
 
   .sub {
-    font-size: 12px;
-    color: #BC4752;
+    font-size: 16px;
+    font-weight: medium;
+    color: #9B9B9B;
+    line-height: 1.7;
   }
+}
+
+
+.disable-gitops-wrapper {
+  padding-top: 30px;
+  border-top: 1px solid #C4C8CA;
+  
 }

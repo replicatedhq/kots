@@ -46,7 +46,8 @@ class GitOpsRepoDetails extends React.Component {
       path,
       action,
       format,
-      finishingSetup: false
+      finishingSetup: false,
+      showFinishedConfirm: false,
     };
   }
 
@@ -99,7 +100,10 @@ class GitOpsRepoDetails extends React.Component {
     await this.props.onFinishSetup(repoDetails);
 
     if (this._mounted) {
-      this.setState({ finishingSetup: false });
+      this.setState({ finishingSetup: false, showFinishedConfirm: true });
+      setTimeout(() => {
+        this.setState({ showFinishedConfirm: false })
+      }, 3000);
     }
   }
 
@@ -131,6 +135,7 @@ class GitOpsRepoDetails extends React.Component {
       action,
       format,
       finishingSetup,
+      showFinishedConfirm,
     } = this.state;
 
     const provider = selectedService?.value;
@@ -269,15 +274,21 @@ class GitOpsRepoDetails extends React.Component {
             </div>
 
             <div className="flex">
-              {this.props.showCancelBtn && <button className="btn secondary dustyGray u-marginRight--10" type="button" onClick={this.props.onCancel}>Cancel</button>}
+            {this.props.showCancelBtn && <button className="btn secondary dustyGray u-marginRight--10" type="button" onClick={this.props.onCancel}>Cancel</button>}
               <button
                 className="btn primary blue"
                 type="button"
                 disabled={finishingSetup || !this.allowUpdate()}
                 onClick={this.onFinishSetup}
               >
-                {finishingSetup ? "Finishing setup" : "Finish GitOps setup"}
+                {finishingSetup ? this.props.ctaLoadingText : this.props.ctaText}
               </button>
+              {showFinishedConfirm &&
+                <div className="u-marginLeft--10 flex alignItems--center">
+                  <span className="icon checkmark-icon" />
+                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings saved</span>
+                </div>
+              }
             </div>
           </div>
       </div>

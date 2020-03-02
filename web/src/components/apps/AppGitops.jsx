@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Helmet from "react-helmet";
 import url from "url";
@@ -6,6 +7,7 @@ import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { testGitOpsConnection, disableAppGitops, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
 import { getServiceSite, getAddKeyUri, requiresHostname } from "../../utilities/utilities";
+import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
 
@@ -57,6 +59,7 @@ class AppGitops extends Component {
       ownerRepo,
       testingConnection: false,
       disablingGitOps: false,
+      showDisableGitopsModalPrompt: false,
       showGitOpsSettings: false
     };
   }
@@ -159,6 +162,10 @@ class AppGitops extends Component {
     }
   }
 
+  promptToDisableGitOps = () => {
+    this.setState({ showDisableGitopsModalPrompt: true });
+  }
+
   disableGitOps = async () => {
     this.setState({ disablingGitOps: true });
     const appId = this.props.app?.id;
@@ -195,6 +202,14 @@ class AppGitops extends Component {
     }
   }
 
+  componentDidMount() {
+    const gitops = this.props.app.downstreams[0].gitops;
+    const gitopsEnabled = gitops?.enabled;
+    if (!gitopsEnabled) {
+      this.props.history.push(`/app/${this.props.app.slug}`);
+    }
+  }
+
   render() {
     const { app } = this.props;
     const appTitle = app.name;
@@ -218,11 +233,12 @@ class AppGitops extends Component {
       testingConnection,
       disablingGitOps,
       showGitOpsSettings,
+      showDisableGitopsModalPrompt,
     } = this.state;
 
     const deployKey = gitops?.deployKey;
     const addKeyUri = getAddKeyUri(gitops?.uri, gitops?.provider, ownerRepo);
-    const gitopsIsConnected = gitops.enabled && gitops.isConnected;
+    const gitopsIsConnected = gitops?.enabled && gitops?.isConnected;
 
     const selectedService = SERVICES.find((service) => {
       return service.value === gitops?.provider;
@@ -237,7 +253,7 @@ class AppGitops extends Component {
         {!ownerRepo || showGitOpsSettings ?
           <div className="u-marginTop--30">
             <GitOpsRepoDetails
-              stepTitle={`Update GitOps for ${appTitle}`}
+              stepTitle={`GitOps settings for ${appTitle}`}
               appName={appTitle}
               ownerRepo={ownerRepo}
               branch={gitops?.branch}
@@ -249,6 +265,8 @@ class AppGitops extends Component {
               showCancelBtn={!!ownerRepo}
               onCancel={this.hideGitOpsSettings}
               otherService=""
+              ctaLoadingText="Updating settings"
+              ctaText="Update settings"
             />
           </div>
           :
@@ -266,21 +284,36 @@ class AppGitops extends Component {
             </div>
 
             {gitopsIsConnected ?
-              <div className="u-textAlign--center u-marginLeft--auto u-marginRight--auto">
-                <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-lineHeight--normal u-marginBottom--10">GitOps for {appTitle}</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">
-                  When an update is available for {appTitle}, the Admin Console will commit the fully<br/>rendered and deployable YAML to {gitops?.path ? `${gitops?.path}/rendered.yaml` : `the root of ${ownerRepo}/${gitops?.branch}`} in the {gitops?.branch} branch of<br/>the {ownerRepo} repo on {gitops?.provider}.
-                </p>
-                <div className="flex justifyContent--center">
-                  <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.disableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
-                  <button className="btn secondary blue" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
+              <div className="u-marginLeft--auto u-marginRight--auto">
+                <GitOpsRepoDetails
+                  stepTitle={`GitOps settings for ${appTitle}`}
+                  appName={appTitle}
+                  ownerRepo={ownerRepo}
+                  branch={gitops?.branch}
+                  path={gitops?.path}
+                  format={gitops?.format}
+                  action={gitops?.action}
+                  selectedService={selectedService}
+                  onFinishSetup={this.finishGitOpsSetup}
+                  otherService=""
+                  ctaLoadingText="Updating settings"
+                  ctaText="Update settings"
+                />
+                <div className="disable-gitops-wrapper">
+                  <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Disable GitOps for {appTitle}</p>
+                  <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginBottom--20">Disabling GitOps will only affect this application. </p>
+                  <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.promptToDisableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
                 </div>
               </div>
               :
-              <div>
+              <div className="flex-column flex1">
                 <div className="GitopsSettings-noRepoAccess">
-                  <p className="title">Unable to access the repository</p>
-                  <p className="sub">Please check that the deploy key is added and has write access</p>
+                  <div className="u-textAlign--center">
+                    <span className="success-checkmark-icon icon u-marginBottom--10" />
+                  </div>
+                  <p className="title">GitOps has been enabled. You're almost ready to deploy</p>
+                  <p className="sub">In order for application updates to be pushed to your GitOps deployment pipeline we need to be able to access to the repository. To&nbsp;do this, copy the key below and add it to your repository settings page. If you need further assistance, you can <a href="https://kots.io/kotsadm/gitops/single-app-workflows/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+                  <p className="sub u-marginTop--10">If you have already added this key to your repository and are seeing this message, check to make sure that the key has "Write access" for the repository and click "Try again".</p>
                 </div>
 
                 <div className="u-marginBottom--30">
@@ -310,6 +343,24 @@ class AppGitops extends Component {
             }
           </div>
         }
+        <Modal
+          isOpen={showDisableGitopsModalPrompt}
+          onRequestClose={() => { this.setState({ showDisableGitopsModalPrompt: false }) }}
+          contentLabel="Disable GitOps"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <div className="u-marginTop--10 u-marginBottom--10">
+              <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--10">Are you sure you want to disable GitOps?</p>
+              <p className="u-fontSize--large u-color--dustyGray">You can re-enable GitOps for this application by clicking "GitOps" in the Nav bar</p>
+            </div>
+            <div className="u-marginTop--30">
+              <button type="button" className="btn secondary u-marginRight--10" onClick={() => { this.setState({ showDisableGitopsModalPrompt: false }) }}>Cancel</button>
+              <button type="button" className="btn primary red" onClick={this.disableGitOps}>Disable GitOps</button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -317,6 +368,7 @@ class AppGitops extends Component {
 
 export default compose(
   withApollo,
+  withRouter,
   graphql(testGitOpsConnection, {
     props: ({ mutate }) => ({
       testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
