@@ -262,7 +262,7 @@ class AppGitops extends Component {
               action={gitops?.action}
               selectedService={selectedService}
               onFinishSetup={this.finishGitOpsSetup}
-              showCancelBtn={true}
+              showCancelBtn={!!ownerRepo}
               onCancel={this.hideGitOpsSettings}
               otherService=""
               ctaLoadingText="Updating settings"
