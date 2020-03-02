@@ -237,7 +237,7 @@ class AppGitops extends Component {
         {!ownerRepo || showGitOpsSettings ?
           <div className="u-marginTop--30">
             <GitOpsRepoDetails
-              stepTitle={`Update GitOps for ${appTitle}`}
+              stepTitle={`GitOps settings for ${appTitle}`}
               appName={appTitle}
               ownerRepo={ownerRepo}
               branch={gitops?.branch}
@@ -246,9 +246,11 @@ class AppGitops extends Component {
               action={gitops?.action}
               selectedService={selectedService}
               onFinishSetup={this.finishGitOpsSetup}
-              showCancelBtn={!!ownerRepo}
+              showCancelBtn={true}
               onCancel={this.hideGitOpsSettings}
               otherService=""
+              ctaLoadingText="Updating settings"
+              ctaText="Update settings"
             />
           </div>
           :
@@ -266,21 +268,36 @@ class AppGitops extends Component {
             </div>
 
             {gitopsIsConnected ?
-              <div className="u-textAlign--center u-marginLeft--auto u-marginRight--auto">
-                <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-lineHeight--normal u-marginBottom--10">GitOps for {appTitle}</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">
-                  When an update is available for {appTitle}, the Admin Console will commit the fully<br/>rendered and deployable YAML to {gitops?.path ? `${gitops?.path}/rendered.yaml` : `the root of ${ownerRepo}/${gitops?.branch}`} in the {gitops?.branch} branch of<br/>the {ownerRepo} repo on {gitops?.provider}.
-                </p>
-                <div className="flex justifyContent--center">
+              <div className="u-marginLeft--auto u-marginRight--auto">
+                <GitOpsRepoDetails
+                  stepTitle={`GitOps settings for ${appTitle}`}
+                  appName={appTitle}
+                  ownerRepo={ownerRepo}
+                  branch={gitops?.branch}
+                  path={gitops?.path}
+                  format={gitops?.format}
+                  action={gitops?.action}
+                  selectedService={selectedService}
+                  onFinishSetup={this.finishGitOpsSetup}
+                  otherService=""
+                  ctaLoadingText="Updating settings"
+                  ctaText="Update settings"
+                />
+                <div className="disable-gitops-wrapper">
+                  <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Disable GitOps for {appTitle}</p>
+                  <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginBottom--20">Disabling GitOps will only affect this application. </p>
                   <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.disableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
-                  <button className="btn secondary blue" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
               </div>
               :
-              <div>
+              <div className="flex-column flex1">
                 <div className="GitopsSettings-noRepoAccess">
-                  <p className="title">Unable to access the repository</p>
-                  <p className="sub">Please check that the deploy key is added and has write access</p>
+                  <div className="u-textAlign--center">
+                    <span className="success-checkmark-icon icon u-marginBottom--10" />
+                  </div>
+                  <p className="title">GitOps has been enabled. You're almost ready to deploy</p>
+                  <p className="sub">In order for application updates to be pushed to your GitOps deployment pipeline we need to be able to access to the repository. To&nbsp;do this, copy the key below and add it to your repository settings page. If you need further assistance, you can <a href="https://kots.io/kotsadm/gitops/single-app-workflows/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+                  <p className="sub u-marginTop--10">If you have already added your key to your repository and you still seeing this message, check to make sure that the key you added has "Write access" for the repository.</p>
                 </div>
 
                 <div className="u-marginBottom--30">
