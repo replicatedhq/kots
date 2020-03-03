@@ -348,7 +348,7 @@ backup_spec = EXCLUDED.backup_spec`
 // return the list of versions available for an app
 func (a App) GetVersions() ([]AppVersion, error) {
 	db := persistence.MustGetPGSession()
-	query := `select sequence, update_cursor, version_label from app_version where app_id = $1 order by sequence asc`
+	query := `select sequence, update_cursor, version_label from app_version where app_id = $1 order by update_cursor asc, sequence asc`
 	rows, err := db.Query(query, a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "query app_version table")

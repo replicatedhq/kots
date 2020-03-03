@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -291,7 +292,7 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	return string(decrypted), nil
 }
 
-func getLaterVersions(versionedApp *app.App, startSeq int) (int, map[int]app.AppVersion, error) {
+func getLaterVersions(versionedApp *app.App, startSeq int) (int, []app.AppVersion, error) {
 	versions, err := versionedApp.GetVersions()
 	if err != nil {
 		return -1, nil, errors.Wrap(err, "failed to get app versions")
@@ -324,5 +325,17 @@ func getLaterVersions(versionedApp *app.App, startSeq int) (int, map[int]app.App
 		}
 	}
 
-	return latestSequenceWithUpdateCursor, laterVersions, nil
+	// ensure that the returned versions array is sorted by GVK
+	keys := []int{}
+	for key, _ := range laterVersions {
+		keys = append(keys, key)
+	}
+	sort.Ints(keys)
+
+	sortedVersions := []app.AppVersion{}
+	for _, key := range keys {
+		sortedVersions = append(sortedVersions, laterVersions[key])
+	}
+
+	return latestSequenceWithUpdateCursor, sortedVersions, nil
 }
