@@ -27,13 +27,15 @@ var (
 )
 
 type ApplicationManifests struct {
-	AppID             string `json:"app_id"`
-	KubectlVersion    string `json:"kubectl_version"`
-	Namespace         string `json:"namespace"`
-	PreviousManifests string `json:"previous_manifests"`
-	Manifests         string `json:"manifests"`
-	Wait              bool   `json:"wait"`
-	ResultCallback    string `json:"result_callback"`
+	AppID                string   `json:"app_id"`
+	KubectlVersion       string   `json:"kubectl_version"`
+	AdditionalNamespaces []string `json:"additional_namespaces"`
+	ImagePullSecret      string   `json:"image_pull_secret"`
+	Namespace            string   `json:"namespace"`
+	PreviousManifests    string   `json:"previous_manifests"`
+	Manifests            string   `json:"manifests"`
+	Wait                 bool     `json:"wait"`
+	ResultCallback       string   `json:"result_callback"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server
@@ -62,15 +64,22 @@ type Client struct {
 	Token           string
 	TargetNamespace string
 
-	appStateMonitor *appstate.Monitor
-	hookStopChans   []chan struct{}
+	watchedNamespaces []string
+	imagePullSecret   string
+
+	appStateMonitor   *appstate.Monitor
+	hookStopChans     []chan struct{}
+	namespaceStopChan chan struct{}
 }
 
+// Run is the main entrypoint of the operator when running in standard, normal operations
 func (c *Client) Run() error {
 	log.Println("Starting kotsadm-operator loop")
 
 	c.runHooksInformer()
 	defer c.shutdownHooksInformer()
+
+	defer c.shutdownNamespacesInformer()
 
 	for {
 		err := c.connect()
@@ -192,7 +201,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}
 	})
 	if err != nil {
-		return errors.Wrap(err, "preflight handler")
+		return errors.Wrap(err, "failed in preflight handler")
 	}
 
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
@@ -203,12 +212,30 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 				return
 			}
 		}
+
+		for _, additionalNamespace := range args.AdditionalNamespaces {
+			if additionalNamespace == "*" {
+				continue
+			}
+
+			if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
+				// we don't fail here...
+				log.Printf("error creating namespace: %s", err.Error())
+			}
+		}
+		c.imagePullSecret = args.ImagePullSecret
+		c.watchedNamespaces = args.AdditionalNamespaces
+
 		if err := c.ensureResourcesPresent(args); err != nil {
 			log.Printf("error deploying: %s", err.Error())
 		}
+
+		c.shutdownNamespacesInformer()
+		c.runNamespacesInformer()
+
 	})
 	if err != nil {
-		return errors.Wrap(err, "deploy handler")
+		return errors.Wrap(err, "failed in deploy handler")
 	}
 
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
@@ -224,7 +251,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}()
 	})
 	if err != nil {
-		return errors.Wrap(err, "support bundle handler")
+		return errors.Wrap(err, "failed in support bundle handler")
 	}
 
 	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
@@ -234,7 +261,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}
 	})
 	if err != nil {
-		return errors.Wrap(err, "inform handler")
+		return errors.Wrap(err, "failed in inform handler")
 	}
 
 	return nil

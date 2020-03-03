@@ -9,6 +9,7 @@ export interface ApplicationSpec {
   graphs?: MetricGraph[];
   kubectlVersion?: string;
   kustomizeVersion?: string;
+  additionalNamespaces?: string[];
 }
 
 export interface ApplicationPort {

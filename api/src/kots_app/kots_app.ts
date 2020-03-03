@@ -351,6 +351,56 @@ export class KotsApp {
     return result.Body;
   }
 
+  async getImagePullSecretFromArchive(sequence: string): Promise<string> {
+    const replicatedParams = await Params.getParams();
+    const params = {
+      Bucket: replicatedParams.shipOutputBucket,
+      Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,
+    };
+
+    const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
+    const extract = tar.extract();
+    const gzunipStream = zlib.createGunzip();
+
+    return new Promise((resolve, reject) => {
+      const tmpDir = tmp.dirSync();
+      extract.on("entry", async (header, stream, next) => {
+        if (header.type !== "file") {
+          stream.resume();
+          next();
+          return;
+        }
+
+        const contents = await this.readFile(stream);
+
+        const fileName = path.join(tmpDir.name, header.name);
+
+        const parsed = path.parse(fileName);
+        if (!fs.existsSync(parsed.dir)) {
+          // TODO, move to node 10 and use the built in
+          // fs.mkdirSync(parsed.dir, {recursive: true});
+          mkdirp.sync(parsed.dir);
+        }
+
+        fs.writeFileSync(fileName, contents);
+        next();
+      });
+
+      extract.on("finish", () => {
+        // read the file IF IT EXISTS
+        const secretFile = path.join(tmpDir.name, "overlays", "midstream", "secret.yaml")
+        if (!fs.existsSync(secretFile)) {
+          resolve("");
+        }
+
+        const content = fs.readFileSync(secretFile, "utf-8");
+        resolve(content);
+      });
+
+      tgzStream.pipe(gzunipStream).pipe(extract);
+    });
+  }
+
   async render(sequence: string, overlayPath: string, kustomizeVersion: string | undefined): Promise<string> {
     const replicatedParams = await Params.getParams();
     const params = {

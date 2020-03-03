@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
 	"github.com/replicatedhq/kotsadm/operator/pkg/util"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -72,6 +76,37 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			} else {
 				log.Printf("manifest(s) deleted: %s/%s/%s", gv, k, n)
 			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) ensureNamespacePresent(name string) error {
+	restconfig, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get in cluster config")
+	}
+	clientset, err := kubernetes.NewForConfig(restconfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new kubernetes client")
+	}
+
+	_, err = clientset.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		namespace := &corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+
+		_, err = clientset.CoreV1().Namespaces().Create(namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to create namespace")
 		}
 	}
 
