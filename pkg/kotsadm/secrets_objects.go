@@ -128,7 +128,7 @@ func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
-			APIVersion: "core/v1",
+			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: deployOptions.Namespace,
