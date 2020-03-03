@@ -219,6 +219,16 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 }
 
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	// check additional namespaces early in case there are rbac issues we don't
+	// leave the cluster in a partially deployed state
+	if deployOptions.ApplicationMetadata != nil {
+		// If the metadata parses, and if the metadata contains additional namespaces
+		// attempt to create
+		if err := ensureAdditionalNamespaces(&deployOptions, clientset, log); err != nil {
+			return errors.Wrap(err, "failed to ensure additional namespaces")
+		}
+	}
+
 	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
