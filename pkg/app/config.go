@@ -39,10 +39,14 @@ func needsConfiguration(configSpec string, configValuesSpec string, licenseSpec 
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, _, _ := decode([]byte(rendered), nil, nil)
+	decoded, gvk, err := decode([]byte(rendered), nil, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to decode config")
 	}
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
+		return false, errors.Errorf("unexpected gvk found in metadata: %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
+	}
+
 	renderedConfig := decoded.(*kotsv1beta1.Config)
 
 	for _, group := range renderedConfig.Spec.Groups {
