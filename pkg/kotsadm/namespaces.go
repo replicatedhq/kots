@@ -29,11 +29,6 @@ func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset *k
 	}
 
 	application := obj.(*kotsv1beta1.Application)
-
-	if application.Spec.AdditionalNamespaces == nil {
-		return nil
-	}
-
 	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
 		// We support "*" for additional namespaces to handle pullsecret propagation
 		if additionalNamespace == "*" {
