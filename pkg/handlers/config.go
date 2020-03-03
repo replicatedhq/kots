@@ -205,12 +205,27 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		err := app.UpdateConfigValuesInDB(archiveDir, foundApp.ID, int64(updateAppConfigRequest.Sequence))
-		if err != nil {
+		if err := app.UpdateConfigValuesInDB(archiveDir, foundApp.ID, int64(updateAppConfigRequest.Sequence)); err != nil {
 			logger.Error(err)
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			JSON(w, 500, updateAppConfigResponse)
 			return
+		}
+
+		if kotsKinds.Preflight != nil {
+			if err := app.SetDownstreamVersionPendingPreflight(foundApp.ID, int64(updateAppConfigRequest.Sequence)); err != nil {
+				logger.Error(err)
+				updateAppConfigResponse.Error = "failed to set downstream version pending preflight"
+				JSON(w, 500, updateAppConfigResponse)
+				return
+			}
+		} else {
+			if err := app.SetDownstreamVersionReady(foundApp.ID, int64(updateAppConfigRequest.Sequence)); err != nil {
+				logger.Error(err)
+				updateAppConfigResponse.Error = "failed to set downstream version ready"
+				JSON(w, 500, updateAppConfigResponse)
+				return
+			}
 		}
 
 		if err := app.CreateAppVersionArchive(foundApp.ID, int64(updateAppConfigRequest.Sequence), archiveDir); err != nil {

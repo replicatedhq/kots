@@ -105,6 +105,30 @@ func GetFromSlug(slug string) (*App, error) {
 	return Get(id)
 }
 
+// SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
+func SetDownstreamVersionReady(appID string, sequence int64) error {
+	db := persistence.MustGetPGSession()
+	query := `update app_downstream_version set status = 'pending' where app_id = $1 and sequence = $2`
+	_, err := db.Exec(query, appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to set downstream version ready")
+	}
+
+	return nil
+}
+
+// SetDownstreamVersionPendingPreflight sets the status for the downstream version with the given sequence and app id to "pending_preflight"
+func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+	db := persistence.MustGetPGSession()
+	query := `update app_downstream_version set status = 'pending_preflight' where app_id = $1 and sequence = $2`
+	_, err := db.Exec(query, appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to set downstream version pending preflight")
+	}
+
+	return nil
+}
+
 // CreateFirstVersion works much likst CreateVersion except that it assumes version 0
 // and never attempts to calculate a diff, or look at previous versions
 func (a App) CreateFirstVersion(filesInDir string, source string) (int64, error) {
