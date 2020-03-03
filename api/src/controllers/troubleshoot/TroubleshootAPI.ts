@@ -66,7 +66,9 @@ export class TroubleshootAPI {
     const params = await Params.getParams();
 
     let uploadUrl;
-    if (inCluster === "true") {
+    if (request.header("Bundle-Upload-Host")) {
+      uploadUrl = `${request.header("Bundle-Upload-Host")}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
+    } else if (inCluster === "true") {
       uploadUrl = `${params.shipApiEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
     } else {
       uploadUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
