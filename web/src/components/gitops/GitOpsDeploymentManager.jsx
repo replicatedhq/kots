@@ -401,7 +401,7 @@ class GitOpsDeploymentManager extends React.Component {
                 <div style={{ backgroundImage: `url(${app.iconUri})` }} className="appIcon u-position--relative" />
                 <div className="u-marginLeft--10">
                   <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-marginBottom--5">{app.name}</p>
-                  {gitopsEnabled && <Link to={`/app/${app.slug}/gitops`} className="gitops-action-link">Manage settings</Link>}
+                  {gitopsEnabled && <Link to={`/app/${app.slug}/gitops`} className="gitops-action-link">Manage GitOps settings</Link>}
                 </div>
               </div>
               <div className="flex-column alignItems--flexEnd">
