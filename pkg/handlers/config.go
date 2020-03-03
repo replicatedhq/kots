@@ -78,7 +78,39 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest)
+	if !updateAppConfigRequest.CreateNewVersion {
+		// special case handling for "do not create new version"
+		// no need to update versions after this/search for latest sequence that has the same upstream version/etc
+		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest, true)
+		if err != nil {
+			logger.Error(err)
+			JSON(w, 500, resp)
+			return
+		}
+
+		if len(resp.RequiredItems) > 0 {
+			JSON(w, 400, resp)
+			return
+		}
+
+		JSON(w, 200, resp)
+		return
+	}
+
+	// find the update cursor referred to by updateAppConfigRequest.Sequence
+	// then find the latest sequence with that update cursor, and use that for the update we're making here
+	// (for instance, the registry settings may have changed)
+	// if there are additional update cursors past this, also create updates for them
+	latestSequenceMatchingUpdateCursor, laterVersions, err := getLaterVersions(foundApp, updateAppConfigRequest.Sequence)
+	if err != nil {
+		logger.Error(err)
+		updateAppConfigResponse.Error = err.Error()
+		JSON(w, 500, updateAppConfigResponse)
+		return
+	}
+
+	// attempt to apply the config to the app version specified in the request
+	resp, err := updateAppConfig(foundApp, latestSequenceMatchingUpdateCursor, updateAppConfigRequest, true)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, resp)
@@ -90,15 +122,25 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, 200, resp)
+	// if there were no errors applying the config for the desired version, do the same for any later versions too
+	for _, version := range laterVersions {
+		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest, false)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "error creating app with new config based on seq %d for upstream %q", version.Sequence, version.VersionLabel))
+		}
+	}
+
+	JSON(w, 200, UpdateAppConfigResponse{Success: true})
 }
 
-func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest) (UpdateAppConfigResponse, error) {
+// if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
+// the app version with status needs_config
+func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
 
-	archiveDir, err := app.GetAppVersionArchive(updateApp.ID, req.Sequence)
+	archiveDir, err := app.GetAppVersionArchive(updateApp.ID, seq)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app version archive"
 		return updateAppConfigResponse, err
@@ -126,13 +168,11 @@ func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest) (U
 			}
 		}
 	}
+	updateAppConfigResponse.RequiredItems = requiredItems
 
-	if len(requiredItems) > 0 {
-		updateAppConfigResponse := UpdateAppConfigResponse{
-			Success:       false,
-			Error:         fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", ")),
-			RequiredItems: requiredItems,
-		}
+	// not having all the required items is only a failure for the version that the user intended to edit
+	if len(requiredItems) > 0 && isPrimaryVersion {
+		updateAppConfigResponse.Error = fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
 		return updateAppConfigResponse, nil
 	}
 
@@ -206,24 +246,24 @@ func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest) (U
 			return updateAppConfigResponse, err
 		}
 	} else {
-		if err := app.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(req.Sequence)); err != nil {
+		if err := app.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(seq)); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			return updateAppConfigResponse, err
 		}
 
 		if kotsKinds.Preflight != nil {
-			if err := app.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(req.Sequence)); err != nil {
+			if err := app.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(seq)); err != nil {
 				updateAppConfigResponse.Error = "failed to set downstream version pending preflight"
 				return updateAppConfigResponse, err
 			}
 		} else {
-			if err := app.SetDownstreamVersionReady(updateApp.ID, int64(req.Sequence)); err != nil {
+			if err := app.SetDownstreamVersionReady(updateApp.ID, int64(seq)); err != nil {
 				updateAppConfigResponse.Error = "failed to set downstream version ready"
 				return updateAppConfigResponse, err
 			}
 		}
 
-		if err := app.CreateAppVersionArchive(updateApp.ID, int64(req.Sequence), archiveDir); err != nil {
+		if err := app.CreateAppVersionArchive(updateApp.ID, int64(seq), archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}
@@ -249,4 +289,40 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	}
 
 	return string(decrypted), nil
+}
+
+func getLaterVersions(versionedApp *app.App, startSeq int) (int, map[int]app.AppVersion, error) {
+	versions, err := versionedApp.GetVersions()
+	if err != nil {
+		return -1, nil, errors.Wrap(err, "failed to get app versions")
+	}
+
+	thisUpdateCursor := -1
+	latestSequenceWithUpdateCursor := startSeq
+	laterVersions := map[int]app.AppVersion{}
+	for _, version := range versions {
+		if version.Sequence == startSeq {
+			thisUpdateCursor = version.UpdateCursor
+		}
+	}
+	if thisUpdateCursor == -1 {
+		err := fmt.Errorf("unable to find update cursor for sequence %d in %+v", startSeq, versions)
+		return -1, nil, err
+	}
+	for _, version := range versions {
+		if version.UpdateCursor == thisUpdateCursor && version.Sequence > latestSequenceWithUpdateCursor {
+			latestSequenceWithUpdateCursor = version.Sequence
+		}
+		if version.UpdateCursor > thisUpdateCursor {
+			// save the latest sequence # for a given update cursor
+			ver, ok := laterVersions[version.UpdateCursor]
+			if !ok {
+				laterVersions[version.UpdateCursor] = version
+			} else if ver.Sequence < version.Sequence {
+				laterVersions[version.UpdateCursor] = version
+			}
+		}
+	}
+
+	return latestSequenceWithUpdateCursor, laterVersions, nil
 }
