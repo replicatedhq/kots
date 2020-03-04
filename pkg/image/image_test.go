@@ -249,6 +249,22 @@ func Test_buildImageAlts(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "fluent/fluentd:v1.7",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "fluent/fluentd:v1.7",
+			want: []kustomizetypes.Image{
+				{
+					Name:    "fluent/fluentd",
+					NewName: "localhost:5000/somebigbank/fluentd",
+					NewTag:  "v1.7",
+					Digest:  "",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
