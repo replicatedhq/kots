@@ -134,38 +134,56 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 			imageFile.UploadEnd = time.Now()
 			reportWriter.Write([]byte(fmt.Sprintf("+file.end:%s\n", imageFile.FilePath)))
 
-			images = append(images, rewrittenImage)
-
-			// kustomize does string based comparison, so all of these are treated as different images:
-			// docker.io/library/redis:latest
-			// redis:latest
-			// redis
-			// As a workaround we add all 3 to the list
-
-			rewrittenName := rewrittenImage.Name
-			if strings.HasPrefix(rewrittenName, "docker.io/library/") {
-				rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/library/")
-				images = append(images, kustomizetypes.Image{
-					Name:    rewrittenName,
-					NewName: rewrittenImage.NewName,
-					NewTag:  rewrittenImage.NewTag,
-					Digest:  rewrittenImage.Digest,
-				})
-			}
-
-			if strings.HasSuffix(rewrittenName, ":latest") {
-				rewrittenName = strings.TrimSuffix(rewrittenName, ":latest")
-				images = append(images, kustomizetypes.Image{
-					Name:    rewrittenName,
-					NewName: rewrittenImage.NewName,
-					NewTag:  rewrittenImage.NewTag,
-					Digest:  rewrittenImage.Digest,
-				})
-			}
+			images = append(images, buildImageAltNames(rewrittenImage)...)
 		}
 	}
 
 	return images, nil
+}
+
+func buildImageAltNames(rewrittenImage kustomizetypes.Image) []kustomizetypes.Image {
+	// kustomize does string based comparison, so all of these are treated as different images:
+	// docker.io/library/redis:latest
+	// redis:latest
+	// redis
+	// As a workaround we add all 3 to the list
+
+	// similarly, docker.io/notlibrary/image:tag needs to be rewritten
+	// as notlibrary/image:tag (and the same handling for 'latest')
+
+	images := []kustomizetypes.Image{rewrittenImage}
+
+	rewrittenName := rewrittenImage.Name
+	if strings.HasPrefix(rewrittenName, "docker.io/library/") {
+		rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/library/")
+		images = append(images, kustomizetypes.Image{
+			Name:    rewrittenName,
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+	} else if strings.HasPrefix(rewrittenName, "docker.io/") {
+		rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/")
+		images = append(images, kustomizetypes.Image{
+			Name:    rewrittenName,
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+
+	}
+
+	if strings.HasSuffix(rewrittenName, ":latest") {
+		rewrittenName = strings.TrimSuffix(rewrittenName, ":latest")
+		images = append(images, kustomizetypes.Image{
+			Name:    rewrittenName,
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+	}
+
+	return images
 }
 
 func reportWriterWithProgress(files map[string]*ImageFile, reportWriter io.Writer) io.WriteCloser {
