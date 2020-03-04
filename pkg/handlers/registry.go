@@ -70,13 +70,6 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
 	updateAppRegistryResponse := UpdateAppRegistryResponse{
 		Hostname:  updateAppRegistryRequest.Hostname,
 		Username:  updateAppRegistryRequest.Username,
@@ -87,6 +80,14 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	if foundApp.RegistrySettings != nil {
 		if foundApp.RegistrySettings.Hostname == updateAppRegistryRequest.Hostname {
 			if foundApp.RegistrySettings.Namespace == updateAppRegistryRequest.Namespace {
+
+				err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+				if err != nil {
+					logger.Error(err)
+					w.WriteHeader(500)
+					return
+				}
+
 				JSON(w, 200, updateAppRegistryResponse)
 				return
 			}
@@ -99,8 +100,14 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		if err := foundApp.RewriteImages(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
 			updateAppRegistryRequest.Namespace, nil); err != nil {
 			logger.Error(err)
+			return
 		}
 
+		err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
 	}()
 
 	JSON(w, 200, updateAppRegistryResponse)
