@@ -169,10 +169,10 @@ func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest, is
 			}
 		}
 	}
-	updateAppConfigResponse.RequiredItems = requiredItems
 
 	// not having all the required items is only a failure for the version that the user intended to edit
 	if len(requiredItems) > 0 && isPrimaryVersion {
+		updateAppConfigResponse.RequiredItems = requiredItems
 		updateAppConfigResponse.Error = fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
 		return updateAppConfigResponse, nil
 	}
