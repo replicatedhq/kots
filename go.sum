@@ -719,6 +719,8 @@ github.com/replicatedhq/kots v1.13.3/go.mod h1:wI3W7ksjw8IupLA3m4gGJ79fWZIhSJfU/
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.22 h1:rPnjb7BXJOx0Z6r+W+I5nzq2cDzT69zqcLaiQNWcSPc=
 github.com/replicatedhq/troubleshoot v0.9.22/go.mod h1:o/7PaQGCntybrPOZbK0WR3wgcvoD2frKCEqCmOSv82M=
+github.com/replicatedhq/troubleshoot v0.9.24 h1:q+JuWtv0YGgQNyRj9NDdop5MGeO4KiNjy11dE6G4D/o=
+github.com/replicatedhq/troubleshoot v0.9.24/go.mod h1:PHelBeEH+xBNcqFr7p2OAW3QMJa6RoshFphoW0VkWW0=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
