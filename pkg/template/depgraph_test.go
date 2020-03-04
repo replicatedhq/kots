@@ -104,6 +104,15 @@ func TestDepGraph(t *testing.T) {
 			expectError:  false,
 			name:         "not referenced", // items should eventually be resolved even if nothing depends on them
 		},
+		{
+			dependencies: map[string][]string{
+				"alpha": {},
+				"bravo": {"alpha", "charlie"},
+			},
+			resolveOrder: []string{"alpha", "bravo"},
+			expectError:  true,
+			name:         "does_not_exist",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -188,6 +197,7 @@ func runGraphTests(t *testing.T, test depGraphTestCase, graph depGraph) {
 	for _, toResolve := range test.resolveOrder {
 		available, err := graph.GetHeadNodes()
 		if err != nil && test.expectError {
+			// fmt.Printf("err: %s\n", err.Error())
 			return
 		}
 

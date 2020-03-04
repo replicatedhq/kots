@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
@@ -63,7 +63,16 @@ func (d *depGraph) GetHeadNodes() ([]string, error) {
 	}
 
 	if len(headNodes) == 0 && len(d.Dependencies) != 0 {
-		return headNodes, errors.New("No nodes exist with 0 dependencies")
+		waitList := []string{}
+		for k, v := range d.Dependencies {
+			depsList := []string{}
+			for dep, _ := range v {
+				depsList = append(depsList, fmt.Sprintf("%q", dep))
+			}
+			waitItem := fmt.Sprintf(`%q depends on %s`, k, strings.Join(depsList, `, `))
+			waitList = append(waitList, waitItem)
+		}
+		return headNodes, fmt.Errorf("no config options exist with 0 dependencies - %s", strings.Join(waitList, "; "))
 	}
 
 	return headNodes, nil
