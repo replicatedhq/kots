@@ -30,7 +30,7 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(licenseData), nil, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to decode config data")
+		return "", errors.Wrap(err, "failed to decode license data")
 	}
 	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
 		return "", errors.Errorf("expected License, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
