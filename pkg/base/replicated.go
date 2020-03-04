@@ -92,6 +92,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		builder.AddCtx(licenseCtx)
 	}
 
+	kurlCtx, err := template.NewKurlContext()
+	if err != nil {
+		return nil, error.Wrap(err, "failed to create kurl context")
+	}
+	builder.AddCtx(kurlCtx)
+
 	for _, upstreamFile := range u.Files {
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
 		if err != nil {

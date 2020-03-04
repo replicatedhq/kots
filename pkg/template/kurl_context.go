@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"fmt"
 
 	"github.com/pkg/errors"
 	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
@@ -86,15 +87,20 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx KurlCtx) kurlBool(yamlPath string) bool {
+	// if ctx == nil {
+	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
+	// 	return false
+	// }
+
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		//TODO: log that key was not found
+		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
 		return false
 	}
 
 	b, ok := result.(bool)
 	if !ok {
-		//TODO: log that type was bad
+		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlBool function supports only boolean values", yamlPath, result, result)
 		return false
 	}
 
@@ -102,15 +108,20 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 }
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
+	// if ctx == nil {
+	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
+	// 	return 0
+	// }
+
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		//TODO: log that key was not found
+		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
 		return 0
 	}
 
 	i, ok := result.(int)
 	if !ok {
-		//TODO: log that type was bad
+		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlInt function supports only integer values", yamlPath, result, result)
 		return 0
 	}
 
@@ -118,22 +129,54 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 }
 
 func (ctx KurlCtx) kurlString(yamlPath string) string {
+	// if ctx == nil {
+	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
+	// 	return ""
+	// }
+
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		//TODO: log that key was not found
+		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
 		return ""
 	}
 
 	s, ok := result.(string)
 	if !ok {
-		//TODO: log that type was bad
+		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlString function supports only string values", yamlPath, result, result)
 		return ""
 	}
 
 	return s
 }
 
+func (ctx KurlCtx) kurlOption(yamlPath string) string {
+	// if ctx == nil {
+	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
+	// 	return ""
+	// }
+
+	result, ok := ctx.KurlValues[yamlPath]
+	if !ok {
+		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
+		return ""
+	}
+
+	switch t := interface{}(result).(type) {
+	case int:
+		return strconv.Itoa(t)
+	case string:
+		return t
+	case bool:
+		return strconv.FormatBool(t)
+	default:
+		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlOption function supports only string, integer, and boolean values", yamlPath, result, result)
+		return ""
+	}
+}
+
 func (ctx KurlCtx) kurlAll() string {
+	//debug function to show all supported k:v pairs
+
 	keys := make([]string, len(ctx.KurlValues))
 
 	i := 0
