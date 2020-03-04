@@ -174,7 +174,9 @@ func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
 		APIVersion: obj.APIVersion,
 		Kind:       obj.Kind,
 		Metadata: k8sdoc.Metadata{
-			Name: obj.Metadata.Name,
+			Name:      obj.Metadata.Name,
+			Namespace: obj.Metadata.Namespace,
+			Labels:    obj.Metadata.Labels,
 		},
 		Spec: k8sdoc.Spec{
 			Template: k8sdoc.Template{

@@ -8,7 +8,9 @@ type Doc struct {
 }
 
 type Metadata struct {
-	Name string `yaml:"name"`
+	Name      string            `yaml:"name"`
+	Namespace string            `yaml:"namespace,omitempty"`
+	Labels    map[string]string `yaml:"labels,omitempty"`
 }
 
 type Spec struct {
