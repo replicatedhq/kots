@@ -15,6 +15,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20191127005431-f65d91d395eb // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.15.8 // indirect
+	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
@@ -26,6 +27,7 @@ require (
 	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3 // indirect
@@ -43,7 +45,7 @@ require (
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200227234931-c098073f445c // indirect
+	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200227234931-c098073f445c
 	github.com/replicatedhq/troubleshoot v0.9.21
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5

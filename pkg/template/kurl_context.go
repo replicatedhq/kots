@@ -1,12 +1,12 @@
 package template
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"text/template"
-	"fmt"
 
 	"github.com/pkg/errors"
 	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
@@ -82,6 +82,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 		"KurlString": ctx.kurlString,
 		"KurlInt":    ctx.kurlInt,
 		"KurlBool":   ctx.kurlBool,
+		"KurlOption": ctx.kurlOption,
 		"KurlAll":    ctx.kurlAll,
 	}
 }
