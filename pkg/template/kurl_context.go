@@ -95,13 +95,13 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
+		fmt.Printf("There is no value found at the yamlPath ''%s'\n", yamlPath)
 		return false
 	}
 
 	b, ok := result.(bool)
 	if !ok {
-		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlBool function supports only boolean values", yamlPath, result, result)
+		fmt.Printf("The yamlPath '%s' corresponds to value '%v' of type '%T'. The KurlBool function supports only boolean values\n", yamlPath, result, result)
 		return false
 	}
 
@@ -116,13 +116,13 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
+		fmt.Printf("There is no value found at the yamlPath '%s'\n", yamlPath)
 		return 0
 	}
 
 	i, ok := result.(int)
 	if !ok {
-		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlInt function supports only integer values", yamlPath, result, result)
+		fmt.Printf("The yamlPath '%s' corresponds to value '%v' of type '%T'. The KurlInt function supports only integer values\n", yamlPath, result, result)
 		return 0
 	}
 
@@ -137,13 +137,13 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
+		fmt.Printf("There is no value found at the yamlPath '%s'\n", yamlPath)
 		return ""
 	}
 
 	s, ok := result.(string)
 	if !ok {
-		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlString function supports only string values", yamlPath, result, result)
+		fmt.Printf("The yamlPath '%s' corresponds to value '%v' of type '%T'. The KurlString function supports only string values\n", yamlPath, result, result)
 		return ""
 	}
 
@@ -158,7 +158,7 @@ func (ctx KurlCtx) kurlOption(yamlPath string) string {
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
-		fmt.Printf("There is no value found at the yamlPath %s", yamlPath)
+		fmt.Printf("There is no value found at the yamlPath '%s'\n", yamlPath)
 		return ""
 	}
 
@@ -170,7 +170,7 @@ func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	case bool:
 		return strconv.FormatBool(t)
 	default:
-		fmt.Printf("The yamlPath '%s' corresponds to value %v of type %T. The KurlOption function supports only string, integer, and boolean values", yamlPath, result, result)
+		fmt.Printf("The yamlPath '%s' corresponds to value '%v' of type '%T'. The KurlOption function supports only string, integer, and boolean values\n", yamlPath, result, result)
 		return ""
 	}
 }
