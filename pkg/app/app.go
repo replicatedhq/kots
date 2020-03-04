@@ -30,6 +30,12 @@ type Downstream struct {
 	Name      string
 }
 
+type AppVersion struct {
+	Sequence     int
+	UpdateCursor int
+	VersionLabel string
+}
+
 func Get(id string) (*App, error) {
 	logger.Debug("getting app from id",
 		zap.String("id", id))
@@ -198,7 +204,13 @@ func (a App) createVersion(filesInDir string, source string, isFirstVersion bool
 
 	newSequence := 0
 	if !isFirstVersion {
-		newSequence = a.CurrentSequence + 1
+		// determine next available sequence for this app - we shouldn't assume that a.CurrentSequence is accurate
+		row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, a.ID)
+		err = row.Scan(&newSequence)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to find current max sequence in row")
+		}
+		newSequence++
 	}
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
@@ -247,7 +259,7 @@ backup_spec = EXCLUDED.backup_spec`
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
 
 	query = "update app set current_sequence = $1, name = $2, icon_uri = $3 where id = $4"
-	_, err = tx.Exec(query, int64(a.CurrentSequence+1), appName, appIcon, a.ID)
+	_, err = tx.Exec(query, int64(newSequence), appName, appIcon, a.ID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to update app")
 	}
@@ -331,4 +343,27 @@ backup_spec = EXCLUDED.backup_spec`
 	}
 
 	return int64(newSequence), nil
+}
+
+// return the list of versions available for an app
+func (a App) GetVersions() ([]AppVersion, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence, update_cursor, version_label from app_version where app_id = $1 order by update_cursor asc, sequence asc`
+	rows, err := db.Query(query, a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "query app_version table")
+	}
+
+	versions := []AppVersion{}
+
+	for rows.Next() {
+		rowVersion := AppVersion{}
+		err = rows.Scan(&rowVersion.Sequence, &rowVersion.UpdateCursor, &rowVersion.VersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "scan row from app_version table")
+		}
+		versions = append(versions, rowVersion)
+	}
+
+	return versions, nil
 }
