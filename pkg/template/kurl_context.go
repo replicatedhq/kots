@@ -30,7 +30,7 @@ func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, err
 	retrieved, err := installers.Get(installerName, metav1.GetOptions{})
 
 	if err != nil {
-		fmt.Printf("Could not retrieve installer crd object, does an the installer '%s' exist in the '%s namespace'?", installerName, nameSpace)
+		fmt.Printf("Could not retrieve installer crd object, does an the installer '%s' exist in the '%s namespace'?\n", installerName, nameSpace)
 	}
 
 	return retrieved, nil
