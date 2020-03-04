@@ -30,7 +30,7 @@ func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, err
 	retrieved, err := installers.Get(installerName, metav1.GetOptions{})
 
 	if err != nil {
-		return nil, errors.Wrap(err, "could not retrive installer crd object")
+		fmt.Printf("Could not retrieve installer crd object, does an the installer '%s' exist in the '%s namespace'?", installerName, nameSpace)
 	}
 
 	return retrieved, nil
@@ -47,7 +47,9 @@ func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
 		return nil, errors.Wrap(err, "could not retrieve kurl values")
 	}
 
-	ctx.AddValuesToKurlContext(retrieved)
+	if retrieved != nil {
+		ctx.AddValuesToKurlContext(retrieved)
+	}
 
 	return ctx, nil
 }
@@ -70,7 +72,6 @@ func (ctx KurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
 			}
 		}
 	}
-
 }
 
 type KurlCtx struct {
@@ -88,10 +89,10 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 }
 
 func (ctx KurlCtx) kurlBool(yamlPath string) bool {
-	// if ctx == nil {
-	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
-	// 	return false
-	// }
+	if len(ctx.KurlValues) == 0 {
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		return false
+	}
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
@@ -109,10 +110,10 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 }
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
-	// if ctx == nil {
-	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
-	// 	return 0
-	// }
+	if len(ctx.KurlValues) == 0 {
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		return 0
+	}
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
@@ -130,10 +131,10 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 }
 
 func (ctx KurlCtx) kurlString(yamlPath string) string {
-	// if ctx == nil {
-	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
-	// 	return ""
-	// }
+	if len(ctx.KurlValues) == 0 {
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		return ""
+	}
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {
@@ -151,10 +152,10 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 }
 
 func (ctx KurlCtx) kurlOption(yamlPath string) string {
-	// if ctx == nil {
-	// 	fmt.Printf("No Installer has been found, is this a kURL cluster?")
-	// 	return ""
-	// }
+	if len(ctx.KurlValues) == 0 {
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		return ""
+	}
 
 	result, ok := ctx.KurlValues[yamlPath]
 	if !ok {

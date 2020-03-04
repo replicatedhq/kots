@@ -144,6 +144,53 @@ func TestIntInvalidType(t *testing.T) {
 	req.Equal(outcome, 0)
 }
 
+func TestOptionPresent(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	ctx := &KurlCtx{
+		KurlValues: make(map[string]interface{}),
+	}
+
+	ctx.KurlValues["test"] = 42
+
+	outcome := ctx.kurlOption("test")
+	req.Equal(outcome, "42")
+}
+
+func TestOptionNotPresent(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	ctx := &KurlCtx{
+		KurlValues: make(map[string]interface{}),
+	}
+
+	ctx.KurlValues["test"] = "test"
+
+	outcome := ctx.kurlOption("wrong")
+	req.NotEqual(outcome, "test")
+}
+
+func TestKurlAll(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	ctx := &KurlCtx{
+		KurlValues: make(map[string]interface{}),
+	}
+
+	ctx.KurlValues["int"] = 42
+	ctx.KurlValues["string"] = "k8s"
+	ctx.KurlValues["bool"] = true
+
+	outcome := ctx.kurlAll()
+	req.Equal(outcome, "bool:true int:42 string:k8s")
+}
+
 func TestParseInstallerProperly(t *testing.T) {
 	scopetest := scopeagent.StartTest(t)
 	defer scopetest.End()
