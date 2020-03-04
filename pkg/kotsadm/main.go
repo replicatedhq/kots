@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -11,7 +12,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+}
 
 // YAML will return a map containing the YAML needed to run the admin console
 func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
