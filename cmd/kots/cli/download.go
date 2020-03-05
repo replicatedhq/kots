@@ -12,7 +12,7 @@ import (
 
 func DownloadCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "download [app-slug]",
+		Use:           "download",
 		Short:         "Download Kubernetes manifests from your cluster to the local filesystem",
 		Long:          `Download the active Kubernetes manifests from a cluster to the local filesystem so that they can be edited and then reapplied to the cluster with 'kots upload'.`,
 		SilenceUsage:  true,
@@ -23,12 +23,15 @@ func DownloadCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			if len(args) != 1 {
-				cmd.Help()
-				os.Exit(1)
+			appSlug := v.GetString("slug")
+			if appSlug == "" {
+				if len(args) == 1 {
+					appSlug = args[0]
+				} else {
+					cmd.Help()
+					os.Exit(1)
+				}
 			}
-
-			appSlug := args[0]
 
 			downloadOptions := download.DownloadOptions{
 				Namespace:             v.GetString("namespace"),
@@ -52,6 +55,7 @@ func DownloadCmd() *cobra.Command {
 
 	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
+	cmd.Flags().String("slug", "", "the application slug to download")
 
 	return cmd
 }
