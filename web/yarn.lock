@@ -1100,10 +1100,10 @@
     pkginfo "^0.4.1"
     popsicle "^9.2.0"
 
-"@replicatedhq/ship-init@1.6.18":
-  version "1.6.18"
-  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.6.18.tgz#33d3c62df64ed63e4215d87bec46483a46dd49a3"
-  integrity sha512-80nsVm8OtQ21cxAo85BXNLUpVFy1ixwkNlupMn889rY8E5PW3wS4pfQUqu99jOepvGag8Xm0EdV+iaoVJtFiEw==
+"@replicatedhq/ship-init@1.6.19":
+  version "1.6.19"
+  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.6.19.tgz#bdc3894bb72a6b27013a0f289583d3c44563f78b"
+  integrity sha512-5Xpo1wvMbsCmaSTuzg+gAfREUWHC6bB7IO4Ahx4PdBb9gVaqRpEghUdbCyxd4VCvkkEGKNzzGkgoYLoDnY/orw==
   dependencies:
     brace "^0.11.1"
     classnames "^2.2.6"
