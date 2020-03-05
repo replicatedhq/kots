@@ -247,12 +247,7 @@ func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localP
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
 
-	cfg, err := kubernetesConfigFlags.ToRESTConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert kubernetes flags to rest config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := GetClientset(kubernetesConfigFlags)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
@@ -271,6 +266,11 @@ func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localP
 	if podName == "" {
 		// not ready yet
 		return nil, nil
+	}
+
+	cfg, err := kubernetesConfigFlags.ToRESTConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
