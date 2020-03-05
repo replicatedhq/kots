@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
@@ -221,7 +220,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 						continue
 					}
 
-					serviceStopCh, err := ServiceForward(cfg, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
+					serviceStopCh, err := ServiceForward(kubernetesConfigFlags, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
 						runtime.HandleError(errors.Wrap(err, "failed to forward port"))
 						continue // try again
@@ -243,12 +242,12 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 	return localPort, errChan, nil
 }
 
-func ServiceForward(cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
+func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
 	if !IsPortAvailable(localPort) {
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
 
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := GetClientset(kubernetesConfigFlags)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
@@ -267,6 +266,11 @@ func ServiceForward(cfg *rest.Config, localPort int, remotePort int, namespace s
 	if podName == "" {
 		// not ready yet
 		return nil, nil
+	}
+
+	cfg, err := kubernetesConfigFlags.ToRESTConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
