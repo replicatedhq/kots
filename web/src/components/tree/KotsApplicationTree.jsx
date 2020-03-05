@@ -209,7 +209,7 @@ class KotsApplicationTree extends React.Component {
                     canCopy={true}
                     onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                   >
-                    {`kubectl kots download ${this.props.match.params.slug} --namespace ${this.props.appNameSpace} --dest ~/${this.props.match.params.slug}`}
+                    {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug} --dest ~/${this.props.match.params.slug}`}
                   </CodeSnippet>
                 </div>
               </div>
