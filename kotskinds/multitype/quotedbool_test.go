@@ -35,6 +35,16 @@ func TestQuotedBool_UnmarshalJSON(t *testing.T) {
 			input: `false`,
 			want:  QuotedBool("false"),
 		},
+		{
+			name:  "unquoted boolstring 0",
+			input: `0`,
+			want:  QuotedBool("false"),
+		},
+		{
+			name:  "unquoted boolstring 1",
+			input: `1`,
+			want:  QuotedBool("true"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -87,6 +97,21 @@ func TestQuotedBool_UnmarshalYAML(t *testing.T) {
 			name:  "unquoted boolstring no",
 			input: `no`,
 			want:  QuotedBool("false"),
+		},
+		{
+			name:  "unquoted boolstring 0",
+			input: `0`,
+			want:  QuotedBool("false"),
+		},
+		{
+			name:  "unquoted boolstring 1",
+			input: `1`,
+			want:  QuotedBool("true"),
+		},
+		{
+			name:  "unquoted boolstring 45", // not a valid input, but we'll count it as true
+			input: `45`,
+			want:  QuotedBool("true"),
 		},
 	}
 	for _, tt := range tests {

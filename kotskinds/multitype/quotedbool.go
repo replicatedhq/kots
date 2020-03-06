@@ -18,8 +18,8 @@ type QuotedBool string
 
 // UnmarshalJSON implements the json.Unmarshaller interface.
 func (b *QuotedBool) UnmarshalJSON(value []byte) error {
-	trueValues := []string{"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON"}
-	falseValues := []string{"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF"}
+	trueValues := []string{"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON", "1"}
+	falseValues := []string{"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF", "0"}
 	for _, v := range trueValues {
 		if string(value) == v {
 			*b = "true"
@@ -43,6 +43,7 @@ func (b *QuotedBool) UnmarshalJSON(value []byte) error {
 // UnmarshalJSON implements the yaml.Unmarshaller interface.
 func (b *QuotedBool) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	boolTry := false
+	intTry := 0
 	stringTry := ""
 	err := unmarshal(&boolTry)
 	if err == nil {
@@ -54,6 +55,16 @@ func (b *QuotedBool) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return nil
 	}
 
+	err = unmarshal(&intTry)
+	if err == nil {
+		if intTry == 0 {
+			*b = "false"
+		} else {
+			*b = "true"
+		}
+		return nil
+	}
+
 	// unable to unmarshal as bool, try string
 	err = unmarshal(&stringTry)
 	if err == nil {
@@ -61,7 +72,7 @@ func (b *QuotedBool) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return nil
 	}
 
-	return errors.Wrapf(err, "unable to unmarshal as bool or string")
+	return errors.Wrapf(err, "unable to unmarshal as bool, int or string")
 }
 
 // OpenAPISchemaType is used by the kube-openapi generator when constructing
