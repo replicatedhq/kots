@@ -271,6 +271,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchGraphQLData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
+                        refreshAppData={refreshAppData}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
