@@ -147,7 +147,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.ConfigFile != "" {
 		config, err := parseConfigValuesFromFile(pullOptions.ConfigFile)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to parse license from file")
+			return "", errors.Wrap(err, "failed to parse config values from file")
 		}
 		fetchOptions.ConfigValues = config
 	} else {
