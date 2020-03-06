@@ -14,16 +14,16 @@ var (
 )
 
 func ExpandDir(input string) string {
+	if strings.HasPrefix(input, "~") {
+		input = filepath.Join(homeDir(), strings.TrimPrefix(input, "~"))
+	}
+
 	uploadPath, err := filepath.Abs(input)
 	if err != nil {
 		panic(errors.Wrapf(err, "unable to expand %q to absolute path", input))
 	}
 
-	if !strings.HasPrefix(uploadPath, "~") {
-		return uploadPath
-	}
-
-	return filepath.Join(homeDir(), uploadPath[1:])
+	return uploadPath
 }
 
 func homeDir() string {
