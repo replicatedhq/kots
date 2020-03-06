@@ -15,8 +15,8 @@ require (
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
-	github.com/pkg/errors v0.8.1
-	github.com/replicatedhq/troubleshoot v0.9.24
+	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/troubleshoot v0.9.25
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
@@ -24,5 +24,7 @@ require (
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.17.3
-	k8s.io/helm v2.14.0+incompatible
+	k8s.io/helm v2.14.3+incompatible
 )
+
+replace github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1

@@ -32,7 +32,7 @@ RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v1.13.4/kots
   rm -rf /tmp/*
 
 # Install troubleshoot.so
-RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.24/troubleshoot.so_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
+RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.25/troubleshoot.so_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \
   cd /tmp && tar xzvf troubleshoot.tar.gz && \
   mv /tmp/troubleshoot.so /lib/troubleshoot.so && \
   rm -rf /tmp/*
