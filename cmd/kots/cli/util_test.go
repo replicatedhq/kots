@@ -31,6 +31,11 @@ func TestExpandDir(t *testing.T) {
 			input: "./cmd",
 			want:  filepath.Join(wd, "cmd"),
 		},
+		{
+			name:  "empty string should remain empty",
+			input: "",
+			want:  "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

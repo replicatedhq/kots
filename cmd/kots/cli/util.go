@@ -14,6 +14,10 @@ var (
 )
 
 func ExpandDir(input string) string {
+	if input == "" {
+		return ""
+	}
+
 	if strings.HasPrefix(input, "~") {
 		input = filepath.Join(homeDir(), strings.TrimPrefix(input, "~"))
 	}
