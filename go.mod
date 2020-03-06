@@ -37,7 +37,7 @@ require (
 	github.com/mattn/go-isatty v0.0.9
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
-	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect
+	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913 // indirect
@@ -72,5 +72,3 @@ require (
 replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 
 replace github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
-
-replace github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
