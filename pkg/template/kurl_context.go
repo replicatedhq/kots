@@ -91,7 +91,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 
 func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return false
 	}
 
@@ -112,7 +112,7 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return 0
 	}
 
@@ -133,7 +133,7 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 
 func (ctx KurlCtx) kurlString(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return ""
 	}
 
@@ -154,7 +154,7 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 
 func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?")
+		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return ""
 	}
 
