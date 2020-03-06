@@ -701,6 +701,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kots v1.13.3 h1:AnraOU2iAqfkkLRD6wujX30Sr+OG37lPqldZRRKFRlg=
 github.com/replicatedhq/kots v1.13.3/go.mod h1:wI3W7ksjw8IupLA3m4gGJ79fWZIhSJfU/SaPZqm9pVA=
+github.com/replicatedhq/kots v1.13.4 h1:QmrVpVh0mgdS6i7VCku1ThHB4yxVt5ZpIbtVYH6ryIc=
+github.com/replicatedhq/kots v1.13.4/go.mod h1:wI3W7ksjw8IupLA3m4gGJ79fWZIhSJfU/SaPZqm9pVA=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.24 h1:q+JuWtv0YGgQNyRj9NDdop5MGeO4KiNjy11dE6G4D/o=
 github.com/replicatedhq/troubleshoot v0.9.24/go.mod h1:PHelBeEH+xBNcqFr7p2OAW3QMJa6RoshFphoW0VkWW0=
