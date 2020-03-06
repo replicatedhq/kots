@@ -202,6 +202,13 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			return
 		}
 
+		beforeInstallation, err := loadInstallationFromPath(installationFilePath)
+		if err != nil {
+			fmt.Printf("failed to read installation before update: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
 		expectedLicenseFile := filepath.Join(tmpRoot, "upstream", "userdata", "license.yaml")
 		license, err := loadLicenseFromPath(expectedLicenseFile)
 		if err != nil {
@@ -245,6 +252,13 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			return
 		}
 
+		afterInstallation, err := loadInstallationFromPath(installationFilePath)
+		if err != nil {
+			fmt.Printf("failed to read installation after update: %s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		}
+
 		fmt.Printf("Result of checking for updates for %s: Before: %s, After %s\n", license.Spec.AppSlug, beforeCursor, afterCursor)
 
 		bc, err := cursor.NewCursor(string(beforeCursor.Cursor))
@@ -269,7 +283,9 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 		}
 
 		if !bc.Before(ac) {
-			ffiResult = NewFFIResult(0)
+			err := errors.Errorf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterInstallation.Spec.VersionLabel, afterCursor.Cursor, beforeInstallation.Spec.VersionLabel, beforeCursor.Cursor)
+			fmt.Printf("%s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
 			return
 		}
 
