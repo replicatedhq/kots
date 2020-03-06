@@ -5,3 +5,4 @@ supportbundle.tar.gz
 vendor
 bin
 kustomize/overlays/github/
+.idea/
