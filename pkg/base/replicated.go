@@ -65,9 +65,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
-	builder := template.Builder{}
-	builder.AddCtx(template.StaticCtx{})
-
 	configGroups := []kotsv1beta1.ConfigGroup{}
 	if config != nil {
 		configGroups = config.Spec.Groups
@@ -79,17 +76,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
 	}
-	configCtx, err := builder.NewConfigContext(configGroups, templateContext, localRegistry, cipher, license)
+
+	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
-	}
-	builder.AddCtx(configCtx)
-
-	if license != nil {
-		licenseCtx := template.LicenseCtx{
-			License: license,
-		}
-		builder.AddCtx(licenseCtx)
 	}
 
 	for _, upstreamFile := range u.Files {
