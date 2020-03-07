@@ -8,19 +8,18 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
 	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, error) {
+func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer) {
 
 	cfg, err := k8sconfig.GetConfig()
 
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get config")
+		return nil
 	}
 
 	clientset := kurlclientset.NewForConfigOrDie(cfg)
@@ -31,28 +30,24 @@ func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer, err
 
 	if err != nil {
 		fmt.Printf("Could not retrieve installer crd object, does an the installer '%s' exist in the '%s namespace'?\n", installerName, nameSpace)
-		return nil, nil
+		return nil
 	}
 
-	return retrieved, nil
+	return retrieved
 }
 
-func NewKurlContext(installerName, nameSpace string) (*KurlCtx, error) {
+func NewKurlContext(installerName, nameSpace string) (*KurlCtx) {
 	ctx := &KurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
-	retrieved, err := GetKurlValues(installerName, nameSpace)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "could not retrieve kurl values")
-	}
+	retrieved := GetKurlValues(installerName, nameSpace)
 
 	if retrieved != nil {
 		ctx.AddValuesToKurlContext(retrieved)
 	}
 
-	return ctx, nil
+	return ctx
 }
 
 func (ctx KurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {

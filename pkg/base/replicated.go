@@ -93,10 +93,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	installerName, nameSpace := "base", "default"
-	kurlCtx, err := template.NewKurlContext(installerName, nameSpace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kurl context")
-	}
+	kurlCtx := template.NewKurlContext(installerName, nameSpace)
 	builder.AddCtx(kurlCtx)
 
 	for _, upstreamFile := range u.Files {
