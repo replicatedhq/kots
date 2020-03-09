@@ -53,8 +53,8 @@ type ApplicationSpec struct {
 	Graphs               []MetricGraph     `json:"graphs,omitempty"`
 	KubectlVersion       string            `json:"kubectlVersion,omitempty"`
 	KustomizeVersion     string            `json:"kustomizeVersion,omitempty"`
-	AdditionalImages     []string          `json:"additionalImages,omitEmpty"`
-	AdditionalNamespaces []string          `json:"additionalNamespaces,omitEmpty"`
+	AdditionalImages     []string          `json:"additionalImages,omitempty"`
+	AdditionalNamespaces []string          `json:"additionalNamespaces,omitempty"`
 }
 
 type ApplicationPort struct {
