@@ -14,7 +14,7 @@ import (
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer) {
+func GetKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 
 	cfg, err := k8sconfig.GetConfig()
 
@@ -36,7 +36,7 @@ func GetKurlValues(installerName, nameSpace string) (*kurlv1beta1.Installer) {
 	return retrieved
 }
 
-func NewKurlContext(installerName, nameSpace string) (*KurlCtx) {
+func NewKurlContext(installerName, nameSpace string) *KurlCtx {
 	ctx := &KurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
@@ -86,7 +86,6 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 
 func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return false
 	}
 
@@ -107,7 +106,6 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 
 func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return 0
 	}
 
@@ -128,7 +126,6 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 
 func (ctx KurlCtx) kurlString(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return ""
 	}
 
@@ -149,7 +146,6 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 
 func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
-		fmt.Printf("No Installer CRD has been found, is this a kURL cluster?\n")
 		return ""
 	}
 
