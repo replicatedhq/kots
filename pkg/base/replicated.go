@@ -92,6 +92,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		builder.AddCtx(licenseCtx)
 	}
 
+	installerName, nameSpace := "base", "default"
+	kurlCtx := template.NewKurlContext(installerName, nameSpace)
+	builder.AddCtx(kurlCtx)
+
 	for _, upstreamFile := range u.Files {
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
 		if err != nil {
