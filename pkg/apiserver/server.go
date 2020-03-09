@@ -38,6 +38,7 @@ func Start() {
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
+	r.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
 	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
 	r.PathPrefix("/api/v1/kots/").Methods("HEAD", "GET", "POST", "PUT", "DELETE").HandlerFunc(handlers.NodeProxy(upstream))
