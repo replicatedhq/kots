@@ -44,16 +44,17 @@ type ApplicationList struct {
 
 // ApplicationSpec defines the desired state of ApplicationSpec
 type ApplicationSpec struct {
-	Title            string            `json:"title"`
-	Icon             string            `json:"icon,omitempty"`
-	ApplicationPorts []ApplicationPort `json:"ports,omitempty"`
-	ReleaseNotes     string            `json:"releaseNotes,omitempty"`
-	AllowRollback    bool              `json:"allowRollback,omitempty"`
-	StatusInformers  []string          `json:"statusInformers,omitempty"`
-	Graphs           []MetricGraph     `json:"graphs,omitempty"`
-	KubectlVersion   string            `json:"kubectlVersion,omitempty"`
-	KustomizeVersion string            `json:"kustomizeVersion,omitempty"`
-	AdditionalImages []string          `json:"additionalImages,omitempty"`
+	Title                string            `json:"title"`
+	Icon                 string            `json:"icon,omitempty"`
+	ApplicationPorts     []ApplicationPort `json:"ports,omitempty"`
+	ReleaseNotes         string            `json:"releaseNotes,omitempty"`
+	AllowRollback        bool              `json:"allowRollback,omitempty"`
+	StatusInformers      []string          `json:"statusInformers,omitempty"`
+	Graphs               []MetricGraph     `json:"graphs,omitempty"`
+	KubectlVersion       string            `json:"kubectlVersion,omitempty"`
+	KustomizeVersion     string            `json:"kustomizeVersion,omitempty"`
+	AdditionalImages     []string          `json:"additionalImages,omitempty"`
+	AdditionalNamespaces []string          `json:"additionalNamespaces,omitempty"`
 }
 
 type ApplicationPort struct {

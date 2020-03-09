@@ -55,6 +55,8 @@ spec:
                             allows you to have, for example, a JSON field that can
                             accept a booolean string or raw bool.
                           type: BoolString
+                        error:
+                          type: string
                         help_text:
                           type: string
                         hidden:

@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -11,7 +12,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+}
 
 // YAML will return a map containing the YAML needed to run the admin console
 func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
@@ -219,6 +225,16 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 }
 
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	// check additional namespaces early in case there are rbac issues we don't
+	// leave the cluster in a partially deployed state
+	if deployOptions.ApplicationMetadata != nil {
+		// If the metadata parses, and if the metadata contains additional namespaces
+		// attempt to create
+		if err := ensureAdditionalNamespaces(&deployOptions, clientset, log); err != nil {
+			return errors.Wrap(err, "failed to ensure additional namespaces")
+		}
+	}
+
 	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
