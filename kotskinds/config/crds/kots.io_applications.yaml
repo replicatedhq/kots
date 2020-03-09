@@ -40,6 +40,10 @@ spec:
               items:
                 type: string
               type: array
+            additionalNamespaces:
+              items:
+                type: string
+              type: array
             allowRollback:
               type: boolean
             graphs:
@@ -105,6 +109,7 @@ spec:
               type: string
           required:
           - additionalImages
+          - additionalNamespaces
           - title
           type: object
         status:
