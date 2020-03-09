@@ -7,6 +7,8 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 )
 
 var (
@@ -16,6 +18,23 @@ var (
 type Builder struct {
 	Ctx    []Ctx
 	Functs template.FuncMap
+}
+
+// NewBuilder creates a builder with StaticCtx, LicenseCtx and ConfigCtx.
+func NewBuilder(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (Builder, map[string]ItemValue, error) {
+	b := Builder{}
+	configCtx, err := b.newConfigContext(configGroups, existingValues, localRegistry, cipher, license)
+	if err != nil {
+		return Builder{}, nil, errors.Wrap(err, "create config context")
+	}
+
+	b.Ctx = []Ctx{
+		StaticCtx{},
+		LicenseCtx{License: license},
+		NewKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
+		configCtx,
+	}
+	return b, configCtx.ItemValues, nil
 }
 
 func (b *Builder) AddCtx(ctx Ctx) {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -12,14 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-)
-
-type RoleScope string
-
-const (
-	None      = ""
-	Cluster   = "cluster"
-	Namespace = "namespace"
 )
 
 func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
@@ -54,12 +46,7 @@ func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 }
 
 func ensureOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	rules, err := k8sutil.GetCurrentRules(deployOptions, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current rules")
-	}
-
-	if err := ensureOperatorRBAC(deployOptions.Namespace, clientset, rules); err != nil {
+	if err := ensureOperatorRBAC(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator rbac")
 	}
 
@@ -70,97 +57,133 @@ func ensureOperator(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 	return nil
 }
 
-func ensureOperatorRBAC(namespace string, clientset *kubernetes.Clientset, rules []rbacv1.PolicyRule) error {
-	scope, err := ensureOperatorRole(namespace, clientset, rules)
+func ensureOperatorClusterRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	err := ensureOperatorClusterRole(clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to ensure operator role")
+		return errors.Wrap(err, "failed to ensure operator cluster role")
 	}
 
-	if err := ensureOperatorRoleBinding(scope, namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure operator role binding")
+	if err := ensureOperatorClusterRoleBinding(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator cluster role binding")
 	}
 
-	if err := ensureOperatorServiceAccount(namespace, clientset); err != nil {
+	if err := ensureOperatorServiceAccount(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator service account")
 	}
 
 	return nil
 }
 
-func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset, rules []rbacv1.PolicyRule) (RoleScope, error) {
-	// we'd like to create a cluster scope role, but will settle for namespace scope...
-
-	_, err := clientset.RbacV1().ClusterRoles().Create(operatorClusterRole(namespace))
-	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
-		return Cluster, nil
-	}
-	if !kuberneteserrors.IsForbidden(err) {
-		return None, errors.Wrap(err, "failed to create cluster role")
+func ensureOperatorRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	shouldBeClusterScoped, err := isOperatorClusterScoped(deployOptions.ApplicationMetadata)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if operator should be cluster scoped")
 	}
 
-	role := operatorRole(namespace)
-
-	_, err = clientset.RbacV1().Roles(namespace).Create(role)
-	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
-		return Namespace, nil
+	// if this is cluster scoped, it's easy... create everything as a cluster role and cluster role binding
+	// with pretty open permissions
+	if shouldBeClusterScoped {
+		return ensureOperatorClusterRBAC(deployOptions, clientset)
 	}
 
-	// if forbidden, try a more restrictive version
-	if !kuberneteserrors.IsForbidden(err) {
-		return None, errors.Wrap(err, "failed to create role")
+	// we want to ensure that the principle of least privilege is applied.
+	// so we will create our role and rolebinding
+	// and then create a role and role binding PER namespace that the application
+	// wants...  everthing will be linked to the same service account
+
+	err = ensureOperatorRole(deployOptions.Namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure operator role")
 	}
 
-	role.Rules = rules
-	_, err = clientset.RbacV1().Roles(namespace).Create(role)
-	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
-		return None, errors.Wrap(err, "failed to create restricted role")
+	if err := ensureOperatorRoleBinding(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator role binding")
 	}
 
-	return Namespace, nil
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode application metadata")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return errors.New("application metadata contained unepxected gvk")
+	}
+
+	application := obj.(*kotsv1beta1.Application)
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		if err = ensureOperatorRole(additionalNamespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure operator additional namespace role")
+		}
+
+		if err = ensureOperatorRoleBinding(additionalNamespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure operator additional namespace role binding")
+		}
+	}
+
+	if err := ensureOperatorServiceAccount(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator service account")
+	}
+
+	return nil
 }
 
-func ensureOperatorRoleBinding(scope RoleScope, namespace string, clientset *kubernetes.Clientset) error {
-	if scope == Cluster {
-		clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
-		if kuberneteserrors.IsNotFound(err) {
-			_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(namespace))
-			if err != nil {
-				return errors.Wrap(err, "failed to create cluster rolebinding")
-			}
-			return nil
-		} else if err != nil {
-			return errors.Wrap(err, "failed to get cluster rolebinding")
-		}
+func ensureOperatorClusterRole(clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().ClusterRoles().Create(operatorClusterRole())
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return nil
+	}
 
-		for _, subject := range clusterRoleBinding.Subjects {
-			if subject.Namespace == namespace && subject.Name == "kotsadm-operator" && subject.Kind == "ServiceAccount" {
-				return nil
-			}
-		}
+	return errors.Wrap(err, "failed to create cluster role")
+}
 
-		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
-			Kind:      "ServiceAccount",
-			Name:      "kotsadm-operator",
-			Namespace: namespace,
-		})
+func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().Roles(namespace).Create(operatorRole(namespace))
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return nil
+	}
 
-		_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+	return errors.Wrap(err, "failed to create role")
+}
+
+func ensureOperatorClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
+	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(serviceAccountNamespace))
 		if err != nil {
 			return errors.Wrap(err, "failed to create cluster rolebinding")
 		}
-
 		return nil
+	} else if err != nil {
+		return errors.Wrap(err, "failed to get cluster rolebinding")
 	}
 
-	if scope == Namespace {
-		_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
-		if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "failed to create rolebinding")
+	for _, subject := range clusterRoleBinding.Subjects {
+		if subject.Namespace == serviceAccountNamespace && subject.Name == "kotsadm-operator" && subject.Kind == "ServiceAccount" {
+			return nil
 		}
-		return nil
 	}
 
-	return errors.Errorf("failed to create rolebinding for scope %q", scope)
+	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      "kotsadm-operator",
+		Namespace: serviceAccountNamespace,
+	})
+
+	_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cluster rolebinding")
+	}
+
+	return nil
+}
+
+func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
+	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+		return errors.Wrap(err, "failed to create rolebinding")
+	}
+	return nil
 }
 
 func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
@@ -204,4 +227,30 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 	}
 
 	return nil
+}
+
+func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
+	if applicationMetadata == nil {
+		return false, nil
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(applicationMetadata, nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode application metadata")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return false, errors.New("application metadata contained unepxected gvk")
+	}
+
+	application := obj.(*kotsv1beta1.Application)
+
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		if additionalNamespace == "*" {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

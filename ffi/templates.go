@@ -63,9 +63,6 @@ func RenderFile(socket string, filePath string, archivePath string, registryJson
 			return
 		}
 
-		builder := template.Builder{}
-		builder.AddCtx(template.StaticCtx{})
-
 		// look for config
 		config, values, license, installation, err := findConfig(tmpRoot)
 		if err != nil {
@@ -105,24 +102,15 @@ func RenderFile(socket string, filePath string, archivePath string, registryJson
 			Password:  registryInfo.Password,
 		}
 
-		configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, localRegistry, cipher, license)
+		builder, configVals, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, cipher, license)
 		if err != nil {
 			fmt.Printf("failed to create config context %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)
 			return
 		}
 
-		builder.AddCtx(configCtx)
-
 		if config != nil {
-			kotsconfig.ApplyValuesToConfig(config, configCtx.ItemValues)
-		}
-
-		if license != nil {
-			licenseCtx := template.LicenseCtx{
-				License: license,
-			}
-			builder.AddCtx(licenseCtx)
+			kotsconfig.ApplyValuesToConfig(config, configVals)
 		}
 
 		inputContent, err := ioutil.ReadFile(filePath)

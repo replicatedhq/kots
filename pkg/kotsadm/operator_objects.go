@@ -12,15 +12,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func operatorClusterRole(namespace string) *rbacv1.ClusterRole {
+func operatorClusterRole() *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-operator-role",
-			Namespace: namespace,
+			Name: "kotsadm-operator-role",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
 			},
@@ -37,15 +36,14 @@ func operatorClusterRole(namespace string) *rbacv1.ClusterRole {
 	return clusterRole
 }
 
-func operatorClusterRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
+func operatorClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "CluserRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-operator-rolebinding",
-			Namespace: namespace,
+			Name: "kotsadm-operator-rolebinding",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
 			},
@@ -54,7 +52,7 @@ func operatorClusterRoleBinding(namespace string) *rbacv1.ClusterRoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      "kotsadm-operator",
-				Namespace: namespace,
+				Namespace: serviceAccountNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

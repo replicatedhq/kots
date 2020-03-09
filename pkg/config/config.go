@@ -46,9 +46,6 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	}
 	config := obj.(*kotsv1beta1.Config)
 
-	builder := template.Builder{}
-	builder.AddCtx(template.StaticCtx{})
-
 	// get template context from config values
 	templateContext, err := base.UnmarshalConfigValuesContent([]byte(configValuesData))
 	if err != nil {
@@ -56,19 +53,16 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 		templateContext = map[string]template.ItemValue{}
 	}
 
-	// add config context
-	configCtx, err := builder.NewConfigContext(config.Spec.Groups, templateContext, localRegistry, nil, license)
+	builder, configVals, err := template.NewBuilder(config.Spec.Groups, templateContext, localRegistry, nil, license)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
 	}
 
-	ApplyValuesToConfig(config, configCtx.ItemValues)
+	ApplyValuesToConfig(config, configVals)
 	configDocWithData, err := marshalFunc(config)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config")
 	}
-
-	builder.AddCtx(configCtx)
 
 	rendered, err := builder.RenderTemplate("config", string(configDocWithData))
 	if err != nil {
