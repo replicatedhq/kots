@@ -723,8 +723,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kots v1.13.3 h1:AnraOU2iAqfkkLRD6wujX30Sr+OG37lPqldZRRKFRlg=
 github.com/replicatedhq/kots v1.13.3/go.mod h1:wI3W7ksjw8IupLA3m4gGJ79fWZIhSJfU/SaPZqm9pVA=
-github.com/replicatedhq/kots v1.13.5 h1:5CJbVby39ThL5wk385d8CpaL3f65tyfznO9lvh2eECY=
-github.com/replicatedhq/kots v1.13.5/go.mod h1:hIjcm5uIBP7LZ0O7S+SJqw2Esw8NQbAgwpL9oHiGTA8=
+github.com/replicatedhq/kots v1.13.6 h1:zN9hQoOT8GHXLSleNtwUfMDE0nwUm4OcVctHaB5dNg0=
+github.com/replicatedhq/kots v1.13.6/go.mod h1:hIjcm5uIBP7LZ0O7S+SJqw2Esw8NQbAgwpL9oHiGTA8=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.26 h1:zd/Umkad5NVr5A5sB8JR/gAicTiwDO0am87qgvlTZyY=
 github.com/replicatedhq/troubleshoot v0.9.26/go.mod h1:7MyY22gXMXTp1cUczegcXUeMsUJhtMzrrmlAi0aJu4s=
