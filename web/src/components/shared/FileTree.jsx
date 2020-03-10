@@ -72,9 +72,9 @@ export default class FileTree extends React.Component {
               <input type="checkbox"
                 checked={this.state.selected.hasOwnProperty(file.path) ? this.state.selected[file.path] : this.arePathsSame(selectedFile, file.path)}
                 onChange={e => this.handleCheckboxChange(file.path, e.target.checked)}
-                name={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}`}
-                id={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}`} />
-              <label htmlFor={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}`}>{file.name}</label>
+                name={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}-${this.getLevel()}`}
+                id={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}-${this.getLevel()}`} />
+              <label htmlFor={`sub-dir-${file.name}-${file.children.length}-${file.path}-${i}-${this.getLevel()}`}>{file.name}</label>
               <FileTree
                 level={this.getLevel() + 1}
                 files={file.children}

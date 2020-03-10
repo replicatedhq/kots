@@ -17,32 +17,8 @@ export class SupportBundleAnalysis extends React.Component {
     super();
     this.state = {
       activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : "bundleAnalysis",
-      filterTiles: "0",
-      displayShareBundleModal: false
+      filterTiles: "0"
     };
-  }
-
-  shareBundle = (unShare = false) => {
-    const { getSupportBundle } = this.props;
-    const bundle = getSupportBundle.getSupportBundle;
-    this.setState({ shareBundleLoading: true });
-    this.props.client.mutate({
-      mutation: updateSupportBundle,
-      variables: {
-        id: bundle.id,
-        shareTeamIDs: unShare ? [] : [
-          "replicated",
-        ],
-      },
-    })
-      .then(() => {
-        this.props.getSupportBundle.refetch();
-        this.setState({ shareBundleLoading: false, displayShareBundleModal: false });
-      }).catch(() => this.setState({ shareBundleLoading: false }));
-  }
-
-  toggleConfirmShareModal = () => {
-    this.setState({ displayShareBundleModal: !this.state.displayShareBundleModal });
   }
 
   reAnalyzeBundle = async (callback) => {
@@ -85,23 +61,6 @@ export class SupportBundleAnalysis extends React.Component {
     });
   }
 
-  renderSharedContext = () => {
-    // const sharedIds = bundle.teamShareIds || [];
-    // const isShared = sharedIds.length;
-    let shareContext = null;
-
-    // if (isShared) {
-    //   shareContext = (
-    //     <div className="flex flex-auto">
-    //       <span className="u-marginRight--10 u-fontSize--normal u-fontWeight--medium u-color--tundora alignSelf--center">Shared with Replicated</span>
-    //       <button className="btn secondary flex-auto u-marginRight--10" onClick={() => this.shareBundle(true)}>Unshare</button>
-    //     </div>
-    //   )
-    // } else {
-    //   shareContext = <button className="btn secondary flex-auto u-marginRight--10" onClick={this.toggleConfirmShareModal}>Share with Replicated</button>
-    // }
-    return shareContext;
-  }
 
   render() {
     const { watch, getSupportBundle } = this.props;
@@ -132,9 +91,6 @@ export class SupportBundleAnalysis extends React.Component {
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
                         <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
-                      </div>
-                      <div className="flex flex-auto alignItems--center">
-                        {this.renderSharedContext(bundle)}
                       </div>
                     </div>
                     <div className="upload-date-container flex u-marginTop--5 alignItems--center">
@@ -193,27 +149,6 @@ export class SupportBundleAnalysis extends React.Component {
             </div>
           }
         </div>
-        {this.state.displayShareBundleModal &&
-          <Modal
-            isOpen={this.state.displayShareBundleModal}
-            onRequestClose={() => this.toggleConfirmShareModal()}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Modal"
-            ariaHideApp={false}
-            className="console Modal DefaultSize"
-          >
-            <div className="Modal-header">
-              <p>Share this Support Bundle</p>
-            </div>
-            <div className="flex flex-column u-paddingLeft--20 u-paddingRight--20 u-paddingBottom--20">
-              <span className="u-fontSize--large u-fontWeight--normal u-color--dustyGray u-lineHeight--more">By sharing this bundle, Replicated will be able to view analyzers and inspect all files. Only this bundle will be visible, no other bundles will be seen by our team.</span>
-              <div className="flex justifyContent--flexEnd u-marginTop--30">
-                <button className="btn secondary flex-auto u-marginRight--10" onClick={() => { this.toggleConfirmShareModal() }}>Cancel</button>
-                <button className="btn secondary blue flex-auto" disabled={this.state.shareBundleLoading} onClick={() => this.shareBundle()}>{this.state.shareBundleLoading ? "Sharing" : "Share bundle"}</button>
-              </div>
-            </div>
-          </Modal>
-        }
       </div>
     );
   }

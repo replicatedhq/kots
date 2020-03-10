@@ -14,14 +14,14 @@ import { kotsAppSequenceKey, kotsClusterIdKey } from "../../snapshots/snapshot";
 import { Phase, Restore } from "../../snapshots/velero";
 import { ReplicatedError } from "../../server/errors";
 
-const DefaultReadyState = [{kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", state: State.Ready}];
+const DefaultReadyState = [{ kind: "EMPTY", name: "EMPTY", namespace: "EMPTY", state: State.Ready }];
 
 const oneMinuteInMilliseconds = 1 * 60 * 1000;
 
 interface ClusterSocketHistory {
   clusterId: string;
   socketId: string;
-  sentPreflightUrls: {[key: string]: boolean};
+  sentPreflightUrls: { [key: string]: boolean };
   sentDeploySequences: string[];
 }
 
@@ -99,7 +99,7 @@ export class KotsDeploySocketService {
       const pendingSupportBundles = await this.troubleshootStore.listPendingSupportBundlesForCluster(clusterSocketHistory.clusterId);
       for (const pendingSupportBundle of pendingSupportBundles) {
         const app = await this.kotsAppStore.getApp(pendingSupportBundle.appId);
-        this.io.in(clusterSocketHistory.clusterId).emit("supportbundle", {uri: `${this.params.shipApiEndpoint}/api/v1/troubleshoot/${app.slug}?incluster=true`});
+        this.io.in(clusterSocketHistory.clusterId).emit("supportbundle", { uri: `${this.params.shipApiEndpoint}/api/v1/troubleshoot/${app.slug}?incluster=true` });
         await this.troubleshootStore.clearPendingSupportBundle(pendingSupportBundle.id);
       }
     }
@@ -132,33 +132,33 @@ export class KotsDeploySocketService {
     if (!app.restoreInProgressName) {
       return;
     }
-  
+
     switch (app.restoreUndeployStatus) {
-    case UndeployStatus.InProcess:
-      // retry undeploy every minute since socket.io is not bi-directional
-      const lastUndeployInterval = new Date().getTime() - this.lastUndeployTime;
-      if (lastUndeployInterval >= oneMinuteInMilliseconds) {
+      case UndeployStatus.InProcess:
+        // retry undeploy every minute since socket.io is not bi-directional
+        const lastUndeployInterval = new Date().getTime() - this.lastUndeployTime;
+        if (lastUndeployInterval >= oneMinuteInMilliseconds) {
+          await this.undeployApp(app, cluster);
+          this.lastUndeployTime = new Date().getTime();
+        }
+        break;
+
+      case UndeployStatus.Completed:
+        await this.handleUndeployCompleted(app, cluster);
+        break;
+
+      case UndeployStatus.Failed:
+        logger.warn(`Restore ${app.restoreInProgressName} falied`);
+        // TODO
+        break;
+
+      default:
+        // start undeploy
         await this.undeployApp(app, cluster);
         this.lastUndeployTime = new Date().getTime();
-      }
-      break;
-  
-    case UndeployStatus.Completed:
-      await this.handleUndeployCompleted(app, cluster);
-      break;
-  
-    case UndeployStatus.Failed:
-      logger.warn(`Restore ${app.restoreInProgressName} falied`);
-      // TODO
-      break;
-  
-    default:
-      // start undeploy
-      await this.undeployApp(app, cluster);
-      this.lastUndeployTime = new Date().getTime();
     }
   }
-  
+
   async undeployApp(app: KotsApp, cluster: Cluster): Promise<void> {
     logger.info(`Starting restore, undeploying app ${app.name}`);
 
@@ -244,7 +244,7 @@ export class KotsDeploySocketService {
         break;
 
       default:
-        // in progress
+      // in progress
     }
   }
 
@@ -285,10 +285,13 @@ export class KotsDeploySocketService {
               const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
               const b = new Buffer(rendered);
 
+              const imagePullSecret = await app.getImagePullSecretFromArchive(app.currentSequence!.toString());
 
               const args = {
                 app_id: app.id,
                 kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
+                additional_namespaces: kotsAppSpec ? kotsAppSpec.additionalNamespaces : [],
+                image_pull_secret: imagePullSecret,
                 namespace: desiredNamespace,
                 manifests: b.toString("base64"),
                 previous_manifests: "",
@@ -305,7 +308,7 @@ export class KotsDeploySocketService {
 
               this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
               clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence}`);
-            } catch(err) {
+            } catch (err) {
               await this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
               continue;
             }
@@ -330,8 +333,8 @@ export class KotsDeploySocketService {
     }
   }
 }
-  
+
 function getSnapshotNameFromRestoreName(restoreName: string): string {
   const parts = restoreName.split("-");
-  return parts.slice(0, parts.length-1).join("-");
+  return parts.slice(0, parts.length - 1).join("-");
 }

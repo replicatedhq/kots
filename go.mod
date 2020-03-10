@@ -3,7 +3,6 @@ module github.com/replicatedhq/kotsadm
 go 1.12
 
 require (
-	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -11,7 +10,6 @@ require (
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
-	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -28,7 +26,6 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
-	golang.org/x/time v0.0.0-20191023065245-6d3f0bb11be5 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/api v0.17.3

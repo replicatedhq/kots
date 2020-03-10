@@ -270,7 +270,7 @@ class AirgapRegistrySettings extends Component {
           }
           <div className="flex u-marginBottom--5">
             <div className="flex1">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Namespace {(showRequiredFields || showNamespaceAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace {(showRequiredFields || showNamespaceAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
               <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
             </div>

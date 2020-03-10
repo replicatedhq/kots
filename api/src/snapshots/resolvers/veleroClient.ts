@@ -10,6 +10,7 @@ import {
   V1Secret,
 } from "@kubernetes/client-node";
 import { ReplicatedError } from "../../server/errors";
+import { logger } from "../../server/logger";
 import request, { RequestPromiseOptions } from "request-promise";
 import {
   kotsAppSlugKey,
@@ -34,10 +35,9 @@ import {
   SnapshotStoreS3AWS,
   SnapshotStoreGoogle } from "../";
 import { Backup, Phase, Restore } from "../velero";
-import { sleep } from "../../util/utilities";
+import { base64Decode, sleep } from "../../util/utilities";
 import { parseBackupLogs, ParsedBackupLogs } from "./parseBackupLogs";
 import { AzureCloudName } from "../snapshot_config";
-import { base64Decode } from '../../util/utilities';
 
 export const backupStorageLocationName = "kotsadm-velero-backend";
 const awsSecretName = "aws-credentials";
@@ -68,8 +68,9 @@ export class VeleroClient {
     this.server = cluster.server;
   }
 
+  // tslint:disable-next-line cyclomatic-complexity
   async request(method: string, path: string, body?: any): Promise<any> {
-    let url = `${this.server}/apis/velero.io/v1/namespaces/${this.ns}/${path}`;
+    const url = `${this.server}/apis/velero.io/v1/namespaces/${this.ns}/${path}`;
     const req = { url };
     await this.kc.applyToRequest(req);
     const options: RequestPromiseOptions = {
@@ -88,15 +89,16 @@ export class VeleroClient {
     case 204:
       return response.body
     case 400:
-      console.log(response.body);
+      logger.warn(response.body);
       break
     case 403:
       throw new ReplicatedError(`Permission denied: RBAC may be misconfigured for ${method} velero.io/v1 ${path} in namespace ${this.ns}`);
     case 404:
       throw new ReplicatedError("Not found: a requested resource may not exist or Velero may not be installed in this cluster");
     case 422:
-      console.log(response.body);
-      break
+      logger.warn(response.body);
+      break;
+    default:
     }
 
     if (response.body && response.body.message) {
@@ -107,7 +109,7 @@ export class VeleroClient {
   }
 
   async unhandledRequest(method: string, path: string, body?: any): Promise<any> {
-    let url = `${this.server}/apis/velero.io/v1/namespaces/${this.ns}/${path}`;
+    const url = `${this.server}/apis/velero.io/v1/namespaces/${this.ns}/${path}`;
     const req = { url };
     await this.kc.applyToRequest(req);
     const options: RequestPromiseOptions = {
@@ -123,11 +125,11 @@ export class VeleroClient {
     return response;
   }
 
-  async listSnapshots(): Promise<Array<Snapshot>> {
+  async listSnapshots(): Promise<Snapshot[]> {
     const body = await this.request("GET", "backups");
-    const snapshots: Array<Snapshot> = [];
+    const snapshots: Snapshot[] = [];
 
-    for (let backup of body.items) {
+    for (const backup of body.items) {
       const snapshot = await this.snapshotFromBackup(backup);
       snapshots.push(snapshot);
     }
@@ -154,8 +156,9 @@ export class VeleroClient {
     });
   }
 
+  // tslint:disable-next-line cyclomatic-complexity
   async snapshotFromBackup(backup: Backup): Promise<Snapshot> {
-    let trigger: SnapshotTrigger|undefined = undefined;
+    let trigger: SnapshotTrigger|undefined;
 
     switch (backup.metadata.annotations && backup.metadata.annotations[snapshotTriggerKey]) {
     case SnapshotTrigger.Manual:
@@ -167,6 +170,7 @@ export class VeleroClient {
     case SnapshotTrigger.Schedule:
       trigger = SnapshotTrigger.Schedule;
       break;
+    default:
     }
 
     const status = backup.status ? backup.status.phase : Phase.New;
@@ -237,7 +241,7 @@ export class VeleroClient {
   }
 
   async readBackup(name: string): Promise<Backup> {
-    return await this.request("GET", `backups/${name}`);
+    return this.request("GET", `backups/${name}`);
   }
 
   async readRestore(name: string): Promise<Restore|null> {
@@ -245,7 +249,7 @@ export class VeleroClient {
     if (response.statusCode === 200) {
       return response.body;
     }
-    if (response.statusCode == 404) {
+    if (response.statusCode === 404) {
       return null;
     }
     if (response.statusCode === 403) {
@@ -258,12 +262,12 @@ export class VeleroClient {
     throw new Error(`Read Restore ${name} from namespace ${this.ns}: ${response.statusCode}`);
   }
 
-  async listRestoreVolumes(name: string): Promise<Array<RestoreVolume>> {
+  async listRestoreVolumes(name: string): Promise<RestoreVolume[]> {
     const q = {
       labelSelector: `velero.io/restore-name=${getValidName(name)}`,
     };
     const volumeList = await this.request("GET", `podvolumerestores?${querystring.stringify(q)}`);
-    const volumes: Array<RestoreVolume> = [];
+    const volumes: RestoreVolume[] = [];
 
     _.each(volumeList.items, (pvr) => {
       const rv: RestoreVolume = {
@@ -298,6 +302,7 @@ export class VeleroClient {
     return volumes;
   }
 
+  // tslint:disable-next-line cyclomatic-complexity
   async getSnapshotDetail(name: string): Promise<SnapshotDetail> {
     const path = `backups/${name}`;
     const backup = await this.request("GET", path);
@@ -307,7 +312,7 @@ export class VeleroClient {
       labelSelector: `velero.io/backup-name=${getValidName(name)}`,
     };
     const volumeList = await this.request("GET", `podvolumebackups?${querystring.stringify(q)}`);
-    const volumes: Array<SnapshotVolume> = [];
+    const volumes: SnapshotVolume[] = [];
 
     _.each(volumeList.items, (pvb) => {
       const sv: SnapshotVolume = {
@@ -335,11 +340,11 @@ export class VeleroClient {
       try {
         logs = await this.getBackupLogs(name);
       } catch(e) {
-        console.log(`Failed to get backup logs: ${e.message}`);
+        logger.error(`Failed to get backup logs: ${e.message}`);
       }
     }
 
-    const errors: Array<SnapshotError> = logs ? logs.errors : [];
+    const errors: SnapshotError[] = logs ? logs.errors : [];
 
     _.each(backup.status.validationErrors, (message: string) => {
       errors.push({
@@ -368,12 +373,12 @@ export class VeleroClient {
     const buffer = await request(url, options);
 
     return new Promise((resolve, reject) => {
-      zlib.gunzip(buffer, (err, buffer) => {
+      zlib.gunzip(buffer, (err, buf) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(parseBackupLogs(buffer));
+        resolve(parseBackupLogs(buf));
       });
     });
   }
@@ -388,12 +393,12 @@ export class VeleroClient {
     const buffer = await request(url, options);
 
     return new Promise((resolve, reject) => {
-      zlib.gunzip(buffer, (err, buffer) => {
+      zlib.gunzip(buffer, (err, buf) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve(JSON.parse(buffer.toString()));
+        resolve(JSON.parse(buf.toString()));
       });
     });
   }
@@ -401,7 +406,7 @@ export class VeleroClient {
   async getDownloadURL(kind, name: string): Promise<string> {
     const drname = getValidName(`${kind.toLowerCase()}-${name}-${Date.now()}`);
 
-    let downloadrequest = {
+    const downloadrequest = {
       apiVersion: "velero.io/v1",
       kind: "DownloadRequest",
       metadata: {
@@ -428,11 +433,12 @@ export class VeleroClient {
     throw new Error(`Timed out waiting for DownloadRequest for ${kind}/${name} logs`);
   }
 
+  // tslint:disable-next-line cyclomatic-complexity
   async readSnapshotStore(): Promise<SnapshotStore|null> {
     const corev1 = this.kc.makeApiClient(CoreV1Api);
     const bsls = await this.request("GET", `backupstoragelocations`); 
-    const bsl: any = _.find(bsls.items, (bsl) => {
-      return bsl.metadata.name === backupStorageLocationName;
+    const bsl: any = _.find(bsls.items, (bslItem) => {
+      return bslItem.metadata.name === backupStorageLocationName;
     });
 
     if (!bsl) {
@@ -446,28 +452,27 @@ export class VeleroClient {
     };
 
     switch (store.provider) {
-    case SnapshotProvider.S3AWS:
-      const {accessKeyID, accessKeySecret} = await readAWSCredentialsSecret(corev1, this.ns);
+      case SnapshotProvider.S3AWS:
+        const {accessKeyID, accessKeySecret} = await readAWSCredentialsSecret(corev1, this.ns);
 
-      store.s3AWS = {
-        region: bsl.spec.config.region,
-        accessKeyID,
-      };
-      if (accessKeySecret) {
-        store.s3AWS.accessKeySecret = redacted;
-      }
-      break;
-
-      case SnapshotProvider.S3Compatible:
-        const s3Creds = await readAWSCredentialsSecret(corev1, this.ns);
-
-        store.s3Compatible = {
-          region: bsl.spec.config.region,
-          endpoint: bsl.spec.config.endpoint,
-          accessKeyID: s3Creds.accessKeyID,
-        };
-        if (s3Creds.accessKeySecret) {
-          store.s3Compatible.accessKeySecret = redacted;
+        if (bsl.spec.config.s3Url) {
+          store.provider = SnapshotProvider.S3Compatible
+          store.s3Compatible = {
+            region: bsl.spec.config.region,
+            endpoint: bsl.spec.config.s3Url,
+            accessKeyID: accessKeyID,
+          };
+          if (accessKeySecret) {
+            store.s3Compatible.accessKeySecret = redacted;
+          }
+        } else {
+          store.s3AWS = {
+            region: bsl.spec.config.region,
+            accessKeyID,
+          };
+          if (accessKeySecret) {
+            store.s3AWS.accessKeySecret = redacted;
+          }
         }
         break;
 
@@ -491,12 +496,21 @@ export class VeleroClient {
         store.google = {
           serviceAccount: serviceAccount ? redacted : "",
         };
+
+      default:
     }
 
     return store;
   }
 
+  // tslint:disable-next-line
   async saveSnapshotStore(store: SnapshotStore): Promise<void> {
+    let currentSpec: any;
+    const currentBSLResponse = await this.unhandledRequest("GET", `backupstoragelocations/${backupStorageLocationName}`);
+    if (currentBSLResponse.statusCode === 200) {
+      currentSpec = currentBSLResponse.body.spec;
+    }
+
     const backupStorageLocation = {
       apiVersion: "velero.io/v1",
       kind: "BackupStorageLocation",
@@ -510,7 +524,7 @@ export class VeleroClient {
           bucket: store.bucket,
           prefix: store.path,
         },
-        config: {},
+        config: currentSpec ? currentSpec.config : {},
       },
     };
     const corev1 = this.kc.makeApiClient(CoreV1Api);
@@ -531,10 +545,9 @@ export class VeleroClient {
       if (!_.isObject(store.s3Compatible)) {
         throw new ReplicatedError("s3Compatible store configuration is required");
       }
-      backupStorageLocation.spec.config = {
-        region: store.s3Compatible!.region,
-        endpoint: store.s3Compatible!.endpoint,
-      };
+      backupStorageLocation.spec.config.region = store.s3Compatible!.region;
+      backupStorageLocation.spec.config.s3Url = store.s3Compatible!.endpoint;
+
       credentialsSecret = await awsCredentialsSecret(corev1, this.ns, store.s3Compatible!);
       break;
 
@@ -571,7 +584,7 @@ export class VeleroClient {
       try {
         await this.request("POST", "backupstoragelocations", backupStorageLocation);
       } catch(e) {
-        console.log(e);
+        logger.error(e);
         return;
       }
     }
@@ -587,14 +600,14 @@ export class VeleroClient {
         try {
           await corev1.replaceNamespacedSecret(credentialsSecret.metadata!.name!, this.ns, credentialsSecret);
         } catch(e) {
-          console.log(e);
+          logger.error(e);
           return;
         }
       } else {
         try {
           await corev1.createNamespacedSecret(this.ns, credentialsSecret);
         } catch(e) {
-          console.log(e);
+          logger.error(e);
           return;
         }
       }
@@ -602,13 +615,13 @@ export class VeleroClient {
       try {
         await corev1.createNamespacedSecret(this.ns, credentialsSecret);
       } catch(e) {
-        console.log(e);
+        logger.error(e);
         return;
       }
     }
   }
 
-  async listBackends(): Promise<Array<string>> {
+  async listBackends(): Promise<string[]> {
     const body = await this.request("GET", "backupstoragelocations");
 
     return _.map(body.items, (item: any) => {
@@ -644,11 +657,34 @@ export class VeleroClient {
 
     await this.request("POST", "restores", restore);
   }
+
+  async isVeleroInstalled(): Promise<boolean> {
+    const url = `${this.server}/apis/velero.io/`;
+    const req = { url };
+    await this.kc.applyToRequest(req);
+    const options: RequestPromiseOptions = {
+      method: "GET",
+      simple: false,
+      resolveWithFullResponse: true,
+      json: true,
+    };
+    Object.assign(options, req);
+
+    const response = await request(url, options);
+    if (response.statusCode === 200) {
+      return true;
+    }
+    if (response.statusCode === 404) {
+      return false;
+    }
+
+    throw new Error(`GET ${url}: ${response.statusCode}`);
+  }
 }
 
 function maybeParseInt(s: string|undefined): number|undefined {
   if (_.isString(s)) {
-    const i = parseInt(s)
+    const i = parseInt(s, 10)
     if (_.isNumber(i)) {
       return i;
     }
@@ -694,16 +730,17 @@ AZURE_CLOUD_NAME=${azure.cloudName}`,
   };
 }
 
-interface azureCreds {
+interface AzureCreds {
   tenantID?: string,
   clientID?: string,
   clientSecret?: string,
   resourceGroup?: string,
   cloudName?: AzureCloudName,
 }
-async function readAzureCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<azureCreds> {
+// tslint:disable-next-line cyclomatic-complexity
+async function readAzureCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<AzureCreds> {
   try {
-    const creds: azureCreds = {};
+    const creds: AzureCreds = {};
 
     const { response, body: secret } = await corev1.readNamespacedSecret(azureSecretName, namespace);
     if (response.statusCode !== 200 || !secret.data!.cloud) {
@@ -768,12 +805,12 @@ aws_secret_access_key=${accessKeySecret}`,
   };
 }
 
-interface awsCreds {
+interface AWSCreds {
   accessKeyID?: string,
   accessKeySecret?: string,
 }
-async function readAWSCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<awsCreds> {
-  const creds: awsCreds = {};
+async function readAWSCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<AWSCreds> {
+  const creds: AWSCreds = {};
 
   const  { response, body: secret } = await corev1.readNamespacedSecret(awsSecretName, namespace);
   if (response.statusCode !== 200 || !secret.data!.cloud) {

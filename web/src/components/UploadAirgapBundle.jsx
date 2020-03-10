@@ -328,6 +328,7 @@ class UploadAirgapBundle extends React.Component {
       logo,
       fetchingMetadata,
       showRegistry,
+      appsListLength
     } = this.props;
 
     const {
@@ -360,17 +361,27 @@ class UploadAirgapBundle extends React.Component {
       supportBundleCommand = supportBundleCommand.replace("API_ADDRESS", window.location.origin);
     }
 
+    let logoUri;
+    let applicationName;
+    if (appsListLength && appsListLength > 1) {
+      logoUri = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
+      applicationName = "";
+    } else {
+      logoUri = logo;
+      applicationName = appName;
+    }
+
     return (
       <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+          <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
               <div className="flex">
                 {logo
-                  ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logo})` }} />
+                  ? <span className="icon brand-login-icon u-marginRight--10" style={{ backgroundImage: `url(${logoUri})` }} />
                   : !fetchingMetadata ? <span className="icon kots-login-icon u-marginRight--10" />
                     : <span style={{ width: "60px", height: "60px" }} />
                 }
@@ -386,9 +397,9 @@ class UploadAirgapBundle extends React.Component {
                 <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
                 <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
                   {showRegistry ?
-                    `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${appName ? `in ${appName}` : ""} will be retagged and pushed to the registry that you provide here.`
+                    `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${applicationName?.length > 0 ? `in ${applicationName}` : ""} will be retagged and pushed to the registry that you provide here.`
                     :
-                    `To install on an airgapped network, the images ${appName ? `in ${appName}` : ""} will be uploaded from the bundle you provide to the cluster.`
+                    `To install on an airgapped network, the images ${applicationName?.length > 0 ? `in ${applicationName}` : ""} will be uploaded from the bundle you provide to the cluster.`
                   }
                 </p>
                 {showRegistry &&
@@ -424,7 +435,7 @@ class UploadAirgapBundle extends React.Component {
                         :
                         <div className="u-textAlign--center">
                           <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file {appName} provided. Please contact your account rep if you are unable to locate your .airgap file.</p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
                         </div>
                       }
                     </Dropzone>
@@ -476,7 +487,7 @@ class UploadAirgapBundle extends React.Component {
           </div>
         </div>
         <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage }, { "u-display--none": preparingOnlineInstall })}>
-          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {appName} from the Internet</span></span>
+          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {applicationName?.length > 0 ? applicationName : "this application"} from the Internet</span></span>
         </div>
         {onlineInstallErrorMessage && (
           <div className="u-marginTop--10 u-marginBottom--20">
