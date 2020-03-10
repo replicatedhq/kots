@@ -851,10 +851,10 @@ order by sequence desc`;
         lastError: configMapData.lastError
       }
     } catch (err) {
-      if (err && (!err.response || err.response.statusCode !== 404)) {
+      if (err && err.response && err.response.statusCode !== 404) {
         logger.error(err);
       }
-      throw new ReplicatedError("Failed to get gitops info");
+      throw new ReplicatedError(`Failed to get gitops info ${err}`);
     }
   }
 

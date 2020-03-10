@@ -227,11 +227,9 @@ class AppConfig extends Component {
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
-        <div className={classNames("ConfigOuterWrapper flex u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
-          <div className="ConfigInnerWrapper flex1 u-padding--15">
-            <div className="flex1">
-              <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
-            </div>
+        <div className={classNames("ConfigOuterWrapper u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
+          <div className="ConfigInnerWrapper u-padding--15">
+            <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
           </div>
         </div>
         {savingConfig ?

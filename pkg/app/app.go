@@ -111,6 +111,18 @@ func GetFromSlug(slug string) (*App, error) {
 	return Get(id)
 }
 
+// LastUpdateAtTime sets the time that the client last checked for an update to now
+func LastUpdateAtTime(appID string) error {
+	db := persistence.MustGetPGSession()
+	query := `update app set last_update_check_at = $1 where id = $2`
+	_, err := db.Exec(query, time.Now(), appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to update last_update_check_at")
+	}
+
+	return nil
+}
+
 // SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
 func SetDownstreamVersionReady(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()

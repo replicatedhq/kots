@@ -112,6 +112,14 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update last updated at time
+	t := app.LastUpdateAtTime(foundApp.ID)
+	if t != nil {
+		logger.Error(t)
+		w.WriteHeader(500)
+		return
+	}
+
 	// if there are updates, go routine it
 	if len(updates) == 0 {
 		JSON(w, 200, appUpdateCheckResponse)

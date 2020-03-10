@@ -113,20 +113,31 @@ class UploadLicenseFile extends React.Component {
       appName,
       logo,
       fetchingMetadata,
+      appsListLength,
     } = this.props;
     const { licenseFile, fileUploading, errorMessage, viewErrorMessage } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
+    
+    let logoUri;
+    let applicationName;
+    if (appsListLength && appsListLength > 1) {
+      logoUri = "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
+      applicationName = "";
+    } else {
+      logoUri = logo;
+      applicationName = appName;
+    }
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+          <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
               {logo
-              ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
+              ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logoUri})` }} />
               : !fetchingMetadata ? <span className="icon kots-login-icon" />
               : <span style={{ width: "60px", height: "60px" }} />
               }
@@ -149,7 +160,7 @@ class UploadLicenseFile extends React.Component {
                         :
                         <div className="u-textAlign--center">
                           <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file {appName} provided. Please contact your account rep if you are unable to locate your license file.</p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your license file.</p>
                         </div>
                       }
                     </Dropzone>
