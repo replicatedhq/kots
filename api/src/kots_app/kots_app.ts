@@ -391,6 +391,7 @@ export class KotsApp {
         const secretFile = path.join(tmpDir.name, "overlays", "midstream", "secret.yaml")
         if (!fs.existsSync(secretFile)) {
           resolve("");
+          return;
         }
 
         const content = fs.readFileSync(secretFile, "utf-8");
