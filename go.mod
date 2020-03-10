@@ -24,6 +24,7 @@ require (
 	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4 // indirect
@@ -38,7 +39,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56
-	github.com/replicatedhq/troubleshoot v0.9.27-0.20200310004312-d9625477d2a5
+	github.com/replicatedhq/troubleshoot v0.9.27-0.20200312233845-35808423b22b
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
@@ -47,6 +48,8 @@ require (
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	go.undefinedlabs.com/scopeagent v0.1.12
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	go.undefinedlabs.com/scopeagent v0.1.7
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2
 	k8s.io/apiextensions-apiserver v0.17.2

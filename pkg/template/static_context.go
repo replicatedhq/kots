@@ -26,8 +26,10 @@ import (
 	sprig "github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
+	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	discovery "k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	certUtil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -77,6 +79,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["TLSKey"] = ctx.tlsKey
 
 	funcMap["IsKurl"] = ctx.isKurl
+	funcMap["Distribution"] = ctx.distribution
 
 	return funcMap
 }
@@ -419,4 +422,42 @@ func (ctx StaticCtx) isKurl() bool {
 	}
 
 	return configMap != nil
+}
+
+func (ctx StaticCtx) distribution() string {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return ""
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return ""
+	}
+
+	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return ""
+	}
+	nodes := nodeList.Items
+
+	foundProviders, workingProvider := analyze.ParseNodesForProviders(nodes)
+
+	if workingProvider != "" {
+		return workingProvider
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return ""
+	}
+
+	_, apiResourceList, err := discoveryClient.ServerGroupsAndResources()
+	if err != nil {
+		return ""
+	}
+
+	provider := analyze.CheckOpenShift(&foundProviders, apiResourceList, workingProvider)
+
+	return provider
 }
