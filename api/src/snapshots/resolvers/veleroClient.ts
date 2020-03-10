@@ -657,6 +657,29 @@ export class VeleroClient {
 
     await this.request("POST", "restores", restore);
   }
+
+  async isVeleroInstalled(): Promise<boolean> {
+    const url = `${this.server}/apis/velero.io/`;
+    const req = { url };
+    await this.kc.applyToRequest(req);
+    const options: RequestPromiseOptions = {
+      method: "GET",
+      simple: false,
+      resolveWithFullResponse: true,
+      json: true,
+    };
+    Object.assign(options, req);
+
+    const response = await request(url, options);
+    if (response.statusCode === 200) {
+      return true;
+    }
+    if (response.statusCode === 404) {
+      return false;
+    }
+
+    throw new Error(`GET ${url}: ${response.statusCode}`);
+  }
 }
 
 function maybeParseInt(s: string|undefined): number|undefined {
