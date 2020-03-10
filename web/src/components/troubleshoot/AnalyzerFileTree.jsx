@@ -29,7 +29,6 @@ class AnalyzerFileTree extends React.Component {
       fileLoading: false,
       fileLoadErr: false,
       fileLoadErrMessage: "",
-      line: null,
       activeMarkers: [],
       analysisError: false
     };
@@ -139,7 +138,7 @@ class AnalyzerFileTree extends React.Component {
       if (this.props.location) {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
-        if (this.props.location.hash ) {
+        if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
             startRow: parseInt(this.props.location.hash.substring(2)) - 1,
@@ -153,23 +152,24 @@ class AnalyzerFileTree extends React.Component {
     }
   }
 
-  onSelectionChange = (selection) => {
-    if (selection.anchor.column === 0 && this.props.history?.location?.hash !== "#L0") {
-      this.setState({ line: selection.anchor.row });
+  onSelectionChange = () => {
+    const column = this.refAceEditor?.editor?.selection?.anchor.column;
+    const row = this.refAceEditor?.editor?.selection?.anchor.row;
+    if (column === 0) {
       let newMarker = [];
       newMarker.push({
-        startRow: this.state.line - 1,
-        endRow: this.state.line,
+        startRow: row - 1,
+        endRow: row,
         className: "active-highlight",
         type: "background"
       })
       this.setState({ activeMarkers: newMarker });
-      this.props.history.replace(`${this.props.location.pathname}#L${this.state.line}`);
+      this.props.history.replace(`${this.props.location.pathname}#L${row}`);
     }
   }
 
   handleDownload = () => {
-    const { downloadBundle} = this.props;
+    const { downloadBundle } = this.props;
     if (downloadBundle && typeof downloadBundle == "function") {
       downloadBundle();
     }
@@ -234,29 +234,29 @@ class AnalyzerFileTree extends React.Component {
                       <div className="flex-column flex1 alignItems--center justifyContent--center">
                         <p className="u-color--tundora u-fontSize--normal u-fontWeight--medium">This file was collected and analyzed but it contains no data.</p>
                       </div>
-                    :
-                    <AceEditor
-                      ref={(input) => this.refAceEditor = input}
-                      mode={format}
-                      theme="chrome"
-                      className="flex1 flex"
-                      readOnly={true}
-                      value={fileToView.content}
-                      height="100%"
-                      width="100%"
-                      markers={this.state.activeMarkers}
-                      editorProps={{
-                        $blockScrolling: Infinity,
-                        useSoftTabs: true,
-                        tabSize: 2,
-                      }}
-                      onLoad={(editor) => editor.gotoLine(this.props.location.hash !== "" && parseInt(this.props.location.hash.substring(2)))}
-                      onSelectionChange={this.onSelectionChange}
-                      setOptions={{
-                        scrollPastEnd: false,
-                        showGutter: true,
-                      }}
-                    />
+                      :
+                      <AceEditor
+                        ref={(input) => this.refAceEditor = input}
+                        mode={format}
+                        theme="chrome"
+                        className="flex1 flex"
+                        readOnly={true}
+                        value={fileToView.content}
+                        height="100%"
+                        width="100%"
+                        markers={this.state.activeMarkers}
+                        editorProps={{
+                          $blockScrolling: Infinity,
+                          useSoftTabs: true,
+                          tabSize: 2,
+                        }}
+                        onLoad={(editor) => editor.gotoLine(this.props.location.hash !== "" && parseInt(this.props.location.hash.substring(2)))}
+                        onSelectionChange={this.onSelectionChange}
+                        setOptions={{
+                          scrollPastEnd: false,
+                          showGutter: true,
+                        }}
+                      />
               }
             </div>
           </div>
