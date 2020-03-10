@@ -28,12 +28,22 @@ class AppSnapshots extends Component {
     restoringSnapshot: false,
     snapshotToRestore: "",
     restoreErr: false,
-    restoreErrorMsg: ""
+    restoreErrorMsg: "", 
+    configuration: {}
   };
 
   componentDidMount() {
     if (this.props.snapshots?.length) {
       this.props.snapshots.startPolling(2000);
+    }
+    if (this.props.snapshotSettings.snapshotConfig) {
+      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
+    }
+  }
+
+  componentDidUpdate = (lastProps) => {
+    if (this.props.snapshotSettings.snapshotConfig && this.props.snapshotSettings.snapshotConfig !== lastProps.snapshotSettings.snapshotConfig) {
+      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
     }
   }
 
@@ -154,7 +164,8 @@ class AppSnapshots extends Component {
       restoringSnapshot,
       snapshotToRestore,
       restoreErr,
-      restoreErrorMsg
+      restoreErrorMsg,
+      configuration
     } = this.state;
     const { app, snapshots, snapshotSettings } = this.props;
     const appTitle = app.name;
@@ -182,7 +193,7 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (!snapshotSettings?.snapshotConfig || !snapshotSettings?.snapshotConfig?.store) {
+    if (!configuration || !configuration?.store) {
       return (
         <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch()} />
       )
@@ -217,7 +228,7 @@ class AppSnapshots extends Component {
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
             {startSnapshotErr ?
-              <div class="flex flex1">
+              <div class="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
