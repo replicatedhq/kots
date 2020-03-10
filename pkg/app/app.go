@@ -17,7 +17,7 @@ type App struct {
 	Slug            string
 	Name            string
 	IsAirgap        bool
-	CurrentSequence int
+	CurrentSequence int64
 	Downstreams     []*Downstream
 
 	// Additional fields will be added here as implementation is moved from node to go
@@ -31,7 +31,7 @@ type Downstream struct {
 }
 
 type AppVersion struct {
-	Sequence     int
+	Sequence     int64
 	UpdateCursor int
 	VersionLabel string
 }
@@ -69,7 +69,7 @@ func Get(id string) (*App, error) {
 	}
 
 	if currentSequence.Valid {
-		app.CurrentSequence = int(currentSequence.Int64)
+		app.CurrentSequence = currentSequence.Int64
 	} else {
 		app.CurrentSequence = -1
 	}

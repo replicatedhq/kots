@@ -79,7 +79,7 @@ func CreateAppVersionArchive(appID string, sequence int64, archivePath string) e
 
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
-func GetAppVersionArchive(appID string, sequence int) (string, error) {
+func GetAppVersionArchive(appID string, sequence int64) (string, error) {
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")

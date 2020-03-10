@@ -11,23 +11,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	yaml "github.com/replicatedhq/yaml/v3"
 )
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
 func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]byte, error) {
-
-	yamlObj := map[string]interface{}{}
-	err := yaml.Unmarshal(inputContent, &yamlObj)
+	inputContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
-		return nil, err
-	}
-	inputContent, err = util.MarshalIndent(2, yamlObj)
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))

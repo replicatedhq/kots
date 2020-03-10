@@ -12,6 +12,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -78,6 +79,10 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 
 		if err := app.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
 			return nil, errors.Wrap(err, "failed to upload")
+		}
+
+		if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+			return nil, errors.Wrap(err, "failed to run preflights")
 		}
 	}
 

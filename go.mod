@@ -7,7 +7,6 @@ require (
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/frankban/quicktest v1.7.3 // indirect
-	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
@@ -15,7 +14,8 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.13.6
-	github.com/replicatedhq/troubleshoot v0.9.26
+	github.com/replicatedhq/kotsadm/operator v0.0.0-20200312204205-5dc8b8fe1538 // indirect
+	github.com/replicatedhq/troubleshoot v0.9.27-0.20200310173216-983aaaacea80
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
