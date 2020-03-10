@@ -1,5 +1,12 @@
 import gql from "graphql-tag";
 
+export const isVeleroInstalled = gql(`
+  query isVeleroInstalled {
+    isVeleroInstalled
+  }
+`);
+
+
 export const listSnapshotsRaw = `
   query listSnapshots($slug: String!) {
     listSnapshots(slug: $slug) {
