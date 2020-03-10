@@ -327,7 +327,7 @@ export async function kotsPullFromLicense(socket: string, out: string, kotsApp: 
 
   const licenseDataParam = new GoString();
   licenseDataParam["p"] = kotsApp.license;
-  licenseDataParam["n"] = String(kotsApp.license).length;
+  licenseDataParam["n"] = Buffer.from(kotsApp.license!).length;
 
   const downstreamParam = new GoString();
   downstreamParam["p"] = downstreamName;
@@ -545,15 +545,15 @@ export async function kotsTestRegistryCredentials(endpoint: string, username: st
 export async function kotsTemplateConfig(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<any> {
   const configDataParam = new GoString();
   configDataParam["p"] = configSpec;
-  configDataParam["n"] = String(configSpec).length;
+  configDataParam["n"] = Buffer.from(configSpec).length;
 
   const configValuesDataParam = new GoString();
   configValuesDataParam["p"] = configValues;
-  configValuesDataParam["n"] = String(configValues).length;
+  configValuesDataParam["n"] = Buffer.from(configValues).length;
 
   const licenseParam = new GoString();
   licenseParam["p"] = license;
-  licenseParam["n"] = String(license).length;
+  licenseParam["n"] = Buffer.from(license).length;
 
   const registryJson = JSON.stringify(registryInfo)
   const registryJsonParam = new GoString();
@@ -575,11 +575,11 @@ export async function kotsTemplateConfig(configSpec: string, configValues: strin
 export async function kotsEncryptString(cipherString: string, message: string): Promise<string> {
   const cipherStringParam = new GoString();
   cipherStringParam["p"] = cipherString;
-  cipherStringParam["n"] = String(cipherString).length;
+  cipherStringParam["n"] = Buffer.from(cipherString).length;
 
   const messageParam = new GoString();
   messageParam["p"] = message;
-  messageParam["n"] = String(message).length;
+  messageParam["n"] = Buffer.from(message).length;
 
   const encrypted = kots().EncryptString(cipherStringParam, messageParam);
 
@@ -593,11 +593,11 @@ export async function kotsEncryptString(cipherString: string, message: string): 
 export async function kotsDecryptString(cipherString: string, message: string): Promise<string> {
   const cipherStringParam = new GoString();
   cipherStringParam["p"] = cipherString;
-  cipherStringParam["n"] = String(cipherString).length;
+  cipherStringParam["n"] = Buffer.from(cipherString).length;
 
   const messageParam = new GoString();
   messageParam["p"] = message;
-  messageParam["n"] = String(message).length;
+  messageParam["n"] = Buffer.from(message).length;
 
   const decrypted = kots().DecryptString(cipherStringParam, messageParam);
 
