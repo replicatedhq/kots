@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/go-playground/assert.v1"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_diffContent(t *testing.T) {

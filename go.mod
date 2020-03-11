@@ -3,16 +3,29 @@ module github.com/replicatedhq/kotsadm
 go 1.12
 
 require (
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
+	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
+	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
+	github.com/chzyer/logex v1.1.11-0.20160617073814-96a4d311aa9b // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/docker v1.13.1 // indirect
+	github.com/docker/docker-credential-helpers v0.6.3 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
+	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
+	github.com/huandu/xstrings v1.2.1 // indirect
+	github.com/klauspost/cpuid v1.2.1 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.13.6
 	github.com/replicatedhq/troubleshoot v0.9.26
@@ -22,10 +35,14 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.5.1
+	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	github.com/vmware-tanzu/velero v1.2.0
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
+	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/api v0.17.3

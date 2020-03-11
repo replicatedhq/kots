@@ -2,6 +2,8 @@ package util
 
 import (
 	"testing"
+
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_matchKnownVersion(t *testing.T) {

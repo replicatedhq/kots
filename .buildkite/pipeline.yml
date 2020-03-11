@@ -94,23 +94,42 @@ steps:
           limit: 5
 
   - label: "build-operator"
-    command: make -C operator test build
+    command: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C operator test build
     plugins:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
+          environment:
+            - SCOPE_DSN_PUBLIC
+            - BUILDKITE_REPO
+            - BUILDKITE_COMMIT
+            - BUILDKITE_BUILD_ID
+            - BUILDKITE_BUILD_NUMBER
+            - BUILDKITE_BUILD_URL
+            - BUILDKITE_BUILD_CHECKOUT_PATH
+            - BUILDKITE
+
     artifact_paths:
       - "operator/bin/**/*"
       - "operator/pacts/**/*"
 
   - label: "build-kurl_proxy"
-    command: make -C kurl_proxy test build
+    command: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kurl_proxy test build
     plugins:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
+          environment:
+            - SCOPE_DSN_PUBLIC
+            - BUILDKITE_REPO
+            - BUILDKITE_COMMIT
+            - BUILDKITE_BUILD_ID
+            - BUILDKITE_BUILD_NUMBER
+            - BUILDKITE_BUILD_URL
+            - BUILDKITE_BUILD_CHECKOUT_PATH
+            - BUILDKITE
     artifact_paths:
       - "kurl_proxy/bin/**/*"
 
@@ -120,12 +139,21 @@ steps:
   ## go api
   - label: "build-go-api"
     commands:
-      - make test kotsadm
+      - SCOPE_DSN=$SCOPE_DSN_PUBLIC make test kotsadm
     plugins:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go12-node10
           workdir: /go/src/github.com/replicatedhq/kotsadm
+          environment:
+            - SCOPE_DSN_PUBLIC
+            - BUILDKITE_REPO
+            - BUILDKITE_COMMIT
+            - BUILDKITE_BUILD_ID
+            - BUILDKITE_BUILD_NUMBER
+            - BUILDKITE_BUILD_URL
+            - BUILDKITE_BUILD_CHECKOUT_PATH
+            - BUILDKITE
     artifact_paths:
       - "./bin/**/*"
 

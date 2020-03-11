@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_isHelmInstalled(t *testing.T) {
