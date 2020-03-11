@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 type replicatedPullTest struct {
