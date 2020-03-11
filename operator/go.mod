@@ -15,6 +15,7 @@ require (
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
+	github.com/mitchellh/hashstructure v1.0.0
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.9.26

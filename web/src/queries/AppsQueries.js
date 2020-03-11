@@ -427,6 +427,12 @@ export const getKotsAppDashboard = gql`
         appId
         updatedAt
         state
+        resourceStates {
+          kind
+          name
+          namespace
+          state
+        }
       }
       metrics {
         title

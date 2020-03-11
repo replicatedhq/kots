@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate"
@@ -97,6 +98,7 @@ func (c *Client) Run() error {
 
 func (c *Client) runAppStateMonitor() error {
 	m := map[string]func(f func()){}
+	hash := map[string]uint64{}
 
 	for appStatus := range c.appStateMonitor.AppStatusChan() {
 		throttled, ok := m[appStatus.AppID]
@@ -105,7 +107,13 @@ func (c *Client) runAppStateMonitor() error {
 			m[appStatus.AppID] = throttled
 		}
 		throttled(func() {
-			// log.Printf("Sending app status %#v", appStatus)
+			lastHash := hash[appStatus.AppID]
+			nextHash, _ := hashstructure.Hash(appStatus, nil)
+			hash[appStatus.AppID] = nextHash
+			if lastHash != nextHash {
+				b, _ := json.Marshal(appStatus)
+				log.Printf("Sending app status %s", b)
+			}
 			if err := c.sendAppStatus(appStatus); err != nil {
 				log.Printf("error sending app status: %v", err)
 			}
