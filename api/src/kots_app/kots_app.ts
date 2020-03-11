@@ -327,10 +327,15 @@ export class KotsApp {
       };
 
       const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
+      tarGZStream.on("error", err => {
+        reject(err);
+      });
 
-      tarGZStream.on("error", reject);
       const unzipperStream = zlib.createGunzip();
-      unzipperStream.on("error", reject);
+      unzipperStream.on("error", err => {
+        reject(err);
+      });
+
       tarGZStream.pipe(unzipperStream);
 
       const bundleUnpacker = new TarballUnpacker();
@@ -361,7 +366,7 @@ export class KotsApp {
     const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
     const extract = tar.extract();
     const gzunipStream = zlib.createGunzip();
-
+ 
     return new Promise((resolve, reject) => {
       const tmpDir = tmp.dirSync();
       extract.on("entry", async (header, stream, next) => {
@@ -405,6 +410,10 @@ export class KotsApp {
 
           resolve(stdout);
         });
+      });
+
+      tgzStream.on("error", err => {
+        reject(err);
       });
 
       tgzStream.pipe(gzunipStream).pipe(extract);

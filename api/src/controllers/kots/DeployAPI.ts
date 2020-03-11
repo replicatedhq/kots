@@ -66,48 +66,54 @@ export class DeployAPI {
       return {};
     }
 
-    const apps = await request.app.locals.stores.kotsAppStore.listAppsForCluster(cluster.id);
+    try {
+      const apps = await request.app.locals.stores.kotsAppStore.listAppsForCluster(cluster.id);
 
-    const present: any[] = [];
-    const missing = {};
-    let preflight = [];
+      const present: any[] = [];
+      const missing = {};
+      let preflight = [];
 
-    for (const app of apps) {
-      // app existing in a cluster doesn't always mean deploy.
-      // this means that we could possible have a version and/or preflights to run
+      for (const app of apps) {
+        // app existing in a cluster doesn't always mean deploy.
+        // this means that we could possible have a version and/or preflights to run
 
-      // this needs to be updated after the preflight PR is merged
-      const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightParams(true);
-      const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentVersion(app.id, cluster.id);
-      const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.sequence;
-      if (pendingPreflightURLs.length > 0) {
-        preflight = preflight.concat(pendingPreflightURLs);
+        // this needs to be updated after the preflight PR is merged
+        const pendingPreflightURLs = await request.app.locals.stores.preflightStore.getPendingPreflightParams(true);
+        const deployedKotsAppVersion = await request.app.locals.stores.kotsAppStore.getCurrentVersion(app.id, cluster.id);
+        const deployedAppSequence = deployedKotsAppVersion && deployedKotsAppVersion.sequence;
+        if (pendingPreflightURLs.length > 0) {
+          preflight = preflight.concat(pendingPreflightURLs);
+        }
+
+        if (deployedAppSequence > -1) {
+          const desiredNamespace = ".";
+          const kotsAppSpec = await app.getKotsAppSpec(cluster.id, request.app.locals.stores.kotsAppStore);
+
+          const rendered = await app.render(`${app.currentSequence}`, `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
+          const b = new Buffer(rendered);
+
+
+          const applicationManifests = {
+            "app_id": app.id,
+            kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
+            namespace: desiredNamespace,
+            manifests: b.toString("base64"),
+          };
+
+          present.push(applicationManifests);
+        }
       }
 
-      if (deployedAppSequence > -1) {
-        const desiredNamespace = ".";
-        const kotsAppSpec = await app.getKotsAppSpec(cluster.id, request.app.locals.stores.kotsAppStore);
-
-        const rendered = await app.render(`${app.currentSequence}`, `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
-        const b = new Buffer(rendered);
-
-
-        const applicationManifests = {
-          "app_id": app.id,
-          kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
-          namespace: desiredNamespace,
-          manifests: b.toString("base64"),
-        };
-
-        present.push(applicationManifests);
+      response.status(200);
+      return {
+        present,
+        missing,
+        preflight,
       }
-    }
-
-    response.status(200);
-    return {
-      present,
-      missing,
-      preflight,
+    } catch (err) {
+      console.log("getDesiredState failed:", err);
+      response.status(500);
+      return {};
     }
   }
 }
