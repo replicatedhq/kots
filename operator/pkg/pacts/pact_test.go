@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 var (

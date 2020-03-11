@@ -2,6 +2,8 @@ package appstate
 
 import (
 	"testing"
+
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_getResourceKindCommonName(t *testing.T) {
