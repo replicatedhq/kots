@@ -32,7 +32,6 @@ require (
 	github.com/mattn/go-isatty v0.0.9
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mtrmac/gpgme v0.1.2 // indirect
-	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913 // indirect
 	github.com/otiai10/copy v1.0.2
@@ -46,9 +45,8 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tj/go-spin v1.1.0
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
-	go.undefinedlabs.com/scopeagent v0.1.7
+	go.undefinedlabs.com/scopeagent v0.1.12
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
-	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20191105091915-95d230a53780 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2
 	k8s.io/apiextensions-apiserver v0.17.2

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_UnmarshalValues(t *testing.T) {

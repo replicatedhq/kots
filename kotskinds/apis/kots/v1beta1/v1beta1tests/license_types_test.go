@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/scheme"
+	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_License(t *testing.T) {
