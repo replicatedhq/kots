@@ -168,36 +168,36 @@ class AppSnapshotSettings extends Component {
     this.setState({ gcsServiceAccount: value });
   }
 
-  onSubmit = (e, snapshotAction) => {
+  onSubmit = async (e, snapshotAction) => {
     const { app } = this.props;
     
     e.preventDefault();
     switch (this.state.selectedDestination.value) {
       case "aws":
-        this.snapshotProviderAWS();
+        await this.snapshotProviderAWS();
         break;
       case "azure":
-        this.snapshotProviderAzure();
+        await this.snapshotProviderAzure();
         break;
       case "google":
-        this.snapshotProviderGoogle();
+        await this.snapshotProviderGoogle();
         break;
       case "s3compatible":
-        this.snapshotProviderS3Compatible();
+        await this.snapshotProviderS3Compatible();
         break;
     }
 
     if (snapshotAction === "start") {
-      this.props.refetchSnapshotSettings;
+      this.props.refetchSnapshotSettings();
       this.props.startManualSnapshot();
     } else {
       this.props.history.push(`/app/${app.slug}/snapshots/schedule`)
     }
   }
 
-  snapshotProviderAWS = () => {
+  snapshotProviderAWS = async () => {
     this.setState({ updatingSettings: true });
-    this.props.snapshotProviderAWS(
+    await this.props.snapshotProviderAWS(
       this.state.s3bucket,
       this.state.s3Path,
       this.state.s3Region,
@@ -218,9 +218,9 @@ class AppSnapshotSettings extends Component {
       });
   }
 
-  snapshotProviderAzure = () => {
+  snapshotProviderAzure = async () => {
     this.setState({ updatingSettings: true });
-    this.props.snapshotProviderAzure(
+    await this.props.snapshotProviderAzure(
       this.state.azureBucket,
       this.state.azurePath,
       this.state.azureTenantId,
@@ -245,9 +245,9 @@ class AppSnapshotSettings extends Component {
       });
   }
 
-  snapshotProviderGoogle = () => {
+  snapshotProviderGoogle = async () => {
     this.setState({ updatingSettings: true });
-    this.props.snapshotProviderGoogle(
+    await this.props.snapshotProviderGoogle(
       this.state.gcsBucket,
       this.state.gcsPath,
       this.state.gcsServiceAccount
@@ -266,9 +266,9 @@ class AppSnapshotSettings extends Component {
       });
   }
 
-  snapshotProviderS3Compatible = () => {
+  snapshotProviderS3Compatible = async () => {
     this.setState({ updatingSettings: true });
-    this.props.snapshotProviderS3Compatible(
+    await this.props.snapshotProviderS3Compatible(
       this.state.s3CompatibleBucket,
       this.state.s3CompatiblePath,
       this.state.s3CompatibleRegion,

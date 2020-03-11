@@ -6,7 +6,7 @@ import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import Modal from "react-modal";
-import { listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
+import { isVeleroInstalled, listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
 import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -28,12 +28,23 @@ class AppSnapshots extends Component {
     restoringSnapshot: false,
     snapshotToRestore: "",
     restoreErr: false,
-    restoreErrorMsg: ""
+    restoreErrorMsg: "",
+    configuration: {},
+    hideCheckVeleroButton: false
   };
 
   componentDidMount() {
     if (this.props.snapshots?.length) {
       this.props.snapshots.startPolling(2000);
+    }
+    if (this.props.snapshotSettings?.snapshotConfig) {
+      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
+    }
+  }
+
+  componentDidUpdate = (lastProps) => {
+    if (this.props.snapshotSettings?.snapshotConfig && this.props.snapshotSettings?.snapshotConfig !== lastProps.snapshotSettings?.snapshotConfig) {
+      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
     }
   }
 
@@ -135,8 +146,22 @@ class AppSnapshots extends Component {
   }
 
   checkForVelero = () => {
-    console.log("implement check for velero");
+    this.props.isVeleroInstalled.refetch().then((response) => {
+      this.setState({ hideCheckVeleroButton: true });
+      if (!response.data.isVeleroInstalled) {
+        setTimeout(() => {
+          this.setState({ hideCheckVeleroButton: false });
+        }, 5000);
+      } else {
+        this.setState({ hideCheckVeleroButton: false });
+      }
+    })
   }
+
+  renderNotVeleroMessage = () => {
+    return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Not able to find Velero</p>
+  }
+
 
 
   render() {
@@ -154,13 +179,14 @@ class AppSnapshots extends Component {
       restoringSnapshot,
       snapshotToRestore,
       restoreErr,
-      restoreErrorMsg
+      restoreErrorMsg,
+      configuration,
+      hideCheckVeleroButton
     } = this.state;
-    const { app, snapshots, snapshotSettings } = this.props;
+    const { app, snapshots, snapshotSettings, isVeleroInstalled } = this.props;
     const appTitle = app.name;
-    const veleroInstalled = true;
 
-    if (snapshots?.loading ||snapshotSettings?.loading) {
+    if (snapshots?.loading || snapshotSettings?.loading || isVeleroInstalled?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -168,23 +194,27 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (!veleroInstalled) {
+
+    if (!isVeleroInstalled.isVeleroInstalled) {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
             <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure application snapshots</p>
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">Snapshots are enabled for {appTitle || "your application"} however you need to install Velero before you will be able to capture any snapshots. After installing Velero on your cluster click the button below so that kotsadm can pick it up and you can begin creating applicaiton snapshots.</p>
             <div className="u-textAlign--center">
-              <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
+              {!hideCheckVeleroButton ?
+                <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
+                : this.renderNotVeleroMessage()
+              }
             </div>
           </div>
         </div>
       )
     }
 
-    if (!snapshotSettings?.snapshotConfig || !snapshotSettings?.snapshotConfig?.store) {
+    if (!configuration?.store) {
       return (
-        <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch()} />
+        <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch} />
       )
     }
 
@@ -217,7 +247,7 @@ class AppSnapshots extends Component {
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
             {startSnapshotErr ?
-              <div class="flex flex1">
+              <div class="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
@@ -288,6 +318,9 @@ class AppSnapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
+  graphql(isVeleroInstalled, {
+    name: "isVeleroInstalled"
+  }),
   graphql(listSnapshots, {
     name: "snapshots",
     options: ({ match }) => {
