@@ -201,13 +201,19 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		return nil, errors.Wrap(err, "failed to get files from release")
 	}
 
+	// get channel name from license, if one was provided
+	channelName := ""
+	if license != nil {
+		channelName = license.Spec.ChannelName
+	}
+
 	upstream := &types.Upstream{
 		URI:           u.RequestURI(),
 		Name:          application.Name,
 		Files:         files,
 		Type:          "replicated",
 		UpdateCursor:  release.UpdateCursor.Cursor,
-		ChannelName:   license.Spec.ChannelName,
+		ChannelName:   channelName,
 		VersionLabel:  release.VersionLabel,
 		ReleaseNotes:  release.ReleaseNotes,
 		EncryptionKey: cipher.ToString(),
