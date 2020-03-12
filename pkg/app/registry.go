@@ -19,13 +19,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type RegistrySettings struct {
-	Hostname    string
-	Username    string
-	PasswordEnc string
-	Namespace   string
-}
-
 func UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error {
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
