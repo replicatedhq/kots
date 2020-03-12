@@ -117,10 +117,15 @@ export class SupportBundle {
       };
 
       const tarGZStream = getS3(replicatedParams).getObject(params).createReadStream();
+      tarGZStream.on("error", err => {
+        reject(err);
+      });
 
-      tarGZStream.on("error", reject);
       const unzipperStream = zlib.createGunzip();
-      unzipperStream.on("error", reject);
+      unzipperStream.on("error", err => {
+        reject(err);
+      });
+
       tarGZStream.pipe(unzipperStream);
 
       const bundleUnpacker = new TarballUnpacker();
