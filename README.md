@@ -1,3 +1,6 @@
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/replicatedhq/kots) [![Scope](https://app.scope.dev/api/badge/90e6e263-0a67-4230-bb6c-d72d70a5413c/default)](https://app.scope.dev/external/v1/explore/28825e16-0dc1-4819-bea4-5ba2f04575ab/90e6e263-0a67-4230-bb6c-d72d70a5413c/default?branch=master)
+
+
 # Kubernetes Off-The-Shelf (KOTS) Software
 Replicated KOTS is the collective set of tools that enable the distribution and management of Kubernetes Off-The-Shelf (KOTS) software. The Kots CLI (a Kubectl plugin) is a general purpose, client-side binary for configuring and building dynamic Kubernetes manifests. The Kots CLI also serves as the bootstrapper for the in-cluster Kubernetes application Admin Console [kotsadm](https://github.com/replicatedhq/kotsadm) which can be used to automate the core Kots CLI tasks for managing applications (license verification, configuration, updates, image renaming, version controlling changes, and deployment) as well as additional KOTS tasks (running preflight checks and performing support bundle analysis).
 
