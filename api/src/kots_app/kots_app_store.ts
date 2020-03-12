@@ -880,6 +880,23 @@ order by sequence desc`;
     }
   }
 
+  async getDeployedVersionBackup(appId: string, clusterId: string): Promise<string|void> {
+    const q = `select app_version.backup_spec from app_version
+      inner join app_downstream on
+        app_version.sequence = app_downstream.current_sequence AND
+        app_version.app_id = app_downstream.app_id
+      where app_downstream.app_id = $1 and app_downstream.cluster_id = $2`;
+    const v = [
+      appId,
+      clusterId,
+    ];
+    const result = await this.pool.query(q, v);
+    if (result.rows.length === 0) {
+      return;
+    }
+    return result.rows[0].backup_spec;
+  }
+
   async getCurrentVersion(appId: string, clusterId: string): Promise<KotsVersion | undefined> {
     let q = `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`;
     let v = [
@@ -954,7 +971,7 @@ order by adv.sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, release_notes, status, sequence, applied_at from app_version where app_id = $1 and sequence = $2`;
+    q = `select created_at, version_label, release_notes, status, sequence, applied_at, backup_spec from app_version where app_id = $1 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -979,6 +996,7 @@ order by adv.sequence desc`;
       deployedAt: row.applied_at,
       preflightResult: row.preflight_result,
       preflightResultCreatedAt: row.preflight_result_created_at,
+      backupSpec: row.backup_spec,
     };
 
     return versionItem;
