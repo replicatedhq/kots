@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
@@ -23,7 +22,7 @@ type App struct {
 
 	// Additional fields will be added here as implementation is moved from node to go
 
-	RegistrySettings *types.RegistrySettings
+	RegistrySettings *RegistrySettings
 }
 
 type Downstream struct {
@@ -59,7 +58,7 @@ func Get(id string) (*App, error) {
 	}
 
 	if registryHostname.Valid {
-		registrySettings := types.RegistrySettings{
+		registrySettings := RegistrySettings{
 			Hostname:    registryHostname.String,
 			Username:    registryUsername.String,
 			PasswordEnc: registryPasswordEnc.String,
@@ -195,10 +194,11 @@ func (a App) createVersion(filesInDir string, source string, isFirstVersion bool
 		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
-	templatedPreflight, err := kotsutil.TemplateFile(preflightSpec, a.RegistrySettings, kotsKinds)
+	preflightBytes, err := a.RenderFile(kotsKinds, []byte(preflightSpec))
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to template preflight spec")
 	}
+	templatedPreflight := string(preflightBytes)
 
 	db := persistence.MustGetPGSession()
 

@@ -9,8 +9,78 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
+	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	yaml "github.com/replicatedhq/yaml/v3"
 )
+
+// RenderFile renders a single file
+// this is useful for upstream/kotskinds files that are not rendered in the dir
+func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]byte, error) {
+
+	yamlObj := map[string]interface{}{}
+	err := yaml.Unmarshal(inputContent, &yamlObj)
+	if err != nil {
+		return nil, err
+	}
+	inputContent, err = util.MarshalIndent(2, yamlObj)
+	if err != nil {
+		return nil, err
+	}
+
+	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load cipher")
+	}
+
+	localRegistry := template.LocalRegistry{}
+
+	if a.RegistrySettings != nil {
+		decodedPassword, err := base64.StdEncoding.DecodeString(a.RegistrySettings.PasswordEnc)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode")
+		}
+
+		decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt")
+		}
+
+		localRegistry.Host = a.RegistrySettings.Hostname
+		localRegistry.Namespace = a.RegistrySettings.Namespace
+		localRegistry.Username = a.RegistrySettings.Username
+		localRegistry.Password = string(decryptedPassword)
+	}
+
+	templateContextValues := make(map[string]template.ItemValue)
+	for k, v := range kotsKinds.ConfigValues.Spec.Values {
+		templateContextValues[k] = template.ItemValue{
+			Value:   v.Value,
+			Default: v.Default,
+		}
+	}
+
+	builder := template.Builder{
+		Ctx: []template.Ctx{
+			template.LicenseCtx{License: kotsKinds.License},
+			template.StaticCtx{},
+		},
+	}
+
+	configCtx, err := builder.NewConfigContext(kotsKinds.Config.Spec.Groups, templateContextValues, localRegistry, cipher, kotsKinds.License)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create builder")
+	}
+	builder.AddCtx(configCtx)
+
+	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render")
+	}
+
+	return []byte(rendered), nil
+}
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again

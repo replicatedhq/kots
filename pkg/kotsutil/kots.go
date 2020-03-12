@@ -9,12 +9,8 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kotsadm/pkg/app/types"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	yaml "github.com/replicatedhq/yaml/v3"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -292,54 +288,4 @@ func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigV
 	}
 
 	return obj.(*kotsv1beta1.ConfigValues), nil
-}
-
-// using the data in the passed kotskinds, makes a builder and templates the provided yaml file.
-func TemplateFile(filestring string, registry *types.RegistrySettings, kinds *KotsKinds) (string, error) {
-
-	// unmarshal and remarshal the yamlstring in order to fix line length splitting issues
-	yamlObj := map[string]interface{}{}
-	err := yaml.Unmarshal([]byte(filestring), &yamlObj)
-	if err != nil {
-		return "", err
-	}
-	filebytes, err := util.MarshalIndent(2, yamlObj)
-	if err != nil {
-		return "", err
-	}
-	filestring = string(filebytes)
-
-	build := template.Builder{
-		Ctx: []template.Ctx{
-			template.LicenseCtx{License: kinds.License},
-			template.StaticCtx{},
-		},
-	}
-
-	itemValues := map[string]template.ItemValue{}
-	for k, item := range kinds.ConfigValues.Spec.Values {
-		itemValues[k] = template.ItemValue{
-			Value:   item.Value,
-			Default: item.Default,
-		}
-	}
-
-	convertRegistry := template.LocalRegistry{}
-	if registry != nil {
-		convertRegistry = template.LocalRegistry{
-			Host:      registry.Hostname,
-			Namespace: registry.Namespace,
-			Username:  registry.Username,
-			Password:  registry.PasswordEnc,
-		}
-	}
-
-	configCtx, err := build.NewConfigContext(kinds.Config.Spec.Groups, itemValues, convertRegistry, nil, kinds.License)
-	if err != nil {
-		return "", err
-	}
-
-	build.AddCtx(configCtx)
-
-	return build.String(filestring)
 }
