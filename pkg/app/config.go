@@ -32,6 +32,10 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 }
 
 func needsConfiguration(configSpec string, configValuesSpec string, licenseSpec string) (bool, error) {
+	if configSpec == "" {
+		return false, nil
+	}
+
 	localRegistry := template.LocalRegistry{}
 	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), configSpec, configValuesSpec, licenseSpec, localRegistry)
 	if err != nil {
