@@ -206,6 +206,12 @@ func (a App) createVersion(filesInDir string, source string, isFirstVersion bool
 		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
+	preflightBytes, err := a.RenderFile(kotsKinds, []byte(preflightSpec))
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to template preflight spec")
+	}
+	templatedPreflight := string(preflightBytes)
+
 	db := persistence.MustGetPGSession()
 
 	tx, err := db.Begin()
@@ -252,7 +258,7 @@ backup_spec = EXCLUDED.backup_spec`
 		kotsKinds.Installation.Spec.EncryptionKey,
 		supportBundleSpec,
 		analyzersSpec,
-		preflightSpec,
+		templatedPreflight,
 		appSpec,
 		kotsAppSpec,
 		licenseSpec,
