@@ -18,10 +18,15 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/config"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/render"
 	"github.com/replicatedhq/kotsadm/pkg/session"
+	"github.com/replicatedhq/kotsadm/pkg/version"
+	versiontypes "github.com/replicatedhq/kotsadm/pkg/version/types"
 )
 
 type UpdateAppConfigRequest struct {
@@ -142,7 +147,7 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 		Success: false,
 	}
 
-	archiveDir, err := app.GetAppVersionArchive(updateApp.ID, sequence)
+	archiveDir, err := version.GetAppVersionArchive(updateApp.ID, sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app version archive"
 		return updateAppConfigResponse, err
@@ -160,7 +165,7 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 	requiredItemsTitles := make([]string, 0, 0)
 	for _, group := range req.ConfigGroups {
 		for _, item := range group.Items {
-			if app.IsRequiredItem(item) && app.IsUnsetItem(item) {
+			if config.IsRequiredItem(item) && config.IsUnsetItem(item) {
 				requiredItems = append(requiredItems, item.Name)
 				if item.Title != "" {
 					requiredItemsTitles = append(requiredItemsTitles, item.Title)
@@ -230,31 +235,36 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 		return updateAppConfigResponse, err
 	}
 
-	err = updateApp.RenderDir(archiveDir)
+	registrySettings, err := registry.GetRegistrySettingsForApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to get registry settings"
+		return updateAppConfigResponse, err
+	}
+	err = render.RenderDir(archiveDir, updateApp.ID, registrySettings)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
 	if req.CreateNewVersion {
-		newSequence, err := updateApp.CreateVersion(archiveDir, "Config Change")
+		newSequence, err := version.CreateVersion(updateApp.ID, archiveDir, "Config Change", updateApp.CurrentSequence)
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
 		}
 		sequence = newSequence
 
-		if err := app.CreateAppVersionArchive(updateApp.ID, newSequence, archiveDir); err != nil {
+		if err := version.CreateAppVersionArchive(updateApp.ID, newSequence, archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version archive"
 			return updateAppConfigResponse, err
 		}
 	} else {
-		if err := app.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
+		if err := config.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			return updateAppConfigResponse, err
 		}
 
-		if err := app.CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
+		if err := version.CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}
@@ -287,15 +297,15 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	return string(decrypted), nil
 }
 
-func getLaterVersions(versionedApp *app.App, startSequence int64) (int64, []app.AppVersion, error) {
-	versions, err := versionedApp.GetVersions()
+func getLaterVersions(versionedApp *app.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
+	versions, err := version.GetVersions(versionedApp.ID)
 	if err != nil {
 		return -1, nil, errors.Wrap(err, "failed to get app versions")
 	}
 
 	thisUpdateCursor := -1
 	latestSequenceWithUpdateCursor := startSequence
-	laterVersions := map[int]app.AppVersion{}
+	laterVersions := map[int]versiontypes.AppVersion{}
 	for _, version := range versions {
 		if version.Sequence == startSequence {
 			thisUpdateCursor = version.UpdateCursor
@@ -327,7 +337,7 @@ func getLaterVersions(versionedApp *app.App, startSequence int64) (int64, []app.
 	}
 	sort.Ints(keys)
 
-	sortedVersions := []app.AppVersion{}
+	sortedVersions := []versiontypes.AppVersion{}
 	for _, key := range keys {
 		sortedVersions = append(sortedVersions, laterVersions[key])
 	}

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/airgap"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -32,7 +32,7 @@ func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingApp, err := app.GetPendingAirgapUploadApp()
+	pendingApp, err := airgap.GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -65,7 +65,7 @@ func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 	go func() {
 		defer airgapBundle.Close()
-		if err := app.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password); err != nil {
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password); err != nil {
 			logger.Error(err)
 		}
 	}()

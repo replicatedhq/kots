@@ -2,9 +2,11 @@ package preflight
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/render"
 )
 
 func Run(appID string, sequence int64, archiveDir string) error {
@@ -12,9 +14,10 @@ func Run(appID string, sequence int64, archiveDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
+
 	if renderedKotsKinds.Preflight != nil {
 		// set the status to pending_preflights
-		if err := app.SetDownstreamVersionPendingPreflight(appID, int64(sequence)); err != nil {
+		if err := downstream.SetDownstreamVersionPendingPreflight(appID, int64(sequence)); err != nil {
 			return errors.Wrap(err, "failed to set downstream version pending preflight")
 		}
 
@@ -25,11 +28,12 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		a, err := app.Get(appID)
+		registrySettings, err := registry.GetRegistrySettingsForApp(appID)
 		if err != nil {
-			return errors.Wrap(err, "failed to get app")
+			return errors.Wrap(err, "failed to get registry settings for app")
 		}
-		renderedPreflight, err := a.RenderFile(renderedKotsKinds, []byte(renderedMarshalledPreflights))
+
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
@@ -47,7 +51,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			logger.Debug("preflight checks completed")
 		}()
 	} else {
-		if err := app.SetDownstreamVersionReady(appID, int64(sequence)); err != nil {
+		if err := downstream.SetDownstreamVersionReady(appID, int64(sequence)); err != nil {
 			return errors.Wrap(err, "failed to set downstream version ready")
 		}
 	}

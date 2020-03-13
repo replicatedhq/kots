@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/task"
 )
 
 type UpdateAppRegistryRequest struct {
@@ -44,7 +46,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, err := app.GetTaskStatus("image-rewrite")
+	currentStatus, err := task.GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -57,7 +59,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.ClearTaskStatus("image-rewrite"); err != nil {
+	if err := task.ClearTaskStatus("image-rewrite"); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
@@ -77,33 +79,33 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if hostname and namespace have not changed, we don't need to re-push
-	if foundApp.RegistrySettings != nil {
-		if foundApp.RegistrySettings.Hostname == updateAppRegistryRequest.Hostname {
-			if foundApp.RegistrySettings.Namespace == updateAppRegistryRequest.Namespace {
+	// if foundApp.RegistrySettings != nil {
+	// 	if foundApp.RegistrySettings.Hostname == updateAppRegistryRequest.Hostname {
+	// 		if foundApp.RegistrySettings.Namespace == updateAppRegistryRequest.Namespace {
 
-				err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
-				if err != nil {
-					logger.Error(err)
-					w.WriteHeader(500)
-					return
-				}
+	// 			err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+	// 			if err != nil {
+	// 				logger.Error(err)
+	// 				w.WriteHeader(500)
+	// 				return
+	// 			}
 
-				JSON(w, 200, updateAppRegistryResponse)
-				return
-			}
-		}
-	}
+	// 			JSON(w, 200, updateAppRegistryResponse)
+	// 			return
+	// 		}
+	// 	}
+	// }
 
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens
 	go func() {
-		if err := foundApp.RewriteImages(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
+		if err := registry.RewriteImages(foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
 			updateAppRegistryRequest.Namespace, nil); err != nil {
 			logger.Error(err)
 			return
 		}
 
-		err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+		err = registry.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
 		if err != nil {
 			logger.Error(err)
 			return

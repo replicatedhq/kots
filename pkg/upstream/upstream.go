@@ -1,4 +1,4 @@
-package app
+package upstream
 
 import (
 	"bufio"
@@ -12,18 +12,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/task"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 )
 
-func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
+func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := UpdateTaskStatusTimestamp("update-download"); err != nil {
+				if err := task.UpdateTaskStatusTimestamp("update-download"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -35,11 +39,11 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 	var finalError error
 	defer func() {
 		if finalError == nil {
-			if err := ClearTaskStatus("update-download"); err != nil {
+			if err := task.ClearTaskStatus("update-download"); err != nil {
 				logger.Error(err)
 			}
 		} else {
-			if err := SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+			if err := task.SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -57,7 +61,7 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := task.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -82,7 +86,12 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 		ReportWriter:        pipeWriter,
 	}
 
-	if a.RegistrySettings != nil {
+	registrySettings, err := registry.GetRegistrySettingsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings")
+	}
+
+	if registrySettings != nil {
 		pullOptions.RewriteImages = true
 
 		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
@@ -90,7 +99,7 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 			return errors.Wrap(err, "failed to create aes cipher")
 		}
 
-		decodedPassword, err := base64.StdEncoding.DecodeString(a.RegistrySettings.PasswordEnc)
+		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode")
 		}
@@ -101,9 +110,9 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 		}
 
 		pullOptions.RewriteImageOptions = kotspull.RewriteImageOptions{
-			Host:      a.RegistrySettings.Hostname,
-			Namespace: a.RegistrySettings.Namespace,
-			Username:  a.RegistrySettings.Username,
+			Host:      registrySettings.Hostname,
+			Namespace: registrySettings.Namespace,
+			Username:  registrySettings.Username,
 			Password:  string(decryptedPassword),
 		}
 	}
@@ -123,13 +132,18 @@ func DownloadUpdate(a *App, archiveDir string, toCursor string) error {
 		return nil // ?
 	}
 
-	newSequence, err := a.CreateVersion(archiveDir, "Upstream Update")
+	a, err := app.Get(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence)
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create version")
 	}
 
-	if err := CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
+	if err := version.CreateAppVersionArchive(appID, newSequence, archiveDir); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
 	}

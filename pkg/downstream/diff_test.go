@@ -1,11 +1,11 @@
-package app
+package downstream
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/go-playground/assert.v1"
 	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
+	"gopkg.in/go-playground/assert.v1"
 )
 
 func Test_diffContent(t *testing.T) {

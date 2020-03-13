@@ -1,4 +1,4 @@
-package app
+package downstream
 
 import (
 	"bufio"
@@ -40,7 +40,7 @@ func diffContent(updatedContent string, baseContent string) (int, int, error) {
 	return additions, deletions, nil
 }
 
-func diffAppVersionsForDownstreams(downstreamName string, archive string, diffBasePath string) (*Diff, error) {
+func DiffAppVersionsForDownstreams(downstreamName string, archive string, diffBasePath string) (*Diff, error) {
 	rootPathsToInclude := []string{
 		"base",
 		filepath.Join("overlays", "midstream"),

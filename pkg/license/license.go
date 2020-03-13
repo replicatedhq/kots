@@ -12,13 +12,15 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/render"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
-	archiveDir, err := app.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
@@ -68,22 +70,27 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to write new license")
 		}
 
-		if err := a.RenderDir(archiveDir); err != nil {
+		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
+
+		if err := render.RenderDir(archiveDir, a.ID, registrySettings); err != nil {
 			return nil, errors.Wrap(err, "failed to render new version")
 		}
 
-		newSequence, err := a.CreateVersion(archiveDir, "License Change")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create new version")
-		}
+		// newSequence, err := a.CreateVersion(archiveDir, "License Change")
+		// if err != nil {
+		// 	return nil, errors.Wrap(err, "failed to create new version")
+		// }
 
-		if err := app.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
-			return nil, errors.Wrap(err, "failed to upload")
-		}
+		// if err := version.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
+		// 	return nil, errors.Wrap(err, "failed to upload")
+		// }
 
-		if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
-			return nil, errors.Wrap(err, "failed to run preflights")
-		}
+		// if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+		// 	return nil, errors.Wrap(err, "failed to run preflights")
+		// }
 	}
 
 	return latestLicense, nil
