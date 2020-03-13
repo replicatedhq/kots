@@ -29,9 +29,9 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 		return nil, err
 	}
 
-	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load cipher")
+		return nil, errors.Wrap(err, "failed to load apiCipher")
 	}
 
 	localRegistry := template.LocalRegistry{}
@@ -42,7 +42,7 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 			return nil, errors.Wrap(err, "failed to decode")
 		}
 
-		decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
+		decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decrypt")
 		}
@@ -68,7 +68,12 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 		},
 	}
 
-	configCtx, err := builder.NewConfigContext(kotsKinds.Config.Spec.Groups, templateContextValues, localRegistry, cipher, kotsKinds.License)
+	appCipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load appCipher")
+	}
+
+	configCtx, err := builder.NewConfigContext(kotsKinds.Config.Spec.Groups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
