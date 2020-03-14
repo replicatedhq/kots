@@ -75,7 +75,7 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 	}
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
-	if kotsKinds.Config != nil {
+	if kotsKinds.Config != nil && kotsKinds.Config.Spec.Groups != nil {
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
