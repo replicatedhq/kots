@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -73,7 +74,12 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 		return nil, errors.Wrap(err, "failed to load appCipher")
 	}
 
-	configCtx, err := builder.NewConfigContext(kotsKinds.Config.Spec.Groups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if kotsKinds.Config != nil {
+		configGroups = kotsKinds.Config.Spec.Groups
+	}
+
+	configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
