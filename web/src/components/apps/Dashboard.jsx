@@ -11,7 +11,6 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
-import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -414,7 +413,7 @@ class Dashboard extends Component {
       // empty
     }
 
-    if (!app || !appLicense || isVeleroInstalled?.loading) {
+    if (!app || !appLicense) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -481,7 +480,7 @@ class Dashboard extends Component {
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
                     isSnapshotAllowed={app.allowSnapshots}
-                    isVeleroInstalled={isVeleroInstalled.isVeleroInstalled}
+                    isVeleroInstalled={isVeleroInstalled}
                   />
                   <DashboardCard
                     cardName="License"
@@ -571,9 +570,6 @@ export default compose(
         fetchPolicy: "no-cache"
       };
     }
-  }),
-  graphql(isVeleroInstalled, {
-    name: "isVeleroInstalled"
   }),
   graphql(setPrometheusAddress, {
     props: ({ mutate }) => ({

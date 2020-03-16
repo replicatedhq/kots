@@ -7,20 +7,24 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, watch } = props;
+  const { className, activeTab, watch, isVeleroInstalled } = props;
   let { slug } = watch;
 
-  if(isHelmChart(watch)) {
+  if (isHelmChart(watch)) {
     slug = `helm/${watch.id}`;
   }
   const kotsSequence = watch.currentSequence;
   return (
     <div className={classNames("details-subnav", className)}>
       <ul>
-        {subNavConfig.map( (link, idx) => {
+        {subNavConfig.map((link, idx) => {
           let hasBadge = false;
           if (link.hasBadge) {
             hasBadge = link.hasBadge(watch || {});
+          }
+          let veleroStatus = false;
+          if (link.veleroStatus) {
+            veleroStatus = link.veleroStatus(!isVeleroInstalled);
           }
           const generatedMenuItem = (
             <li
@@ -29,7 +33,7 @@ export default function SubNavBar(props) {
                 "is-active": activeTab === link.tabName
               })}>
               <Link to={link.to(slug, kotsSequence)}>
-                {link.displayName} {hasBadge && <span className="subnav-badge" />}
+                {veleroStatus && <span className="status-indicator failed" />} {link.displayName} {hasBadge && <span className="subnav-badge" />}
               </Link>
             </li>
           );
