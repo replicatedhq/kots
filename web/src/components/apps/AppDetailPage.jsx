@@ -8,6 +8,7 @@ import has from "lodash/has";
 
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
+import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
 import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -167,7 +168,8 @@ class AppDetailPage extends Component {
       listApps,
       refetchListApps,
       rootDidInitialAppFetch,
-      appName
+      appName,
+      isVeleroInstalled
     } = this.props;
     const {
       displayDownloadCommandModal,
@@ -185,7 +187,7 @@ class AppDetailPage extends Component {
     const refreshAppData = getKotsAppQuery.refetch;
 
     // if there is app, don't render a loader to avoid flickering
-    const loading = (getKotsAppQuery?.loading || !rootDidInitialAppFetch) && !app;
+    const loading = (getKotsAppQuery?.loading || !rootDidInitialAppFetch || isVeleroInstalled?.loading) && !app;
 
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
@@ -245,6 +247,7 @@ class AppDetailPage extends Component {
                     className="flex"
                     activeTab={match.params.tab || "app"}
                     watch={app}
+                    isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
@@ -258,6 +261,7 @@ class AppDetailPage extends Component {
                         makeCurrentVersion={this.makeCurrentRelease}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
+                        isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                       />}
                     />
 
@@ -420,6 +424,9 @@ export default compose(
         }
       }
     }
+  }),
+  graphql(isVeleroInstalled, {
+    name: "isVeleroInstalled"
   }),
   graphql(createKotsDownstream, {
     props: ({ mutate }) => ({

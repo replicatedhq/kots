@@ -395,7 +395,7 @@ class Dashboard extends Component {
       savingPromValue
     } = this.state;
 
-    const { app, isBundleUploading } = this.props;
+    const { app, isBundleUploading, isVeleroInstalled } = this.props;
 
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
     const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
@@ -480,6 +480,7 @@ class Dashboard extends Component {
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
                     isSnapshotAllowed={app.allowSnapshots}
+                    isVeleroInstalled={isVeleroInstalled}
                   />
                   <DashboardCard
                     cardName="License"
