@@ -11,6 +11,7 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -395,7 +396,7 @@ class Dashboard extends Component {
       savingPromValue
     } = this.state;
 
-    const { app, isBundleUploading } = this.props;
+    const { app, isBundleUploading, isVeleroInstalled } = this.props;
 
     const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
     const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
@@ -413,7 +414,7 @@ class Dashboard extends Component {
       // empty
     }
 
-    if (!app || !appLicense) {
+    if (!app || !appLicense || isVeleroInstalled?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -480,6 +481,7 @@ class Dashboard extends Component {
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
                     isSnapshotAllowed={app.allowSnapshots}
+                    isVeleroInstalled={isVeleroInstalled.isVeleroInstalled}
                   />
                   <DashboardCard
                     cardName="License"
@@ -569,6 +571,9 @@ export default compose(
         fetchPolicy: "no-cache"
       };
     }
+  }),
+  graphql(isVeleroInstalled, {
+    name: "isVeleroInstalled"
   }),
   graphql(setPrometheusAddress, {
     props: ({ mutate }) => ({

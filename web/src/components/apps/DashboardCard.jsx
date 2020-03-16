@@ -202,7 +202,7 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, isVeleroInstalled } = this.props;
 
 
     return (
@@ -210,7 +210,7 @@ export default class DashboardCard extends React.Component {
         <div className="flex u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 justifyContent--center">
-            <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 && "u-marginTop--10"}`}>
+            <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 ? "u-marginTop--10" : ""}`}>
               <p className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
@@ -224,7 +224,10 @@ export default class DashboardCard extends React.Component {
                 size(appLicense) > 0 ?
                   <Link to={`${url}/license`} className="card-link"> View license details </Link>
                   : isSnapshotAllowed ?
-                    <Link to={`${url}/snapshots`} className="card-link"> View snapshot details </Link>
+                    !isVeleroInstalled ?
+                      <span className="status-indicator failed"> Unavailable </span>
+                      :
+                      <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className="u-marginTop--15">
@@ -236,7 +239,10 @@ export default class DashboardCard extends React.Component {
                     : license ?
                       this.renderLicenseCard()
                       : isSnapshotAllowed ?
-                        null
+                        !isVeleroInstalled ?
+                          <a className="card-link" href="#" target="_blank" rel="noopener noreferrer"> Learn how to enable snapshots </a>
+                          :
+                          <Link to={`${url}/snapshots`} className="card-link"> Start snapshot </Link>
                         : null
                 }
               </div>
