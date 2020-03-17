@@ -1,4 +1,4 @@
-package app
+package gitops
 
 import (
 	"encoding/base64"
@@ -191,7 +191,7 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 	return provider, publicKey, privateKey, repoURI, nil
 }
 
-func createGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
+func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds")

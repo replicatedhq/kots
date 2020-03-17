@@ -18,13 +18,19 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/config"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/render"
 	"github.com/replicatedhq/kotsadm/pkg/session"
+	"github.com/replicatedhq/kotsadm/pkg/version"
+	versiontypes "github.com/replicatedhq/kotsadm/pkg/version/types"
 )
 
 type UpdateAppConfigRequest struct {
-	Sequence         int                        `json:"sequence"`
+	Sequence         int64                      `json:"sequence"`
 	CreateNewVersion bool                       `json:"createNewVersion"`
 	ConfigGroups     []*kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
@@ -127,7 +133,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	for _, version := range laterVersions {
 		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest, false)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "error creating app with new config based on seq %d for upstream %q", version.Sequence, version.VersionLabel))
+			logger.Error(errors.Wrapf(err, "error creating app with new config based on sequence %d for upstream %q", version.Sequence, version.VersionLabel))
 		}
 	}
 
@@ -136,12 +142,12 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
 // the app version with status needs_config
-func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
+func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
 
-	archiveDir, err := app.GetAppVersionArchive(updateApp.ID, seq)
+	archiveDir, err := version.GetAppVersionArchive(updateApp.ID, sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app version archive"
 		return updateAppConfigResponse, err
@@ -159,7 +165,7 @@ func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest, is
 	requiredItemsTitles := make([]string, 0, 0)
 	for _, group := range req.ConfigGroups {
 		for _, item := range group.Items {
-			if app.IsRequiredItem(item) && app.IsUnsetItem(item) {
+			if config.IsRequiredItem(item) && config.IsUnsetItem(item) {
 				requiredItems = append(requiredItems, item.Name)
 				if item.Title != "" {
 					requiredItemsTitles = append(requiredItemsTitles, item.Title)
@@ -229,45 +235,44 @@ func updateAppConfig(updateApp *app.App, seq int, req UpdateAppConfigRequest, is
 		return updateAppConfigResponse, err
 	}
 
-	err = updateApp.RenderDir(archiveDir)
+	registrySettings, err := registry.GetRegistrySettingsForApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to get registry settings"
+		return updateAppConfigResponse, err
+	}
+	err = render.RenderDir(archiveDir, updateApp.ID, registrySettings)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
 	if req.CreateNewVersion {
-		newSequence, err := updateApp.CreateVersion(archiveDir, "Config Change")
+		newSequence, err := version.CreateVersion(updateApp.ID, archiveDir, "Config Change", updateApp.CurrentSequence)
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
 		}
+		sequence = newSequence
 
-		if err := app.CreateAppVersionArchive(updateApp.ID, newSequence, archiveDir); err != nil {
+		if err := version.CreateAppVersionArchive(updateApp.ID, newSequence, archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version archive"
 			return updateAppConfigResponse, err
 		}
 	} else {
-		if err := app.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(seq)); err != nil {
+		if err := config.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			return updateAppConfigResponse, err
 		}
 
-		if kotsKinds.Preflight != nil {
-			if err := app.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(seq)); err != nil {
-				updateAppConfigResponse.Error = "failed to set downstream version pending preflight"
-				return updateAppConfigResponse, err
-			}
-		} else {
-			if err := app.SetDownstreamVersionReady(updateApp.ID, int64(seq)); err != nil {
-				updateAppConfigResponse.Error = "failed to set downstream version ready"
-				return updateAppConfigResponse, err
-			}
-		}
-
-		if err := app.CreateAppVersionArchive(updateApp.ID, int64(seq), archiveDir); err != nil {
+		if err := version.CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}
+	}
+
+	if err := preflight.Run(updateApp.ID, int64(sequence), archiveDir); err != nil {
+		updateAppConfigResponse.Error = errors.Cause(err).Error()
+		return updateAppConfigResponse, err
 	}
 
 	updateAppConfigResponse.Success = true
@@ -292,22 +297,22 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	return string(decrypted), nil
 }
 
-func getLaterVersions(versionedApp *app.App, startSeq int) (int, []app.AppVersion, error) {
-	versions, err := versionedApp.GetVersions()
+func getLaterVersions(versionedApp *app.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
+	versions, err := version.GetVersions(versionedApp.ID)
 	if err != nil {
 		return -1, nil, errors.Wrap(err, "failed to get app versions")
 	}
 
 	thisUpdateCursor := -1
-	latestSequenceWithUpdateCursor := startSeq
-	laterVersions := map[int]app.AppVersion{}
+	latestSequenceWithUpdateCursor := startSequence
+	laterVersions := map[int]versiontypes.AppVersion{}
 	for _, version := range versions {
-		if version.Sequence == startSeq {
+		if version.Sequence == startSequence {
 			thisUpdateCursor = version.UpdateCursor
 		}
 	}
 	if thisUpdateCursor == -1 {
-		err := fmt.Errorf("unable to find update cursor for sequence %d in %+v", startSeq, versions)
+		err := fmt.Errorf("unable to find update cursor for sequence %d in %+v", startSequence, versions)
 		return -1, nil, err
 	}
 	for _, version := range versions {
@@ -332,7 +337,7 @@ func getLaterVersions(versionedApp *app.App, startSeq int) (int, []app.AppVersio
 	}
 	sort.Ints(keys)
 
-	sortedVersions := []app.AppVersion{}
+	sortedVersions := []versiontypes.AppVersion{}
 	for _, key := range keys {
 		sortedVersions = append(sortedVersions, laterVersions[key])
 	}

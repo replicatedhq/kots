@@ -1,4 +1,4 @@
-package app
+package render
 
 import (
 	"encoding/base64"
@@ -11,23 +11,18 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	yaml "github.com/replicatedhq/yaml/v3"
+	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
 )
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]byte, error) {
-
-	yamlObj := map[string]interface{}{}
-	err := yaml.Unmarshal(inputContent, &yamlObj)
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
+	inputContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
-		return nil, err
-	}
-	inputContent, err = util.MarshalIndent(2, yamlObj)
-	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
@@ -37,8 +32,8 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 
 	localRegistry := template.LocalRegistry{}
 
-	if a.RegistrySettings != nil {
-		decodedPassword, err := base64.StdEncoding.DecodeString(a.RegistrySettings.PasswordEnc)
+	if registrySettings != nil {
+		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decode")
 		}
@@ -48,9 +43,9 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 			return nil, errors.Wrap(err, "failed to decrypt")
 		}
 
-		localRegistry.Host = a.RegistrySettings.Hostname
-		localRegistry.Namespace = a.RegistrySettings.Namespace
-		localRegistry.Username = a.RegistrySettings.Username
+		localRegistry.Host = registrySettings.Hostname
+		localRegistry.Namespace = registrySettings.Namespace
+		localRegistry.Username = registrySettings.Username
 		localRegistry.Password = string(decryptedPassword)
 	}
 
@@ -89,7 +84,7 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (a *App) RenderDir(archiveDir string) error {
+func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -105,9 +100,15 @@ func (a *App) RenderDir(archiveDir string) error {
 		return errors.Wrap(err, "failed to load config values from path")
 	}
 
-	downstreams := []string{}
-	for _, downstream := range a.Downstreams {
-		downstreams = append(downstreams, downstream.Name)
+	// get the downstream names only
+	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+
+	downstreamNames := []string{}
+	for _, d := range downstreams {
+		downstreamNames = append(downstreamNames, d.Name)
 	}
 
 	k8sNamespace := "default"
@@ -118,12 +119,17 @@ func (a *App) RenderDir(archiveDir string) error {
 		k8sNamespace = os.Getenv("POD_NAMESPACE")
 	}
 
+	a, err := app.Get(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
 	reOptions := rewrite.RewriteOptions{
 		RootDir:          archiveDir,
 		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
 		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
 		Installation:     installation,
-		Downstreams:      downstreams,
+		Downstreams:      downstreamNames,
 		Silent:           true,
 		CreateAppDir:     false,
 		ExcludeKotsKinds: true,
@@ -134,13 +140,13 @@ func (a *App) RenderDir(archiveDir string) error {
 		IsAirgap:         a.IsAirgap,
 	}
 
-	if a.RegistrySettings != nil {
+	if registrySettings != nil {
 		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 		if err != nil {
 			return errors.Wrap(err, "failed to create aes cipher")
 		}
 
-		decodedPassword, err := base64.StdEncoding.DecodeString(a.RegistrySettings.PasswordEnc)
+		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode")
 		}
@@ -150,9 +156,9 @@ func (a *App) RenderDir(archiveDir string) error {
 			return errors.Wrap(err, "failed to decrypt")
 		}
 
-		reOptions.RegistryEndpoint = a.RegistrySettings.Hostname
-		reOptions.RegistryNamespace = a.RegistrySettings.Namespace
-		reOptions.RegistryUsername = a.RegistrySettings.Username
+		reOptions.RegistryEndpoint = registrySettings.Hostname
+		reOptions.RegistryNamespace = registrySettings.Namespace
+		reOptions.RegistryUsername = registrySettings.Username
 		reOptions.RegistryPassword = string(decryptedPassword)
 	}
 

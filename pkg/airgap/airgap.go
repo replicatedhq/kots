@@ -1,4 +1,4 @@
-package app
+package airgap
 
 import (
 	"archive/tar"
@@ -15,8 +15,12 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/task"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -53,7 +57,7 @@ func GetPendingAirgapUploadApp() (*PendingApp, error) {
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
 func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, registryHost string, namespace string, username string, password string) error {
-	if err := SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
+	if err := task.SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
 
@@ -63,7 +67,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := UpdateTaskStatusTimestamp("airgap-install"); err != nil {
+				if err := task.UpdateTaskStatusTimestamp("airgap-install"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -75,14 +79,14 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	var finalError error
 	defer func() {
 		if finalError == nil {
-			if err := ClearTaskStatus("airgap-install"); err != nil {
+			if err := task.ClearTaskStatus("airgap-install"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to clear install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
 			}
 		} else {
-			if err := SetTaskStatus("airgap-install", finalError.Error(), "failed"); err != nil {
+			if err := task.SetTaskStatus("airgap-install", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
@@ -115,13 +119,13 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 
 	// Extract it
 	// we seem to need a lot of temp dirs here... maybe too many?
-	archiveDir, err := ExtractArchiveToTempDirectory(tmpFile.Name())
+	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to extract archive")
 	}
 
-	if err := SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
+	if err := task.SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -170,7 +174,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := SetTaskStatus("airgap-install", scanner.Text(), "running"); err != nil {
+			if err := task.SetTaskStatus("airgap-install", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -239,13 +243,13 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		}
 	}
 
-	a, err := Get(pendingApp.ID)
+	a, err := app.Get(pendingApp.ID)
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to get app from pending app")
 	}
 
-	if err := UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {
+	if err := registry.UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to update registry")
 	}
@@ -257,13 +261,13 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		return errors.Wrap(err, "failed to update app to installed")
 	}
 
-	newSequence, err := a.CreateFirstVersion(tmpRoot, "Airgap Upload")
+	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload")
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
+	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
 	}

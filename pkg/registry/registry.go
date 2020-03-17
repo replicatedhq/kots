@@ -1,7 +1,8 @@
-package app
+package registry
 
 import (
 	"bufio"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -13,17 +14,44 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
+	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kotsadm/pkg/task"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 	"go.uber.org/zap"
 )
 
-type RegistrySettings struct {
-	Hostname    string
-	Username    string
-	PasswordEnc string
-	Namespace   string
+func GetRegistrySettingsForApp(appID string) (*types.RegistrySettings, error) {
+	db := persistence.MustGetPGSession()
+	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+	row := db.QueryRow(query, appID)
+
+	var registryHostname sql.NullString
+	var registryUsername sql.NullString
+	var registryPasswordEnc sql.NullString
+	var registryNamespace sql.NullString
+
+	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
+		return nil, errors.Wrap(err, "failed to scan registry")
+	}
+
+	if !registryHostname.Valid {
+		return nil, nil
+	}
+
+	registrySettings := types.RegistrySettings{
+		Hostname:    registryHostname.String,
+		Username:    registryUsername.String,
+		PasswordEnc: registryPasswordEnc.String,
+		Namespace:   registryNamespace.String,
+	}
+
+	return &registrySettings, nil
 }
 
 func UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error {
@@ -49,8 +77,8 @@ func UpdateRegistry(appID string, hostname string, username string, password str
 
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
-func (a App) RewriteImages(hostname string, username string, password string, namespace string, configValues *kotsv1beta1.ConfigValues) error {
-	if err := SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, configValues *kotsv1beta1.ConfigValues) error {
+	if err := task.SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -60,7 +88,7 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := UpdateTaskStatusTimestamp("image-rewrite"); err != nil {
+				if err := task.UpdateTaskStatusTimestamp("image-rewrite"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -72,18 +100,18 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 	var finalError error
 	defer func() {
 		if finalError == nil {
-			if err := ClearTaskStatus("image-rewrite"); err != nil {
+			if err := task.ClearTaskStatus("image-rewrite"); err != nil {
 				logger.Error(err)
 			}
 		} else {
-			if err := SetTaskStatus("image-rewrite", finalError.Error(), "failed"); err != nil {
+			if err := task.SetTaskStatus("image-rewrite", finalError.Error(), "failed"); err != nil {
 				logger.Error(err)
 			}
 		}
 	}()
 
 	// get the archive and store it in a temporary location
-	appDir, err := GetAppVersionArchive(a.ID, a.CurrentSequence)
+	appDir, err := version.GetAppVersionArchive(appID, sequence)
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to get app version archive")
@@ -113,9 +141,19 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 	}
 
 	// get the downstream names only
-	downstreams := []string{}
-	for _, downstream := range a.Downstreams {
-		downstreams = append(downstreams, downstream.Name)
+	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+
+	downstreamNames := []string{}
+	for _, d := range downstreams {
+		downstreamNames = append(downstreamNames, d.Name)
+	}
+
+	a, err := app.Get(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
 	}
 
 	// dev_namespace makes the dev env work
@@ -131,7 +169,7 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := SetTaskStatus("image-rewrite", scanner.Text(), "running"); err != nil {
+			if err := task.SetTaskStatus("image-rewrite", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -143,7 +181,7 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 		UpstreamURI:       fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
 		UpstreamPath:      filepath.Join(appDir, "upstream"),
 		Installation:      installation,
-		Downstreams:       downstreams,
+		Downstreams:       downstreamNames,
 		CreateAppDir:      false,
 		ExcludeKotsKinds:  true,
 		License:           license,
@@ -163,15 +201,20 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 		return errors.Wrap(err, "failed to rewrite images")
 	}
 
-	newSequence, err := a.CreateVersion(appDir, "Registry Change")
+	newSequence, err := version.CreateVersion(appID, appDir, "Registry Change", a.CurrentSequence)
 	if err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := CreateAppVersionArchive(a.ID, newSequence, appDir); err != nil {
+	if err := version.CreateAppVersionArchive(appID, newSequence, appDir); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to upload app version")
+	}
+
+	if err := preflight.Run(appID, newSequence, appDir); err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to run preflights")
 	}
 
 	return nil
