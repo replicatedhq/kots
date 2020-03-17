@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// execute will execute the preflights using spec in renderedPreflights.
+// execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
 func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Preflight) error {
 	logger.Debug("executing preflight checks",

@@ -46,6 +46,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 		}
 
 		go func() {
+			logger.Debug("preflight checks beginning")
 			if err := execute(appID, sequence, p); err != nil {
 				logger.Error(err)
 				return
