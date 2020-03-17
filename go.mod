@@ -47,8 +47,6 @@ require (
 	github.com/tj/go-spin v1.1.0
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	go.undefinedlabs.com/scopeagent v0.1.12
-	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
-	go.undefinedlabs.com/scopeagent v0.1.7
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2

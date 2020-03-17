@@ -31,7 +31,6 @@ func NewBuilder(configGroups []kotsv1beta1.ConfigGroup, existingValues map[strin
 	b.Ctx = []Ctx{
 		StaticCtx{},
 		LicenseCtx{License: license},
-		NewKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		configCtx,
 	}
 	return b, configCtx.ItemValues, nil
