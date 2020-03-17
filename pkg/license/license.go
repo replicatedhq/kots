@@ -12,6 +12,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kotsadm/pkg/render"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -79,18 +80,18 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to render new version")
 		}
 
-		// newSequence, err := a.CreateVersion(archiveDir, "License Change")
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to create new version")
-		// }
+		newSequence, err := version.CreateVersion(a.ID, archiveDir, "License Change", a.CurrentSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create new version")
+		}
 
-		// if err := version.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
-		// 	return nil, errors.Wrap(err, "failed to upload")
-		// }
+		if err := version.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
+			return nil, errors.Wrap(err, "failed to upload")
+		}
 
-		// if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
-		// 	return nil, errors.Wrap(err, "failed to run preflights")
-		// }
+		if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+			return nil, errors.Wrap(err, "failed to run preflights")
+		}
 	}
 
 	return latestLicense, nil
