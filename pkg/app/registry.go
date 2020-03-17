@@ -104,7 +104,7 @@ func (a App) RewriteImages(hostname string, username string, password string, na
 
 	if configValues == nil {
 		previousConfigValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
-		if err != nil {
+		if err != nil && !os.IsNotExist(errors.Cause(err)) {
 			finalError = err
 			return errors.Wrap(err, "failed to load config values from path")
 		}

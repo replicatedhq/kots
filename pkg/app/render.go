@@ -55,10 +55,12 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 	}
 
 	templateContextValues := make(map[string]template.ItemValue)
-	for k, v := range kotsKinds.ConfigValues.Spec.Values {
-		templateContextValues[k] = template.ItemValue{
-			Value:   v.Value,
-			Default: v.Default,
+	if kotsKinds.ConfigValues != nil {
+		for k, v := range kotsKinds.ConfigValues.Spec.Values {
+			templateContextValues[k] = template.ItemValue{
+				Value:   v.Value,
+				Default: v.Default,
+			}
 		}
 	}
 
@@ -107,7 +109,7 @@ func (a *App) RenderDir(archiveDir string) error {
 	}
 
 	configValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"))
-	if err != nil {
+	if err != nil && !os.IsNotExist(errors.Cause(err)) {
 		return errors.Wrap(err, "failed to load config values from path")
 	}
 
