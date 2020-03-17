@@ -1,6 +1,7 @@
 package version
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kotsadm/pkg/render"
 	"github.com/replicatedhq/kotsadm/pkg/version/types"
 )
@@ -76,12 +78,12 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 
 	// TODO: solve
 
-	// registrySettings, err := registry.GetRegistrySettingsForApp(appID)
-	// if err != nil {
-	// 	return int64(0), errors.Wrap(err, "failed to get registry settings")
-	// }
+	registrySettings, err := getRegistrySettingsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get registry settings")
+	}
 
-	preflightBytes, err := render.RenderFile(kotsKinds, nil, []byte(preflightSpec))
+	preflightBytes, err := render.RenderFile(kotsKinds, registrySettings, []byte(preflightSpec))
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to template preflight spec")
 	}
@@ -273,4 +275,33 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 	}
 
 	return versions, nil
+}
+
+// this is a copy from registry.  so many import cycles to unwind here, todo
+func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
+	db := persistence.MustGetPGSession()
+	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+	row := db.QueryRow(query, appID)
+
+	var registryHostname sql.NullString
+	var registryUsername sql.NullString
+	var registryPasswordEnc sql.NullString
+	var registryNamespace sql.NullString
+
+	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
+		return nil, errors.Wrap(err, "failed to scan registry")
+	}
+
+	if !registryHostname.Valid {
+		return nil, nil
+	}
+
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:    registryHostname.String,
+		Username:    registryUsername.String,
+		PasswordEnc: registryPasswordEnc.String,
+		Namespace:   registryNamespace.String,
+	}
+
+	return &registrySettings, nil
 }
