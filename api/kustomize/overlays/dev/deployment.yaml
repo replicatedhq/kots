@@ -38,7 +38,7 @@ spec:
             - name: SHIP_API_ENDPOINT
               value: http://kotsadm-api.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
-              value: http://localhost:30065
+              value: http://127.0.0.1:30065
             - name: GRAPHQL_PREM_ENDPOINT
               value: http://graphql-api-prem:3000/graphql
             - name: AUTO_CREATE_CLUSTER
