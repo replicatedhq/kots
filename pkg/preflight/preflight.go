@@ -1,11 +1,14 @@
 package preflight
 
 import (
+	"database/sql"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kotsadm/pkg/render"
 )
 
@@ -28,7 +31,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		registrySettings, err := registry.GetRegistrySettingsForApp(appID)
+		registrySettings, err := getRegistrySettingsForApp(appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
@@ -57,4 +60,33 @@ func Run(appID string, sequence int64, archiveDir string) error {
 	}
 
 	return nil
+}
+
+// this is a copy from registry.  so many import cycles to unwind here, todo
+func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
+	db := persistence.MustGetPGSession()
+	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+	row := db.QueryRow(query, appID)
+
+	var registryHostname sql.NullString
+	var registryUsername sql.NullString
+	var registryPasswordEnc sql.NullString
+	var registryNamespace sql.NullString
+
+	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
+		return nil, errors.Wrap(err, "failed to scan registry")
+	}
+
+	if !registryHostname.Valid {
+		return nil, nil
+	}
+
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:    registryHostname.String,
+		Username:    registryUsername.String,
+		PasswordEnc: registryPasswordEnc.String,
+		Namespace:   registryNamespace.String,
+	}
+
+	return &registrySettings, nil
 }

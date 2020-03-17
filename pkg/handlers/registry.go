@@ -79,22 +79,29 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if hostname and namespace have not changed, we don't need to re-push
-	// if foundApp.RegistrySettings != nil {
-	// 	if foundApp.RegistrySettings.Hostname == updateAppRegistryRequest.Hostname {
-	// 		if foundApp.RegistrySettings.Namespace == updateAppRegistryRequest.Namespace {
+	registrySettings, err := registry.GetRegistrySettingsForApp(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 
-	// 			err = app.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
-	// 			if err != nil {
-	// 				logger.Error(err)
-	// 				w.WriteHeader(500)
-	// 				return
-	// 			}
+	if registrySettings != nil {
+		if registrySettings.Hostname == updateAppRegistryRequest.Hostname {
+			if registrySettings.Namespace == updateAppRegistryRequest.Namespace {
 
-	// 			JSON(w, 200, updateAppRegistryResponse)
-	// 			return
-	// 		}
-	// 	}
-	// }
+				err = registry.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+				if err != nil {
+					logger.Error(err)
+					w.WriteHeader(500)
+					return
+				}
+
+				JSON(w, 200, updateAppRegistryResponse)
+				return
+			}
+		}
+	}
 
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens

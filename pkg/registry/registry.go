@@ -14,11 +14,12 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
+	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kotsadm/pkg/task"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -142,7 +143,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	// get the downstream names only
 	downstreams, err := downstream.ListDownstreamsForApp(appID)
 	if err != nil {
-		return  errors.Wrap(err, "failed to list downstreams")
+		return errors.Wrap(err, "failed to list downstreams")
 	}
 
 	downstreamNames := []string{}
@@ -176,10 +177,10 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}()
 
 	options := rewrite.RewriteOptions{
-		RootDir:      appDir,
-		UpstreamURI:  fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath: filepath.Join(appDir, "upstream"),
-		Installation: installation,
+		RootDir:           appDir,
+		UpstreamURI:       fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:      filepath.Join(appDir, "upstream"),
+		Installation:      installation,
 		Downstreams:       downstreamNames,
 		CreateAppDir:      false,
 		ExcludeKotsKinds:  true,
@@ -200,16 +201,21 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return errors.Wrap(err, "failed to rewrite images")
 	}
 
-	// newSequence, err := version.CreateVersion(appID, appDir, "Registry Change")
-	// if err != nil {
-	// 	finalError = err
-	// 	return errors.Wrap(err, "failed to create new version")
-	// }
+	newSequence, err := version.CreateVersion(appID, appDir, "Registry Change", a.CurrentSequence)
+	if err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to create new version")
+	}
 
-	// if err := version.CreateAppVersionArchive(a.ID, newSequence, appDir); err != nil {
-	// 	finalError = err
-	// 	return errors.Wrap(err, "failed to upload app version")
-	// }
+	if err := version.CreateAppVersionArchive(appID, newSequence, appDir); err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to upload app version")
+	}
+
+	if err := preflight.Run(appID, newSequence, appDir); err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to run preflights")
+	}
 
 	return nil
 }
