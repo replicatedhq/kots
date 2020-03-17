@@ -590,6 +590,8 @@ github.com/replicatedhq/troubleshoot v0.9.27-0.20200310004312-d9625477d2a5 h1:dr
 github.com/replicatedhq/troubleshoot v0.9.27-0.20200310004312-d9625477d2a5/go.mod h1:hTdyiE0k5AjRO+bCgZcYKXDCw+m+RULTuw55i6FfFEY=
 github.com/replicatedhq/troubleshoot v0.9.27-0.20200312233845-35808423b22b h1:cBLqvFU0a/2ZeN06iMP4D7GpDK3IvGhPQ7WfLbQCmT0=
 github.com/replicatedhq/troubleshoot v0.9.27-0.20200312233845-35808423b22b/go.mod h1:Uhf5OIgXvM89Y6clH3a8oZeoo7BrWJV74aBsfmJmCC0=
+github.com/replicatedhq/troubleshoot v0.9.27-0.20200317213638-f37bbdb14cee h1:0wI2jbEvR95XhNzF7deEhxZh4fKRaI1efpAOlmVs1q0=
+github.com/replicatedhq/troubleshoot v0.9.27-0.20200317213638-f37bbdb14cee/go.mod h1:Uhf5OIgXvM89Y6clH3a8oZeoo7BrWJV74aBsfmJmCC0=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
