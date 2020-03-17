@@ -64,13 +64,6 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 		}
 	}
 
-	builder := template.Builder{
-		Ctx: []template.Ctx{
-			template.LicenseCtx{License: kotsKinds.License},
-			template.StaticCtx{},
-		},
-	}
-
 	appCipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load appCipher")
@@ -81,11 +74,10 @@ func (a *App) RenderFile(kotsKinds *kotsutil.KotsKinds, inputContent []byte) ([]
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	configCtx, err := builder.NewConfigContext(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
-	builder.AddCtx(configCtx)
 
 	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
 	if err != nil {
