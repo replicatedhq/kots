@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kotsadm/pkg/task"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -146,6 +147,11 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 	if err := version.CreateAppVersionArchive(appID, newSequence, archiveDir); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
+	}
+
+	if err := preflight.Run(appID, newSequence, archiveDir); err != nil {
+		finalError = err
+		return errors.Wrap(err, "failed to run preflights")
 	}
 
 	return nil
