@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"github.com/pkg/errors"
@@ -31,7 +31,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func needsConfiguration(configSpec string, configValuesSpec string, licenseSpec string) (bool, error) {
+func NeedsConfiguration(configSpec string, configValuesSpec string, licenseSpec string) (bool, error) {
 	if configSpec == "" {
 		return false, nil
 	}

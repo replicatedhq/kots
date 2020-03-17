@@ -289,3 +289,20 @@ func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigV
 
 	return obj.(*kotsv1beta1.ConfigValues), nil
 }
+
+func LoadPreflightFromContents(content []byte) (*troubleshootv1beta1.Preflight, error) {
+	troubleshootscheme.AddToScheme(scheme.Scheme)
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "not a preflight")
+	}
+
+	if gvk.String() != "troubleshoot.replicated.com/v1beta1, Kind=Preflight" {
+		return nil, errors.New("not a preflight")
+	}
+
+	return obj.(*troubleshootv1beta1.Preflight), nil
+}

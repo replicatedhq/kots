@@ -15,6 +15,9 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/license"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/session"
+	"github.com/replicatedhq/kotsadm/pkg/task"
+	"github.com/replicatedhq/kotsadm/pkg/upstream"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 )
 
 type AppUpdateCheckRequest struct {
@@ -53,7 +56,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, err := app.GetTaskStatus("update-download")
+	currentStatus, err := task.GetTaskStatus("update-download")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -70,7 +73,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.ClearTaskStatus("update-download"); err != nil {
+	if err := task.ClearTaskStatus("update-download"); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
@@ -93,7 +96,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// download the app
-	archiveDir, err := app.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -149,7 +152,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		defer os.RemoveAll(archiveDir)
 		for _, update := range updates {
 			// the latest version is in archive dir
-			if err := app.DownloadUpdate(foundApp, archiveDir, update.Cursor); err != nil {
+			if err := upstream.DownloadUpdate(foundApp.ID, archiveDir, update.Cursor); err != nil {
 				logger.Error(err)
 			}
 

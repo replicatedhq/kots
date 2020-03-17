@@ -51,7 +51,7 @@ export class KotsDeploySocketService {
             this.troubleshootStore = new TroubleshootStore(pool, params);
             this.clusterSocketHistory = [];
 
-            setInterval(this.preflightLoop.bind(this), 1000);
+            setInterval(this.deployLoop.bind(this), 1000);
             setInterval(this.supportBundleLoop.bind(this), 1000);
             setInterval(this.restoreLoop.bind(this), 1000);
           })
@@ -249,7 +249,7 @@ export class KotsDeploySocketService {
   }
 
   // tslint:disable-next-line cyclomatic-complexity
-  async preflightLoop() {
+  async deployLoop() {
     if (!this.clusterSocketHistory) {
       return;
     }
@@ -259,17 +259,6 @@ export class KotsDeploySocketService {
       for (const app of apps) {
         if (app.restoreInProgressName) {
           continue;
-        }
-        const pendingPreflightParams = await this.preflightStore.getPendingPreflightParams(true);
-        for (const param of pendingPreflightParams) {
-          if (clusterSocketHistory.sentPreflightUrls[param.url] !== param.ignorePermissions) {
-            const msg = {
-              uri: param.url,
-              ignorePermissions: param.ignorePermissions
-            }
-            this.io.in(clusterSocketHistory.clusterId).emit("preflight", msg);
-            clusterSocketHistory.sentPreflightUrls[param.url] = param.ignorePermissions;
-          }
         }
 
         const deployedAppVersion = await this.kotsAppStore.getCurrentVersion(app.id, clusterSocketHistory.clusterId);
