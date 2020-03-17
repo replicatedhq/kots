@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/license"
@@ -82,6 +84,14 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// reload app because license sync could have created a new release
+	foundApp, err = app.Get(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	// download the app
 	archiveDir, err := app.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
 	if err != nil {
@@ -108,7 +118,14 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			w.WriteHeader(500)
+			w.Write([]byte(cause.Error()))
+		} else {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+		}
 		return
 	}
 
@@ -137,7 +154,6 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			}
 
 		}
-
 	}()
 
 	JSON(w, 200, appUpdateCheckResponse)

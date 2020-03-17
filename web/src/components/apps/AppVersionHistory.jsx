@@ -491,6 +491,7 @@ class AppVersionHistory extends Component {
       checkingForUpdates: true,
       checkingForUpdateError: false,
       errorCheckingUpdate: false,
+      checkingUpdateMessage: "",
     });
 
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
@@ -501,6 +502,15 @@ class AppVersionHistory extends Component {
       method: "POST",
     })
       .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          this.setState({
+            errorCheckingUpdate: true,
+            checkingForUpdates: false,
+            checkingUpdateMessage: text,
+          });
+          return;
+        }
         this.props.refreshAppData();
         const response = await res.json();
         if (response.availableUpdates === 0) {
@@ -521,6 +531,7 @@ class AppVersionHistory extends Component {
         this.setState({
           errorCheckingUpdate: true,
           checkingForUpdates: false,
+          checkingUpdateMessage: String(err),
         });
       });
   }
@@ -758,6 +769,8 @@ class AppVersionHistory extends Component {
       );
     }
 
+    const errorText = checkingUpdateMessage ? checkingUpdateMessage : "Error checking for updates, please try again";
+
     let updateText;
     if (airgapUploadError) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{airgapUploadError}</p>;
@@ -778,7 +791,7 @@ class AppVersionHistory extends Component {
           smallSize={true}
         />);
     } else if (errorCheckingUpdate) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{errorText}</p>
     } else if (checkingForUpdates) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {
