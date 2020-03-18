@@ -14,6 +14,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func kotsadmClusterRole() *rbacv1.ClusterRole {
+	clusterRole := &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-role",
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+			},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     metav1.Verbs{"*"},
+			},
+		},
+	}
+
+	return clusterRole
+}
+
 func kotsadmRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
@@ -60,6 +84,35 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 	}
 
 	return role
+}
+
+func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "CluserRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kotsadm-rolebinding",
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "kotsadm",
+				Namespace: serviceAccountNamespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "kotsadm-role",
+		},
+	}
+
+	return clusterRoleBinding
 }
 
 func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
