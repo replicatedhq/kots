@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_isOperatorClusterScoped(t *testing.T) {
+func Test_isKotsadmClusterScoped(t *testing.T) {
 	tests := []struct {
 		name                string
 		applicationMetadata []byte
@@ -19,30 +19,16 @@ func Test_isOperatorClusterScoped(t *testing.T) {
 			expected:            true,
 		},
 		{
-			name: "without additional namespaces, false in yaml",
+			name: "without additional namespaces",
 			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
   name: app-slug
 spec:
   title: App Name
-  requireMinimalRBACPrivileges: false
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
 			),
 			expected: true,
-		},
-		{
-			name: "without additional namespaces, true in yaml",
-			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
-kind: Application
-metadata:
-  name: app-slug
-spec:
-  title: App Name
-  requireMinimalRBACPrivileges: true
-  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
-			),
-			expected: false,
 		},
 		{
 			name: "with empty additional namespaces",
@@ -53,10 +39,9 @@ metadata:
 spec:
   title: App Name
   additionalNamespaces: []
-  requireMinimalRBACPrivileges: true
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
 			),
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "with static additional namespaces",
@@ -66,13 +51,12 @@ metadata:
   name: app-slug
 spec:
   title: App Name
-  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - other1
     - other2
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
 			),
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "with wildcard namespace",
@@ -82,7 +66,6 @@ metadata:
   name: app-slug
 spec:
   title: App Name
-  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - "*"
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
@@ -97,7 +80,6 @@ metadata:
   name: app-slug
 spec:
   title: App Name
-  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - "*"
     - "test"
@@ -105,13 +87,37 @@ spec:
 			),
 			expected: true,
 		},
+		{
+			name: "with cluster scope requested",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: false
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`),
+			expected: true,
+		},
+		{
+			name: "with minimal scope requested",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: true
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`),
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			actual, err := isOperatorClusterScoped(test.applicationMetadata)
+			actual, err := isKotsadmClusterScoped(test.applicationMetadata)
 			req.NoError(err)
 
 			assert.Equal(t, test.expected, actual)

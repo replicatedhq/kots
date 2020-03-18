@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -80,7 +82,7 @@ func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 }
 
 func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureKotsadmRBAC(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureKotsadmRBAC(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm rbac")
 	}
 
@@ -98,17 +100,85 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func ensureKotsadmRBAC(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureKotsadmRole(namespace, clientset); err != nil {
+func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
+	}
+
+	if isClusterScoped {
+		return ensureKotsadmClusterRBAC(deployOptions, clientset)
+	}
+
+	if err := ensureKotsadmRole(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role")
 	}
 
-	if err := ensureKotsadmRoleBinding(namespace, clientset); err != nil {
+	if err := ensureKotsadmRoleBinding(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role binding")
 	}
 
-	if err := ensureKotsadmServiceAccount(namespace, clientset); err != nil {
+	if err := ensureKotsadmServiceAccount(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm service account")
+	}
+
+	return nil
+}
+
+// ensureKotsadmClusterRBAC will ensure that the cluster role and cluster role bindings exists
+func ensureKotsadmClusterRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	err := ensureKotsadmClusterRole(clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm cluster role")
+	}
+
+	if err := ensureKotsadmClusterRoleBinding(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm cluster role binding")
+	}
+
+	if err := ensureKotsadmServiceAccount(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm service account")
+	}
+
+	return nil
+}
+
+func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().ClusterRoles().Create(kotsadmClusterRole())
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return nil
+	}
+
+	return errors.Wrap(err, "failed to create cluster role")
+}
+
+func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
+	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-rolebinding", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(kotsadmClusterRoleBinding(serviceAccountNamespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create cluster rolebinding")
+		}
+		return nil
+	} else if err != nil {
+		return errors.Wrap(err, "failed to get cluster rolebinding")
+	}
+
+	for _, subject := range clusterRoleBinding.Subjects {
+		if subject.Namespace == serviceAccountNamespace && subject.Name == "kotsadm" && subject.Kind == "ServiceAccount" {
+			return nil
+		}
+	}
+
+	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      "kotsadm",
+		Namespace: serviceAccountNamespace,
+	})
+
+	_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cluster rolebinding")
 	}
 
 	return nil
@@ -210,4 +280,31 @@ func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset) err
 	}
 
 	return nil
+}
+
+// isKotsadmClusterScoped determines if the kotsadm pod should be running
+// with cluster-wide permissions or not
+func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
+	if applicationMetadata == nil {
+		return true, nil
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(applicationMetadata, nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode application metadata")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return false, errors.New("application metadata contained unepxected gvk")
+	}
+
+	application := obj.(*kotsv1beta1.Application)
+
+	// An application can request cluster scope privileges quite simply
+	if !application.Spec.RequireMinimalRBACPrivileges {
+		return true, nil
+	}
+
+	return false, nil
 }

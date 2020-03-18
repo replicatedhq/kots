@@ -231,7 +231,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 
 func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
 	if applicationMetadata == nil {
-		return false, nil
+		return true, nil
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -245,6 +245,11 @@ func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
 	}
 
 	application := obj.(*kotsv1beta1.Application)
+
+	// An application can request cluster scope privileges quite simply
+	if !application.Spec.RequireMinimalRBACPrivileges {
+		return true, nil
+	}
 
 	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
 		if additionalNamespace == "*" {
