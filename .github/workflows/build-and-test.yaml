@@ -41,19 +41,14 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - name: get digitalocean kubeconfig
-        uses: digitalocean/action-doctl@master
-        env:
-          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        with:
-          args: kubernetes cluster kubeconfig show marc-qa > $GITHUB_WORKSPACE/.kubeconfig
+      - uses: engineerd/setup-kind@v0.2.0
 
       - name: install qa app
-        run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
+        run: ./bin/kots install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
 
       - uses: actions/setup-node@v1
         with:
-          node-version: '10.x'
+          node-version: "10.x"
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
@@ -64,10 +59,10 @@ jobs:
           cat > license.yml <<EOF
           ${{ secrets.GITHUB_ACTION_KOTS_QA_LICENSE }}
           EOF
-          ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig admin-console -n automated-$GITHUB_RUN_ID &
+          ./bin/kots admin-console -n automated-$GITHUB_RUN_ID &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --label kotsadm-smoke-test --tunnel --tunnel-port 8800
           kill $ADMIN_CONSOLE_PID
 
       - name: delete namespace
-        run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns automated-$GITHUB_RUN_ID
+        run: kubectl delete ns automated-$GITHUB_RUN_ID
