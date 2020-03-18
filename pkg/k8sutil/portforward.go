@@ -51,6 +51,7 @@ func IsPortAvailable(port int) bool {
 	return true
 }
 
+// PortForward starts a local port forward to a pod in the cluster
 func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.Logger) (int, <-chan error, error) {
 	if localPort == 0 {
 		freePort, err := freeport.GetFreePort()
