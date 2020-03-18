@@ -286,7 +286,7 @@ func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset) err
 // with cluster-wide permissions or not
 func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
 	if applicationMetadata == nil {
-		return false, nil
+		return true, nil
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
