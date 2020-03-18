@@ -11,12 +11,12 @@ func StartMockServer(endpoint string, method string, expectedUpdateCursor string
 	stopCh := make(chan bool)
 
 	srv := &http.Server{Addr: ":3001"}
-	http.HandleFunc("/api/v1/kots/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/v1/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != method {
 			w.WriteHeader(404)
 			return
 		}
-		w.Write([]byte(`{"uri": "integratin"}`))
+		w.Write([]byte(`{"slug": "sluggy"}`))
 	})
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{}`))
