@@ -29,7 +29,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	loginRequest := LoginRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(400)
 		return
 	}
 

@@ -63,6 +63,7 @@ func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+
 	go func() {
 		defer airgapBundle.Close()
 		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password); err != nil {
