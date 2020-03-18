@@ -48,6 +48,7 @@ func Start() {
 
 	// Implemented handlers
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
+	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)

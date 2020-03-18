@@ -109,6 +109,8 @@ export class KotsAPI {
     }
   }
 
+  // Downloading apps was moved to the Go API in 1.14.0
+  // this function is deprecated and will be removed in 1.16.0
   @Get("/:slug")
   async kotsDownload(
     @Req() request: Request,
