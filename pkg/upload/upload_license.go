@@ -3,6 +3,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -55,7 +56,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	_, errChan, err := k8sutil.PortForward(uploadLicenseOptions.KubernetesConfigFlags, 3000, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(uploadLicenseOptions.KubernetesConfigFlags, 0, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -72,7 +73,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	}()
 
 	// upload using http to the pod directly
-	req, err := createUploadLicenseRequest(license, uploadLicenseOptions, "http://localhost:3000/api/v1/kots/license")
+	req, err := createUploadLicenseRequest(license, uploadLicenseOptions, fmt.Sprintf("http://localhost:%d/api/v1/kots/license", localPort))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create upload request")

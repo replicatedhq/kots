@@ -193,7 +193,7 @@ func InstallCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			_, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}
@@ -211,8 +211,14 @@ func InstallCmd() *cobra.Command {
 
 			if v.GetBool("port-forward") {
 				log.ActionWithoutSpinner("")
+
+				if adminConsolePort != 8800 {
+					log.ActionWithoutSpinner("Port 8800 is not available. The Admin Console is running on port %d", adminConsolePort)
+					log.ActionWithoutSpinner("")
+				}
+
 				log.ActionWithoutSpinner("Press Ctrl+C to exit")
-				log.ActionWithoutSpinner("Go to http://localhost:8800 to access the Admin Console")
+				log.ActionWithoutSpinner("Go to http://localhost:%d to access the Admin Console", adminConsolePort)
 				log.ActionWithoutSpinner("")
 
 				signalChan := make(chan os.Signal, 1)
