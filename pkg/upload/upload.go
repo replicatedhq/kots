@@ -109,7 +109,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
 	// upload using http to the pod directly
-	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/kots/", uploadOptions.Endpoint))
+	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create upload request")
@@ -132,7 +132,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 		return errors.Wrap(err, "failed to read response body")
 	}
 	type UploadResponse struct {
-		URI string `json:"uri"`
+		Slug string `json:"slug"`
 	}
 	var uploadResponse UploadResponse
 	if err := json.Unmarshal(b, &uploadResponse); err != nil {
