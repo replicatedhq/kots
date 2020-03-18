@@ -16,16 +16,30 @@ func Test_isOperatorClusterScoped(t *testing.T) {
 		{
 			name:                "no metadata",
 			applicationMetadata: nil,
-			expected:            false,
+			expected:            true,
 		},
 		{
-			name: "without additional namespaces",
+			name: "without additional namespaces, false in yaml",
 			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
   name: app-slug
 spec:
   title: App Name
+  requireMinimalRBACPrivileges: false
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
+			),
+			expected: true,
+		},
+		{
+			name: "without additional namespaces, true in yaml",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: true
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
 			),
 			expected: false,
@@ -39,6 +53,7 @@ metadata:
 spec:
   title: App Name
   additionalNamespaces: []
+  requireMinimalRBACPrivileges: true
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
 			),
 			expected: false,
@@ -51,6 +66,7 @@ metadata:
   name: app-slug
 spec:
   title: App Name
+  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - other1
     - other2
@@ -66,6 +82,7 @@ metadata:
   name: app-slug
 spec:
   title: App Name
+  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - "*"
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
@@ -80,6 +97,7 @@ metadata:
   name: app-slug
 spec:
   title: App Name
+  requireMinimalRBACPrivileges: true
   additionalNamespaces:
     - "*"
     - "test"

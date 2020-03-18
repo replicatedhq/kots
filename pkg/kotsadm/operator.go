@@ -231,7 +231,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 
 func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
 	if applicationMetadata == nil {
-		return false, nil
+		return true, nil
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
