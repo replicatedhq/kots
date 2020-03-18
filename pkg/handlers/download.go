@@ -1,0 +1,91 @@
+package handlers
+
+import (
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+
+	"github.com/mholt/archiver"
+	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/version"
+)
+
+func DownloadApp(w http.ResponseWriter, r *http.Request) {
+	if err := requireValidKOTSToken(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	a, err := app.GetFromSlug(r.URL.Query().Get("slug"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	archivePath, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	// archiveDir is unarchived, it contains the files
+	// let's package that back up for the kots cli
+	// because sending 1 file is nice. sending many files, not so nice.
+	paths := []string{
+		filepath.Join(archivePath, "upstream"),
+		filepath.Join(archivePath, "base"),
+		filepath.Join(archivePath, "overlays"),
+	}
+	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+	fileToSend := filepath.Join(tmpDir, "archive.tar.gz")
+
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Archive(paths, fileToSend); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	fi, err := os.Stat(fileToSend)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=archive.tar.gz")
+	w.Header().Set("Content-Type", "application/gzip")
+	w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+
+	f, err := os.Open(fileToSend)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	io.Copy(w, f)
+	w.WriteHeader(200)
+}
