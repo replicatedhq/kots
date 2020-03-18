@@ -227,6 +227,8 @@ export class KotsAPI {
     };
   }
 
+  // This handler was moved to kotsadm (go) in 1.14.0
+  // Remind me to delete this in 1.16.0
   @Put("/")
   async kotsUploadUpdate(
     @MultipartFile("file") file: Express.Multer.File,
