@@ -45,8 +45,8 @@ export const snapshotConfigRaw = `
 export const snapshotConfig = gql(snapshotConfigRaw);
 
 export const snapshotSettingsRaw = `
-  query snapshotConfig($slug: String!) {
-    snapshotConfig(slug: $slug) {
+  query snapshotSettings {
+    snapshotSettings {
       store {
         provider
         bucket

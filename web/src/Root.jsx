@@ -9,6 +9,7 @@ import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
+import AppSnapshotSettings from "././components/apps/AppSnapshotSettings";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
@@ -239,6 +240,11 @@ class Root extends Component {
     return !!find(apps, app => app.isGitOpsSupported);
   }
 
+  isSnapshotsSupported = () => {
+    const apps = this.state.listApps;
+    return !!find(apps, app => app.allowSnapshots);
+  }
+
   render() {
     const {
       themeState,
@@ -272,6 +278,7 @@ class Root extends Component {
                   isKurlEnabled={this.state.isKurlEnabled}
                   isGitOpsSupported={this.isGitOpsSupported()}
                   listApps={listApps}
+                  isSnapshotsSupported={this.isSnapshotsSupported()}
                 />
                 <div className="flex1 flex-column u-overflow--hidden">
                   <Switch>
@@ -293,6 +300,7 @@ class Root extends Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute path="/snapshots" render={(props) => <AppSnapshotSettings {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute
                       path={["/apps", "/app/:slug/:tab?"]}
                       render={

@@ -3,6 +3,11 @@ const SnapshotConfig = `
     autoEnabled: Boolean
     autoSchedule: SnapshotSchedule
     ttl: SnapshotTTl
+  }
+`;
+
+const SnapshotSettings = `
+  type SnapshotSettings {
     store: SnapshotStore
   }
 `;
@@ -164,6 +169,7 @@ const RestoreVolume = `
 
 export default [
   SnapshotConfig,
+  SnapshotSettings,
   SnapshotStore,
   SnapshotSchedule,
   SnapshotTTl,
