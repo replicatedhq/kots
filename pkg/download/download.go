@@ -45,7 +45,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	_, errChan, err := k8sutil.PortForward(downloadOptions.KubernetesConfigFlags, 3000, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(downloadOptions.KubernetesConfigFlags, 0, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -67,7 +67,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
-	url := fmt.Sprintf("http://localhost:3000/api/v1/kots/%s", appSlug)
+	url := fmt.Sprintf("http://localhost:%d/api/v1/download?slug=%s", localPort, appSlug)
 	newRequest, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.FinishSpinnerWithError()
