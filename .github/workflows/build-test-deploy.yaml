@@ -96,4 +96,4 @@ jobs:
           version: latest
           args: release --rm-dist --config deploy/.goreleaser.yaml
         env:
-          GITHUB_TOKEN: ${{ secrets.PROACTIONBOT_GITHUB_TOKEN }}        
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
