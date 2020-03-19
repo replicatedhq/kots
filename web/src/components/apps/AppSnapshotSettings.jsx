@@ -1,11 +1,13 @@
 import React, { Component } from "react";
 import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
-import { Link, withRouter } from "react-router-dom"
+import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import find from "lodash/find";
-import { snapshotSettings } from "../../queries/SnapshotQueries";
+import { isVeleroInstalled, snapshotSettings } from "../../queries/SnapshotQueries";
 import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
+
+import Loader from "../shared/Loader";
 import "../../scss/components/shared/SnapshotForm.scss";
 
 const DESTINATIONS = [
@@ -79,7 +81,9 @@ class AppSnapshotSettings extends Component {
     s3CompatibleKeyId: "",
     s3CompatibleKeySecret: "",
     s3CompatibleEndpoint: "",
-    s3CompatibleRegion: ""
+    s3CompatibleRegion: "",
+
+    hideCheckVeleroButton: false
   };
 
   setFields = () => {
@@ -516,12 +520,59 @@ class AppSnapshotSettings extends Component {
     }
   }
 
+  checkForVelero = () => {
+    this.props.isVeleroInstalled.refetch().then((response) => {
+      this.setState({ hideCheckVeleroButton: true });
+      if (!response.data.isVeleroInstalled) {
+        setTimeout(() => {
+          this.setState({ hideCheckVeleroButton: false });
+        }, 5000);
+      } else {
+        this.props.snapshotSettings.refetch()
+        this.setState({ hideCheckVeleroButton: false });
+      }
+    })
+  }
+
+  renderNotVeleroMessage = () => {
+    return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Not able to find Velero</p>
+  }
+
+
   render() {
-    const { updatingSettings } = this.state;
+    const { updatingSettings, hideCheckVeleroButton } = this.state;
+    const { snapshotSettings, isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
+
+
+    if (snapshotSettings?.loading || isVeleroInstalled?.loading) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
+    }
+
+    if (!isVeleroInstalled.isVeleroInstalled) {
+      return (
+        <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
+          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
+            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure snapshots</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">Snapshots are enabled but you must install Velero on your cluster before you will be able to take snapshots of your applications. After installing Velero on your cluster click the button below so that kotsadm can pick it up and you can begin creating applicaiton snapshots.</p>
+            <div className="u-textAlign--center">
+              {!hideCheckVeleroButton ?
+                <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
+                : this.renderNotVeleroMessage()
+              }
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <div className="snapshot-form-wrapper">
@@ -565,6 +616,14 @@ class AppSnapshotSettings extends Component {
 export default compose(
   withApollo,
   withRouter,
+  graphql(isVeleroInstalled, {
+    name: "isVeleroInstalled",
+    options: () => {
+      return {
+        fetchPolicy: "no-cache"
+      }
+    }
+  }),
   graphql(snapshotSettings, {
     name: "snapshotSettings",
     options: () => {

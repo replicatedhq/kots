@@ -6,7 +6,7 @@ import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import Modal from "react-modal";
-import { isVeleroInstalled, listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
+import { listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
 import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -167,12 +167,11 @@ class AppSnapshots extends Component {
       snapshotToRestore,
       restoreErr,
       restoreErrorMsg,
-      hideCheckVeleroButton
     } = this.state;
-    const { app, snapshots, snapshotSettings, isVeleroInstalled } = this.props;
+    const { app, snapshots, snapshotSettings } = this.props;
     const appTitle = app.name;
 
-    if (snapshots?.loading || snapshotSettings?.loading || isVeleroInstalled?.loading) {
+    if (snapshots?.loading || snapshotSettings?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -180,23 +179,6 @@ class AppSnapshots extends Component {
       )
     }
 
-
-    if (!isVeleroInstalled.isVeleroInstalled) {
-      return (
-        <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure application snapshots</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">Snapshots are enabled for {appTitle || "your application"} however you need to install Velero before you will be able to capture any snapshots. After installing Velero on your cluster click the button below so that kotsadm can pick it up and you can begin creating applicaiton snapshots.</p>
-            <div className="u-textAlign--center">
-              {!hideCheckVeleroButton ?
-                <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
-                : this.renderNotVeleroMessage()
-              }
-            </div>
-          </div>
-        </div>
-      )
-    }
 
     if (!snapshotSettings?.snapshotSettings?.store) {
       this.props.history.replace("/snapshots");
@@ -302,9 +284,6 @@ class AppSnapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(isVeleroInstalled, {
-    name: "isVeleroInstalled"
-  }),
   graphql(listSnapshots, {
     name: "snapshots",
     options: ({ match }) => {
