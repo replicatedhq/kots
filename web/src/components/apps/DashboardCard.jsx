@@ -17,6 +17,7 @@ import {
 } from "@src/utilities/utilities";
 
 import "../../scss/components/watches/DashboardCard.scss";
+import { isVeleroInstalled } from "../../queries/SnapshotQueries";
 
 export default class DashboardCard extends React.Component {
   state = {
@@ -202,7 +203,7 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, isVeleroInstalled } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed } = this.props;
 
 
     return (
@@ -224,10 +225,7 @@ export default class DashboardCard extends React.Component {
                 size(appLicense) > 0 ?
                   <Link to={`${url}/license`} className="card-link"> View license details </Link>
                   : isSnapshotAllowed ?
-                    !isVeleroInstalled ?
-                      <span className="status-indicator failed"> Unavailable </span>
-                      :
-                      <span className="status-indicator completed"> Enabled </span>
+                    <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className="u-marginTop--15">
@@ -239,10 +237,7 @@ export default class DashboardCard extends React.Component {
                     : license ?
                       this.renderLicenseCard()
                       : isSnapshotAllowed ?
-                        !isVeleroInstalled ?
-                          <a className="card-link" href="#" target="_blank" rel="noopener noreferrer"> Learn how to enable snapshots </a>
-                          :
-                          <Link to={`${url}/snapshots`} className="card-link"> Start snapshot </Link>
+                        <Link to={`${url}/snapshots`} className="card-link"> Start snapshot </Link>
                         : null
                 }
               </div>

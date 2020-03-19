@@ -86,12 +86,9 @@ export default [
   {
     tabName: "snapshots",
     displayName: "Snapshots",
-    veleroStatus: velero => {
-      return velero;
-    },
     to: (slug) => `/app/${slug}/snapshots`,
-    displayRule: (watch) => {
-      return watch.allowSnapshots;
+    displayRule: (watch, isVeleroInstalled) => {
+      return watch.allowSnapshots && isVeleroInstalled;
     }
   }
 ];

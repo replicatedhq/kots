@@ -473,20 +473,20 @@ class Dashboard extends Component {
                 isBundleUploading={isBundleUploading}
                 checkingForUpdateError={this.state.checkingForUpdateError}
               />
-              {app.allowSnapshots ?
+              {app.allowSnapshots && isVeleroInstalled ?
                 <div className="small-dashboard-wrapper flex-column flex">
                   <DashboardCard
                     cardName="Snapshots"
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
-                    isSnapshotAllowed={app.allowSnapshots}
+                    isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
                   />
                   <DashboardCard
                     cardName="License"
                     cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
                     license={true}
-                    isSnapshotAllowed={app.allowSnapshots}
+                    isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     url={this.props.match.url}
                     appLicense={appLicense}
                   />

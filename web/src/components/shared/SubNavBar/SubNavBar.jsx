@@ -22,10 +22,6 @@ export default function SubNavBar(props) {
           if (link.hasBadge) {
             hasBadge = link.hasBadge(watch || {});
           }
-          let veleroStatus = false;
-          if (link.veleroStatus) {
-            veleroStatus = link.veleroStatus(!isVeleroInstalled);
-          }
           const generatedMenuItem = (
             <li
               key={idx}
@@ -33,12 +29,12 @@ export default function SubNavBar(props) {
                 "is-active": activeTab === link.tabName
               })}>
               <Link to={link.to(slug, kotsSequence)}>
-                {veleroStatus && <span className="status-indicator failed" />} {link.displayName} {hasBadge && <span className="subnav-badge" />}
+                {link.displayName} {hasBadge && <span className="subnav-badge" />}
               </Link>
             </li>
           );
           if (link.displayRule) {
-            return link.displayRule(watch || {}) && generatedMenuItem;
+            return link.displayRule(watch || {}, isVeleroInstalled) && generatedMenuItem;
           }
           return generatedMenuItem;
         }).filter(Boolean)}
