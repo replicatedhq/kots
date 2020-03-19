@@ -3,19 +3,14 @@ import { Stores } from "../../schema/stores";
 import { Params } from "../../server/params";
 import { Context } from "../../context";
 import {
-  kotsClusterIdKey,
-  kotsAppSequenceKey,
   RestoreDetail,
   Snapshot,
-  SnapshotDetail,
-  SnapshotTrigger,
-  SnapshotHookPhase,
+  SnapshotDetail
 } from "../snapshot";
 import { Phase } from "../velero";
-import { SnapshotConfig, AzureCloudName, SnapshotProvider } from "../snapshot_config";
+import { SnapshotConfig, SnapshotSettings } from "../snapshot_config";
 import { VeleroClient } from "./veleroClient";
-import { parseTTL, formatTTL } from "../backup";
-import { ReplicatedError } from "../../server/errors";
+import { parseTTL } from "../backup";
 
 export function SnapshotQueries(stores: Stores, params: Params) {
   // tslint:disable-next-line max-func-body-length
@@ -30,8 +25,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
     async snapshotConfig(root: any, args: any, context: Context): Promise<SnapshotConfig> {
       context.requireSingleTenantSession();
 
-      const velero = new VeleroClient("velero"); // TODO namespace
-      const store = await velero.readSnapshotStore();
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await stores.kotsAppStore.getApp(appId);
 
@@ -52,7 +45,17 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       return {
         autoEnabled: !!app.snapshotSchedule,
         autoSchedule: app.snapshotSchedule ? { schedule: app.snapshotSchedule } : { schedule: "0 0 * * MON" },
-        ttl,
+        ttl
+      };
+    },
+
+    async snapshotSettings(root: any, args: any, context: Context): Promise<SnapshotSettings> {
+      context.requireSingleTenantSession();
+
+      const velero = new VeleroClient("velero"); // TODO namespace
+      const store = await velero.readSnapshotStore();
+
+      return {
         store,
       };
     },

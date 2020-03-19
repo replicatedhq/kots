@@ -11,7 +11,6 @@ import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
-import AppSnapshotSettings from "./AppSnapshotSettings";
 
 class AppSnapshots extends Component {
   state = {
@@ -29,22 +28,12 @@ class AppSnapshots extends Component {
     snapshotToRestore: "",
     restoreErr: false,
     restoreErrorMsg: "",
-    configuration: {},
     hideCheckVeleroButton: false
   };
 
   componentDidMount() {
     if (this.props.snapshots?.length) {
       this.props.snapshots.startPolling(2000);
-    }
-    if (this.props.snapshotSettings?.snapshotConfig) {
-      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
-    }
-  }
-
-  componentDidUpdate = (lastProps) => {
-    if (this.props.snapshotSettings?.snapshotConfig && this.props.snapshotSettings?.snapshotConfig !== lastProps.snapshotSettings?.snapshotConfig) {
-      this.setState({ configuration: this.props.snapshotSettings.snapshotConfig });
     }
   }
 
@@ -180,7 +169,6 @@ class AppSnapshots extends Component {
       snapshotToRestore,
       restoreErr,
       restoreErrorMsg,
-      configuration,
       hideCheckVeleroButton
     } = this.state;
     const { app, snapshots, snapshotSettings, isVeleroInstalled } = this.props;
@@ -212,10 +200,8 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (!configuration?.store) {
-      return (
-        <AppSnapshotSettings noSnapshotsView={true} app={app} startingSnapshot={startingSnapshot} startManualSnapshot={this.startManualSnapshot} refetchSnapshotSettings={this.props.snapshotSettings?.refetch} />
-      )
+    if (!snapshotSettings?.snapshotSettings?.store) {
+      this.props.history.replace("/snapshots");
     }
 
     if (!snapshots.loading && !snapshots?.listSnapshots?.length) {
@@ -252,7 +238,7 @@ class AppSnapshots extends Component {
               </div>
               : null}
             <div className="flex">
-              <Link to={`/app/${app.slug}/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
+              <Link to={`/snapshots`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
               <Link to={`/app/${app.slug}/snapshots/schedule`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotScheduleIcon u-marginRight--5" />Schedule</Link>
               <button className="btn primary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
             </div>
@@ -333,10 +319,8 @@ export default compose(
   }),
   graphql(snapshotSettings, {
     name: "snapshotSettings",
-    options: ({ match }) => {
-      const slug = match.params.slug;
+    options: () => {
       return {
-        variables: { slug },
         fetchPolicy: "no-cache"
       }
     }

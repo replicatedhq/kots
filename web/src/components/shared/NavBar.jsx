@@ -54,6 +54,8 @@ export class NavBar extends PureComponent {
       selectedTab = "cluster_management";
     } else if (pathname.startsWith("/app")) {
       selectedTab = "dashboard"
+    } else if (pathname === "/snapshots") {
+      selectedTab = "snapshots";
     }
     this.setState({ selectedTab });
   }
@@ -77,6 +79,10 @@ export class NavBar extends PureComponent {
     this.props.history.push("/upload-license");
   }
 
+  handleGoToSnapshots = () => {
+    this.props.history.push("/snapshots");
+  }
+
   redirectToDashboard = () => {
     const { refetchListApps, history } = this.props;
     refetchListApps().then(() => {
@@ -85,7 +91,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location } = this.props;
+    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location, isSnapshotsSupported } = this.props;
     const { user, selectedTab } = this.state;
 
     const pathname = location.pathname.split("/");
@@ -145,6 +151,15 @@ export class NavBar extends PureComponent {
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToClusterManagement}>
                           <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                             <span>Cluster Management</span>
+                          </span>
+                        </span>
+                      </div>
+                    }
+                    {isSnapshotsSupported &&
+                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "snapshots" })}>
+                        <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
+                            <span>Snapshots</span>
                           </span>
                         </span>
                       </div>

@@ -60,6 +60,7 @@ export const Query = `
 
     listSnapshots(slug: String!): [Snapshot]
     snapshotConfig(slug: String!): SnapshotConfig
+    snapshotSettings: SnapshotSettings
     snapshotDetail(slug: String!, id: String!): SnapshotDetail
     restoreDetail(appId: String!, restoreName: String!): RestoreDetail
     isVeleroInstalled: Boolean

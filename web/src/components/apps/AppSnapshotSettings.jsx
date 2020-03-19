@@ -84,8 +84,8 @@ class AppSnapshotSettings extends Component {
 
   setFields = () => {
     const { snapshotSettings } = this.props;
-    if (!snapshotSettings.snapshotConfig) return;
-    const { store } = snapshotSettings.snapshotConfig;
+    if (!snapshotSettings.snapshotSettings) return;
+    const { store } = snapshotSettings.snapshotSettings;
 
     if (store?.s3AWS) {
       const useIam = !!store.s3AWS.accessKeyID.length || !!store.s3AWS.accessKeySecret.length;
@@ -168,9 +168,9 @@ class AppSnapshotSettings extends Component {
     this.setState({ gcsServiceAccount: value });
   }
 
-  onSubmit = async (e, snapshotAction) => {
+  onSubmit = async (e) => {
     const { app } = this.props;
-    
+
     e.preventDefault();
     switch (this.state.selectedDestination.value) {
       case "aws":
@@ -185,13 +185,6 @@ class AppSnapshotSettings extends Component {
       case "s3compatible":
         await this.snapshotProviderS3Compatible();
         break;
-    }
-
-    if (snapshotAction === "start") {
-      this.props.refetchSnapshotSettings();
-      this.props.startManualSnapshot();
-    } else {
-      this.props.history.push(`/app/${app.slug}/snapshots/schedule`)
     }
   }
 
@@ -512,45 +505,31 @@ class AppSnapshotSettings extends Component {
   }
 
   componentDidUpdate = (lastProps) => {
-    if (this.props.snapshotSettings.snapshotConfig && this.props.snapshotSettings.snapshotConfig !== lastProps.snapshotSettings.snapshotConfig) {
+    if (this.props.snapshotSettings.snapshotSettings && this.props.snapshotSettings.snapshotSettings !== lastProps.snapshotSettings.snapshotSettings) {
       this.setFields();
     }
   }
 
   componentDidMount = () => {
-    if (this.props.snapshotSettings.snapshotConfig) {
+    if (this.props.snapshotSettings.snapshotSettings) {
       this.setFields();
     }
   }
 
   render() {
     const { updatingSettings } = this.state;
-    const { app, noSnapshotsView } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-        {noSnapshotsView ?
-          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure snapshots</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">To begin with snapshots you need to configure where you want them to be stored. Snapshots can be stored on Amazon S3, Google Cloud Storage, Azure Blob Storage, and other S3 compatible storage providers.</p>
-          </div>
-          : null}
         <div className="snapshot-form-wrapper">
-          {noSnapshotsView ? null :
-            <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
-              <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-              <span className="u-color--dustyGray"> > </span>
-              Settings
-          </p>}
           <form>
-            {noSnapshotsView ? null :
-              <div className="flex1 u-marginBottom--30">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
-                <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
-              </div>}
+            <div className="flex1 u-marginBottom--30">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
+              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
+            </div>
             <div className="flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               <div className="flex1">
@@ -571,24 +550,9 @@ class AppSnapshotSettings extends Component {
             {!this.state.determiningDestination &&
               <div>
                 {this.renderDestinationFields()}
-                {noSnapshotsView ?
-                  <div className="flex justifyContent--center">
-                    <div className="flex-auto u-marginRight--20">
-                      <button className="btn secondary blue" onClick={(e) => this.onSubmit(e, "start")}> Save & start a snapshot </button>
-                    </div>
-                    <div className="flex-auto">
-                      <button className="btn primary blue" onClick={(e) => this.onSubmit(e, "schedule")}>Save & schedule snapshots</button>
-                    </div>
-                  </div>
-                  :
-                  <div className="flex u-marginBottom--30">
-                    <div className="u-marginRight--10">
-                      <Link to={`/app/${app?.slug}/snapshots`} className="btn secondary">Cancel</Link>
-                    </div>
-                    <div>
-                      <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
-                    </div>
-                  </div>}
+                <div className="flex u-marginBottom--30">
+                  <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
+                </div>
               </div>
             }
           </form>
@@ -603,10 +567,8 @@ export default compose(
   withRouter,
   graphql(snapshotSettings, {
     name: "snapshotSettings",
-    options: ({ match }) => {
-      const slug = match.params.slug;
+    options: () => {
       return {
-        variables: { slug },
         fetchPolicy: "no-cache"
       }
     }

@@ -18,6 +18,7 @@ export const listAppsRaw = `
         slug
         currentSequence
         isGitOpsSupported
+        allowSnapshots
         licenseType
         currentVersion {
           title
