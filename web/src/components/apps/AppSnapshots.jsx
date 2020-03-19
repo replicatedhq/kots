@@ -32,9 +32,7 @@ class AppSnapshots extends Component {
   };
 
   componentDidMount() {
-    if (this.props.snapshots?.length) {
-      this.props.snapshots.startPolling(2000);
-    }
+    this.props.snapshots?.startPolling(2000);
   }
 
   toggleScheduleSnapshotModal = () => {
