@@ -58,8 +58,8 @@ export interface SnapshotStoreGoogle {
 
 export interface SnapshotStore {
   provider: SnapshotProvider;
-  bucket: String;
-  path?: String;
+  bucket: string;
+  path?: string;
   s3AWS?: SnapshotStoreS3AWS;
   s3Compatible?: SnapshotStoreS3Compatible;
   azure?: SnapshotStoreAzure;

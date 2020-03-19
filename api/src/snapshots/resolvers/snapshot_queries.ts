@@ -11,6 +11,7 @@ import { Phase } from "../velero";
 import { SnapshotConfig, SnapshotSettings } from "../snapshot_config";
 import { VeleroClient } from "./veleroClient";
 import { parseTTL } from "../backup";
+import { logger } from "../../server/logger";
 
 export function SnapshotQueries(stores: Stores, params: Params) {
   // tslint:disable-next-line max-func-body-length
@@ -19,7 +20,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       context.requireSingleTenantSession();
       
       const velero = new VeleroClient("velero");
-      return await velero.isVeleroInstalled();
+      return velero.isVeleroInstalled();
     },
 
     async snapshotConfig(root: any, args: any, context: Context): Promise<SnapshotConfig> {
@@ -39,7 +40,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
           inputValue: quantity.toString(),
           inputTimeUnit: unit,
           converted: app.snapshotTTL,
-        };
+        }
       }
 
       return {
@@ -64,11 +65,10 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       context.requireSingleTenantSession();
 
       const { slug } = args;
-      const client = new VeleroClient("velero"); // TODO namespace
-      const snapshots = await client.listSnapshots();
+      const velero = new VeleroClient("velero"); // TODO namespace
+      await velero.maybeCreateAppBackend(slug);
 
-      // TODO filter earlier
-      return _.filter(snapshots, { appSlug: slug });
+      return velero.listSnapshots(slug);
     },
 
     async snapshotDetail(root: any, args: any, context: Context): Promise<SnapshotDetail> {

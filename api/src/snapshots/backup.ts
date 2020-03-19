@@ -48,21 +48,17 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean):
 
   const velero = new VeleroClient("velero"); // TODO namespace
 
-  let backend: string;
-  const backends = await velero.listBackends();
-  if (_.includes(backends, backupStorageLocationName)) {
-    backend = backupStorageLocationName;
-  } else if (_.includes(backends, "local-ceph-rgw")) {
-    backend = "local-ceph-rgw";
-  } else {
-    throw new ReplicatedError("No backupstoragelocation configured");
-  }
+  const backend = app.slug;
+  await velero.maybeCreateAppBackend(app.slug);
 
   const b: Backup = {
     apiVersion: "velero.io/v1",
     kind: "Backup",
     metadata: {
       name,
+      labels: {
+        [kotsAppSlugKey]: app.slug,
+      },
       annotations: {
         [snapshotTriggerKey]: scheduled ? SnapshotTrigger.Schedule : SnapshotTrigger.Manual,
         [kotsAppSlugKey]: app.slug,

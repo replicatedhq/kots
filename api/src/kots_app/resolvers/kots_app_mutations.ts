@@ -21,6 +21,7 @@ import { Params } from "../../server/params";
 import { Repeater } from "../../util/repeater";
 import { sendInitialGitCommitsForAppDownstream } from "../gitops";
 import { StatusServer } from "../../airgap/status";
+import { logger } from "../../server/logger";
 
 // tslint:disable-next-line max-func-body-length cyclomatic-complexity
 export function KotsMutations(stores: Stores) {
@@ -98,7 +99,7 @@ export function KotsMutations(stores: Stores) {
 
         return true;
       } catch (err) {
-        console.log(err);
+        logger.error(err);
         const gitOpsError = err.errno ? `Error code ${err.errno}` : "Unknown error connecting to repo";
         await stores.kotsAppStore.setGitOpsError(appId, clusterId, gitOpsError);
         return false;
@@ -245,7 +246,7 @@ export function KotsMutations(stores: Stores) {
 }
 
 // tslint:disable-next-line cyclomatic-complexity
-async function createKotsApp(stores: Stores, kotsApp: KotsApp, downstreamName: string): Promise<{ hasPreflight: boolean, isConfigurable: boolean }> {
+async function createKotsApp(stores: Stores, kotsApp: KotsApp, downstreamName: string): Promise<{ hasPreflight: boolean; isConfigurable: boolean }> {
   const liveness = new Repeater(() => {
     return new Promise((resolve) => {
       stores.kotsAppStore.updateOnlineInstallLiveness().finally(() => {

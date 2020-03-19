@@ -76,9 +76,15 @@ export function SnapshotMutations(stores: Stores) {
           accessKeySecret,
         },
       };
+      const slugs = await stores.kotsAppStore.listAppSlugs();
       const client = new VeleroClient("velero"); // TODO velero namespace
 
-      return client.saveSnapshotStore(config);
+      try {
+        await client.saveSnapshotStore(config, slugs);
+      } catch(e) {
+        logger.error(e);
+        throw e;
+      }
     },
 
     async snapshotProviderS3Compatible(root: any, args: any, context: Context): Promise<void> {
@@ -96,9 +102,10 @@ export function SnapshotMutations(stores: Stores) {
           accessKeySecret,
         },
       };
+      const slugs = await stores.kotsAppStore.listAppSlugs();
       const client = new VeleroClient("velero"); // TODO velero namespace
 
-      return client.saveSnapshotStore(config);
+      return client.saveSnapshotStore(config, slugs);
     },
 
     async snapshotProviderAzure(root: any, args: any, context: Context): Promise<void> {
@@ -119,9 +126,10 @@ export function SnapshotMutations(stores: Stores) {
           cloudName,
         },
       };
+      const slugs = await stores.kotsAppStore.listAppSlugs();
       const client = new VeleroClient("velero"); // TODO velero namespace
 
-      return client.saveSnapshotStore(config);
+      return client.saveSnapshotStore(config, slugs);
     },
 
     async snapshotProviderGoogle(root: any, args: any, context: Context): Promise<void> {
@@ -136,9 +144,10 @@ export function SnapshotMutations(stores: Stores) {
           serviceAccount,
         },
       };
+      const slugs = await stores.kotsAppStore.listAppSlugs();
       const client = new VeleroClient("velero"); // TODO velero namespace
 
-      return client.saveSnapshotStore(config);
+      return client.saveSnapshotStore(config, slugs);
     },
 
     async manualSnapshot(root: any, args: any, context: Context): Promise<void> {

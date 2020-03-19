@@ -92,7 +92,7 @@ class AppSnapshotSettings extends Component {
     const { store } = snapshotSettings.snapshotSettings;
 
     if (store?.s3AWS) {
-      const useIam = !!store.s3AWS.accessKeyID.length || !!store.s3AWS.accessKeySecret.length;
+      const useIam = !!store.s3AWS.accessKeyID?.length || !!store.s3AWS.accessKeySecret?.length;
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
@@ -198,8 +198,8 @@ class AppSnapshotSettings extends Component {
       this.state.s3bucket,
       this.state.s3Path,
       this.state.s3Region,
-      this.state.useIam && this.state.s3KeyId,
-      this.state.useIam && this.state.s3KeySecret,
+      this.state.useIam ? this.state.s3KeyId : "",
+      this.state.useIam ? this.state.s3KeySecret : "",
     ).then(() => {
       this.setState({ updatingSettings: false });
     })

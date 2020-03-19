@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import zlib from "zlib";
 import querystring from "querystring";
+import { join } from "path";
 import moment from "moment";
 import * as _ from "lodash";
 import prettyBytes from "pretty-bytes";
@@ -125,8 +126,11 @@ export class VeleroClient {
     return response;
   }
 
-  async listSnapshots(): Promise<Snapshot[]> {
-    const body = await this.request("GET", "backups");
+  async listSnapshots(slug: string): Promise<Snapshot[]> {
+    const q  = {
+      labelSelector: `${kotsAppSlugKey}=${slug}`,
+    };
+    const body = await this.request("GET", `backups?${querystring.stringify(q)}`);
     const snapshots: Snapshot[] = [];
 
     for (const backup of body.items) {
@@ -503,12 +507,37 @@ export class VeleroClient {
     return store;
   }
 
+  // Create a new BackupStorageLocation for the app copied from kotsadm-velero-backend
+  async maybeCreateAppBackend(slug): Promise<void> {
+    const currentBSLResponse = await this.unhandledRequest("GET", `backupstoragelocations/${backupStorageLocationName}`);
+    if (currentBSLResponse.statusCode !== 200) {
+      return;
+    }
+
+    const bsl = {
+      apiVersion: "velero.io/v1",
+      kind: "BackupStorageLocation",
+      metadata: {
+        name: slug,
+        namespace: this.ns,
+      },
+      spec: currentBSLResponse.body.spec,
+    };
+    bsl.spec.objectStorage.prefix = join(bsl.spec.objectStorage.prefix, slug);
+
+    const postResponse = await this.unhandledRequest("POST", `backupstoragelocations/${slug}`, bsl);
+    if (postResponse.statusCode !== 201 && postResponse.statusCode !== 409) {
+      logger.error(postResponse.body);
+      throw new ReplicatedError(`Failed to create new BackupStorageLocation for app ${slug}`);
+    }
+  }
+
   // tslint:disable-next-line
-  async saveSnapshotStore(store: SnapshotStore): Promise<void> {
-    let currentSpec: any;
+  async saveSnapshotStore(store: SnapshotStore, slugs: string[]): Promise<void> {
+    let currentBSL: any;
     const currentBSLResponse = await this.unhandledRequest("GET", `backupstoragelocations/${backupStorageLocationName}`);
     if (currentBSLResponse.statusCode === 200) {
-      currentSpec = currentBSLResponse.body.spec;
+      currentBSL = currentBSLResponse.body;
     }
 
     const backupStorageLocation = {
@@ -524,7 +553,7 @@ export class VeleroClient {
           bucket: store.bucket,
           prefix: store.path,
         },
-        config: currentSpec ? currentSpec.config : {},
+        config: currentBSL ? currentBSL.spec.config : {},
       },
     };
     const corev1 = this.kc.makeApiClient(CoreV1Api);
@@ -545,8 +574,10 @@ export class VeleroClient {
       if (!_.isObject(store.s3Compatible)) {
         throw new ReplicatedError("s3Compatible store configuration is required");
       }
+      backupStorageLocation.spec.provider = SnapshotProvider.S3AWS;
       backupStorageLocation.spec.config.region = store.s3Compatible!.region;
       backupStorageLocation.spec.config.s3Url = store.s3Compatible!.endpoint;
+      backupStorageLocation.spec.config.s3ForcePathStyle = "true";
 
       credentialsSecret = await awsCredentialsSecret(corev1, this.ns, store.s3Compatible!);
       break;
@@ -575,17 +606,34 @@ export class VeleroClient {
       throw new ReplicatedError(`unknown snapshot provider: ${_.escape(store.provider)}`);
     }
 
-    try {
-      const body = await this.request("GET", `backupstoragelocations/${backupStorageLocationName}`);
-      body.spec = backupStorageLocation.spec;
-      await this.request("PUT", `backupstoragelocations/${backupStorageLocationName}`, body);
-    } catch(e) {
-      // TODO verify it was a 404 error
-      try {
-        await this.request("POST", "backupstoragelocations", backupStorageLocation);
-      } catch(e) {
-        logger.error(e);
-        return;
+    if (currentBSL) {
+      currentBSL.spec = backupStorageLocation.spec;
+      await this.request("PUT", `backupstoragelocations/${backupStorageLocationName}`, currentBSL);
+    } else {
+      await this.request("POST", "backupstoragelocations", backupStorageLocation);
+    }
+
+    for (const slug of slugs) {
+      let appBSL: any;
+      const resourceURL = `backupstoragelocations/${slug}`;
+
+      const appBSLResponse = await this.unhandledRequest("GET", resourceURL);
+      switch (appBSLResponse.statusCode) {
+      case 200:
+        appBSL = appBSLResponse.body
+        appBSL.spec = _.cloneDeep(backupStorageLocation.spec);
+        appBSL.spec.objectStorage.prefix = store.path ? join(store.path, slug) : slug;
+        await this.request("PUT", resourceURL, appBSL);
+        break;
+      case 404:
+        appBSL = _.cloneDeep(backupStorageLocation);
+        appBSL.metadata.name = slug;
+        appBSL.spec.objectStorage.prefix = store.path ? join(store.path, slug) : slug;
+        await this.request("POST", resourceURL, appBSL);
+        break;
+      default:
+        logger.error(appBSLResponse.body);
+        throw new ReplicatedError(`Failed to GET BackupStorageLocation ${slug}: ${appBSLResponse.statusCode}`);
       }
     }
 
@@ -742,8 +790,17 @@ async function readAzureCredentialsSecret(corev1: CoreV1Api, namespace: string):
   try {
     const creds: AzureCreds = {};
 
-    const { response, body: secret } = await corev1.readNamespacedSecret(azureSecretName, namespace);
-    if (response.statusCode !== 200 || !secret.data!.cloud) {
+    let secret: any;
+    try {
+      const { body } = await corev1.readNamespacedSecret(azureSecretName, namespace);
+      secret = body;
+    } catch(e) {
+      if (e.response && e.response.statusCode === 404) {
+        return creds;
+      }
+      throw e;
+    }
+    if (!secret.data!.cloud) {
       return creds;
     }
     const cloud = base64Decode(secret.data!.cloud);
@@ -783,8 +840,12 @@ async function awsCredentialsSecret(corev1: CoreV1Api, namespace: string, aws: S
   }
 
   if (!accessKeySecret && !aws.accessKeyID) {
-    const { response } = await corev1.deleteNamespacedSecret(awsSecretName, namespace);
-    if (response.statusCode !== 200 && response.statusCode !== 404) {
+    try {
+      await corev1.deleteNamespacedSecret(awsSecretName, namespace);
+    } catch(e) {
+      if (e.response && e.response.statusCode === 404) {
+        return null;
+      }
       throw new ReplicatedError(`Failed to delete secret ${awsSecretName} from namespace ${namespace}. Velero will continue using the credentials in the secret if it exists rather than EC2 instance profiles`);
     }
     return null;
@@ -809,11 +870,21 @@ interface AWSCreds {
   accessKeyID?: string,
   accessKeySecret?: string,
 }
+// tslint:disable-next-line cyclomatic-complexity
 async function readAWSCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<AWSCreds> {
   const creds: AWSCreds = {};
 
-  const  { response, body: secret } = await corev1.readNamespacedSecret(awsSecretName, namespace);
-  if (response.statusCode !== 200 || !secret.data!.cloud) {
+  let secret: any;
+  try {
+    const  { body } = await corev1.readNamespacedSecret(awsSecretName, namespace);
+    secret = body;
+  } catch (e) {
+    if (e && e.response && e.response.statusCode === 404) {
+      return {};
+    }
+    throw e;
+  }
+  if (!secret.data!.cloud) {
     return {};
   }
   const cloud = base64Decode(secret.data!.cloud);
@@ -856,13 +927,12 @@ async function googleCredentialsSecret(corev1: CoreV1Api, namespace: string, goo
 
 async function readGoogleCredentialsSecret(corev1: CoreV1Api, namespace: string): Promise<string|void> {
   try {
-    const { response, body: secret } = await corev1.readNamespacedSecret(googleSecretName, namespace);
-    if (response.statusCode !== 200 || !secret.data!.cloud) {
-      return;
-    }
-
+    const { body: secret } = await corev1.readNamespacedSecret(googleSecretName, namespace);
     return base64Decode(secret.data!.cloud);
   } catch(e) {
+    if (e.response && e.response.statusCode === 404) {
+      return;
+    }
     throw e;
   }
 }

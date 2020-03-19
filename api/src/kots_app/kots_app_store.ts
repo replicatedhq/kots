@@ -419,6 +419,14 @@ export class KotsAppStore {
     return apps;
   }
 
+  async listAppSlugs(): Promise<string[]> {
+    const q = `select slug from app`;
+    const v = [];
+
+    const result = await this.pool.query(q,v);
+    return _.map(result.rows, ({ slug }) => slug);
+  }
+
   async updateDownstreamsStatus(appId: string, sequence: number, status: string, statusInfo: string): Promise<void> {
     const q = `
       update app_downstream_version
