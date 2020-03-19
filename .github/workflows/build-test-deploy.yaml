@@ -48,7 +48,7 @@ jobs:
         env:
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
         with:
-          args: kubernetes cluster kubeconfig show marc-qa > $GITHUB_WORKSPACE/.kubeconfig
+          args: kubernetes cluster kubeconfig show github-action > $GITHUB_WORKSPACE/.kubeconfig
 
       - name: install qa app
         run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
