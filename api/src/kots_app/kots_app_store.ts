@@ -1026,7 +1026,7 @@ order by adv.sequence desc`;
     const result = await this.pool.query(q, v);
 
     if (result.rows.length === 0) {
-      throw new ReplicatedError(`No config found for app with id ${appId}`);
+      throw new ReplicatedError(`No config found for app with id ${appId} and sequence ${sequence}`);
     }
 
     const row = result.rows[0];
