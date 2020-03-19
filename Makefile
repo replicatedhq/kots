@@ -68,11 +68,6 @@ gosec:
 	go get github.com/securego/gosec/cmd/gosec
 	$(GOPATH)/bin/gosec ./...
 
-.PHONY: snapshot-release
-snapshot-release:
-	curl -sL https://git.io/goreleaser | VERSION=v0.118.2 bash -s -- --rm-dist --snapshot --config deploy/.goreleaser.snapshot.yml
-
 .PHONY: release
-release: export GITHUB_TOKEN = $(shell echo ${GITHUB_TOKEN_REPLICATEDBOT})
 release:
 	curl -sL https://git.io/goreleaser | VERSION=v0.118.2 bash -s -- --rm-dist --config deploy/.goreleaser.yml
