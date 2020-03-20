@@ -9,6 +9,7 @@ import moment from "moment";
 import Loader from "../shared/Loader";
 import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
+import { Utilities } from "../../utilities/utilities";
 
 class AppSnapshotDetail extends Component {
   state = {
@@ -123,6 +124,18 @@ class AppSnapshotDetail extends Component {
 
   toggleShowAllErrors = () => {
     this.setState({ showAllErrors: !this.state.showAllErrors });
+  }
+
+  downloadLogs = () => {
+    const name = this.props.snapshotDetail?.snapshotDetail?.name;
+    const link = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;  
+
+    fetch(link, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+      },
+    });
   }
 
   renderOutputTabs = () => {
@@ -296,7 +309,7 @@ class AppSnapshotDetail extends Component {
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
             <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetail?.snapshotDetail?.status.toLowerCase()} u-marginLeft--5`}>{snapshotDetail?.snapshotDetail?.status}</span></p>
-            <div className="u-fontSize--small"><span className="u-marginRight--5 u-fontWeight--medium u-color--chestnut">{`${snapshotDetail?.snapshotDetail?.warnings ? snapshotDetail?.snapshotDetail?.errors.length : 0} errors`}</span><span className="replicated-link">Download logs</span></div>
+            <div className="u-fontSize--small"><span className="u-marginRight--5 u-fontWeight--medium u-color--chestnut">{`${snapshotDetail?.snapshotDetail?.warnings ? snapshotDetail?.snapshotDetail?.errors.length : 0} errors`}</span><span className="replicated-link" onClick={() => this.downloadLogs()}>Download logs</span></div>
           </div>
         </div>
 
