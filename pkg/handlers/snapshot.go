@@ -32,13 +32,13 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg, err := config.GetConfig
+	cfg, err := config.GetConfig()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-	velero, err := velerov1.NewForConfig(config)
+	velero, err := velerov1.NewForConfig(cfg)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
