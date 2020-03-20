@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -13,7 +14,7 @@ var (
 	OverrideNamespace = ""
 )
 
-// return "alpha" for all prerelease or invalid versions of kots,
+// return "alpha" for all invalid versions of kots,
 // kotsadm tag that matches this version for others
 func kotsadmTag() string {
 	if OverrideVersion != "" {
@@ -21,16 +22,25 @@ func kotsadmTag() string {
 	}
 
 	kotsVersion := version.Version()
-	parsed, err := semver.NewVersion(kotsVersion)
+
+	return kotsadmTagForVersionString(kotsVersion)
+}
+
+func kotsadmTagForVersionString(kotsVersion string) string {
+	version, err := semver.NewVersion(kotsVersion)
 	if err != nil {
 		return "alpha"
 	}
 
-	if parsed.Prerelease() != "" {
+	if strings.Contains(version.Prerelease(), "dirty") {
 		return "alpha"
 	}
 
-	return fmt.Sprintf("v%s", kotsVersion)
+	if !strings.HasPrefix(kotsVersion, "v") {
+		kotsVersion = fmt.Sprintf("v%s", kotsVersion)
+	}
+
+	return kotsVersion
 }
 
 func kotsadmRegistry() string {
