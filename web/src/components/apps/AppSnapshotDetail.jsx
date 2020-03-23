@@ -6,6 +6,8 @@ import Modal from "react-modal";
 import filter from "lodash/filter";
 import ReactApexChart from "react-apexcharts";
 import moment from "moment";
+import { saveAs } from "file-saver";
+
 import Loader from "../shared/Loader";
 import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
@@ -66,15 +68,15 @@ class AppSnapshotDetail extends Component {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           return (
             '<div class="arrow_box">' +
-              '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
-                w.globals.labels[dataPointIndex] +
-              "</p>" +
-              "<br />" +
-              '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
-              "Started at " + moment(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
-              "<br />" +
-              '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">' +
-              "Finished at " + moment(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
+            w.globals.labels[dataPointIndex] +
+            "</p>" +
+            "<br />" +
+            '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
+            "Started at " + moment(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            "<br />" +
+            '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">' +
+            "Finished at " + moment(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "</div>"
           );
         }
@@ -128,14 +130,20 @@ class AppSnapshotDetail extends Component {
 
   downloadLogs = () => {
     const name = this.props.snapshotDetail?.snapshotDetail?.name;
-    const link = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;  
-
-    fetch(link, {
-      method: "GET",
+    const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+    fetch(url, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": `${Utilities.getToken()}`
       },
-    });
+      method: "GET",
+    })
+      .then(async (response) => {
+        const blob = await response.blob();
+        saveAs(blob, "snapshot-logs.gz")
+      })
+      .catch((err) => {
+        throw err;
+      });
   }
 
   renderOutputTabs = () => {
