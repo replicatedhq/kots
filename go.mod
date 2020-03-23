@@ -13,7 +13,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.13.10-0.20200317153303-89d5bfaddd77
+	github.com/replicatedhq/kots v1.14.0-beta.1
 	github.com/replicatedhq/kotsadm/operator v0.0.0-20200319203633-86dcbbd1ab78 // indirect
 	github.com/replicatedhq/troubleshoot v0.9.27
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -27,7 +27,7 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.12
-	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/api v0.17.4
