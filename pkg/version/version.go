@@ -196,14 +196,6 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 
 		commitURL := ""
-		query = `select max(sequence) from app_downstream_version where app_id = $1 and cluster_id = $2`
-		row := tx.QueryRow(query, appID, d.ClusterID)
-
-		lastDownstreamSequence := int64(-1)
-		if err := row.Scan(&lastDownstreamSequence); err != nil {
-			// continue, it's 0
-		}
-		newSequence := lastDownstreamSequence + 1
 
 		downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, d.ClusterID)
 		if err != nil {
