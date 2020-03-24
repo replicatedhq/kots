@@ -11,9 +11,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kotsadm/pkg/handlers"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 )
 
 func Start() {
+	// NOTE: This should be removed in 1.15 or a later version.
+	if err := version.PopulateMissingDownstreamVersions(); err != nil {
+		log.Println("Failed to run migrations", err)
+	}
+
 	u, err := url.Parse("http://kotsadm-api-node:3000")
 	if err != nil {
 		panic(err)
