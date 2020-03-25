@@ -671,6 +671,11 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
 	for filename, content := range release.Manifests {
+		fixedUp, err := util.FixUpYAML(content)
+		if err == nil {
+			content = fixedUp
+		}
+
 		upstreamFile := types.UpstreamFile{
 			Path:    filename,
 			Content: content,
