@@ -158,13 +158,13 @@ steps:
       - "./bin/**/*"
 
   ## typescript api
-  - label: "verify pacts"
-    commands:
-      - docker-compose -f api/test/docker-compose.yml down
-      - docker-compose -f api/test/docker-compose.yml pull
-      - docker-compose -f api/test/docker-compose.yml build
-      - docker-compose -f api/test/docker-compose.yml up --exit-code-from kotsadm-api
-      - docker-compose -f api/test/docker-compose.yml down --remove-orphans
+#  - label: "verify pacts"
+#    commands:
+#      - docker-compose -f api/test/docker-compose.yml down
+#      - docker-compose -f api/test/docker-compose.yml pull
+#      - docker-compose -f api/test/docker-compose.yml build
+#      - docker-compose -f api/test/docker-compose.yml up --exit-code-from kotsadm-api
+#      - docker-compose -f api/test/docker-compose.yml down --remove-orphans
   - label: "build typescript api"
     commands:
       - make -C api no-yarn deps build
@@ -179,10 +179,10 @@ steps:
       - "api/build/**/*"
       - "api/bin/**/*"
 
-  - wait # wait for pacts to finish before checking if they pass
-
-  - commands:
-      - make -C api can-i-deploy
+#  - wait # wait for pacts to finish before checking if they pass
+#
+#  - commands:
+#      - make -C api can-i-deploy
 
   - wait # wait for all builds to be completed before moving on (to the publish steps)
 
