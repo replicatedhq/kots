@@ -10,7 +10,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -71,15 +70,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			}
 		}
 
-		fixedUpContent, err := util.FixUpYAML(file.Content)
-		if err != nil {
-			// sometimes files aren't yaml...  sometimes files aren't valid
-			// this should not warn, it will be noisy at times
-			// but we should use use the original content here
-			fixedUpContent = file.Content
-		}
-
-		if err := ioutil.WriteFile(fileRenderPath, fixedUpContent, 0644); err != nil {
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
 	}
