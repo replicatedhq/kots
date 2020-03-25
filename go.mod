@@ -3,15 +3,22 @@ module github.com/replicatedhq/kotsadm
 go 1.12
 
 require (
+	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/docker v1.13.1 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
+	github.com/klauspost/cpuid v1.2.1 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.14.0-beta.1
 	github.com/replicatedhq/kotsadm/operator v0.0.0-20200319203633-86dcbbd1ab78 // indirect
@@ -24,6 +31,8 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.5.1
 	github.com/vmware-tanzu/velero v1.2.0
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
+	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.12
