@@ -765,6 +765,8 @@ github.com/replicatedhq/kots v1.14.0-beta.2.0.20200325225551-4348102b0d11 h1:RZT
 github.com/replicatedhq/kots v1.14.0-beta.2.0.20200325225551-4348102b0d11/go.mod h1:rNlIvtVW3Rgvy2d4H6r95l6waTU3XJeK7FwjXa2qIeM=
 github.com/replicatedhq/kots v1.14.0-beta.2.0.20200325233012-1a95562ec586 h1:X1NBwKNSunjageP5UtDsHyaxBHNUrhp3EJdrZRZkMJY=
 github.com/replicatedhq/kots v1.14.0-beta.2.0.20200325233012-1a95562ec586/go.mod h1:rNlIvtVW3Rgvy2d4H6r95l6waTU3XJeK7FwjXa2qIeM=
+github.com/replicatedhq/kots v1.14.0-beta.3 h1:n99FRfq8GFX998ygN+F2hC86ovIKnSGF3OboP4j0u5w=
+github.com/replicatedhq/kots v1.14.0-beta.3/go.mod h1:rNlIvtVW3Rgvy2d4H6r95l6waTU3XJeK7FwjXa2qIeM=
 github.com/replicatedhq/kotsadm/operator v0.0.0-20200319203633-86dcbbd1ab78 h1:ea4KHKGAz93Jh9vENjRm5MThOoxAaoInawlYABhd50E=
 github.com/replicatedhq/kotsadm/operator v0.0.0-20200319203633-86dcbbd1ab78/go.mod h1:NSqt331XhUNgvyb3/THH6lCnpB1NNM+7eGWWM4acW3U=
 github.com/replicatedhq/kotsadm/operator v0.0.0-20200319221914-592c0560c20f h1:cs++Qkmtum9XskrkkG0XPeSN8a+jXDOQ1LAR0y1tbqY=
