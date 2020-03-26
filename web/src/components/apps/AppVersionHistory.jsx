@@ -540,7 +540,9 @@ class AppVersionHistory extends Component {
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
-      airgapUploadError: null
+      airgapUploadError: null,
+      checkingForUpdateError: false,
+      checkingUpdateMessage: ""
     });
 
     this.props.toggleIsBundleUploading(true);
