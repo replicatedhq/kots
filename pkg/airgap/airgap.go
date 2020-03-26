@@ -127,7 +127,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 
 	if err := task.SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
 		finalError = err
-		return errors.Wrap(err, "failed to set tasks status")
+		return errors.Wrap(err, "failed to set task status")
 	}
 
 	// extract the release

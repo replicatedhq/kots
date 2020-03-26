@@ -5,7 +5,6 @@ import { putObject } from "../../util/s3";
 import { Params } from "../../server/params";
 import path from "path";
 import fs from "fs";
-import tmp from "tmp";
 import * as _ from "lodash";
 import {
   extractDownstreamNamesFromTarball,
@@ -27,13 +26,10 @@ import { KotsApp } from "../../kots_app";
 import { StatusServer } from "../../airgap/status";
 import {
   kotsTestRegistryCredentials,
-  Update,
-  kotsAppDownloadUpdateFromAirgap,
 } from "../../kots_app/kots_ffi";
 import { Session } from "../../session";
 import { getDiffSummary } from "../../util/utilities";
 import yaml from "js-yaml";
-import { Repeater } from "../../util/repeater";
 import { KotsAppStore } from "../../kots_app/kots_app_store";
 import { createGitCommitForVersion } from "../../kots_app/gitops";
 
@@ -250,59 +246,6 @@ export class KotsAPI {
     const stores = request.app.locals.stores;
 
     return uploadUpdate(stores, metadata.slug, buffer, "Kots Upload");
-  }
-
-  @Post("/airgap/update")
-  async kotsUploadAirgapUpdate(
-    @MultipartFile("file") file: Express.Multer.File,
-    @BodyParams("") body: any,
-    @Req() request: Request,
-    @Res() response: Response,
-    @HeaderParams("Authorization") auth: string,
-  ) {
-    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
-    if (!session || !session.userId) {
-      response.status(401);
-      return {};
-    }
-
-    const stores = request.app.locals.stores;
-
-    const liveness = new Repeater(() => {
-      return new Promise((resolve) => {
-        request.app.locals.stores.kotsAppStore.updateUpdateDownloadStatusLiveness().finally(() => {
-          resolve();
-        })
-      });
-    }, 1000);
-
-    // we are doing this asyncronously....
-    const processFile = async () => {
-      try {
-        liveness.start();
-        await stores.kotsAppStore.setUpdateDownloadStatus("Processing package...", "running");
-
-        const app = await stores.kotsAppStore.getApp(body.appId);
-        const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
-
-        await kotsAppDownloadUpdateFromAirgap(file.path, app, registryInfo, stores);
-
-        await request.app.locals.stores.kotsAppStore.clearUpdateDownloadStatus();
-
-      } catch (err) {
-
-        await request.app.locals.stores.kotsAppStore.setUpdateDownloadStatus(String(err), "failed");
-        throw (err);
-
-      } finally {
-        liveness.stop();
-      }
-    }
-
-    // tslint:disable-next-line no-floating-promises
-    processFile();
-
-    response.status(202);
   }
 
   @Post("/airgap/reset/:slug")

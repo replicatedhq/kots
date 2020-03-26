@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/airgap"
+	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,7 +19,10 @@ type CreateAppFromAirgapRequest struct {
 type CreateAppFromAirgapResponse struct {
 }
 
-func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+type UpdateAppFromAirgapResponse struct {
+}
+
+func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
 
@@ -32,6 +36,42 @@ func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "POST" {
+		createAppFromAirgap(w, r)
+		return
+	}
+
+	updateAppFromAirgap(w, r)
+}
+
+func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	a, err := app.Get(r.FormValue("appId"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	airgapBundle, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	go func() {
+		defer airgapBundle.Close()
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundle); err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
+
+	JSON(w, 202, updateAppFromAirgapResponse)
+}
+
+func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	pendingApp, err := airgap.GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
