@@ -6,7 +6,7 @@ spec:
   licenseID: 0uW6Y5ilnr-hGcYqXeEivZi0krBr9yCK
   appSlug: kitchen-sink
   channelName: Unstable
-  endpoint: 'http://localhost:3000'
+  endpoint: 'http://localhost:3001'
   entitlements:
     expires_at:
       title: Expiration
