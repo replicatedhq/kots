@@ -192,6 +192,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
 		AirgapRoot:          archiveDir,
+		Silent:              true,
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
