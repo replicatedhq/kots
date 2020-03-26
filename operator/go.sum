@@ -605,6 +605,8 @@ github.com/replicatedhq/kots v1.13.3 h1:AnraOU2iAqfkkLRD6wujX30Sr+OG37lPqldZRRKF
 github.com/replicatedhq/kots v1.13.3/go.mod h1:wI3W7ksjw8IupLA3m4gGJ79fWZIhSJfU/SaPZqm9pVA=
 github.com/replicatedhq/kots v1.14.0-beta.1 h1:4d7n9ZT8IxSDp2MD+M7wXy0yxKkDLkFz9/E0i+qn0t4=
 github.com/replicatedhq/kots v1.14.0-beta.1/go.mod h1:rNlIvtVW3Rgvy2d4H6r95l6waTU3XJeK7FwjXa2qIeM=
+github.com/replicatedhq/kots v1.14.0-beta.3 h1:n99FRfq8GFX998ygN+F2hC86ovIKnSGF3OboP4j0u5w=
+github.com/replicatedhq/kots v1.14.0-beta.3/go.mod h1:rNlIvtVW3Rgvy2d4H6r95l6waTU3XJeK7FwjXa2qIeM=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.26 h1:zd/Umkad5NVr5A5sB8JR/gAicTiwDO0am87qgvlTZyY=
