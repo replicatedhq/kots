@@ -39,7 +39,7 @@ func PopulateMissingDownstreamVersions() error {
 	for _, appID := range appIDs {
 		downstreams, err := downstream.ListDownstreamsForApp(appID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get downstreams for app", appID)
+			return errors.Wrapf(err, "failed to get downstreams for app %s", appID)
 		}
 		for _, downstream := range downstreams {
 			if err := populateMissingDownstreamVersionsForApp(tx, appID, downstream); err != nil {
