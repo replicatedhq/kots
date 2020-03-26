@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
 )
 
@@ -36,8 +37,14 @@ func PopulateMissingDownstreamVersions() error {
 	}
 
 	for _, appID := range appIDs {
-		if err := populateMissingDownstreamVersionsForApp(tx, appID); err != nil {
-			return errors.Wrapf(err, "failed to populate missing data for app %s", appID)
+		downstreams, err := downstream.ListDownstreamsForApp(appID)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get downstreams for app", appID)
+		}
+		for _, downstream := range downstreams {
+			if err := populateMissingDownstreamVersionsForApp(tx, appID, downstream); err != nil {
+				return errors.Wrapf(err, "failed to populate missing data for app %s", appID)
+			}
 		}
 	}
 
@@ -48,77 +55,168 @@ func PopulateMissingDownstreamVersions() error {
 	return nil
 }
 
-func populateMissingDownstreamVersionsForApp(tx *sql.Tx, appID string) error {
-	var maxAppVersionSequenceSQL sql.NullInt64
-	row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-	if err := row.Scan(&maxAppVersionSequenceSQL); err != nil {
-		return errors.Wrap(err, "failed to find current appversion max sequence in row")
+type appDownstreamVersion struct {
+	Sequence       int64
+	ParentSequence int64
+	CreatedAt      time.Time
+	VersionLabel   string
+	Status         sql.NullString
+}
+
+type appVersion struct {
+	Sequence     int64
+	UpdateCursor sql.NullString
+	CreatedAt    time.Time
+	VersionLabel string
+}
+
+// This will attempt to make sequences in app_version and app_downstream_version match.
+// The descision will based on `created_at` timestamp in each table.
+// Starting with the first record in app_version, the matching record in app_downstream_version should be (slightly) older.
+// If for a app_version record we see a app_downstream_version record that's newer, we remove it.
+// The record removed cannot be matching an earlier record in app_version because all previous records have been reconciled.
+// Caveat: this is tailored to a specific database problem.
+func populateMissingDownstreamVersionsForApp(tx *sql.Tx, appID string, downstream *types.Downstream) error {
+	versions, err := getAppVersions(tx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load versions for app %s", appID)
 	}
-	if !maxAppVersionSequenceSQL.Valid {
-		log.Printf("No app version found for %s; skipping migration.", appID)
+	if len(versions) == 0 {
 		return nil
 	}
-	maxAppVersionSequence := maxAppVersionSequenceSQL.Int64
 
-	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	downstreamVersions, err := getAppDownstreamVersions(tx, appID, downstream.ClusterID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Printf("No downstreams found for app %s; skipping migration.", appID)
-			return nil
-		}
-		return errors.Wrap(err, "failed to list downstreams")
+		return errors.Wrapf(err, "failed to load dowstream versions for app %s in cluster %s", appID, downstream.ClusterID)
+	}
+	if len(downstreamVersions) == 0 {
+		return nil
 	}
 
-	for _, d := range downstreams {
-		query := `select max(sequence) from app_downstream_version where app_id = $1 and cluster_id = $2`
-		row := tx.QueryRow(query, appID, d.ClusterID)
+	newDownstreamSequence := downstream.CurrentSequence
+VERSIONS:
+	for idx1, version := range versions {
+		versionsRemoved := false
+		for idx2 := idx1; idx2 < len(downstreamVersions); idx2++ {
+			downstreamVersion := downstreamVersions[idx2]
 
-		var maxDownstreamSequenceSQL sql.NullInt64
-		if err := row.Scan(&maxDownstreamSequenceSQL); err != nil {
-			return errors.Wrapf(err, "failed to find max sequence for app %s, cluster %s", appID, d.ClusterID)
-		}
+			if downstreamVersion.CreatedAt.After(version.CreatedAt) {
+				if !versionsRemoved {
+					continue VERSIONS
+				}
 
-		maxDownstreamSequence := int64(-1)
-		if maxDownstreamSequenceSQL.Valid {
-			maxDownstreamSequence = maxDownstreamSequenceSQL.Int64
-		}
-
-		if maxAppVersionSequence <= maxDownstreamSequence {
-			// all sequences are present in app_downstream_version. nothing to do.
-			continue
-		}
-
-		commitURL := ""
-		diffSummary := ""
-		downstreamStatus := "failed"
-		source := "Generated"
-
-		for maxDownstreamSequence < maxAppVersionSequence {
-			var createdAt time.Time
-			var versionLabel string
-			maxDownstreamSequence = maxDownstreamSequence + 1
-
-			query = `select version_label, created_at from app_version where app_id = $1 and sequence = $2`
-			row := tx.QueryRow(query, appID, maxDownstreamSequence)
-
-			var versionLabelSQL sql.NullString
-			if err := row.Scan(&versionLabelSQL, &createdAt); err != nil {
-				// this could be optional but because this is in a transaction,
-				// no other queries can be executed after this error
-				return errors.Wrap(err, "failed to load version label")
+				log.Printf("Will change downstream version sequence: app=%s, cluster=%s, sequence=%d, new sequence=%d", appID, downstream.ClusterID, downstreamVersion.Sequence, version.Sequence)
+				err := setDownstreamVersionSequence(tx, appID, downstream.ClusterID, downstreamVersion.Sequence, version.Sequence)
+				if err != nil {
+					return errors.Wrapf(err, "failed to update dowstream versions for app %s in cluster %s, current sequence %d, new sequence %d", appID, downstream.ClusterID, downstreamVersion.Sequence, version.Sequence)
+				}
+				if downstream.CurrentSequence == downstreamVersion.Sequence {
+					newDownstreamSequence = version.Sequence
+				}
+				continue VERSIONS
 			}
 
-			versionLabel = versionLabelSQL.String
-
-			query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
-			_, err = tx.Exec(query, appID, d.ClusterID, maxDownstreamSequence, maxDownstreamSequence, createdAt,
-				versionLabel, downstreamStatus, source,
-				diffSummary, commitURL, commitURL != "")
+			log.Printf("Will delete downstream version: app=%s, cluster=%s, sequence=%d", appID, downstream.ClusterID, downstreamVersion.Sequence)
+			err := deleteAppDownstreamVersions(tx, appID, downstream.ClusterID, downstreamVersion.Sequence)
 			if err != nil {
-				return errors.Wrap(err, "failed to create downstream version")
+				return errors.Wrapf(err, "failed to delete dowstream versions for app %s in cluster %s, sequence %d", appID, downstream.ClusterID, downstreamVersion.Sequence)
 			}
+			versionsRemoved = true
 		}
 	}
 
+	if newDownstreamSequence == downstream.CurrentSequence {
+		return nil
+	}
+
+	log.Printf("Will change current downstream %s sequence from %d to %d", downstream.ClusterID, downstream.CurrentSequence, newDownstreamSequence)
+	if err := updateDownstreamSequence(tx, appID, downstream.ClusterID, newDownstreamSequence); err != nil {
+		return errors.Wrapf(err, "failed to change dowstream %s sequence from %d to %d", downstream.ClusterID, downstream.CurrentSequence, newDownstreamSequence)
+	}
+
+	return nil
+}
+
+func getAppDownstreamVersions(tx *sql.Tx, appID string, clusterID string) ([]appDownstreamVersion, error) {
+	query := `SELECT sequence, parent_sequence, created_at, version_label, status
+	FROM app_downstream_version
+	WHERE app_id = $1 AND cluster_id = $2
+	ORDER BY sequence ASC`
+	rows, err := tx.Query(query, appID, clusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query dowstream versions")
+	}
+	defer rows.Close()
+
+	downstreamVersions := make([]appDownstreamVersion, 0)
+	for rows.Next() {
+		v := appDownstreamVersion{}
+		if err := rows.Scan(&v.Sequence, &v.ParentSequence, &v.CreatedAt, &v.VersionLabel, &v.Status); err != nil {
+			if err == sql.ErrNoRows {
+				return downstreamVersions, nil
+			}
+			return nil, errors.Wrap(err, "failed to query dowstream versions")
+		}
+		downstreamVersions = append(downstreamVersions, v)
+	}
+
+	return downstreamVersions, nil
+}
+
+func getAppVersions(tx *sql.Tx, appID string) ([]appVersion, error) {
+	query := `SELECT sequence, update_cursor, created_at, version_label
+	FROM app_version
+	WHERE app_id = $1
+	ORDER BY sequence ASC`
+	rows, err := tx.Query(query, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query app versions")
+	}
+	defer rows.Close()
+
+	versions := make([]appVersion, 0)
+	for rows.Next() {
+		v := appVersion{}
+		if err := rows.Scan(&v.Sequence, &v.UpdateCursor, &v.CreatedAt, &v.VersionLabel); err != nil {
+			if err == sql.ErrNoRows {
+				return versions, nil
+			}
+			return nil, errors.Wrap(err, "failed to query app versions")
+		}
+		versions = append(versions, v)
+	}
+	return versions, nil
+}
+
+func deleteAppDownstreamVersions(tx *sql.Tx, appID string, clusterID string, sequence int64) error {
+	query := `DELETE FROM app_downstream_version WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`
+	_, err := tx.Exec(query, appID, clusterID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete downstream version")
+	}
+	return nil
+}
+
+func setDownstreamVersionSequence(tx *sql.Tx, appID string, clusterID string, sequence int64, newSequence int64) error {
+	query := `UPDATE app_downstream_version
+	SET sequence = $4, parent_sequence = $4
+	WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`
+	_, err := tx.Exec(query, appID, clusterID, sequence, newSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to update downstream version")
+	}
+	return nil
+}
+
+func updateDownstreamSequence(tx *sql.Tx, appID string, clusterID string, newSequence int64) error {
+	if newSequence == -1 {
+		return nil
+	}
+
+	query := `UPDATE app_downstream SET current_sequence = $3 WHERE app_id = $1 AND cluster_id = $2`
+	_, err := tx.Exec(query, appID, clusterID, newSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to update downstream sequence")
+	}
 	return nil
 }
