@@ -22,6 +22,13 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 
+	go func() {
+		for {
+			msg := <-progressChan
+			logger.Debugf("%v", msg)
+		}
+	}()
+
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to read in cluster config")
