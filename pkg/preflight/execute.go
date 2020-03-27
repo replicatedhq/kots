@@ -21,6 +21,14 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 		zap.Int64("sequence", sequence))
 
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
+	defer close(progressChan)
+
+	go func() {
+		for {
+			msg := <-progressChan
+			logger.Debugf("%v", msg)
+		}
+	}()
 
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
