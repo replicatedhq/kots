@@ -25,8 +25,12 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 
 	go func() {
 		for {
-			msg := <-progressChan
-			logger.Debugf("%v", msg)
+			msg, ok := <-progressChan
+			if ok {
+				logger.Debugf("%v", msg)
+			} else {
+				return
+			}
 		}
 	}()
 
