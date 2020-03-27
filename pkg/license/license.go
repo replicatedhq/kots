@@ -67,8 +67,13 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 		if err := s.Encode(latestLicense, &b); err != nil {
 			return nil, errors.Wrap(err, "failed to encode license")
 		}
-		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), b.Bytes(), 0644); err != nil {
+		encodedLicense := b.Bytes()
+		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
 			return nil, errors.Wrap(err, "failed to write new license")
+		}
+
+		if err := updateAppLicense(a, string(encodedLicense)); err != nil {
+			return nil, err
 		}
 
 		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
