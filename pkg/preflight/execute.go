@@ -34,11 +34,13 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 		KubernetesRestConfig:   restConfig,
 	}
 
+	logger.Debug("preflight collect phase")
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
 	if err != nil {
 		return errors.Wrap(err, "failed to collect")
 	}
 
+	logger.Debug("preflight analyze phase")
 	analyzeResults := collectResults.Analyze()
 	if err != nil {
 		return errors.Wrap(err, "failed to analyze")
@@ -63,6 +65,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 		uploadPreflightResults.Results = append(uploadPreflightResults.Results, uploadPreflightResult)
 	}
 
+	logger.Debug("preflight marshalling")
 	b, err := json.Marshal(uploadPreflightResults)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal results")
