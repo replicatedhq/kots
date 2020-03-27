@@ -35,7 +35,7 @@ export class ClusterNodes extends Component {
   deleteNode = (name) => {
     try {
       this.props.deleteNode(name);
-      // refecth nodes so deleted node is from the list?
+      // reflect nodes so deleted node is from the list?
     } catch (error) {
       console.log(error);
     }
