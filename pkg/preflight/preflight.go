@@ -24,6 +24,11 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			return errors.Wrap(err, "failed to set downstream version pending preflight")
 		}
 
+		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, int64(sequence))
+		if err != nil {
+			return errors.Wrap(err, "failed to get ignore rbac flag")
+		}
+
 		// render the preflight file
 		// we need to convert to bytes first, so that we can reuse the renderfile function
 		renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
@@ -47,7 +52,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 
 		go func() {
 			logger.Debug("preflight checks beginning")
-			if err := execute(appID, sequence, p); err != nil {
+			if err := execute(appID, sequence, p, ignoreRBAC); err != nil {
 				logger.Error(err)
 				return
 			}

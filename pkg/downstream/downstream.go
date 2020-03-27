@@ -15,6 +15,7 @@ func ListDownstreamsForApp(appID string) ([]*types.Downstream, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get downstreams")
 	}
+	defer rows.Close()
 
 	downstreams := []*types.Downstream{}
 	for rows.Next() {
@@ -54,6 +55,38 @@ func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to set downstream version pending preflight")
+	}
+
+	return nil
+}
+
+func GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT preflight_ignore_permissions FROM app_downstream_version
+	WHERE app_id = $1 and sequence = $2 LIMIT 1`
+	row := db.QueryRow(query, appID, sequence)
+
+	var shouldIgnore sql.NullBool
+	if err := row.Scan(&shouldIgnore); err != nil {
+		return false, errors.Wrap(err, "failed to select downstream")
+	}
+
+	if !shouldIgnore.Valid {
+		return false, nil
+	}
+
+	return shouldIgnore.Bool, nil
+}
+
+func SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
+	db := persistence.MustGetPGSession()
+	query := `UPDATE app_downstream_version
+	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null
+	WHERE app_id = $1 AND sequence = $2`
+
+	_, err := db.Exec(query, appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to set downstream version ignore rbac errors")
 	}
 
 	return nil
