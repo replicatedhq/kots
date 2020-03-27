@@ -90,11 +90,11 @@ func Test_releaseToFiles(t *testing.T) {
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "deployment.yaml",
-					Content: []byte("a: b\n"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("c: d\n"),
+					Content: []byte("c: d"),
 				},
 			},
 		},
@@ -109,11 +109,11 @@ func Test_releaseToFiles(t *testing.T) {
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "manifests/deployment.yaml",
-					Content: []byte("a: b\n"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("c: d\n"),
+					Content: []byte("c: d"),
 				},
 			},
 		},
@@ -129,15 +129,15 @@ func Test_releaseToFiles(t *testing.T) {
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "deployment.yaml",
-					Content: []byte("a: b\n"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("c: d\n"),
+					Content: []byte("c: d"),
 				},
 				types.UpstreamFile{
 					Path:    "userdata/values.yaml",
-					Content: []byte("d: e\n"),
+					Content: []byte("d: e"),
 				},
 			},
 		},
