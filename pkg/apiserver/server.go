@@ -56,6 +56,7 @@ func Start() {
 	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
 
 	// Implemented handlers
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("OPTIONS", "POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
 	r.HandleFunc("/api/v1/login", handlers.Login)
