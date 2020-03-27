@@ -328,11 +328,6 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCurs
 			appPath := strings.TrimPrefix(path, localPath)
 			appPath = strings.TrimLeft(appPath, string(os.PathSeparator))
 
-			fixedUp, err := util.FixUpYAML(contents)
-			if err == nil {
-				contents = fixedUp
-			}
-
 			release.Manifests[appPath] = contents
 
 			return nil
