@@ -60,6 +60,20 @@ func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	return nil
 }
 
+// GetDownstreamVersionStatus gets the status for the downstream version with the given sequence and app id
+func GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select status from app_downstream_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+	var status sql.NullString
+	err := row.Scan(&status)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get downstream version")
+	}
+
+	return status.String, nil
+}
+
 func GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `SELECT preflight_ignore_permissions FROM app_downstream_version

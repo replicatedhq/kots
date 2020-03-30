@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
 	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kotsadm/pkg/render"
+	"go.uber.org/zap"
 )
 
 func Run(appID string, sequence int64, archiveDir string) error {
@@ -18,10 +19,23 @@ func Run(appID string, sequence int64, archiveDir string) error {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
+	status, err := downstream.GetDownstreamVersionStatus(appID, int64(sequence))
+	if err != nil {
+		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
+	}
+
+	// preflights should not run until config is finished
+	if status == "pending_config" {
+		logger.Debug("not running preflights for app that is pending required configuration",
+			zap.String("appID", appID),
+			zap.Int64("sequence", sequence))
+		return nil
+	}
+
 	if renderedKotsKinds.Preflight != nil {
 		// set the status to pending_preflights
 		if err := downstream.SetDownstreamVersionPendingPreflight(appID, int64(sequence)); err != nil {
-			return errors.Wrap(err, "failed to set downstream version pending preflight")
+			return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 		}
 
 		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, int64(sequence))
