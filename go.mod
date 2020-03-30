@@ -21,7 +21,7 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.14.0-beta.7
+	github.com/replicatedhq/kots v1.14.0
 	github.com/replicatedhq/troubleshoot v0.9.27
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
