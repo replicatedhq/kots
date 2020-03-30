@@ -11,5 +11,5 @@ func updateAppLicense(a *app.App, licenseData string) error {
 
 	query := `update app set license=$1 where id = $2`
 	_, err := db.Exec(query, licenseData, a.ID)
-	return errors.Wrap(err, "update app license")
+	return errors.Wrapf(err, "update app %q license", a.ID)
 }

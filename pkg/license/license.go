@@ -73,7 +73,7 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 		}
 
 		if err := updateAppLicense(a, string(encodedLicense)); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "update app license")
 		}
 
 		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
