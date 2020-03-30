@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/config"
+	"github.com/replicatedhq/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/preflight"
@@ -268,6 +269,11 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}
+	}
+
+	if err := downstream.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
+		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
+		return updateAppConfigResponse, err
 	}
 
 	if err := preflight.Run(updateApp.ID, int64(sequence), archiveDir); err != nil {
