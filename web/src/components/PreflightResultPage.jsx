@@ -8,9 +8,9 @@ import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queri
 import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
-import { getPreflightResultState } from "../utilities/utilities";
+import { getPreflightResultState, Utilities } from "../utilities/utilities";
 import "../scss/components/PreflightCheckPage.scss";
-import { ignorePreflightPermissionErrors, retryPreflights } from "../mutations/AppsMutations";
+import { retryPreflights } from "../mutations/AppsMutations";
 import PreflightResultErrors from "./PreflightResultErrors";
 import has from "lodash/has";
 import size from "lodash/size";
@@ -79,16 +79,22 @@ class PreflightResultPage extends Component {
   ignorePermissionErrors = () => {
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
-    this.props.client.mutate({
-      mutation: ignorePreflightPermissionErrors,
-      variables: {
-        appSlug: preflightResultData.appSlug,
-        clusterSlug: preflightResultData.clusterSlug,
-        sequence: sequence,
+
+    const appSlug = preflightResultData.appSlug;
+    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/preflight/ignore-rbac`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": Utilities.getToken(),
       },
-    }).then(() => {
-      this.props.data.refetch();
-    });
+      method: "POST",
+    })
+      .then(async (res) => {
+        this.props.data.refetch();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   retryResults= () => {

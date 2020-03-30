@@ -72,8 +72,11 @@ class SecureAdminConsole extends React.Component {
         this.completeLogin(await res.json());
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ authLoading: false, passwordErr: true, passwordErrMessage: msg });
+        console.log("Login failed:", err);
+        this.setState({
+          authLoading: false,
+          passwordErr: true,
+          passwordErrMessage: "There was an error logging in. Please try again",
         });
       });
     }

@@ -540,7 +540,9 @@ class AppVersionHistory extends Component {
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
-      airgapUploadError: null
+      airgapUploadError: null,
+      checkingForUpdateError: false,
+      checkingUpdateMessage: ""
     });
 
     this.props.toggleIsBundleUploading(true);
@@ -549,9 +551,9 @@ class AppVersionHistory extends Component {
     formData.append("file", files[0]);
     formData.append("appId", this.props.app.id);
 
-    const url = `${window.env.API_ENDPOINT}/kots/airgap/update`;
+    const url = `${window.env.API_ENDPOINT}/app/airgap`;
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
+    xhr.open("PUT", url);
 
     xhr.setRequestHeader("Authorization", Utilities.getToken())
     xhr.upload.onprogress = event => {

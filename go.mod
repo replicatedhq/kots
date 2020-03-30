@@ -3,24 +3,26 @@ module github.com/replicatedhq/kotsadm
 go 1.12
 
 require (
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
+	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
-	github.com/klauspost/cpuid v1.2.1 // indirect
+	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.13.10-0.20200317153303-89d5bfaddd77
-	github.com/replicatedhq/kotsadm/operator v0.0.0-20200319203633-86dcbbd1ab78 // indirect
-	github.com/replicatedhq/troubleshoot v0.9.27-0.20200310173216-983aaaacea80
+	github.com/replicatedhq/kots v1.14.0
+	github.com/replicatedhq/troubleshoot v0.9.27
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
@@ -34,11 +36,11 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.12
-	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	k8s.io/api v0.17.3
-	k8s.io/apimachinery v0.17.3
+	k8s.io/api v0.17.4
+	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/cluster-bootstrap v0.17.3
 	k8s.io/kubernetes v1.17.3

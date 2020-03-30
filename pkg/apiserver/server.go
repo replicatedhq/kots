@@ -11,9 +11,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kotsadm/pkg/handlers"
+	"github.com/replicatedhq/kotsadm/pkg/version"
 )
 
 func Start() {
+	// NOTE: This should be removed in 1.15 or a later version.
+	if err := version.PopulateMissingDownstreamVersions(); err != nil {
+		log.Println("Failed to run migrations", err)
+	}
+
 	u, err := url.Parse("http://kotsadm-api-node:3000")
 	if err != nil {
 		panic(err)
@@ -46,7 +52,11 @@ func Start() {
 	// proxy for license/titled api
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 
+	// Airgap upload and update
+	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
+
 	// Implemented handlers
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("OPTIONS", "POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
 	r.HandleFunc("/api/v1/login", handlers.Login)
@@ -56,7 +66,6 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SyncLicense)
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)
-	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateAppFromAirgap)
 	r.Path("/api/v1/snapshot/{backup}/logs").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSnapshotLogs)
 
 	// TODO
