@@ -21,7 +21,7 @@ metadata:
 spec:
   licenseID: %s
   appSlug: %s
-  endpoint: http://localhost:3000
+  endpoint: http://localhost:3001
   signature: IA==
 `, name, name)
 

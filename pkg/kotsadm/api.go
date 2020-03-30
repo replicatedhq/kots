@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -80,7 +81,7 @@ func waitForAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Client
 }
 
 func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureApiRBAC(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureApiRBAC(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api rbac")
 	}
 
@@ -98,17 +99,85 @@ func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clients
 	return nil
 }
 
-func ensureApiRBAC(namespace string, clientset *kubernetes.Clientset) error {
-	if err := ensureApiRole(namespace, clientset); err != nil {
+func ensureApiRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if kotsadm api is cluster scoped")
+	}
+
+	if isClusterScoped {
+		err := ensureApiClusterRBAC(deployOptions, clientset)
+		return errors.Wrap(err, "failed to ensure api cluster role")
+	}
+
+	if err := ensureApiRole(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api role")
 	}
 
-	if err := ensureApiRoleBinding(namespace, clientset); err != nil {
+	if err := ensureApiRoleBinding(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api role binding")
 	}
 
-	if err := ensureApiServiceAccount(namespace, clientset); err != nil {
+	if err := ensureApiServiceAccount(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api service account")
+	}
+
+	return nil
+}
+
+func ensureApiClusterRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	err := ensureApiClusterRole(clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure api cluster role")
+	}
+
+	if err := ensureApiClusterRoleBinding(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api cluster role binding")
+	}
+
+	if err := ensureApiServiceAccount(deployOptions.Namespace, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure api service account")
+	}
+
+	return nil
+}
+
+func ensureApiClusterRole(clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().ClusterRoles().Create(apiClusterRole())
+	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
+		return nil
+	}
+
+	return errors.Wrap(err, "failed to create cluster role")
+}
+
+func ensureApiClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
+	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-api-rolebinding", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(apiClusterRoleBinding(serviceAccountNamespace))
+		if err != nil {
+			return errors.Wrap(err, "failed to create cluster rolebinding")
+		}
+		return nil
+	} else if err != nil {
+		return errors.Wrap(err, "failed to get cluster rolebinding")
+	}
+
+	for _, subject := range clusterRoleBinding.Subjects {
+		if subject.Namespace == serviceAccountNamespace && subject.Name == "kotsadm-api" && subject.Kind == "ServiceAccount" {
+			return nil
+		}
+	}
+
+	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      "kotsadm-api",
+		Namespace: serviceAccountNamespace,
+	})
+
+	_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cluster rolebinding")
 	}
 
 	return nil

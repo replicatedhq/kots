@@ -8,7 +8,7 @@ import (
 )
 
 func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, error) {
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
+	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm"})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
 	}

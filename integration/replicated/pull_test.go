@@ -19,7 +19,7 @@ type replicatedPullTest struct {
 	testDir string
 }
 
-const endpoint = "http://localhost:3000"
+const endpoint = "http://localhost:3001"
 
 func Test_PullReplicated(t *testing.T) {
 	namespace := "test_ns"
