@@ -75,14 +75,8 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		license:       license,
 	}
 
-	builder := Builder{
-		Ctx: []Ctx{
-			configCtx,
-			StaticCtx{},
-			&LicenseCtx{License: license},
-			NewKurlContext("base", "default"),
-		},
-	}
+	builder := newNoConfigBuilder(license)
+	builder.Ctx = append(b.Ctx, configCtx)
 
 	configItemsByName := make(map[string]kotsv1beta1.ConfigItem)
 	for _, configGroup := range configGroups {

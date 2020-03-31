@@ -20,20 +20,26 @@ type Builder struct {
 	Functs template.FuncMap
 }
 
+func newNoConfigBuilder(license *kotsv1beta1.License) Builder {
+	b := Builder{
+		Ctx: []Ctx{
+			StaticCtx{},
+			LicenseCtx{License: license},
+			NewKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
+		},
+	}
+	return b
+}
+
 // NewBuilder creates a builder with StaticCtx, LicenseCtx and ConfigCtx.
 func NewBuilder(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (Builder, map[string]ItemValue, error) {
-	b := Builder{}
+	b := newNoConfigBuilder(license)
 	configCtx, err := b.newConfigContext(configGroups, existingValues, localRegistry, cipher, license)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}
 
-	b.Ctx = []Ctx{
-		StaticCtx{},
-		LicenseCtx{License: license},
-		NewKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
-		configCtx,
-	}
+	b.Ctx = append(b.Ctx, configCtx)
 	return b, configCtx.ItemValues, nil
 }
 
