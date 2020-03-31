@@ -8,6 +8,7 @@ import get from "lodash/get";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
+import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
@@ -46,7 +47,10 @@ class Dashboard extends Component {
     crosshairValues: [],
     updateChecker: new Repeater(),
     uploadingAirgapFile: false,
-    airgapUploadError: null
+    airgapUploadError: null,
+    viewAirgapUploadError: false,
+    viewAirgapUpdateError: false,
+    airgapUpdateError: "",
   }
 
   toggleConfigureGraphs = () => {
@@ -284,6 +288,17 @@ class Dashboard extends Component {
     });
   }
 
+  toggleViewAirgapUploadError = () => {
+    this.setState({ viewAirgapUploadError: !this.state.viewAirgapUploadError });
+  }
+
+  toggleViewAirgapUpdateError = (err) => {
+    this.setState({
+      viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
+      airgapUpdateError: !this.state.viewAirgapUpdateError ? err : ""
+    });
+  }
+
   getValue = (chart, value) => {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
@@ -472,6 +487,8 @@ class Dashboard extends Component {
                 redirectToDiff={() => this.redirectToDiff(currentSequence, latestSequence)}
                 isBundleUploading={isBundleUploading}
                 checkingForUpdateError={this.state.checkingForUpdateError}
+                viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
+                viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
               />
               {app.allowSnapshots && isVeleroInstalled ?
                 <div className="small-dashboard-wrapper flex-column flex">
@@ -539,6 +556,40 @@ class Dashboard extends Component {
           savingPromValue={savingPromValue}
           onPromValueChange={this.onPromValueChange}
         />
+        {this.state.viewAirgapUploadError && 
+          <Modal
+            isOpen={this.state.viewAirgapUploadError}
+            onRequestClose={this.toggleViewAirgapUploadError}
+            contentLabel="Error uploading airgap bundle"
+            ariaHideApp={false}
+            className="Modal"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">Error uploading airgap buundle</p>
+              <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                <p className="u-fontSize--normal u-color--chestnut">{this.state.airgapUploadError}</p>
+              </div>
+              <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewAirgapUploadError}>Ok, got it!</button>
+            </div>
+          </Modal>
+        }
+        {this.state.viewAirgapUpdateError && 
+          <Modal
+            isOpen={this.state.viewAirgapUpdateError}
+            onRequestClose={this.toggleViewAirgapUpdateError}
+            contentLabel="Error updating airgap version"
+            ariaHideApp={false}
+            className="Modal"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">Error updating version</p>
+              <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                <p className="u-fontSize--normal u-color--chestnut">{this.state.airgapUpdateError}</p>
+              </div>
+              <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewAirgapUpdateError}>Ok, got it!</button>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
