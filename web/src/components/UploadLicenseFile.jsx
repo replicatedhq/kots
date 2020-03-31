@@ -6,7 +6,7 @@ import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import { uploadKotsLicense } from "../mutations/AppsMutations";
-import { getFileContent } from "../utilities/utilities";
+import { getFileContent, Utilities } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 
@@ -79,7 +79,21 @@ class UploadLicenseFile extends React.Component {
             }
 
             if (data.hasPreflight) {
-              history.replace("/preflight");
+              fetch(`${window.env.API_ENDPOINT}/app/${data.slug}/preflight/run`, {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "Authorization": Utilities.getToken(),
+                },
+                method: "POST",
+              })
+                .then(async (res) => {
+                  history.replace("/preflight");
+                })
+                .catch((err) => {
+                  // TODO: UI for this error
+                  console.log(err);
+                });
               return;
             }
 
