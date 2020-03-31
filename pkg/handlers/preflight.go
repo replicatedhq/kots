@@ -66,3 +66,44 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, 200, struct{}{})
 }
+
+func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := app.GetFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	go func() {
+		defer os.RemoveAll(archiveDir)
+		if err := preflight.Run(foundApp.ID, foundApp.CurrentSequence, archiveDir); err != nil {
+			logger.Error(err)
+			return
+		}
+	}()
+
+	JSON(w, 200, struct{}{})
+}
