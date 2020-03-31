@@ -271,10 +271,10 @@ export class KotsDeploySocketService {
               const desiredNamespace = ".";
               const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-              const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
+              const rendered = await app.render(deployedAppSequence.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
               const b = new Buffer(rendered);
 
-              const imagePullSecret = await app.getImagePullSecretFromArchive(app.currentSequence!.toString());
+              const imagePullSecret = await app.getImagePullSecretFromArchive(deployedAppSequence.toString());
 
               const args = {
                 app_id: app.id,
