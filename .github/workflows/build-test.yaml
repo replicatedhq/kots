@@ -1,12 +1,12 @@
+name: build-test
+
 on:
   pull_request:
     branches:
       - master
   push:
     branches:
-      - "*"
-    tags:
-      - "v*.*.*"
+      - "**"
 
 jobs:
   build-kots:
