@@ -115,7 +115,7 @@ export default class DashboardCard extends React.Component {
 
     let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
     if (this.props.airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{this.props.airgapUploadError}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error uploading bundle <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>View details</span></p>
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
@@ -131,7 +131,7 @@ export default class DashboardCard extends React.Component {
           unkownProgress={true}
           onProgressError={this.onProgressError}
           smallSize={true}
-        />);
+        />);  
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
@@ -169,9 +169,7 @@ export default class DashboardCard extends React.Component {
         {updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
-            <div className="airgap-upload-error-wrapper">
-              <p className="u-color--chestnut u-fontSize--small u-lineHeight--normal">{checkingUpdateText}</p>
-            </div>
+            <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error updating version <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
           </div>}
       </div>
     )
