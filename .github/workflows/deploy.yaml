@@ -7,7 +7,6 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - name: Checkout
       uses: actions/checkout@v2
