@@ -40,6 +40,7 @@ type Ctx interface {
 }
 
 type StaticCtx struct {
+	tlsMap map[string]TLSPair
 }
 
 type TLSPair struct {
@@ -48,10 +49,9 @@ type TLSPair struct {
 	Cn   string
 }
 
-var tlsMap = map[string]TLSPair{}
-
 func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap := sprig.TxtFuncMap()
+	ctx.tlsMap = map[string]TLSPair{}
 
 	funcMap["Now"] = ctx.now
 	funcMap["NowFmt"] = ctx.nowFormat
@@ -334,19 +334,19 @@ func (ctx StaticCtx) namespace() string {
 }
 
 func (ctx StaticCtx) tlsCert(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
-	if p, ok := tlsMap[certName]; ok {
+	if p, ok := ctx.tlsMap[certName]; ok {
 		if p.Cn == cn {
 			return p.Cert
 		}
 	}
 
 	p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
-	tlsMap[certName] = p
+	ctx.tlsMap[certName] = p
 	return p.Cert
 }
 
 func (ctx StaticCtx) tlsKey(certName string) string {
-	if p, ok := tlsMap[certName]; ok {
+	if p, ok := ctx.tlsMap[certName]; ok {
 		return p.Key
 	}
 	return ""
