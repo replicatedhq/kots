@@ -22,7 +22,7 @@ interface ClusterSocketHistory {
   clusterId: string;
   socketId: string;
   sentPreflightUrls: { [key: string]: boolean };
-  sentDeploySequences: string[];
+  lastDeployedSequences: Map<string, number>;
 }
 
 
@@ -76,7 +76,7 @@ export class KotsDeploySocketService {
       clusterId: cluster.id,
       socketId: socket.id,
       sentPreflightUrls: {},
-      sentDeploySequences: [],
+      lastDeployedSequences: new Map<string, number>()
     });
   }
 
@@ -265,7 +265,7 @@ export class KotsDeploySocketService {
         const maybeDeployedAppSequence = deployedAppVersion && deployedAppVersion.sequence;
         if (maybeDeployedAppSequence! > -1) {
           const deployedAppSequence = Number(maybeDeployedAppSequence);
-          if (clusterSocketHistory.sentDeploySequences.indexOf(`${app.id}/${deployedAppSequence}`) === -1) {
+          if (!clusterSocketHistory.lastDeployedSequences.has(app.id) || clusterSocketHistory.lastDeployedSequences.get(app.id) !== deployedAppSequence) {
             const cluster = await this.clusterStore.getCluster(clusterSocketHistory.clusterId);
             try {
               const desiredNamespace = ".";
@@ -296,7 +296,7 @@ export class KotsDeploySocketService {
               }
 
               this.io.in(clusterSocketHistory.clusterId).emit("deploy", args);
-              clusterSocketHistory.sentDeploySequences.push(`${app.id}/${deployedAppSequence}`);
+              clusterSocketHistory.lastDeployedSequences.set(app.id, deployedAppSequence);
             } catch (err) {
               await this.kotsAppStore.updateDownstreamsStatus(app.id, deployedAppSequence, "failed", String(err));
               continue;
