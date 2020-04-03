@@ -14,6 +14,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.16.2 // indirect
+	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
@@ -39,7 +40,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56
-	github.com/replicatedhq/troubleshoot v0.9.27-0.20200317213638-f37bbdb14cee
+	github.com/replicatedhq/troubleshoot v0.9.27
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
@@ -47,16 +48,15 @@ require (
 	github.com/tj/go-spin v1.1.0
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	go.undefinedlabs.com/scopeagent v0.1.12
-	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.17.2
+	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.2
-	k8s.io/apimachinery v0.17.3
+	k8s.io/apimachinery v0.17.4
 	k8s.io/cli-runtime v0.17.0
-	k8s.io/client-go v0.17.2
+	k8s.io/client-go v0.17.4
 	k8s.io/helm v2.14.3+incompatible
 	sigs.k8s.io/controller-runtime v0.4.0
-	sigs.k8s.io/controller-tools v0.2.4 // indirect
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )

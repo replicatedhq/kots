@@ -45,6 +45,7 @@ type StaticCtx struct {
 type TLSPair struct {
 	Cert string
 	Key  string
+	Cn   string
 }
 
 var tlsMap = map[string]TLSPair{}
@@ -334,7 +335,9 @@ func (ctx StaticCtx) namespace() string {
 
 func (ctx StaticCtx) tlsCert(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
 	if p, ok := tlsMap[certName]; ok {
-		return p.Cert
+		if p.Cn == cn {
+			return p.Cert
+		}
 	}
 
 	p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
@@ -369,7 +372,7 @@ key: {{ $i.Key | b64enc }}`
 		return TLSPair{}
 	}
 
-	result := TLSPair{}
+	result := TLSPair{Cn: cn}
 	if err := yaml.Unmarshal(buff.Bytes(), &result); err != nil {
 		fmt.Printf("Failed to unmarshal cert template result: %v\n", err)
 		return TLSPair{}

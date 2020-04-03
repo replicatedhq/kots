@@ -83,18 +83,18 @@ func Test_releaseToFiles(t *testing.T) {
 			name: "with common prefix",
 			release: &Release{
 				Manifests: map[string][]byte{
-					"manifests/deployment.yaml": []byte("---"),
-					"manifests/service.yaml":    []byte("---"),
+					"manifests/deployment.yaml": []byte("a: b"),
+					"manifests/service.yaml":    []byte("c: d"),
 				},
 			},
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "deployment.yaml",
-					Content: []byte("---"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("---"),
+					Content: []byte("c: d"),
 				},
 			},
 		},
@@ -102,18 +102,18 @@ func Test_releaseToFiles(t *testing.T) {
 			name: "without common prefix",
 			release: &Release{
 				Manifests: map[string][]byte{
-					"manifests/deployment.yaml": []byte("---"),
-					"service.yaml":              []byte("---"),
+					"manifests/deployment.yaml": []byte("a: b"),
+					"service.yaml":              []byte("c: d"),
 				},
 			},
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "manifests/deployment.yaml",
-					Content: []byte("---"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("---"),
+					Content: []byte("c: d"),
 				},
 			},
 		},
@@ -121,23 +121,23 @@ func Test_releaseToFiles(t *testing.T) {
 			name: "common prefix, with userdata",
 			release: &Release{
 				Manifests: map[string][]byte{
-					"manifests/deployment.yaml": []byte("---"),
-					"manifests/service.yaml":    []byte("---"),
-					"userdata/values.yaml":      []byte("---"),
+					"manifests/deployment.yaml": []byte("a: b"),
+					"manifests/service.yaml":    []byte("c: d"),
+					"userdata/values.yaml":      []byte("d: e"),
 				},
 			},
 			expected: []types.UpstreamFile{
 				types.UpstreamFile{
 					Path:    "deployment.yaml",
-					Content: []byte("---"),
+					Content: []byte("a: b"),
 				},
 				types.UpstreamFile{
 					Path:    "service.yaml",
-					Content: []byte("---"),
+					Content: []byte("c: d"),
 				},
 				types.UpstreamFile{
 					Path:    "userdata/values.yaml",
-					Content: []byte("---"),
+					Content: []byte("d: e"),
 				},
 			},
 		},

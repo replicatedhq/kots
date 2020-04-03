@@ -1,12 +1,12 @@
+name: build-test
+
 on:
   pull_request:
     branches:
       - master
   push:
     branches:
-      - "master"
-    tags:
-      - "v*.*.*"
+      - "**"
 
 jobs:
   build-kots:
@@ -75,27 +75,3 @@ jobs:
 
       - name: delete namespace
         run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns automated-$GITHUB_RUN_ID
-
-  goreleaser:
-    runs-on: ubuntu-latest
-    needs:
-      - validate
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Unshallow
-        run: git fetch --prune --unshallow
-
-      - uses: actions/setup-go@v1
-        with:
-          go-version: "1.12.14"
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
-        with:
-          version: latest
-          args: release --rm-dist --config deploy/.goreleaser.yaml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
