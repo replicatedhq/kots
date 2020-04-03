@@ -28,12 +28,12 @@ build-ttl.sh:
 
 .PHONY: build-alpha
 build-alpha:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:alpha .
+	docker build -f deploy/Dockerfile --build-arg version=${BUILDKITE_COMMIT} -t kotsadm/kotsadm:alpha .
 	docker push kotsadm/kotsadm:alpha
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm:${BUILDKITE_TAG} .
+	docker build -f deploy/Dockerfile --build-arg version=${BUILDKITE_TAG} -t kotsadm/kotsadm:${BUILDKITE_TAG} .
 	docker push kotsadm/kotsadm:${BUILDKITE_TAG}
 
 .PHONY: project-pact-tests

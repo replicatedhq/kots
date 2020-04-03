@@ -29,7 +29,7 @@ USER kotsadm
 WORKDIR /
 
 EXPOSE 3000
-# ARG version=unknown
-# ENV VERSION=${version}
+ARG version=unknown
+ENV VERSION=${version}
 ENTRYPOINT ["/kotsadm"]
 CMD ["api"]

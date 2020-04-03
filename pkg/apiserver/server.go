@@ -15,6 +15,7 @@ import (
 )
 
 func Start() {
+	log.Println("kotsadm version", os.Getenv("VERSION"))
 	// NOTE: This should be removed in 1.15 or a later version.
 	if err := version.PopulateMissingDownstreamVersions(); err != nil {
 		log.Println("Failed to run migrations", err)
