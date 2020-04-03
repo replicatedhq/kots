@@ -26,12 +26,7 @@ export class Footer extends React.Component {
     return (
       <div className={`FooterContent-wrapper flex flex-auto justifyContent--center ${this.props.className || ""}`}>
         <div className="container flex1 flex">
-          <div className="flex flex-auto">
-            <div className="FooterItem-wrapper">
-              <span className="FooterItem">&#169; {new Date().getFullYear()}, Replicated, Inc. All Rights Reserved.</span>
-            </div>
-          </div>
-          <div className="flex flex1 justifyContent--flexEnd">
+          <div className="flex flex1 justifyContent--center">
             {footerItems.filter(item => item).map((item, i) => {
               let node = (
                 <span className="FooterItem">{item.label}</span>
