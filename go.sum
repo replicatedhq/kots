@@ -614,8 +614,14 @@ github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
+github.com/replicatedhq/kurl v0.0.0-20200402185619-582073c8f74a h1:N8RvISpFJqbwku9rLAQrHT/3imBf7ScKANWUbKExUsY=
+github.com/replicatedhq/kurl v0.0.0-20200403203724-cdcbe7cc469d h1:yIkmCn48b9G4Uqc3MFmKfA8XUlwDlB6SckyyH5N6iag=
+github.com/replicatedhq/kurl v0.0.0-20200403203724-cdcbe7cc469d/go.mod h1:UuCug8Z5k9PVcsBLxjTN3BgBJFcvQXoc7lyR4VUUTTc=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
+github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200402185619-582073c8f74a h1:fFMqilw4CG3h4ylTZTZnWDXRdqXVtA66YRrZiSQBtS4=
+github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200403203724-cdcbe7cc469d h1:zoZeOdaSTg0gSDaLCWTLPs63eLlwc8avNtcAOBsQzmI=
+github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200403203724-cdcbe7cc469d/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.21 h1:u7q932Bi0t2jVtyRlKmMNlXndr/Bxt4rTzFFF1i53Kg=
 github.com/replicatedhq/troubleshoot v0.9.21/go.mod h1:g9CJ1cKv9H6en9gcSL3U7a74HqVkPSz8bKqXLwunroo=
 github.com/replicatedhq/troubleshoot v0.9.26 h1:zd/Umkad5NVr5A5sB8JR/gAicTiwDO0am87qgvlTZyY=

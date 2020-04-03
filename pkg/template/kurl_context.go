@@ -75,11 +75,12 @@ type KurlCtx struct {
 
 func (ctx KurlCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
-		"KurlString": ctx.kurlString,
-		"KurlInt":    ctx.kurlInt,
-		"KurlBool":   ctx.kurlBool,
-		"KurlOption": ctx.kurlOption,
-		"KurlAll":    ctx.kurlAll,
+		"KurlString":   ctx.kurlString,
+		"KurlInt":      ctx.kurlInt,
+		"KurlBool":     ctx.kurlBool,
+		"KurlOption":   ctx.kurlOption,
+		"KurlAll":      ctx.kurlAll,
+		"KurlCommands": ctx.kurlCommands,
 	}
 }
 
@@ -143,6 +144,28 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	return s
 }
 
+func (ctx KurlCtx) kurlCommands(yamlPath string) [][]string {
+	var empty [][]string
+
+	if len(ctx.KurlValues) == 0 {
+		return empty
+	}
+
+	result, ok := ctx.KurlValues[yamlPath]
+	if !ok {
+		fmt.Printf("There is no value found at the yamlPath '%s'\n", yamlPath)
+		return empty
+	}
+
+	s, ok := result.([][]string)
+	if !ok {
+		fmt.Printf("The yamlPath '%s' corresponds to value '%v' of type '%T'. The KurlString function supports only string values\n", yamlPath, result, result)
+		return empty
+	}
+
+	return s
+}
+
 func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
 		return ""
@@ -167,6 +190,17 @@ func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	}
 }
 
+func flattenArrays(input [][]string) string {
+	var commands []string
+
+	for _, command := range input {
+		s := strings.Join(command, ", ")
+		commands = append(commands, s)
+	}
+
+	return strings.Join(commands, ", ")
+}
+
 func (ctx KurlCtx) kurlAll() string {
 	//debug function to show all supported k:v pairs
 
@@ -182,6 +216,8 @@ func (ctx KurlCtx) kurlAll() string {
 			keys[i] = k + ":" + t
 		case bool:
 			keys[i] = k + ":" + strconv.FormatBool(t)
+		case [][]string:
+			keys[i] = k + ":" + flattenArrays(t)
 		}
 		i++
 	}

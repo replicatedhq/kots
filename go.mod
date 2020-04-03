@@ -39,7 +39,8 @@ require (
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56
+	github.com/replicatedhq/kurl v0.0.0-20200403203724-cdcbe7cc469d // indirect
+	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200403203724-cdcbe7cc469d
 	github.com/replicatedhq/troubleshoot v0.9.27
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5
