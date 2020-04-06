@@ -175,7 +175,7 @@ backup_spec = EXCLUDED.backup_spec`
 		diffSummary := ""
 		if currentSequence != nil {
 			// diff this release from the last release
-			diff, err := downstream.DiffAppVersionsForDownstreams(d.Name, filesInDir, previousArchiveDir)
+			diff, err := downstream.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kotsKinds.KustomizeVersion())
 			if err != nil {
 				return int64(0), errors.Wrap(err, "failed to diff")
 			}
