@@ -48,7 +48,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	vals := map[string]interface{}{}
 	for _, value := range renderOptions.HelmOptions {
 		if err := strvals.ParseInto(value, vals); err != nil {
-			return nil, errors.Wrap(err, "failed to parse helm value")
+			return nil, errors.Wrapf(err, "failed to parse helm value %q", value)
 		}
 	}
 
