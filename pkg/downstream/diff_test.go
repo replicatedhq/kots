@@ -14,7 +14,7 @@ func Test_diffContent(t *testing.T) {
 		updatedContent       string
 		baseContent          string
 		expectedLinesAdded   int
-		expectedLinedRemoved int
+		expectedLinesRemoved int
 	}{
 		{
 			name: "identical",
@@ -29,7 +29,7 @@ func Test_diffContent(t *testing.T) {
   - name: MINIO_SECRET_KEY
     value: abc234`,
 			expectedLinesAdded:   0,
-			expectedLinedRemoved: 0,
+			expectedLinesRemoved: 0,
 		},
 		{
 			name: "single line edit",
@@ -44,7 +44,7 @@ func Test_diffContent(t *testing.T) {
   - name: MINIO_SECRET_KEY
     value: abc235`,
 			expectedLinesAdded:   1,
-			expectedLinedRemoved: 1,
+			expectedLinesRemoved: 1,
 		},
 	}
 	for _, test := range tests {
@@ -55,7 +55,7 @@ func Test_diffContent(t *testing.T) {
 			req.NoError(err)
 
 			assert.Equal(t, test.expectedLinesAdded, actualLinesAdded)
-			assert.Equal(t, test.expectedLinedRemoved, actualLinesRemoved)
+			assert.Equal(t, test.expectedLinesRemoved, actualLinesRemoved)
 		})
 	}
 }

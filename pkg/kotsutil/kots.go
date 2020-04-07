@@ -38,6 +38,16 @@ type KotsKinds struct {
 	Backup *velerov1.Backup
 }
 
+// KustomizeVersion will return the kustomize version to use for this application
+// applying the default, if there is one, for the current version of kots
+func (k KotsKinds) KustomizeVersion() string {
+	if k.KotsApplication.Spec.KustomizeVersion != "" {
+		return k.KotsApplication.Spec.KustomizeVersion
+	}
+
+	return "3.5.4"
+}
+
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)

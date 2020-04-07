@@ -197,13 +197,8 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to load kots kinds")
 	}
 
-	kustomizeVersion := "3.5.4"
-	if kotsKinds.KotsApplication.Spec.KustomizeVersion != "" {
-		kustomizeVersion = kotsKinds.KotsApplication.Spec.KustomizeVersion
-	}
-
 	// we use the kustomize binary here...
-	cmd := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archiveDir, "overlays", "downstreams", downstreamName))
+	cmd := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", filepath.Join(archiveDir, "overlays", "downstreams", downstreamName))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to run kustomize")

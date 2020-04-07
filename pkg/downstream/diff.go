@@ -3,11 +3,11 @@ package downstream
 import (
 	"bufio"
 	"bytes"
-	"io/ioutil"
-	"os"
+	"fmt"
+	"os/exec"
 	"path/filepath"
-	"strings"
 
+	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -15,7 +15,7 @@ import (
 type Diff struct {
 	FilesChanged int `json:"filesChanged"`
 	LinesAdded   int `json:"linesAdded"`
-	LinedRemoved int `json:"linesRemoved"`
+	LinesRemoved int `json:"linesRemoved"`
 }
 
 func diffContent(updatedContent string, baseContent string) (int, int, error) {
@@ -40,79 +40,65 @@ func diffContent(updatedContent string, baseContent string) (int, int, error) {
 	return additions, deletions, nil
 }
 
-func DiffAppVersionsForDownstreams(downstreamName string, archive string, diffBasePath string) (*Diff, error) {
-	rootPathsToInclude := []string{
-		"base",
-		filepath.Join("overlays", "midstream"),
-		filepath.Join("overlays", "downstreams", downstreamName),
+// DiffAppVersionsForDownstream will generate a diff of the rendered yaml between two different
+// archivedirs
+func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeVersion string) (*Diff, error) {
+	// kustomize build both of these archives before diffing
+	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
+	}
+	baseOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to run kustomize on base dir")
+	}
+
+	archiveFiles, err := splitter.SplitYAML(archiveOutput)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to split archive yaml")
+	}
+	baseFiles, err := splitter.SplitYAML(baseOutput)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to split base yaml")
 	}
 
 	diff := Diff{}
 
-	err := filepath.Walk(archive,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
+	for archiveFilename, archiveContents := range archiveFiles {
+		baseContents, ok := baseFiles[archiveFilename]
+		if !ok {
+			// this file was added
+			scanner := bufio.NewScanner(bytes.NewReader(archiveContents))
+			for scanner.Scan() {
+				diff.LinesAdded++
 			}
+			diff.FilesChanged++
+			continue
+		}
 
-			if info.IsDir() {
-				return nil
-			}
+		linesAdded, linesRemoved, err := diffContent(string(archiveContents), string(baseContents))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to diff contents")
+		}
 
-			// we only diff files in base and the specific downstream
-			isInSupportedRoot := false
-			pathWithoutRoot := path[len(archive)+1:]
-			for _, rootPathToInclude := range rootPathsToInclude {
-				if strings.HasPrefix(pathWithoutRoot, rootPathToInclude) {
-					isInSupportedRoot = true
-				}
-			}
+		diff.LinesAdded += linesAdded
+		diff.LinesRemoved += linesRemoved
 
-			if !isInSupportedRoot {
-				return nil
-			}
-
-			contentA, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			pathInDiffBase := filepath.Join(diffBasePath, path[len(archive):])
-
-			if _, err := os.Stat(pathInDiffBase); os.IsNotExist(err) {
-				// the entire file is a addition
-				scanner := bufio.NewScanner(bytes.NewReader(contentA))
-				for scanner.Scan() {
-					diff.LinesAdded++
-				}
-				return nil
-			}
-
-			contentB, err := ioutil.ReadFile(pathInDiffBase)
-			if err != nil {
-				return err
-			}
-
-			linedAdded, linesRemoved, err := diffContent(string(contentA), string(contentB))
-			if err != nil {
-				return err
-			}
-
-			diff.LinesAdded += linedAdded
-			diff.LinedRemoved += linesRemoved
-
-			if linedAdded > 0 || linesRemoved > 0 {
-				diff.FilesChanged++
-			}
-
-			return nil
-		})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to diff")
+		if diff.LinesAdded > 0 || diff.LinesRemoved > 0 {
+			diff.FilesChanged++
+		}
 	}
 
-	// TODO walk base looking for files that were removed from updated
+	for baseFilename, baseContents := range baseFiles {
+		_, ok := archiveFiles[baseFilename]
+		if !ok {
+			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
+			for scanner.Scan() {
+				diff.LinesRemoved++
+			}
+			diff.FilesChanged++
+		}
+	}
 
 	return &diff, nil
 }
