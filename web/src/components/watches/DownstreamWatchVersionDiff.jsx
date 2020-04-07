@@ -117,16 +117,22 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     const diffEditors = [];
     for (const filename of filesToInclude) {
-      diffEditors.push(<DiffEditor
-        original={firstApplicationTree.files[filename]}
-        value={secondApplicationTree.files[filename]}
-        key={filename}
-        specKey={filename}
-        options={{
-          contextMenu: false,
-          readOnly: true,
-        }}
-      />);
+      const firstNumOfLines = firstApplicationTree.files[filename] ? firstApplicationTree.files[filename].split("\n").length : 0;
+      const secondNumOfLines = secondApplicationTree.files[filename] ? secondApplicationTree.files[filename].split("\n").length : 0;
+      const maxNumOfLines = Math.max(firstNumOfLines, secondNumOfLines);
+
+      diffEditors.push(<div className="DiffEditor flex-column" key={filename} style={{ height: maxNumOfLines * 23 }}>
+        <DiffEditor
+          original={firstApplicationTree.files[filename]}
+          value={secondApplicationTree.files[filename]}
+          key={filename}
+          specKey={filename}
+          options={{
+            contextMenu: false,
+            readOnly: true,
+          }}
+        />
+      </div>);
     }
 
     const content = diffEditors.length > 0 ? diffEditors :
