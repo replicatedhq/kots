@@ -13,6 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"go.uber.org/zap"
 )
 
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it
@@ -80,6 +82,10 @@ func CreateAppVersionArchive(appID string, sequence int64, archivePath string) e
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
 func GetAppVersionArchive(appID string, sequence int64) (string, error) {
+	logger.Debug("getting app version archive",
+		zap.String("appID", appID),
+		zap.Int64("sequence", sequence))
+
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")

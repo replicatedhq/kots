@@ -17,6 +17,14 @@ import (
 	applicationv1beta1 "sigs.k8s.io/application/pkg/apis/app/v1beta1"
 )
 
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
+	velerov1.AddToScheme(scheme.Scheme)
+	applicationv1beta1.AddToScheme(scheme.Scheme)
+
+}
+
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,
@@ -49,11 +57,6 @@ func (k KotsKinds) KustomizeVersion() string {
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
-	kotsscheme.AddToScheme(scheme.Scheme)
-	troubleshootscheme.AddToScheme(scheme.Scheme)
-	velerov1.AddToScheme(scheme.Scheme)
-	applicationv1beta1.AddToScheme(scheme.Scheme)
-
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	if g == "kots.io" {
@@ -185,12 +188,6 @@ func emptyKotsKinds() KotsKinds {
 
 func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	kotsKinds := emptyKotsKinds()
-
-	kotsscheme.AddToScheme(scheme.Scheme)
-	troubleshootscheme.AddToScheme(scheme.Scheme)
-	velerov1.AddToScheme(scheme.Scheme)
-	applicationv1beta1.AddToScheme(scheme.Scheme)
-
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	err := filepath.Walk(filepath.Join(fromDir, "upstream"),
