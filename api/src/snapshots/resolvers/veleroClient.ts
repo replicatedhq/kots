@@ -449,10 +449,13 @@ export class VeleroClient {
       return null;
     }
 
+    let prefix = bsl.spec.objectStorage.prefix || "";
+    const idx = prefix.lastIndexOf(`/${backupStorageLocationName}`);
+    prefix = bsl.spec.objectStorage.prefix.slice(0, idx);
     const store: SnapshotStore = {
       provider: bsl.spec.provider,
       bucket: bsl.spec.objectStorage.bucket,
-      path: bsl.spec.objectStorage.prefix,
+      path: prefix,
     };
 
     switch (store.provider) {
@@ -607,9 +610,14 @@ export class VeleroClient {
     }
 
     if (currentBSL) {
+      // This is used as a template for BackupStorageLocations for each app. Apps use <prefix>/slug
+      // as the prefix. This uses <prefix>/kotsadm-velero-backend because using just <prefix> would
+      // cause the velero pod to get in a crash loop when it sees the <slug> directories in there.
       currentBSL.spec = backupStorageLocation.spec;
+      currentBSL.spec.objectStorage.prefix += `/${backupStorageLocationName}`
       await this.request("PUT", `backupstoragelocations/${backupStorageLocationName}`, currentBSL);
     } else {
+      backupStorageLocation.spec.objectStorage.prefix += `/${backupStorageLocationName}`
       await this.request("POST", "backupstoragelocations", backupStorageLocation);
     }
 

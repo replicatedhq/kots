@@ -3,9 +3,11 @@ package applier
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	rest "k8s.io/client-go/rest"
@@ -122,9 +124,18 @@ func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]b
 	return stdout, stderr, errors.Wrap(err, "failed to run kubectl delete")
 }
 
-func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool, wait bool) ([]byte, []byte, error) {
+func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool) ([]byte, []byte, error) {
+	tmp, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create temp directory")
+	}
+	// TODO uncomment
+	// defer os.Remove(tmp)
+
 	args := []string{
 		"apply",
+		"--kustomize",
+		tmp,
 	}
 
 	if dryRun {
@@ -141,13 +152,24 @@ func (c *Kubectl) Apply(targetNamespace string, yamlDoc []byte, dryRun bool, wai
 		}...)
 	}
 
-	args = append(args, []string{
-		"-f",
-		"-",
-	}...)
+	yamlPath := filepath.Join(tmp, "doc.yaml")
+	if err := ioutil.WriteFile(yamlPath, yamlDoc, 0644); err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to write %s", yamlPath)
+	}
+
+	kustomizationPath := filepath.Join(tmp, "kustomization.yaml")
+	kustomizationYaml := fmt.Sprintf(`
+resources:
+- doc.yaml
+
+commonAnnotations:
+  kots.io/app-slug: %q
+`, slug)
+	if err := ioutil.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to write %s", kustomizationPath)
+	}
 
 	cmd := c.kubectlCommand(args...)
-	cmd.Stdin = bytes.NewReader(yamlDoc)
 
 	stdout, stderr, err := Run(cmd)
 	return stdout, stderr, errors.Wrap(err, "failed to run kubectl apply")

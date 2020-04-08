@@ -20,22 +20,22 @@ import { logger } from "../server/logger";
 export async function backup(stores: Stores, appId: string, scheduled: boolean): Promise<Backup> {
   const app = await stores.kotsAppStore.getApp(appId);
   const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(appId);
-  const kotsVersion = await stores.kotsAppStore.getCurrentAppVersion(appId);
-  if (!kotsVersion) {
-    throw new ReplicatedError("App does not have a current version");
-  }
   const clusters = await stores.clusterStore.listClustersForKotsApp(app.id);
   if (clusters.length !== 1) {
     throw new ReplicatedError("Must have exactly 1 cluster for backup");
   }
   const clusterId = clusters[0].id;
+  const deployedVersion = await stores.kotsAppStore.getCurrentVersion(appId, clusterId);
+  if (!deployedVersion) {
+    throw new ReplicatedError("App does not have a deployed version");
+  }
 
   let name = `manual-${Date.now()}`;
   if (scheduled) {
     name = `scheduled-${Date.now()}`;
   }
 
-  const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, kotsVersion.sequence);
+  const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, deployedVersion.sequence);
   const rendered = await kotsRenderFile(app, stores, tmpl, registryInfo);
   const base = yaml.safeLoad(rendered) as Backup;
   const spec = (base && base.spec) || {};
@@ -63,7 +63,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean):
         [snapshotTriggerKey]: scheduled ? SnapshotTrigger.Schedule : SnapshotTrigger.Manual,
         [kotsAppSlugKey]: app.slug,
         [kotsAppIdKey]: app.id,
-        [kotsAppSequenceKey]: kotsVersion.sequence.toString(),
+        [kotsAppSequenceKey]: deployedVersion.sequence.toString(),
         [kotsClusterIdKey]: clusterId,
       }
     },

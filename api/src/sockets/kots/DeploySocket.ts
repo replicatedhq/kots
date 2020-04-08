@@ -69,7 +69,7 @@ export class KotsDeploySocketService {
     }
 
     const cluster = await this.clusterStore.getFromDeployToken(socket.handshake.query.token);
-    console.log(`Cluster ${cluster.id} joined`);
+    logger.info(`Cluster ${cluster.id} joined`);
     socket.join(cluster.id);
 
     this.clusterSocketHistory.push({
@@ -148,12 +148,13 @@ export class KotsDeploySocketService {
         break;
 
       case UndeployStatus.Failed:
-        logger.warn(`Restore ${app.restoreInProgressName} falied`);
+        logger.warn(`Restore ${app.restoreInProgressName} failed`);
         // TODO
         break;
 
       default:
         // start undeploy
+        const velero = new VeleroClient("velero"); // TODO velero namespace
         await this.undeployApp(app, cluster);
         this.lastUndeployTime = new Date().getTime();
     }
@@ -169,15 +170,19 @@ export class KotsDeploySocketService {
     const b = new Buffer(rendered);
 
 
+    const veleroClient = new VeleroClient("velero"); // TODO velero namespace
+    const backup = await veleroClient.readBackup(getSnapshotNameFromRestoreName(app.restoreInProgressName!));
     // make operator prune everything
     const args = {
       app_id: app.id,
+      app_slug: app.slug,
       kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
       namespace: desiredNamespace,
       manifests: "",
       previous_manifests: b.toString("base64"),
       result_callback: "/api/v1/undeploy/result",
       wait: true,
+      clear_namespaces: backup.spec.includedNamespaces,
     };
 
     this.io.in(cluster.id).emit("deploy", args);
@@ -278,6 +283,7 @@ export class KotsDeploySocketService {
 
               const args = {
                 app_id: app.id,
+                app_slug: app.slug,
                 kubectl_version: kotsAppSpec ? kotsAppSpec.kubectlVersion : "",
                 additional_namespaces: kotsAppSpec ? kotsAppSpec.additionalNamespaces : [],
                 image_pull_secret: imagePullSecret,
@@ -314,7 +320,7 @@ export class KotsDeploySocketService {
                 await this.kotsAppStatusStore.setKotsAppStatus(app.id, DefaultReadyState, new Date());
               }
             } catch (err) {
-              console.log(err);
+              logger.error(err);
             }
           }
         }

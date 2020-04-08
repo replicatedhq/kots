@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os/exec"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/mitchellh/hashstructure"
@@ -29,6 +30,7 @@ var (
 
 type ApplicationManifests struct {
 	AppID                string   `json:"app_id"`
+	AppSlug              string   `json:"app_slug"`
 	KubectlVersion       string   `json:"kubectl_version"`
 	AdditionalNamespaces []string `json:"additional_namespaces"`
 	ImagePullSecret      string   `json:"image_pull_secret"`
@@ -37,6 +39,7 @@ type ApplicationManifests struct {
 	Manifests            string   `json:"manifests"`
 	Wait                 bool     `json:"wait"`
 	ResultCallback       string   `json:"result_callback"`
+	ClearNamespaces      []string `json:"clear_namespaces"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server
@@ -99,6 +102,7 @@ func (c *Client) Run() error {
 func (c *Client) runAppStateMonitor() error {
 	m := map[string]func(f func()){}
 	hash := map[string]uint64{}
+	var mtx sync.Mutex
 
 	for appStatus := range c.appStateMonitor.AppStatusChan() {
 		throttled, ok := m[appStatus.AppID]
@@ -107,9 +111,11 @@ func (c *Client) runAppStateMonitor() error {
 			m[appStatus.AppID] = throttled
 		}
 		throttled(func() {
+			mtx.Lock()
 			lastHash := hash[appStatus.AppID]
 			nextHash, _ := hashstructure.Hash(appStatus, nil)
 			hash[appStatus.AppID] = nextHash
+			mtx.Unlock()
 			if lastHash != nextHash {
 				b, _ := json.Marshal(appStatus)
 				log.Printf("Sending app status %s", b)
@@ -214,6 +220,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
 		log.Println("received a deploy request")
+
 		if args.PreviousManifests != "" {
 			if err := c.diffAndRemovePreviousManifests(args); err != nil {
 				log.Printf("error diffing and removing previous manifests: %s", err.Error())
