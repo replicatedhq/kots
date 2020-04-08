@@ -99,6 +99,12 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 		return false, nil
 	}
 
+	// Backup is never deployed. kots.io/exclude and kots.io/when are used to enable snapshots
+	if excludeKotsKinds {
+		if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
+			return false, nil
+		}
+	}
 	if o.Metadata.Annotations != nil {
 		if val, ok := o.Metadata.Annotations["kots.io/exclude"]; ok {
 			if boolVal, ok := val.(bool); ok {
@@ -145,10 +151,6 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 
 		// In addition to kotskinds, we exclude the application crd for now
 		if o.APIVersion == "app.k8s.io/v1beta1" {
-			return false, nil
-		}
-
-		if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
 			return false, nil
 		}
 	}
