@@ -3,6 +3,7 @@ import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
+import Helmet from "react-helmet";
 import find from "lodash/find";
 import { isVeleroInstalled, snapshotSettings } from "../../queries/SnapshotQueries";
 import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
@@ -575,6 +576,9 @@ class AppSnapshotSettings extends Component {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        <Helmet>
+          <title>Snapshots</title>
+        </Helmet>
         <div className="snapshot-form-wrapper">
           <form>
             <div className="flex1 u-marginBottom--30">
