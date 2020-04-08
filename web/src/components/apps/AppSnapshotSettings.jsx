@@ -580,6 +580,10 @@ class AppSnapshotSettings extends Component {
           <title>Snapshots</title>
         </Helmet>
         <div className="snapshot-form-wrapper">
+          <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
+            <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
+          </div>
           <form>
             <div className="flex1 u-marginBottom--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
