@@ -81,6 +81,10 @@ export class KotsApp {
     const parsedKotsAppSpec = await stores.kotsAppStore.getKotsAppSpec(this.id, activeDownstream.parentSequence!);
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
+      if (!parsedAppSpec.spec.descriptor || !parsedAppSpec.spec.descriptor.links) {
+        return [];
+      }
+
       const links: KotsAppLink[] = [];
       for (const unrealizedLink of parsedAppSpec.spec.descriptor.links) {
         // this is a pretty naive solution that works when there is 1 downstream only
@@ -417,7 +421,7 @@ export class KotsApp {
     const tgzStream = getS3(replicatedParams).getObject(params).createReadStream();
     const extract = tar.extract();
     const gzunipStream = zlib.createGunzip();
- 
+
     return new Promise((resolve, reject) => {
       const tmpDir = tmp.dirSync();
       extract.on("entry", async (header, stream, next) => {
