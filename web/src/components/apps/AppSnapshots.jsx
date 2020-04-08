@@ -11,6 +11,7 @@ import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+import { Utilities } from "../../utilities/utilities";
 
 class AppSnapshots extends Component {
   state = {
@@ -108,24 +109,35 @@ class AppSnapshots extends Component {
 
   startManualSnapshot = () => {
     const { app } = this.props;
-    this.setState({ startingSnapshot: true, startSnapshotErr: false, startSnapshotErrorMsg: "" });
-    this.props.manualSnapshot(app.id)
-      .then(() => {
-        this.setState({ startingSnapshot: false });
-        this.props.snapshots.refetch();
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            startingSnapshot: false,
-            startSnapshotErr: true,
-            startSnapshotErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ startingSnapshot: false });
+    this.setState({
+      startingSnapshot: true,
+      startSnapshotErr: false,
+      startSnapshotErrorMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
+      method: "POST",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      console.log(result);
+      this.setState({
+        startingSnapshot: false,
       });
+      this.props.snapshots.refetch();
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        startingSnapshot: false,
+        startSnapshotErr: true,
+        startSnapshotErrorMsg: err,
+      })
+    })
   }
 
   handleScheduleSubmit = () => {
