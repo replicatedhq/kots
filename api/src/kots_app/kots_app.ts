@@ -490,10 +490,6 @@ export class KotsApp {
   }
 
   private async isAllowSnapshots(stores: Stores, downstreams: Cluster[]): Promise<boolean> {
-    const partOfLicenseYaml = await stores.kotsAppStore.isAllowSnapshotsPartOfLicenseYaml(this.id, this.currentSequence!);
-    if (!partOfLicenseYaml) {
-      return false;
-    }
     if (!downstreams.length) {
       return false;
     }
