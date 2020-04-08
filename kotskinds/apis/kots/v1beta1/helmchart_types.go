@@ -39,9 +39,13 @@ type MappedChartValue struct {
 	array    []*MappedChartValue          `json:"-"`
 }
 
-func (m *MappedChartValue) GetValue() (interface{}, error) {
+func (m *MappedChartValue) GetBuiltValue(updater func(string) (string, error)) (interface{}, error) {
 	if m.valueType == "string" {
-		return escapeValueIfNeeded(m.strValue), nil
+		updatedString, err := updater(m.strValue)
+		if err != nil {
+			return nil, errors.Wrap(err, "update built value")
+		}
+		return escapeValueIfNeeded(updatedString), nil
 	}
 	if m.valueType == "bool" {
 		return m.boolValue, nil
@@ -56,7 +60,7 @@ func (m *MappedChartValue) GetValue() (interface{}, error) {
 	if m.valueType == "children" {
 		children := map[string]interface{}{}
 		for k, v := range m.children {
-			childValue, err := v.GetValue()
+			childValue, err := v.GetBuiltValue(updater)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
@@ -67,7 +71,7 @@ func (m *MappedChartValue) GetValue() (interface{}, error) {
 	if m.valueType == "array" {
 		var elements []interface{}
 		for i, v := range m.array {
-			elValue, err := v.GetValue()
+			elValue, err := v.GetBuiltValue(updater)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
 			}
@@ -159,7 +163,7 @@ type ChartIdentifier struct {
 	ChartVersion string `json:"chartVersion"`
 }
 
-func renderOneLevelValues(values map[string]MappedChartValue, parent []string) ([]string, error) {
+func renderOneLevelValues(values map[string]MappedChartValue, parent []string, updater func(string) (string, error)) ([]string, error) {
 	keys := []string{}
 
 	for k, v := range values {
@@ -175,7 +179,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 			if k != "" {
 				next = append(next, escapeKeyIfNeeded(k))
 			}
-			childKeys, err := renderOneLevelValues(notNilChildren, next)
+			childKeys, err := renderOneLevelValues(notNilChildren, next, updater)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get children")
 			}
@@ -187,7 +191,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				notNilChildren[""] = *mv
 
 				key := fmt.Sprintf("%s[%d]", escapeKeyIfNeeded(k), i)
-				childKeys, err := renderOneLevelValues(notNilChildren, append(parent, key))
+				childKeys, err := renderOneLevelValues(notNilChildren, append(parent, key), updater)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to get children")
 				}
@@ -195,7 +199,7 @@ func renderOneLevelValues(values map[string]MappedChartValue, parent []string) (
 				keys = append(keys, childKeys...)
 			}
 		} else {
-			value, err := v.GetValue()
+			value, err := v.GetBuiltValue(updater)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get value")
 			}
@@ -224,8 +228,8 @@ func escapeValueIfNeeded(in string) string {
 	).Replace(in)
 }
 
-func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue) ([]string, error) {
-	return renderOneLevelValues(values, []string{})
+func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue, updater func(string) (string, error)) ([]string, error) {
+	return renderOneLevelValues(values, []string{}, updater)
 }
 
 type OptionalValue struct {

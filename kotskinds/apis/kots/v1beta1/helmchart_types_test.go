@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -124,6 +125,16 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{`a=b\,c\,d`},
 		},
 		{
+			name: "string with comma in generated string",
+			values: map[string]MappedChartValue{
+				"a": MappedChartValue{
+					strValue:  "replaceme",
+					valueType: "string",
+				},
+			},
+			expect: []string{`a=I\,was\,replaced`},
+		},
+		{
 
 			name: "with-child",
 			values: map[string]MappedChartValue{
@@ -199,12 +210,19 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									boolValue: true,
 									valueType: "bool",
 								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "replaceme",
+									valueType: `string`,
+								},
 							},
 						},
 					},
 				},
 			},
-			expect: []string{"storage.postgres.enabled=true"},
+			expect: []string{
+				"storage.postgres.enabled=true",
+				`storage.postgres.replacementtest=I\,was\,replaced`,
+			},
 		},
 		{
 			name: "complex",
@@ -227,6 +245,10 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									strValue:  "amazonaws.com",
 									valueType: "string",
 								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "replaceme",
+									valueType: `string`,
+								},
 							},
 						},
 					},
@@ -236,6 +258,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				"replicas=4",
 				"storage.postgres.enabled=true",
 				"storage.postgres.host=amazonaws.com",
+				`storage.postgres.replacementtest=I\,was\,replaced`,
 			},
 		},
 		{
@@ -255,6 +278,10 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									strValue:  "nginx",
 									valueType: "string",
 								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "replaceme please",
+									valueType: `string`,
+								},
 							},
 						},
 					},
@@ -263,6 +290,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			expect: []string{
 				"ingress.enabled=true",
 				`ingress.annotations.kubernetes\.io/ingress\.class=nginx`,
+				`ingress.annotations.replacementtest=I\,was\,replaced please`,
 			},
 		},
 	}
@@ -274,7 +302,11 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			h := HelmChartSpec{
 				Values: test.values,
 			}
-			actual, err := h.RenderValues(h.Values)
+			actual, err := h.RenderValues(h.Values, func(s2 string) (s string, err error) {
+				return strings.NewReplacer(
+					"replaceme", "I,was,replaced",
+				).Replace(s2), nil
+			})
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.expect, actual)
@@ -351,7 +383,7 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 				},
 			},
 			expected: []interface{}{
-				"val1",
+				"val9",
 				"val2",
 			},
 		},
@@ -377,7 +409,7 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"child": []interface{}{
-					"val1",
+					"val9",
 					"val2",
 				},
 			},
@@ -388,7 +420,11 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			actual, err := test.mappedChartValue.GetValue()
+			actual, err := test.mappedChartValue.GetBuiltValue(func(s2 string) (s string, err error) {
+				return strings.NewReplacer(
+					"1", `9`,
+				).Replace(s2), nil
+			})
 			req.NoError(err)
 
 			assert.Equal(t, test.expected, actual)

@@ -162,18 +162,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 		}
 
-		localValues, err := kotsHelmChart.Spec.RenderValues(mergedValues)
+		localValues, err := kotsHelmChart.Spec.RenderValues(mergedValues, func(s2 string) (s string, err error) {
+			return builder.RenderTemplate(s2, s2)
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
-		}
-
-		for i, localValue := range localValues {
-			renderedValue, err := builder.RenderTemplate(localValue, localValue)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render helm value mapping")
-			}
-
-			localValues[i] = renderedValue
 		}
 
 		namespace := kotsHelmChart.Spec.Namespace
