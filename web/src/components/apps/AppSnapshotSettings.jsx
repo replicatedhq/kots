@@ -83,8 +83,8 @@ class AppSnapshotSettings extends Component {
     s3CompatibleKeySecret: "",
     s3CompatibleEndpoint: "",
     s3CompatibleRegion: "",
-
-    hideCheckVeleroButton: false
+    hideCheckVeleroButton: false,
+    updateConfirm: false
   };
 
   setFields = () => {
@@ -202,7 +202,10 @@ class AppSnapshotSettings extends Component {
       this.state.useIam ? this.state.s3KeyId : "",
       this.state.useIam ? this.state.s3KeySecret : "",
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -229,7 +232,10 @@ class AppSnapshotSettings extends Component {
       this.state.azureClientSecret,
       this.state.selectedAzureCloudName.value,
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -250,7 +256,10 @@ class AppSnapshotSettings extends Component {
       this.state.gcsPath,
       this.state.gcsServiceAccount
     ).then(() => {
-      this.setState({ updatingSettings: false })
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -274,7 +283,10 @@ class AppSnapshotSettings extends Component {
       this.state.s3CompatibleKeyId,
       this.state.s3CompatibleKeySecret,
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -541,7 +553,7 @@ class AppSnapshotSettings extends Component {
 
 
   render() {
-    const { updatingSettings, hideCheckVeleroButton } = this.state;
+    const { updatingSettings, hideCheckVeleroButton, updateConfirm } = this.state;
     const { snapshotSettings, isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
@@ -611,6 +623,12 @@ class AppSnapshotSettings extends Component {
                 {this.renderDestinationFields()}
                 <div className="flex u-marginBottom--30">
                   <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
+                  {updateConfirm &&
+                    <div className="u-marginLeft--10 flex alignItems--center">
+                      <span className="icon checkmark-icon" />
+                      <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
+                    </div>
+                  }
                 </div>
               </div>
             }
