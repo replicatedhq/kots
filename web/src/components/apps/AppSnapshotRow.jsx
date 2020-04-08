@@ -21,7 +21,7 @@ class AppShanpshotRow extends React.Component {
     const { appSlug, snapshot } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot.expires);
 
-    
+
     return (
       <div className={`flex flex-auto ActiveDownstreamVersionRow--wrapper alignItems--center ${snapshot.status === "Deleting" && "is-deleting"} ${isExpired && "is-expired"}`}>
         <div className="flex-column flex1">
@@ -47,8 +47,10 @@ class AppShanpshotRow extends React.Component {
         </div>
         {!isExpired && snapshot.status !== "Deleting" &&
           <div className="flex-auto">
-            <span className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleRestoreClick(snapshot)}>Restore</span>
-            <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover" onClick={() => this.handleDeleteClick(snapshot)}>Delete</span>
+            {snapshot.status !== "InProgress" && snapshot.status !== "Failed" &&
+              <span className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleRestoreClick(snapshot)}>Restore</span>}
+            {snapshot.status !== "InProgress" &&
+              <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover" onClick={() => this.handleDeleteClick(snapshot)}>Delete</span>}
           </div>
         }
       </div>
