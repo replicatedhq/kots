@@ -3,6 +3,7 @@ import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
+import Helmet from "react-helmet";
 import find from "lodash/find";
 import { isVeleroInstalled, snapshotSettings } from "../../queries/SnapshotQueries";
 import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
@@ -82,8 +83,8 @@ class AppSnapshotSettings extends Component {
     s3CompatibleKeySecret: "",
     s3CompatibleEndpoint: "",
     s3CompatibleRegion: "",
-
-    hideCheckVeleroButton: false
+    hideCheckVeleroButton: false,
+    updateConfirm: false
   };
 
   setFields = () => {
@@ -201,7 +202,10 @@ class AppSnapshotSettings extends Component {
       this.state.useIam ? this.state.s3KeyId : "",
       this.state.useIam ? this.state.s3KeySecret : "",
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -228,7 +232,10 @@ class AppSnapshotSettings extends Component {
       this.state.azureClientSecret,
       this.state.selectedAzureCloudName.value,
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -249,7 +256,10 @@ class AppSnapshotSettings extends Component {
       this.state.gcsPath,
       this.state.gcsServiceAccount
     ).then(() => {
-      this.setState({ updatingSettings: false })
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -273,7 +283,10 @@ class AppSnapshotSettings extends Component {
       this.state.s3CompatibleKeyId,
       this.state.s3CompatibleKeySecret,
     ).then(() => {
-      this.setState({ updatingSettings: false });
+      this.setState({ updatingSettings: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
       .catch(err => {
         console.log(err);
@@ -540,7 +553,7 @@ class AppSnapshotSettings extends Component {
 
 
   render() {
-    const { updatingSettings, hideCheckVeleroButton } = this.state;
+    const { updatingSettings, hideCheckVeleroButton, updateConfirm } = this.state;
     const { snapshotSettings, isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
@@ -575,7 +588,14 @@ class AppSnapshotSettings extends Component {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        <Helmet>
+          <title>Snapshots</title>
+        </Helmet>
         <div className="snapshot-form-wrapper">
+          <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
+            <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
+          </div>
           <form>
             <div className="flex1 u-marginBottom--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
@@ -603,6 +623,12 @@ class AppSnapshotSettings extends Component {
                 {this.renderDestinationFields()}
                 <div className="flex u-marginBottom--30">
                   <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
+                  {updateConfirm &&
+                    <div className="u-marginLeft--10 flex alignItems--center">
+                      <span className="icon checkmark-icon" />
+                      <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
+                    </div>
+                  }
                 </div>
               </div>
             }
