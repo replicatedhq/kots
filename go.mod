@@ -38,6 +38,7 @@ require (
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	gopkg.in/go-playground/assert.v1 v1.2.1
+	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/api v0.17.4
 	k8s.io/apimachinery v0.17.4
