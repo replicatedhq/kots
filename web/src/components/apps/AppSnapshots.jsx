@@ -148,7 +148,6 @@ class AppSnapshots extends Component {
     })
     .then(res => res.json())
     .then(result => {
-      console.log(result);
       this.setState({
         startingSnapshot: false,
       });
