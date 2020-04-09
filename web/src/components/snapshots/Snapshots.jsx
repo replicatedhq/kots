@@ -136,7 +136,29 @@ class Snapshots extends Component {
     }
   }
 
-  updateSettings = (provider, bucket, path, aws) => {
+  checkForChanges = () => {
+    const { snapshotSettings } = this.state;
+
+    return  (
+      snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
+      snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret || snapshotSettings.store.aws.useInstanceRole !== this.state.useIam
+    )
+  }
+
+  updateSettings = (provider, bucket, path) => {
+    const hasChanges = this.checkForChanges();
+    let aws;
+    if (provider === "aws") {
+      if (hasChanges) {
+        aws = {
+          region: this.state.s3Region,
+          accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
+          secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
+          useInstanceRole: this.state.useIam 
+        }
+      }
+    }
+
     this.setState({ updatingSettings: true });
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
@@ -165,14 +187,6 @@ class Snapshots extends Component {
       });
   }
 
-  getSecret = (destinationSecret) => {
-    if (destinationSecret) {
-      return "****";
-    } else {
-      return "";
-    }
-  }
-
   setFields = () => {
     const { snapshotSettings } = this.state;
     if (!snapshotSettings) return;
@@ -187,8 +201,8 @@ class Snapshots extends Component {
         s3Region: store.aws.region,
         s3Path: store.path,
         useIam,
-        s3KeyId: store.aws.accessKeyID,
-        s3KeySecret: this.getSecret(store.aws.secretAccessKey)
+        s3KeyId: store.aws.accessKeyID || "",
+        s3KeySecret: store.aws.secretAccessKey || ""
       });
     }
 
@@ -201,7 +215,7 @@ class Snapshots extends Component {
         azureSubscriptionId: store.azure.subscriptionID,
         azureTenantId: store.azure.tenantID,
         azureClientId: store.azure.clientID,
-        azureClientSecret: this.getSecret(store.azure.clientSecret),
+        azureClientSecret: store.azure.clientSecret,
         azureResourceGroupName: store.azure.resourceGroup,
         azureStorageAccountId: store.azure.storageAccount,
         selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store.azure.cloudName])
@@ -225,7 +239,7 @@ class Snapshots extends Component {
         s3CompatibleBucket: store.bucket,
         s3CompatiblePath: store.path,
         s3CompatibleKeyId: store.s3Compatible.accessKeyID,
-        s3CompatibleKeySecret: this.getSecret(store.s3Compatible.accessKeySecret),
+        s3CompatibleKeySecret: store.s3Compatible.accessKeySecret,
         s3CompatibleEndpoint: store.s3Compatible.endpoint,
         s3CompatibleRegion: store.s3Compatible.region
       });
@@ -282,11 +296,7 @@ class Snapshots extends Component {
   }
 
   snapshotProviderAWS = async () => {
-    this.updateSettings("aws", this.state.s3bucket, this.state.s3Path, {
-      region: this.state.s3Region,
-      accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
-      secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : ""
-    })
+    this.updateSettings("aws", this.state.s3bucket, this.state.s3Path)
   }
 
   snapshotProviderAzure = async () => {
@@ -440,7 +450,7 @@ class Snapshots extends Component {
                 </div>
                 <div className="flex1 u-paddingLeft--5">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
-                  <input type="text" className="Input" placeholder="access key" value={this.state.s3KeySecret} onChange={(e) => { this.handleFormChange("s3KeySecret", e) }} />
+                  <input type="password" className="Input" placeholder="access key" value={this.state.s3KeySecret} onChange={(e) => { this.handleFormChange("s3KeySecret", e) }} />
                 </div>
               </div>
             }
@@ -477,7 +487,7 @@ class Snapshots extends Component {
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client Secret</p>
-                <input type="text" className="Input" placeholder="Client Secret" value={this.state.azureClientSecret} onChange={(e) => { this.handleFormChange("azureClientSecret", e) }} />
+                <input type="password" className="Input" placeholder="Client Secret" value={this.state.azureClientSecret} onChange={(e) => { this.handleFormChange("azureClientSecret", e) }} />
               </div>
             </div>
 
@@ -568,7 +578,7 @@ class Snapshots extends Component {
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
-                <input type="text" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }} />
+                <input type="password" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
