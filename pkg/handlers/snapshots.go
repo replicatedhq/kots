@@ -94,11 +94,14 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			if updateGlobalSnapshotSettingsRequest.AWS.SecretAccessKey != "" {
 				store.AWS.SecretAccessKey = updateGlobalSnapshotSettingsRequest.AWS.SecretAccessKey
 			}
+			if updateGlobalSnapshotSettingsRequest.AWS.Region != "" {
+				store.AWS.Region = updateGlobalSnapshotSettingsRequest.AWS.Region
+			}
 		}
 
 		if !store.AWS.UseInstanceRole {
-			if store.AWS.AccessKeyID == "" || store.AWS.SecretAccessKey == "" {
-				globalSnapshotSettingsResponse.Error = "missing access key id and/or secret access key"
+			if store.AWS.AccessKeyID == "" || store.AWS.SecretAccessKey == "" || store.AWS.Region == "" {
+				globalSnapshotSettingsResponse.Error = "missing access key id and/or secret access key and/or region"
 				JSON(w, 400, globalSnapshotSettingsResponse)
 				return
 			}
@@ -128,9 +131,60 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if updateGlobalSnapshotSettingsRequest.Azure != nil {
-		// TODO
+		if store.Azure == nil {
+			store.Azure = &snapshottypes.StoreAzure{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Other = nil
+
+		if updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup != "" {
+			store.Azure.ResourceGroup = updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup
+		}
+		if updateGlobalSnapshotSettingsRequest.Azure.SubscriptionID != "" {
+			store.Azure.SubscriptionID = updateGlobalSnapshotSettingsRequest.Azure.SubscriptionID
+		}
+		if updateGlobalSnapshotSettingsRequest.Azure.TenantID != "" {
+			store.Azure.TenantID = updateGlobalSnapshotSettingsRequest.Azure.TenantID
+		}
+		if updateGlobalSnapshotSettingsRequest.Azure.ClientID != "" {
+			store.Azure.ClientID = updateGlobalSnapshotSettingsRequest.Azure.ClientID
+		}
+		if updateGlobalSnapshotSettingsRequest.Azure.ClientSecret != "" {
+			store.Azure.ClientSecret = updateGlobalSnapshotSettingsRequest.Azure.ClientSecret
+		}
+		if updateGlobalSnapshotSettingsRequest.Azure.CloudName != "" {
+			store.Azure.CloudName = updateGlobalSnapshotSettingsRequest.Azure.CloudName
+		}
+
+		// TODO what's required to validate this?
+
 	} else if updateGlobalSnapshotSettingsRequest.Other != nil {
-		// TODO
+		if store.Other == nil {
+			store.Other = &snapshottypes.StoreOther{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+
+		if updateGlobalSnapshotSettingsRequest.Other.AccessKeyID != "" {
+			store.Other.AccessKeyID = updateGlobalSnapshotSettingsRequest.Other.AccessKeyID
+		}
+		if updateGlobalSnapshotSettingsRequest.Other.SecretAccessKey != "" {
+			store.Other.SecretAccessKey = updateGlobalSnapshotSettingsRequest.Other.SecretAccessKey
+		}
+		if updateGlobalSnapshotSettingsRequest.Other.Region != "" {
+			store.Other.Region = updateGlobalSnapshotSettingsRequest.Other.Region
+		}
+		if updateGlobalSnapshotSettingsRequest.Other.Endpoint != "" {
+			store.Other.Endpoint = updateGlobalSnapshotSettingsRequest.Other.Endpoint
+		}
+
+		if store.Other.AccessKeyID == "" || store.Other.SecretAccessKey == "" || store.Other.Endpoint == "" || store.Other.Region == "" {
+			globalSnapshotSettingsResponse.Error = "access key, secret key, endpoint and region are required"
+			JSON(w, 400, globalSnapshotSettingsResponse)
+			return
+		}
 	}
 
 	if err := snapshot.UpdateGlobalStore(store); err != nil {
