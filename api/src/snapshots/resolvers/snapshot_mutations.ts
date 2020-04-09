@@ -150,12 +150,6 @@ export function SnapshotMutations(stores: Stores) {
       return client.saveSnapshotStore(config, slugs);
     },
 
-    async manualSnapshot(root: any, args: any, context: Context): Promise<void> {
-      context.requireSingleTenantSession();
-      const scheduled = false;
-      await backup(stores, args.appId, scheduled);
-    },
-
     // tslint:disable-next-line cyclomatic-complexity
     async restoreSnapshot(root: any, args: any, context: Context): Promise<RestoreDetail> {
       context.requireSingleTenantSession();
@@ -185,7 +179,7 @@ export function SnapshotMutations(stores: Stores) {
         throw new ReplicatedError(`Failed to parse sequence from Backup: ${sequenceString}`);
       }
       logger.info(`Restore found Backup ${args.snapshotName} for app ${appId} sequence ${sequence} on cluster ${clusterId}`);
- 
+
       // ensure the backup's kots app version exists in the db
       const currentVersion = await stores.kotsAppStore.getCurrentVersion(appId, clusterId);
       if (!currentVersion || currentVersion.sequence !== sequence) {

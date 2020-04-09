@@ -6,8 +6,8 @@ import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import Modal from "react-modal";
-import { listSnapshots, snapshotSettings } from "../../queries/SnapshotQueries";
-import { manualSnapshot, deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
+import { snapshotSettings } from "../../queries/SnapshotQueries";
+import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
@@ -29,11 +29,35 @@ class AppSnapshots extends Component {
     snapshotToRestore: "",
     restoreErr: false,
     restoreErrorMsg: "",
-    hideCheckVeleroButton: false
+    hideCheckVeleroButton: false,
+    snapshots: [],
+    hasSnapshotsLoaded: false,
   };
 
   componentDidMount() {
-    this.props.snapshots?.startPolling(2000);
+    this.listSnapshots()
+    setInterval(this.listSnapshots.bind(this), 2000);
+  }
+
+  listSnapshots() {
+    const { app } = this.props;
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      this.setState({
+        snapshots: result.backups,
+        hasSnapshotsLoaded: true,
+      });
+    })
+    .catch(err => {
+      console.log(err);
+    })
   }
 
   toggleScheduleSnapshotModal = () => {
@@ -128,7 +152,6 @@ class AppSnapshots extends Component {
       this.setState({
         startingSnapshot: false,
       });
-      this.props.snapshots.refetch();
     })
     .catch(err => {
       console.log(err);
@@ -160,8 +183,10 @@ class AppSnapshots extends Component {
       snapshotToRestore,
       restoreErr,
       restoreErrorMsg,
+      snapshots,
+      hasSnapshotsLoaded,
     } = this.state;
-    const { app, snapshots, snapshotSettings } = this.props;
+    const { app, snapshotSettings } = this.props;
     const appTitle = app.name;
 
     if (snapshots?.loading || snapshotSettings?.loading) {
@@ -177,7 +202,7 @@ class AppSnapshots extends Component {
       this.props.history.replace("/snapshots");
     }
 
-    if (!snapshots.loading && !snapshots?.listSnapshots?.length) {
+    if (hasSnapshotsLoaded && snapshots.length === 0) {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
@@ -216,7 +241,7 @@ class AppSnapshots extends Component {
               <button className="btn primary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
             </div>
           </div>
-          {snapshots?.listSnapshots && snapshots?.listSnapshots?.map((snapshot) => (
+          {snapshots.map((snapshot) => (
             <AppSnapshotsRow
               key={`snapshot-${snapshot.name}-${snapshot.started}`}
               snapshot={snapshot}
@@ -277,16 +302,6 @@ class AppSnapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(listSnapshots, {
-    name: "snapshots",
-    options: ({ match }) => {
-      const slug = match.params.slug;
-      return {
-        variables: { slug },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(snapshotSettings, {
     name: "snapshotSettings",
     options: () => {
@@ -294,11 +309,6 @@ export default compose(
         fetchPolicy: "no-cache"
       }
     }
-  }),
-  graphql(manualSnapshot, {
-    props: ({ mutate }) => ({
-      manualSnapshot: (appId) => mutate({ variables: { appId } })
-    })
   }),
   graphql(deleteSnapshot, {
     props: ({ mutate }) => ({

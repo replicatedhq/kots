@@ -58,7 +58,6 @@ export const Query = `
 
     getPrometheusAddress: String
 
-    listSnapshots(slug: String!): [Snapshot]
     snapshotConfig(slug: String!): SnapshotConfig
     snapshotSettings: SnapshotSettings
     snapshotDetail(slug: String!, id: String!): SnapshotDetail
