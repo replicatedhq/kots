@@ -6,10 +6,12 @@ type StoreAWS struct {
 	Region          string `json:"region"`
 	AccessKeyID     string `json:"accessKeyID"`
 	SecretAccessKey string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
+	UseInstanceRole bool   `json:"useInstanceRole"`
 }
 
 type StoreGoogle struct {
-	ServiceAccount string `json:"serviceAccount"`
+	ServiceAccount  string `json:"serviceAccount"`
+	UseInstanceRole bool   `json:"useInstanceRole"`
 }
 
 type StoreAzure struct {
