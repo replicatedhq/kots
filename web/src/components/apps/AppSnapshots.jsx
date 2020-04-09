@@ -6,7 +6,6 @@ import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import Modal from "react-modal";
-import { snapshotSettings } from "../../queries/SnapshotQueries";
 import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -301,14 +300,6 @@ class AppSnapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(snapshotSettings, {
-    name: "snapshotSettings",
-    options: () => {
-      return {
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(deleteSnapshot, {
     props: ({ mutate }) => ({
       deleteSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })

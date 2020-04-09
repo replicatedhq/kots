@@ -2,6 +2,43 @@ package types
 
 import "time"
 
+type StoreAWS struct {
+	Region          string `json:"region"`
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
+}
+
+type StoreGoogle struct {
+	ServiceAccount string `json:"serviceAccount"`
+}
+
+type StoreAzure struct {
+	ResourceGroup  string `json:"resourceGroup"`
+	StorageAccount string `json:"storageAccount"`
+	SubscriptionID string `json:"subscriptionId"`
+	TenantID       string `json:"tenantId"`
+	ClientID       string `json:"clientId"`
+	ClientSecret   string `json:"clientSecret"`
+	CloudName      string `json:"cloudName"`
+}
+
+type StoreOther struct {
+	Region          string `json:"region"`
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
+	Endpoint        string `json:"endpoint"`
+}
+
+type Store struct {
+	Provider string       `json:"provider"`
+	Bucket   string       `json:"bucket"`
+	Path     string       `json:"path"`
+	AWS      *StoreAWS    `json:"aws,omitempty"`
+	Azure    *StoreAzure  `json:"azure,omitempty"`
+	Google   *StoreGoogle `json:"google,omitempty"`
+	Other    *StoreOther  `json:"other,omitempty"`
+}
+
 type Backup struct {
 	Name               string     `json:"name"`
 	Status             string     `json:"status"`
