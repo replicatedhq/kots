@@ -14,6 +14,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+func UpdateGlobalStore(store *types.Store) error {
+	// TODO
+	return nil
+}
+
 func GetGlobalStore() (*types.Store, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
