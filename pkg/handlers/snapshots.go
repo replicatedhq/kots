@@ -94,6 +94,8 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 
 	globalSnapshotSettingsResponse.Store = updatedStore
 	globalSnapshotSettingsResponse.Success = true
+
+	JSON(w, 200, globalSnapshotSettingsResponse)
 }
 
 func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
