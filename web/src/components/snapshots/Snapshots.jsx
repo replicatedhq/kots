@@ -93,6 +93,86 @@ class Snapshots extends Component {
     snapshotSettingsErrMsg: "",
   };
 
+  fetchSnapshotSettings = () => {
+    this.setState({
+      isLoadingSnapshotSettings: true,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+      .then(res => res.json())
+      .then(result => {
+        this.setState({
+          snapshotSettings: result,
+          isLoadingSnapshotSettings: false,
+          snapshotSettingsErr: false,
+          snapshotSettingsErrMsg: "",
+        })
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          isLoadingSnapshotSettings: false,
+          snapshotSettingsErr: true,
+          snapshotSettingsErrMsg: err,
+        })
+      })
+  }
+
+  componentDidMount = () => {
+    this.fetchSnapshotSettings();
+  }
+
+  componentDidUpdate(lastProps, lastState) {
+    if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
+      this.setFields();
+    }
+  }
+
+  updateSettings = (provider, bucket, path, aws) => {
+    this.setState({ updatingSettings: true });
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        provider,
+        bucket,
+        path,
+        aws
+      })
+    })
+      .then(() => {
+        this.setState({ updatingSettings: false, updateConfirm: true });
+        setTimeout(() => {
+          this.setState({ updateConfirm: false })
+        }, 3000);
+      })
+      .catch((err) => {
+        console.error(err);
+        this.setState({
+          updatingSettings: false
+        });
+      });
+  }
+
+  getSecret = (destinationSecret) => {
+    if (destinationSecret) {
+      return "****";
+    } else {
+      return "";
+    }
+  }
+
   setFields = () => {
     const { snapshotSettings } = this.state;
     if (!snapshotSettings) return;
@@ -107,8 +187,8 @@ class Snapshots extends Component {
         s3Region: store.aws.region,
         s3Path: store.path,
         useIam,
-        s3KeyId: store.aws.accessKeyID || "",
-        s3KeySecret: store.aws.secretAccessKey || ""
+        s3KeyId: store.aws.accessKeyID,
+        s3KeySecret: this.getSecret(store.aws.secretAccessKey)
       });
     }
 
@@ -121,7 +201,7 @@ class Snapshots extends Component {
         azureSubscriptionId: store.azure.subscriptionID,
         azureTenantId: store.azure.tenantID,
         azureClientId: store.azure.clientID,
-        azureClientSecret: store.azure.clientSecret,
+        azureClientSecret: this.getSecret(store.azure.clientSecret),
         azureResourceGroupName: store.azure.resourceGroup,
         azureStorageAccountId: store.azure.storageAccount,
         selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store.azure.cloudName])
@@ -145,7 +225,7 @@ class Snapshots extends Component {
         s3CompatibleBucket: store.bucket,
         s3CompatiblePath: store.path,
         s3CompatibleKeyId: store.s3Compatible.accessKeyID,
-        s3CompatibleKeySecret: store.s3Compatible.accessKeySecret,
+        s3CompatibleKeySecret: this.getSecret(store.s3Compatible.accessKeySecret),
         s3CompatibleEndpoint: store.s3Compatible.endpoint,
         s3CompatibleRegion: store.s3Compatible.region
       });
@@ -184,43 +264,29 @@ class Snapshots extends Component {
     switch (this.state.selectedDestination.value) {
       case "aws":
         await this.snapshotProviderAWS();
+        this.fetchSnapshotSettings();
         break;
       case "azure":
         await this.snapshotProviderAzure();
+        this.fetchSnapshotSettings();
         break;
       case "google":
         await this.snapshotProviderGoogle();
+        this.fetchSnapshotSettings();
         break;
       case "s3compatible":
         await this.snapshotProviderS3Compatible();
+        this.fetchSnapshotSettings();
         break;
     }
   }
 
   snapshotProviderAWS = async () => {
-    this.setState({ updatingSettings: true });
-    await this.props.snapshotProviderAWS(
-      this.state.s3bucket,
-      this.state.s3Path,
-      this.state.s3Region,
-      !this.state.useIam ? this.state.s3KeyId : "",
-      !this.state.useIam ? this.state.s3KeySecret : "",
-    ).then(() => {
-      this.setState({ updatingSettings: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
+    this.updateSettings("aws", this.state.s3bucket, this.state.s3Path, {
+      region: this.state.s3Region,
+      accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
+      secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : ""
     })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error",
-            updatingSettings: false
-          });
-        });
-      });
   }
 
   snapshotProviderAzure = async () => {
@@ -525,49 +591,6 @@ class Snapshots extends Component {
     }
   }
 
-  fetchSnapshotSettings = () => {
-    this.setState({
-      isLoadingSnapshotSettings: true,
-      snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: "",
-    });
-
-    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
-      method: "GET",
-      headers: {
-        "Authorization": `${Utilities.getToken()}`,
-        "Content-Type": "application/json",
-      }
-    })
-    .then(res => res.json())
-    .then(result => {
-      this.setState({
-        snapshotSettings: result,
-        isLoadingSnapshotSettings: false,
-        snapshotSettingsErr: false,
-        snapshotSettingsErrMsg: "",
-      })
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        isLoadingSnapshotSettings: false,
-        snapshotSettingsErr: true,
-        snapshotSettingsErrMsg: err,
-      })
-    })
-  }
-
-  componentDidMount = () => {
-    this.fetchSnapshotSettings();
-  }
-
-  componentDidUpdate(lastProps, lastState) {
-    if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
-      this.setFields();
-    }
-  }
-
   checkForVelero = () => {
     this.props.isVeleroInstalled.refetch().then((response) => {
       this.setState({ hideCheckVeleroButton: true });
@@ -614,13 +637,13 @@ class Snapshots extends Component {
             </p>
             <div className="flex flex-column u-marginTop--40 u-marginBottom--50 alignItems--center">
               <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
-              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleOne u-marginRight--10"/>Install the CLI on your machine by <a href="https://velero.io/docs/v1.3.2/basic-install/#install-the-cli" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
-              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleTwo u-marginRight--10"/>Run the commands from the instructions for your cloud provider </p>
+              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleOne u-marginRight--10" />Install the CLI on your machine by <a href="https://velero.io/docs/v1.3.2/basic-install/#install-the-cli" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleTwo u-marginRight--10" />Run the commands from the instructions for your cloud provider </p>
               <div className="flex flex1 u-marginTop--15">
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a>
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a>
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a>
-              <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a>
+                <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a>
+                <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a>
+                <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a>
+                <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a>
               </div>
             </div>
             <div className="u-textAlign--center">
