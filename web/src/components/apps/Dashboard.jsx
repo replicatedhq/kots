@@ -515,7 +515,7 @@ class Dashboard extends Component {
                     url={this.props.match.url}
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
-                    startManualSnapshot={() => this.startManualSnapshot()}
+                    startManualSnapshot={this.startManualSnapshot}
                     startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
                   />
                   <DashboardCard
