@@ -71,9 +71,14 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SyncLicense)
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)
 
+	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
 	r.Path("/api/v1/app/{appSlug}/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListBackups)
 
+	// Global snapshot routes
+	r.Path("/api/v1/snapshots/settings").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
+
+	// Find a home snapshot routes
 	r.Path("/api/v1/snapshot/{backup}/logs").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSnapshotLogs)
 
 	// TODO

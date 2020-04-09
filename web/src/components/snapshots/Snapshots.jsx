@@ -10,6 +10,7 @@ import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzur
 
 import Loader from "../shared/Loader";
 import "../../scss/components/shared/SnapshotForm.scss";
+import { Utilities } from "../../utilities/utilities";
 
 const DESTINATIONS = [
   {
@@ -84,7 +85,12 @@ class Snapshots extends Component {
     s3CompatibleEndpoint: "",
     s3CompatibleRegion: "",
     hideCheckVeleroButton: false,
-    updateConfirm: false
+    updateConfirm: false,
+
+    snapshotSettings: null,
+    isLoadingSnapshotSettings: true,
+    snapshotSettingsErr: false,
+    snapshotSettingsErrMsg: "",
   };
 
   setFields = () => {
@@ -528,9 +534,36 @@ class Snapshots extends Component {
   }
 
   componentDidMount = () => {
-    if (this.props.snapshotSettings.snapshotSettings) {
-      this.setFields();
-    }
+    this.setState({
+      isLoadingSnapshotSettings: true,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      this.setState({
+        snapshotSettings: result.settings,
+        isLoadingSnapshotSettings: false,
+        snapshotSettingsErr: false,
+        snapshotSettingsErrMsg: "",
+      })
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        isLoadingSnapshotSettings: false,
+        snapshotSettingsErr: true,
+        snapshotSettingsErrMsg: err,
+      })
+    })
   }
 
   checkForVelero = () => {
