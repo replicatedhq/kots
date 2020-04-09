@@ -136,7 +136,28 @@ class Snapshots extends Component {
     }
   }
 
-  updateSettings = (provider, bucket, path, aws) => {
+  checkForChanges = () => {
+    const { snapshotSettings } = this.state;
+
+    return  (
+      snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
+      snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret
+    )
+  }
+
+  updateSettings = (provider, bucket, path) => {
+    const hasChanges = this.checkForChanges();
+    let aws;
+    if (provider === "aws") {
+      if (hasChanges) {
+        aws = {
+          region: this.state.s3Region,
+          accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
+          secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : ""
+        }
+      }
+    }
+
     this.setState({ updatingSettings: true });
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
@@ -282,11 +303,7 @@ class Snapshots extends Component {
   }
 
   snapshotProviderAWS = async () => {
-    this.updateSettings("aws", this.state.s3bucket, this.state.s3Path, {
-      region: this.state.s3Region,
-      accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
-      secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : ""
-    })
+    this.updateSettings("aws", this.state.s3bucket, this.state.s3Path)
   }
 
   snapshotProviderAzure = async () => {
