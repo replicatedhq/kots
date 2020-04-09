@@ -574,7 +574,20 @@ class AppSnapshotSettings extends Component {
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
             <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure snapshots</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">Snapshots are enabled but you must install Velero on your cluster before you will be able to take snapshots of your applications. After installing Velero on your cluster click the button below so that kotsadm can pick it up and you can begin creating applicaiton snapshots.</p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+              In order to configure and use Snapshots (backup and restore), please install <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
+            </p>
+            <div className="flex flex-column u-marginTop--40 u-marginBottom--50 alignItems--center">
+              <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
+              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleOne u-marginRight--10"/>Install the CLI on your machine by <a href="https://velero.io/docs/v1.3.2/basic-install/#install-the-cli" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleTwo u-marginRight--10"/>Run the commands from the instructions for your cloud provider </p>
+              <div className="flex flex1 u-marginTop--15">
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a> 
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a> 
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a> 
+              <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a> 
+              </div>
+            </div>
             <div className="u-textAlign--center">
               {!hideCheckVeleroButton ?
                 <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
