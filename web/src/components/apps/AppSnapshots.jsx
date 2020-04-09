@@ -132,25 +132,6 @@ class AppSnapshots extends Component {
     console.log("schedule mutation to be implemented");
   }
 
-  checkForVelero = () => {
-    this.props.isVeleroInstalled.refetch().then((response) => {
-      this.setState({ hideCheckVeleroButton: true });
-      if (!response.data.isVeleroInstalled) {
-        setTimeout(() => {
-          this.setState({ hideCheckVeleroButton: false });
-        }, 5000);
-      } else {
-        this.setState({ hideCheckVeleroButton: false });
-      }
-    })
-  }
-
-  renderNotVeleroMessage = () => {
-    return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Not able to find Velero</p>
-  }
-
-
-
   render() {
     const {
       displayScheduleSnapshotModal,

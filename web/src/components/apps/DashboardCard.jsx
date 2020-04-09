@@ -131,7 +131,7 @@ export default class DashboardCard extends React.Component {
           unkownProgress={true}
           onProgressError={this.onProgressError}
           smallSize={true}
-        />);  
+        />);
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
@@ -201,7 +201,7 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErrorMsg } = this.props;
 
 
     return (
@@ -235,7 +235,10 @@ export default class DashboardCard extends React.Component {
                     : license ?
                       this.renderLicenseCard()
                       : isSnapshotAllowed ?
-                        <Link to={`${url}/snapshots`} className="card-link"> Start snapshot </Link>
+                        startSnapshotErrorMsg ?
+                          <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                          :
+                          <span className="card-link" onClick={startManualSnapshot}> Start snapshot </span>
                         : null
                 }
               </div>

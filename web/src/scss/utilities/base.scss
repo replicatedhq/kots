@@ -38,6 +38,21 @@ body a {
   }
 }
 
+.snapshotOptions {
+  display: flex;
+  border: 1px solid #4A4A4A;
+  border-radius: 2px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-right: 10px;
+  align-items: center;
+  color: #000000 !important;
+
+  &:hover {
+    background-color: #F5F8FC;
+  }
+}
+
 .status-indicator {
   font-size: 12px;
   line-height: 12px;

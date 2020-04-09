@@ -13,6 +13,7 @@ import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
+import { manualSnapshot } from "@src/mutations/SnapshotMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -51,6 +52,7 @@ class Dashboard extends Component {
     viewAirgapUploadError: false,
     viewAirgapUpdateError: false,
     airgapUpdateError: "",
+    startSnapshotErrorMsg: ""
   }
 
   toggleConfigureGraphs = () => {
@@ -391,6 +393,21 @@ class Dashboard extends Component {
     );
   }
 
+  startManualSnapshot = () => {
+    const { app } = this.props;
+    this.props.manualSnapshot(app.id)
+      .then(() => {
+        this.props.history.push(`/app/${app.slug}/snapshots`)
+      })
+      .catch(err => {
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({
+            startSnapshotErrorMsg: msg,
+          });
+        })
+      });
+  }
+
 
   render() {
     const {
@@ -498,6 +515,8 @@ class Dashboard extends Component {
                     url={this.props.match.url}
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
+                    startManualSnapshot={this.startManualSnapshot}
+                    startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
                   />
                   <DashboardCard
                     cardName="License"
@@ -556,7 +575,7 @@ class Dashboard extends Component {
           savingPromValue={savingPromValue}
           onPromValueChange={this.onPromValueChange}
         />
-        {this.state.viewAirgapUploadError && 
+        {this.state.viewAirgapUploadError &&
           <Modal
             isOpen={this.state.viewAirgapUploadError}
             onRequestClose={this.toggleViewAirgapUploadError}
@@ -573,7 +592,7 @@ class Dashboard extends Component {
             </div>
           </Modal>
         }
-        {this.state.viewAirgapUpdateError && 
+        {this.state.viewAirgapUpdateError &&
           <Modal
             isOpen={this.state.viewAirgapUpdateError}
             onRequestClose={this.toggleViewAirgapUpdateError}
@@ -626,5 +645,10 @@ export default compose(
     props: ({ mutate }) => ({
       setPrometheusAddress: (value) => mutate({ variables: { value } })
     })
-  })
+  }),
+  graphql(manualSnapshot, {
+    props: ({ mutate }) => ({
+      manualSnapshot: (appId) => mutate({ variables: { appId } })
+    })
+  }),
 )(Dashboard);
