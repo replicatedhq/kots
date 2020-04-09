@@ -94,9 +94,9 @@ class Snapshots extends Component {
   };
 
   setFields = () => {
-    const { snapshotSettings } = this.props;
-    if (!snapshotSettings.snapshotSettings) return;
-    const { store } = snapshotSettings.snapshotSettings;
+    const { snapshotSettings } = this.state;
+    if (!snapshotSettings) return;
+    const { store } = snapshotSettings;
 
     if (store?.s3AWS) {
       const useIam = !!store.s3AWS.accessKeyID?.length || !!store.s3AWS.accessKeySecret?.length;
@@ -527,13 +527,7 @@ class Snapshots extends Component {
     }
   }
 
-  componentDidUpdate = (lastProps) => {
-    if (this.props.snapshotSettings.snapshotSettings && this.props.snapshotSettings.snapshotSettings !== lastProps.snapshotSettings.snapshotSettings) {
-      this.setFields();
-    }
-  }
-
-  componentDidMount = () => {
+  fetchSnapshotSettings = () => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
@@ -550,7 +544,7 @@ class Snapshots extends Component {
     .then(res => res.json())
     .then(result => {
       this.setState({
-        snapshotSettings: result.settings,
+        snapshotSettings: result,
         isLoadingSnapshotSettings: false,
         snapshotSettingsErr: false,
         snapshotSettingsErrMsg: "",
@@ -566,6 +560,16 @@ class Snapshots extends Component {
     })
   }
 
+  componentDidMount = () => {
+    this.fetchSnapshotSettings();
+  }
+
+  componentDidUpdate(lastProps, lastState) {
+    if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
+      this.setFields();
+    }
+  }
+
   checkForVelero = () => {
     this.props.isVeleroInstalled.refetch().then((response) => {
       this.setState({ hideCheckVeleroButton: true });
@@ -574,7 +578,7 @@ class Snapshots extends Component {
           this.setState({ hideCheckVeleroButton: false });
         }, 5000);
       } else {
-        this.props.snapshotSettings.refetch()
+        this.fetchSnapshotSettings();
         this.setState({ hideCheckVeleroButton: false });
       }
     })
@@ -586,15 +590,15 @@ class Snapshots extends Component {
 
 
   render() {
-    const { updatingSettings, hideCheckVeleroButton, updateConfirm } = this.state;
-    const { snapshotSettings, isVeleroInstalled } = this.props;
+    const { updatingSettings, hideCheckVeleroButton, updateConfirm, isLoadingSnapshotSettings } = this.state;
+    const { isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
 
 
-    if (snapshotSettings?.loading || isVeleroInstalled?.loading) {
+    if (isLoadingSnapshotSettings || isVeleroInstalled?.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />

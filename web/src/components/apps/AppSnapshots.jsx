@@ -31,12 +31,17 @@ class AppSnapshots extends Component {
     hideCheckVeleroButton: false,
     snapshots: [],
     hasSnapshotsLoaded: false,
+    snapshotSettings: null,
+    isLoadingSnapshotSettings: true
   };
 
-  componentDidMount() {
+  componentDidMount = async () => {
+    await this.fetchSnapshotSettings();
+
     this.listSnapshots()
     setInterval(this.listSnapshots.bind(this), 2000);
   }
+
 
   listSnapshots() {
     const { app } = this.props;
@@ -56,6 +61,39 @@ class AppSnapshots extends Component {
     })
     .catch(err => {
       console.log(err);
+    })
+  }
+
+  fetchSnapshotSettings = async () => {
+    this.setState({
+      isLoadingSnapshotSettings: true,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      this.setState({
+        snapshotSettings: result,
+        isLoadingSnapshotSettings: false,
+        snapshotSettingsErr: false,
+        snapshotSettingsErrMsg: "",
+      })
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        isLoadingSnapshotSettings: false,
+        snapshotSettingsErr: true,
+        snapshotSettingsErrMsg: err,
+      })
     })
   }
 
@@ -183,11 +221,13 @@ class AppSnapshots extends Component {
       restoreErrorMsg,
       snapshots,
       hasSnapshotsLoaded,
+      snapshotSettings,
+      isLoadingSnapshotSettings
     } = this.state;
-    const { app, snapshotSettings } = this.props;
+    const { app } = this.props;
     const appTitle = app.name;
 
-    if (snapshots?.loading || snapshotSettings?.loading) {
+    if (snapshots?.loading || isLoadingSnapshotSettings) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -195,8 +235,7 @@ class AppSnapshots extends Component {
       )
     }
 
-
-    if (!snapshotSettings?.snapshotSettings?.store) {
+    if (!snapshotSettings?.store) {
       this.props.history.replace("/snapshots");
     }
 
