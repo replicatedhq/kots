@@ -1,7 +1,6 @@
 package snapshot
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -101,7 +100,6 @@ func GetGlobalStore() (*types.Store, error) {
 		}
 
 		if err == nil {
-			fmt.Printf("%s\n", awsSecret.Data["cloud"])
 			cfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load aws credentials")
