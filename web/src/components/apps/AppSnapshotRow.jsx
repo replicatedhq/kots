@@ -21,7 +21,6 @@ class AppShanpshotRow extends React.Component {
     const { appSlug, snapshot } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot.expires);
 
-
     return (
       <div className={`flex flex-auto ActiveDownstreamVersionRow--wrapper alignItems--center ${snapshot.status === "Deleting" && "is-deleting"} ${isExpired && "is-expired"}`}>
         <div className="flex-column flex1">

@@ -298,8 +298,6 @@ func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigV
 }
 
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta1.Preflight, error) {
-	troubleshootscheme.AddToScheme(scheme.Scheme)
-
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	obj, gvk, err := decode(content, nil, nil)
@@ -312,4 +310,19 @@ func LoadPreflightFromContents(content []byte) (*troubleshootv1beta1.Preflight, 
 	}
 
 	return obj.(*troubleshootv1beta1.Preflight), nil
+}
+
+func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "not a backup")
+	}
+
+	if gvk.String() != "velero.io/v1, Kind=Backup" {
+		return nil, errors.New("not a backup")
+	}
+
+	return obj.(*velerov1.Backup), nil
 }

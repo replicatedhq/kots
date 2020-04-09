@@ -126,21 +126,6 @@ export class VeleroClient {
     return response;
   }
 
-  async listSnapshots(slug: string): Promise<Snapshot[]> {
-    const q  = {
-      labelSelector: `${kotsAppSlugKey}=${slug}`,
-    };
-    const body = await this.request("GET", `backups?${querystring.stringify(q)}`);
-    const snapshots: Snapshot[] = [];
-
-    for (const backup of body.items) {
-      const snapshot = await this.snapshotFromBackup(backup);
-      snapshots.push(snapshot);
-    }
-
-    return snapshots;
-  }
-
   async hasUnfinishedBackup(appId: string): Promise<boolean> {
     if (!appId) {
       return false;
@@ -440,7 +425,7 @@ export class VeleroClient {
   // tslint:disable-next-line cyclomatic-complexity
   async readSnapshotStore(): Promise<SnapshotStore|null> {
     const corev1 = this.kc.makeApiClient(CoreV1Api);
-    const bsls = await this.request("GET", `backupstoragelocations`); 
+    const bsls = await this.request("GET", `backupstoragelocations`);
     const bsl: any = _.find(bsls.items, (bslItem) => {
       return bslItem.metadata.name === backupStorageLocationName;
     });

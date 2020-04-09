@@ -6,26 +6,6 @@ export const isVeleroInstalled = gql(`
   }
 `);
 
-
-export const listSnapshotsRaw = `
-  query listSnapshots($slug: String!) {
-    listSnapshots(slug: $slug) {
-      name
-      status
-      trigger
-      appVersion
-      started
-      finished
-      expires
-      volumeCount
-      volumeSuccessCount
-      volumeSizeHuman
-    }
-  }
-`;
-
-export const listSnapshots = gql(listSnapshotsRaw);
-
 export const snapshotConfigRaw = `
   query snapshotConfig($slug: String!) {
     snapshotConfig(slug: $slug) {

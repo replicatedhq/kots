@@ -18,7 +18,7 @@ export function SnapshotQueries(stores: Stores, params: Params) {
   return {
     async isVeleroInstalled(root: any, args: any, context: Context): Promise<boolean> {
       context.requireSingleTenantSession();
-      
+
       const velero = new VeleroClient("velero");
       return velero.isVeleroInstalled();
     },
@@ -59,16 +59,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       return {
         store,
       };
-    },
-
-    async listSnapshots(root: any, args: any, context: Context): Promise<Snapshot[]> {
-      context.requireSingleTenantSession();
-
-      const { slug } = args;
-      const velero = new VeleroClient("velero"); // TODO namespace
-      await velero.maybeCreateAppBackend(slug);
-
-      return velero.listSnapshots(slug);
     },
 
     async snapshotDetail(root: any, args: any, context: Context): Promise<SnapshotDetail> {

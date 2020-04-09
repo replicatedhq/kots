@@ -1,12 +1,5 @@
 import gql from "graphql-tag";
 
-export const manualSnapshotRaw = `
-  mutation manualSnapshot($appId: String!) {
-    manualSnapshot(appId: $appId)
-  }
-`;
-export const manualSnapshot = gql(manualSnapshotRaw);
-
 export const deleteSnapshot = gql`
   mutation deleteSnapshot($snapshotName: String!) {
     deleteSnapshot(snapshotName: $snapshotName)

@@ -13,7 +13,6 @@ import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
-import { manualSnapshot } from "@src/mutations/SnapshotMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -395,19 +394,30 @@ class Dashboard extends Component {
 
   startManualSnapshot = () => {
     const { app } = this.props;
-    this.props.manualSnapshot(app.id)
-      .then(() => {
-        this.props.history.push(`/app/${app.slug}/snapshots`)
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            startSnapshotErrorMsg: msg,
-          });
-        })
-      });
-  }
+    this.setState({
+      startingSnapshot: true,
+      startSnapshotErr: false,
+      startSnapshotErrorMsg: "",
+    });
 
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
+      method: "POST",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(res => res.json())
+    .then(result => {
+      this.props.history.push(`/app/${app.slug}/snapshots`)
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        startSnapshotErrorMsg: err,
+      })
+    })
+  }
 
   render() {
     const {
@@ -644,11 +654,6 @@ export default compose(
   graphql(setPrometheusAddress, {
     props: ({ mutate }) => ({
       setPrometheusAddress: (value) => mutate({ variables: { value } })
-    })
-  }),
-  graphql(manualSnapshot, {
-    props: ({ mutate }) => ({
-      manualSnapshot: (appId) => mutate({ variables: { appId } })
     })
   }),
 )(Dashboard);
