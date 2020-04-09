@@ -1,21 +1,153 @@
 package snapshot
 
 import (
+	"bufio"
+	"bytes"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"gopkg.in/ini.v1"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+// UpdateGlobalStore will update the in-cluster storage with exactly what's in the store param
 func UpdateGlobalStore(store *types.Store) error {
-	// TODO
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to list backupstoragelocations")
+	}
+
+	var kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation
+
+	for _, backupStorageLocation := range backupStorageLocations.Items {
+		if backupStorageLocation.Name == "kotsadm-velero-backend" {
+			kotsadmVeleroBackendStorageLocation = &backupStorageLocation
+		}
+	}
+
+	if kotsadmVeleroBackendStorageLocation == nil {
+		return errors.New("global config not found")
+	}
+
+	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
+
+	if kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage == nil {
+		kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage = &velerov1.ObjectStorageLocation{}
+	}
+
+	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket = store.Bucket
+	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
+
+	if store.AWS != nil {
+		logger.Debug("updating aws config in global snapshot storage")
+		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.AWS.Region
+
+		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to read aws secret")
+		}
+
+		if store.AWS.UseInstanceRole {
+			// delete the secret
+			if err == nil {
+				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
+				if err != nil {
+					return errors.Wrap(err, "failed to delete aws secret")
+				}
+			}
+		} else {
+			awsCfg := ini.Empty()
+			section, err := awsCfg.NewSection("default")
+			if err != nil {
+				return errors.Wrap(err, "failed to create default section in aws creds")
+			}
+			_, err = section.NewKey("aws_access_key_id", store.AWS.AccessKeyID)
+			if err != nil {
+				return errors.Wrap(err, "failed to create access key")
+			}
+			_, err = section.NewKey("aws_secret_access_key", store.AWS.SecretAccessKey)
+			if err != nil {
+				return errors.Wrap(err, "failed to create secret access key")
+			}
+
+			var awsCredentials bytes.Buffer
+			writer := bufio.NewWriter(&awsCredentials)
+			_, err = awsCfg.WriteTo(writer)
+			if err != nil {
+				return errors.Wrap(err, "failed to write ini")
+			}
+
+			// create or update the secret
+			if kuberneteserrors.IsNotFound(err) {
+				// create
+				toCreate := corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cloud-credentials",
+						Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+					},
+					Data: map[string][]byte{
+						"cloud": awsCredentials.Bytes(),
+					},
+				}
+				_, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+				if err != nil {
+					return errors.Wrap(err, "failed to create aws secret")
+				}
+			} else {
+				// update
+				awsSecret.Data["cloud"] = awsCredentials.Bytes()
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(awsSecret)
+				if err != nil {
+					return errors.Wrap(err, "failed to update aws secret")
+				}
+			}
+		}
+	} else if store.Other != nil {
+		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.Other.Region
+		kotsadmVeleroBackendStorageLocation.Spec.Config["s3url"] = store.Other.Endpoint
+
+		// create or update the secret
+	} else if store.Google != nil {
+		if !store.Google.UseInstanceRole {
+			// delete the secret
+		} else {
+			// create or update the secret
+		}
+	} else if store.Azure != nil {
+		kotsadmVeleroBackendStorageLocation.Spec.Config["resourceGroup"] = store.Azure.ResourceGroup
+		kotsadmVeleroBackendStorageLocation.Spec.Config["storageAccount"] = store.Azure.StorageAccount
+		kotsadmVeleroBackendStorageLocation.Spec.Config["subscriptionId"] = store.Azure.SubscriptionID
+		kotsadmVeleroBackendStorageLocation.Spec.Config["cloudName"] = store.Azure.CloudName
+
+		// create or update the secret
+	}
 	return nil
 }
 
@@ -105,12 +237,12 @@ func GetGlobalStore() (*types.Store, error) {
 		}
 
 		if err == nil {
-			cfg, err := ini.Load(awsSecret.Data["cloud"])
+			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load aws credentials")
 			}
 
-			for _, section := range cfg.Sections() {
+			for _, section := range awsCfg.Sections() {
 				if section.Name() == "default" {
 					if isS3Compatible {
 						store.Other.AccessKeyID = section.Key("aws_access_key_id").Value()
