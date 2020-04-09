@@ -31,7 +31,6 @@ import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import AppSettings from "./AppSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
-import Snapshots from "../snapshots/Snapshots";
 import AppSnapshotSchedule from "./AppSnapshotSchedule";
 import AppSnapshotDetail from "./AppSnapshotDetail";
 import AppSnapshotRestore from "./AppSnapshotRestore";
@@ -323,9 +322,6 @@ class AppDetailPage extends Component {
                         app={app}
                         refetch={() => this.props.getKotsAppQuery.refetch()}
                       />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/settings" render={() =>
-                      <Snapshots app={app} />
                     } />
                     <Route exact path="/app/:slug/snapshots/schedule" render={() =>
                       <AppSnapshotSchedule app={app} />

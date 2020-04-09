@@ -407,8 +407,7 @@ class Dashboard extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(res => res.json())
-    .then(result => {
+    .then(() => {
       this.props.history.push(`/app/${app.slug}/snapshots`)
     })
     .catch(err => {
