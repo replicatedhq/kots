@@ -99,7 +99,7 @@ class Snapshots extends Component {
     const { store } = snapshotSettings;
 
     if (store?.aws) {
-      const useIam = !!store.aws.accessKeyID?.length || !!store.aws.secretAccessKey?.length;
+      const useIam = !store.aws.accessKeyID?.length || !store.aws.secretAccessKey?.length;
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
@@ -203,8 +203,8 @@ class Snapshots extends Component {
       this.state.s3bucket,
       this.state.s3Path,
       this.state.s3Region,
-      this.state.useIam ? this.state.s3KeyId : "",
-      this.state.useIam ? this.state.s3KeySecret : "",
+      !this.state.useIam ? this.state.s3KeyId : "",
+      !this.state.useIam ? this.state.s3KeySecret : "",
     ).then(() => {
       this.setState({ updatingSettings: false, updateConfirm: true });
       setTimeout(() => {
@@ -358,7 +358,7 @@ class Snapshots extends Component {
                     />
                     <label htmlFor="useIam" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex1">
-                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Role</p>
+                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
                       </div>
                     </label>
                   </div>
@@ -366,7 +366,7 @@ class Snapshots extends Component {
               </div>
             </div>
 
-            {useIam &&
+            {!useIam &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
