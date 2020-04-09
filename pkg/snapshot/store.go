@@ -7,6 +7,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	"gopkg.in/ini.v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -93,18 +94,27 @@ func GetGlobalStore() (*types.Store, error) {
 			}
 		}
 
-		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("aws-credentials", metav1.GetOptions{})
+		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
-		if err != nil {
-			if isS3Compatible {
-				store.Other.AccessKeyID = string(awsSecret.Data["accessKeyId"])
-				store.Other.SecretAccessKey = "--- REDACTED ---"
-			} else {
-				store.AWS.AccessKeyID = string(awsSecret.Data["accessKeyId"])
-				store.AWS.SecretAccessKey = "--- REDACTED ---"
+		if err == nil {
+			cfg, err := ini.Load(awsSecret.Data["cloud"])
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load aws credentials")
+			}
+
+			for _, section := range cfg.Sections() {
+				if section.Name() == "default" {
+					if isS3Compatible {
+						store.Other.AccessKeyID = section.Key("aws_access_key_id").Value()
+						store.Other.SecretAccessKey = "--- REDACTED ---"
+					} else {
+						store.AWS.AccessKeyID = section.Key("aws_access_key_id").Value()
+						store.AWS.SecretAccessKey = "--- REDACTED ---"
+					}
+				}
 			}
 		}
 		break
