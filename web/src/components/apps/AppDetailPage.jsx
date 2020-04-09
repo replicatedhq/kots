@@ -31,7 +31,7 @@ import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import AppSettings from "./AppSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
-import AppSnapshotSettings from "./AppSnapshotSettings";
+import Snapshots from "../snapshots/Snapshots";
 import AppSnapshotSchedule from "./AppSnapshotSchedule";
 import AppSnapshotDetail from "./AppSnapshotDetail";
 import AppSnapshotRestore from "./AppSnapshotRestore";
@@ -325,7 +325,7 @@ class AppDetailPage extends Component {
                       />
                     } />
                     <Route exact path="/app/:slug/snapshots/settings" render={() =>
-                      <AppSnapshotSettings app={app} />
+                      <Snapshots app={app} />
                     } />
                     <Route exact path="/app/:slug/snapshots/schedule" render={() =>
                       <AppSnapshotSchedule app={app} />

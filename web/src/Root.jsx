@@ -9,7 +9,7 @@ import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
-import AppSnapshotSettings from "././components/apps/AppSnapshotSettings";
+import Snapshots from "./components/snapshots/Snapshots";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
@@ -300,7 +300,7 @@ class Root extends Component {
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute path="/snapshots" render={(props) => <AppSnapshotSettings {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute
                       path={["/apps", "/app/:slug/:tab?"]}
                       render={

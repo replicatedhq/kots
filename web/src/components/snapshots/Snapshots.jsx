@@ -5,7 +5,7 @@ import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import Helmet from "react-helmet";
 import find from "lodash/find";
-import { isVeleroInstalled, snapshotSettings } from "../../queries/SnapshotQueries";
+import { isVeleroInstalled } from "../../queries/SnapshotQueries";
 import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
 
 import Loader from "../shared/Loader";
@@ -49,7 +49,7 @@ const AZURE_CLOUD_NAMES = [
   }
 ];
 
-class AppSnapshotSettings extends Component {
+class Snapshots extends Component {
   state = {
     determiningDestination: true,
     selectedDestination: {},
@@ -582,10 +582,10 @@ class AppSnapshotSettings extends Component {
               <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleOne u-marginRight--10"/>Install the CLI on your machine by <a href="https://velero.io/docs/v1.3.2/basic-install/#install-the-cli" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
               <p className="u-marginTop--10 u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"><span className="icon circleTwo u-marginRight--10"/>Run the commands from the instructions for your cloud provider </p>
               <div className="flex flex1 u-marginTop--15">
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a> 
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a> 
-              <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a> 
-              <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a> 
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a>
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a>
+              <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a>
+              <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a>
               </div>
             </div>
             <div className="u-textAlign--center">
@@ -663,14 +663,6 @@ export default compose(
       }
     }
   }),
-  graphql(snapshotSettings, {
-    name: "snapshotSettings",
-    options: () => {
-      return {
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(snapshotProviderAWS, {
     props: ({ mutate }) => ({
       snapshotProviderAWS: (bucket, prefix, region, accessKeyID, accessKeySecret) => mutate({ variables: { bucket, prefix, region, accessKeyID, accessKeySecret } })
@@ -692,4 +684,4 @@ export default compose(
     })
   })
 
-)(AppSnapshotSettings);
+)(Snapshots);
