@@ -77,7 +77,7 @@ func Start() {
 
 	// Global snapshot routes
 	r.Path("/api/v1/snapshots/settings").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
-	r.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
+	r.Path("/api/v1/snapshots/settings").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
 
 	// Find a home snapshot routes
 	r.Path("/api/v1/snapshot/{backup}/logs").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSnapshotLogs)
