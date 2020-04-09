@@ -98,17 +98,17 @@ class Snapshots extends Component {
     if (!snapshotSettings) return;
     const { store } = snapshotSettings;
 
-    if (store?.s3AWS) {
-      const useIam = !!store.s3AWS.accessKeyID?.length || !!store.s3AWS.accessKeySecret?.length;
+    if (store?.aws) {
+      const useIam = !!store.aws.accessKeyID?.length || !!store.aws.secretAccessKey?.length;
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
         s3bucket: store.bucket,
-        s3Region: store.s3AWS.region,
+        s3Region: store.aws.region,
         s3Path: store.path,
         useIam,
-        s3KeyId: store.s3AWS.accessKeyID || "",
-        s3KeySecret: store.s3AWS.accessKeySecret || ""
+        s3KeyId: store.aws.accessKeyID || "",
+        s3KeySecret: store.aws.secretAccessKey || ""
       });
     }
 
@@ -180,8 +180,6 @@ class Snapshots extends Component {
   }
 
   onSubmit = async (e) => {
-    const { app } = this.props;
-
     e.preventDefault();
     switch (this.state.selectedDestination.value) {
       case "aws":
