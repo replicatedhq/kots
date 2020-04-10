@@ -26,7 +26,7 @@ const DESTINATIONS = [
     label: "Google Cloud Storage",
   },
   {
-    value: "s3compatible",
+    value: "other",
     label: "Other S3-Compatible Storage",
   }
 ];
@@ -153,7 +153,11 @@ class Snapshots extends Component {
       azureTenantId,
       azureClientId,
       azureClientSecret,
-      selectedAzureCloudName
+      selectedAzureCloudName,
+      s3CompatibleRegion,
+      s3CompatibleKeyId,
+      s3CompatibleKeySecret,
+      s3CompatibleEndpoint
     } = this.state;
 
     if (provider === "aws") {
@@ -171,6 +175,12 @@ class Snapshots extends Component {
         snapshotSettings?.store?.azure?.subscriptionId !== azureSubscriptionId || snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
         snapshotSettings?.store?.azure?.clientId !== azureClientId || snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
         snapshotSettings?.store?.azure?.cloudName !== selectedAzureCloudName.value
+      )
+    }
+    if (provider === "other") {
+      return (
+        snapshotSettings?.store?.other?.region !== s3CompatibleRegion || snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
+        snapshotSettings?.store?.other?.secretAccessKey !== s3CompatibleKeySecret || snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
       )
     }
   }
@@ -207,8 +217,15 @@ class Snapshots extends Component {
               useInstanceRole: this.state.gcsUseIam
             }
           }
-        case "s3compatible":
-          return {}
+        case "other":
+          return {
+            other: {
+              region: this.state.s3CompatibleRegion,
+              accessKeyID: this.state.s3CompatibleKeyId,
+              secretAccessKey: this.state.s3CompatibleKeySecret,
+              endpoint: this.state.s3CompatibleEndpoint
+            }
+          }
       }
     }
   }
@@ -268,7 +285,7 @@ class Snapshots extends Component {
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
         s3bucket: store.bucket,
-        s3Region: store.aws.region,
+        s3Region: store?.aws?.region,
         s3Path: store.path,
         useIamAws: store?.aws?.useInstanceRole,
         s3KeyId: store?.aws?.accessKeyID || "",
@@ -303,16 +320,16 @@ class Snapshots extends Component {
       });
     }
 
-    if (store?.provider === "s3Compatible") {
+    if (store?.provider === "other") {
       return this.setState({
         determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "s3compatible"]),
+        selectedDestination: find(DESTINATIONS, ["value", "other"]),
         s3CompatibleBucket: store.bucket,
         s3CompatiblePath: store.path,
-        s3CompatibleKeyId: store?.s3Compatible?.accessKeyID,
-        s3CompatibleKeySecret: store?.s3Compatible?.accessKeySecret,
-        s3CompatibleEndpoint: store?.s3Compatible?.endpoint,
-        s3CompatibleRegion: store?.s3Compatible?.region
+        s3CompatibleKeyId: store?.other?.accessKeyID,
+        s3CompatibleKeySecret: store?.other?.accessKeySecret,
+        s3CompatibleEndpoint: store?.other?.endpoint,
+        s3CompatibleRegion: store?.other?.region
       });
     }
     // if nothing exists yet, we've determined default state is good
@@ -356,7 +373,7 @@ class Snapshots extends Component {
       case "google":
         await this.snapshotProviderGoogle();
         break;
-      case "s3compatible":
+      case "other":
         await this.snapshotProviderS3Compatible();
         break;
     }
@@ -375,30 +392,7 @@ class Snapshots extends Component {
   }
 
   snapshotProviderS3Compatible = async () => {
-    this.setState({ updatingSettings: true });
-    await this.props.snapshotProviderS3Compatible(
-      this.state.s3CompatibleBucket,
-      this.state.s3CompatiblePath,
-      this.state.s3CompatibleRegion,
-      this.state.s3CompatibleEndpoint,
-      this.state.s3CompatibleKeyId,
-      this.state.s3CompatibleKeySecret,
-    ).then(() => {
-      this.setState({ updatingSettings: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
-    })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error",
-            updatingSettings: false
-          });
-        });
-      });
+    this.updateSettings("other", this.state.s3CompatibleBucket, this.state.s3CompatiblePath);
   }
 
   renderIcons = (destination) => {
@@ -597,7 +591,7 @@ class Snapshots extends Component {
           </div>
         )
 
-      case "s3compatible":
+      case "other":
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
