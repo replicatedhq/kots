@@ -91,6 +91,7 @@ class Snapshots extends Component {
     isLoadingSnapshotSettings: true,
     snapshotSettingsErr: false,
     snapshotSettingsErrMsg: "",
+    updateErrorMsg: ""
   };
 
   fetchSnapshotSettings = () => {
@@ -141,63 +142,70 @@ class Snapshots extends Component {
 
     if (provider === "aws") {
       return (
-        snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
-        snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret || snapshotSettings.store.aws.useInstanceRole !== this.state.useIam
+        snapshotSettings?.store?.aws?.region !== this.state.s3Region || snapshotSettings?.store?.aws?.accessKeyID !== this.state.s3KeyId ||
+        snapshotSettings?.store?.aws?.secretAccessKey !== this.state.s3KeySecret || snapshotSettings?.store?.aws?.useInstanceRole !== this.state.useIam
       )
     }
   }
 
   getCurrentProviderStores = (provider) => {
-    switch (provider) {
-      case "aws":
-        return {
-          region: this.state.s3Region,
-          accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
-          secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
-          useInstanceRole: this.state.useIam
-        }
-      case "azure":
-        return {}
-      case "google":
-        return {}
-      case "s3compatible":
-        return {}
+    const hasChanges = this.checkForStoreChanges(provider);
+    if (hasChanges) {
+      switch (provider) {
+        case "aws":
+          return {
+            aws: {
+              region: this.state.s3Region,
+              accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
+              secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
+              useInstanceRole: this.state.useIam
+            }
+          }
+        case "azure":
+          return {}
+        case "google":
+          return {}
+        case "s3compatible":
+          return {}
+      }
     }
   }
 
   updateSettings = (provider, bucket, path) => {
-    const hasChanges = this.checkForStoreChanges(provider);
-    let aws;
-    if (hasChanges) {
-      aws = this.getCurrentProviderStores(provider);
-    }
+    this.setState({ updatingSettings: true, updateErrorMsg: "" });
 
+    const payload = Object.assign({
+      provider,
+      bucket,
+      path
+    }, this.getCurrentProviderStores(provider));
 
-    this.setState({ updatingSettings: true });
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
       headers: {
         "Authorization": `${Utilities.getToken()}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        provider,
-        bucket,
-        path,
-        aws
-      })
+      body: JSON.stringify(payload)
     })
       .then(async (res) => {
-        const settings = await res.json();
-        this.setState({
-          snapshotSettings: settings,
-          updatingSettings: false,
-          updateConfirm: true
-        });
-        setTimeout(() => {
-          this.setState({ updateConfirm: false })
-        }, 3000);
-
+        const settingsResponse = await res.json();
+        if (settingsResponse.success) {
+          this.setState({
+            snapshotSettings: settingsResponse,
+            updatingSettings: false,
+            updateConfirm: true,
+            updateErrorMsg: ""
+          });
+          setTimeout(() => {
+            this.setState({ updateConfirm: false })
+          }, 3000);
+        } else {
+          this.setState({
+            updatingSettings: false,
+            updateErrorMsg: settingsResponse.error
+          })
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -636,7 +644,7 @@ class Snapshots extends Component {
 
 
   render() {
-    const { updatingSettings, hideCheckVeleroButton, updateConfirm, isLoadingSnapshotSettings } = this.state;
+    const { updatingSettings, hideCheckVeleroButton, updateConfirm, isLoadingSnapshotSettings, updateErrorMsg } = this.state;
     const { isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
@@ -692,12 +700,14 @@ class Snapshots extends Component {
             <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
           </div>
-          <form>
+          <form className="flex flex-column">
             <div className="flex1 u-marginBottom--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
               <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
             </div>
-            <div className="flex-column u-marginBottom--20">
+            {updateErrorMsg &&
+              <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--20">{updateErrorMsg}</div>}
+            <div className="flex flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               <div className="flex1">
                 <Select
