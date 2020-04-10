@@ -183,11 +183,19 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(res => res.json())
-    .then(result => {
-      this.setState({
-        startingSnapshot: false,
-      });
+    .then(async (result) => {
+      if (result.ok) {
+        this.setState({
+          startingSnapshot: false,
+        });
+      } else {
+        const body = await result.json();
+        this.setState({
+          startingSnapshot: false,
+          startSnapshotErr: true,
+          startSnapshotErrorMsg: body.error,
+        });
+      }
     })
     .catch(err => {
       console.log(err);
