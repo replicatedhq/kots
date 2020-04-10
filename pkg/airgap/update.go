@@ -123,8 +123,8 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 	}
 
 	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		appNamespace = os.Getenv("DEV_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	pipeReader, pipeWriter := io.Pipe()

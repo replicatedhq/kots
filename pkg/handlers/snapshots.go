@@ -63,7 +63,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := snapshot.GetGlobalStore()
+	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to get store"
@@ -187,14 +187,15 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := snapshot.UpdateGlobalStore(store); err != nil {
+	updatedBackupStorageLocation, err := snapshot.UpdateGlobalStore(store)
+	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to decode request body"
 		JSON(w, 400, globalSnapshotSettingsResponse)
 		return
 	}
 
-	updatedStore, err := snapshot.GetGlobalStore()
+	updatedStore, err := snapshot.GetGlobalStore(updatedBackupStorageLocation)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to update store"
@@ -236,7 +237,7 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store, err := snapshot.GetGlobalStore()
+	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to get store"

@@ -111,12 +111,9 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
-	k8sNamespace := "default"
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		k8sNamespace = os.Getenv("DEV_NAMESPACE")
-	}
-	if os.Getenv("POD_NAMESPACE") != "" {
-		k8sNamespace = os.Getenv("POD_NAMESPACE")
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	a, err := app.Get(appID)
@@ -135,7 +132,7 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		ExcludeKotsKinds: true,
 		License:          license,
 		ConfigValues:     configValues,
-		K8sNamespace:     k8sNamespace,
+		K8sNamespace:     appNamespace,
 		CopyImages:       false,
 		IsAirgap:         a.IsAirgap,
 	}

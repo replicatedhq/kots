@@ -182,8 +182,8 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	}()
 
 	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		appNamespace = os.Getenv("DEV_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	pullOptions := pull.PullOptions{
