@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	"go.uber.org/zap"
 	"gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,17 +63,20 @@ func UpdateGlobalStore(store *types.Store) error {
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
 
 	if store.AWS != nil {
-		logger.Debug("updating aws config in global snapshot storage")
+		logger.Debug("updating aws config in global snapshot storage",
+			zap.String("region", store.AWS.Region),
+			zap.Bool("useInstanceRole", store.AWS.UseInstanceRole))
+
 		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.AWS.Region
 
-		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+		awsSecret, awsSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to read aws secret")
 		}
 
 		if store.AWS.UseInstanceRole {
 			// delete the secret
-			if err == nil {
+			if awsSecretErr == nil {
 				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
 				if err != nil {
 					return errors.Wrap(err, "failed to delete aws secret")
@@ -101,7 +105,7 @@ func UpdateGlobalStore(store *types.Store) error {
 			}
 
 			// create or update the secret
-			if kuberneteserrors.IsNotFound(err) {
+			if kuberneteserrors.IsNotFound(awsSecretErr) {
 				// create
 				toCreate := corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
@@ -122,6 +126,10 @@ func UpdateGlobalStore(store *types.Store) error {
 				}
 			} else {
 				// update
+				if awsSecret.Data == nil {
+					awsSecret.Data = map[string][]byte{}
+				}
+
 				awsSecret.Data["cloud"] = awsCredentials.Bytes()
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(awsSecret)
 				if err != nil {
@@ -236,7 +244,9 @@ func GetGlobalStore() (*types.Store, error) {
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
-		if err == nil {
+		if kuberneteserrors.IsNotFound(err) {
+			store.AWS.UseInstanceRole = true
+		} else if err == nil {
 			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load aws credentials")
