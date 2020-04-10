@@ -51,7 +51,7 @@ type Backup struct {
 	FinishedAt         *time.Time `json:"finishedAt,omitempty"`
 	ExpiresAt          *time.Time `json:"expiresAt,omitempty"`
 	VolumeCount        int        `json:"volumeCount"`
-	VolumeSuccessCount int        `json:"`
+	VolumeSuccessCount int        `json:"volumeSuccessCount"`
 	VolumeBytes        int64
 	VolumeSizeHuman    string
 }
