@@ -236,7 +236,9 @@ func GetGlobalStore() (*types.Store, error) {
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
-		if err == nil {
+		if kuberneteserrors.IsNotFound(err) {
+			store.AWS.UseInstanceRole = true
+		} else if err == nil {
 			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load aws credentials")
