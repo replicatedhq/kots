@@ -136,28 +136,42 @@ class Snapshots extends Component {
     }
   }
 
-  checkForChanges = () => {
+  checkForStoreChanges = (provider) => {
     const { snapshotSettings } = this.state;
 
-    return  (
-      snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
-      snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret || snapshotSettings.store.aws.useInstanceRole !== this.state.useIam
-    )
+    if (provider === "aws") {
+      return  (
+        snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
+        snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret || snapshotSettings.store.aws.useInstanceRole !== this.state.useIam
+      )
+    }
   }
 
-  updateSettings = (provider, bucket, path) => {
-    const hasChanges = this.checkForChanges();
-    let aws;
-    if (provider === "aws") {
-      if (hasChanges) {
-        aws = {
+  getCurrentProviderStores = (provider) => {
+    switch (provider) {
+      case "aws":
+        return  {
           region: this.state.s3Region,
           accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
           secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
           useInstanceRole: this.state.useIam 
         }
-      }
+      case "azure":
+        return {}
+      case "google":
+        return {}
+      case "s3compatible":
+        return {}
     }
+  }
+
+  updateSettings = (provider, bucket, path) => {
+    const hasChanges = this.checkForStoreChanges(provider);
+    let aws;
+    if (hasChanges) {
+      aws = this.getCurrentProviderStores(provider);
+    }
+
 
     this.setState({ updatingSettings: true });
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
@@ -193,14 +207,13 @@ class Snapshots extends Component {
     const { store } = snapshotSettings;
 
     if (store?.aws) {
-      const useIam = !store.aws.accessKeyID?.length || !store.aws.secretAccessKey?.length;
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
         s3bucket: store.bucket,
         s3Region: store.aws.region,
         s3Path: store.path,
-        useIam,
+        useIam: store.aws.useInstanceRole,
         s3KeyId: store.aws.accessKeyID || "",
         s3KeySecret: store.aws.secretAccessKey || ""
       });
