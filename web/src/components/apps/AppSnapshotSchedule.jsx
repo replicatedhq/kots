@@ -29,18 +29,6 @@ const SCHEDULES = [
 
 const RETENTION_UNITS = [
   {
-    value: "seconds",
-    label: "Seconds",
-  },
-  {
-    value: "minutes",
-    label: "Minutes",
-  },
-  {
-    value: "hours",
-    label: "Hours",
-  },
-  {
     value: "days",
     label: "Days",
   },
