@@ -76,7 +76,8 @@ func CreateBackup(a *app.App) error {
 		// "kots.io/cluster-id":       "", // @areed why do we need the cluster id here
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
-	veleroBackup.Spec.StorageLocation = a.Slug
+
+	veleroBackup.Spec.StorageLocation = "kotsadm-velero-backend"
 
 	cfg, err := config.GetConfig()
 	if err != nil {
