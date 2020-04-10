@@ -19,7 +19,7 @@ class AppShanpshotRow extends React.Component {
 
   render() {
     const { appSlug, snapshot } = this.props;
-    const isExpired = dayjs(new Date()).isSameOrAfter(snapshot.expires);
+    const isExpired = dayjs(new Date()).isSameOrAfter(snapshot.expiresAt);
 
     return (
       <div className={`flex flex-auto ActiveDownstreamVersionRow--wrapper alignItems--center ${snapshot.status === "Deleting" && "is-deleting"} ${isExpired && "is-expired"}`}>
@@ -30,8 +30,8 @@ class AppShanpshotRow extends React.Component {
           </div>
           <div className="flex flex-auto alignItems--center u-marginTop--5">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot.started, "MMM D, YYYY h:mm A")}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot.finished ? Utilities.dateFormat(snapshot.finished, "MMM D, YYYY h:mm A") : "TBD"}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot.startedAt, "MMM D, YYYY h:mm A")}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot.finishedAt ? Utilities.dateFormat(snapshot.finishedAt, "MMM D, YYYY h:mm A") : "TBD"}</p>
               <div>
                 <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{snapshot.status}</span>
               </div>
