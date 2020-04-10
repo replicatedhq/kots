@@ -192,7 +192,7 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 		}
 
 		if backup.Status != "New" && backup.Status != "InProgress" {
-			if !volumeBytesOk || !volumeSuccessCountOk || !volumeBytesOk {
+			if !volumeBytesOk || !volumeSuccessCountOk {
 				// save computed summary as annotations if snapshot is finished
 				vc, vsc, vb, err := getSnapshotVolumeSummary(&veleroBackup)
 				if err != nil {
