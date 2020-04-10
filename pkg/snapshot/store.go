@@ -57,6 +57,8 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			zap.Bool("useInstanceRole", store.AWS.UseInstanceRole))
 
 		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.AWS.Region
+		// s3Url can be set by Other and conflicts with S3
+		delete(kotsadmVeleroBackendStorageLocation.Spec.Config, "s3Url")
 
 		awsSecret, awsSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -132,7 +134,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		}
 	} else if store.Other != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.Other.Region
-		kotsadmVeleroBackendStorageLocation.Spec.Config["s3url"] = store.Other.Endpoint
+		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Other.Endpoint
 
 		// create or update the secret
 	} else if store.Google != nil {
@@ -229,7 +231,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 
 	switch store.Provider {
 	case "aws":
-		endpoint, isS3Compatible := kotsadmVeleroBackendStorageLocation.Spec.Config["s3url"]
+		endpoint, isS3Compatible := kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"]
 		if isS3Compatible {
 			store.Other = &types.StoreOther{
 				Region:   kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
