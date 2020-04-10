@@ -38,4 +38,5 @@ spec:
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
               value: "true"
-
+            - name: REPLICATED_API_ENDPOINT
+              value: http://replicated-app:3000

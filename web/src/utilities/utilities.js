@@ -27,7 +27,7 @@ export function getFileContent(file) {
     reader.onerror = function (e) {
       reject(e);
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   });
 }
 
