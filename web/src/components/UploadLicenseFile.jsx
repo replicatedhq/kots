@@ -16,14 +16,14 @@ import "../scss/components/Login.scss";
 class UploadLicenseFile extends React.Component {
   state = {
     licenseFile: {},
-    licenseValue: "",
+    licenseFileContent: null,
     fileUploading: false,
     errorMessage: "",
     viewErrorMessage: false
   }
 
   clearFile = () => {
-    this.setState({ licenseFile: {}, licenseValue: "", errorMessage: "", viewErrorMessage: false });
+    this.setState({ licenseFile: {}, licenseFileContent: null, errorMessage: "", viewErrorMessage: false });
   }
 
   moveBar = (count) => {
@@ -36,22 +36,41 @@ class UploadLicenseFile extends React.Component {
 
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
-    const { licenseValue } = this.state;
+    const { licenseFile, licenseFileContent } = this.state;
 
     this.setState({
       fileUploading: true,
       errorMessage: "",
     });
+
+    let licenseText;
+    if (licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli") {
+      try {
+        // NOTE: this exchange is weird on the frontend but I don't wanna port
+        // all the uploadKotsLicense typescript code to go
+        const base64String = btoa(String.fromCharCode.apply(null, new Uint8Array(licenseFileContent)));
+        licenseText = await this.exchangeRliFileForLicense(base64String);
+      } catch(err) {
+        this.setState({
+          fileUploading: false,
+          errorMessage: err,
+        });
+        return;
+      }
+    } else {
+      licenseText = (new TextDecoder("utf-8")).decode(licenseFileContent);
+    }
+
     let data;
-    this.props.uploadKotsLicense(licenseValue)
-    .then((resp) => {
-      data = resp.data.uploadKotsLicense;
-    })
-    .catch((err) => {
-      err.graphQLErrors.map(({ msg }) => {
-        this.setState({ fileUploading: false, errorMessage: msg });
+    this.props.uploadKotsLicense(licenseText)
+      .then((resp) => {
+        data = resp.data.uploadKotsLicense;
+      })
+      .catch((err) => {
+        err.graphQLErrors.map(({ msg }) => {
+          this.setState({ fileUploading: false, errorMessage: msg });
+        });
       });
-    });
     let count = 0;
     const interval = setInterval(() => {
       if (this.state.errorMessage.length) {
@@ -111,8 +130,37 @@ class UploadLicenseFile extends React.Component {
     const content = await getFileContent(files[0]);
     this.setState({
       licenseFile: files[0],
-      licenseValue: content,
+      licenseFileContent: content,
       errorMessage: ""
+    });
+  }
+
+  exchangeRliFileForLicense = async (content) => {
+    return new Promise((resolve, reject) => {
+      const payload = {
+        licenseData: content,
+      };
+
+      fetch(`${window.env.API_ENDPOINT}/license/platform`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": Utilities.getToken(),
+        },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            reject(res.status === 401 ? "Invalid license. Please try again" : "There was an error uploading your license. Please try again");
+            return;
+          }
+          resolve((await res.json()).licenseData);
+        })
+        .catch((err) => {
+          console.log(err);
+          reject("There was an error uploading your license. Please try again");
+        });
     });
   }
 
@@ -163,7 +211,7 @@ class UploadLicenseFile extends React.Component {
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                     <Dropzone
                       className="Dropzone-wrapper"
-                      accept={["application/x-yaml", ".yaml", ".yml"]}
+                      accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
                       onDropAccepted={this.onDrop}
                       multiple={false}
                     >

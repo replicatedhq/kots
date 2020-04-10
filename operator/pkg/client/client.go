@@ -312,7 +312,7 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	}
 
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
-	req.Header["Content-Type"] = []string{"application/json"}
+	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("", c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -405,7 +405,7 @@ func (c *Client) sendAppStatus(appStatus types.AppStatus) error {
 	uri := fmt.Sprintf("%s/api/v1/appstatus", c.APIEndpoint)
 
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
-	req.Header["Content-Type"] = []string{"application/json"}
+	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("", c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
