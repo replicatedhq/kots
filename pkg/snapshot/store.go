@@ -36,21 +36,9 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
-	}
-
-	var kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation
-
-	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "kotsadm-velero-backend" {
-			kotsadmVeleroBackendStorageLocation = &backupStorageLocation
-		}
-	}
-
-	if kotsadmVeleroBackendStorageLocation == nil {
-		return nil, errors.New("global config not found")
+		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
 	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
@@ -340,6 +328,31 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 	}
 
 	return &store, nil
+}
+
+func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
+	}
+
+	for _, backupStorageLocation := range backupStorageLocations.Items {
+		if backupStorageLocation.Name == "kotsadm-velero-backend" {
+			return &backupStorageLocation, nil
+		}
+	}
+
+	return nil, errors.New("global config not found")
 }
 
 func Redact(store *types.Store) error {

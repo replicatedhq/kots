@@ -52,10 +52,14 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(res => res.json())
-    .then(result => {
+    .then(async (result) => {
+      const body = await result.json();
+      if (!result.ok) {
+        console.log("failed to load snapshots", body);
+        return;
+      }
       this.setState({
-        snapshots: result.backups,
+        snapshots: body.backups,
         hasSnapshotsLoaded: true,
       });
     })
