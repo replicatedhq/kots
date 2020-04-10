@@ -157,12 +157,9 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	// dev_namespace makes the dev env work
-	k8sNamespace := "default"
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		k8sNamespace = os.Getenv("DEV_NAMESPACE")
-	}
-	if os.Getenv("POD_NAMESPACE") != "" {
-		k8sNamespace = os.Getenv("POD_NAMESPACE")
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
@@ -186,7 +183,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		ExcludeKotsKinds:  true,
 		License:           license,
 		ConfigValues:      configValues,
-		K8sNamespace:      k8sNamespace,
+		K8sNamespace:      appNamespace,
 		ReportWriter:      pipeWriter,
 		CopyImages:        true,
 		IsAirgap:          a.IsAirgap,

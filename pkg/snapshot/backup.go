@@ -59,14 +59,15 @@ func CreateBackup(a *app.App) error {
 	}
 
 	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		appNamespace = os.Getenv("DEV_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	includedNamespaces := []string{appNamespace}
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
 	veleroBackup.Name = fmt.Sprintf("scheduled-%d", time.Now().Unix())
+	veleroBackup.Namespace = appNamespace
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger": "manual",
 		// "kots.io/app-slug":         "", // @areed i don't understand why we need both the slug and id here
@@ -97,8 +98,8 @@ func CreateBackup(a *app.App) error {
 
 func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("DEV_NAMESPACE") != "" {
-		appNamespace = os.Getenv("DEV_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	cfg, err := config.GetConfig()
