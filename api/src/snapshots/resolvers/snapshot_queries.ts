@@ -50,17 +50,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       };
     },
 
-    async snapshotSettings(root: any, args: any, context: Context): Promise<SnapshotSettings> {
-      context.requireSingleTenantSession();
-
-      const velero = new VeleroClient("velero"); // TODO namespace
-      const store = await velero.readSnapshotStore();
-
-      return {
-        store,
-      };
-    },
-
     async snapshotDetail(root: any, args: any, context: Context): Promise<SnapshotDetail> {
       context.requireSingleTenantSession();
       const { slug, id } = args;

@@ -83,7 +83,7 @@ func CreateBackup(a *app.App) error {
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
-	veleroBackup.Spec.StorageLocation = "kotsadm-velero-backend"
+	veleroBackup.Spec.StorageLocation = "default"
 
 	cfg, err := config.GetConfig()
 	if err != nil {
