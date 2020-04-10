@@ -20,25 +20,25 @@ import (
 )
 
 // UpdateGlobalStore will update the in-cluster storage with exactly what's in the store param
-func UpdateGlobalStore(store *types.Store) error {
+func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list backupstoragelocations")
+		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 	}
 
 	var kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation
@@ -50,7 +50,7 @@ func UpdateGlobalStore(store *types.Store) error {
 	}
 
 	if kotsadmVeleroBackendStorageLocation == nil {
-		return errors.New("global config not found")
+		return nil, errors.New("global config not found")
 	}
 
 	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
@@ -72,7 +72,7 @@ func UpdateGlobalStore(store *types.Store) error {
 
 		awsSecret, awsSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to read aws secret")
+			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
 		if store.AWS.UseInstanceRole {
@@ -80,33 +80,33 @@ func UpdateGlobalStore(store *types.Store) error {
 			if awsSecretErr == nil {
 				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
 				if err != nil {
-					return errors.Wrap(err, "failed to delete aws secret")
+					return nil, errors.Wrap(err, "failed to delete aws secret")
 				}
 			}
 		} else {
 			awsCfg := ini.Empty()
 			section, err := awsCfg.NewSection("default")
 			if err != nil {
-				return errors.Wrap(err, "failed to create default section in aws creds")
+				return nil, errors.Wrap(err, "failed to create default section in aws creds")
 			}
 			_, err = section.NewKey("aws_access_key_id", store.AWS.AccessKeyID)
 			if err != nil {
-				return errors.Wrap(err, "failed to create access key")
+				return nil, errors.Wrap(err, "failed to create access key")
 			}
 
 			_, err = section.NewKey("aws_secret_access_key", store.AWS.SecretAccessKey)
 			if err != nil {
-				return errors.Wrap(err, "failed to create secret access key")
+				return nil, errors.Wrap(err, "failed to create secret access key")
 			}
 
 			var awsCredentials bytes.Buffer
 			writer := bufio.NewWriter(&awsCredentials)
 			_, err = awsCfg.WriteTo(writer)
 			if err != nil {
-				return errors.Wrap(err, "failed to write ini")
+				return nil, errors.Wrap(err, "failed to write ini")
 			}
 			if err := writer.Flush(); err != nil {
-				return errors.Wrap(err, "failed to flush buffer")
+				return nil, errors.Wrap(err, "failed to flush buffer")
 			}
 
 			// create or update the secret
@@ -125,9 +125,9 @@ func UpdateGlobalStore(store *types.Store) error {
 						"cloud": awsCredentials.Bytes(),
 					},
 				}
-				_, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
 				if err != nil {
-					return errors.Wrap(err, "failed to create aws secret")
+					return nil, errors.Wrap(err, "failed to create aws secret")
 				}
 			} else {
 				// update
@@ -138,7 +138,7 @@ func UpdateGlobalStore(store *types.Store) error {
 				awsSecret.Data["cloud"] = awsCredentials.Bytes()
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(awsSecret)
 				if err != nil {
-					return errors.Wrap(err, "failed to update aws secret")
+					return nil, errors.Wrap(err, "failed to update aws secret")
 				}
 			}
 		}
@@ -161,10 +161,18 @@ func UpdateGlobalStore(store *types.Store) error {
 
 		// create or update the secret
 	}
-	return nil
+
+	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(kotsadmVeleroBackendStorageLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update backup storage location")
+	}
+
+	return updated, nil
 }
 
-func GetGlobalStore() (*types.Store, error) {
+// GetGlobalStore will return the global store from kotsadmVeleroBackupStorageLocation
+// or will find it, is the param is nil
+func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -180,34 +188,35 @@ func GetGlobalStore() (*types.Store, error) {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
-	}
-
-	var kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation
-	var defaultBackendStorageLocation *velerov1.BackupStorageLocation
-
-	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "kotsadm-velero-backend" {
-			kotsadmVeleroBackendStorageLocation = &backupStorageLocation
-		} else if backupStorageLocation.Name == "default" {
-			defaultBackendStorageLocation = &backupStorageLocation
-		}
-	}
-
-	if kotsadmVeleroBackendStorageLocation == nil && defaultBackendStorageLocation != nil {
-		// copy it to ours... so we can make edits without changing the entire cluster config
-		toCreate := defaultBackendStorageLocation.DeepCopy()
-		toCreate.Name = "kotsadm-velero-backend"
-		toCreate.ResourceVersion = ""
-
-		created, err := veleroClient.BackupStorageLocations(toCreate.Namespace).Create(toCreate)
+	if kotsadmVeleroBackendStorageLocation == nil {
+		backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create kotsadm storage location")
+			return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 		}
 
-		kotsadmVeleroBackendStorageLocation = created
+		var defaultBackendStorageLocation *velerov1.BackupStorageLocation
+
+		for _, backupStorageLocation := range backupStorageLocations.Items {
+			if backupStorageLocation.Name == "kotsadm-velero-backend" {
+				kotsadmVeleroBackendStorageLocation = &backupStorageLocation
+			} else if backupStorageLocation.Name == "default" {
+				defaultBackendStorageLocation = &backupStorageLocation
+			}
+		}
+
+		if kotsadmVeleroBackendStorageLocation == nil && defaultBackendStorageLocation != nil {
+			// copy it to ours... so we can make edits without changing the entire cluster config
+			toCreate := defaultBackendStorageLocation.DeepCopy()
+			toCreate.Name = "kotsadm-velero-backend"
+			toCreate.ResourceVersion = ""
+
+			created, err := veleroClient.BackupStorageLocations(toCreate.Namespace).Create(toCreate)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create kotsadm storage location")
+			}
+
+			kotsadmVeleroBackendStorageLocation = created
+		}
 	}
 
 	if kotsadmVeleroBackendStorageLocation == nil {
@@ -269,6 +278,7 @@ func GetGlobalStore() (*types.Store, error) {
 				}
 			}
 		}
+
 		break
 
 	case "azure":
