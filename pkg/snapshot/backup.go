@@ -34,6 +34,11 @@ func CreateBackup(a *app.App) error {
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
+	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kots kinds from path")
@@ -67,7 +72,7 @@ func CreateBackup(a *app.App) error {
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
 	veleroBackup.Name = fmt.Sprintf("scheduled-%d", time.Now().Unix())
-	veleroBackup.Namespace = appNamespace
+	veleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger": "manual",
 		// "kots.io/app-slug":         "", // @areed i don't understand why we need both the slug and id here
@@ -89,7 +94,7 @@ func CreateBackup(a *app.App) error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(appNamespace).Create(veleroBackup)
+	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(veleroBackup)
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero backup")
 	}
@@ -98,11 +103,6 @@ func CreateBackup(a *app.App) error {
 }
 
 func ListBackupsForApp(appID string) ([]*types.Backup, error) {
-	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
-
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -113,7 +113,12 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroBackups, err := veleroClient.Backups(appNamespace).List(metav1.ListOptions{})
+	backendStorageLocation, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
@@ -121,6 +126,10 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 	backups := []*types.Backup{}
 
 	for _, veleroBackup := range veleroBackups.Items {
+		if veleroBackup.Annotations["kots.io/app-id"] != appID {
+			continue
+		}
+
 		backup := types.Backup{
 			Name:   veleroBackup.Name,
 			Status: string(veleroBackup.Status.Phase),
@@ -194,13 +203,14 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 				backup.VolumeSuccessCount = vsc
 				backup.VolumeBytes = vb
 
-				veleroBackup.Annotations["kots.io/snapshot-volume-count"] = strconv.Itoa(backup.VolumeCount)
-				veleroBackup.Annotations["kots.io/snapshot-volume-success-count"] = strconv.Itoa(backup.VolumeSuccessCount)
-				veleroBackup.Annotations["kots.io/snapshot-volume-bytes"] = strconv.FormatInt(backup.VolumeBytes, 10)
+				// This is failing with "the server could not find the requested resource (put backups.velero.io scheduled-1586536961)"
+				// veleroBackup.Annotations["kots.io/snapshot-volume-count"] = strconv.Itoa(backup.VolumeCount)
+				// veleroBackup.Annotations["kots.io/snapshot-volume-success-count"] = strconv.Itoa(backup.VolumeSuccessCount)
+				// veleroBackup.Annotations["kots.io/snapshot-volume-bytes"] = strconv.FormatInt(backup.VolumeBytes, 10)
 
-				if _, err = veleroClient.Backups(appNamespace).UpdateStatus(&veleroBackup); err != nil {
-					return nil, errors.Wrap(err, "failed to update velero backup")
-				}
+				// if _, err = veleroClient.Backups(backendStorageLocation.Namespace).UpdateStatus(&veleroBackup); err != nil {
+				// 	return nil, errors.Wrap(err, "failed to update velero backup")
+				// }
 			}
 		}
 
