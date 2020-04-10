@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/session"
@@ -92,6 +93,12 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 				store.AWS.AccessKeyID = updateGlobalSnapshotSettingsRequest.AWS.AccessKeyID
 			}
 			if updateGlobalSnapshotSettingsRequest.AWS.SecretAccessKey != "" {
+				if strings.Contains(updateGlobalSnapshotSettingsRequest.AWS.SecretAccessKey, "REDACTED") {
+					logger.Error(err)
+					globalSnapshotSettingsResponse.Error = "invalid aws secret access key"
+					JSON(w, 400, globalSnapshotSettingsResponse)
+					return
+				}
 				store.AWS.SecretAccessKey = updateGlobalSnapshotSettingsRequest.AWS.SecretAccessKey
 			}
 			if updateGlobalSnapshotSettingsRequest.AWS.Region != "" {
@@ -119,6 +126,12 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			store.Google.ServiceAccount = ""
 		} else {
 			if updateGlobalSnapshotSettingsRequest.Google.ServiceAccount != "" {
+				if strings.Contains(updateGlobalSnapshotSettingsRequest.Google.ServiceAccount, "REDACTED") {
+					logger.Error(err)
+					globalSnapshotSettingsResponse.Error = "invalid google service account"
+					JSON(w, 400, globalSnapshotSettingsResponse)
+					return
+				}
 				store.Google.ServiceAccount = updateGlobalSnapshotSettingsRequest.Google.ServiceAccount
 			}
 		}
@@ -171,6 +184,12 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			store.Other.AccessKeyID = updateGlobalSnapshotSettingsRequest.Other.AccessKeyID
 		}
 		if updateGlobalSnapshotSettingsRequest.Other.SecretAccessKey != "" {
+			if strings.Contains(updateGlobalSnapshotSettingsRequest.Other.SecretAccessKey, "REDACTED") {
+				logger.Error(err)
+				globalSnapshotSettingsResponse.Error = "invalid secret access key"
+				JSON(w, 400, globalSnapshotSettingsResponse)
+				return
+			}
 			store.Other.SecretAccessKey = updateGlobalSnapshotSettingsRequest.Other.SecretAccessKey
 		}
 		if updateGlobalSnapshotSettingsRequest.Other.Region != "" {
