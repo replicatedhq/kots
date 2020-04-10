@@ -65,6 +65,7 @@ func UpdateGlobalStore(store *types.Store) error {
 	if store.AWS != nil {
 		logger.Debug("updating aws config in global snapshot storage",
 			zap.String("region", store.AWS.Region),
+			zap.String("accessKeyId", store.AWS.AccessKeyID),
 			zap.Bool("useInstanceRole", store.AWS.UseInstanceRole))
 
 		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.AWS.Region
@@ -92,6 +93,7 @@ func UpdateGlobalStore(store *types.Store) error {
 			if err != nil {
 				return errors.Wrap(err, "failed to create access key")
 			}
+
 			_, err = section.NewKey("aws_secret_access_key", store.AWS.SecretAccessKey)
 			if err != nil {
 				return errors.Wrap(err, "failed to create secret access key")
@@ -102,6 +104,9 @@ func UpdateGlobalStore(store *types.Store) error {
 			_, err = awsCfg.WriteTo(writer)
 			if err != nil {
 				return errors.Wrap(err, "failed to write ini")
+			}
+			if err := writer.Flush(); err != nil {
+				return errors.Wrap(err, "failed to flush buffer")
 			}
 
 			// create or update the secret
