@@ -248,7 +248,16 @@ class Snapshots extends Component {
       body: JSON.stringify(payload)
     })
       .then(async (res) => {
+
         const settingsResponse = await res.json();
+        if (!res.ok) {
+          this.setState({
+            updatingSettings: false,
+            updateErrorMsg: settingsResponse.error
+          })
+          return;
+        }
+
         if (settingsResponse.success) {
           this.setState({
             snapshotSettings: settingsResponse,
