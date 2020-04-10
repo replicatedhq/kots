@@ -26,7 +26,7 @@ const DESTINATIONS = [
     label: "Google Cloud Storage",
   },
   {
-    value: "s3compatible",
+    value: "other",
     label: "Other S3-Compatible Storage",
   }
 ];
@@ -58,7 +58,7 @@ class Snapshots extends Component {
     s3bucket: "",
     s3Region: "",
     s3Path: "",
-    useIam: false,
+    useIamAws: false,
     s3KeyId: "",
     s3KeySecret: "",
     azureBucket: "",
@@ -77,6 +77,7 @@ class Snapshots extends Component {
     gcsBucket: "",
     gcsPath: "",
     gcsServiceAccount: "",
+    gcsUseIam: false,
 
     s3CompatibleBucket: "",
     s3CompatiblePath: "",
@@ -138,12 +139,48 @@ class Snapshots extends Component {
   }
 
   checkForStoreChanges = (provider) => {
-    const { snapshotSettings } = this.state;
+    const {
+      snapshotSettings,
+      s3Region,
+      s3KeyId,
+      s3KeySecret,
+      useIamAws,
+      gcsUseIam,
+      gcsServiceAccount,
+      azureResourceGroupName,
+      azureStorageAccountId,
+      azureSubscriptionId,
+      azureTenantId,
+      azureClientId,
+      azureClientSecret,
+      selectedAzureCloudName,
+      s3CompatibleRegion,
+      s3CompatibleKeyId,
+      s3CompatibleKeySecret,
+      s3CompatibleEndpoint
+    } = this.state;
 
     if (provider === "aws") {
       return (
-        snapshotSettings?.store?.aws?.region !== this.state.s3Region || snapshotSettings?.store?.aws?.accessKeyID !== this.state.s3KeyId ||
-        snapshotSettings?.store?.aws?.secretAccessKey !== this.state.s3KeySecret || snapshotSettings?.store?.aws?.useInstanceRole !== this.state.useIam
+        snapshotSettings?.store?.aws?.region !== s3Region || snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId ||
+        snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret || snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
+      )
+    }
+    if (provider === "google") {
+      return (snapshotSettings?.store?.google?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.google?.serviceAccount !== gcsServiceAccount)
+    }
+    if (provider === "azure") {
+      return (
+        snapshotSettings?.store?.azure?.resourceGroup !== azureResourceGroupName || snapshotSettings?.store?.azure?.storageAccount !== azureStorageAccountId ||
+        snapshotSettings?.store?.azure?.subscriptionId !== azureSubscriptionId || snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
+        snapshotSettings?.store?.azure?.clientId !== azureClientId || snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
+        snapshotSettings?.store?.azure?.cloudName !== selectedAzureCloudName.value
+      )
+    }
+    if (provider === "other") {
+      return (
+        snapshotSettings?.store?.other?.region !== s3CompatibleRegion || snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
+        snapshotSettings?.store?.other?.secretAccessKey !== s3CompatibleKeySecret || snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
       )
     }
   }
@@ -156,17 +193,39 @@ class Snapshots extends Component {
           return {
             aws: {
               region: this.state.s3Region,
-              accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
-              secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
-              useInstanceRole: this.state.useIam
+              accessKeyID: !this.state.useIamAws ? this.state.s3KeyId : "",
+              secretAccessKey: !this.state.useIamAws ? this.state.s3KeySecret : "",
+              useInstanceRole: this.state.useIamAws
             }
           }
         case "azure":
-          return {}
+          return {
+            azure: {
+              resourceGroup: this.state.azureResourceGroupName,
+              storageAccount: this.state.azureStorageAccountId,
+              subscriptionId: this.state.azureSubscriptionId,
+              tenantId: this.state.azureTenantId,
+              clientId: this.state.azureClientId,
+              clientSecret: this.state.azureClientSecret,
+              cloudName: this.state.selectedAzureCloudName.value
+            }
+          }
         case "google":
-          return {}
-        case "s3compatible":
-          return {}
+          return {
+            google: {
+              serviceAccount: !this.state.gcsUseIam ? this.state.gcsServiceAccount : "",
+              useInstanceRole: this.state.gcsUseIam
+            }
+          }
+        case "other":
+          return {
+            other: {
+              region: this.state.s3CompatibleRegion,
+              accessKeyID: this.state.s3CompatibleKeyId,
+              secretAccessKey: this.state.s3CompatibleKeySecret,
+              endpoint: this.state.s3CompatibleEndpoint
+            }
+          }
       }
     }
   }
@@ -220,55 +279,57 @@ class Snapshots extends Component {
     if (!snapshotSettings) return;
     const { store } = snapshotSettings;
 
-    if (store?.aws) {
+
+    if (store?.provider === "aws") {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
         s3bucket: store.bucket,
-        s3Region: store.aws.region,
+        s3Region: store?.aws?.region,
         s3Path: store.path,
-        useIam: store.aws.useInstanceRole,
-        s3KeyId: store.aws.accessKeyID || "",
-        s3KeySecret: store.aws.secretAccessKey || ""
+        useIamAws: store?.aws?.useInstanceRole,
+        s3KeyId: store?.aws?.accessKeyID || "",
+        s3KeySecret: store?.aws?.secretAccessKey || ""
       });
     }
 
-    if (store?.azure) {
+    if (store?.provider === "azure") {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "azure"]),
         azureBucket: store.bucket,
         azurePath: store.path,
-        azureSubscriptionId: store.azure.subscriptionID,
-        azureTenantId: store.azure.tenantID,
-        azureClientId: store.azure.clientID,
-        azureClientSecret: store.azure.clientSecret,
-        azureResourceGroupName: store.azure.resourceGroup,
-        azureStorageAccountId: store.azure.storageAccount,
-        selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store.azure.cloudName])
+        azureSubscriptionId: store?.azure?.subscriptionId,
+        azureTenantId: store?.azure?.tenantId,
+        azureClientId: store?.azure?.clientId,
+        azureClientSecret: store?.azure?.clientSecret,
+        azureResourceGroupName: store?.azure?.resourceGroup,
+        azureStorageAccountId: store?.azure?.storageAccount,
+        selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store?.azure?.cloudName])
       });
     }
 
-    if (store?.google) {
+    if (store?.provider === "google") {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "google"]),
         gcsBucket: store.bucket,
         gcsPath: store.path,
-        gcsServiceAccount: store.google.serviceAccount
+        gcsServiceAccount: store?.google?.serviceAccount || "",
+        gcsUseIam: store?.google?.useInstanceRole
       });
     }
 
-    if (store?.s3Compatible) {
+    if (store?.provider === "other") {
       return this.setState({
         determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "s3compatible"]),
+        selectedDestination: find(DESTINATIONS, ["value", "other"]),
         s3CompatibleBucket: store.bucket,
         s3CompatiblePath: store.path,
-        s3CompatibleKeyId: store.s3Compatible.accessKeyID,
-        s3CompatibleKeySecret: store.s3Compatible.accessKeySecret,
-        s3CompatibleEndpoint: store.s3Compatible.endpoint,
-        s3CompatibleRegion: store.s3Compatible.region
+        s3CompatibleKeyId: store?.other?.accessKeyID,
+        s3CompatibleKeySecret: store?.other?.accessKeySecret,
+        s3CompatibleEndpoint: store?.other?.endpoint,
+        s3CompatibleRegion: store?.other?.region
       });
     }
     // if nothing exists yet, we've determined default state is good
@@ -280,7 +341,7 @@ class Snapshots extends Component {
 
   handleFormChange = (field, e) => {
     let nextState = {};
-    if (field === "useIam") {
+    if (field === "useIamAws" || field === "gcsUseIam") {
       nextState[field] = e.target.checked;
     } else {
       nextState[field] = e.target.value;
@@ -312,7 +373,7 @@ class Snapshots extends Component {
       case "google":
         await this.snapshotProviderGoogle();
         break;
-      case "s3compatible":
+      case "other":
         await this.snapshotProviderS3Compatible();
         break;
     }
@@ -323,84 +384,15 @@ class Snapshots extends Component {
   }
 
   snapshotProviderAzure = async () => {
-    this.setState({ updatingSettings: true });
-    await this.props.snapshotProviderAzure(
-      this.state.azureBucket,
-      this.state.azurePath,
-      this.state.azureTenantId,
-      this.state.azureResourceGroupName,
-      this.state.azureStorageAccountId,
-      this.state.azureSubscriptionId,
-      this.state.azureClientId,
-      this.state.azureClientSecret,
-      this.state.selectedAzureCloudName.value,
-    ).then(() => {
-      this.setState({ updatingSettings: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
-    })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error",
-            updatingSettings: false
-          });
-        });
-      });
+    this.updateSettings("azure", this.state.azureBucket, this.state.azurePath);
   }
 
   snapshotProviderGoogle = async () => {
-    this.setState({ updatingSettings: true });
-    await this.props.snapshotProviderGoogle(
-      this.state.gcsBucket,
-      this.state.gcsPath,
-      this.state.gcsServiceAccount
-    ).then(() => {
-      this.setState({ updatingSettings: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
-    })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error",
-            updatingSettings: false
-          });
-        });
-      });
+    this.updateSettings("google", this.state.gcsBucket, this.state.gcsPath);
   }
 
   snapshotProviderS3Compatible = async () => {
-    this.setState({ updatingSettings: true });
-    await this.props.snapshotProviderS3Compatible(
-      this.state.s3CompatibleBucket,
-      this.state.s3CompatiblePath,
-      this.state.s3CompatibleRegion,
-      this.state.s3CompatibleEndpoint,
-      this.state.s3CompatibleKeyId,
-      this.state.s3CompatibleKeySecret,
-    ).then(() => {
-      this.setState({ updatingSettings: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
-    })
-      .catch(err => {
-        console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error",
-            updatingSettings: false
-          });
-        });
-      });
+    this.updateSettings("other", this.state.s3CompatibleBucket, this.state.s3CompatiblePath);
   }
 
   renderIcons = (destination) => {
@@ -421,7 +413,7 @@ class Snapshots extends Component {
   }
 
   renderDestinationFields = () => {
-    const { selectedDestination, useIam } = this.state;
+    const { selectedDestination, useIamAws, gcsUseIam } = this.state;
     const selectedAzureCloudName = AZURE_CLOUD_NAMES.find((cn) => {
       return cn.value === this.state.selectedAzureCloudName.value;
     });
@@ -447,15 +439,15 @@ class Snapshots extends Component {
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">&nbsp;</p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIam ? "is-active" : ""}`}>
+                  <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIamAws ? "is-active" : ""}`}>
                     <input
                       type="checkbox"
                       className="u-cursor--pointer u-marginLeft--10"
-                      id="useIam"
-                      checked={this.state.useIam}
-                      onChange={(e) => { this.handleFormChange("useIam", e) }}
+                      id="useIamAws"
+                      checked={this.state.useIamAws}
+                      onChange={(e) => { this.handleFormChange("useIamAws", e) }}
                     />
-                    <label htmlFor="useIam" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                    <label htmlFor="useIamAws" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex1">
                         <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
                       </div>
@@ -465,7 +457,7 @@ class Snapshots extends Component {
               </div>
             </div>
 
-            {!useIam &&
+            {!useIamAws &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
@@ -556,32 +548,50 @@ class Snapshots extends Component {
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.gcsPath} onChange={(e) => { this.handleFormChange("gcsPath", e) }} />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
-              <div className="flex1">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
-                <div className="gcs-editor">
-                  <MonacoEditor
-                    ref={(editor) => { this.monacoEditor = editor }}
-                    language="json"
-                    value={this.state.gcsServiceAccount}
-                    height="420"
-                    width="100%"
-                    onChange={this.onGcsEditorChange}
-                    options={{
-                      contextmenu: false,
-                      minimap: {
-                        enabled: false
-                      },
-                      scrollBeyondLastLine: false,
-                    }}
-                  />
-                </div>
+            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
+              <div className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${this.state.gcsUseIam ? "is-active" : ""}`}>
+                <input
+                  type="checkbox"
+                  className="u-cursor--pointer u-marginLeft--10"
+                  id="gcsUseIam"
+                  checked={this.state.gcsUseIam}
+                  onChange={(e) => { this.handleFormChange("gcsUseIam", e) }}
+                />
+                <label htmlFor="gcsUseIam" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                  <div className="flex1">
+                    <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
+                  </div>
+                </label>
               </div>
             </div>
+            {!gcsUseIam &&
+              <div className="flex u-marginBottom--30">
+                <div className="flex1">
+                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
+                  <div className="gcs-editor">
+                    <MonacoEditor
+                      ref={(editor) => { this.monacoEditor = editor }}
+                      language="json"
+                      value={this.state.gcsServiceAccount}
+                      height="420"
+                      width="100%"
+                      onChange={this.onGcsEditorChange}
+                      options={{
+                        contextmenu: false,
+                        minimap: {
+                          enabled: false
+                        },
+                        scrollBeyondLastLine: false,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         )
 
-      case "s3compatible":
+      case "other":
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
