@@ -222,6 +222,13 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := snapshot.Redact(updatedStore); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to redact"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
 	globalSnapshotSettingsResponse.Store = updatedStore
 	globalSnapshotSettingsResponse.Success = true
 
@@ -263,6 +270,14 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		JSON(w, 500, globalSnapshotSettingsResponse)
 		return
 	}
+
+	if err := snapshot.Redact(store); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to redact"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
 	globalSnapshotSettingsResponse.Store = store
 	globalSnapshotSettingsResponse.Success = true
 
