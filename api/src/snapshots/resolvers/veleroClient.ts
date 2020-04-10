@@ -40,7 +40,7 @@ import { base64Decode, sleep } from "../../util/utilities";
 import { parseBackupLogs, ParsedBackupLogs } from "./parseBackupLogs";
 import { AzureCloudName } from "../snapshot_config";
 
-export const backupStorageLocationName = "kotsadm-velero-backend";
+export const backupStorageLocationName = "default";
 const awsSecretName = "aws-credentials";
 const googleSecretName = "google-credentials";
 const azureSecretName = "azure-credentials";
@@ -422,80 +422,7 @@ export class VeleroClient {
     throw new Error(`Timed out waiting for DownloadRequest for ${kind}/${name} logs`);
   }
 
-  // tslint:disable-next-line cyclomatic-complexity
-  async readSnapshotStore(): Promise<SnapshotStore|null> {
-    const corev1 = this.kc.makeApiClient(CoreV1Api);
-    const bsls = await this.request("GET", `backupstoragelocations`);
-    const bsl: any = _.find(bsls.items, (bslItem) => {
-      return bslItem.metadata.name === backupStorageLocationName;
-    });
-
-    if (!bsl) {
-      return null;
-    }
-
-    let prefix = bsl.spec.objectStorage.prefix || "";
-    const idx = prefix.lastIndexOf(`/${backupStorageLocationName}`);
-    prefix = bsl.spec.objectStorage.prefix.slice(0, idx);
-    const store: SnapshotStore = {
-      provider: bsl.spec.provider,
-      bucket: bsl.spec.objectStorage.bucket,
-      path: prefix,
-    };
-
-    switch (store.provider) {
-      case SnapshotProvider.S3AWS:
-        const {accessKeyID, accessKeySecret} = await readAWSCredentialsSecret(corev1, this.ns);
-
-        if (bsl.spec.config.s3Url) {
-          store.provider = SnapshotProvider.S3Compatible
-          store.s3Compatible = {
-            region: bsl.spec.config.region,
-            endpoint: bsl.spec.config.s3Url,
-            accessKeyID: accessKeyID,
-          };
-          if (accessKeySecret) {
-            store.s3Compatible.accessKeySecret = redacted;
-          }
-        } else {
-          store.s3AWS = {
-            region: bsl.spec.config.region,
-            accessKeyID,
-          };
-          if (accessKeySecret) {
-            store.s3AWS.accessKeySecret = redacted;
-          }
-        }
-        break;
-
-      case SnapshotProvider.Azure:
-        const creds = await readAzureCredentialsSecret(corev1, this.ns);
-
-        store.azure = {
-          resourceGroup: bsl.spec.config.resourceGroup,
-          storageAccount: bsl.spec.config.storageAccount,
-          subscriptionID: bsl.spec.config.subscriptionId,
-          tenantID: creds.tenantID || "",
-          clientID: creds.clientID || "",
-          clientSecret: creds.clientSecret ? redacted : "",
-          cloudName: creds.cloudName || AzureCloudName.Public,
-        };
-        break;
-
-      case SnapshotProvider.Google:
-        const serviceAccount = await readGoogleCredentialsSecret(corev1, this.ns);
-
-        store.google = {
-          serviceAccount: serviceAccount ? redacted : "",
-        };
-
-      default:
-    }
-
-    return store;
-  }
-
-  // Create a new BackupStorageLocation for the app copied from kotsadm-velero-backend
+  // Create a new BackupStorageLocation for the app copied from default
   async maybeCreateAppBackend(slug): Promise<void> {
     const currentBSLResponse = await this.unhandledRequest("GET", `backupstoragelocations/${backupStorageLocationName}`);
     if (currentBSLResponse.statusCode !== 200) {
@@ -596,7 +523,7 @@ export class VeleroClient {
 
     if (currentBSL) {
       // This is used as a template for BackupStorageLocations for each app. Apps use <prefix>/slug
-      // as the prefix. This uses <prefix>/kotsadm-velero-backend because using just <prefix> would
+      // as the prefix. This uses <prefix>/default because using just <prefix> would
       // cause the velero pod to get in a crash loop when it sees the <slug> directories in there.
       currentBSL.spec = backupStorageLocation.spec;
       currentBSL.spec.objectStorage.prefix += `/${backupStorageLocationName}`
@@ -701,6 +628,7 @@ export class VeleroClient {
 
   async isVeleroInstalled(): Promise<boolean> {
     const url = `${this.server}/apis/velero.io/`;
+    console.log("++++url", url)
     const req = { url };
     await this.kc.applyToRequest(req);
     const options: RequestPromiseOptions = {

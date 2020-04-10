@@ -4,7 +4,7 @@ import { Stores } from "../schema/stores";
 import { ReplicatedError } from "../server/errors";
 import { getK8sNamespace, getKotsadmNamespace, kotsRenderFile } from "../kots_app/kots_ffi";
 import { Backup } from "./velero";
-import { backupStorageLocationName, VeleroClient } from "./resolvers/veleroClient";
+import { VeleroClient } from "./resolvers/veleroClient";
 import {
   kotsAppIdKey,
   kotsAppSlugKey,

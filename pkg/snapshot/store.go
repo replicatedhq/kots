@@ -3,7 +3,6 @@ package snapshot
 import (
 	"bufio"
 	"bytes"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
@@ -173,44 +172,23 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
-	}
-
 	if kotsadmVeleroBackendStorageLocation == nil {
+		veleroClient, err := veleroclientv1.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create velero clientset")
+		}
+
 		backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 		}
 
-		var defaultBackendStorageLocation *velerov1.BackupStorageLocation
-
 		for _, backupStorageLocation := range backupStorageLocations.Items {
-			if backupStorageLocation.Name == "kotsadm-velero-backend" {
+			if backupStorageLocation.Name == "default" {
 				kotsadmVeleroBackendStorageLocation = &backupStorageLocation
-			} else if backupStorageLocation.Name == "default" {
-				defaultBackendStorageLocation = &backupStorageLocation
+				break
 			}
 		}
-
-		if kotsadmVeleroBackendStorageLocation == nil && defaultBackendStorageLocation != nil {
-			// copy it to ours... so we can make edits without changing the entire cluster config
-			toCreate := defaultBackendStorageLocation.DeepCopy()
-			toCreate.Name = "kotsadm-velero-backend"
-			toCreate.ResourceVersion = ""
-
-			created, err := veleroClient.BackupStorageLocations(toCreate.Namespace).Create(toCreate)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create kotsadm storage location")
-			}
-
-			kotsadmVeleroBackendStorageLocation = created
-		}
-	}
-
-	if kotsadmVeleroBackendStorageLocation == nil {
-		return nil, nil // it's not configured
 	}
 
 	if kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage == nil {
@@ -218,10 +196,11 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 	}
 
 	prefix := kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix
+	// TODO: Remove this if nothing gets broken
 	// Copied from the typescript implemention, not sure why this would be set
-	if strings.HasPrefix(prefix, "kotsadm-velero-backend") {
-		prefix = prefix[len("kotsadm-velero-backend"):]
-	}
+	// if strings.HasPrefix(prefix, "kotsadm-velero-backend") {
+	// 	prefix = prefix[len("kotsadm-velero-backend"):]
+	// }
 
 	store := types.Store{
 		Provider: kotsadmVeleroBackendStorageLocation.Spec.Provider,
@@ -351,7 +330,7 @@ func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 	}
 
 	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "kotsadm-velero-backend" {
+		if backupStorageLocation.Name == "default" {
 			return &backupStorageLocation, nil
 		}
 	}
@@ -360,6 +339,10 @@ func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 }
 
 func Redact(store *types.Store) error {
+	if store == nil {
+		return nil
+	}
+
 	if store.AWS != nil {
 		if store.AWS.SecretAccessKey != "" {
 			store.AWS.SecretAccessKey = "--- REDACTED ---"
