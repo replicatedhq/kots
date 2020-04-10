@@ -20,6 +20,7 @@ import (
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -71,7 +72,7 @@ func CreateBackup(a *app.App) error {
 	includedNamespaces := []string{appNamespace}
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	veleroBackup.Name = fmt.Sprintf("scheduled-%d", time.Now().Unix())
+	veleroBackup.Name = makeBackupName(a.Slug)
 	veleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger": "manual",
@@ -281,4 +282,15 @@ func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, e
 	}
 
 	return &registrySettings, nil
+}
+
+func makeBackupName(appSlug string) string {
+	timeFormat := "2006-01-02-15-04"
+
+	name := fmt.Sprintf("kots-%s-%s", appSlug, time.Now().UTC().Format(timeFormat))
+	if len(apimachineryvalidation.NameIsDNSSubdomain(name, false)) > 0 {
+		name = fmt.Sprintf("kots-%s", time.Now().UTC().Format(timeFormat))
+	}
+
+	return name
 }
