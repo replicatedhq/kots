@@ -270,10 +270,10 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 				if section.Name() == "default" {
 					if isS3Compatible {
 						store.Other.AccessKeyID = section.Key("aws_access_key_id").Value()
-						store.Other.SecretAccessKey = "--- REDACTED ---"
+						store.Other.SecretAccessKey = section.Key("aws_secret_access_key").Value()
 					} else {
 						store.AWS.AccessKeyID = section.Key("aws_access_key_id").Value()
-						store.AWS.SecretAccessKey = "--- REDACTED ---"
+						store.AWS.SecretAccessKey = section.Key("aws_secret_access_key").Value()
 					}
 				}
 			}
@@ -311,23 +311,26 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 			if ok {
 				store.Azure.ClientID = string(clientID)
 			}
-			_, ok = azureSecret.Data["clientSecret"]
+			clientSecret, ok := azureSecret.Data["clientSecret"]
 			if ok {
-				store.Azure.ClientSecret = "--- REDACTED ---"
+				store.Azure.ClientSecret = string(clientSecret)
 			}
 		}
 		break
 
 	case "gcp":
 		// get the secret
-		_, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("google-credentials", metav1.GetOptions{})
+		currentSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read google secret")
 		}
 
 		serviceAccount := ""
 		if err == nil {
-			serviceAccount = "--- REDACTED ---"
+			currentServiceAccount, ok := currentSecret.Data["cloud"]
+			if ok {
+				serviceAccount = string(currentServiceAccount)
+			}
 		}
 
 		store.Google = &types.StoreGoogle{
@@ -337,4 +340,20 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 	}
 
 	return &store, nil
+}
+
+func Redact(store *types.Store) error {
+	if store.AWS != nil {
+		if store.AWS.SecretAccessKey != "" {
+			store.AWS.SecretAccessKey = "--- REDACTED ---"
+		}
+	}
+
+	if store.Google != nil {
+		if store.Google.ServiceAccount != "" {
+			store.Google.ServiceAccount = "--- REDACTED ---"
+		}
+	}
+
+	return nil
 }
