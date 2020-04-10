@@ -140,7 +140,7 @@ class Snapshots extends Component {
     const { snapshotSettings } = this.state;
 
     if (provider === "aws") {
-      return  (
+      return (
         snapshotSettings.store.aws.region !== this.state.s3Region || snapshotSettings.store.aws.accessKeyID !== this.state.s3KeyId ||
         snapshotSettings.store.aws.secretAccessKey !== this.state.s3KeySecret || snapshotSettings.store.aws.useInstanceRole !== this.state.useIam
       )
@@ -150,11 +150,11 @@ class Snapshots extends Component {
   getCurrentProviderStores = (provider) => {
     switch (provider) {
       case "aws":
-        return  {
+        return {
           region: this.state.s3Region,
           accessKeyID: !this.state.useIam ? this.state.s3KeyId : "",
           secretAccessKey: !this.state.useIam ? this.state.s3KeySecret : "",
-          useInstanceRole: this.state.useIam 
+          useInstanceRole: this.state.useIam
         }
       case "azure":
         return {}
@@ -187,11 +187,17 @@ class Snapshots extends Component {
         aws
       })
     })
-      .then(() => {
-        this.setState({ updatingSettings: false, updateConfirm: true });
+      .then(async (res) => {
+        const settings = await res.json();
+        this.setState({
+          snapshotSettings: settings,
+          updatingSettings: false,
+          updateConfirm: true
+        });
         setTimeout(() => {
           this.setState({ updateConfirm: false })
         }, 3000);
+
       })
       .catch((err) => {
         console.error(err);
@@ -291,19 +297,15 @@ class Snapshots extends Component {
     switch (this.state.selectedDestination.value) {
       case "aws":
         await this.snapshotProviderAWS();
-        this.fetchSnapshotSettings();
         break;
       case "azure":
         await this.snapshotProviderAzure();
-        this.fetchSnapshotSettings();
         break;
       case "google":
         await this.snapshotProviderGoogle();
-        this.fetchSnapshotSettings();
         break;
       case "s3compatible":
         await this.snapshotProviderS3Compatible();
-        this.fetchSnapshotSettings();
         break;
     }
   }
