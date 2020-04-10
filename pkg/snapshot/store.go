@@ -247,7 +247,9 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		}
 
 		if kuberneteserrors.IsNotFound(err) {
-			store.AWS.UseInstanceRole = true
+			if !isS3Compatible {
+				store.AWS.UseInstanceRole = true
+			}
 		} else if err == nil {
 			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
