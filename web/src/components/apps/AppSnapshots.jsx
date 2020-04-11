@@ -32,16 +32,20 @@ class AppSnapshots extends Component {
     snapshots: [],
     hasSnapshotsLoaded: false,
     snapshotSettings: null,
-    isLoadingSnapshotSettings: true
+    isLoadingSnapshotSettings: true,
+    isStartButtonClicked: false
   };
 
   componentDidMount = async () => {
     await this.fetchSnapshotSettings();
 
-    this.listSnapshots()
-    setInterval(this.listSnapshots.bind(this), 2000);
+    this.listSnapshots();
+    this.interval = setInterval(()=> this.listSnapshots(), 2000);
   }
-
+  
+  componentWillUnmount() {
+    window.clearInterval(this.interval);
+  }
 
   listSnapshots() {
     const { app } = this.props;
@@ -178,6 +182,7 @@ class AppSnapshots extends Component {
       startingSnapshot: true,
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
+      isStartButtonClicked: true
     });
 
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
@@ -190,7 +195,7 @@ class AppSnapshots extends Component {
     .then(async (result) => {
       if (result.ok) {
         this.setState({
-          startingSnapshot: false,
+          startingSnapshot: false
         });
       } else {
         const body = await result.json();
@@ -209,10 +214,6 @@ class AppSnapshots extends Component {
         startSnapshotErrorMsg: err,
       })
     })
-  }
-
-  handleScheduleSubmit = () => {
-    console.log("schedule mutation to be implemented");
   }
 
   render() {
@@ -234,12 +235,13 @@ class AppSnapshots extends Component {
       snapshots,
       hasSnapshotsLoaded,
       snapshotSettings,
-      isLoadingSnapshotSettings
+      isLoadingSnapshotSettings,
+      isStartButtonClicked
     } = this.state;
     const { app } = this.props;
     const appTitle = app.name;
 
-    if (snapshots?.loading || isLoadingSnapshotSettings) {
+    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots.length === 0)) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -251,7 +253,7 @@ class AppSnapshots extends Component {
       this.props.history.replace("/snapshots");
     }
 
-    if (hasSnapshotsLoaded && snapshots.length === 0) {
+    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots.length === 0) {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
