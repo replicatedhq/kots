@@ -241,7 +241,7 @@ class AppSnapshots extends Component {
     const { app } = this.props;
     const appTitle = app.name;
 
-    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots.length === 0)) {
+    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
