@@ -407,8 +407,20 @@ class Dashboard extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(() => {
-      this.props.history.push(`/app/${app.slug}/snapshots`)
+    .then(async (result) => {
+      if (result.ok) {
+        this.setState({
+          startingSnapshot: false
+        });
+        this.props.history.push(`/app/${app.slug}/snapshots`)
+      } else {
+        const body = await result.json();
+        this.setState({
+          startingSnapshot: false,
+          startSnapshotErr: true,
+          startSnapshotErrorMsg: body.error,
+        });
+      }
     })
     .catch(err => {
       console.log(err);
@@ -525,6 +537,7 @@ class Dashboard extends Component {
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
                     startManualSnapshot={this.startManualSnapshot}
+                    startSnapshotErr={this.state.startSnapshotErr}
                     startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
                   />
                   <DashboardCard

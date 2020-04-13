@@ -201,7 +201,7 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErrorMsg } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg } = this.props;
 
 
     return (
@@ -226,7 +226,7 @@ export default class DashboardCard extends React.Component {
                     <span className="status-indicator completed"> Enabled </span>
                     : null
             }
-            <div className="u-marginTop--15">
+            <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>
               <div className="flex flex1">
                 {application ?
                   this.renderApplicationCard()
@@ -235,10 +235,11 @@ export default class DashboardCard extends React.Component {
                     : license ?
                       this.renderLicenseCard()
                       : isSnapshotAllowed ?
-                        startSnapshotErrorMsg ?
-                          <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-                          :
-                          <span className="card-link" onClick={startManualSnapshot}> Start snapshot </span>
+                        <div className="flex flex-column">
+                          {startSnapshotErr &&
+                            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{startSnapshotErrorMsg}</p>}
+                          <span className="card-link flex" onClick={startManualSnapshot}> Start a snapshot </span>
+                        </div>
                         : null
                 }
               </div>
