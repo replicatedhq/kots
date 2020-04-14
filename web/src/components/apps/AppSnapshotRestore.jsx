@@ -91,7 +91,7 @@ class AppSnapshotRestore extends Component {
           {this.renderWarnings(detail?.warnings)}
         </div>
         <div className="flex alignItems--center justifyContent--center">
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact <a className="replicated-link" href="mailto:support@replicated.com"> support@replicated.com</a> for troubleshooting this restore. </p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
         </div>
       </div>
     )
