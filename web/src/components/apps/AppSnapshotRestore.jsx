@@ -81,9 +81,9 @@ class AppSnapshotRestore extends Component {
         <div className="flex flex-column alignItems--center">
           <span className="icon u-superWarning--large"></span>
           <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-            Application falied to restore </p>
+            Application failed to restore </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-            Your application falied to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
+            Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
           <span className="u-fontWeight--bold  u-color--tundora"> {detail.warnings?.length} warnings </span> and <span className="u-fontWeight--bold u-color--tundora"> {detail.errors?.length} errors</span>.</p>
         </div>
         <div className="u-marginTop--30">
