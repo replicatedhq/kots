@@ -5,7 +5,6 @@ import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import Helmet from "react-helmet";
 import find from "lodash/find";
-import { isVeleroInstalled } from "../../queries/SnapshotQueries";
 import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
 
 import Loader from "../shared/Loader";
@@ -643,20 +642,6 @@ class Snapshots extends Component {
     }
   }
 
-  checkForVelero = () => {
-    this.props.isVeleroInstalled.refetch().then((response) => {
-      this.setState({ hideCheckVeleroButton: true });
-      if (!response.data.isVeleroInstalled) {
-        setTimeout(() => {
-          this.setState({ hideCheckVeleroButton: false });
-        }, 5000);
-      } else {
-        this.fetchSnapshotSettings();
-        this.setState({ hideCheckVeleroButton: false });
-      }
-    })
-  }
-
   renderNotVeleroMessage = () => {
     return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Not able to find Velero</p>
   }
@@ -664,14 +649,13 @@ class Snapshots extends Component {
 
   render() {
     const { updatingSettings, hideCheckVeleroButton, updateConfirm, isLoadingSnapshotSettings, updateErrorMsg } = this.state;
-    const { isVeleroInstalled } = this.props;
 
     const selectedDestination = DESTINATIONS.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
 
 
-    if (isLoadingSnapshotSettings || isVeleroInstalled?.loading) {
+    if (isLoadingSnapshotSettings) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -679,7 +663,7 @@ class Snapshots extends Component {
       )
     }
 
-    if (!isVeleroInstalled.isVeleroInstalled) {
+    if (!this.state.snapshotSettings ||  this.state.snapshotSettings.veleroVersion === "") {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
@@ -700,7 +684,7 @@ class Snapshots extends Component {
             </div>
             <div className="u-textAlign--center">
               {!hideCheckVeleroButton ?
-                <button className="btn primary blue" onClick={this.checkForVelero}>Check for Velero</button>
+                <button className="btn primary blue" onClick={this.fetchSnapshotSettings}>Check for Velero</button>
                 : this.renderNotVeleroMessage()
               }
             </div>
@@ -767,14 +751,6 @@ class Snapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(isVeleroInstalled, {
-    name: "isVeleroInstalled",
-    options: () => {
-      return {
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(snapshotProviderAWS, {
     props: ({ mutate }) => ({
       snapshotProviderAWS: (bucket, prefix, region, accessKeyID, accessKeySecret) => mutate({ variables: { bucket, prefix, region, accessKeyID, accessKeySecret } })

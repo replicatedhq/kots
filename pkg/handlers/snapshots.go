@@ -12,7 +12,10 @@ import (
 )
 
 type GlobalSnapshotSettingsResponse struct {
-	Store   *snapshottypes.Store `json:"store"`
+	VeleroVersion string   `json:"veleroVersion"`
+	VeleroPlugins []string `json:"veleroPlugins"`
+
+	Store   *snapshottypes.Store `json:"store,omitempty"`
 	Success bool                 `json:"success"`
 	Error   string               `json:"error,omitempty"`
 }
@@ -63,6 +66,17 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		JSON(w, 400, globalSnapshotSettingsResponse)
 		return
 	}
+
+	veleroVersion, veleroPlugins, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to detect velero"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
+	globalSnapshotSettingsResponse.VeleroVersion = veleroVersion
+	globalSnapshotSettingsResponse.VeleroPlugins = veleroPlugins
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
@@ -260,6 +274,22 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	if sess == nil || sess.ID == "" {
 		globalSnapshotSettingsResponse.Error = "failed to parse authorization header"
 		JSON(w, 401, globalSnapshotSettingsResponse)
+		return
+	}
+
+	veleroVersion, veleroPlugins, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to detect velero"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
+	globalSnapshotSettingsResponse.VeleroVersion = veleroVersion
+	globalSnapshotSettingsResponse.VeleroPlugins = veleroPlugins
+
+	if veleroVersion == "" {
+		JSON(w, 200, globalSnapshotSettingsResponse)
 		return
 	}
 
