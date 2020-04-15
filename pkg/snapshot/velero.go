@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/pkg/errors"
@@ -19,6 +20,9 @@ type VeleroStatus struct {
 	Version string
 	Plugins []string
 	Status  string
+
+	ResticVersion string
+	ResticStatus  string
 }
 
 func DetectVelero() (*VeleroStatus, error) {
@@ -58,36 +62,63 @@ func DetectVelero() (*VeleroStatus, error) {
 		return nil, nil
 	}
 
+	veleroStatus := VeleroStatus{
+		Plugins: []string{},
+	}
+
 	deployments, err := clientset.AppsV1().Deployments(veleroNamespace).List(metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list deployments")
 	}
-
-	plugins := []string{}
 	for _, deployment := range deployments.Items {
 		for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
 			// the default installation is to name these like "velero-plugin-for-aws"
-			plugins = append(plugins, initContainer.Name)
+			veleroStatus.Plugins = append(veleroStatus.Plugins, initContainer.Name)
 		}
 
 		matches := dockerImageNameRegex.FindStringSubmatch(deployment.Spec.Template.Spec.Containers[0].Image)
 		if len(matches) == 5 {
 			status := "NotReady"
+
 			if deployment.Status.AvailableReplicas > 0 {
 				status = "Ready"
 			}
 
-			return &VeleroStatus{
-				Version: matches[4],
-				Plugins: plugins,
-				Status:  status,
-			}, nil
+			veleroStatus.Version = matches[4]
+			veleroStatus.Status = status
+
+			goto DeploymentFound
 		}
-
 	}
+DeploymentFound:
 
-	// get here, no velero
-	return nil, nil
+	daemonsets, err := clientset.AppsV1().DaemonSets(veleroNamespace).List(metav1.ListOptions{
+		LabelSelector: "component=velero",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list daemonsets")
+	}
+	for _, daemonset := range daemonsets.Items {
+		matches := dockerImageNameRegex.FindStringSubmatch(daemonset.Spec.Template.Spec.Containers[0].Image)
+		if len(matches) == 5 {
+			status := "NotReady"
+
+			fmt.Printf("status = %#v\n", daemonset.Status)
+			if daemonset.Status.NumberAvailable > 0 {
+				if daemonset.Status.NumberUnavailable == 0 {
+					status = "Ready"
+				}
+			}
+
+			veleroStatus.ResticVersion = matches[4]
+			veleroStatus.ResticStatus = status
+
+			goto ResticFound
+		}
+	}
+ResticFound:
+
+	return &veleroStatus, nil
 }

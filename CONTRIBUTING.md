@@ -4,7 +4,7 @@ Contributions are definitely welcome! We've published documentation on how to se
 
 ## Local Setup
 
-The recommended configuration to build and run Kotsadm locally is to run everything on a Docker Desktop environment, with the local, Docker-supplied Kubernetes installation.
+The recommended configuration to build and run kotsadm on a microk8s cluster, locally.
 
 Required Software:
 - [Skaffold](https://skaffold.dev) 0.29.0 or later
@@ -19,4 +19,8 @@ To start, build and run all server components in the Kubernetes cluster with:
 skaffold dev
 ```
 
-Go code will not be rebuilt automatically.  Run `make kotsadm` to make the new binary and restart the pod.
+## Notes:
+- Go code will not be rebuilt automatically.  Run `make kotsadm` to make the new binary and restart the pod.
+- After installing restic/velero, edit the restic daemonset to change the volume hostPath mount from:
+      `/var/lib/kubelet/pods` to `/var/snap/microk8s/common/var/lib/kubelet/pods`
+
