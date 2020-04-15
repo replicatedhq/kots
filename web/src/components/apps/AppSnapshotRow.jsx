@@ -45,7 +45,7 @@ class AppShanpshotRow extends React.Component {
               <div>
                 <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{this.snapshotStatusToDisplayName(snapshot.status)}</span>
               </div>
-              <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot.status.analyzeId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot.status.analyzeId}`}>Troubleshoot</Link>
+              <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot.supportBundleId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot.supportBundleId}`}>Troubleshoot</Link>
             </div>
           </div>
           <div className="flex flex-auto alignItems--center u-marginTop--5">

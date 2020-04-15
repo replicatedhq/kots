@@ -17,13 +17,19 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-func SetBundleStatus(id string, status string) error {
+func SetBundleAnalysis(id string, insights []byte) error {
 	db := persistence.MustGetPGSession()
 	query := `update supportbundle set status = $1 where id = $2`
 
-	_, err := db.Exec(query, status, id)
+	_, err := db.Exec(query, "analyzed", id)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert support bundle")
+	}
+
+	query = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`
+	_, err = db.Exec(query, ksuid.New().String(), id, insights, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "failed to insert insights")
 	}
 
 	return nil

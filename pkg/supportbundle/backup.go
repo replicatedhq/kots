@@ -1,6 +1,7 @@
 package supportbundle
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,7 @@ import (
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	troubleshootversion "github.com/replicatedhq/troubleshoot/pkg/version"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -119,9 +121,13 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to analyze")
 	}
 
-	fmt.Printf("\n\n\n----> %#v\n\n\n", analyzeResult)
+	data := convert.FromAnalyzerResult(analyzeResult)
+	insights, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal analysis")
+	}
 
-	if err := SetBundleStatus(supportBundle.ID, "analyzed"); err != nil {
+	if err := SetBundleAnalysis(supportBundle.ID, insights); err != nil {
 		return "", errors.Wrap(err, "failed to update bundle status")
 	}
 	return supportBundle.ID, nil
