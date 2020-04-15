@@ -17,6 +17,7 @@ import (
 	troubleshootversion "github.com/replicatedhq/troubleshoot/pkg/version"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -45,10 +46,36 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	var collectors troubleshootcollect.Collectors
-	// TODO define collectors
 	collectors = append(collectors, &troubleshootcollect.Collector{
 		Collect: &troubleshootv1beta1.Collect{
-			ClusterInfo: &troubleshootv1beta1.ClusterInfo{},
+			Logs: &troubleshootv1beta1.Logs{
+				CollectorMeta: troubleshootv1beta1.CollectorMeta{
+					CollectorName: "velero",
+				},
+				Namespace: backupNamespace,
+				Selector: []string{
+					"component=velero",
+					"deploy=velero",
+				},
+			},
+		},
+		Redact:       true,
+		ClientConfig: restConfig,
+		Namespace:    backupNamespace,
+	})
+	collectors = append(collectors, &troubleshootcollect.Collector{
+		Collect: &troubleshootv1beta1.Collect{
+			Logs: &troubleshootv1beta1.Logs{
+				CollectorMeta: troubleshootv1beta1.CollectorMeta{
+					CollectorName: "restic",
+				},
+				Name:      "restic",
+				Namespace: backupNamespace,
+				Selector: []string{
+					"component=velero",
+					"name=restic",
+				},
+			},
 		},
 		Redact:       true,
 		ClientConfig: restConfig,
@@ -115,8 +142,34 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	// analyze it
-	// TODO define analyzers
-	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(filepath.Join(supportBundleArchivePath, "support-bundle.tar.gz"), "")
+	analyzers := []*troubleshootv1beta1.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta1.Analyze{
+		TextAnalyze: &troubleshootv1beta1.TextAnalyze{
+			CollectorName: "velero",
+			FileName:      "velero/velero*/velero.log",
+			RegexPattern:  "...",
+			Outcomes:      []*troubleshootv1beta1.Outcome{},
+		},
+	})
+	analyzer := troubleshootv1beta1.Analyzer{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "troubleshoot.replicated.com/v1beta1",
+			Kind:       "Analyzer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: backupName,
+		},
+		Spec: troubleshootv1beta1.AnalyzerSpec{
+			analyzers,
+		},
+	}
+	b, err := json.Marshal(analyzer)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal analyzers")
+	}
+
+	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(filepath.Join(supportBundleArchivePath, "support-bundle.tar.gz"), string(b))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to analyze")
 	}
