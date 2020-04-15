@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -12,8 +13,9 @@ import (
 )
 
 type GlobalSnapshotSettingsResponse struct {
-	VeleroVersion string   `json:"veleroVersion"`
-	VeleroPlugins []string `json:"veleroPlugins"`
+	VeleroVersion   string   `json:"veleroVersion"`
+	VeleroPlugins   []string `json:"veleroPlugins"`
+	IsVeleroRunning bool     `json:"isVeleroRunning"`
 
 	Store   *snapshottypes.Store `json:"store,omitempty"`
 	Success bool                 `json:"success"`
@@ -67,16 +69,21 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veleroVersion, veleroPlugins, err := snapshot.DetectVelero()
+	veleroStatus, err := snapshot.DetectVelero()
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to detect velero"
 		JSON(w, 500, globalSnapshotSettingsResponse)
 		return
 	}
+	if veleroStatus == nil {
+		JSON(w, 200, globalSnapshotSettingsResponse)
+		return
+	}
 
-	globalSnapshotSettingsResponse.VeleroVersion = veleroVersion
-	globalSnapshotSettingsResponse.VeleroPlugins = veleroPlugins
+	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
+	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
+	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
@@ -277,21 +284,23 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veleroVersion, veleroPlugins, err := snapshot.DetectVelero()
+	veleroStatus, err := snapshot.DetectVelero()
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to detect velero"
 		JSON(w, 500, globalSnapshotSettingsResponse)
 		return
 	}
-
-	globalSnapshotSettingsResponse.VeleroVersion = veleroVersion
-	globalSnapshotSettingsResponse.VeleroPlugins = veleroPlugins
-
-	if veleroVersion == "" {
+	if veleroStatus == nil {
 		JSON(w, 200, globalSnapshotSettingsResponse)
 		return
 	}
+
+	fmt.Printf("%#v\n", veleroStatus)
+
+	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
+	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
+	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
