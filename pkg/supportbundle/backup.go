@@ -120,6 +120,10 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	fmt.Printf("\n\n\n----> %#v\n\n\n", analyzeResult)
+
+	if err := SetBundleStatus(supportBundle.ID, "analyzed"); err != nil {
+		return "", errors.Wrap(err, "failed to update bundle status")
+	}
 	return supportBundle.ID, nil
 }
 
