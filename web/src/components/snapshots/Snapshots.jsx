@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import classNames from "classnames";
 import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom"
@@ -95,11 +94,12 @@ class Snapshots extends Component {
     updateErrorMsg: ""
   };
 
-  fetchSnapshotSettings = () => {
+  fetchSnapshotSettings = (isCheckForVelero) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
       snapshotSettingsErrMsg: "",
+      hideCheckVeleroButton: isCheckForVelero ? true : false
     });
 
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
@@ -117,6 +117,13 @@ class Snapshots extends Component {
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
         })
+        if (!result.isVeleroRunning) {
+          setTimeout(() => {
+            this.setState({ hideCheckVeleroButton: false });
+          }, 5000);
+        } else {
+          this.setState({ hideCheckVeleroButton: false });
+        }
       })
       .catch(err => {
         console.log(err);
@@ -664,7 +671,7 @@ class Snapshots extends Component {
       )
     }
 
-    if (!this.state.snapshotSettings ||  this.state.snapshotSettings.veleroVersion === "") {
+    if (!this.state.snapshotSettings || this.state.snapshotSettings.veleroVersion === "") {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
@@ -685,7 +692,7 @@ class Snapshots extends Component {
             </div>
             <div className="u-textAlign--center">
               {!hideCheckVeleroButton ?
-                <button className="btn primary blue" onClick={this.fetchSnapshotSettings}>Check for Velero</button>
+                <button className="btn primary blue" onClick={() => this.fetchSnapshotSettings(true)}>Check for Velero</button>
                 : this.renderNotVeleroMessage()
               }
             </div>
@@ -699,8 +706,8 @@ class Snapshots extends Component {
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
-        <div class={classNames("needs-styling", {"u-display--none": this.state.snapshotSettings.isVeleroRunning})}>
-          Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.
+        <div className={`${this.state.snapshotSettings.isVeleroRunning ? "u-display--none" : "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center"}`}>
+          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.</p>
         </div>
         <div className="snapshot-form-wrapper">
           <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
@@ -713,61 +720,12 @@ class Snapshots extends Component {
               <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
             </div>
             {updateErrorMsg &&
-              <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--20">{updateErrorMsg}</div>}
+              <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
             <div className="flex flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
-              <div className="flex1">Please fix Velero so that the deployment is running.
-        </div>
-        <div className="snapshot-form-wrapper">
-          <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
-            <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
-          </div>
-          <form className="flex flex-column">
-            <div className="flex1 u-marginBottom--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
-            </div>
-            {updateErrorMsg &&
-              <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--20">{updateErrorMsg}</div>}
-            <div className="flex flex-column u-marginBottom--20">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
+              {!this.state.snapshotSettings.isVeleroRunning &&
+                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running.</div>}
               <div className="flex1">
-                <Select
-                  className="replicated-select-container"
-                  classNamePrefix="replicated-select"
-                  placeholder="Select unit"
-                  options={DESTINATIONS}
-                  isSearchable={false}
-                  getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
-                  getOptionValue={(destination) => destination.label}
-                  value={selectedDestination}
-                  onChange={this.handleDestinationChange}
-                  isOptionSelected={(option) => { option.value === selectedDestination }}
-                />
-              </div>
-            </div>
-            {!this.state.determiningDestination &&
-              <div>
-                {this.renderDestinationFields()}
-                <div className="flex u-marginBottom--30">
-                  <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
-                  {updateConfirm &&
-                    <div className="u-marginLeft--10 flex alignItems--center">
-                      <span className="icon checkmark-icon" />
-                      <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-          </form>
-        </div>
-      </div>
-    );
-  }
-}
-
                 <Select
                   className="replicated-select-container"
                   classNamePrefix="replicated-select"
