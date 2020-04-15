@@ -2,15 +2,19 @@ import React, { Component } from "react";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
+import Modal from "react-modal";
+import ReactTooltip from "react-tooltip"
+
 import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
-import Modal from "react-modal";
-import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
-import "../../scss/components/snapshots/AppSnapshots.scss";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+
+import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
+import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
+
 
 class AppSnapshots extends Component {
   state = {
@@ -40,9 +44,9 @@ class AppSnapshots extends Component {
     await this.fetchSnapshotSettings();
 
     this.listSnapshots();
-    this.interval = setInterval(()=> this.listSnapshots(), 2000);
+    this.interval = setInterval(() => this.listSnapshots(), 2000);
   }
-  
+
   componentWillUnmount() {
     window.clearInterval(this.interval);
   }
@@ -56,20 +60,20 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(async (result) => {
-      const body = await result.json();
-      if (!result.ok) {
-        console.log("failed to load snapshots", body);
-        return;
-      }
-      this.setState({
-        snapshots: body.backups,
-        hasSnapshotsLoaded: true,
-      });
-    })
-    .catch(err => {
-      console.log(err);
-    })
+      .then(async (result) => {
+        const body = await result.json();
+        if (!result.ok) {
+          console.log("failed to load snapshots", body);
+          return;
+        }
+        this.setState({
+          snapshots: body.backups,
+          hasSnapshotsLoaded: true,
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      })
   }
 
   fetchSnapshotSettings = async () => {
@@ -86,23 +90,23 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(res => res.json())
-    .then(result => {
-      this.setState({
-        snapshotSettings: result,
-        isLoadingSnapshotSettings: false,
-        snapshotSettingsErr: false,
-        snapshotSettingsErrMsg: "",
+      .then(res => res.json())
+      .then(result => {
+        this.setState({
+          snapshotSettings: result,
+          isLoadingSnapshotSettings: false,
+          snapshotSettingsErr: false,
+          snapshotSettingsErrMsg: "",
+        })
       })
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        isLoadingSnapshotSettings: false,
-        snapshotSettingsErr: true,
-        snapshotSettingsErrMsg: err,
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          isLoadingSnapshotSettings: false,
+          snapshotSettingsErr: true,
+          snapshotSettingsErrMsg: err,
+        })
       })
-    })
   }
 
   toggleScheduleSnapshotModal = () => {
@@ -192,29 +196,38 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(async (result) => {
-      if (result.ok) {
-        this.setState({
-          startingSnapshot: false
-        });
-      } else {
-        const body = await result.json();
+      .then(async (result) => {
+        if (result.ok) {
+          this.setState({
+            startingSnapshot: false
+          });
+        } else {
+          const body = await result.json();
+          this.setState({
+            startingSnapshot: false,
+            startSnapshotErr: true,
+            startSnapshotErrorMsg: body.error,
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
         this.setState({
           startingSnapshot: false,
           startSnapshotErr: true,
-          startSnapshotErrorMsg: body.error,
-        });
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        startingSnapshot: false,
-        startSnapshotErr: true,
-        startSnapshotErrorMsg: err,
+          startSnapshotErrorMsg: err,
+        })
       })
-    })
   }
+
+  componentDidUpdate(lastProps, lastState) {
+    if (this.state.snapshots?.length !== lastState.snapshots?.length && this.state.snapshots) {
+      if (this.state.snapshots?.length === 0 && lastState.snapshots?.length > 0) {
+        this.setState({ isStartButtonClicked: false });
+      }
+    }
+  }
+
 
   render() {
     const {
@@ -240,6 +253,7 @@ class AppSnapshots extends Component {
     } = this.state;
     const { app } = this.props;
     const appTitle = app.name;
+    const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
     if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots.length === 0) || startingSnapshot) {
       return (
@@ -289,7 +303,13 @@ class AppSnapshots extends Component {
             <div className="flex">
               <Link to={`/snapshots`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
               <Link to={`/app/${app.slug}/snapshots/schedule`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotScheduleIcon u-marginRight--5" />Schedule</Link>
-              <button className="btn primary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+              <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
+                <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+              </span>
+              {inProgressSnapshotExist &&
+                <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
+                  <span>You can't start a snaphost while another one is In Progress</span>
+                </ReactTooltip>}
             </div>
           </div>
           {snapshots.map((snapshot) => (
