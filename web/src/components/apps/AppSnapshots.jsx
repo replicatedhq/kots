@@ -4,6 +4,7 @@ import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip"
+import moment from "moment";
 
 import AppSnapshotsRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
@@ -130,7 +131,22 @@ class AppSnapshots extends Component {
   };
 
   handleDeleteSnapshot = snapshot => {
-    this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "" });
+    const fakeDeletionSnapshot = {
+      name: "Preparing for snapshot deletion",
+      status: "Deleting",
+      trigger: "manual",
+      appID: this.props.app.id,
+      sequence: snapshot.sequence,
+      startedAt: Utilities.dateFormat(snapshot.startedAt, "MMM D, YYYY h:mm A"),
+      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MMM D, YYYY h:mm A"),
+      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MMM D, YYYY h:mm A"),
+      volumeCount: snapshot.volumeCount,
+      volumeSuccessCount: snapshot.volumeSuccessCount,
+      volumeBytes: 0,
+      volumeSizeHuman: snapshot.volumeSizeHuman
+    }
+
+    this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
     this.props
       .deleteSnapshot(snapshot.name)
       .then(() => {
@@ -182,11 +198,28 @@ class AppSnapshots extends Component {
 
   startManualSnapshot = () => {
     const { app } = this.props;
+
+    const fakeProgressSnapshot = {
+      name: "Preparing snapshot",
+      status: "InProgress",
+      trigger: "manual",
+      appID: app.id,
+      sequence: "",
+      startedAt: moment().format("MMM D, YYYY h:mm A"),
+      finishedAt: "",
+      expiresAt: "",
+      volumeCount: 0,
+      volumeSuccessCount: 0,
+      volumeBytes: 0,
+      volumeSizeHuman: ""
+    }
+
     this.setState({
       startingSnapshot: true,
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
-      isStartButtonClicked: true
+      isStartButtonClicked: true,
+      snapshots: [...this.state.snapshots, fakeProgressSnapshot]
     });
 
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
