@@ -61,25 +61,25 @@ func Start() error {
 
 						if _, err := veleroClient.Backups(backup.Namespace).Update(backup); err != nil {
 							logger.Error(err)
-							break
+							continue
 						}
 
 						supportBundleID, err := supportbundle.CreateBundleForBackup(appID, backup.Name, backup.Namespace)
 						if err != nil {
 							logger.Error(err)
-							break
+							continue
 						}
 
 						updatedBackup, err := veleroClient.Backups(backup.Namespace).Get(backup.Name, metav1.GetOptions{})
 						if err != nil {
 							logger.Error(err)
-							break
+							continue
 						}
 
 						updatedBackup.Annotations["kots.io/support-bundle-id"] = supportBundleID
 						if _, err := veleroClient.Backups(backup.Namespace).Update(updatedBackup); err != nil {
 							logger.Error(err)
-							break
+							continue
 						}
 					}
 				}
