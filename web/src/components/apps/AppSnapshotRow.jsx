@@ -57,7 +57,7 @@ class AppShanpshotRow extends React.Component {
         </div>
         {!isExpired && snapshot.status !== "Deleting" &&
           <div className="flex-auto">
-            {snapshot.status !== "InProgress" && snapshot.status !== "Failed" &&
+            {snapshot.status === "Completed" &&
               <span className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleRestoreClick(snapshot)}>Restore</span>}
             {snapshot.status !== "InProgress" &&
               <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover" onClick={() => this.handleDeleteClick(snapshot)}>Delete</span>}
