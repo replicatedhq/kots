@@ -706,21 +706,48 @@ class Snapshots extends Component {
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
-        <div className={`${this.state.snapshotSettings.isVeleroRunning ? "u-display--none" : "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center"}`}>
-          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.</p>
-        </div>
-        <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion === "" ? "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
-          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">The Admin Console requires the Velero restic integration to use Snapshots, but it was not found. Please install the Velero restic integration to continue.</p>
-        </div>
-        <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion !== "" && !this.state.snapshotSettings.isResticRunning ? "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
-          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">Velero and the restic integration have been detected, but restic is not running successfully. Snapshots will not work until Restic is running reliably.</p>
-        </div>
         <div className="snapshot-form-wrapper">
           <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
             <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
           </div>
           <form className="flex flex-column">
+            <div className={`${this.state.snapshotSettings.isVeleroRunning ? "u-display--none" : "flex flex1 u-marginBottom--30 flex justifyContent--center alignItems--center"}`}>
+              <div className="flex u-marginRight--20">
+                <span className="icon redWarningIcon" />
+              </div>
+              <div className="flex flex-column">
+                <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Velero is not running </p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
+                  Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.
+                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                </p>
+              </div>
+            </div>
+            <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion === "" ? "flex flex1 u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
+              <div className="flex u-marginRight--20">
+                <span className="icon redWarningIcon" />
+              </div>
+              <div className="flex flex-column">
+                <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Restic integration not found </p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
+                  The Admin Console requires the Velero restic integration to use Snapshots, but it was not found. Please install the Velero restic integration to continue.
+                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                </p>
+              </div>
+            </div>
+            <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion !== "" && !this.state.snapshotSettings.isResticRunning ? "flex flex1 u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
+              <div className="flex u-marginRight--20">
+                <span className="icon redWarningIcon" />
+              </div>
+              <div className="flex flex-column">
+                <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Restic is not working </p>
+                <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
+                  Velero and the restic integration have been detected, but restic is not running successfully. Snapshots will not work until Restic is running reliably.
+                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                </p>
+              </div>
+            </div>
             <div className="flex1 u-marginBottom--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
               <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
@@ -730,7 +757,7 @@ class Snapshots extends Component {
             <div className="flex flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               {!this.state.snapshotSettings.isVeleroRunning &&
-                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running.</div>}
+                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
               <div className="flex1">
                 <Select
                   className="replicated-select-container"
