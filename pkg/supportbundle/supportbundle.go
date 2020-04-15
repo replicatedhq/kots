@@ -2,6 +2,7 @@ package supportbundle
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -54,6 +55,7 @@ func CreateBundle(requestedID string, appID string, archivePath string) (*types.
 		return nil, errors.Wrap(err, "failed to marshal tree index")
 	}
 
+	fmt.Printf("\n\n\n%s\n\n\n", marshaledTree)
 	db := persistence.MustGetPGSession()
 	query := `insert into supportbundle (id, slug, watch_id, size, status, created_at, tree_index) values ($1, $2, $3, $4, $5, $6, $7)`
 
