@@ -709,6 +709,12 @@ class Snapshots extends Component {
         <div className={`${this.state.snapshotSettings.isVeleroRunning ? "u-display--none" : "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center"}`}>
           <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.</p>
         </div>
+        <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion === "" ? "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
+          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">The Admin Console requires the Velero restic integration to use Snapshots, but it was not found. Please install the Velero restic integration to continue.</p>
+        </div>
+        <div className={`${this.state.snapshotSettings.veleroVersion !== "" && this.state.snapshotSettings.resticVersion !== "" && !this.state.snapshotSettings.isResticRunning ? "VeleroWarning--wrapper u-marginBottom--30 flex justifyContent--center alignItems--center" : "u-display--none"}`}>
+          <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium">Velero and the restic integration have been detected, but restic is not running successfully. Snapshots will not work until Restic is running reliably.</p>
+        </div>
         <div className="snapshot-form-wrapper">
           <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
             <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>

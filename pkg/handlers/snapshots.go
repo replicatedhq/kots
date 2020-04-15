@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -16,6 +15,8 @@ type GlobalSnapshotSettingsResponse struct {
 	VeleroVersion   string   `json:"veleroVersion"`
 	VeleroPlugins   []string `json:"veleroPlugins"`
 	IsVeleroRunning bool     `json:"isVeleroRunning"`
+	ResticVersion   string   `json:"resticVersion"`
+	IsResticRunning bool     `json:"isResticRunning"`
 
 	Store   *snapshottypes.Store `json:"store,omitempty"`
 	Success bool                 `json:"success"`
@@ -84,6 +85,8 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
+	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
+	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
@@ -296,11 +299,11 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("%#v\n", veleroStatus)
-
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
+	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
+	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {

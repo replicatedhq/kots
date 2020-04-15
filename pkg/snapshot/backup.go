@@ -78,9 +78,9 @@ func CreateBackup(a *app.App) error {
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger": "manual",
 		// "kots.io/app-slug":         "", // @areed i don't understand why we need both the slug and id here
-		"kots.io/app-id":         a.ID,
-		"kots.io/app-sequence":   strconv.FormatInt(a.CurrentSequence, 10),
-		"kots.io/snapshot-start": time.Now().UTC().Format(time.RFC3339),
+		"kots.io/app-id":             a.ID,
+		"kots.io/app-sequence":       strconv.FormatInt(a.CurrentSequence, 10),
+		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
 		// "kots.io/cluster-id":       "", // @areed why do we need the cluster id here
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
