@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -21,14 +22,23 @@ type Session struct {
 	ExpiresAt time.Time
 }
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func Create(forUser *user.User) (*Session, error) {
 	logger.Debug("creating session")
 
-	id := ksuid.New().String()
+	randomID, err := ksuid.NewRandom()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to generate random session id")
+	}
+
+	id := randomID.String()
 
 	db := persistence.MustGetPGSession()
 	query := `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`
-	_, err := db.Exec(query, id, forUser.ID, "", time.Now().AddDate(0, 0, 14))
+	_, err = db.Exec(query, id, forUser.ID, "", time.Now().AddDate(0, 0, 14))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create session")
 	}

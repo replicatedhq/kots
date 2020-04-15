@@ -23,7 +23,7 @@ require (
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.0-beta.1
-	github.com/replicatedhq/troubleshoot v0.9.27
+	github.com/replicatedhq/troubleshoot v0.9.29-0.20200414221457-f06cd9e4a26e
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
@@ -41,6 +41,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
+	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.4
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible

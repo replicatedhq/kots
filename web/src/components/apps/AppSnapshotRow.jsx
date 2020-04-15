@@ -17,6 +17,16 @@ class AppShanpshotRow extends React.Component {
     this.props.toggleRestoreModal(snapshot);
   }
 
+  snapshotStatusToDisplayName = status => {
+    // The front end replacessome status values with user friendly messages
+    switch (status) {
+      case "PartiallyFailed":
+        return "Incomplete (Failed)";
+    }
+
+    return status;
+  }
+
   render() {
     const { appSlug, snapshot } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot.expiresAt);
@@ -33,8 +43,9 @@ class AppShanpshotRow extends React.Component {
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot.startedAt, "MMM D, YYYY h:mm A")}</p>
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot.finishedAt ? Utilities.dateFormat(snapshot.finishedAt, "MMM D, YYYY h:mm A") : "TBD"}</p>
               <div>
-                <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{snapshot.status}</span>
+                <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{this.snapshotStatusToDisplayName(snapshot.status)}</span>
               </div>
+              <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot.status.analyzeId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot.status.analyzeId}`}>Troubleshoot</Link>
             </div>
           </div>
           <div className="flex flex-auto alignItems--center u-marginTop--5">
