@@ -75,6 +75,7 @@ func DetectVelero() (*VeleroStatus, error) {
 		matches := dockerImageNameRegex.FindStringSubmatch(deployment.Spec.Template.Spec.Containers[0].Image)
 		if len(matches) == 5 {
 			status := "NotReady"
+
 			if deployment.Status.AvailableReplicas > 0 {
 				status = "Ready"
 			}

@@ -20,7 +20,6 @@ import (
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
-	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -72,13 +71,16 @@ func CreateBackup(a *app.App) error {
 	includedNamespaces := []string{appNamespace}
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	veleroBackup.Name = makeBackupName(a.Slug)
+	veleroBackup.Name = ""
+	veleroBackup.GenerateName = a.Slug + "-"
+
 	veleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger": "manual",
 		// "kots.io/app-slug":         "", // @areed i don't understand why we need both the slug and id here
-		"kots.io/app-id":       a.ID,
-		"kots.io/app-sequence": strconv.FormatInt(a.CurrentSequence, 10),
+		"kots.io/app-id":         a.ID,
+		"kots.io/app-sequence":   strconv.FormatInt(a.CurrentSequence, 10),
+		"kots.io/snapshot-start": time.Now().UTC().Format(time.RFC3339),
 		// "kots.io/cluster-id":       "", // @areed why do we need the cluster id here
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
@@ -253,12 +255,14 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (int, int, int64, e
 	}
 
 	return count, success, totalBytes, nil
+
 }
 
 // this is a copy from registry.  so many import cycles to unwind here, todo
 func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
 	db := persistence.MustGetPGSession()
 	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+
 	row := db.QueryRow(query, appID)
 
 	var registryHostname sql.NullString
@@ -282,15 +286,4 @@ func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, e
 	}
 
 	return &registrySettings, nil
-}
-
-func makeBackupName(appSlug string) string {
-	timeFormat := "2006-01-02-15-04"
-
-	name := fmt.Sprintf("kots-%s-%s", appSlug, time.Now().UTC().Format(timeFormat))
-	if len(apimachineryvalidation.NameIsDNSSubdomain(name, false)) > 0 {
-		name = fmt.Sprintf("kots-%s", time.Now().UTC().Format(timeFormat))
-	}
-
-	return name
 }
