@@ -54,4 +54,5 @@ type Backup struct {
 	VolumeSuccessCount int        `json:"volumeSuccessCount"`
 	VolumeBytes        int64      `json:"volumeBytes"`
 	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
+	SupportBundleID    string     `json:"supportBundleId,omitempty"`
 }

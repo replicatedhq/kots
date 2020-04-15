@@ -1,7 +1,6 @@
 package snapshot
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/pkg/errors"
@@ -105,7 +104,6 @@ DeploymentFound:
 		if len(matches) == 5 {
 			status := "NotReady"
 
-			fmt.Printf("status = %#v\n", daemonset.Status)
 			if daemonset.Status.NumberAvailable > 0 {
 				if daemonset.Status.NumberUnavailable == 0 {
 					status = "Ready"

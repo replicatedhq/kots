@@ -166,6 +166,11 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 			backup.Trigger = trigger
 		}
 
+		supportBundleID, ok := veleroBackup.Annotations["kots.io/support-bundle-id"]
+		if ok {
+			backup.SupportBundleID = supportBundleID
+		}
+
 		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
 		if volumeCountOk {
 			i, err := strconv.Atoi(volumeCount)
