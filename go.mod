@@ -11,6 +11,7 @@ require (
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
 	github.com/go-logr/zapr v0.1.1 // indirect
+	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/huandu/xstrings v1.3.0 // indirect
@@ -23,7 +24,7 @@ require (
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.0-beta.1
-	github.com/replicatedhq/troubleshoot v0.9.29-0.20200414221457-f06cd9e4a26e
+	github.com/replicatedhq/troubleshoot v0.9.29-0.20200415224716-5050f46b1efe
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
@@ -46,9 +47,12 @@ require (
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/cluster-bootstrap v0.17.3
+	k8s.io/gengo v0.0.0-20200114144118-36b2048a9120 // indirect
 	k8s.io/kubernetes v1.17.3
+	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.7 // indirect
 	sigs.k8s.io/application v0.8.1
 	sigs.k8s.io/controller-runtime v0.4.0
+	sigs.k8s.io/structured-merge-diff/v3 v3.0.0 // indirect
 )
 
 replace (

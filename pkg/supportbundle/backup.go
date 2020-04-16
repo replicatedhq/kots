@@ -52,6 +52,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 				CollectorMeta: troubleshootv1beta1.CollectorMeta{
 					CollectorName: "velero",
 				},
+				Name:      "velero",
 				Namespace: backupNamespace,
 				Selector: []string{
 					"component=velero",
@@ -146,12 +147,45 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 	analyzers = append(analyzers, &troubleshootv1beta1.Analyze{
 		TextAnalyze: &troubleshootv1beta1.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta1.AnalyzeMeta{
+				CheckName: "Velero Errors",
+			},
 			CollectorName: "velero",
 			FileName:      "velero/velero*/velero.log",
-			RegexPattern:  "...",
-			Outcomes:      []*troubleshootv1beta1.Outcome{},
+			RegexPattern:  "level=error",
+			Outcomes: []*troubleshootv1beta1.Outcome{
+				{
+					Fail: &troubleshootv1beta1.SingleOutcome{
+						Message: "Velero has errors",
+					},
+					Pass: &troubleshootv1beta1.SingleOutcome{
+						Message: "Velero does not have errors",
+					},
+				},
+			},
 		},
 	})
+	analyzers = append(analyzers, &troubleshootv1beta1.Analyze{
+		TextAnalyze: &troubleshootv1beta1.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta1.AnalyzeMeta{
+				CheckName: "Restic Volumes",
+			},
+			CollectorName: "restic",
+			FileName:      "restic/*.log",
+			RegexPattern:  "expected one matching path, got 0",
+			Outcomes: []*troubleshootv1beta1.Outcome{
+				{
+					Fail: &troubleshootv1beta1.SingleOutcome{
+						Message: "Restic volume error",
+					},
+					Pass: &troubleshootv1beta1.SingleOutcome{
+						Message: "No restic volume error",
+					},
+				},
+			},
+		},
+	})
+
 	analyzer := troubleshootv1beta1.Analyzer{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "troubleshoot.replicated.com/v1beta1",
