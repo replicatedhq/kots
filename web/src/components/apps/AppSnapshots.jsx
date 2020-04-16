@@ -341,7 +341,7 @@ class AppSnapshots extends Component {
               </span>
               {inProgressSnapshotExist &&
                 <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
-                  <span>You can't start a snaphost while another one is In Progress</span>
+                  <span>You can't start a snapshot while another one is In Progress</span>
                 </ReactTooltip>}
             </div>
           </div>

@@ -281,6 +281,7 @@ class AppSnapshotDetail extends Component {
     return series;
   }
 
+
   render() {
     const {
       showOutputForPreScripts,
@@ -316,7 +317,7 @@ class AppSnapshotDetail extends Component {
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">Total size: <span className="u-fontWeight--bold u-color--doveGray">{snapshotDetail?.snapshotDetail?.volumeSizeHuman}</span></p>
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
-            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetail?.snapshotDetail?.status.toLowerCase()} u-marginLeft--5`}>{snapshotDetail?.snapshotDetail?.status}</span></p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetail?.snapshotDetail?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetail?.snapshotDetail?.status)}</span></p>
             <div className="u-fontSize--small"><span className="u-marginRight--5 u-fontWeight--medium u-color--chestnut">{`${snapshotDetail?.snapshotDetail?.warnings ? snapshotDetail?.snapshotDetail?.errors.length : 0} errors`}</span>
               {snapshotDetail?.snapshotDetail?.status !== "InProgress" &&
               <span className="replicated-link" onClick={() => this.downloadLogs()}>Download logs</span>}
