@@ -185,6 +185,33 @@ code {
   padding: 10px;
 }
 
+.errors {
+  display: inline-block;
+  color: #FFFFFF;
+  text-align: center;
+  font-weight: bold;
+  font-size: 10px;
+  line-height: 10px;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  padding: 3px 6px 6px 5px;
+  background: #BC4752;
+}
+.warnings {
+  display: inline-block;
+  color: #FFFFFF;
+  text-align: center;
+  font-weight: bold;
+  font-size: 10px;
+  line-height: 10px;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  padding: 3px 6px 6px 5px;
+  background: #F7B500;
+}
+
 
 /*
 Apply this class to any icon using main_spritesheet. From there
