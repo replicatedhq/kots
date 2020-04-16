@@ -122,9 +122,9 @@ export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
     size = parseInt(resizerElm.style.fontSize, 10);
     resizerElm.style.fontSize = `${size - 1}px`;
   }
-  
+
   resizerElm.remove();
-  
+
   // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
   return `${size - 1}px`;
 }
@@ -154,7 +154,7 @@ export function getCronInterval(frequency) {
     return "daily";
   case "0 0 * * MON":
     return "weekly";
-  default: 
+  default:
     return "custom";
   }
 }
@@ -460,6 +460,8 @@ export const Utilities = {
     switch (status) {
       case "PartiallyFailed":
         return "Incomplete (Failed)";
+      case "InProgress":
+        return "In Progress";
     }
 
     return status;
