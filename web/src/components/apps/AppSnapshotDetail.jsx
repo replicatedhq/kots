@@ -24,6 +24,8 @@ class AppSnapshotDetail extends Component {
     showAllPostSnapshotScripts: false,
     showAllWarnings: false,
     showAllErrors: false,
+    snapshotDetails: {},
+    series: [],
 
     options: {
       chart: {
@@ -85,14 +87,29 @@ class AppSnapshotDetail extends Component {
     }
   };
 
+  componentDidMount() {
+    if (this.props.snapshotDetail) {
+      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
+    }
+  }
+
+  componentDidUpdate(lastProps) {
+    if (this.props.snapshotDetail?.snapshotDetail !== lastProps.snapshotDetail?.snapshotDetail && this.props.snapshotDetail?.snapshotDetail) {
+      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
+      if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
+        this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+      }
+    }
+  }
+
   preSnapshotScripts = () => {
-    return filter(this.props.snapshotDetail?.snapshotDetail?.hooks, (hook) => {
+    return filter(this.state.snapshotDetails?.hooks, (hook) => {
       return hook.phase === "pre";
     });
   }
 
   postSnapshotScripts = () => {
-    return filter(this.props.snapshotDetail?.snapshotDetail?.hooks, (hook) => {
+    return filter(this.state.snapshotDetails?.hooks, (hook) => {
       return hook.phase === "post";
     });
   }
@@ -130,7 +147,7 @@ class AppSnapshotDetail extends Component {
   }
 
   downloadLogs = () => {
-    const name = this.props.snapshotDetail?.snapshotDetail?.name;
+    const name = this.state.snapshotDetails?.name;
     const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
     fetch(url, {
       headers: {
@@ -293,7 +310,9 @@ class AppSnapshotDetail extends Component {
       showAllPostSnapshotScripts,
       showAllNamespaces,
       showAllErrors,
-      showAllWarnings } = this.state;
+      showAllWarnings,
+      snapshotDetails,
+      series } = this.state;
     const { app, snapshotDetail } = this.props;
 
     if (snapshotDetail?.loading) {
@@ -303,37 +322,35 @@ class AppSnapshotDetail extends Component {
         </div>)
     }
 
-    const series = this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes);
-
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
           <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
           <span className="u-color--dustyGray"> > </span>
-          {snapshotDetail?.snapshotDetail?.name}
+          {snapshotDetails?.name}
         </p>
         <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--30 u-borderBottom--gray">
           <div className="flex-column u-lineHeight--normal">
-            <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--5">{snapshotDetail?.snapshotDetail?.name}</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">Total size: <span className="u-fontWeight--bold u-color--doveGray">{snapshotDetail?.snapshotDetail?.volumeSizeHuman}</span></p>
+            <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--5">{snapshotDetails?.name}</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">Total size: <span className="u-fontWeight--bold u-color--doveGray">{snapshotDetails?.volumeSizeHuman}</span></p>
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
-            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetail?.snapshotDetail?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetail?.snapshotDetail?.status)}</span></p>
-            <div className="u-fontSize--small"><span className="u-marginRight--5 u-fontWeight--medium u-color--chestnut">{`${snapshotDetail?.snapshotDetail?.warnings ? snapshotDetail?.snapshotDetail?.errors.length : 0} errors`}</span>
-              {snapshotDetail?.snapshotDetail?.status !== "InProgress" &&
+            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
+            <div className="u-fontSize--small"><span className="u-marginRight--5 u-fontWeight--medium u-color--chestnut">{`${snapshotDetails?.warnings ? snapshotDetails?.errors.length : 0} errors`}</span>
+              {snapshotDetails?.status !== "InProgress" &&
                 <span className="replicated-link" onClick={() => this.downloadLogs()}>Download logs</span>}
             </div>
           </div>
         </div>
 
-        {snapshotDetail?.snapshotDetail?.status === "InProgress" ?
+        {snapshotDetails?.status === "InProgress" ?
           <div className="flex flex-column alignItems--center u-marginTop--60">
             <span className="icon blueWarningIcon" />
             <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginTop--20"> This snapshot has not completed yet, check back soon </p>
           </div>
           :
           <div>
-            {snapshotDetail?.snapshotDetail?.volumes?.length ?
+            {!isEmpty(snapshotDetails?.volumes) ?
               <div className="flex-column flex-auto u-marginTop--30 u-marginBottom--40">
                 <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--10">Snapshot timeline</p>
                 <div className="flex1" id="chart">
@@ -341,18 +358,23 @@ class AppSnapshotDetail extends Component {
                   <div className="flex flex1">
                     <div className="flex flex1">
                       <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
-                        Started: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumeTimeInterval(snapshotDetail?.snapshotDetail?.volumes).minStarted}</span>
+                        Started: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumeTimeInterval(snapshotDetails?.volumes).minStarted}</span>
                       </p>
                     </div>
                     <div className="flex flex1 justifyContent--center">
-                      <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
-                        Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumeTimeInterval(snapshotDetail?.snapshotDetail?.volumes).maxHourDifference} hr `}</span>
-                        <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumeTimeInterval(snapshotDetail?.snapshotDetail?.volumes).maxMinDifference} min `}</span>
-                      </p>
+                      {this.calculateVolumeTimeInterval(snapshotDetails?.volumes).maxHourDifference === 0 && this.calculateVolumeTimeInterval(snapshotDetails?.volumes).maxMinDifference === 0 ?
+                        <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+                          Total capture time: <span className="u-fontWeight--bold u-color--doveGray">less than a minute</span>
+                        </p>
+                        :
+                        <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+                          Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumeTimeInterval(snapshotDetails?.volumes).maxHourDifference} hr `}</span>
+                          <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumeTimeInterval(snapshotDetails?.volumes).maxMinDifference} min `}</span>
+                        </p>}
                     </div>
                     <div className="flex flex1 justifyContent--flexEnd">
                       <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
-                        Finished: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumeTimeInterval(snapshotDetail?.snapshotDetail?.volumes).maxFinished} </span>
+                        Finished: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumeTimeInterval(snapshotDetails?.volumes).maxFinished} </span>
                       </p>
                     </div>
                   </div>
@@ -363,8 +385,8 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginRight--20">
                 <div className="dashboard-card-wrapper flex1">
                   <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-borderBottom--gray">Volumes</p>
-                  {!isEmpty(snapshotDetail?.snapshotDetail?.volumes) ?
-                    snapshotDetail?.snapshotDetail?.volumes?.slice(0, 3).map((volume) => (
+                  {!isEmpty(snapshotDetails?.volumes) ?
+                    snapshotDetails?.volumes?.slice(0, 3).map((volume) => (
                       <div className="flex flex1 u-borderBottom--gray" key={volume.name}>
                         <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
                           <p className="flex1 u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold">{volume.name}</p>
@@ -380,9 +402,9 @@ class AppSnapshotDetail extends Component {
                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No volumes to display </p>
                     </div>}
-                  {snapshotDetail?.snapshotDetail?.volumes?.length > 3 ?
+                  {snapshotDetails?.volumes?.length > 3 ?
                     <div className="flex flex1 justifyContent--center">
-                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllVolumes()}>Show all {snapshotDetail?.snapshotDetail?.volumes?.length} volumes</span>
+                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllVolumes()}>Show all {snapshotDetails?.volumes?.length} volumes</span>
                     </div> : null
                   }
                 </div>
@@ -390,8 +412,8 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginLeft--20">
                 <div className="dashboard-card-wrapper flex1">
                   <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-borderBottom--gray">Namespaces</p>
-                  {!isEmpty(snapshotDetail?.snapshotDetail?.namespaces) ?
-                    snapshotDetail?.snapshotDetail?.namespaces?.slice(0, 3).map((namespace) => (
+                  {!isEmpty(snapshotDetails?.namespaces) ?
+                    snapshotDetails?.namespaces?.slice(0, 3).map((namespace) => (
                       <div className="flex flex1 u-borderBottom--gray" key={namespace}>
                         <div className="flex1">
                           <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">{namespace}</p>
@@ -401,9 +423,9 @@ class AppSnapshotDetail extends Component {
                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No namespaces to display </p>
                     </div>}
-                  {snapshotDetail?.snapshotDetail?.namespaces?.length > 3 ?
+                  {snapshotDetails?.namespaces?.length > 3 ?
                     <div className="flex flex1 justifyContent--center">
-                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllNamespaces()}>Show all {snapshotDetail?.snapshotDetail?.namespaces?.length} namespaces</span>
+                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllNamespaces()}>Show all {snapshotDetails?.namespaces?.length} namespaces</span>
                     </div> : null
                   }
                 </div>
@@ -467,8 +489,8 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginRight--20">
                 <div className="dashboard-card-wrapper flex1">
                   <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-borderBottom--gray">Warnings</p>
-                  {!isEmpty(snapshotDetail?.snapshotDetail?.warnings) ?
-                    snapshotDetail?.snapshotDetail?.warnings?.slice(0, 3).map((warning, i) => (
+                  {!isEmpty(snapshotDetails?.warnings) ?
+                    snapshotDetails?.warnings?.slice(0, 3).map((warning, i) => (
                       <div className="flex flex1 u-borderBottom--gray" key={`${warning.title}-${i}`}>
                         <div className="flex1">
                           <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">{warning.title}</p>
@@ -477,9 +499,9 @@ class AppSnapshotDetail extends Component {
                     )) : <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No warnings to display </p>
                     </div>}
-                  {snapshotDetail?.snapshotDetail?.warnings?.length > 3 ?
+                  {snapshotDetails?.warnings?.length > 3 ?
                     <div className="flex flex1 justifyContent--center">
-                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetail?.snapshotDetail?.warnings?.length} warnings</span>
+                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings</span>
                     </div> : null
                   }
                 </div>
@@ -487,8 +509,8 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginLeft--20">
                 <div className="dashboard-card-wrapper flex1">
                   <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-borderBottom--gray">Errors</p>
-                  {!isEmpty(snapshotDetail?.snapshotDetail?.errors) ?
-                    snapshotDetail?.snapshotDetail?.errors?.slice(0, 3).map((error, i) => (
+                  {!isEmpty(snapshotDetails?.errors) ?
+                    snapshotDetails?.errors?.slice(0, 3).map((error, i) => (
                       <div className="flex flex1 u-borderBottom--gray" key={`${error.title}-${i}`}>
                         <div className="flex1 u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">
                           <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold">{error.title}</p>
@@ -498,9 +520,9 @@ class AppSnapshotDetail extends Component {
                     )) : <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                       <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No errors to display </p>
                     </div>}
-                  {snapshotDetail?.snapshotDetail?.errors?.length > 3 ?
+                  {snapshotDetails?.errors?.length > 3 ?
                     <div className="flex flex1 justifyContent--center">
-                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetail?.snapshotDetail?.errors?.length} errors</span>
+                      <span className="replicated-link u-fontSize--normal u-paddingTop--20" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors</span>
                     </div> : null
                   }
                 </div>
@@ -553,7 +575,7 @@ class AppSnapshotDetail extends Component {
           <ShowAllModal
             displayShowAllModal={showAllVolumes}
             toggleShowAllModal={this.toggleShowAllVolumes}
-            dataToShow={this.renderShowAllVolumes(snapshotDetail?.snapshotDetail?.volumes)}
+            dataToShow={this.renderShowAllVolumes(snapshotDetails?.volumes)}
             name="Volumes"
           />
         }
@@ -577,7 +599,7 @@ class AppSnapshotDetail extends Component {
           <ShowAllModal
             displayShowAllModal={showAllNamespaces}
             toggleShowAllModal={this.toggleShowAllNamespaces}
-            dataToShow={this.renderShowAllNamespaces(snapshotDetail?.snapshotDetail?.namespaces)}
+            dataToShow={this.renderShowAllNamespaces(snapshotDetails?.namespaces)}
             name="Namespaces"
           />
         }
@@ -585,7 +607,7 @@ class AppSnapshotDetail extends Component {
           <ShowAllModal
             displayShowAllModal={showAllWarnings}
             toggleShowAllModal={this.toggleShowAllWarnings}
-            dataToShow={this.renderShowAllWarnings(snapshotDetail?.snapshotDetail?.warnings)}
+            dataToShow={this.renderShowAllWarnings(snapshotDetails?.warnings)}
             name="Warnings"
           />
         }
@@ -593,7 +615,7 @@ class AppSnapshotDetail extends Component {
           <ShowAllModal
             displayShowAllModal={showAllErrors}
             toggleShowAllModal={this.toggleShowAllErrors}
-            dataToShow={this.renderShowAllErrors(snapshotDetail?.snapshotDetail?.errors)}
+            dataToShow={this.renderShowAllErrors(snapshotDetails?.errors)}
             name="Errors"
           />
         }
