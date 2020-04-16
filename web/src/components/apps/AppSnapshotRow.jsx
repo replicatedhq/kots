@@ -1,10 +1,11 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Utilities } from "../../utilities/utilities";
 import dayjs from "dayjs";
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 dayjs.extend(isSameOrAfter)
+
+import { Utilities } from "../../utilities/utilities";
 
 
 class AppShanpshotRow extends React.Component {
@@ -17,15 +18,6 @@ class AppShanpshotRow extends React.Component {
     this.props.toggleRestoreModal(snapshot);
   }
 
-  snapshotStatusToDisplayName = status => {
-    // The front end replacessome status values with user friendly messages
-    switch (status) {
-      case "PartiallyFailed":
-        return "Incomplete (Failed)";
-    }
-
-    return status;
-  }
 
   render() {
     const { appSlug, snapshot } = this.props;
@@ -42,10 +34,10 @@ class AppShanpshotRow extends React.Component {
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot.startedAt, "MMM D, YYYY h:mm A")}</p>
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot.finishedAt ? Utilities.dateFormat(snapshot.finishedAt, "MMM D, YYYY h:mm A") : "TBD"}</p>
-              <div>
-                <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{this.snapshotStatusToDisplayName(snapshot.status)}</span>
+              <div className="flex alignItems--center">
+                <span className={`status-indicator ${snapshot.status.toLowerCase()}`}>{Utilities.snapshotStatusToDisplayName(snapshot.status)}</span>
+                <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot.supportBundleId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot.supportBundleId}`}>Troubleshoot</Link>
               </div>
-              <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot.supportBundleId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot.supportBundleId}`}>Troubleshoot</Link>
             </div>
           </div>
           <div className="flex flex-auto alignItems--center u-marginTop--5">
