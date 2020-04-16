@@ -54,6 +54,7 @@ class AppSnapshotSchedule extends Component {
     selectedRetentionUnit: {},
     frequency: "",
     updatingSchedule: false,
+    updateConfirm: false
   };
 
   setFields = () => {
@@ -139,7 +140,10 @@ class AppSnapshotSchedule extends Component {
       this.state.frequency,
       this.state.autoEnabled,
     ).then(() => {
-      this.setState({ updatingSchedule: false });
+      this.setState({ updatingSchedule: false, updateConfirm: true });
+      setTimeout(() => {
+        this.setState({ updateConfirm: false })
+      }, 3000);
     })
     .catch(err => {
       console.log(err);
@@ -155,7 +159,7 @@ class AppSnapshotSchedule extends Component {
 
   render() {
     const { app } = this.props;
-    const { hasValidCron, updatingSchedule } = this.state;
+    const { hasValidCron, updatingSchedule, updateConfirm } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
     });
@@ -245,8 +249,14 @@ class AppSnapshotSchedule extends Component {
                   </div>
                 </div>
               </div>
-              <div>
-                <button className="btn primary blue" disabled={updatingSchedule} onClick={() => this.saveSnapshotConfig()}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
+              <div className="flex">
+                <button className="btn primary blue" disabled={updatingSchedule} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
+                {updateConfirm &&
+                    <div className="u-marginLeft--10 flex alignItems--center">
+                      <span className="icon checkmark-icon" />
+                      <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Schedule updated</span>
+                    </div>
+                  }
               </div>
             </div>
           </form>
