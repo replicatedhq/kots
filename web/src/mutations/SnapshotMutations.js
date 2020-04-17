@@ -6,8 +6,6 @@ export const deleteSnapshot = gql`
   }
 `;
 
-export const saveSnapshotConfig = gql(saveSnapshotConfigRaw);
-
 export const restoreSnapshotRaw = `
   mutation restoreSnapshot($snapshotName: String!) {
     restoreSnapshot(snapshotName: $snapshotName) {
@@ -23,3 +21,11 @@ export const cancelRestoreRaw = `
   }
 `;
 export const cancelRestore = gql(cancelRestoreRaw);
+
+
+export const saveSnapshotConfigRaw = `	
+  mutation saveSnapshotConfig($appId: String!, $inputValue: Int!, $inputTimeUnit: String!, $schedule: String!, $autoEnabled: Boolean!) {	
+    saveSnapshotConfig(appId: $appId, inputValue: $inputValue, inputTimeUnit: $inputTimeUnit, schedule: $schedule, autoEnabled: $autoEnabled)	
+  }	
+`;	
+export const saveSnapshotConfig = gql(saveSnapshotConfigRaw);
