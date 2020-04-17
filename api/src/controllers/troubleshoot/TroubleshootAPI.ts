@@ -26,7 +26,7 @@ export class TroubleshootAPI {
     @Req() request: Request,
     @Res() response: Response,
   ): Promise<any | ErrorResponse> {
-    let collector = TroubleshootStore.defaultSpec;
+    const collector = TroubleshootStore.defaultSpec;
 
     let parsedSpec = jsYaml.load(collector);
 

@@ -101,3 +101,17 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 
 	return latestLicense, nil
 }
+
+func GetCurrentLicenseString(a *app.App) (string, error) {
+	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get latest app version")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	kotsLicense, err := ioutil.ReadFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read license file from archive")
+	}
+	return string(kotsLicense), nil
+}

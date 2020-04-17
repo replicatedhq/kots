@@ -19,7 +19,7 @@ export class TroubleshootStore {
   static defaultSpec = `apiVersion: troubleshoot.replicated.com/v1beta1
 kind: Collector
 metadata:
-  name: defalt-collector
+  name: default-collector
 spec:
   collectors: []`
 
