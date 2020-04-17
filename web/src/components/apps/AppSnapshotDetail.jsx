@@ -62,7 +62,7 @@ class AppSnapshotDetail extends Component {
         xaxis: {
           lines: {
             show: true
-          }
+          },
         },
         yaxis: {
           lines: {
@@ -100,7 +100,11 @@ class AppSnapshotDetail extends Component {
     if (this.props.snapshotDetail?.snapshotDetail !== lastProps.snapshotDetail?.snapshotDetail && this.props.snapshotDetail?.snapshotDetail) {
       this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
       if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
-        this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+        if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
+          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks]) })
+        } else {
+          this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+        }
       }
     }
   }
@@ -177,7 +181,7 @@ class AppSnapshotDetail extends Component {
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs.map(tab => (
-          <div className={`tab-item blue ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
+          <div className={`tab-item ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
             {tab}
           </div>
         ))}
@@ -213,18 +217,10 @@ class AppSnapshotDetail extends Component {
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs.map(tab => (
-          <div className={`tab-item blue ${tab === selectedScriptTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedScriptTab: tab })}>
+          <div className={`tab-item ${tab === selectedScriptTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedScriptTab: tab })}>
             {tab}
           </div>
         ))}
-        {this.preSnapshotScripts()?.length > 3 && selectedScriptTab === "Pre-snapshot scripts" ?
-          <div className="flex flex1 justifyContent--flexEnd">
-            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPreScripts()}>Show all {this.preSnapshotScripts()?.length} pre-scripts</span>
-          </div> : null}
-        {this.postSnapshotScripts()?.length > 3 && selectedScriptTab === "Post-snapshot scripts" ?
-          <div className="flex flex1 justifyContent--flexEnd">
-            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPostScripts()}>Show all {this.postSnapshotScripts()?.length} post-scripts</span>
-          </div> : null}
       </div>
     );
   }
@@ -235,20 +231,12 @@ class AppSnapshotDetail extends Component {
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs.map(tab => (
-          <div className={`tab-item blue ${tab === selectedErrorsWarningTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedErrorsWarningTab: tab })}>
+          <div className={`tab-item ${tab === selectedErrorsWarningTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedErrorsWarningTab: tab })}>
             {tab}
             {tab === "Errors" ?
               <span className="errors u-marginLeft--5"> {snapshotDetails?.errors?.length} </span> : <span className="warnings u-marginLeft--5"> {snapshotDetails?.warnings?.length} </span>}
           </div>
         ))}
-        {this.preSnapshotScripts()?.length > 3 && selectedErrorsWarningTab === "Errors" ?
-          <div className="flex flex1 justifyContent--flexEnd">
-            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors </span>
-          </div> : null}
-        {this.postSnapshotScripts()?.length > 3 && selectedErrorsWarningTab === "Warnings" ?
-          <div className="flex flex1 justifyContent--flexEnd">
-            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings </span>
-          </div> : null}
       </div>
     );
   }
@@ -259,12 +247,13 @@ class AppSnapshotDetail extends Component {
         <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
           <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.podName}</p>
+              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
               <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
             </div>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPreScripts(hook)}> View output </span>
-            </div>
+            {hook.stderr !== "" || hook.stdout !== "" &&
+              <div className="flex flex1 justifyContent--flexEnd">
+                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPreScripts(hook)}> View output </span>
+              </div>}
           </div>
         </div>
       ))
@@ -277,12 +266,13 @@ class AppSnapshotDetail extends Component {
         <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
           <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.podName}</p>
+              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
               <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
             </div>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPostScripts(hook)}> View output </span>
-            </div>
+            {hook.stderr !== "" || hook.stdout !== "" &&
+              <div className="flex flex1 justifyContent--flexEnd">
+                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPostScripts(hook)}> View output </span>
+              </div>}
           </div>
         </div>
       ))
@@ -331,16 +321,17 @@ class AppSnapshotDetail extends Component {
     }
   }
 
-  getSeriesData = (volumes) => {
-    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD"];
+  getSeriesData = (seriesData) => {
+    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD", "#ED2D2D", "#6236FF",];
     const series = [{ data: null }]
-    if (!volumes) {
+    if (!seriesData) {
       return series;
     }
-    const data = volumes.map((volume, i) => {
+
+    const data = seriesData.map((d, i) => {
       return {
-        x: volume.name,
-        y: [new Date(volume.started).getTime(), new Date(volume.finished).getTime()],
+        x: d.name ? `${d.name}-volume` : `${d.hookName}-${i}-${d.phase}-script`,
+        y: [new Date(d.started).getTime(), new Date(d.finished).getTime()],
         fillColor: colors[i]
       }
     });
@@ -467,7 +458,17 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginRight--20">
                 <div className="dashboard-card-wrapper flex1">
                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
-                    <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10">Scripts</p>
+                    <div className="flex flex1">
+                      <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Scripts</p>
+                      {this.preSnapshotScripts()?.length > 3 && selectedScriptTab === "Pre-snapshot scripts" ?
+                        <div className="flex flex1 justifyContent--flexEnd">
+                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPreScripts()}>Show all {this.preSnapshotScripts()?.length} pre-scripts</span>
+                        </div> : null}
+                      {this.postSnapshotScripts()?.length > 3 && selectedScriptTab === "Post-snapshot scripts" ?
+                        <div className="flex flex1 justifyContent--flexEnd">
+                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPostScripts()}>Show all {this.postSnapshotScripts()?.length} post-scripts</span>
+                        </div> : null}
+                    </div>
                     <div className="flex-column flex1">
                       {this.renderScriptsTabs()}
                     </div>
@@ -497,7 +498,17 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex1 u-marginRight--20">
                 <div className="dashboard-card-wrapper flex1">
                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
-                    <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10">Errors and warnings</p>
+                    <div className="flex flex1">
+                      <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Errors and warnings</p>
+                      {snapshotDetails?.errors?.length > 3 && selectedErrorsWarningTab === "Errors" ?
+                        <div className="flex flex1 justifyContent--flexEnd">
+                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors </span>
+                        </div> : null}
+                      {snapshotDetails?.warnings?.length > 3 && selectedErrorsWarningTab === "Warnings" ?
+                        <div className="flex flex1 justifyContent--flexEnd">
+                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings </span>
+                        </div> : null}
+                    </div>
                     <div className="flex-column flex1">
                       {this.renderErrorsWarningsTabs()}
                     </div>
