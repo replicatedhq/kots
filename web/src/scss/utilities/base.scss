@@ -41,12 +41,13 @@ body a {
 .snapshotOptions {
   display: flex;
   border: 1px solid #4A4A4A;
-  border-radius: 2px;
+  border-radius: 3px;
   padding: 8px 15px;
   cursor: pointer;
   margin-right: 10px;
-  align-items: center;
   color: #000000 !important;
+  min-width: 92px;
+  justify-content: center;
 
   &:hover {
     background-color: #F5F8FC;
@@ -210,6 +211,20 @@ code {
   height: 8px;
   padding: 3px 6px 6px 5px;
   background: #F7B500;
+}
+
+.circleNumberGray { 
+  display: inline-block;
+  color: #FFFFFF;
+  text-align: center;
+  font-weight: bold;
+  font-size: 12px;
+  line-height: 12px;
+  border-radius: 50%;
+  width: 7px;
+  height: 11px;
+  padding: 3px 6px 4px 6px;
+  background: #9B9B9B;
 }
 
 
