@@ -12,7 +12,7 @@ import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
 
-import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
+import { deleteSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
 
@@ -425,9 +425,4 @@ export default compose(
       deleteSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
     })
   }),
-  graphql(restoreSnapshot, {
-    props: ({ mutate }) => ({
-      restoreSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
-    })
-  })
 )(AppSnapshots);

@@ -24,43 +24,6 @@ export const snapshotConfigRaw = `
 
 export const snapshotConfig = gql(snapshotConfigRaw);
 
-// export const snapshotSettingsRaw = `
-//   query snapshotSettings {
-//     snapshotSettings {
-//       store {
-//         provider
-//         bucket
-//         path
-//         s3AWS {
-//           region
-//           accessKeyID
-//           accessKeySecret
-//         }
-//         azure {
-//           tenantID
-//           resourceGroup
-//           storageAccount
-//           subscriptionID
-//           clientID
-//           clientSecret
-//           cloudName
-//         }
-//         s3Compatible {
-//           endpoint
-//           region
-//           accessKeyID
-//           accessKeySecret
-//         }
-//         google {
-//           serviceAccount
-//         }
-//       }
-//     }
-//   }
-// `;
-
-// export const snapshotSettings = gql(snapshotSettingsRaw);
-
 export const snapshotDetailRaw = `
   query snapshotDetail($slug: String!, $id: String!) {
     snapshotDetail(slug: $slug, id: $id) {
