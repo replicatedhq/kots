@@ -32,7 +32,7 @@ class AppSnapshotDetail extends Component {
 
     options: {
       chart: {
-        height: 110,
+        height: 140,
         type: "rangeBar",
         toolbar: {
           show: false
@@ -304,9 +304,9 @@ class AppSnapshotDetail extends Component {
     );
   }
 
-  calculateVolumesTimeInterval = (volumes) => {
-    const startedTimes = volumes.map((volume) => moment(volume.started).format("MMM D, YYYY h:mm A"));
-    const finishedTimes = volumes.map((volume) => moment(volume.finished).format("MMM D, YYYY h:mm A"));
+  calculateTimeInterval = (data) => {
+    const startedTimes = data.map((d) => moment(d.started).format("MMM D, YYYY h:mm A"));
+    const finishedTimes = data.map((d) => moment(d.finished).format("MMM D, YYYY h:mm A"));
     const minStarted = startedTimes?.length ? startedTimes.reduce((a, b) => { return a <= b ? a : b; }) : "";
     const maxFinished = finishedTimes?.length ? finishedTimes.reduce((a, b) => { return a <= b ? b : a; }) : "";
 
@@ -339,21 +339,41 @@ class AppSnapshotDetail extends Component {
     return series;
   }
 
-  renderVolumesTimeInterval = (volumes) => {
-    if (this.calculateVolumesTimeInterval(volumes).maxHourDifference === 0 && this.calculateVolumesTimeInterval(volumes).maxMinDifference === 0) {
-      return (
-        <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
-          Total capture time: <span className="u-fontWeight--bold u-color--doveGray">less than a minute</span>
-        </p>
-      )
-    } else {
-      return (
-        <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
-          Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumesTimeInterval(volumes).maxHourDifference} hr `}</span>
-          <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateVolumesTimeInterval(volumes).maxMinDifference} min `}</span>
-        </p>
-      )
+  renderTimeInterval = () => {
+    let data;
+    if (!isEmpty(this.state.snapshotDetails?.volumes)) {
+      if (!isEmpty(this.state.snapshotDetails?.hooks)) {
+        data = [...this.state.snapshotDetails?.volumes, ...this.state.snapshotDetails?.hooks];
+      } else {
+        data = this.state.snapshotDetails?.volumes;
+      }
     }
+    return (
+      <div className="flex flex1">
+        <div className="flex flex1">
+          <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
+            Started: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateTimeInterval(data).minStarted}</span>
+          </p>
+        </div>
+        <div className="flex flex1 justifyContent--center">
+          {this.calculateTimeInterval(data).maxHourDifference === 0 && this.calculateTimeInterval(data).maxMinDifference === 0 ?
+            <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+              Total capture time: <span className="u-fontWeight--bold u-color--doveGray">less than a minute</span>
+            </p>
+            :
+            <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+              Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
+              <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
+            </p>
+          }
+        </div>
+        <div className="flex flex1 justifyContent--flexEnd">
+          <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
+            Finished: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateTimeInterval(data).maxFinished} </span>
+          </p>
+        </div>
+      </div>
+    )
   }
 
 
@@ -414,22 +434,8 @@ class AppSnapshotDetail extends Component {
               <div className="flex-column flex-auto u-marginTop--30 u-marginBottom--40">
                 <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--10">Snapshot timeline</p>
                 <div className="flex1" id="chart">
-                  <ReactApexChart options={this.state.options} series={series} type="rangeBar" height={110} />
-                  <div className="flex flex1">
-                    <div className="flex flex1">
-                      <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
-                        Started: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumesTimeInterval(snapshotDetails?.volumes).minStarted}</span>
-                      </p>
-                    </div>
-                    <div className="flex flex1 justifyContent--center">
-                      {this.renderVolumesTimeInterval(snapshotDetails?.volumes)}
-                    </div>
-                    <div className="flex flex1 justifyContent--flexEnd">
-                      <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">
-                        Finished: <span className="u-fontWeight--bold u-color--doveGray"> {this.calculateVolumesTimeInterval(snapshotDetails?.volumes).maxFinished} </span>
-                      </p>
-                    </div>
-                  </div>
+                  <ReactApexChart options={this.state.options} series={series} type="rangeBar" height={140} />
+                  {this.renderTimeInterval()}
                 </div>
               </div> : null}
 
