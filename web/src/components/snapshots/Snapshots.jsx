@@ -1,11 +1,10 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import Helmet from "react-helmet";
 import find from "lodash/find";
-import { snapshotProviderAWS, snapshotProviderS3Compatible, snapshotProviderAzure, snapshotProviderGoogle } from "../../mutations/SnapshotMutations";
 
 import Loader from "../shared/Loader";
 import "../../scss/components/shared/SnapshotForm.scss";
@@ -797,25 +796,4 @@ class Snapshots extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(snapshotProviderAWS, {
-    props: ({ mutate }) => ({
-      snapshotProviderAWS: (bucket, prefix, region, accessKeyID, accessKeySecret) => mutate({ variables: { bucket, prefix, region, accessKeyID, accessKeySecret } })
-    })
-  }),
-  graphql(snapshotProviderS3Compatible, {
-    props: ({ mutate }) => ({
-      snapshotProviderS3Compatible: (bucket, prefix, region, endpoint, accessKeyID, accessKeySecret) => mutate({ variables: { bucket, prefix, region, endpoint, accessKeyID, accessKeySecret } })
-    })
-  }),
-  graphql(snapshotProviderGoogle, {
-    props: ({ mutate }) => ({
-      snapshotProviderGoogle: (bucket, prefix, serviceAccount) => mutate({ variables: { bucket, prefix, serviceAccount } })
-    })
-  }),
-  graphql(snapshotProviderAzure, {
-    props: ({ mutate }) => ({
-      snapshotProviderAzure: (bucket, prefix, tenantID, resourceGroup, storageAccount, subscriptionID, clientID, clientSecret, cloudName) => mutate({ variables: { bucket, prefix, tenantID, resourceGroup, storageAccount, subscriptionID, clientID, clientSecret, cloudName } })
-    })
-  })
-
 )(Snapshots);

@@ -34,11 +34,6 @@ type Mutation {
   deletePrometheusAddress: Boolean
 
   saveSnapshotConfig(appId: String!, inputValue: Int!, inputTimeUnit: String!, schedule: String!, autoEnabled: Boolean!): Boolean
-  snapshotProviderAWS(bucket: String!, prefix: String, region: String!, accessKeyID: String, accessKeySecret: String): Boolean
-  snapshotProviderS3Compatible(bucket: String!, prefix: String, region: String!, endpoint: String!, accessKeyID: String, accessKeySecret: String): Boolean
-  snapshotProviderAzure(bucket: String!, prefix: String, tenantID: String!, resourceGroup: String!, storageAccount: String!, subscriptionID: String!, clientID: String!, clientSecret: String!, cloudName: String!): Boolean
-  snapshotProviderGoogle(bucket: String!, prefix: String, serviceAccount: String!): Boolean
-  restoreSnapshot(snapshotName: String!): RestoreDetail
   deleteSnapshot(snapshotName: String!): Boolean
   cancelRestore(appId: String!): Boolean
 }

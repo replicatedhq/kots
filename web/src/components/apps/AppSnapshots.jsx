@@ -12,7 +12,7 @@ import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
 
-import { deleteSnapshot, restoreSnapshot } from "../../mutations/SnapshotMutations";
+import { deleteSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
 
@@ -171,29 +171,43 @@ class AppSnapshots extends Component {
   };
 
   handleRestoreSnapshot = snapshot => {
-    this.setState({ restoringSnapshot: true, restoreErr: false, restoreErrorMsg: "" });
-    this.props
-      .restoreSnapshot(snapshot.name)
-      .then((res) => {
+    this.setState({
+      restoringSnapshot: true,
+      restoreErr: false,
+      restoreErrorMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
+      method: "POST",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then((async (result) => {
+      const body = await result.json();
+
+      if (!body.success) {
+        // todo this needs ui
+        alert("failed to start restore")
         this.setState({
           restoringSnapshot: false,
           restoreSnapshotModal: false,
-          snapshotToRestore: ""
+          restoreErrorMsg: body.error,
         });
-        this.props.history.push(`/app/${this.props.app.slug}/snapshots/${res.data.restoreSnapshot.name}/restore`);
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            restoringSnapshot: false,
-            restoreErr: true,
-            restoreErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ restoringSnapshot: false });
+        this.props.history.replace(`/app/${this.props.app.slug}/snapshots`);
+        return;
+      }
+
+      this.setState({
+        restoringSnapshot: false,
+        restoreSnapshotModal: true,
+        restoreErrorMsg: body.error,
       });
+
+      this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${snapshot.name}/restore`);
+
+    }))
   }
 
   startManualSnapshot = () => {
@@ -411,9 +425,4 @@ export default compose(
       deleteSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
     })
   }),
-  graphql(restoreSnapshot, {
-    props: ({ mutate }) => ({
-      restoreSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
-    })
-  })
 )(AppSnapshots);
