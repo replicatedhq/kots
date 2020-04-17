@@ -62,7 +62,7 @@ class AppSnapshotDetail extends Component {
         xaxis: {
           lines: {
             show: true
-          }
+          },
         },
         yaxis: {
           lines: {
@@ -72,7 +72,6 @@ class AppSnapshotDetail extends Component {
       },
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          console.log(w.globals)
           return (
             '<div class="arrow_box">' +
             '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
@@ -101,7 +100,11 @@ class AppSnapshotDetail extends Component {
     if (this.props.snapshotDetail?.snapshotDetail !== lastProps.snapshotDetail?.snapshotDetail && this.props.snapshotDetail?.snapshotDetail) {
       this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
       if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
-        this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+        if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
+          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks]) })
+        } else {
+          this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+        }
       }
     }
   }
@@ -244,12 +247,13 @@ class AppSnapshotDetail extends Component {
         <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
           <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.podName}</p>
+              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
               <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
             </div>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPreScripts(hook)}> View output </span>
-            </div>
+            {hook.stderr !== "" || hook.stdout !== "" &&
+              <div className="flex flex1 justifyContent--flexEnd">
+                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPreScripts(hook)}> View output </span>
+              </div>}
           </div>
         </div>
       ))
@@ -262,12 +266,13 @@ class AppSnapshotDetail extends Component {
         <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
           <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
             <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.podName}</p>
+              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
               <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
             </div>
-            <div className="flex flex1 justifyContent--flexEnd">
-              <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPostScripts(hook)}> View output </span>
-            </div>
+            {hook.stderr !== "" || hook.stdout !== "" &&
+              <div className="flex flex1 justifyContent--flexEnd">
+                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPostScripts(hook)}> View output </span>
+              </div>}
           </div>
         </div>
       ))
@@ -316,16 +321,17 @@ class AppSnapshotDetail extends Component {
     }
   }
 
-  getSeriesData = (volumes) => {
-    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD"];
+  getSeriesData = (seriesData) => {
+    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD", "#ED2D2D", "#6236FF",];
     const series = [{ data: null }]
-    if (!volumes) {
+    if (!seriesData) {
       return series;
     }
-    const data = volumes.map((volume, i) => {
+
+    const data = seriesData.map((d, i) => {
       return {
-        x: volume.name,
-        y: [new Date(volume.started).getTime(), new Date(volume.finished).getTime()],
+        x: d.name ? `${d.name}-volume` : `${d.hookName}-${i}-${d.phase}-script`,
+        y: [new Date(d.started).getTime(), new Date(d.finished).getTime()],
         fillColor: colors[i]
       }
     });
