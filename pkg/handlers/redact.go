@@ -70,14 +70,14 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		updateRedactResponse.Error = "failed to get cluster config"
-		JSON(w, 401, updateRedactResponse)
+		JSON(w, 500, updateRedactResponse)
 		return
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		updateRedactResponse.Error = "failed to create kubernetes clientset"
-		JSON(w, 401, updateRedactResponse)
+		JSON(w, 500, updateRedactResponse)
 		return
 	}
 
@@ -86,7 +86,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not found, so return empty string
 			updateRedactResponse.Error = errors.Wrap(err, "failed to get kotsadm-redact configMap").Error()
-			JSON(w, 200, updateRedactResponse)
+			JSON(w, 500, updateRedactResponse)
 			return
 		} else {
 			// not found, so create it fresh
@@ -109,7 +109,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 			_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(&newMap)
 			if err != nil {
 				updateRedactResponse.Error = errors.Wrap(err, "failed to create kotsadm-redact configMap").Error()
-				JSON(w, 200, updateRedactResponse)
+				JSON(w, 500, updateRedactResponse)
 				return
 			}
 
@@ -124,7 +124,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
 	if err != nil {
 		updateRedactResponse.Error = errors.Wrap(err, "failed to update kotsadm-redact configMap").Error()
-		JSON(w, 200, updateRedactResponse)
+		JSON(w, 500, updateRedactResponse)
 		return
 	}
 
@@ -164,14 +164,14 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		getRedactResponse.Error = "failed to get cluster config"
-		JSON(w, 401, getRedactResponse)
+		JSON(w, 500, getRedactResponse)
 		return
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		getRedactResponse.Error = "failed to create kubernetes clientset"
-		JSON(w, 401, getRedactResponse)
+		JSON(w, 500, getRedactResponse)
 		return
 	}
 
@@ -180,7 +180,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not found, so return empty string
 			getRedactResponse.Error = errors.Wrap(err, "failed to get kotsadm-redact configMap").Error()
-			JSON(w, 200, getRedactResponse)
+			JSON(w, 500, getRedactResponse)
 			return
 		} else {
 			// not found, so return empty string
