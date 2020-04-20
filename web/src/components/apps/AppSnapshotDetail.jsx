@@ -76,7 +76,7 @@ class AppSnapshotDetail extends Component {
             '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
             w.globals.labels[dataPointIndex] +
             "</p>" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
+            '<span class="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
             w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
             "<br />" +
             "<br />" +
