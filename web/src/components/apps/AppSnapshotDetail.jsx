@@ -243,7 +243,7 @@ class AppSnapshotDetail extends Component {
           <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.hookName}-${hook.phase}-${i}`}>
             <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
               </div>
             </div>
@@ -311,7 +311,7 @@ class AppSnapshotDetail extends Component {
 
     const data = seriesData.map((d, i) => {
       return {
-        x: d.name ? `${d.name}` : `${d.hookName}-${d.podName}-${i}`,
+        x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
         y: [new Date(d.started).getTime(), new Date(d.finished).getTime()],
         z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
         fillColor: colors[i]
