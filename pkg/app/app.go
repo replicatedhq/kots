@@ -18,6 +18,7 @@ type App struct {
 	CurrentSequence int64
 
 	// Additional fields will be added here as implementation is moved from node to go
+	RestoreInProgressName string
 }
 
 func Get(id string) (*App, error) {
@@ -25,14 +26,15 @@ func Get(id string) (*App, error) {
 		zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, slug, name, current_sequence, is_airgap from app where id = $1`
+	query := `select id, slug, name, current_sequence, is_airgap, restore_in_progress_name from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := App{}
 
 	var currentSequence sql.NullInt64
+	var restoreInProgressName sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap); err != nil {
+	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap, &restoreInProgressName); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -41,6 +43,8 @@ func Get(id string) (*App, error) {
 	} else {
 		app.CurrentSequence = -1
 	}
+
+	app.RestoreInProgressName = restoreInProgressName.String
 
 	return &app, nil
 }
@@ -69,6 +73,17 @@ func LastUpdateAtTime(appID string) error {
 	_, err := db.Exec(query, time.Now(), appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to update last_update_check_at")
+	}
+
+	return nil
+}
+
+func InitiateRestore(snapshotName string, appID string) error {
+	db := persistence.MustGetPGSession()
+	query := `update app set restore_in_progress_name = $1 where id = $2`
+	_, err := db.Exec(query, snapshotName, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to update restore_in_progress_name")
 	}
 
 	return nil
