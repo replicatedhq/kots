@@ -76,6 +76,9 @@ class AppSnapshotDetail extends Component {
             '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
             w.globals.labels[dataPointIndex] +
             "</p>" +
+            '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
+            w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
+            "<br />" +
             "<br />" +
             '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
             "Started at " + moment(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
@@ -308,8 +311,9 @@ class AppSnapshotDetail extends Component {
 
     const data = seriesData.map((d, i) => {
       return {
-        x: d.name ? `${d.name}-volume` : `${d.hookName}-${i}-${d.phase}-script`,
+        x: d.name ? `${d.name}` : `${d.hookName}-${d.podName}-${i}`,
         y: [new Date(d.started).getTime(), new Date(d.finished).getTime()],
+        z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
         fillColor: colors[i]
       }
     });
