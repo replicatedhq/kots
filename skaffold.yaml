@@ -1,24 +1,27 @@
-apiVersion: skaffold/v1beta11
+apiVersion: skaffold/v2beta2
 kind: Config
 
 profiles:
   - name: github
     deploy:
       kustomize:
-        path: "./kustomize/overlays/github"
+        paths:
+          - "./kustomize/overlays/github"
 
   - name: microk8s
     activation:
       - kubeContext: microk8s
     deploy:
       kustomize:
-        path: "./kustomize/overlays/microk8s"
+        paths:
+          - "./kustomize/overlays/microk8s"
         flags:
           apply:
             - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
 
 build:
   local:
+    concurrency: 0
     useBuildkit: true
 
   artifacts:
@@ -56,4 +59,5 @@ build:
 
 deploy:
   kustomize:
-    path: "./kustomize/overlays/dev"
+    paths:
+      - "./kustomize/overlays/dev"
