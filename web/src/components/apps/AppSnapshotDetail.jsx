@@ -101,9 +101,9 @@ class AppSnapshotDetail extends Component {
       this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
       if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
         if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
-          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks]) })
+          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
         } else {
-          this.setState({ series: this.getSeriesData(this.props.snapshotDetail?.snapshotDetail?.volumes) })
+          this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a,b) => new Date(a.started) - new Date(b.started))) })
         }
       }
     }
@@ -401,6 +401,7 @@ class AppSnapshotDetail extends Component {
           <Loader size="60" />
         </div>)
     }
+
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
