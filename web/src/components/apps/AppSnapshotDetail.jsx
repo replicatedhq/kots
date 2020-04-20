@@ -76,7 +76,7 @@ class AppSnapshotDetail extends Component {
             '<p class="u-color--tuna u-fontSize--normal u-fontWeight--medium">' +
             w.globals.labels[dataPointIndex] +
             "</p>" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
+            '<span class="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
             w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
             "<br />" +
             "<br />" +
@@ -107,6 +107,8 @@ class AppSnapshotDetail extends Component {
         } else {
           this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
         }
+      } else if((this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks))) {
+        this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
       }
     }
   }
@@ -285,6 +287,7 @@ class AppSnapshotDetail extends Component {
     );
   }
 
+
   calculateTimeInterval = (data) => {
     const startedTimes = data.map((d) => moment(d.started).format("MMM D, YYYY h:mm A"));
     const finishedTimes = data.map((d) => moment(d.finished).format("MMM D, YYYY h:mm A"));
@@ -303,18 +306,22 @@ class AppSnapshotDetail extends Component {
   }
 
   getSeriesData = (seriesData) => {
-    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD", "#ED2D2D", "#6236FF",];
     const series = [{ data: null }]
     if (!seriesData) {
       return series;
     }
 
     const data = seriesData.map((d, i) => {
+      let finishedTime;
+      if (d.started === d.finished) {
+        finishedTime = new Date(moment(d.finished).add(1, "seconds")).getTime();
+      } else {
+        finishedTime = new Date(d.finished).getTime()
+      }
       return {
         x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
-        y: [new Date(d.started).getTime(), new Date(d.finished).getTime()],
-        z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
-        fillColor: colors[i]
+        y: [new Date(d.started).getTime(), finishedTime],
+        z: d.name ? "Volume" : `${d.phase}-snapshot-script`
       }
     });
     series[0].data = data;
@@ -329,6 +336,8 @@ class AppSnapshotDetail extends Component {
       } else {
         data = this.state.snapshotDetails?.volumes;
       }
+    } else if (!isEmpty(this.state.snapshotDetails?.hooks)) {
+      data = this.state.snapshotDetails?.hooks;
     }
     return (
       <div className="flex flex1">
@@ -411,7 +420,7 @@ class AppSnapshotDetail extends Component {
           </div>
           :
           <div>
-            {!isEmpty(snapshotDetails?.volumes) ?
+            {!isEmpty(snapshotDetails?.volumes) || !isEmpty(this.preSnapshotScripts()) || !isEmpty(this.postSnapshotScripts()) ?
               <div className="flex-column flex-auto u-marginTop--30 u-marginBottom--40">
                 <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--10">Snapshot timeline</p>
                 <div className="flex1" id="chart">
