@@ -16,9 +16,8 @@ import { Utilities } from "../../utilities/utilities";
 
 class AppSnapshotDetail extends Component {
   state = {
-    showOutputForPreScripts: false,
-    preScriptOutput: "",
-    postScriptOutput: "",
+    showScriptsOutput: false,
+    scriptOutput: "",
     selectedTab: "stdout",
     showAllVolumes: false,
     selectedScriptTab: "Pre-snapshot scripts",
@@ -103,7 +102,7 @@ class AppSnapshotDetail extends Component {
         if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
           this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
         } else {
-          this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a,b) => new Date(a.started) - new Date(b.started))) })
+          this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
         }
       }
     }
@@ -133,19 +132,11 @@ class AppSnapshotDetail extends Component {
     this.setState({ showAllVolumes: !this.state.showAllVolumes });
   }
 
-  toggleOutputForPreScripts = output => {
-    if (this.state.toggleOutputForPreScripts) {
-      this.setState({ showOutputForPreScripts: false, preScriptOutput: "" });
+  toggleScriptsOutput = output => {
+    if (this.state.toggleScriptsOutput) {
+      this.setState({ showScriptsOutput: false, scriptOutput: "" });
     } else {
-      this.setState({ showOutputForPreScripts: true, preScriptOutput: output });
-    }
-  }
-
-  toggleOutputForPostScripts = output => {
-    if (this.state.toggleOutputForPostScripts) {
-      this.setState({ showOutputForPostScripts: false, postScriptOutput: "" });
-    } else {
-      this.setState({ showOutputForPostScripts: true, postScriptOutput: output });
+      this.setState({ showScriptsOutput: true, scriptOutput: output });
     }
   }
 
@@ -241,41 +232,28 @@ class AppSnapshotDetail extends Component {
     );
   }
 
-  renderShowAllPrescripts = (preSnapshotScripts) => {
+  renderShowAllScripts = (hooks) => {
     return (
-      preSnapshotScripts.map((hook, i) => (
-        <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
-          <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
-            <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
-              <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
+      hooks.map((hook, i) => {
+        const diffMinutes = moment(hook?.finished).diff(moment(hook?.started), "minutes");
+        return (
+          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.hookName}-${hook.phase}-${i}`}>
+            <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
+              <div className="flex flex-column">
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
+                <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
+              </div>
             </div>
-            {hook.stderr !== "" || hook.stdout !== "" &&
-              <div className="flex flex1 justifyContent--flexEnd">
-                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPreScripts(hook)}> View output </span>
-              </div>}
-          </div>
-        </div>
-      ))
-    );
-  }
-
-  renderShowAllPostscripts = (postSnapshotScripts) => {
-    return (
-      postSnapshotScripts.map((hook, i) => (
-        <div className="flex flex1 u-borderBottom--gray" key={`${hook.hookName}-${hook.phase}-${i}`}>
-          <div className="flex flex1 alignItems--center u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
-            <div className="flex flex-column">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName}</p>
-              <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
+            <div className="flex flex-column justifyContent--flexEnd">
+              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
+              {!hook.errors &&
+                <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
+              {hook.stderr !== "" || hook.stdout !== "" &&
+                <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}
             </div>
-            {hook.stderr !== "" || hook.stdout !== "" &&
-              <div className="flex flex1 justifyContent--flexEnd">
-                <span className="replicated-link u-fontSize--small" onClick={() => this.toggleOutputForPostScripts(hook)}> View output </span>
-              </div>}
           </div>
-        </div>
-      ))
+        )
+      })
     );
   }
 
@@ -379,12 +357,10 @@ class AppSnapshotDetail extends Component {
 
   render() {
     const {
-      showOutputForPreScripts,
-      showOutputForPostScripts,
+      showScriptsOutput,
       selectedTab,
       selectedScriptTab,
-      preScriptOutput,
-      postScriptOutput,
+      scriptOutput,
       showAllVolumes,
       showAllPreSnapshotScripts,
       showAllPostSnapshotScripts,
@@ -483,14 +459,14 @@ class AppSnapshotDetail extends Component {
                   <div>
                     {selectedScriptTab === "Pre-snapshot scripts" ?
                       !isEmpty(this.preSnapshotScripts()) ?
-                        this.renderShowAllPrescripts(this.preSnapshotScripts().slice(0, 3))
+                        this.renderShowAllScripts(this.preSnapshotScripts().slice(0, 3))
                         :
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                           <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No pre-snapshot scripts to display </p>
                         </div>
                       : selectedScriptTab === "Post-snapshot scripts" &&
                         !isEmpty(this.postSnapshotScripts()) ?
-                        this.renderShowAllPostscripts(this.postSnapshotScripts().slice(0, 3))
+                        this.renderShowAllScripts(this.postSnapshotScripts().slice(0, 3))
                         :
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
                           <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No post-snapshot scripts to display </p>
@@ -541,10 +517,10 @@ class AppSnapshotDetail extends Component {
             </div>
           </div>}
 
-        {showOutputForPreScripts && preScriptOutput &&
+        {showScriptsOutput && scriptOutput &&
           <Modal
-            isOpen={showOutputForPreScripts}
-            onRequestClose={() => this.toggleOutputForPreScripts()}
+            isOpen={showScriptsOutput}
+            onRequestClose={() => this.toggleScriptsOutput()}
             shouldReturnFocusAfterClose={false}
             contentLabel="View logs"
             ariaHideApp={false}
@@ -561,7 +537,7 @@ class AppSnapshotDetail extends Component {
                   <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
                     <MonacoEditor
                       language="json"
-                      value={preScriptOutput[selectedTab]}
+                      value={scriptOutput[selectedTab]}
                       height="100%"
                       width="100%"
                       options={{
@@ -577,48 +553,7 @@ class AppSnapshotDetail extends Component {
                 </div>
               }
               <div className="u-marginTop--20 flex">
-                <button type="button" className="btn primary blue" onClick={() => this.toggleOutputForPreScripts()}>Ok, got it!</button>
-              </div>
-            </div>
-          </Modal>
-        }
-        {showOutputForPostScripts && postScriptOutput &&
-          <Modal
-            isOpen={showOutputForPostScripts}
-            onRequestClose={() => this.toggleOutputForPostScripts()}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="View logs"
-            ariaHideApp={false}
-            className="Modal logs-modal"
-          >
-            <div className="Modal-body flex flex1 flex-column">
-              {!selectedTab ?
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <Loader size="60" />
-                </div>
-                :
-                <div className="flex-column flex1">
-                  {this.renderOutputTabs()}
-                  <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
-                    <MonacoEditor
-                      language="json"
-                      value={postScriptOutput[selectedTab]}
-                      height="100%"
-                      width="100%"
-                      options={{
-                        readOnly: true,
-                        contextmenu: false,
-                        minimap: {
-                          enabled: false
-                        },
-                        scrollBeyondLastLine: false,
-                      }}
-                    />
-                  </div>
-                </div>
-              }
-              <div className="u-marginTop--20 flex">
-                <button type="button" className="btn primary blue" onClick={() => this.toggleOutputForPostScripts()}>Ok, got it!</button>
+                <button type="button" className="btn primary blue" onClick={() => this.toggleScriptsOutput()}>Ok, got it!</button>
               </div>
             </div>
           </Modal>
@@ -635,7 +570,7 @@ class AppSnapshotDetail extends Component {
           <ShowAllModal
             displayShowAllModal={showAllPreSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPreScripts}
-            dataToShow={this.renderShowAllPrescripts(this.preSnapshotScripts())}
+            dataToShow={this.renderShowAllScripts(this.preSnapshotScripts())}
             name="Pre-snapshot scripts"
           />
         }
