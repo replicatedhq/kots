@@ -171,7 +171,7 @@ export class KotsDeploySocketService {
 
 
     const veleroClient = new VeleroClient("velero"); // TODO velero namespace
-    const backup = await veleroClient.readBackup(getSnapshotNameFromRestoreName(app.restoreInProgressName!));
+    const backup = await veleroClient.readBackup(app.restoreInProgressName!);
     // make operator prune everything
     const args = {
       app_id: app.id,
@@ -327,9 +327,4 @@ export class KotsDeploySocketService {
       }
     }
   }
-}
-
-function getSnapshotNameFromRestoreName(restoreName: string): string {
-  const parts = restoreName.split("-");
-  return parts.slice(0, parts.length - 1).join("-");
 }

@@ -628,7 +628,6 @@ export class VeleroClient {
 
   async isVeleroInstalled(): Promise<boolean> {
     const url = `${this.server}/apis/velero.io/`;
-    console.log("++++url", url)
     const req = { url };
     await this.kc.applyToRequest(req);
     const options: RequestPromiseOptions = {
