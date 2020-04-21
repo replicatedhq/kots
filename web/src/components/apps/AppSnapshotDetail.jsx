@@ -7,7 +7,6 @@ import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
 import ReactApexChart from "react-apexcharts";
 import moment from "moment";
-import { saveAs } from "file-saver";
 
 import Loader from "../shared/Loader";
 import { snapshotDetail } from "../../queries/SnapshotQueries";
@@ -17,15 +16,6 @@ import { Utilities } from "../../utilities/utilities";
 
 let colorIndex = 0;
 let mapColors = {}
-
-const snapshotLogs = `time="2020-04-17T17:24:40Z" level=info msg="Setting up backup temp file" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:462"
-time="2020-04-17T17:24:40Z" level=info msg="Setting up plugin manager" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:469"
-time="2020-04-17T17:24:40Z" level=info msg="Getting backup item actions" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:473"
-time="2020-04-17T17:24:41Z" level=info msg="Setting up backup store" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:479"
-time="2020-04-17T17:24:41Z" level=info msg="Writing backup version file" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:213"
-time="2020-04-17T17:24:41Z" level=info msg="Including namespaces: test" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:219"
-time="2020-04-17T17:24:41Z" level=info msg="Excluding namespaces: <none>" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:220"
-time="2020-04-17T17:24:41Z" level=info msg="Including resources: *" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:223"`;
 
 class AppSnapshotDetail extends Component {
   state = {
@@ -42,6 +32,7 @@ class AppSnapshotDetail extends Component {
     snapshotDetails: {},
     series: [],
     toggleViewLogsModal: false,
+    snapshotLogs: "",
 
     options: {
       chart: {
@@ -168,22 +159,21 @@ class AppSnapshotDetail extends Component {
   }
 
   viewLogs = () => {
-    // const name = this.state.snapshotDetails?.name;
-    // const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
-    // fetch(url, {
-    //   headers: {
-    //     "Authorization": `${Utilities.getToken()}`
-    //   },
-    //   method: "GET",
-    // })
-    //   .then(async (response) => {
-    //     const blob = await response.blob();
-    //     saveAs(blob, "snapshot-logs.gz")
-    //   })
-    //   .catch((err) => {
-    //     throw err;
-    //   });
-    this.setState({ toggleViewLogsModal: !this.state.toggleViewLogsModal })
+    const name = this.state.snapshotDetails?.name;
+    const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+    fetch(url, {
+      headers: {
+        "Authorization": `${Utilities.getToken()}`
+      },
+      method: "GET",
+    })
+      .then(async (response) => {
+        const logs = await response.text();
+        this.setState({ snapshotLogs: logs, toggleViewLogsModal: !this.state.toggleViewLogsModal})
+      })
+      .catch((err) => {
+        throw err;
+      });
   }
 
   renderOutputTabs = () => {
@@ -645,7 +635,7 @@ class AppSnapshotDetail extends Component {
           <ViewSnapshotLogsModal 
             displayShowSnapshotLogsModal={this.state.toggleViewLogsModal}
             toggleViewLogsModal={this.viewLogs}
-            logs={snapshotLogs}
+            logs={this.state.snapshotLogs}
             snapshotDetails={snapshotDetails}
           />}
       </div>

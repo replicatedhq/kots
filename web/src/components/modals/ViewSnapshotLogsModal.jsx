@@ -14,7 +14,7 @@ export default function ViewSnapshotLogsModal(props) {
       ariaHideApp={false}
       className="Modal FullSize"
     >
-      <div className="Modal-body flex1 flex-column u-height--97">
+      <div className="Modal-body flex1 flex-column" style={{ height: "97%" }}>
         <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--5">{snapshotDetails?.name} logs</p>
         <div className="flex1 flex-column u-position--relative u-marginTop--10">
           <AceEditor
