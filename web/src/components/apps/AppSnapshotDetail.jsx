@@ -33,6 +33,7 @@ class AppSnapshotDetail extends Component {
     series: [],
     toggleViewLogsModal: false,
     snapshotLogs: "",
+    loadingSnapshotLogs: false,
 
     options: {
       chart: {
@@ -159,21 +160,27 @@ class AppSnapshotDetail extends Component {
   }
 
   viewLogs = () => {
-    const name = this.state.snapshotDetails?.name;
-    const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
-    fetch(url, {
-      headers: {
-        "Authorization": `${Utilities.getToken()}`
-      },
-      method: "GET",
-    })
-      .then(async (response) => {
-        const logs = await response.text();
-        this.setState({ snapshotLogs: logs, toggleViewLogsModal: !this.state.toggleViewLogsModal})
+    this.setState({
+      toggleViewLogsModal: !this.state.toggleViewLogsModal
+    }, () => {
+      this.setState({ loadingSnapshotLogs: true })
+      const name = this.state.snapshotDetails?.name;
+      const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+      fetch(url, {
+        headers: {
+          "Authorization": `${Utilities.getToken()}`
+        },
+        method: "GET",
       })
-      .catch((err) => {
-        throw err;
-      });
+        .then(async (response) => {
+          const logs = await response.text();
+          this.setState({ snapshotLogs: logs, loadingSnapshotLogs: false });
+        })
+        .catch((err) => {
+          this.setState({ loadingSnapshotLogs: false });
+          throw err;
+        });
+    });
   }
 
   renderOutputTabs = () => {
@@ -632,11 +639,12 @@ class AppSnapshotDetail extends Component {
           />
         }
         {this.state.toggleViewLogsModal &&
-          <ViewSnapshotLogsModal 
+          <ViewSnapshotLogsModal
             displayShowSnapshotLogsModal={this.state.toggleViewLogsModal}
             toggleViewLogsModal={this.viewLogs}
             logs={this.state.snapshotLogs}
             snapshotDetails={snapshotDetails}
+            loadingSnapshotLogs={this.state.loadingSnapshotLogs}
           />}
       </div>
     );
