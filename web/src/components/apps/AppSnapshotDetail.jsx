@@ -12,10 +12,20 @@ import { saveAs } from "file-saver";
 import Loader from "../shared/Loader";
 import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
+import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import { Utilities } from "../../utilities/utilities";
 
-let colorIndex=0;
-let mapColors ={}
+let colorIndex = 0;
+let mapColors = {}
+
+const snapshotLogs = `time="2020-04-17T17:24:40Z" level=info msg="Setting up backup temp file" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:462"
+time="2020-04-17T17:24:40Z" level=info msg="Setting up plugin manager" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:469"
+time="2020-04-17T17:24:40Z" level=info msg="Getting backup item actions" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:473"
+time="2020-04-17T17:24:41Z" level=info msg="Setting up backup store" backup=velero/jelena-snapshots-vpqcz logSource="pkg/controller/backup_controller.go:479"
+time="2020-04-17T17:24:41Z" level=info msg="Writing backup version file" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:213"
+time="2020-04-17T17:24:41Z" level=info msg="Including namespaces: test" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:219"
+time="2020-04-17T17:24:41Z" level=info msg="Excluding namespaces: <none>" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:220"
+time="2020-04-17T17:24:41Z" level=info msg="Including resources: *" backup=velero/jelena-snapshots-vpqcz logSource="pkg/backup/backup.go:223"`;
 
 class AppSnapshotDetail extends Component {
   state = {
@@ -31,6 +41,7 @@ class AppSnapshotDetail extends Component {
     showAllErrors: false,
     snapshotDetails: {},
     series: [],
+    toggleViewLogsModal: false,
 
     options: {
       chart: {
@@ -156,22 +167,23 @@ class AppSnapshotDetail extends Component {
     this.setState({ showAllErrors: !this.state.showAllErrors });
   }
 
-  downloadLogs = () => {
-    const name = this.state.snapshotDetails?.name;
-    const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
-    fetch(url, {
-      headers: {
-        "Authorization": `${Utilities.getToken()}`
-      },
-      method: "GET",
-    })
-      .then(async (response) => {
-        const blob = await response.blob();
-        saveAs(blob, "snapshot-logs.gz")
-      })
-      .catch((err) => {
-        throw err;
-      });
+  viewLogs = () => {
+    // const name = this.state.snapshotDetails?.name;
+    // const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+    // fetch(url, {
+    //   headers: {
+    //     "Authorization": `${Utilities.getToken()}`
+    //   },
+    //   method: "GET",
+    // })
+    //   .then(async (response) => {
+    //     const blob = await response.blob();
+    //     saveAs(blob, "snapshot-logs.gz")
+    //   })
+    //   .catch((err) => {
+    //     throw err;
+    //   });
+    this.setState({ toggleViewLogsModal: !this.state.toggleViewLogsModal })
   }
 
   renderOutputTabs = () => {
@@ -315,7 +327,7 @@ class AppSnapshotDetail extends Component {
       return mapColors[podName];
     } else {
       mapColors[podName] = colors[colorIndex];
-      colorIndex = (colorIndex +1) % colors.length;
+      colorIndex = (colorIndex + 1) % colors.length;
       return mapColors[podName];
     }
   }
@@ -426,7 +438,7 @@ class AppSnapshotDetail extends Component {
             <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
             <div className="u-fontSize--small">
               {snapshotDetails?.status !== "InProgress" &&
-                <span className="replicated-link" onClick={() => this.downloadLogs()}>Download logs</span>}
+                <span className="replicated-link" onClick={() => this.viewLogs()}>View logs</span>}
             </div>
           </div>
         </div>
@@ -629,6 +641,13 @@ class AppSnapshotDetail extends Component {
             name="Errors"
           />
         }
+        {this.state.toggleViewLogsModal &&
+          <ViewSnapshotLogsModal 
+            displayShowSnapshotLogsModal={this.state.toggleViewLogsModal}
+            toggleViewLogsModal={this.viewLogs}
+            logs={snapshotLogs}
+            snapshotDetails={snapshotDetails}
+          />}
       </div>
     );
   }
