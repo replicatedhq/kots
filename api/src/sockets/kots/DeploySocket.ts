@@ -183,6 +183,7 @@ export class KotsDeploySocketService {
       result_callback: "/api/v1/undeploy/result",
       wait: true,
       clear_namespaces: backup.spec.includedNamespaces,
+      clear_pvcs: true,
     };
 
     this.io.in(cluster.id).emit("deploy", args);

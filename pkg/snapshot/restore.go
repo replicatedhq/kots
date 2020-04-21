@@ -68,6 +68,32 @@ func CreateRestore(snapshotName string) error {
 	return nil
 }
 
+func DeleteRestore(snapshotName string) error {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	err = veleroClient.Restores(veleroNamespace).Delete(snapshotName, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete restore %s", snapshotName)
+	}
+
+	return nil
+}
+
 func GetBackup(snapshotName string) (*veleroapiv1.Backup, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
