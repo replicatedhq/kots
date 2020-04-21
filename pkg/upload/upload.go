@@ -108,8 +108,15 @@ func Upload(path string, uploadOptions UploadOptions) error {
 
 	log.ActionWithSpinner("Uploading local application to Admin Console")
 
+	// PUT /api/v1/upload is implemented in the GO API
+	// POST /api/v1/kots/ for new installs so the request gets forwarded to the Node API
+	endpoint := fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint)
+	if uploadOptions.ExistingAppSlug == "" {
+		endpoint = fmt.Sprintf("%s/api/v1/kots/", uploadOptions.Endpoint)
+	}
+
 	// upload using http to the pod directly
-	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint))
+	req, err := createUploadRequest(archiveFilename, uploadOptions, endpoint)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create upload request")
