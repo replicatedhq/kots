@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -112,18 +113,26 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := http.Get(signedURL)
 	if err != nil {
-		logger.Error(err)
+		logger.Errorf("failed to execute get request: %v", err)
 		w.WriteHeader(500)
 		return
 	}
 	defer resp.Body.Close()
 
-	w.Header().Set("Content-Disposition", "attachment; filename=snapshot-logs.gz")
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.Header().Set("Content-Length", resp.Header.Get("Content-Length"))
+	gzipReader, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		logger.Errorf("failed to create gzip reader: %v", err)
+		w.WriteHeader(500)
+		return
+	}
+	defer gzipReader.Close()
+
+	w.Header().Set("Content-Disposition", "attachment; filename=snapshot.log")
+	w.Header().Set("Content-Type", "text/plain")
 
 	w.WriteHeader(200)
-	_, err = io.Copy(w, resp.Body)
+
+	_, err = io.Copy(w, gzipReader)
 	if err != nil {
 		logger.Error(err)
 		return
