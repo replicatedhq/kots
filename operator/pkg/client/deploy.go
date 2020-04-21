@@ -11,13 +11,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
 	"github.com/replicatedhq/kotsadm/operator/pkg/util"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	k8sschema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -65,22 +71,41 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		targetNamespace = applicationManifests.Namespace
 	}
 
+	allPVCs := make([]string, 0)
 	for k, oldContents := range decodedPreviousMap {
-		if _, ok := decodedCurrentMap[k]; !ok {
-			gv, k, n, err := ParseSimpleGVK([]byte(oldContents))
-			if err != nil {
-				log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
-			} else {
-				log.Printf("deleting manifest(s): %s/%s/%s", gv, k, n)
-			}
-			stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents), applicationManifests.Wait)
-			if err != nil {
-				log.Printf("stdout (delete) = %s", stdout)
-				log.Printf("stderr (delete) = %s", stderr)
-				log.Printf("error: %s", err.Error())
-			} else {
-				log.Printf("manifest(s) deleted: %s/%s/%s", gv, k, n)
-			}
+		if _, ok := decodedCurrentMap[k]; ok {
+			continue
+		}
+
+		obj, gvk, err := parseK8sYaml([]byte(oldContents))
+		if err != nil {
+			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
+		} else {
+			log.Printf("deleting manifest(s): %s/%s/%s", gvk.Group, gvk.Kind, getObjectName(obj))
+		}
+
+		pvcs, err := getPVCs(obj, gvk)
+		if err != nil {
+			return errors.Wrap(err, "failed to list PVCs")
+		}
+		allPVCs = append(allPVCs, pvcs...)
+
+		stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents), applicationManifests.Wait)
+		if err != nil {
+			log.Printf("stdout (delete) = %s", stdout)
+			log.Printf("stderr (delete) = %s", stderr)
+			log.Printf("error: %s", err.Error())
+		} else {
+			log.Printf("manifest(s) deleted: %s/%s/%s", gvk.Group, gvk.Kind, getObjectName(obj))
+		}
+	}
+
+	if applicationManifests.ClearPVCs {
+		log.Printf("deleting pvcs: %s", strings.Join(allPVCs, ","))
+		// TODO: multi-namespace support
+		err := deletePVCs(targetNamespace, allPVCs)
+		if err != nil {
+			return errors.Wrap(err, "failed to delete PVCs")
 		}
 	}
 
@@ -320,4 +345,104 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 	}
 
 	return clear, nil
+}
+
+func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(doc, nil, nil)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to decode k8s yaml")
+	}
+	return obj, gvk, err
+}
+
+func getObjectName(obj k8sruntime.Object) string {
+	// TODO: something like...
+	// if o, ok := obj.(metav1.ObjectMeta); ok {
+	// 	return o.Name
+	// }
+	return ""
+}
+
+func getPVCs(obj k8sruntime.Object, gvk *k8sschema.GroupVersionKind) ([]string, error) {
+	var err error
+	var pods []*corev1.Pod
+	if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
+		o := obj.(*appsv1.Deployment)
+		pods, err = findPodsByOwner(o.Name, o.Namespace, gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
+		o := obj.(*appsv1.StatefulSet)
+		pods, err = findPodsByOwner(o.Name, o.Namespace, gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "batch" && gvk.Version == "v1" && gvk.Kind == "Job" {
+		o := obj.(*batchv1.Job)
+		pods, err = findPodsByOwner(o.Name, o.Namespace, gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "batch" && gvk.Version == "v1" && gvk.Kind == "Job" {
+		o := obj.(*batchv1.Job)
+		pods, err = findPodsByOwner(o.Name, o.Namespace, gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "batch" && gvk.Version == "v1beta1" && gvk.Kind == "CronJob" {
+		o := obj.(*batchv1beta1.CronJob)
+		pods, err = findPodsByOwner(o.Name, o.Namespace, gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Pod" {
+		o := obj.(*corev1.Pod)
+		pod, err := findPodByName(o.Name, o.Namespace)
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(err) {
+				return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+			}
+		}
+		pods = []*corev1.Pod{pod}
+	}
+
+	pvcs := make([]string, 0)
+	for _, pod := range pods {
+		for _, v := range pod.Spec.Volumes {
+			if v.PersistentVolumeClaim != nil {
+				pvcs = append(pvcs, v.PersistentVolumeClaim.ClaimName)
+			}
+		}
+	}
+
+	return pvcs, nil
+}
+
+func deletePVCs(namespace string, pvcs []string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
+	}
+
+	for _, pvc := range pvcs {
+		grace := int64(0)
+		policy := metav1.DeletePropagationBackground
+		opts := &metav1.DeleteOptions{
+			GracePeriodSeconds: &grace,
+			PropagationPolicy:  &policy,
+		}
+		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(pvc, opts)
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
+		}
+	}
+
+	return nil
 }

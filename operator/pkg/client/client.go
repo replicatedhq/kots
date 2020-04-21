@@ -40,6 +40,7 @@ type ApplicationManifests struct {
 	Wait                 bool     `json:"wait"`
 	ResultCallback       string   `json:"result_callback"`
 	ClearNamespaces      []string `json:"clear_namespaces"`
+	ClearPVCs            bool     `json:"clear_pvcs"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server

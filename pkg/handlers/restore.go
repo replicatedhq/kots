@@ -99,6 +99,13 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := snapshot.DeleteRestore(mux.Vars(r)["snapshotName"]); err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to initiate restore"
+		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
 	err = app.InitiateRestore(mux.Vars(r)["snapshotName"], appID)
 	if err != nil {
 		logger.Error(err)
