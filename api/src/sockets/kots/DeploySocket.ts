@@ -212,8 +212,7 @@ export class KotsDeploySocketService {
     logger.info(`Creating velero Restore object ${app.restoreInProgressName}`);
 
     // create the Restore resource
-    const snapshotName = getSnapshotNameFromRestoreName(app.restoreInProgressName);
-    await velero.restore(snapshotName, app.restoreInProgressName);
+    await velero.restore(app.restoreInProgressName, app.restoreInProgressName);
   }
 
   async checkRestoreComplete(velero: VeleroClient, restore: Restore, app: KotsApp) {
