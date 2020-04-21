@@ -81,7 +81,6 @@ func CreateBackup(a *app.App) error {
 		"kots.io/app-id":             a.ID,
 		"kots.io/app-sequence":       strconv.FormatInt(a.CurrentSequence, 10),
 		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
-		// "kots.io/cluster-id":       "", // @areed why do we need the cluster id here
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
