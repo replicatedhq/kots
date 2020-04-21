@@ -1,6 +1,8 @@
 package snapshot
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -87,7 +89,7 @@ func DeleteRestore(snapshotName string) error {
 	}
 
 	err = veleroClient.Restores(veleroNamespace).Delete(snapshotName, &metav1.DeleteOptions{})
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "not found") {
 		return errors.Wrapf(err, "failed to delete restore %s", snapshotName)
 	}
 
