@@ -184,30 +184,33 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then((async (result) => {
-      const body = await result.json();
+      .then(async (result) => {
+        if (result.ok) {
+          this.setState({
+            restoringSnapshot: true,
+            restoreSnapshotModal: false,
+            restoreErr: false,
+            restoreErrorMsg: "",
+          });
 
-      if (!body.success) {
-        // todo this needs ui
-        alert("failed to start restore")
+          this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${snapshot.name}/restore`);
+        } else {
+          const body = await result.json();
+          this.setState({
+            restoringSnapshot: false,
+            restoreErr: true,
+            restoreErrorMsg: body.error,
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
         this.setState({
           restoringSnapshot: false,
-          restoreSnapshotModal: false,
-          restoreErrorMsg: body.error,
-        });
-        this.props.history.replace(`/app/${this.props.app.slug}/snapshots`);
-        return;
-      }
-
-      this.setState({
-        restoringSnapshot: false,
-        restoreSnapshotModal: true,
-        restoreErrorMsg: body.error,
-      });
-
-      this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${snapshot.name}/restore`);
-
-    }))
+          restoreErr: true,
+          restoreErrorMsg: err,
+        })
+      })
   }
 
   startManualSnapshot = () => {
