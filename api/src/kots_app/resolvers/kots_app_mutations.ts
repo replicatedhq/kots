@@ -207,9 +207,7 @@ export function KotsMutations(stores: Stores) {
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
       const app = await context.getApp(appId);
 
-      const clusterId = await stores.clusterStore.getIdFromSlug(clusterSlug);
-
-      await stores.kotsAppStore.deployVersion(app.id, sequence, clusterId);
+      await stores.kotsAppStore.deployVersion(app.id, sequence);
       return true;
     },
 

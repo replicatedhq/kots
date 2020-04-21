@@ -232,13 +232,9 @@ export class KotsDeploySocketService {
         if (_.isNaN(sequence)) {
           throw new ReplicatedError(`Failed to parse sequence from Backup: ${sequenceString}`);
         }
-        const clusterId = backup.metadata.annotations[kotsClusterIdKey];
-        if (!clusterId) {
-          throw new ReplicatedError(`Backup is missing cluster ID annotation`);
-        }
 
         logger.info(`Restore complete, setting deploy version to ${sequence}`);
-        await this.kotsAppStore.deployVersion(app.id, sequence, clusterId);
+        await this.kotsAppStore.deployVersion(app.id, sequence);
         await this.kotsAppStore.updateAppRestoreReset(app.id);
         break;
 

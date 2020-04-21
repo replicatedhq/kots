@@ -1160,23 +1160,21 @@ order by adv.sequence desc`;
     return true;
   }
 
-  async deployVersion(appId: string, sequence: number, clusterId: string): Promise<void> {
-    const q = `update app_downstream set current_sequence = $1 where app_id = $2 and cluster_id = $3`;
+  async deployVersion(appId: string, sequence: number): Promise<void> {
+    const q = `update app_downstream set current_sequence = $1 where app_id = $2`;
     const v = [
       sequence,
       appId,
-      clusterId,
     ];
     await this.pool.query(q, v);
 
     const qq = `UPDATE app_downstream_version
-        SET status = 'deployed', applied_at = $4
-      WHERE sequence = $1 AND app_id = $2 AND cluster_id = $3`;
+        SET status = 'deployed', applied_at = $3
+      WHERE sequence = $1 AND app_id = $2`;
 
     const vv = [
       sequence,
       appId,
-      clusterId,
       new Date()
     ];
 
@@ -1669,12 +1667,11 @@ order by adv.sequence desc`;
             'pending'
           END
           )
-      WHERE app_id = $2 AND cluster_id = $3 AND sequence = $4`;
+      WHERE app_id = $2 AND sequence = $3`;
 
     const v = [
       preflightResult,
       appId,
-      clusterId,
       sequence
     ];
 
@@ -1685,7 +1682,7 @@ order by adv.sequence desc`;
       const results = JSON.parse(JSON.stringify(preflightResult));
       const preflightState = getPreflightResultState(results);
       if (preflightState === "pass") {
-        await this.deployVersion(appId, sequence, clusterId);
+        await this.deployVersion(appId, sequence);
       }
     }
   }
