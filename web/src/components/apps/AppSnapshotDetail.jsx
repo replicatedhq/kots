@@ -14,6 +14,9 @@ import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
 import { Utilities } from "../../utilities/utilities";
 
+let colorIndex=0;
+let mapColors ={}
+
 class AppSnapshotDetail extends Component {
   state = {
     showScriptsOutput: false,
@@ -107,7 +110,7 @@ class AppSnapshotDetail extends Component {
         } else {
           this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
         }
-      } else if((this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks))) {
+      } else if ((this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks))) {
         this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
       }
     }
@@ -305,11 +308,24 @@ class AppSnapshotDetail extends Component {
     }
   }
 
+  assignColorToPath = (podName) => {
+    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD", "#ED2D2D", "#6236FF", "#48C9B0", "#A569BD", "#D35400"];
+
+    if (mapColors[podName]) {
+      return mapColors[podName];
+    } else {
+      mapColors[podName] = colors[colorIndex];
+      colorIndex = (colorIndex +1) % colors.length;
+      return mapColors[podName];
+    }
+  }
+
   getSeriesData = (seriesData) => {
     const series = [{ data: null }]
     if (!seriesData) {
       return series;
     }
+
 
     const data = seriesData.map((d, i) => {
       let finishedTime;
@@ -318,10 +334,12 @@ class AppSnapshotDetail extends Component {
       } else {
         finishedTime = new Date(d.finished).getTime()
       }
+
       return {
         x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
         y: [new Date(d.started).getTime(), finishedTime],
-        z: d.name ? "Volume" : `${d.phase}-snapshot-script`
+        z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
+        fillColor: d.name ? this.assignColorToPath(d.name) : this.assignColorToPath(d.podName)
       }
     });
     series[0].data = data;
