@@ -351,6 +351,10 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									Name:  "S3_BUCKET_ENDPOINT",
 									Value: "true",
 								},
+								{
+									Name:  "API_ADVERTISE_ENDPOINT",
+									Value: "http://localhost:8800",
+								},
 							},
 						},
 					},
