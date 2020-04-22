@@ -16,13 +16,6 @@ export class TroubleshootStore {
   ) {
   }
 
-  static defaultSpec = `apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Collector
-metadata:
-  name: default-collector
-spec:
-  collectors: []`
-
   public async tryGetAnalyzersForKotsApp(id: string): Promise<Analyzer | void> {
     const q = `select analyzer_spec from app_version
       inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
@@ -237,20 +230,6 @@ spec:
       supportBundles.push(await this.getSupportBundle(row.id));
     }
     return supportBundles;
-  }
-
-  // creates a SupportBundle object which is not stored in DB, but can be used to
-  // create signed upload URL
-  public async getBlankSupportBundle(appOrWatchId: string): Promise<SupportBundle> {
-    const id = randomstring.generate({ capitalization: "lowercase" });
-    const status: SupportBundleStatus = "pending";
-
-    const supportBundle = new SupportBundle();
-    supportBundle.id = id;
-    supportBundle.watchId = appOrWatchId;
-    supportBundle.status = status;
-
-    return supportBundle;
   }
 
   public async createSupportBundle(appOrWatchId: string, size: number, id?: string): Promise<SupportBundle> {
