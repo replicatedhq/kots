@@ -20,6 +20,14 @@ class AppSnapshotRestore extends Component {
     this.props.restoreDetail.startPolling(2000);
   }
 
+  componentDidUpdate(lastProps) {
+    if (this.props.restoreDetail?.restoreDetail !== lastProps.restoreDetail?.restoreDetail && this.props.restoreDetail?.restoreDetail) {
+      if (this.props.restoreDetail?.restoreDetail?.phase === "Completed") {
+        this.props.restoreDetail.stopPolling();
+      }
+    }
+  }
+
   logOutUser = () => {
     const token = Utilities.getToken();
     if (token) {
