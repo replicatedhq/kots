@@ -1,6 +1,7 @@
 package types
 
 import (
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -25,4 +26,5 @@ type DeployOptions struct {
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool
+	License                *kotsv1beta1.License
 }

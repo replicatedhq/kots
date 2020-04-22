@@ -34,7 +34,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions.CurrentChannel = getUpdatesOptions.CurrentChannel
 
 	if getUpdatesOptions.LicenseFile != "" {
-		license, err := parseLicenseFromFile(getUpdatesOptions.LicenseFile)
+		license, err := ParseLicenseFromFile(getUpdatesOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == ErrSignatureInvalid {
 				return nil, ErrSignatureInvalid

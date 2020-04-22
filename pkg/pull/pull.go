@@ -76,23 +76,6 @@ func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
 	return data, nil
 }
 
-// CanPullUpstream will return a bool indicating if the specified upstream
-// is accessible and authenticated for us.
-func CanPullUpstream(upstreamURI string, pullOptions PullOptions) (bool, error) {
-	u, err := url.ParseRequestURI(upstreamURI)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to parse uri")
-	}
-
-	if u.Scheme != "replicated" {
-		return true, nil
-	}
-
-	// For now, we shortcut http checks because all replicated:// app types
-	// require a license to pull.
-	return pullOptions.LicenseFile != "", nil
-}
-
 // Pull will download the application specified in upstreamURI using the options
 // specified in pullOptions. It returns the directory that the app was pulled to
 func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
@@ -128,7 +111,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.LicenseFile != "" {
-		license, err := parseLicenseFromFile(pullOptions.LicenseFile)
+		license, err := ParseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == ErrSignatureInvalid {
 				return "", ErrSignatureInvalid
@@ -473,7 +456,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
 }
 
-func parseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
+func ParseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read license file")
