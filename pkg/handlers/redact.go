@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/replicatedhq/kotsadm/pkg/logger"
@@ -10,7 +11,8 @@ import (
 )
 
 type UpdateRedactRequest struct {
-	RedactSpec string `json:"redactSpec"`
+	RedactSpec    string `json:"redactSpec"`
+	RedactSpecURL string `json:"redactSpecUrl"`
 }
 
 type UpdateRedactResponse struct {
@@ -61,15 +63,41 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errMessage, err := redact.SetRedactSpec(updateRedactRequest.RedactSpec)
+	setSpec := ""
+	if updateRedactRequest.RedactSpec != "" {
+		setSpec = updateRedactRequest.RedactSpec
+	} else if updateRedactRequest.RedactSpecURL != "" {
+		resp, err := http.Get(updateRedactRequest.RedactSpecURL)
+		if err != nil {
+			logger.Error(err)
+			updateRedactResponse.Error = "failed to get spec from url"
+			JSON(w, 500, updateRedactResponse)
+			return
+		}
+		respBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error(err)
+			updateRedactResponse.Error = "failed to read spec from url"
+			JSON(w, 500, updateRedactResponse)
+			return
+		}
+		setSpec = string(respBytes)
+	} else {
+		updateRedactResponse.Error = "no spec or url provided"
+		JSON(w, 400, updateRedactResponse)
+		return
+	}
+
+	errMessage, err := redact.SetRedactSpec(setSpec)
 	if err != nil {
 		logger.Error(err)
 		updateRedactResponse.Error = errMessage
 		JSON(w, 500, updateRedactResponse)
+		return
 	}
 
 	updateRedactResponse.Success = true
-	updateRedactResponse.UpdatedSpec = updateRedactRequest.RedactSpec
+	updateRedactResponse.UpdatedSpec = setSpec
 	JSON(w, 200, updateRedactResponse)
 }
 
