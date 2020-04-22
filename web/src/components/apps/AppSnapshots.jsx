@@ -24,6 +24,8 @@ class AppSnapshots extends Component {
     startingSnapshot: false,
     startSnapshotErr: false,
     startSnapshotErrorMsg: "",
+    snapshotsListErr: false,
+    snapshotsListErrMsg: "",
     snapshotToDelete: "",
     deletingSnapshot: false,
     deleteErr: false,
@@ -38,7 +40,9 @@ class AppSnapshots extends Component {
     hasSnapshotsLoaded: false,
     snapshotSettings: null,
     isLoadingSnapshotSettings: true,
-    isStartButtonClicked: false
+    isStartButtonClicked: false,
+    restoreInProgressErr: false,
+    restoreInProgressMsg: ""
   };
 
   componentDidMount = async () => {
@@ -62,30 +66,27 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-    .then(async (result) => {
-      const body = await result.json();
-      if (body.error) {
-        console.log(body.error);
+      .then(async (result) => {
+        const body = await result.json();
+        if (body.error) {
+          this.setState({
+            restoreInProgressErr: true,
+            restoreInProgressMsg: body.error
+          });
+        } else if (body.status == "running") {
+          this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${body.restore_name}/restore`);
+        } else {
+          this.listSnapshots();
+          this.interval = setInterval(() => this.listSnapshots(), 2000);
+        }
+      })
+      .catch(err => {
+        console.log(err);
         this.setState({
-          isLoadingSnapshotSettings: false,
-          snapshotSettingsErr: true,
-          snapshotSettingsErrMsg: body.error,
+          restoreInProgressErr: true,
+          restoreInProgressMsg: err
         });
-      } else if (body.status == "running") {
-        this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${body.restore_name}/restore`);
-      } else {
-        this.listSnapshots();
-        this.interval = setInterval(() => this.listSnapshots(), 2000);
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        isLoadingSnapshotSettings: false,
-        snapshotSettingsErr: true,
-        snapshotSettingsErrMsg: err,
-      });
-    })
+      })
   }
 
   listSnapshots() {
@@ -100,16 +101,23 @@ class AppSnapshots extends Component {
       .then(async (result) => {
         const body = await result.json();
         if (!result.ok) {
-          console.log("failed to load snapshots", body);
-          return;
+          this.setState({
+            snapshotsListErr: true,
+            snapshotsListErrMsg: body.error
+          })
+        } else {
+          this.setState({
+            snapshots: body.backups.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
+            hasSnapshotsLoaded: true
+          });
         }
-        this.setState({
-          snapshots: body.backups.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
-          hasSnapshotsLoaded: true,
-        });
       })
       .catch(err => {
         console.log(err);
+        this.setState({
+          snapshotsListErr: true,
+          snapshotsListErrMsg: err
+        })
       })
   }
 
@@ -335,7 +343,11 @@ class AppSnapshots extends Component {
       hasSnapshotsLoaded,
       snapshotSettings,
       isLoadingSnapshotSettings,
-      isStartButtonClicked
+      isStartButtonClicked,
+      snapshotsListErr,
+      snapshotsListErrMsg,
+      restoreInProgressErr,
+      restoreInProgressErrMsg
     } = this.state;
     const { app } = this.props;
     const appTitle = app.name;
@@ -351,6 +363,27 @@ class AppSnapshots extends Component {
 
     if (!snapshotSettings?.store) {
       this.props.history.replace("/snapshots");
+    }
+
+    if (snapshotsListErr) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg}</p>
+          <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
+            To troubleshoot create <Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">a support bundle</Link>
+          </p>
+        </div>
+      )
+    }
+
+    if (restoreInProgressErr) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
+        </div>
+      )
     }
 
     if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots.length === 0) {
