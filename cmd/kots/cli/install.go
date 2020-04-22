@@ -13,13 +13,11 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -111,28 +109,6 @@ func InstallCmd() *cobra.Command {
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				return errors.Wrap(err, "failed to deploy")
-			}
-
-			// upload the kots app to kotsadm
-			uploadOptions := upload.UploadOptions{
-				Namespace:             namespace,
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				NewAppName:            v.GetString("name"),
-				UpstreamURI:           upstream,
-				Endpoint:              "http://localhost:3000",
-				RegistryOptions: registry.RegistryOptions{
-					Endpoint:  v.GetString("registry-endpoint"),
-					Namespace: v.GetString("image-namespace"),
-				},
-			}
-
-			if v.GetString("registry-endpoint") != "" {
-				registryUser, registryPass, err := registry.LoadAuthForRegistry(v.GetString("registry-endpoint"))
-				if err != nil {
-					return errors.Wrap(err, "failed to load registry auth info")
-				}
-				uploadOptions.RegistryOptions.Username = registryUser
-				uploadOptions.RegistryOptions.Password = registryPass
 			}
 
 			// port forward
