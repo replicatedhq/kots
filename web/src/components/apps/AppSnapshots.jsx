@@ -44,12 +44,48 @@ class AppSnapshots extends Component {
   componentDidMount = async () => {
     await this.fetchSnapshotSettings();
 
-    this.listSnapshots();
-    this.interval = setInterval(() => this.listSnapshots(), 2000);
+    this.checkRestoreInProgress()
   }
 
   componentWillUnmount() {
-    window.clearInterval(this.interval);
+    if (this.interval) {
+      window.clearInterval(this.interval);
+    }
+  }
+
+  checkRestoreInProgress() {
+    const { app } = this.props;
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore/status`, {
+      method: "GET",
+      headers: {
+        "Authorization": `${Utilities.getToken()}`,
+        "Content-Type": "application/json",
+      }
+    })
+    .then(async (result) => {
+      const body = await result.json();
+      if (body.error) {
+        console.log(body.error);
+        this.setState({
+          isLoadingSnapshotSettings: false,
+          snapshotSettingsErr: true,
+          snapshotSettingsErrMsg: body.error,
+        });
+      } else if (body.status == "running") {
+        this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${body.restore_name}/restore`);
+      } else {
+        this.listSnapshots();
+        this.interval = setInterval(() => this.listSnapshots(), 2000);
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      this.setState({
+        isLoadingSnapshotSettings: false,
+        snapshotSettingsErr: true,
+        snapshotSettingsErrMsg: err,
+      });
+    })
   }
 
   listSnapshots() {

@@ -22,6 +22,12 @@ type CreateRestoreResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
+type GetRestoreStatusResponse struct {
+	Status      string `json:"status,omitempty"`
+	RestoreName string `json:"restore_name,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -117,4 +123,48 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	createRestoreResponse.Success = true
 
 	JSON(w, 200, createRestoreResponse)
+}
+
+func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	response := GetRestoreStatusResponse{
+		Status: "",
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to parse authorization header"
+		JSON(w, 401, response)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		response.Error = "failed to parse authorization header"
+		JSON(w, 401, response)
+		return
+	}
+
+	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to get app from app slug"
+		JSON(w, 500, response)
+		return
+	}
+
+	if foundApp.RestoreInProgressName != "" {
+		response.RestoreName = foundApp.RestoreInProgressName
+		response.Status = "running" // there is only one status right now
+	}
+
+	JSON(w, 200, response)
 }
