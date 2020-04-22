@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import { Controller, Post, Put, Get, Res, Req, BodyParams, PathParams, QueryParams } from "@tsed/common";
 import { Params } from "../../server/params";
 import { logger } from "../../server/logger";
-import jsYaml from "js-yaml";
-import { TroubleshootStore, injectKotsCollectors, setKotsCollectorsNamespaces } from "../../troubleshoot";
 import { analyzeSupportBundle } from "../../troubleshoot/troubleshoot_ffi";
 import fs from "fs";
 import path from "path";
@@ -21,78 +19,6 @@ interface BundleUploadedBody {
 
 @Controller("/api/v1/troubleshoot")
 export class TroubleshootAPI {
-  @Get("/")
-  async getGenericSpec(
-    @Req() request: Request,
-    @Res() response: Response,
-  ): Promise<any | ErrorResponse> {
-    let collector = TroubleshootStore.defaultSpec;
-
-    let parsedSpec = jsYaml.load(collector);
-
-    const params = await Params.getParams();
-
-    // the injected collector has a different namespace in dev environment,
-    // so the order of these calls matters.
-    parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-    parsedSpec = injectKotsCollectors(params, parsedSpec, "");
-
-    response.send(200, parsedSpec);
-  }
-
-  @Get("/:slug")
-  async getSpec(
-    @Req() request: Request,
-    @Res() response: Response,
-    @PathParams("slug") slug: string,
-    @QueryParams("incluster") inCluster: string,
-  ): Promise<any | ErrorResponse> {
-    const collector = await request.app.locals.stores.troubleshootStore.tryGetCollectorForKotsSlug(slug);
-    const isKotsSpec = true;
-
-    let appOrWatchId;
-    let licenseData = "";
-
-    try {
-      appOrWatchId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await request.app.locals.stores.kotsAppStore.getApp(appOrWatchId);
-      licenseData = app.license;
-    } catch {
-      appOrWatchId = await request.app.locals.stores.watchStore.getIdFromSlug(slug);
-    }
-
-    const supportBundle = await request.app.locals.stores.troubleshootStore.getBlankSupportBundle(appOrWatchId);
-
-    const params = await Params.getParams();
-
-    let uploadUrl;
-    if (request.header("Bundle-Upload-Host")) {
-      uploadUrl = `${request.header("Bundle-Upload-Host")}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
-    } else if (inCluster === "true") {
-      uploadUrl = `${params.shipApiEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
-    } else {
-      uploadUrl = `${params.apiAdvertiseEndpoint}/api/v1/troubleshoot/${appOrWatchId}/${supportBundle.id}`;
-    }
-
-    let parsedSpec = jsYaml.load(collector);
-    if (isKotsSpec) {
-      // the injected collector has a different namespace in dev environment,
-      // so the order of these calls matters.
-      parsedSpec = await setKotsCollectorsNamespaces(parsedSpec);
-      parsedSpec = injectKotsCollectors(params, parsedSpec, licenseData);
-    }
-    parsedSpec.spec.afterCollection = [
-      {
-        "uploadResultsTo": {
-          "method": "PUT",
-          "uri": uploadUrl,
-        },
-      },
-    ];
-
-    response.send(200, parsedSpec);
-  }
-
   @Put("/:appId/:supportBundleId")
   public async bundleUpload(
     @Res() response: Response,
