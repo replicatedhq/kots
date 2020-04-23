@@ -749,6 +749,8 @@ github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDF
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kots v1.15.0-beta.1 h1:O7DbcMSvcAQP3+f9vvfCXyyOBgK7sRl6Bv2TrN/I/XU=
 github.com/replicatedhq/kots v1.15.0-beta.1/go.mod h1:VUHc86zPdn7QfV+IKcj7FyA1wUFrQYPHEeDI5oWj5x8=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423173525-31311c1ceb08 h1:/d/gEUGz90RYQaPx1981ZJlL5eEibe6/TD8vsrqQnqg=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423173525-31311c1ceb08/go.mod h1:VUHc86zPdn7QfV+IKcj7FyA1wUFrQYPHEeDI5oWj5x8=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
