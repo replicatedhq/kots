@@ -125,7 +125,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
                     <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
                   </div>
-                  <div className="flex-column flex1 action-content">
+                  <div className="flex-column flex1 action-content blue">
                     <Switch>
                       <Route exact path={insightsUrl} render={() =>
                         <AnalyzerInsights

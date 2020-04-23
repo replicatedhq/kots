@@ -226,10 +226,14 @@
 
 .action-content {
   margin-top: 12px;
-  background-color: #F5F8FC;
+  background-color: #ffffff;
   padding: 16px 14px;
   border-top: 1px solid #DFDFDF;
   border-radius: 0 0 4px 4px;
+
+  &.blue {
+    background-color: #F5F8FC;
+  }
 }
 
 .action-tab-bar .tab-item {
