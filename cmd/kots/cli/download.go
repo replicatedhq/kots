@@ -2,6 +2,7 @@ package cli
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/download"
@@ -39,21 +40,28 @@ func DownloadCmd() *cobra.Command {
 				Overwrite:             v.GetBool("overwrite"),
 			}
 
-			if err := download.Download(appSlug, ExpandDir(v.GetString("dest")), downloadOptions); err != nil {
+			downloadPath := filepath.Join(ExpandDir(v.GetString("dest")), appSlug)
+			if err := download.Download(appSlug, downloadPath, downloadOptions); err != nil {
 				return errors.Cause(err)
 			}
 
 			log := logger.NewLogger()
 			log.ActionWithoutSpinner("")
-			log.Info("The application manifests have been downloaded and saved in %s\n\nAfter editing these files, you can upload a new version using", ExpandDir(v.GetString("dest")))
-			log.Info("  kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, ExpandDir(v.GetString("dest")))
+			log.Info("The application manifests have been downloaded and saved in %s\n\nAfter editing these files, you can upload a new version using", downloadPath)
+			log.Info("  kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, downloadPath)
 			log.ActionWithoutSpinner("")
 
 			return nil
 		},
 	}
 
-	cmd.Flags().String("dest", homeDir(), "the directory to store the application in")
+	defaultDest := homeDir()
+	cwd, err := os.Getwd()
+	if err == nil {
+		defaultDest = cwd
+	}
+
+	cmd.Flags().String("dest", defaultDest, "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
 	cmd.Flags().String("slug", "", "the application slug to download")
 

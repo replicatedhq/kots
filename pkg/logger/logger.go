@@ -53,7 +53,7 @@ func (l *Logger) Finish() {
 }
 
 func (l *Logger) Debug(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
+	if l == nil || l.isSilent || !l.isVerbose {
 		return
 	}
 
@@ -63,7 +63,7 @@ func (l *Logger) Debug(msg string, args ...interface{}) {
 }
 
 func (l *Logger) Info(msg string, args ...interface{}) {
-	if l == nil || l.isSilent || !l.isVerbose {
+	if l == nil || l.isSilent {
 		return
 	}
 
