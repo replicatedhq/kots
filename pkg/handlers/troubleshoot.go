@@ -15,11 +15,14 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/redact"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/yaml/v3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
+
+func init() {
+	scheme.AddToScheme(scheme.Scheme)
+}
 
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -81,7 +84,6 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(existingSpec), nil, nil)
 	if err != nil {

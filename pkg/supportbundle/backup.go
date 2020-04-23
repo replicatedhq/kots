@@ -10,6 +10,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/redact"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
@@ -94,6 +95,14 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to write version file")
 	}
 
+	redacts := []*troubleshootv1beta1.Redact{}
+	globalRedact, err := redact.GetRedact()
+	if err == nil && globalRedact != nil {
+		redacts = globalRedact.Spec.Redactors
+	} else if err != nil {
+		return "", errors.Wrap(err, "failed to get global redactors")
+	}
+
 	// Run preflights collectors synchronously
 	for _, collector := range collectors {
 		if len(collector.RBACErrors) > 0 {
@@ -106,7 +115,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 		progressChan <- collector.GetDisplayName()
 
-		result, err := collector.RunCollectorSync()
+		result, err := collector.RunCollectorSync(redacts)
 		if err != nil {
 			progressChan <- fmt.Errorf("failed to run collector %q: %v", collector.GetDisplayName(), err)
 			continue
