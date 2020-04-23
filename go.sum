@@ -753,10 +753,6 @@ github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4l
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
 github.com/replicatedhq/troubleshoot v0.9.27/go.mod h1:g9GiMrUk+s9j2PbbaJ4vav8yAakCPg4c9GBSdVtUxyk=
-github.com/replicatedhq/troubleshoot v0.9.29-0.20200414221457-f06cd9e4a26e h1:rD94CzyTUIjyOjNTVeoQDZVetb02i2tSIZ/CAcdAwk4=
-github.com/replicatedhq/troubleshoot v0.9.29-0.20200414221457-f06cd9e4a26e/go.mod h1:1DLEO9EeR+OSTrvSUocmwg5YeH27N9ocXszPdZE716g=
-github.com/replicatedhq/troubleshoot v0.9.29-0.20200415220808-222a93162def h1:+HZ0MJzyioJHFrYo3jCsIIlLaV+bI0qaYF5/vkdi4Sc=
-github.com/replicatedhq/troubleshoot v0.9.29-0.20200415220808-222a93162def/go.mod h1:1DLEO9EeR+OSTrvSUocmwg5YeH27N9ocXszPdZE716g=
 github.com/replicatedhq/troubleshoot v0.9.29-0.20200415224716-5050f46b1efe h1:IQEJAsXVKsW0wIzVHy4GN99nSF98iMriTiPiQYCcEPg=
 github.com/replicatedhq/troubleshoot v0.9.29-0.20200415224716-5050f46b1efe/go.mod h1:YLrtvTJxqlvaqR/EsnfJ4IGNG2aWqV3yPSQ3WWEA/cU=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=

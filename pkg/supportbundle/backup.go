@@ -195,7 +195,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 			Name: backupName,
 		},
 		Spec: troubleshootv1beta1.AnalyzerSpec{
-			analyzers,
+			Analyzers: analyzers,
 		},
 	}
 	b, err := json.Marshal(analyzer)
