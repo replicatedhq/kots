@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +42,25 @@ func GetRedactSpec() (string, string, error) {
 	}
 
 	return encodedData, "", nil
+}
+
+func GetRedact() (*v1beta1.Redactor, error) {
+	spec, _, err := GetRedactSpec()
+	if err != nil {
+		return nil, err
+	}
+
+	scheme.AddToScheme(scheme.Scheme)
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(spec), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "make scheme deserializer")
+	}
+	redactor, ok := obj.(*v1beta1.Redactor)
+	if !ok {
+		return nil, nil
+	}
+	return redactor, nil
 }
 
 // SetRedactSpec sets the global redact spec to the specified string, and returns a pretty error string + the underlying error
