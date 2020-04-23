@@ -5,9 +5,9 @@ go 1.12
 require (
 	github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774 // indirect
 	github.com/Masterminds/semver v1.4.2
-	github.com/Masterminds/semver/v3 v3.0.2
+	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/Masterminds/sprig/v3 v3.0.1
+	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.25.18
@@ -46,7 +46,7 @@ require (
 	github.com/tj/go-spin v1.1.0
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
 	go.undefinedlabs.com/scopeagent v0.1.12
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
+	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.2
