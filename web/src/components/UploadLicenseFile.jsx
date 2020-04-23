@@ -71,9 +71,6 @@ class UploadLicenseFile extends React.Component {
     })
     .then(async (result) => {
       const body = await result.json();
-      console.log(body);
-
-      // TODO What is this?
       data = body;
     })
     .catch(err => {

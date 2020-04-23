@@ -90,9 +90,7 @@ func AutomateInstall() error {
 		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(licenseSecret.Name, &metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error(err)
-
 			// this is going to create a new app on each start now!
-
 			continue
 		}
 	}
