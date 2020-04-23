@@ -58,6 +58,7 @@ build:
         dockerfile: ./Dockerfile.skaffold
 
 deploy:
+  statusCheckDeadlineSeconds: 240
   kustomize:
     paths:
       - "./kustomize/overlays/dev"
