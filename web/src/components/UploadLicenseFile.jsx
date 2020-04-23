@@ -70,14 +70,14 @@ class UploadLicenseFile extends React.Component {
       }),
     })
     .then(async (result) => {
-      const body = await result.json();
-      data = body;
+      data = await result.json();
     })
     .catch(err => {
       this.setState({
         fileUploading: false,
         errorMessage: err,
       });
+      return;
     })
 
     let count = 0;
