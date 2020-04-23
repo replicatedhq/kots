@@ -104,7 +104,7 @@ class Snapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
@@ -248,7 +248,7 @@ class Snapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload)

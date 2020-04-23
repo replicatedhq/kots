@@ -1,0 +1,190 @@
+package online
+
+import (
+	"bufio"
+	"io"
+	"io/ioutil"
+	"os"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kotsadm/pkg/task"
+	"github.com/replicatedhq/kotsadm/pkg/version"
+	"go.uber.org/zap"
+)
+
+type PendingApp struct {
+	ID          string
+	Slug        string
+	Name        string
+	LicenseData string
+}
+
+func CreateAppFromOnline(pendingApp *PendingApp, licenseData string, upstreamURI string) (*kotsutil.KotsKinds, error) {
+	logger.Debug("creating app from online",
+		zap.String("upstreamURI", upstreamURI))
+
+	if err := task.SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
+		return nil, errors.Wrap(err, "failed to set task status")
+	}
+
+	finishedCh := make(chan struct{})
+	defer close(finishedCh)
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Second):
+				if err := task.UpdateTaskStatusTimestamp("online-install"); err != nil {
+					logger.Error(err)
+				}
+			case <-finishedCh:
+				return
+			}
+		}
+	}()
+
+	var finalError error
+	defer func() {
+		if finalError == nil {
+			if err := task.ClearTaskStatus("online-install"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to clear install task status"))
+			}
+			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
+			}
+		} else {
+			if err := task.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
+			}
+			if err := setAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
+				logger.Error(errors.Wrap(err, "faild to set app status to error"))
+			}
+		}
+	}()
+
+	db := persistence.MustGetPGSession()
+
+	pipeReader, pipeWriter := io.Pipe()
+	go func() {
+		scanner := bufio.NewScanner(pipeReader)
+		for scanner.Scan() {
+			if err := task.SetTaskStatus("online-install", scanner.Text(), "running"); err != nil {
+				logger.Error(err)
+			}
+		}
+		pipeReader.CloseWithError(scanner.Err())
+	}()
+
+	// put the license in a temp file
+	licenseFile, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tmp file for license")
+	}
+	defer os.RemoveAll(licenseFile.Name())
+	if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to write license tmp file")
+	}
+
+	// pull to a tmp dir
+	tmpRoot, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to create tmp dir for pull")
+	}
+	defer os.RemoveAll(tmpRoot)
+
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	pullOptions := pull.PullOptions{
+		Downstreams:         []string{"this-cluster"},
+		LicenseFile:         licenseFile.Name(),
+		Namespace:           appNamespace,
+		ExcludeKotsKinds:    true,
+		RootDir:             tmpRoot,
+		ExcludeAdminConsole: true,
+		CreateAppDir:        false,
+		ReportWriter:        pipeWriter,
+	}
+
+	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {
+		return nil, errors.Wrap(err, "failed to pull")
+	}
+
+	// Create the downstream
+	// copying this from typescript ...
+	// i'll leave this next line
+	// TODO: refactor this entire function to be testable, reliable and less monolithic
+	query := `select id, title from cluster`
+	rows, err := db.Query(query)
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to query clusters")
+	}
+	defer rows.Close()
+
+	clusterIDs := map[string]string{}
+	for rows.Next() {
+		clusterID := ""
+		name := ""
+		if err := rows.Scan(&clusterID, &name); err != nil {
+			finalError = err
+			return nil, errors.Wrap(err, "failed to scan row")
+		}
+
+		clusterIDs[clusterID] = name
+	}
+	for clusterID, name := range clusterIDs {
+		query = `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
+		_, err = db.Exec(query, pendingApp.ID, clusterID, name)
+		if err != nil {
+			finalError = err
+			return nil, errors.Wrap(err, "failed to create app downstream")
+		}
+	}
+
+	query = `update app set install_state = 'installed', is_airgap=true where id = $1`
+	_, err = db.Exec(query, pendingApp.ID)
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to update app to installed")
+	}
+
+	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Airgap Upload")
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to create new version")
+	}
+
+	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to create app version archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	return kotsKinds, nil
+}
+
+func setAppInstallState(appID string, status string) error {
+	db := persistence.MustGetPGSession()
+
+	query := `update app set install_state = $2 where id = $1`
+	_, err := db.Exec(query, appID, status)
+	if err != nil {
+		return errors.Wrap(err, "failed to update app install state")
+	}
+
+	return nil
+}

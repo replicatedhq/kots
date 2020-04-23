@@ -58,7 +58,7 @@ func GetPendingAirgapUploadApp() (*PendingApp, error) {
 // will also have a version
 func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, registryHost string, namespace string, username string, password string) error {
 	if err := task.SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
-		return errors.Wrap(err, "failed to set tasks status")
+		return errors.Wrap(err, "failed to set task status")
 	}
 
 	finishedCh := make(chan struct{})
@@ -276,7 +276,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	return nil
 }
 
-func setAppInstallState(appID, status string) error {
+func setAppInstallState(appID string, status string) error {
 	db := persistence.MustGetPGSession()
 
 	query := `update app set install_state = $2 where id = $1`

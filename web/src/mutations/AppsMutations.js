@@ -24,19 +24,6 @@ export const deleteKotsAppRaw = `
 
 export const deleteKotsApp = gql(deleteKotsAppRaw);
 
-export const uploadKotsLicenseRaw = `
-  mutation uploadKotsLicense($value: String!) {
-    uploadKotsLicense(value: $value) {
-      hasPreflight
-      slug
-      isAirgap
-      needsRegistry
-      isConfigurable
-    }
-  }
-`
-export const uploadKotsLicense = gql(uploadKotsLicenseRaw);
-
 export const deployKotsVersionRaw = `
   mutation deployKotsVersion($upstreamSlug: String!, $sequence: Int!, $clusterSlug: String!) {
     deployKotsVersion(upstreamSlug: $upstreamSlug, sequence: $sequence, clusterSlug: $clusterSlug)

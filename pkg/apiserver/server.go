@@ -26,6 +26,10 @@ func Start() {
 		log.Println("Failed to start informers", err)
 	}
 
+	// if err := automation.AutomateInstall(); err != nil {
+	// 	log.Println("Failed to run automated installs", err)
+	// }
+
 	u, err := url.Parse("http://kotsadm-api-node:3000")
 	if err != nil {
 		panic(err)
@@ -71,6 +75,10 @@ func Start() {
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
+
+	// Installation
+	r.Path("/api/v1/license").Methods("OPTIONS", "POST").HandlerFunc(handlers.UploadNewLicense)
+
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)

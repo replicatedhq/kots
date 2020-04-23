@@ -98,7 +98,7 @@ class AppConfig extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -262,7 +262,7 @@ class AppConfig extends Component {
             </div>
             :
             <div className="Modal-body">
-              {isNewVersion ? 
+              {isNewVersion ?
                 <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated. A new version is available on the version history page with these changes.
                 </p>

@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/license"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/online"
 	"github.com/replicatedhq/kotsadm/pkg/session"
 )
 
@@ -29,6 +34,20 @@ type EntitlementResponse struct {
 	Title string      `json:"title"`
 	Value interface{} `json:"value"`
 	Label string      `json:"label"`
+}
+
+type UploadLicenseRequest struct {
+	LicenseData string `json:"licenseData"`
+}
+
+type UploadLicenseResponse struct {
+	Success        bool   `json:"success"`
+	Error          string `json:"error,omitempty"`
+	HasPreflight   bool   `json:"hasPreflight"`
+	Slug           string `json:"slug"`
+	IsAirgap       bool   `json:"isAirgap"`
+	NeedsRegistry  bool   `json:"needsRegistry"`
+	IsConfigurable bool   `json:"isConfigurable"`
 }
 
 func SyncLicense(w http.ResponseWriter, r *http.Request) {
@@ -108,4 +127,94 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, syncLicenseResponse)
+}
+
+func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	uploadLicenseRequest := UploadLicenseRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	// validate the license
+	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(uploadLicenseRequest.LicenseData))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	uploadLicenseResponse := UploadLicenseResponse{
+		Success: false,
+	}
+
+	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	if err != nil {
+		uploadLicenseResponse.Error = "License signature is not valid"
+		JSON(w, 200, uploadLicenseResponse)
+		return
+	}
+
+	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
+
+	a, err := app.Create(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
+	if !verifiedLicense.Spec.IsAirgapSupported {
+		// complete the install online
+		pendingApp := online.PendingApp{
+			ID:          a.ID,
+			Slug:        a.Slug,
+			Name:        a.Name,
+			LicenseData: uploadLicenseRequest.LicenseData,
+		}
+		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, uploadLicenseRequest.LicenseData, upstreamURI)
+		if err != nil {
+			logger.Error(err)
+			uploadLicenseResponse.Error = err.Error()
+			JSON(w, 500, uploadLicenseResponse)
+			return
+		}
+
+		uploadLicenseResponse.IsAirgap = false
+		uploadLicenseResponse.HasPreflight = kotsKinds.Preflight != nil
+		uploadLicenseResponse.Success = true
+		uploadLicenseResponse.Slug = a.Slug
+		uploadLicenseResponse.NeedsRegistry = false
+		uploadLicenseResponse.IsConfigurable = kotsKinds.Config != nil
+
+		JSON(w, 200, uploadLicenseResponse)
+		return
+	}
+	uploadLicenseResponse.Success = true
+
+	JSON(w, 200, uploadLicenseResponse)
 }

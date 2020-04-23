@@ -2,11 +2,15 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 )
 
@@ -61,6 +65,69 @@ func GetFromSlug(slug string) (*App, error) {
 
 	if err := row.Scan(&id); err != nil {
 		return nil, errors.Wrap(err, "failed to scan id")
+	}
+
+	return Get(id)
+}
+
+func Create(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*App, error) {
+	logger.Debug("creating app",
+		zap.String("name", name),
+		zap.String("upstreamURI", upstreamURI))
+
+	db := persistence.MustGetPGSession()
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to begin transaction")
+	}
+	defer tx.Rollback()
+
+	titleForSlug := strings.Replace(name, ".", "-", 0)
+	slugProposal := slug.Make(titleForSlug)
+
+	foundUniqueSlug := false
+	i := 0
+	for !foundUniqueSlug {
+		if i > 0 {
+			slugProposal = fmt.Sprintf("%s-%d", titleForSlug, i)
+		}
+
+		query := `select count(1) as count from app where slug = $1`
+		row := tx.QueryRow(query, slugProposal)
+		exists := 0
+		if err := row.Scan(&exists); err != nil {
+			return nil, errors.Wrap(err, "failed to scan existing slug")
+		}
+
+		if exists == 0 {
+			foundUniqueSlug = true
+		} else {
+			i++
+		}
+	}
+
+	installState := ""
+	if strings.HasPrefix(upstreamURI, "replicated://") == false {
+		installState = "installed"
+	} else {
+		if isAirgapEnabled {
+			installState = "airgap_upload_pending"
+		} else {
+			installState = "online_upload_pending"
+		}
+	}
+
+	id := ksuid.New().String()
+
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	_, err = tx.Exec(query, id, name, "", time.Now(), slugProposal, upstreamURI, licenseData, true, installState)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to insert app")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "failerd to commit transaction")
 	}
 
 	return Get(id)

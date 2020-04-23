@@ -14,6 +14,7 @@ require (
 	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
+	github.com/gosimple/slug v1.9.0
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect

@@ -46,7 +46,7 @@ export class ClusterNodes extends Component {
 
     fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-worker`, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
@@ -68,7 +68,7 @@ export class ClusterNodes extends Component {
 
     fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-master`, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
@@ -92,7 +92,7 @@ export class ClusterNodes extends Component {
       await this.generateWorkerAddNodeCommand();
     });
   }
-  
+
   onSelectNodeType = event => {
     const value = event.currentTarget.value;
     this.setState({
@@ -165,7 +165,7 @@ export class ClusterNodes extends Component {
                           checked={this.state.selectedNodeType === "master"}
                           onChange={this.onSelectNodeType}
                         />
-                        <label 
+                        <label
                           htmlFor="masterNode"
                           className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                           <div className="flex-auto">
@@ -198,14 +198,14 @@ export class ClusterNodes extends Component {
                             <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
                           </div>
                         </label>
-                      </div>  
+                      </div>
                     </div>
                     {this.state.generating && (
                       <div className="flex u-width--full justifyContent--center">
                         <Loader size={60} />
                       </div>
                     )}
-                    {!this.state.generating && this.state.command.length > 0 
+                    {!this.state.generating && this.state.command.length > 0
                       ? (
                         <Fragment>
                           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">

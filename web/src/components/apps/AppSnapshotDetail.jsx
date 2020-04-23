@@ -168,7 +168,7 @@ class AppSnapshotDetail extends Component {
       const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
       fetch(url, {
         headers: {
-          "Authorization": `${Utilities.getToken()}`
+          "Authorization": Utilities.getToken()
         },
         method: "GET",
       })

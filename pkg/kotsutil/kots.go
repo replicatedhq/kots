@@ -265,8 +265,12 @@ func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
 
+	return LoadLicenseFromBytes(licenseData)
+}
+
+func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(licenseData), nil, nil)
+	obj, gvk, err := decode([]byte(data), nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode license data")
 	}
