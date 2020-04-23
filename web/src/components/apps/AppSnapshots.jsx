@@ -81,7 +81,6 @@ class AppSnapshots extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           restoreInProgressErr: true,
           restoreInProgressMsg: err
@@ -113,7 +112,6 @@ class AppSnapshots extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           snapshotsListErr: true,
           snapshotsListErrMsg: err
@@ -145,7 +143,6 @@ class AppSnapshots extends Component {
         })
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
@@ -248,7 +245,6 @@ class AppSnapshots extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           restoringSnapshot: false,
           restoreErr: true,
@@ -280,7 +276,7 @@ class AppSnapshots extends Component {
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
       isStartButtonClicked: true,
-      snapshots: [...this.state.snapshots, fakeProgressSnapshot]
+      snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
     });
 
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
@@ -305,7 +301,6 @@ class AppSnapshots extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           startingSnapshot: false,
           startSnapshotErr: true,
@@ -371,7 +366,7 @@ class AppSnapshots extends Component {
           <span className="icon redWarningIcon" />
           <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg}</p>
           <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-            To troubleshoot create <Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">a support bundle</Link>
+            To troubleshoot<Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">create a support bundle</Link>
           </p>
         </div>
       )
