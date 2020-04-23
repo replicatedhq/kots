@@ -99,10 +99,7 @@ func (c *Kubectl) Preflight(preflightURI string, ignorePermissions bool) error {
 func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]byte, []byte, error) {
 	args := []string{
 		"delete",
-	}
-
-	if wait {
-		args = append(args, "--wait")
+		fmt.Sprintf("--wait=%t", wait),
 	}
 
 	if targetNamespace != "" {
