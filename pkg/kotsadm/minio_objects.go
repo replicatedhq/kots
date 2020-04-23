@@ -43,34 +43,10 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	}
 
 	var securityContext corev1.PodSecurityContext
-	var initContainers []corev1.Container
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(1001),
 			FSGroup:   util.IntPointer(1001),
-		}
-
-		initContainers = []corev1.Container{
-			{
-				Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Name:            "kotsadm-minio-init",
-				Command: []string{
-					"/bin/sh",
-					"-ce",
-					"chown -R minio:minio /export && chown -R minio:minio /home/minio/.minio",
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "kotsadm-minio",
-						MountPath: "/export",
-					},
-					{
-						Name:      "minio-config-dir",
-						MountPath: "/home/minio/.minio/",
-					},
-				},
-			},
 		}
 	}
 
@@ -224,7 +200,6 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 							},
 						},
 					},
-					InitContainers: initContainers,
 				},
 			},
 		},
