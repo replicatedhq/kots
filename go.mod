@@ -7,16 +7,13 @@ require (
 	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
-	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
 	github.com/go-logr/zapr v0.1.1 // indirect
-	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-sigs/application v0.8.1 // indirect
 	github.com/lib/pq v1.3.0
@@ -25,8 +22,8 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots v1.15.0-beta.2
 	github.com/replicatedhq/troubleshoot v0.9.30
-	github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423202800-d2ec7fee11ea
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
@@ -40,7 +37,7 @@ require (
 	go.uber.org/multierr v1.5.0 // indirect
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
+	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
@@ -49,12 +46,9 @@ require (
 	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/cluster-bootstrap v0.17.3
-	k8s.io/gengo v0.0.0-20200114144118-36b2048a9120 // indirect
 	k8s.io/kubernetes v1.17.3
-	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.7 // indirect
 	sigs.k8s.io/application v0.8.1
 	sigs.k8s.io/controller-runtime v0.4.0
-	sigs.k8s.io/structured-merge-diff/v3 v3.0.0 // indirect
 )
 
 replace (
