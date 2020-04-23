@@ -49,12 +49,15 @@ func GetRedact() (*v1beta1.Redactor, error) {
 	if err != nil {
 		return nil, err
 	}
+	if spec == "" {
+		return nil, nil
+	}
 
 	scheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(spec), nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "make scheme deserializer")
+		return nil, errors.Wrap(err, "deserialize redact spec")
 	}
 	redactor, ok := obj.(*v1beta1.Redactor)
 	if !ok {
