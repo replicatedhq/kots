@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -63,6 +65,32 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 
 	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	// encrypt any plain text values
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := kotsKinds.EncryptConfigValues(); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

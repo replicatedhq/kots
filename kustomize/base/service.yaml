@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: kotsadm-api
   labels:
-    app: kotsadm-api
+    app: kotsadm
 spec:
   type: ClusterIP
   ports:
@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: http
   selector:
-    app: kotsadm-api
+    app: kotsadm

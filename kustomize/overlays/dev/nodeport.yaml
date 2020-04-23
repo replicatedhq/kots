@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: kotsadm-api-lb
   labels:
-    app: kotsadm-api
+    app: kotsadm
 spec:
   type: NodePort
   ports:
@@ -12,4 +12,4 @@ spec:
     targetPort: http
     nodePort: 30065
   selector:
-    app: kotsadm-api
+    app: kotsadm

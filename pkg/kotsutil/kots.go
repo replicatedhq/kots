@@ -2,6 +2,7 @@ package kotsutil
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -44,6 +46,98 @@ type KotsKinds struct {
 	License      *kotsv1beta1.License
 
 	Backup *velerov1.Backup
+}
+
+func (k *KotsKinds) EncryptConfigValues() error {
+	if k.ConfigValues == nil || k.Config == nil {
+		return nil
+	}
+
+	cipher, err := crypto.AESCipherFromString(k.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cipher from installation spec")
+	}
+
+	updated := map[string]kotsv1beta1.ConfigValue{}
+
+	for name, configValue := range k.ConfigValues.Spec.Values {
+		updated[name] = configValue
+
+		if configValue.ValuePlaintext != "" {
+			// ensure it's a password type
+			configItemType := ""
+
+			for _, group := range k.Config.Spec.Groups {
+				for _, item := range group.Items {
+					if item.Name == name {
+						configItemType = item.Type
+						goto Found
+					}
+				}
+			}
+		Found:
+
+			if configItemType == "" {
+				return errors.Errorf("Cannot encrypt item %q because item type was not found", name)
+			}
+			if configItemType != "password" {
+				return errors.Errorf("Cannot encrypt item %q because item type was %q (not password)", name, configItemType)
+			}
+
+			encrypted := cipher.Encrypt([]byte(configValue.ValuePlaintext))
+			encoded := base64.StdEncoding.EncodeToString(encrypted)
+
+			configValue.Value = encoded
+			configValue.ValuePlaintext = ""
+
+			updated[name] = configValue
+		}
+	}
+
+	k.ConfigValues.Spec.Values = updated
+
+	return nil
+}
+
+func (k *KotsKinds) DecryptConfigValues() error {
+	if k.ConfigValues == nil {
+		return nil
+	}
+
+	cipher, err := crypto.AESCipherFromString(k.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cipher from installation spec")
+	}
+
+	updated := map[string]kotsv1beta1.ConfigValue{}
+
+	for name, configValue := range k.ConfigValues.Spec.Values {
+		// config values doesn't know the type..
+		// we could look it up in the config
+		// or we can just try to decode and decrypt it
+
+		updated[name] = configValue // will be overwritten if we decrypt anything
+
+		if configValue.Value != "" {
+			decoded, err := base64.StdEncoding.DecodeString(configValue.Value)
+			if err != nil {
+				continue
+			}
+			decrypted, err := cipher.Decrypt(decoded)
+			if err != nil {
+				continue
+			}
+
+			configValue.Value = ""
+			configValue.ValuePlaintext = string(decrypted)
+
+			updated[name] = configValue
+		}
+	}
+
+	k.ConfigValues.Spec.Values = updated
+
+	return nil
 }
 
 // KustomizeVersion will return the kustomize version to use for this application

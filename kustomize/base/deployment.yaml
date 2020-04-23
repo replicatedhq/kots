@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kotsadm-api
+  name: kotsadm
 spec:
   selector:
     matchLabels:
-      app: kotsadm-api
+      app: kotsadm
   template:
     metadata:
       labels:
-        app: kotsadm-api
+        app: kotsadm
     spec:
       restartPolicy: Always
       containers:
