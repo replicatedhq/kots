@@ -20,6 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
+func init() {
+	scheme.AddToScheme(scheme.Scheme)
+}
+
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -80,7 +84,6 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(existingSpec), nil, nil)
 	if err != nil {

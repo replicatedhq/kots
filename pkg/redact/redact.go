@@ -13,6 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+func init() {
+	scheme.AddToScheme(scheme.Scheme)
+}
+
 // GetRedactSpec returns the redaction yaml spec, a pretty error string, and the underlying error
 func GetRedactSpec() (string, string, error) {
 	cfg, err := config.GetConfig()
@@ -53,7 +57,6 @@ func GetRedact() (*v1beta1.Redactor, error) {
 		return nil, nil
 	}
 
-	scheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(spec), nil, nil)
 	if err != nil {
