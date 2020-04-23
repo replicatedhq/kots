@@ -58,7 +58,7 @@ class AirgapRegistrySettings extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

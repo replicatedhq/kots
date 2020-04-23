@@ -32,7 +32,7 @@ class DownstreamWatchVersionDiff extends React.Component {
     const url = `${window.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     fetch(url, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`
+        "Authorization": Utilities.getToken()
       },
       method: "GET",
     })

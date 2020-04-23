@@ -41,7 +41,6 @@ const GoBool = "bool";
 function kots() {
   return ffi.Library("/lib/kots.so", {
     TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    PullFromLicense: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateCheck: ["void", [GoString, GoString, GoString]],
     UpdateDownload: ["void", [GoString, GoString, GoString, GoString, GoString]],
     UpdateDownloadFromAirgap: ["void", [GoString, GoString, GoString, GoString, GoString]],

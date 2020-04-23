@@ -1,11 +1,10 @@
 import * as React from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
-import { uploadKotsLicense } from "../mutations/AppsMutations";
 import { getFileContent, Utilities } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
@@ -38,16 +37,9 @@ class UploadLicenseFile extends React.Component {
     const { onUploadSuccess, history } = this.props;
     const { licenseFile, licenseFileContent } = this.state;
 
-    this.setState({
-      fileUploading: true,
-      errorMessage: "",
-    });
-
     let licenseText;
     if (licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli") {
       try {
-        // NOTE: this exchange is weird on the frontend but I don't wanna port
-        // all the uploadKotsLicense typescript code to go
         const base64String = btoa(String.fromCharCode.apply(null, new Uint8Array(licenseFileContent)));
         licenseText = await this.exchangeRliFileForLicense(base64String);
       } catch(err) {
@@ -61,16 +53,33 @@ class UploadLicenseFile extends React.Component {
       licenseText = (new TextDecoder("utf-8")).decode(licenseFileContent);
     }
 
+    this.setState({
+      fileUploading: true,
+      errorMessage: "",
+    });
+
     let data;
-    this.props.uploadKotsLicense(licenseText)
-      .then((resp) => {
-        data = resp.data.uploadKotsLicense;
-      })
-      .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ fileUploading: false, errorMessage: msg });
-        });
+    fetch(`${window.env.API_ENDPOINT}/license`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        licenseData: licenseText,
+      }),
+    })
+    .then(async (result) => {
+      data = await result.json();
+    })
+    .catch(err => {
+      this.setState({
+        fileUploading: false,
+        errorMessage: err,
       });
+      return;
+    })
+
     let count = 0;
     const interval = setInterval(() => {
       if (this.state.errorMessage.length) {
@@ -179,7 +188,7 @@ class UploadLicenseFile extends React.Component {
     } = this.props;
     const { licenseFile, fileUploading, errorMessage, viewErrorMessage } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
-    
+
     let logoUri;
     let applicationName;
     if (appsListLength && appsListLength > 1) {
@@ -204,7 +213,7 @@ class UploadLicenseFile extends React.Component {
               : <span style={{ width: "60px", height: "60px" }} />
               }
             </div>
-            {!fileUploading ? 
+            {!fileUploading ?
               <div className="flex-column">
                 <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center">Upload your license file</p>
                 <div className="u-marginTop--30 flex">
@@ -292,10 +301,4 @@ class UploadLicenseFile extends React.Component {
 
 export default compose(
   withRouter,
-  withApollo,
-  graphql(uploadKotsLicense, {
-    props: ({ mutate }) => ({
-      uploadKotsLicense: (value) => mutate({ variables: { value } })
-    })
-  }),
 )(UploadLicenseFile);

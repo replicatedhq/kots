@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kotsadm/pkg/informers"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -24,6 +25,10 @@ func Start() {
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)
+	}
+
+	if err := automation.AutomateInstall(); err != nil {
+		log.Println("Failed to run automated installs", err)
 	}
 
 	u, err := url.Parse("http://kotsadm-api-node:3000")
@@ -72,6 +77,11 @@ func Start() {
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
+
+	// Installation
+	r.Path("/api/v1/license").Methods("OPTIONS", "POST").HandlerFunc(handlers.UploadNewLicense)
+	r.Path("/api/v1/license/resume").Methods("OPTIONS", "PUT").HandlerFunc(handlers.ResumeInstallOnline)
+
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)

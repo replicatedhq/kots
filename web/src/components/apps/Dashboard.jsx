@@ -143,7 +143,7 @@ class Dashboard extends Component {
 
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
       method: "POST",
@@ -403,7 +403,7 @@ class Dashboard extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
       method: "POST",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })

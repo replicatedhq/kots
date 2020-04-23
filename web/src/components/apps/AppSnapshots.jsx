@@ -62,7 +62,7 @@ class AppSnapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore/status`, {
       method: "GET",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
@@ -94,7 +94,7 @@ class AppSnapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
       method: "GET",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
@@ -131,7 +131,7 @@ class AppSnapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
@@ -224,7 +224,7 @@ class AppSnapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
       method: "POST",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
@@ -286,7 +286,7 @@ class AppSnapshots extends Component {
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
       method: "POST",
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
