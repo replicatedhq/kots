@@ -69,30 +69,6 @@ spec:
         volumeMounts:
           - mountPath: /data
             name: miniodata  # this is where the data is stored
-      initContainers:
-      - command:
-        - chown
-        args:
-        - "-R"
-        - "1001:1001"
-        - /data
-        image: kotsadm/minio:alpha
-        imagePullPolicy: Always
-        name: minio-chown
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-        volumeMounts:
-        - mountPath: /data
-          name: miniodata  # this is where the data is stored
-      volumes:
-      - name: miniodata
-        persistentVolumeClaim:
-          claimName: miniodata
-      - name: minio-user
-        secret:
-          secretName: minio
 
   volumeClaimTemplates:
   - metadata:
