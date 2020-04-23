@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kotsadm/pkg/informers"
 	"github.com/replicatedhq/kotsadm/pkg/version"
@@ -26,9 +27,9 @@ func Start() {
 		log.Println("Failed to start informers", err)
 	}
 
-	// if err := automation.AutomateInstall(); err != nil {
-	// 	log.Println("Failed to run automated installs", err)
-	// }
+	if err := automation.AutomateInstall(); err != nil {
+		log.Println("Failed to run automated installs", err)
+	}
 
 	u, err := url.Parse("http://kotsadm-api-node:3000")
 	if err != nil {
