@@ -67,17 +67,28 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	if updateRedactRequest.RedactSpec != "" {
 		setSpec = updateRedactRequest.RedactSpec
 	} else if updateRedactRequest.RedactSpecURL != "" {
-		resp, err := http.Get(updateRedactRequest.RedactSpecURL)
+		req, err := http.NewRequest("GET", updateRedactRequest.RedactSpecURL, nil)
+		if err != nil {
+			logger.Error(err)
+			updateRedactResponse.Error = "failed to create request to get spec from url"
+			JSON(w, 500, updateRedactResponse)
+			return
+		}
+
+		req.Header.Set("User-Agent", "replicatedhq/kotsadm")
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			logger.Error(err)
 			updateRedactResponse.Error = "failed to get spec from url"
 			JSON(w, 500, updateRedactResponse)
 			return
 		}
+		defer resp.Body.Close()
+
 		respBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			logger.Error(err)
-			updateRedactResponse.Error = "failed to read spec from url"
+			updateRedactResponse.Error = "failed to read spec response from url"
 			JSON(w, 500, updateRedactResponse)
 			return
 		}
