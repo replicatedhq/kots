@@ -12,13 +12,12 @@ import (
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -78,39 +77,19 @@ func InstallCmd() *cobra.Command {
 			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
 			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
 
-			pullOptions := pull.PullOptions{
-				HelmRepoURI: v.GetString("repo"),
-				RootDir:     rootDir,
-				Namespace:   namespace,
-				Downstreams: []string{
-					"this-cluster", // this is the auto-generated operator downstream
-				},
-				LocalPath:           ExpandDir(v.GetString("local-path")),
-				LicenseFile:         ExpandDir(v.GetString("license-file")),
-				ExcludeAdminConsole: true,
-				ExcludeKotsKinds:    true,
-				HelmOptions:         v.GetStringSlice("set"),
-				RewriteImages:       v.GetBool("rewrite-images"),
-				RewriteImageOptions: pull.RewriteImageOptions{
-					Host:      v.GetString("registry-endpoint"),
-					Namespace: v.GetString("image-namespace"),
-				},
-			}
-
-			canPull, err := pull.CanPullUpstream(upstream, pullOptions)
-			if err != nil {
-				return errors.Wrap(err, "failed to check upstream")
-			}
-
-			if canPull {
-				if _, err := pull.Pull(upstream, pullOptions); err != nil {
-					return errors.Wrap(err, "failed to pull app")
-				}
-			}
-
 			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 			if err != nil {
 				return errors.Wrap(err, "failed to pull app metadata")
+			}
+
+			var license *kotsv1beta1.License
+			if v.GetString("license-file") != "" {
+				parsedLicense, err := pull.ParseLicenseFromFile(ExpandDir(v.GetString("license-file")))
+				if err != nil {
+					return errors.Wrap(err, "failed to parse license file")
+				}
+
+				license = parsedLicense
 			}
 
 			deployOptions := kotsadmtypes.DeployOptions{
@@ -124,59 +103,12 @@ func InstallCmd() *cobra.Command {
 				NodePort:              v.GetInt32("node-port"),
 				Hostname:              v.GetString("hostname"),
 				ApplicationMetadata:   applicationMetadata,
+				License:               license,
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				return errors.Wrap(err, "failed to deploy")
-			}
-
-			// upload the kots app to kotsadm
-			uploadOptions := upload.UploadOptions{
-				Namespace:             namespace,
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				NewAppName:            v.GetString("name"),
-				UpstreamURI:           upstream,
-				Endpoint:              "http://localhost:3000",
-				RegistryOptions: registry.RegistryOptions{
-					Endpoint:  v.GetString("registry-endpoint"),
-					Namespace: v.GetString("image-namespace"),
-				},
-			}
-
-			if v.GetString("registry-endpoint") != "" {
-				registryUser, registryPass, err := registry.LoadAuthForRegistry(v.GetString("registry-endpoint"))
-				if err != nil {
-					return errors.Wrap(err, "failed to load registry auth info")
-				}
-				uploadOptions.RegistryOptions.Username = registryUser
-				uploadOptions.RegistryOptions.Password = registryPass
-			}
-
-			if canPull {
-				stopCh := make(chan struct{})
-				defer close(stopCh)
-
-				localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, kubernetesConfigFlags, stopCh, log)
-				if err != nil {
-					return err
-				}
-
-				uploadOptions.Endpoint = fmt.Sprintf("http://localhost:%d", localPort)
-				go func() {
-					select {
-					case err := <-errChan:
-						if err != nil {
-							log.Error(err)
-							os.Exit(-1)
-						}
-					case <-stopCh:
-					}
-				}()
-
-				if err := upload.Upload(rootDir, uploadOptions); err != nil {
-					return err
-				}
 			}
 
 			// port forward
