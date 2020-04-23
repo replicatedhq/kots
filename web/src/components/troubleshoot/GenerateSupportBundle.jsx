@@ -293,7 +293,6 @@ class GenerateSupportBundle extends React.Component {
                 mode="yaml"
                 theme="chrome"
                 className="flex1 flex"
-                readOnly={true}
                 value={customRedactorSpec}
                 height="380px"
                 width="100%"
