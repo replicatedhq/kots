@@ -1,13 +1,3 @@
-const KotsAppUpload = `
-  type KotsAppUpload {
-    hasPreflight: Boolean
-    isAirgap: Boolean
-    needsRegistry: Boolean
-    slug: String
-    isConfigurable: Boolean
-  }
-`;
-
 const KotsApp = `
   type KotsApp {
     id: String
@@ -265,7 +255,6 @@ type KotsAppDashboard {
 `;
 
 export default [
-  KotsAppUpload,
   KotsApp,
   KotsAppLink,
   KotsDownstream,

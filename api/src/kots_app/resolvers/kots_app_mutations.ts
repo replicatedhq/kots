@@ -125,14 +125,11 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
-    // tslint:disable-next-line cyclomatic-complexity
-    // async uploadKotsLicense(root: any, args: any, context: Context) {
-    //   const { value } = args;
-    //   const parsedLicense = yaml.safeLoad(value);
-
+    // async resumeInstallOnline(root: any, args: any, context: Context) {
     //   try {
-    //     context.requireSingleTenantSession();
-
+    //     const { slug } = args;
+    //     const appId = await stores.kotsAppStore.getIdFromSlug(slug);
+    //     const app = await context.getApp(appId);
     //     const clusters = await stores.clusterStore.listAllUsersClusters();
     //     let downstream;
     //     for (const cluster of clusters) {
@@ -140,67 +137,15 @@ export function KotsMutations(stores: Stores) {
     //         downstream = cluster;
     //       }
     //     }
-    //     const name = parsedLicense.spec.appSlug.replace("-", " ");
-    //     let kotsApp = await stores.kotsAppStore.kotsAppFromLicenseData(value, name);
 
-    //     if (!parsedLicense.spec.isAirgapSupported) {
-    //       await createKotsApp(stores, kotsApp, downstream.title);
+    //     await createKotsApp(stores, app, downstream.title);
+    //     await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
 
-    //       // If airgap is supported and we choose to install the kots app online,
-    //       // this will be set in resumeInstallOnline.
-    //       await stores.kotsAppStore.setKotsAppInstallState(kotsApp.id, "installed");
-    //     }
-
-    //     kotsApp = await stores.kotsAppStore.getApp(kotsApp.id);
-
-    //     // Carefully now, peek at registry credentials to see if we need to prompt for them
-    //     let needsRegistry = true;
-    //     try {
-    //       const kc = new k8s.KubeConfig();
-    //       kc.loadFromDefault();
-    //       const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-    //       const res = await k8sApi.readNamespacedSecret("registry-creds", "default");
-    //       if (res && res.body && res.body.data && res.body.data[".dockerconfigjson"]) {
-    //         needsRegistry = false;
-    //       }
-
-    //     } catch {
-    //       // no need to handle, rbac problem or not a path we can read registry
-    //     }
-
-    //     return {
-    //       hasPreflight: kotsApp.hasPreflight,
-    //       isAirgap: !!parsedLicense.spec.isAirgapSupported,
-    //       needsRegistry,
-    //       slug: kotsApp.slug,
-    //       isConfigurable: kotsApp.isConfigurable
-    //     };
+    //     return await stores.kotsAppStore.getApp(app.id);
     //   } catch (err) {
     //     throw new ReplicatedError(err.message);
     //   }
     // },
-
-    async resumeInstallOnline(root: any, args: any, context: Context) {
-      try {
-        const { slug } = args;
-        const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-        const app = await context.getApp(appId);
-        const clusters = await stores.clusterStore.listAllUsersClusters();
-        let downstream;
-        for (const cluster of clusters) {
-          if (cluster.title === "this-cluster") {
-            downstream = cluster;
-          }
-        }
-
-        await createKotsApp(stores, app, downstream.title);
-        await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-
-        return await stores.kotsAppStore.getApp(app.id);
-      } catch (err) {
-        throw new ReplicatedError(err.message);
-      }
-    },
 
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterSlug } = args;

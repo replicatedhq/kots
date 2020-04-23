@@ -8,7 +8,6 @@ import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
-import { resumeInstallOnline } from "../mutations/AppsMutations";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
@@ -216,23 +215,36 @@ class UploadAirgapBundle extends React.Component {
 
   handleOnlineInstall = async () => {
     const { slug } = this.props.match.params;
+
     this.setState({
       preparingOnlineInstall: true,
       onlineInstallErrorMessage: ""
     });
+
     let app;
-    this.props.resumeInstallOnline(slug)
-    .then((resp) => {
-      app = resp.data?.resumeInstallOnline;
+    fetch(`${window.env.API_ENDPOINT}/license/resume`, {
+      method: "PUT",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        slug,
+      }),
     })
-    .catch((err) => {
-      err.graphQLErrors.map(({ msg }) => {
-        this.setState({
-          preparingOnlineInstall: false,
-          onlineInstallErrorMessage: msg
-        });
+    .then(async (result) => {
+      const body = await result.json();
+      console.log(body);
+
+      app = body;
+    })
+    .catch(err => {
+      this.setState({
+        fileUploading: false,
+        errorMessage: err,
       });
-    });
+    })
+
     let count = 0;
     const interval = setInterval(() => {
       if (this.state.onlineInstallErrorMessage.length) {
@@ -545,9 +557,4 @@ class UploadAirgapBundle extends React.Component {
 export default compose(
   withRouter,
   withApollo,
-  graphql(resumeInstallOnline, {
-    props: ({ mutate }) => ({
-      resumeInstallOnline: (slug) => mutate({ variables: { slug } })
-    })
-  })
 )(UploadAirgapBundle);

@@ -24,6 +24,11 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/task"
 	"github.com/replicatedhq/kotsadm/pkg/version"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func GetRegistrySettingsForApp(appID string) (*types.RegistrySettings, error) {
@@ -215,4 +220,35 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	return nil
+}
+
+func HasKurlRegistry() (bool, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create clientset")
+	}
+
+	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get("registry-creds", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		// this is not an error, it could be rbac
+		// don't even log it, normal operations
+		return false, nil
+	}
+
+	if registryCredsSecret != nil {
+		if registryCredsSecret.Type == corev1.SecretTypeDockercfg {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

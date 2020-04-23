@@ -40,19 +40,6 @@ export const updateRegistryDetailsRaw = `
 
 export const updateRegistryDetails = gql(updateRegistryDetailsRaw);
 
-
-export const resumeInstallOnlineRaw = `
-  mutation resumeInstallOnline($slug: String!) {
-    resumeInstallOnline(slug: $slug) {
-      hasPreflight
-      slug
-      isConfigurable
-    }
-  }
-`;
-
-export const resumeInstallOnline = gql(resumeInstallOnlineRaw);
-
 export const updateDownstreamsStatus = gql`
   mutation updateDownstreamsStatus($slug: String!, $sequence: Int!, $status: String!) {
     updateDownstreamsStatus(slug: $slug, sequence: $sequence, status: $status)

@@ -1503,27 +1503,6 @@ order by adv.sequence desc`;
     return result.rows[0].id;
   }
 
-  async kotsAppFromLicenseData(licenseData: string, name: string): Promise<KotsApp> {
-    const parsedLicense = yaml.safeLoad(licenseData);
-    if (parsedLicense.apiVersion === "kots.io/v1beta1" && parsedLicense.kind === "License") {
-      if (parsedLicense.spec.isAirgapSupported) {
-        try {
-          const kotsApp = await this.getPendingKotsAirgapApp();
-          await this.updateKotsAppLicense(kotsApp.id, licenseData);
-          return kotsApp;
-        } catch (e) {
-          console.log("no pending airgap install found, creating a new app");
-        }
-  
-        return await this.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, true);
-      }
-  
-      return await this.createKotsApp(name, `replicated://${parsedLicense.spec.appSlug}`, licenseData, false);
-    } else {
-      throw new ReplicatedError("Uploaded license file is invalid")
-    }
-  }
-
   async createKotsApp(name: string, upstreamURI: string, license: string, airgapEnabled: boolean, userId?: string): Promise<KotsApp> {
     if (!name) {
       throw new Error("missing name");
@@ -1737,7 +1716,7 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
   async getOnlineInstallStatus(): Promise<{ installStatus: string, currentMessage: string }> {
     const q = `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`;
     const result = await this.pool.query(q);
-    
+
     if (result.rows.length !== 1) {
       return {
         installStatus: "not_installed",

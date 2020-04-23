@@ -24,7 +24,7 @@ type PendingApp struct {
 	LicenseData string
 }
 
-func CreateAppFromOnline(pendingApp *PendingApp, licenseData string, upstreamURI string) (*kotsutil.KotsKinds, error) {
+func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.KotsKinds, error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 
@@ -85,7 +85,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, licenseData string, upstreamURI
 		return nil, errors.Wrap(err, "failed to create tmp file for license")
 	}
 	defer os.RemoveAll(licenseFile.Name())
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(licenseData), 0644); err != nil {
+	if err := ioutil.WriteFile(licenseFile.Name(), []byte(pendingApp.LicenseData), 0644); err != nil {
 		finalError = err
 		return nil, errors.Wrap(err, "failed to write license tmp file")
 	}

@@ -70,6 +70,23 @@ func GetFromSlug(slug string) (*App, error) {
 	return Get(id)
 }
 
+func GetLicenseDataFromDatabase(id string) (string, error) {
+	logger.Debug("getting app license from database",
+		zap.String("id", id))
+
+	db := persistence.MustGetPGSession()
+	query := `select license from app where id = $1`
+	row := db.QueryRow(query, id)
+
+	license := ""
+
+	if err := row.Scan(&license); err != nil {
+		return "", errors.Wrap(err, "failed to scan license")
+	}
+
+	return license, nil
+}
+
 func Create(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),

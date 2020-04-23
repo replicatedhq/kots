@@ -79,6 +79,7 @@ func Start() {
 
 	// Installation
 	r.Path("/api/v1/license").Methods("OPTIONS", "POST").HandlerFunc(handlers.UploadNewLicense)
+	r.Path("/api/v1/license/resume").Methods("OPTIONS", "PUT").HandlerFunc(handlers.ResumeInstallOnline)
 
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppRegistry)
