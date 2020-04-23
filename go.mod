@@ -14,7 +14,6 @@ require (
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/storage v1.16.2 // indirect
-	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
@@ -25,7 +24,6 @@ require (
 	github.com/etcd-io/bbolt v1.3.3 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4 // indirect
@@ -55,10 +53,13 @@ require (
 	k8s.io/apimachinery v0.17.4
 	k8s.io/cli-runtime v0.17.0
 	k8s.io/client-go v0.17.4
+	k8s.io/code-generator v0.18.3-beta.0 // indirect
 	k8s.io/helm v2.14.3+incompatible
+	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c // indirect
 	sigs.k8s.io/controller-runtime v0.4.0
+	sigs.k8s.io/controller-tools v0.2.8 // indirect
 	sigs.k8s.io/kustomize/api v0.3.2
-	sigs.k8s.io/yaml v1.1.0
+	sigs.k8s.io/yaml v1.2.0
 )
 
 replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65

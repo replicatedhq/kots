@@ -18,6 +18,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"time"
 
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -36,15 +37,15 @@ type ConfigValuesesGetter interface {
 
 // ConfigValuesInterface has methods to work with ConfigValues resources.
 type ConfigValuesInterface interface {
-	Create(*v1beta1.ConfigValues) (*v1beta1.ConfigValues, error)
-	Update(*v1beta1.ConfigValues) (*v1beta1.ConfigValues, error)
-	UpdateStatus(*v1beta1.ConfigValues) (*v1beta1.ConfigValues, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.ConfigValues, error)
-	List(opts v1.ListOptions) (*v1beta1.ConfigValuesList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ConfigValues, err error)
+	Create(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.CreateOptions) (*v1beta1.ConfigValues, error)
+	Update(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (*v1beta1.ConfigValues, error)
+	UpdateStatus(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (*v1beta1.ConfigValues, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.ConfigValues, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.ConfigValuesList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ConfigValues, err error)
 	ConfigValuesExpansion
 }
 
@@ -63,20 +64,20 @@ func newConfigValueses(c *KotsV1beta1Client, namespace string) *configValueses {
 }
 
 // Get takes name of the configValues, and returns the corresponding configValues object, and an error if there is any.
-func (c *configValueses) Get(name string, options v1.GetOptions) (result *v1beta1.ConfigValues, err error) {
+func (c *configValueses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ConfigValues, err error) {
 	result = &v1beta1.ConfigValues{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("configvalueses").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of ConfigValueses that match those selectors.
-func (c *configValueses) List(opts v1.ListOptions) (result *v1beta1.ConfigValuesList, err error) {
+func (c *configValueses) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ConfigValuesList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -87,13 +88,13 @@ func (c *configValueses) List(opts v1.ListOptions) (result *v1beta1.ConfigValues
 		Resource("configvalueses").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested configValueses.
-func (c *configValueses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *configValueses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -104,87 +105,90 @@ func (c *configValueses) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("configvalueses").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a configValues and creates it.  Returns the server's representation of the configValues, and an error, if there is any.
-func (c *configValueses) Create(configValues *v1beta1.ConfigValues) (result *v1beta1.ConfigValues, err error) {
+func (c *configValueses) Create(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.CreateOptions) (result *v1beta1.ConfigValues, err error) {
 	result = &v1beta1.ConfigValues{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("configvalueses").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(configValues).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a configValues and updates it. Returns the server's representation of the configValues, and an error, if there is any.
-func (c *configValueses) Update(configValues *v1beta1.ConfigValues) (result *v1beta1.ConfigValues, err error) {
+func (c *configValueses) Update(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (result *v1beta1.ConfigValues, err error) {
 	result = &v1beta1.ConfigValues{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("configvalueses").
 		Name(configValues.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(configValues).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *configValueses) UpdateStatus(configValues *v1beta1.ConfigValues) (result *v1beta1.ConfigValues, err error) {
+func (c *configValueses) UpdateStatus(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (result *v1beta1.ConfigValues, err error) {
 	result = &v1beta1.ConfigValues{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("configvalueses").
 		Name(configValues.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(configValues).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the configValues and deletes it. Returns an error if one occurs.
-func (c *configValueses) Delete(name string, options *v1.DeleteOptions) error {
+func (c *configValueses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("configvalueses").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *configValueses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *configValueses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("configvalueses").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched configValues.
-func (c *configValueses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ConfigValues, err error) {
+func (c *configValueses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ConfigValues, err error) {
 	result = &v1beta1.ConfigValues{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("configvalueses").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

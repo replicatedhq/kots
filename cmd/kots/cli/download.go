@@ -38,6 +38,7 @@ func DownloadCmd() *cobra.Command {
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				Overwrite:             v.GetBool("overwrite"),
+				DecryptPasswordValues: v.GetBool("decrypt-password-values"),
 			}
 
 			downloadPath := filepath.Join(ExpandDir(v.GetString("dest")), appSlug)
@@ -64,6 +65,7 @@ func DownloadCmd() *cobra.Command {
 	cmd.Flags().String("dest", defaultDest, "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
 	cmd.Flags().String("slug", "", "the application slug to download")
+	cmd.Flags().Bool("decrypt-password-values", false, "decrypt password values to plaintext")
 
 	return cmd
 }

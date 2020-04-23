@@ -20,6 +20,7 @@ type DownloadOptions struct {
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
 	Overwrite             bool
 	Silent                bool
+	DecryptPasswordValues bool
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
@@ -68,6 +69,10 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	}
 
 	url := fmt.Sprintf("http://localhost:%d/api/v1/download?slug=%s", localPort, appSlug)
+	if downloadOptions.DecryptPasswordValues {
+		url = fmt.Sprintf("%s&decryptPasswordValues=1", url)
+	}
+
 	newRequest, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.FinishSpinnerWithError()

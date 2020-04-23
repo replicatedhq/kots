@@ -21,9 +21,11 @@ import (
 )
 
 type ConfigValue struct {
-	Value   string `json:"value,omitempty"`
-	Data    string `json:"data,omitempty"`
-	Default string `json:"default,omitempty"`
+	Default        string `json:"default,omitempty"`
+	Value          string `json:"value,omitempty"`
+	Data           string `json:"data,omitempty"`
+	ValuePlaintext string `json:"valuePlaintext,omitempty"`
+	DataPlaintext  string `json:"dataPlaintext,omitempty"`
 }
 
 // ConfigValuesSpec defines the desired state of ConfigValue

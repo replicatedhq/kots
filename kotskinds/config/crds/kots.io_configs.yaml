@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
+    controller-gen.kubebuilder.io/version: v0.2.8
   creationTimestamp: null
   name: configs.kots.io
 spec:
@@ -117,7 +117,9 @@ spec:
                             accept a booolean string or raw bool.
                           type: BoolString
                         when:
-                          type: string
+                          description: QuotedBool is a string type that can also unmarshal
+                            raw yaml bools.
+                          type: QuotedBool
                         write_once:
                           type: boolean
                       required:

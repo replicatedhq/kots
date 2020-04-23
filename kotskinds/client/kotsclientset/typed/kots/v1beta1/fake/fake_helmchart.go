@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var helmchartsResource = schema.GroupVersionResource{Group: "kots.io", Version: 
 var helmchartsKind = schema.GroupVersionKind{Group: "kots.io", Version: "v1beta1", Kind: "HelmChart"}
 
 // Get takes name of the helmChart, and returns the corresponding helmChart object, and an error if there is any.
-func (c *FakeHelmCharts) Get(name string, options v1.GetOptions) (result *v1beta1.HelmChart, err error) {
+func (c *FakeHelmCharts) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.HelmChart, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(helmchartsResource, c.ns, name), &v1beta1.HelmChart{})
 
@@ -49,7 +51,7 @@ func (c *FakeHelmCharts) Get(name string, options v1.GetOptions) (result *v1beta
 }
 
 // List takes label and field selectors, and returns the list of HelmCharts that match those selectors.
-func (c *FakeHelmCharts) List(opts v1.ListOptions) (result *v1beta1.HelmChartList, err error) {
+func (c *FakeHelmCharts) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.HelmChartList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(helmchartsResource, helmchartsKind, c.ns, opts), &v1beta1.HelmChartList{})
 
@@ -71,14 +73,14 @@ func (c *FakeHelmCharts) List(opts v1.ListOptions) (result *v1beta1.HelmChartLis
 }
 
 // Watch returns a watch.Interface that watches the requested helmCharts.
-func (c *FakeHelmCharts) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeHelmCharts) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(helmchartsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a helmChart and creates it.  Returns the server's representation of the helmChart, and an error, if there is any.
-func (c *FakeHelmCharts) Create(helmChart *v1beta1.HelmChart) (result *v1beta1.HelmChart, err error) {
+func (c *FakeHelmCharts) Create(ctx context.Context, helmChart *v1beta1.HelmChart, opts v1.CreateOptions) (result *v1beta1.HelmChart, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(helmchartsResource, c.ns, helmChart), &v1beta1.HelmChart{})
 
@@ -89,7 +91,7 @@ func (c *FakeHelmCharts) Create(helmChart *v1beta1.HelmChart) (result *v1beta1.H
 }
 
 // Update takes the representation of a helmChart and updates it. Returns the server's representation of the helmChart, and an error, if there is any.
-func (c *FakeHelmCharts) Update(helmChart *v1beta1.HelmChart) (result *v1beta1.HelmChart, err error) {
+func (c *FakeHelmCharts) Update(ctx context.Context, helmChart *v1beta1.HelmChart, opts v1.UpdateOptions) (result *v1beta1.HelmChart, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(helmchartsResource, c.ns, helmChart), &v1beta1.HelmChart{})
 
@@ -101,7 +103,7 @@ func (c *FakeHelmCharts) Update(helmChart *v1beta1.HelmChart) (result *v1beta1.H
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHelmCharts) UpdateStatus(helmChart *v1beta1.HelmChart) (*v1beta1.HelmChart, error) {
+func (c *FakeHelmCharts) UpdateStatus(ctx context.Context, helmChart *v1beta1.HelmChart, opts v1.UpdateOptions) (*v1beta1.HelmChart, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(helmchartsResource, "status", c.ns, helmChart), &v1beta1.HelmChart{})
 
@@ -112,7 +114,7 @@ func (c *FakeHelmCharts) UpdateStatus(helmChart *v1beta1.HelmChart) (*v1beta1.He
 }
 
 // Delete takes name of the helmChart and deletes it. Returns an error if one occurs.
-func (c *FakeHelmCharts) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeHelmCharts) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(helmchartsResource, c.ns, name), &v1beta1.HelmChart{})
 
@@ -120,15 +122,15 @@ func (c *FakeHelmCharts) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeHelmCharts) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(helmchartsResource, c.ns, listOptions)
+func (c *FakeHelmCharts) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(helmchartsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.HelmChartList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched helmChart.
-func (c *FakeHelmCharts) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.HelmChart, err error) {
+func (c *FakeHelmCharts) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.HelmChart, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(helmchartsResource, c.ns, name, pt, data, subresources...), &v1beta1.HelmChart{})
 

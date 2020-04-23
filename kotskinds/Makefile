@@ -3,14 +3,14 @@ export GO111MODULE=on
 
 .PHONY: generate
 generate: controller-gen client-gen
-	controller-gen \
+	$(CONTROLLER_GEN) \
 		object:headerFile=./hack/boilerplate.go.txt \
 		paths=./apis/...
-	controller-gen \
+	$(CONTROLLER_GEN) \
 		crd \
 		+output:dir=./config/crds \
 		paths=./apis/kots/v1beta1/...
-	client-gen \
+	$(CLIENT_GEN) \
 		--output-package=github.com/replicatedhq/kots/kotskinds/client \
 		--clientset-name kotsclientset \
 		--input-base github.com/replicatedhq/kots/kotskinds/apis \
@@ -20,7 +20,7 @@ generate: controller-gen client-gen
 
 .PHONY: openapischema
 openapischema: controller-gen
-	controller-gen crd +output:dir=./config/crds  paths=./apis/kos/v1beta1
+	$(CONTROLLER_GEN) crd +output:dir=./config/crds  paths=./apis/kos/v1beta1
 
 .PHONY: schemas
 schemas: fmt generate
@@ -31,20 +31,19 @@ schemas: fmt generate
 fmt:
 	go fmt ./...
 
-# find or download controller-gen
-# download controller-gen if necessary
+.PHONY: contoller-gen
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.2
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.8
 CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
-# find or download client-gen
+.PHONY: client-gen
 client-gen:
 ifeq (, $(shell which client-gen))
-	go get k8s.io/code-generator/cmd/client-gen@kubernetes-1.13.5
+	go get k8s.io/code-generator/cmd/client-gen@kubernetes-1.18.0
 CLIENT_GEN=$(shell go env GOPATH)/bin/client-gen
 else
 CLIENT_GEN=$(shell which client-gen)
