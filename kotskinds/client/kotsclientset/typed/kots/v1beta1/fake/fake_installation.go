@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var installationsResource = schema.GroupVersionResource{Group: "kots.io", Versio
 var installationsKind = schema.GroupVersionKind{Group: "kots.io", Version: "v1beta1", Kind: "Installation"}
 
 // Get takes name of the installation, and returns the corresponding installation object, and an error if there is any.
-func (c *FakeInstallations) Get(name string, options v1.GetOptions) (result *v1beta1.Installation, err error) {
+func (c *FakeInstallations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.Installation, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(installationsResource, c.ns, name), &v1beta1.Installation{})
 
@@ -49,7 +51,7 @@ func (c *FakeInstallations) Get(name string, options v1.GetOptions) (result *v1b
 }
 
 // List takes label and field selectors, and returns the list of Installations that match those selectors.
-func (c *FakeInstallations) List(opts v1.ListOptions) (result *v1beta1.InstallationList, err error) {
+func (c *FakeInstallations) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.InstallationList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(installationsResource, installationsKind, c.ns, opts), &v1beta1.InstallationList{})
 
@@ -71,14 +73,14 @@ func (c *FakeInstallations) List(opts v1.ListOptions) (result *v1beta1.Installat
 }
 
 // Watch returns a watch.Interface that watches the requested installations.
-func (c *FakeInstallations) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeInstallations) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(installationsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a installation and creates it.  Returns the server's representation of the installation, and an error, if there is any.
-func (c *FakeInstallations) Create(installation *v1beta1.Installation) (result *v1beta1.Installation, err error) {
+func (c *FakeInstallations) Create(ctx context.Context, installation *v1beta1.Installation, opts v1.CreateOptions) (result *v1beta1.Installation, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(installationsResource, c.ns, installation), &v1beta1.Installation{})
 
@@ -89,7 +91,7 @@ func (c *FakeInstallations) Create(installation *v1beta1.Installation) (result *
 }
 
 // Update takes the representation of a installation and updates it. Returns the server's representation of the installation, and an error, if there is any.
-func (c *FakeInstallations) Update(installation *v1beta1.Installation) (result *v1beta1.Installation, err error) {
+func (c *FakeInstallations) Update(ctx context.Context, installation *v1beta1.Installation, opts v1.UpdateOptions) (result *v1beta1.Installation, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(installationsResource, c.ns, installation), &v1beta1.Installation{})
 
@@ -101,7 +103,7 @@ func (c *FakeInstallations) Update(installation *v1beta1.Installation) (result *
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeInstallations) UpdateStatus(installation *v1beta1.Installation) (*v1beta1.Installation, error) {
+func (c *FakeInstallations) UpdateStatus(ctx context.Context, installation *v1beta1.Installation, opts v1.UpdateOptions) (*v1beta1.Installation, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(installationsResource, "status", c.ns, installation), &v1beta1.Installation{})
 
@@ -112,7 +114,7 @@ func (c *FakeInstallations) UpdateStatus(installation *v1beta1.Installation) (*v
 }
 
 // Delete takes name of the installation and deletes it. Returns an error if one occurs.
-func (c *FakeInstallations) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeInstallations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(installationsResource, c.ns, name), &v1beta1.Installation{})
 
@@ -120,15 +122,15 @@ func (c *FakeInstallations) Delete(name string, options *v1.DeleteOptions) error
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeInstallations) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(installationsResource, c.ns, listOptions)
+func (c *FakeInstallations) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(installationsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.InstallationList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched installation.
-func (c *FakeInstallations) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.Installation, err error) {
+func (c *FakeInstallations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.Installation, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(installationsResource, c.ns, name, pt, data, subresources...), &v1beta1.Installation{})
 

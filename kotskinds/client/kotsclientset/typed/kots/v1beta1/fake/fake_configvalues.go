@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var configvaluesesResource = schema.GroupVersionResource{Group: "kots.io", Versi
 var configvaluesesKind = schema.GroupVersionKind{Group: "kots.io", Version: "v1beta1", Kind: "ConfigValues"}
 
 // Get takes name of the configValues, and returns the corresponding configValues object, and an error if there is any.
-func (c *FakeConfigValueses) Get(name string, options v1.GetOptions) (result *v1beta1.ConfigValues, err error) {
+func (c *FakeConfigValueses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.ConfigValues, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(configvaluesesResource, c.ns, name), &v1beta1.ConfigValues{})
 
@@ -49,7 +51,7 @@ func (c *FakeConfigValueses) Get(name string, options v1.GetOptions) (result *v1
 }
 
 // List takes label and field selectors, and returns the list of ConfigValueses that match those selectors.
-func (c *FakeConfigValueses) List(opts v1.ListOptions) (result *v1beta1.ConfigValuesList, err error) {
+func (c *FakeConfigValueses) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.ConfigValuesList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(configvaluesesResource, configvaluesesKind, c.ns, opts), &v1beta1.ConfigValuesList{})
 
@@ -71,14 +73,14 @@ func (c *FakeConfigValueses) List(opts v1.ListOptions) (result *v1beta1.ConfigVa
 }
 
 // Watch returns a watch.Interface that watches the requested configValueses.
-func (c *FakeConfigValueses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeConfigValueses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(configvaluesesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a configValues and creates it.  Returns the server's representation of the configValues, and an error, if there is any.
-func (c *FakeConfigValueses) Create(configValues *v1beta1.ConfigValues) (result *v1beta1.ConfigValues, err error) {
+func (c *FakeConfigValueses) Create(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.CreateOptions) (result *v1beta1.ConfigValues, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(configvaluesesResource, c.ns, configValues), &v1beta1.ConfigValues{})
 
@@ -89,7 +91,7 @@ func (c *FakeConfigValueses) Create(configValues *v1beta1.ConfigValues) (result 
 }
 
 // Update takes the representation of a configValues and updates it. Returns the server's representation of the configValues, and an error, if there is any.
-func (c *FakeConfigValueses) Update(configValues *v1beta1.ConfigValues) (result *v1beta1.ConfigValues, err error) {
+func (c *FakeConfigValueses) Update(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (result *v1beta1.ConfigValues, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(configvaluesesResource, c.ns, configValues), &v1beta1.ConfigValues{})
 
@@ -101,7 +103,7 @@ func (c *FakeConfigValueses) Update(configValues *v1beta1.ConfigValues) (result 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeConfigValueses) UpdateStatus(configValues *v1beta1.ConfigValues) (*v1beta1.ConfigValues, error) {
+func (c *FakeConfigValueses) UpdateStatus(ctx context.Context, configValues *v1beta1.ConfigValues, opts v1.UpdateOptions) (*v1beta1.ConfigValues, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(configvaluesesResource, "status", c.ns, configValues), &v1beta1.ConfigValues{})
 
@@ -112,7 +114,7 @@ func (c *FakeConfigValueses) UpdateStatus(configValues *v1beta1.ConfigValues) (*
 }
 
 // Delete takes name of the configValues and deletes it. Returns an error if one occurs.
-func (c *FakeConfigValueses) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeConfigValueses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(configvaluesesResource, c.ns, name), &v1beta1.ConfigValues{})
 
@@ -120,15 +122,15 @@ func (c *FakeConfigValueses) Delete(name string, options *v1.DeleteOptions) erro
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeConfigValueses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(configvaluesesResource, c.ns, listOptions)
+func (c *FakeConfigValueses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(configvaluesesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.ConfigValuesList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched configValues.
-func (c *FakeConfigValueses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.ConfigValues, err error) {
+func (c *FakeConfigValueses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.ConfigValues, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(configvaluesesResource, c.ns, name, pt, data, subresources...), &v1beta1.ConfigValues{})
 

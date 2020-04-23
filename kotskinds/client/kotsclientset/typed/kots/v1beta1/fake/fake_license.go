@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var licensesResource = schema.GroupVersionResource{Group: "kots.io", Version: "v
 var licensesKind = schema.GroupVersionKind{Group: "kots.io", Version: "v1beta1", Kind: "License"}
 
 // Get takes name of the license, and returns the corresponding license object, and an error if there is any.
-func (c *FakeLicenses) Get(name string, options v1.GetOptions) (result *v1beta1.License, err error) {
+func (c *FakeLicenses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.License, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(licensesResource, c.ns, name), &v1beta1.License{})
 
@@ -49,7 +51,7 @@ func (c *FakeLicenses) Get(name string, options v1.GetOptions) (result *v1beta1.
 }
 
 // List takes label and field selectors, and returns the list of Licenses that match those selectors.
-func (c *FakeLicenses) List(opts v1.ListOptions) (result *v1beta1.LicenseList, err error) {
+func (c *FakeLicenses) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.LicenseList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(licensesResource, licensesKind, c.ns, opts), &v1beta1.LicenseList{})
 
@@ -71,14 +73,14 @@ func (c *FakeLicenses) List(opts v1.ListOptions) (result *v1beta1.LicenseList, e
 }
 
 // Watch returns a watch.Interface that watches the requested licenses.
-func (c *FakeLicenses) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeLicenses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(licensesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a license and creates it.  Returns the server's representation of the license, and an error, if there is any.
-func (c *FakeLicenses) Create(license *v1beta1.License) (result *v1beta1.License, err error) {
+func (c *FakeLicenses) Create(ctx context.Context, license *v1beta1.License, opts v1.CreateOptions) (result *v1beta1.License, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(licensesResource, c.ns, license), &v1beta1.License{})
 
@@ -89,7 +91,7 @@ func (c *FakeLicenses) Create(license *v1beta1.License) (result *v1beta1.License
 }
 
 // Update takes the representation of a license and updates it. Returns the server's representation of the license, and an error, if there is any.
-func (c *FakeLicenses) Update(license *v1beta1.License) (result *v1beta1.License, err error) {
+func (c *FakeLicenses) Update(ctx context.Context, license *v1beta1.License, opts v1.UpdateOptions) (result *v1beta1.License, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(licensesResource, c.ns, license), &v1beta1.License{})
 
@@ -101,7 +103,7 @@ func (c *FakeLicenses) Update(license *v1beta1.License) (result *v1beta1.License
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeLicenses) UpdateStatus(license *v1beta1.License) (*v1beta1.License, error) {
+func (c *FakeLicenses) UpdateStatus(ctx context.Context, license *v1beta1.License, opts v1.UpdateOptions) (*v1beta1.License, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(licensesResource, "status", c.ns, license), &v1beta1.License{})
 
@@ -112,7 +114,7 @@ func (c *FakeLicenses) UpdateStatus(license *v1beta1.License) (*v1beta1.License,
 }
 
 // Delete takes name of the license and deletes it. Returns an error if one occurs.
-func (c *FakeLicenses) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeLicenses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(licensesResource, c.ns, name), &v1beta1.License{})
 
@@ -120,15 +122,15 @@ func (c *FakeLicenses) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeLicenses) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(licensesResource, c.ns, listOptions)
+func (c *FakeLicenses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(licensesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.LicenseList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched license.
-func (c *FakeLicenses) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.License, err error) {
+func (c *FakeLicenses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.License, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(licensesResource, c.ns, name, pt, data, subresources...), &v1beta1.License{})
 

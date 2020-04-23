@@ -18,6 +18,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var airgapsResource = schema.GroupVersionResource{Group: "kots.io", Version: "v1
 var airgapsKind = schema.GroupVersionKind{Group: "kots.io", Version: "v1beta1", Kind: "Airgap"}
 
 // Get takes name of the airgap, and returns the corresponding airgap object, and an error if there is any.
-func (c *FakeAirgaps) Get(name string, options v1.GetOptions) (result *v1beta1.Airgap, err error) {
+func (c *FakeAirgaps) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.Airgap, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(airgapsResource, c.ns, name), &v1beta1.Airgap{})
 
@@ -49,7 +51,7 @@ func (c *FakeAirgaps) Get(name string, options v1.GetOptions) (result *v1beta1.A
 }
 
 // List takes label and field selectors, and returns the list of Airgaps that match those selectors.
-func (c *FakeAirgaps) List(opts v1.ListOptions) (result *v1beta1.AirgapList, err error) {
+func (c *FakeAirgaps) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.AirgapList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(airgapsResource, airgapsKind, c.ns, opts), &v1beta1.AirgapList{})
 
@@ -71,14 +73,14 @@ func (c *FakeAirgaps) List(opts v1.ListOptions) (result *v1beta1.AirgapList, err
 }
 
 // Watch returns a watch.Interface that watches the requested airgaps.
-func (c *FakeAirgaps) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeAirgaps) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(airgapsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a airgap and creates it.  Returns the server's representation of the airgap, and an error, if there is any.
-func (c *FakeAirgaps) Create(airgap *v1beta1.Airgap) (result *v1beta1.Airgap, err error) {
+func (c *FakeAirgaps) Create(ctx context.Context, airgap *v1beta1.Airgap, opts v1.CreateOptions) (result *v1beta1.Airgap, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(airgapsResource, c.ns, airgap), &v1beta1.Airgap{})
 
@@ -89,7 +91,7 @@ func (c *FakeAirgaps) Create(airgap *v1beta1.Airgap) (result *v1beta1.Airgap, er
 }
 
 // Update takes the representation of a airgap and updates it. Returns the server's representation of the airgap, and an error, if there is any.
-func (c *FakeAirgaps) Update(airgap *v1beta1.Airgap) (result *v1beta1.Airgap, err error) {
+func (c *FakeAirgaps) Update(ctx context.Context, airgap *v1beta1.Airgap, opts v1.UpdateOptions) (result *v1beta1.Airgap, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(airgapsResource, c.ns, airgap), &v1beta1.Airgap{})
 
@@ -101,7 +103,7 @@ func (c *FakeAirgaps) Update(airgap *v1beta1.Airgap) (result *v1beta1.Airgap, er
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAirgaps) UpdateStatus(airgap *v1beta1.Airgap) (*v1beta1.Airgap, error) {
+func (c *FakeAirgaps) UpdateStatus(ctx context.Context, airgap *v1beta1.Airgap, opts v1.UpdateOptions) (*v1beta1.Airgap, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(airgapsResource, "status", c.ns, airgap), &v1beta1.Airgap{})
 
@@ -112,7 +114,7 @@ func (c *FakeAirgaps) UpdateStatus(airgap *v1beta1.Airgap) (*v1beta1.Airgap, err
 }
 
 // Delete takes name of the airgap and deletes it. Returns an error if one occurs.
-func (c *FakeAirgaps) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeAirgaps) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(airgapsResource, c.ns, name), &v1beta1.Airgap{})
 
@@ -120,15 +122,15 @@ func (c *FakeAirgaps) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeAirgaps) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(airgapsResource, c.ns, listOptions)
+func (c *FakeAirgaps) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(airgapsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.AirgapList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched airgap.
-func (c *FakeAirgaps) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.Airgap, err error) {
+func (c *FakeAirgaps) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.Airgap, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(airgapsResource, c.ns, name, pt, data, subresources...), &v1beta1.Airgap{})
 
