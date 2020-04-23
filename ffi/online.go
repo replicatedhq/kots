@@ -12,89 +12,10 @@ import (
 
 	"github.com/mholt/archiver"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
-
-//export PullFromLicense
-func PullFromLicense(socket string, licenseData string, downstream string, namespace string, outputFile string) {
-	go func() {
-		var ffiResult *FFIResult
-
-		statusClient, err := connectToStatusServer(socket)
-		if err != nil {
-			fmt.Printf("failed to connect to status server: %s\n", err)
-			return
-		}
-		defer func() {
-			statusClient.end(ffiResult)
-		}()
-
-		license, err := loadLicense(licenseData)
-		if err != nil {
-			fmt.Printf("failed to load license: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-
-		licenseFile, err := writeLicenseFileFromLicenseData(licenseData)
-		if err != nil {
-			fmt.Printf("failed to write license file: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-		defer os.Remove(licenseFile)
-
-		// pull to a tmp dir
-		tmpRoot, err := ioutil.TempDir("", "kots")
-		if err != nil {
-			fmt.Printf("failed to create temp root path: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-		defer os.RemoveAll(tmpRoot)
-
-		pullOptions := pull.PullOptions{
-			Downstreams:         []string{downstream},
-			LicenseFile:         licenseFile,
-			Namespace:           namespace,
-			ExcludeKotsKinds:    true,
-			RootDir:             tmpRoot,
-			ExcludeAdminConsole: true,
-			CreateAppDir:        false,
-			ReportWriter:        statusClient.getOutputWriter(),
-		}
-
-		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-			fmt.Printf("failed to pull upstream: %s\n", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-
-		// make an archive
-		tarGz := archiver.TarGz{
-			Tar: &archiver.Tar{
-				ImplicitTopLevelFolder: true,
-			},
-		}
-
-		paths := []string{
-			filepath.Join(tmpRoot, "upstream"),
-			filepath.Join(tmpRoot, "base"),
-			filepath.Join(tmpRoot, "overlays"),
-		}
-
-		if err := tarGz.Archive(paths, outputFile); err != nil {
-			fmt.Printf("failed to write archive: %s", err.Error())
-			ffiResult = NewFFIResult(1).WithError(err)
-			return
-		}
-
-		ffiResult = NewFFIResult(0)
-	}()
-}
 
 //export RewriteVersion
 func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sNamespace, registryJson string, copyImages, isAirgap bool, marshalledConfigValues string) {

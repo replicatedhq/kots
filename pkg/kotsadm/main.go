@@ -235,6 +235,14 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
+	if deployOptions.License != nil {
+		// if there's a license, we write it as a secret and kotsadm will
+		// find it on startup and handle installation
+		if err := ensureLicenseSecret(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure license s")
+		}
+	}
+
 	if err := ensureMinio(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio")
 	}
