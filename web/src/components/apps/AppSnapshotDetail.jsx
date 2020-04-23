@@ -34,6 +34,8 @@ class AppSnapshotDetail extends Component {
     toggleViewLogsModal: false,
     snapshotLogs: "",
     loadingSnapshotLogs: false,
+    snapshotLogsErr: false,
+    snapshotLogsErrMsg: "",
 
     options: {
       chart: {
@@ -172,13 +174,28 @@ class AppSnapshotDetail extends Component {
         },
         method: "GET",
       })
-        .then(async (response) => {
-          const logs = await response.text();
-          this.setState({ snapshotLogs: logs, loadingSnapshotLogs: false });
+        .then(async (result) => {
+          const logs = await result.text();
+          if (!result.ok) {
+            this.setState({
+              loadingSnapshotLogs: false,
+              snapshotLogsErr: true,
+              snapshotLogsErrMsg: "An error occurred while viewing snapshot logs. Please try again"
+            })
+          } else {
+            this.setState({ 
+              snapshotLogs: logs, 
+              snapshotLogsErr: false,
+              snapshotLogsErrMsg: "",
+              loadingSnapshotLogs: false });
+          }
         })
         .catch((err) => {
-          this.setState({ loadingSnapshotLogs: false });
-          throw err;
+          this.setState({
+            loadingSnapshotLogs: false,
+            snapshotLogsErr: true,
+            snapshotLogsErrMsg: err
+          });
         });
     });
   }
@@ -242,7 +259,7 @@ class AppSnapshotDetail extends Component {
           <div className={`tab-item ${tab === selectedErrorsWarningTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedErrorsWarningTab: tab })}>
             {tab}
             {tab === "Errors" ?
-              <span className="errors u-marginLeft--5"> {snapshotDetails?.errors?.length} </span> : <span className="warnings u-marginLeft--5"> {snapshotDetails?.warnings?.length} </span>}
+              <span className="errors u-marginLeft--5"> {snapshotDetails?.errors?.length} </span> : <span className="warnings u-marginLeft--5"> {!snapshotDetails?.warnings ? "0" : snapshotDetails?.warnings?.length} </span>}
           </div>
         ))}
       </div>
@@ -645,6 +662,8 @@ class AppSnapshotDetail extends Component {
             logs={this.state.snapshotLogs}
             snapshotDetails={snapshotDetails}
             loadingSnapshotLogs={this.state.loadingSnapshotLogs}
+            snapshotLogsErr={this.state.snapshotLogsErr}
+            snapshotLogsErrMsg={this.state.snapshotLogsErrMsg}
           />}
       </div>
     );

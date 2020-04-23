@@ -5,7 +5,7 @@ import AceEditor from "react-ace";
 import Loader from "../shared/Loader";
 
 export default function ViewSnapshotLogsModal(props) {
-  const { displayShowSnapshotLogsModal, toggleViewLogsModal, logs, snapshotDetails, loadingSnapshotLogs } = props;
+  const { displayShowSnapshotLogsModal, toggleViewLogsModal, logs, snapshotDetails, loadingSnapshotLogs, snapshotLogsErr, snapshotLogsErrMsg } = props;
 
   return (
     <Modal
@@ -24,19 +24,25 @@ export default function ViewSnapshotLogsModal(props) {
               <Loader size="60" />
             </div>
             :
-            <AceEditor
-              value={logs}
-              theme="chrome"
-              className="flex1 flex"
-              height="100%"
-              width="100%"
-              readOnly={true}
-              editorProps={{
-                $blockScrolling: true,
-                useSoftTabs: true,
-                tabSize: 2,
-              }}
-            />}
+            snapshotLogsErr ?
+              <div class="flex1 flex-column justifyContent--center alignItems--center">
+                <span className="icon redWarningIcon" />
+                <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotLogsErrMsg}</p>
+              </div>
+              :
+              <AceEditor
+                value={logs}
+                theme="chrome"
+                className="flex1 flex"
+                height="100%"
+                width="100%"
+                readOnly={true}
+                editorProps={{
+                  $blockScrolling: true,
+                  useSoftTabs: true,
+                  tabSize: 2,
+                }}
+              />}
         </div>
 
         <div className="u-marginTop--10 flex">
