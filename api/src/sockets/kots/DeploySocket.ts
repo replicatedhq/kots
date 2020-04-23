@@ -135,12 +135,6 @@ export class KotsDeploySocketService {
 
     switch (app.restoreUndeployStatus) {
       case UndeployStatus.InProcess:
-        // retry undeploy every minute since socket.io is not bi-directional
-        const lastUndeployInterval = new Date().getTime() - this.lastUndeployTime;
-        if (lastUndeployInterval >= oneMinuteInMilliseconds) {
-          await this.undeployApp(app, cluster);
-          this.lastUndeployTime = new Date().getTime();
-        }
         break;
 
       case UndeployStatus.Completed:

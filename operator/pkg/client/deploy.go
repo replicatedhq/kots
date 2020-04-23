@@ -90,7 +90,14 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		}
 		allPVCs = append(allPVCs, pvcs...)
 
-		stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents), applicationManifests.Wait)
+		wait := applicationManifests.Wait
+		if gvk.Kind == "PersistentVolumeClaim" {
+			// blocking on PVC delete will create a deadlock if
+			// it's used by a pod that has not been deleted yet.
+			wait = false
+		}
+
+		stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents), wait)
 		if err != nil {
 			log.Printf("stdout (delete) = %s", stdout)
 			log.Printf("stderr (delete) = %s", stderr)
@@ -438,6 +445,7 @@ func deletePVCs(namespace string, pvcs []string) error {
 			GracePeriodSeconds: &grace,
 			PropagationPolicy:  &policy,
 		}
+		log.Printf("deleting pvc: %s", pvc)
 		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(pvc, opts)
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
