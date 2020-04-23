@@ -7,6 +7,7 @@ require (
 	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
+	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/frankban/quicktest v1.7.3 // indirect
@@ -24,8 +25,8 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423173525-31311c1ceb08
 	github.com/replicatedhq/troubleshoot v0.9.30
+	github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423202800-d2ec7fee11ea
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0

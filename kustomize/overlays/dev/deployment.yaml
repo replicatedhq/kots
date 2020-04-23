@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kotsadm-api
+  name: kotsadm
 spec:
   template:
     spec:
@@ -16,7 +16,7 @@ spec:
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.namespace              
+                  fieldPath: metadata.namespace
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:

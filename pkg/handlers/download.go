@@ -10,6 +10,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/version"
 )
@@ -27,11 +28,49 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	decryptPasswordValues := false
+	if r.URL.Query().Get("decryptPasswordValues") != "" {
+		decryptPasswordValues, err = strconv.ParseBool(r.URL.Query().Get("decryptPasswordValues"))
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+	}
+
 	archivePath, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
+	}
+
+	if decryptPasswordValues {
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		if err := kotsKinds.DecryptConfigValues(); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		if err := ioutil.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 	}
 
 	// archiveDir is unarchived, it contains the files

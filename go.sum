@@ -751,6 +751,10 @@ github.com/replicatedhq/kots v1.15.0-beta.1 h1:O7DbcMSvcAQP3+f9vvfCXyyOBgK7sRl6B
 github.com/replicatedhq/kots v1.15.0-beta.1/go.mod h1:VUHc86zPdn7QfV+IKcj7FyA1wUFrQYPHEeDI5oWj5x8=
 github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423173525-31311c1ceb08 h1:/d/gEUGz90RYQaPx1981ZJlL5eEibe6/TD8vsrqQnqg=
 github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423173525-31311c1ceb08/go.mod h1:VUHc86zPdn7QfV+IKcj7FyA1wUFrQYPHEeDI5oWj5x8=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423194615-134b308dbfdc h1:wnYm87BLYrh+lPByi5ET60z8vk+jz92bDYVnnqRCjyo=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423194615-134b308dbfdc/go.mod h1:6lpp005Cf8o2rzzPGRf99JAAiGrlEyUaoRUJ4yphxg0=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423202800-d2ec7fee11ea h1:KEK6UAIZcFDgM0pLnMkKKH9rdiz/Z8skuBPJQw8IfLU=
+github.com/replicatedhq/kots v1.15.0-beta.1.0.20200423202800-d2ec7fee11ea/go.mod h1:6lpp005Cf8o2rzzPGRf99JAAiGrlEyUaoRUJ4yphxg0=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
@@ -1309,6 +1313,7 @@ sigs.k8s.io/application v0.8.1/go.mod h1:9C86g0wiFn8jtZjgJepSx188uJeWLGWTbcCycu5
 sigs.k8s.io/controller-runtime v0.4.0 h1:wATM6/m+3w8lj8FXNaO6Fs/rq/vqoOjO1Q116Z9NPsg=
 sigs.k8s.io/controller-runtime v0.4.0/go.mod h1:ApC79lpY3PHW9xj/w9pj+lYkLgwAAUZwfXkME1Lajns=
 sigs.k8s.io/controller-tools v0.2.4/go.mod h1:m/ztfQNocGYBgTTCmFdnK94uVvgxeZeE3LtJvd/jIzA=
+sigs.k8s.io/controller-tools v0.2.8/go.mod h1:9VKHPszmf2DHz/QmHkcfZoewO6BL7pPs9uAiBVsaJSE=
 sigs.k8s.io/kustomize v2.0.3+incompatible h1:JUufWFNlI44MdtnjUqVnvh29rR37PQFzPbLXqhyOyX0=
 sigs.k8s.io/kustomize v2.0.3+incompatible/go.mod h1:MkjgH3RdOWrievjo6c9T245dYlB5QeXV4WCbnt/PEpU=
 sigs.k8s.io/kustomize/api v0.3.2 h1:64gvYVAvqe2fNfcTevtXh/GmLwVwHIcJ2Z5HBMfjncs=
