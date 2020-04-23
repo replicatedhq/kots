@@ -60,7 +60,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 			if err := task.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
 			}
-			if err := setAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
+			if err := setAppInstallState(pendingApp.ID, "install_error"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to set app status to error"))
 			}
 		}
@@ -150,14 +150,14 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		}
 	}
 
-	query = `update app set install_state = 'installed', is_airgap=true where id = $1`
+	query = `update app set install_state = 'installed', is_airgap=false where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
 		finalError = err
 		return nil, errors.Wrap(err, "failed to update app to installed")
 	}
 
-	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Airgap Upload")
+	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")
 	if err != nil {
 		finalError = err
 		return nil, errors.Wrap(err, "failed to create new version")
