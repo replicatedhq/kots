@@ -125,28 +125,6 @@ export function KotsMutations(stores: Stores) {
       return true;
     },
 
-    // async resumeInstallOnline(root: any, args: any, context: Context) {
-    //   try {
-    //     const { slug } = args;
-    //     const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-    //     const app = await context.getApp(appId);
-    //     const clusters = await stores.clusterStore.listAllUsersClusters();
-    //     let downstream;
-    //     for (const cluster of clusters) {
-    //       if (cluster.title === "this-cluster") {
-    //         downstream = cluster;
-    //       }
-    //     }
-
-    //     await createKotsApp(stores, app, downstream.title);
-    //     await stores.kotsAppStore.setKotsAppInstallState(appId, "installed");
-
-    //     return await stores.kotsAppStore.getApp(app.id);
-    //   } catch (err) {
-    //     throw new ReplicatedError(err.message);
-    //   }
-    // },
-
     async deployKotsVersion(root: any, args: any, context: Context) {
       const { upstreamSlug, sequence, clusterSlug } = args;
       const appId = await stores.kotsAppStore.getIdFromSlug(upstreamSlug);
