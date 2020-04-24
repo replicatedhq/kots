@@ -24,6 +24,7 @@ func jwtSecret(namespace string, jwt string) *corev1.Secret {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -49,6 +50,7 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -71,6 +73,7 @@ func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -92,6 +95,7 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{
@@ -114,6 +118,7 @@ func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{

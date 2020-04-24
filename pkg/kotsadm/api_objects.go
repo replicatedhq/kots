@@ -24,6 +24,7 @@ func apiClusterRole() *rbacv1.ClusterRole {
 			Name: "kotsadm-api-role",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -49,6 +50,7 @@ func apiRole(namespace string) *rbacv1.Role {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		// creation cannot be restricted by name
@@ -91,6 +93,7 @@ func apiClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBi
 			Name: "kotsadm-api-rolebinding",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -121,6 +124,7 @@ func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -151,6 +155,7 @@ func apiServiceAccount(namespace string) *corev1.ServiceAccount {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 	}
@@ -173,10 +178,12 @@ func updateApiDeployment(deployment *appsv1.Deployment, deployOptions types.Depl
 		deployment.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
+	deployment.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelValue
 	if deployment.Spec.Template.ObjectMeta.Labels == nil {
 		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
+	deployment.Spec.Template.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelValue
 
 	// security context (added in 1.11.0)
 	deployment.Spec.Template.Spec.SecurityContext = &securityContext
@@ -236,6 +243,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -249,6 +257,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					Labels: map[string]string{
 						"app":            "kotsadm-api",
 						types.KotsadmKey: types.KotsadmLabelValue,
+						types.VeleroKey:  types.VeleroLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -414,6 +423,7 @@ func apiService(namespace string) *corev1.Service {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{

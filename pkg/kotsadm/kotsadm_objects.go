@@ -24,6 +24,7 @@ func kotsadmClusterRole() *rbacv1.ClusterRole {
 			Name: "kotsadm-role",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -49,6 +50,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		// creation cannot be restricted by name
@@ -96,6 +98,7 @@ func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRo
 			Name: "kotsadm-rolebinding",
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -126,6 +129,7 @@ func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Subjects: []rbacv1.Subject{
@@ -156,6 +160,7 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 	}
@@ -222,6 +227,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -235,6 +241,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					Labels: map[string]string{
 						"app":            "kotsadm",
 						types.KotsadmKey: types.KotsadmLabelValue,
+						types.VeleroKey:  types.VeleroLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
