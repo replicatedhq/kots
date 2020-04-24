@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/app"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
@@ -195,7 +196,7 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 				return nil, errors.Wrap(err, "failed to convert volume-bytes")
 			}
 			backup.VolumeBytes = i
-			backup.VolumeSizeHuman = "Many TB"
+			backup.VolumeSizeHuman = units.HumanSize(float64(i))
 		}
 
 		if backup.Status != "New" && backup.Status != "InProgress" {
