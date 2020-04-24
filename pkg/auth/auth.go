@@ -61,6 +61,7 @@ func GetOrCreateAuthSlug(kubernetesConfigFlags *genericclioptions.ConfigFlags, n
 				Namespace: namespace,
 				Labels: map[string]string{
 					types.KotsadmKey: types.KotsadmLabelValue,
+					types.VeleroKey:  types.VeleroLabelValue,
 				},
 			},
 			StringData: map[string]string{KotsadmAuthstringSecretKey: newAuthstring},

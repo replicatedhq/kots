@@ -31,6 +31,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: corev1.PodSpec{

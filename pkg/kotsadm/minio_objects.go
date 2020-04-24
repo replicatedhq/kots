@@ -60,6 +60,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -77,6 +78,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 						Name: "kotsadm-minio",
 						Labels: map[string]string{
 							types.KotsadmKey: types.KotsadmLabelValue,
+							types.VeleroKey:  types.VeleroLabelValue,
 						},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
@@ -96,6 +98,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					Labels: map[string]string{
 						"app":            "kotsadm-minio",
 						types.KotsadmKey: types.KotsadmLabelValue,
+						types.VeleroKey:  types.VeleroLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -219,6 +222,7 @@ func minioService(namespace string) *corev1.Service {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{

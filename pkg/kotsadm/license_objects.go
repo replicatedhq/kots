@@ -18,6 +18,7 @@ func licenseSecret(namespace string, license string) *corev1.Secret {
 			Labels: map[string]string{
 				types.KotsadmKey:     types.KotsadmLabelValue,
 				"kots.io/automation": "license",
+				types.VeleroKey:      types.VeleroLabelValue,
 			},
 		},
 		Data: map[string][]byte{

@@ -59,6 +59,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -73,6 +74,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 						Name: "kotsadm-postgres",
 						Labels: map[string]string{
 							types.KotsadmKey: types.KotsadmLabelValue,
+							types.VeleroKey:  types.VeleroLabelValue,
 						},
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
@@ -92,6 +94,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 					Labels: map[string]string{
 						"app":            "kotsadm-postgres",
 						types.KotsadmKey: types.KotsadmLabelValue,
+						types.VeleroKey:  types.VeleroLabelValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -199,6 +202,7 @@ func postgresService(namespace string) *corev1.Service {
 			Namespace: namespace,
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
 			},
 		},
 		Spec: corev1.ServiceSpec{
