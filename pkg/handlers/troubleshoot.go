@@ -40,7 +40,7 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	var fullTroubleshoot string
+	fullTroubleshoot := string(defaultBytes)
 	redactSpec, _, err := redact.GetRedactSpec()
 	if err != nil {
 		// this isn't fatal, since we can just omit the redact spec
@@ -129,7 +129,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	var fullTroubleshoot string
+	fullTroubleshoot := string(specBytes)
 	redactSpec, _, err := redact.GetRedactSpec()
 	if err != nil {
 		// this isn't fatal, since we can just omit the redact spec
