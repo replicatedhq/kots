@@ -22,7 +22,8 @@ class AppSnapshotRestore extends Component {
 
   componentDidUpdate(lastProps) {
     if (this.props.restoreDetail?.restoreDetail !== lastProps.restoreDetail?.restoreDetail && this.props.restoreDetail?.restoreDetail) {
-      if (this.props.restoreDetail?.restoreDetail?.phase === "Completed") {
+      const phase = this.props.restoreDetail?.restoreDetail?.phase;
+      if (phase !== "New" && phase !== "InProgress") {
         this.props.restoreDetail.stopPolling();
       }
     }
