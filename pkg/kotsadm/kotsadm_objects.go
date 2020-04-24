@@ -390,6 +390,10 @@ func kotsadmService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: namespace,
+			Labels: map[string]string{
+				types.KotsadmKey: types.KotsadmLabelValue,
+				types.VeleroKey:  types.VeleroLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
