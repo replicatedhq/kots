@@ -63,11 +63,29 @@ export function SnapshotQueries(stores: Stores, params: Params) {
       context.requireSingleTenantSession();
 
       const { appId, restoreName: name } = args;
-      const { restoreInProgressName } = await stores.kotsAppStore.getApp(appId);
+      const { restoreInProgressName, restoreUndeployStatus } = await stores.kotsAppStore.getApp(appId); 
+   
       const active = !!restoreInProgressName && restoreInProgressName === name;
       const velero = new VeleroClient("velero"); // TODO namespace
       const restore = await velero.readRestore(name);
       if (!restore) {
+        if (restoreUndeployStatus === "failed") {
+          // HACK: once the user has see the error, clear it out.
+          // Otherwise there is no way to get back to snapshot list.
+          await stores.kotsAppStore.updateAppRestoreReset(appId);
+          return {
+            name,
+            active,
+            phase: Phase.Failed,
+            volumes: [],
+            errors: [{
+              title: "Restore has failed",
+              message: "Please check logs for errors.",
+            }],
+            warnings: [],
+          };  
+        }
+
         return {
           name,
           active,
