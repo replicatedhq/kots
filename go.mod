@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.25.18
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
+	github.com/docker/go-units v0.4.0
 	github.com/frankban/quicktest v1.7.3 // indirect
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gorilla/mux v1.7.4
