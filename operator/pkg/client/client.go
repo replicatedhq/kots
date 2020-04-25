@@ -216,15 +216,41 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed in preflight handler")
+		return errors.Wrap(err, "failed to add preflight handler")
 	}
 
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
 		log.Println("received a deploy request")
 
+		var result *applyResult
+		var deployError error
+		defer func() {
+			if result != nil {
+				err := c.sendResult(
+					args, result.hasErr, []byte{}, []byte{},
+					bytes.Join(result.multiStdout, []byte("\n")), bytes.Join(result.multiStderr, []byte("\n")),
+				)
+				if err != nil {
+					log.Printf("failed to report result: %v", err)
+				}
+				return
+			}
+
+			if deployError != nil {
+				err := c.sendResult(
+					args, true, []byte{}, []byte{},
+					nil, []byte(deployError.Error()),
+				)
+				if err != nil {
+					log.Printf("failed to report result: %v", err)
+				}
+				return
+			}
+		}()
+
 		if args.PreviousManifests != "" {
-			if err := c.diffAndRemovePreviousManifests(args); err != nil {
-				log.Printf("error diffing and removing previous manifests: %s", err.Error())
+			if deployError = c.diffAndRemovePreviousManifests(args); deployError != nil {
+				log.Printf("error diffing and removing previous manifests: %s", deployError.Error())
 				return
 			}
 		}
@@ -234,16 +260,18 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 				continue
 			}
 
-			if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
+			if deployError = c.ensureNamespacePresent(additionalNamespace); deployError != nil {
 				// we don't fail here...
-				log.Printf("error creating namespace: %s", err.Error())
+				log.Printf("error creating namespace: %s", deployError.Error())
 			}
 		}
 		c.imagePullSecret = args.ImagePullSecret
 		c.watchedNamespaces = args.AdditionalNamespaces
 
-		if err := c.ensureResourcesPresent(args); err != nil {
-			log.Printf("error deploying: %s", err.Error())
+		result, deployError = c.ensureResourcesPresent(args)
+		if deployError != nil {
+			log.Printf("error deploying: %s", deployError.Error())
+			return
 		}
 
 		c.shutdownNamespacesInformer()
@@ -251,7 +279,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed in deploy handler")
+		return errors.Wrap(err, "failed to add deploy handler")
 	}
 
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
@@ -267,7 +295,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}()
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed in support bundle handler")
+		return errors.Wrap(err, "failed to add support bundle handler")
 	}
 
 	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
@@ -277,7 +305,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed in inform handler")
+		return errors.Wrap(err, "failed to add inform handler")
 	}
 
 	return nil

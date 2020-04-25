@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -27,6 +26,12 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+type applyResult struct {
+	hasErr      bool
+	multiStdout [][]byte
+	multiStderr [][]byte
+}
 
 func (c *Client) diffAndRemovePreviousManifests(applicationManifests ApplicationManifests) error {
 	decodedPrevious, err := base64.StdEncoding.DecodeString(applicationManifests.PreviousManifests)
@@ -168,7 +173,7 @@ func (c *Client) ensureNamespacePresent(name string) error {
 	return nil
 }
 
-func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) error {
+func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) (*applyResult, error) {
 	targetNamespace := c.TargetNamespace
 	if applicationManifests.Namespace != "." {
 		targetNamespace = applicationManifests.Namespace
@@ -176,17 +181,17 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 	kubernetesApplier, err := c.getApplier(applicationManifests.KubectlVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to get applier")
+		return nil, errors.Wrap(err, "failed to get applier")
 	}
 
 	decoded, err := base64.StdEncoding.DecodeString(applicationManifests.Manifests)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode manifests")
+		return nil, errors.Wrap(err, "failed to decode manifests")
 	}
 
 	customResourceDefinitions, otherDocs, err := splitMutlidocYAMLIntoCRDsAndOthers(decoded)
 	if err != nil {
-		return errors.Wrap(err, "failed to split decoded into crds and other")
+		return nil, errors.Wrap(err, "failed to split decoded into crds and other")
 	}
 
 	// We don't dry run if there's a crd becasue there's a likely chance that the
@@ -195,7 +200,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	if shouldDryRun {
 		byNamespace, err := docsByNamespace(decoded, targetNamespace)
 		if err != nil {
-			return errors.Wrap(err, "failed to get docs by requested namespace")
+			return nil, errors.Wrap(err, "failed to get docs by requested namespace")
 		}
 
 		for requestedNamespace, docs := range byNamespace {
@@ -215,10 +220,10 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 			if dryRunErr != nil {
 				if err := c.sendResult(applicationManifests, true, dryrunStdout, dryrunStderr, []byte{}, []byte{}); err != nil {
-					return errors.Wrap(err, "failed to report dry run status")
+					return nil, errors.Wrap(err, "failed to report dry run status")
 				}
 
-				return nil // don't return an error because execution is proper, the api now has the error
+				return nil, nil // don't return an error because execution is proper, the api now has the error
 			}
 		}
 
@@ -236,10 +241,10 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 			log.Printf("error (CRDS): %s", applyErr.Error())
 
 			if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
-				return errors.Wrap(err, "failed to report crd status")
+				return nil, errors.Wrap(err, "failed to report crd status")
 			}
 
-			return nil
+			return nil, nil
 		} else {
 			log.Println("custom resource definition(s) applied")
 		}
@@ -250,7 +255,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 	byNamespace, err := docsByNamespace(otherDocs, targetNamespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to get docs by requested namespace")
+		return nil, errors.Wrap(err, "failed to get docs by requested namespace")
 	}
 
 	var hasErr bool
@@ -278,14 +283,12 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		}
 	}
 
-	if err := c.sendResult(
-		applicationManifests, hasErr, []byte{}, []byte{},
-		bytes.Join(multiStdout, []byte("\n")), bytes.Join(multiStderr, []byte("\n")),
-	); err != nil {
-		return errors.Wrap(err, "failed to report status")
+	result := &applyResult{
+		hasErr:      hasErr,
+		multiStderr: multiStderr,
+		multiStdout: multiStdout,
 	}
-
-	return nil
+	return result, nil
 }
 
 func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
