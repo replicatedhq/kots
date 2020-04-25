@@ -63,9 +63,7 @@ class AppSnapshotRestore extends Component {
       errors.map((error, i) => (
         <div className="RestoreError--wrapper flex justifyContent--space-between alignItems--center" key={`${error.title}-${i}`}>
           <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10"> </div>
-          <div className="flex1">
-            <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
-          </div>
+          <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
         </div>
       ))
     );
@@ -76,9 +74,7 @@ class AppSnapshotRestore extends Component {
       warnings.map((warning, i) => (
         <div className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center" key={`${warning.title}-${i}`}>
           <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10"> </div>
-          <div className="flex1">
-            <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
-          </div>
+          <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
         </div>
       ))
     );
