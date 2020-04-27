@@ -37,17 +37,19 @@ func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernet
 		return errors.Wrap(err, "failed to check for existing license secret")
 	}
 
-	if existingSecret == nil {
-		s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-		var b bytes.Buffer
-		if err := s.Encode(deployOptions.License, &b); err != nil {
-			return errors.Wrap(err, "failed to encode license")
-		}
+	if existingSecret != nil {
+		return nil
+	}
 
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(licenseSecret(deployOptions.Namespace, b.String()))
-		if err != nil {
-			return errors.Wrap(err, "failed to create license secret")
-		}
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(deployOptions.License, &b); err != nil {
+		return errors.Wrap(err, "failed to encode license")
+	}
+
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(licenseSecret(deployOptions.Namespace, b.String()))
+	if err != nil {
+		return errors.Wrap(err, "failed to create license secret")
 	}
 
 	return nil

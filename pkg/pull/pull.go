@@ -128,7 +128,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.ConfigFile != "" {
-		config, err := parseConfigValuesFromFile(pullOptions.ConfigFile)
+		config, err := ParseConfigValuesFromFile(pullOptions.ConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse config values from file")
 		}
@@ -481,7 +481,7 @@ func ParseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 	return verifiedLicense, nil
 }
 
-func parseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
+func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {

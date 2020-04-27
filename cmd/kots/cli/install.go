@@ -92,18 +92,26 @@ func InstallCmd() *cobra.Command {
 				license = parsedLicense
 			}
 
+			var configValues *kotsv1beta1.ConfigValues
+			if v.GetString("config-values") != "" {
+				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(v.GetString("config-values")))
+				if err != nil {
+					return errors.Wrap(err, "failed to parse config values")
+				}
+
+				configValues = parsedConfigValues
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:             namespace,
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				Context:               v.GetString("context"),
-				IncludeShip:           v.GetBool("include-ship"),
-				IncludeGitHub:         v.GetBool("include-github"),
 				SharedPassword:        v.GetString("shared-password"),
 				ServiceType:           v.GetString("service-type"),
 				NodePort:              v.GetInt32("node-port"),
-				Hostname:              v.GetString("hostname"),
 				ApplicationMetadata:   applicationMetadata,
 				License:               license,
+				ConfigValues:          configValues,
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -172,20 +180,19 @@ func InstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool("include-ship", false, "include the shipinit/edit/update and watch components")
-	cmd.Flags().Bool("include-github", false, "set up for github login")
 	cmd.Flags().String("shared-password", "", "shared password to apply")
 	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
 	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
-	cmd.Flags().String("hostname", "localhost:8800", "the hostname to that the admin console will be exposed on")
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues")
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
+	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
@@ -193,9 +200,17 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-registry")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
 
+	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
+	cmd.Flags().MarkHidden("rewrite-images")
+	cmd.Flags().MarkHidden("image-namespace")
+	cmd.Flags().MarkHidden("registry-endpoint")
+
+	// flags that are not fully supported or generally available yet
+	cmd.Flags().MarkHidden("service-type")
+	cmd.Flags().MarkHidden("node-port")
 
 	return cmd
 }

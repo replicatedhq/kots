@@ -239,7 +239,16 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		// if there's a license, we write it as a secret and kotsadm will
 		// find it on startup and handle installation
 		if err := ensureLicenseSecret(&deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure license s")
+			return errors.Wrap(err, "failed to ensure license secret")
+		}
+	}
+
+	if deployOptions.ConfigValues != nil {
+		// if there's a configvalues file, store it as a secret (they may contain
+		// sensitive information) and kotsadm will find it on startup and apply
+		// it to the installation
+		if err := ensureConfigValuesSecret(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure config values secret")
 		}
 	}
 
@@ -287,10 +296,7 @@ func readDeployOptionsFromCluster(namespace string, kubernetesConfigFlags *gener
 	deployOptions := types.DeployOptions{
 		Namespace:             namespace,
 		KubernetesConfigFlags: kubernetesConfigFlags,
-		IncludeShip:           false,
-		IncludeGitHub:         false,
 		ServiceType:           "ClusterIP",
-		Hostname:              "localhost:8800",
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value

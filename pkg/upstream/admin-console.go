@@ -115,7 +115,6 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
-		Hostname:               "localhost:8800",
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {
