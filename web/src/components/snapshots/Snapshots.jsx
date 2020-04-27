@@ -20,7 +20,7 @@ const DESTINATIONS = [
     label: "Azure Blob Storage",
   },
   {
-    value: "google",
+    value: "gcp",
     label: "Google Cloud Storage",
   },
   {
@@ -172,8 +172,8 @@ class Snapshots extends Component {
         snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret || snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
       )
     }
-    if (provider === "google") {
-      return (snapshotSettings?.store?.google?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.google?.serviceAccount !== gcsServiceAccount)
+    if (provider === "gcp") {
+      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount)
     }
     if (provider === "azure") {
       return (
@@ -216,9 +216,9 @@ class Snapshots extends Component {
               cloudName: this.state.selectedAzureCloudName.value
             }
           }
-        case "google":
+        case "gcp":
           return {
-            google: {
+            gcp: {
               serviceAccount: !this.state.gcsUseIam ? this.state.gcsServiceAccount : "",
               useInstanceRole: this.state.gcsUseIam
             }
@@ -324,14 +324,14 @@ class Snapshots extends Component {
       });
     }
 
-    if (store?.provider === "google") {
+    if (store?.provider === "gcp") {
       return this.setState({
         determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "google"]),
+        selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
         gcsBucket: store.bucket,
         gcsPath: store.path,
-        gcsServiceAccount: store?.google?.serviceAccount || "",
-        gcsUseIam: store?.google?.useInstanceRole
+        gcsServiceAccount: store?.gcp?.serviceAccount || "",
+        gcsUseIam: store?.gcp?.useInstanceRole
       });
     }
 
@@ -385,7 +385,7 @@ class Snapshots extends Component {
       case "azure":
         await this.snapshotProviderAzure();
         break;
-      case "google":
+      case "gcp":
         await this.snapshotProviderGoogle();
         break;
       case "other":
@@ -403,7 +403,7 @@ class Snapshots extends Component {
   }
 
   snapshotProviderGoogle = async () => {
-    this.updateSettings("google", this.state.gcsBucket, this.state.gcsPath);
+    this.updateSettings("gcp", this.state.gcsBucket, this.state.gcsPath);
   }
 
   snapshotProviderS3Compatible = async () => {
@@ -550,7 +550,7 @@ class Snapshots extends Component {
           </div>
         )
 
-      case "google":
+      case "gcp":
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
