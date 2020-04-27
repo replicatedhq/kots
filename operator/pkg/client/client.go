@@ -285,10 +285,11 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
 		log.Println("received a support bundle request")
 		go func() {
+			startTime := time.Now()
 			// This is in a goroutine because if we disconnect and reconnect to the
 			// websocket, we will want to report that it's completed...
 			err := runSupportBundle(args.URI)
-			log.Printf("support bundle run completed with err = %#v", err)
+			log.Printf("support bundle run completed in %s", time.Since(startTime).String())
 			if err != nil {
 				log.Printf("error running support bundle: %s", err.Error())
 			}
