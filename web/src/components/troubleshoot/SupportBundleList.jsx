@@ -8,9 +8,21 @@ import { listSupportBundles } from "../../queries/TroubleshootQueries";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
+import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 
 class SupportBundleList extends React.Component {
+
+  state = {
+    displayRedactorModal: false
+  }
+
+  toggleRedactorModal = () => {
+    this.setState({
+      displayRedactorModal: !this.state.displayRedactorModal
+    })
+  }
+
   render() {
     const { watch } = this.props;
     const { loading, error, listSupportBundles } = this.props.listSupportBundles;
@@ -67,8 +79,9 @@ class SupportBundleList extends React.Component {
                         <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna flex alignContent--center">Support bundles</h2>
                       </div>
                     </div>
-                    <div className="RightNode flex-auto flex-column flex-verticalCenter u-position--relative">
+                    <div className="RightNode flex-auto flex alignItems--center u-position--relative">
                       <Link to={`${this.props.match.url}/generate`} className="btn secondary">Generate a support bundle</Link>
+                      <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redactor spec</span>
                     </div>
                   </div>
                 </div>
@@ -79,6 +92,9 @@ class SupportBundleList extends React.Component {
             </div>
           </div>
         </div>
+        {this.state.displayRedactorModal && 
+          <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
+        }
       </div>
     );
   }
