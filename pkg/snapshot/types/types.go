@@ -37,7 +37,7 @@ type Store struct {
 	Path     string       `json:"path"`
 	AWS      *StoreAWS    `json:"aws,omitempty"`
 	Azure    *StoreAzure  `json:"azure,omitempty"`
-	Google   *StoreGoogle `json:"google,omitempty"`
+	Google   *StoreGoogle `json:"gcp,omitempty"`
 	Other    *StoreOther  `json:"other,omitempty"`
 }
 

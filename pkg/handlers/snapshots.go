@@ -29,7 +29,7 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	Path     string `json:"path"`
 
 	AWS    *snapshottypes.StoreAWS    `json:"aws"`
-	Google *snapshottypes.StoreGoogle `json:"google"`
+	Google *snapshottypes.StoreGoogle `json:"gcp"`
 	Azure  *snapshottypes.StoreAzure  `json:"azure"`
 	Other  *snapshottypes.StoreOther  `json:"other"`
 }
@@ -152,7 +152,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			if updateGlobalSnapshotSettingsRequest.Google.ServiceAccount != "" {
 				if strings.Contains(updateGlobalSnapshotSettingsRequest.Google.ServiceAccount, "REDACTED") {
 					logger.Error(err)
-					globalSnapshotSettingsResponse.Error = "invalid google service account"
+					globalSnapshotSettingsResponse.Error = "invalid gcp service account"
 					JSON(w, 400, globalSnapshotSettingsResponse)
 					return
 				}
