@@ -281,7 +281,7 @@ class UploadLicenseFile extends React.Component {
           <div className="Modal-body">
             <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
               <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
-              <p className="u-fontSize--small u-color--chestnut">{errorMessage}</p>
+              <p className="u-fontSize--small u-color--chestnut">{typeof errorMessage === "object" ? "An unknown error orrcured while trying to upload your license. Please try again." : errorMessage}</p>
               <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
               <CodeSnippet
                   language="bash"
