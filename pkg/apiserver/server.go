@@ -122,9 +122,6 @@ func Start() {
 	// GitOps
 	r.HandleFunc("/api/v1/gitops", handlers.NotImplemented)
 
-	// License
-	r.HandleFunc("/api/v1/license", handlers.NotImplemented)
-
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
 		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
