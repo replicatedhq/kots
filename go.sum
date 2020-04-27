@@ -156,6 +156,7 @@ github.com/containers/storage v1.16.2/go.mod h1:/RNmsK01ajCL+VtMSi3W8kHzpBwN+Q5g
 github.com/coredns/corefile-migration v1.0.4/go.mod h1:OFwBp/Wc9dJt5cAZzHWMNhK1r5L0p0jDwIBc6j8NC8E=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
+github.com/coreos/etcd v3.3.15+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8NzMklzPG4d5KIOhIy30Tk=
 github.com/coreos/go-oidc v2.1.0+incompatible/go.mod h1:CgnwVTmzoESiwO9qyAFEMiHoZ1nMCKZlZ9V6mm3/LKc=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
@@ -744,6 +745,8 @@ github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDF
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kots v1.15.0-beta.2 h1:IXhk0zrd+nOjAxBIeFWDMO6WqR+GWOpVOGI0P4FiqIg=
 github.com/replicatedhq/kots v1.15.0-beta.2/go.mod h1:8mbam1nJv/DzA7809Tx0kEL4IBhIYqtzACMsM+eKIOw=
+github.com/replicatedhq/kots v1.15.0-beta.3 h1:lgiNiIkzptvnAJZ6YVKjUz3Exg4IjnmI4wYUh0ydcus=
+github.com/replicatedhq/kots v1.15.0-beta.3/go.mod h1:eJSwT3usYAPwEYmJZuJtt2XKWsk9UdinPElWSc7eoAg=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
