@@ -111,15 +111,20 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		finalError = err
 		return nil, errors.Wrap(err, "failed to read config values from in cluster")
 	}
-	configFile, err := ioutil.TempFile("", "kots")
-	if err != nil {
-		finalError = err
-		return nil, errors.Wrap(err, "failed to create temp file for config values")
-	}
-	defer os.RemoveAll(configFile.Name())
-	if err := ioutil.WriteFile(configFile.Name(), []byte(configValues), 0644); err != nil {
-		finalError = err
-		return nil, errors.Wrap(err, "failed to write config values to temp file")
+	configFile := ""
+	if configValues != "" {
+		tmpFile, err := ioutil.TempFile("", "kots")
+		if err != nil {
+			finalError = err
+			return nil, errors.Wrap(err, "failed to create temp file for config values")
+		}
+		defer os.RemoveAll(tmpFile.Name())
+		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
+			finalError = err
+			return nil, errors.Wrap(err, "failed to write config values to temp file")
+		}
+
+		configFile = tmpFile.Name()
 	}
 
 	// kots install --config-values (and other documented automation workflows) support
@@ -134,7 +139,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
-		ConfigFile:          configFile.Name(),
+		ConfigFile:          configFile,
 		ReportWriter:        pipeWriter,
 	}
 
