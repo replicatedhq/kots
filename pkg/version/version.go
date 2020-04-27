@@ -196,7 +196,7 @@ backup_spec = EXCLUDED.backup_spec`
 				return int64(0), errors.Wrap(err, "failed to check if app needs configuration")
 			}
 
-			if needsConfig && configValues != "" {
+			if needsConfig || configValues == "" {
 				downstreamStatus = "pending_config"
 			} else if kotsKinds.Preflight != nil {
 				downstreamStatus = "pending_preflight"
