@@ -18,11 +18,10 @@ class SecureAdminConsole extends React.Component {
   }
 
   completeLogin = (data) => {
-    const { onLoginSuccess } = this.props;
     let token = data.token;
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
-      onLoginSuccess().then((res) => {
+      this.props.onLoginSuccess().then((res) => {
         this.setState({ authLoading: false });
         if (res.length > 0) {
           this.props.history.replace(`/app/${res[0].slug}`);
@@ -36,8 +35,7 @@ class SecureAdminConsole extends React.Component {
   }
 
   validatePassword = () => {
-    const { password } = this.state;
-    if (!password || password.length === "0") {
+    if (!this.state.password || this.state.password.length === "0") {
       this.setState({
         passwordErr: true,
         passwordErrMessage: `Please provide your password`,
@@ -48,7 +46,6 @@ class SecureAdminConsole extends React.Component {
   }
 
   loginToConsole = async () => {
-    const { password } = this.state;
     if (this.validatePassword()) {
       this.setState({ authLoading: true, passwordErr: false, passwordErrMessage: "" });
       fetch(`${window.env.API_ENDPOINT}/login`, {
@@ -57,7 +54,7 @@ class SecureAdminConsole extends React.Component {
         },
         method: "POST",
         body: JSON.stringify({
-          password: password,
+          password: this.state.password,
         })
       })
       .then(async (res) => {
