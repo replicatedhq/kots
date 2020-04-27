@@ -15,6 +15,9 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/task"
 	"github.com/replicatedhq/kotsadm/pkg/version"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type PendingApp struct {
@@ -103,6 +106,26 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
+	configValues, err := readConfigValuesFromInClusterSecret()
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to read config values from in cluster")
+	}
+	configFile, err := ioutil.TempFile("", "kots")
+	if err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to create temp file for config values")
+	}
+	defer os.RemoveAll(configFile.Name())
+	if err := ioutil.WriteFile(configFile.Name(), []byte(configValues), 0644); err != nil {
+		finalError = err
+		return nil, errors.Wrap(err, "failed to write config values to temp file")
+	}
+
+	// kots install --config-values (and other documented automation workflows) support
+	// a writing a config values file as a secret...
+	// if this secret exists, we automatically (blindly) use it as the config values
+	// for the application, and then delete it.
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LicenseFile:         licenseFile.Name(),
@@ -111,6 +134,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
+		ConfigFile:          configFile.Name(),
 		ReportWriter:        pipeWriter,
 	}
 
@@ -187,4 +211,42 @@ func setAppInstallState(appID string, status string) error {
 	}
 
 	return nil
+}
+
+func readConfigValuesFromInClusterSecret() (string, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
+	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
+		LabelSelector: "kots.io/automation=configvalues",
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list configvalues secrets")
+	}
+
+	// just get the first
+	for _, configValuesSecret := range configValuesSecrets.Items {
+		configValues, ok := configValuesSecret.Data["configvalues"]
+		if !ok {
+			logger.Errorf("config values secret %q does not contain config values key", configValuesSecret.Name)
+			continue
+		}
+
+		// delete it, these are one time use secrets
+		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(configValuesSecret.Name, &metav1.DeleteOptions{})
+		if err != nil {
+			logger.Errorf("error deleting config values secret: %v", err)
+		}
+
+		return string(configValues), nil
+	}
+
+	return "", nil
 }

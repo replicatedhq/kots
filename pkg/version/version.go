@@ -167,7 +167,40 @@ backup_spec = EXCLUDED.backup_spec`
 	for _, d := range downstreams {
 		downstreamStatus := "pending"
 		if currentSequence == nil && kotsKinds.Config != nil {
-			downstreamStatus = "pending_config"
+			configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to render config")
+			}
+
+			configValues := ""
+			if kotsKinds.ConfigValues != nil {
+				configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+				if err != nil {
+					return int64(0), errors.Wrap(err, "failed to render config values")
+				}
+
+				configValues = string(configValuesSpec)
+			}
+
+			license := ""
+			if kotsKinds.License != nil {
+				licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+				if err != nil {
+					return int64(0), errors.Wrap(err, "failed to render license")
+				}
+
+				license = string(licenseSpec)
+			}
+			needsConfig, err := config.NeedsConfiguration(string(configSpec), configValues, license)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to check if app needs configuration")
+			}
+
+			if needsConfig || configValues == "" {
+				downstreamStatus = "pending_config"
+			} else if kotsKinds.Preflight != nil {
+				downstreamStatus = "pending_preflight"
+			}
 		} else if kotsKinds.Preflight != nil {
 			downstreamStatus = "pending_preflight"
 		}
