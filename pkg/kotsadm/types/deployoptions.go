@@ -10,8 +10,6 @@ type DeployOptions struct {
 	Namespace              string
 	KubernetesConfigFlags  *genericclioptions.ConfigFlags
 	Context                string
-	IncludeShip            bool
-	IncludeGitHub          bool
 	SharedPassword         string
 	SharedPasswordBcrypt   string
 	S3AccessKey            string
@@ -22,9 +20,9 @@ type DeployOptions struct {
 	AutoCreateClusterToken string
 	ServiceType            string
 	NodePort               int32
-	Hostname               string
 	ApplicationMetadata    []byte
 	LimitRange             *corev1.LimitRange
 	IsOpenShift            bool
 	License                *kotsv1beta1.License
+	ConfigValues           *kotsv1beta1.ConfigValues
 }
