@@ -49,6 +49,9 @@ jobs:
         with:
           args: kubernetes cluster kubeconfig show github-action > $GITHUB_WORKSPACE/.kubeconfig
 
+      - name: delete namespace
+        run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns --ignore-not-found automated-$GITHUB_RUN_ID
+
       - name: install qa app
         run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
 
