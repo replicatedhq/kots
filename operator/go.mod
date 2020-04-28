@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/troubleshoot v0.9.30
+	github.com/replicatedhq/troubleshoot v0.9.31
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.5.1
