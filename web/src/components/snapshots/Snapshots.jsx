@@ -780,6 +780,7 @@ class Snapshots extends Component {
                   value={selectedDestination}
                   onChange={this.handleDestinationChange}
                   isOptionSelected={(option) => { option.value === selectedDestination }}
+                  isDisabled={true}
                 />
               </div>
             </div>
