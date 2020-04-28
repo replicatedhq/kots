@@ -14,6 +14,10 @@ import (
 	"github.com/replicatedhq/kotsadm/pkg/user"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Session struct {
@@ -54,8 +58,47 @@ func Parse(signedToken string) (*Session, error) {
 	if len(tokenParts) != 2 {
 		return nil, errors.New("invalid number of components in authorization header")
 	}
-	if tokenParts[0] != "Bearer" {
-		return nil, errors.New("expected bearer token")
+	if tokenParts[0] != "Bearer" && tokenParts[0] != "Kots" {
+		return nil, errors.New("expected bearer or kots token")
+	}
+
+	if tokenParts[0] == "Kots" {
+		// this is a token from the kots CLI
+		// it needs to be compared with the "kotsadm-authstring" secret
+		// if that matches, we return a new session token with the session ID set to the authstring value
+		// and the userID set to "kots-cli"
+		// this works for now as the endpoints used by the kots cli don't rely on user ID
+		// TODO make real userid/sessionid
+		cfg, err := config.GetConfig()
+		if err != nil {
+			return nil, errors.New("failed to get cluster config")
+		}
+
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, errors.New("failed to create clientset")
+		}
+
+		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-authstring", metav1.GetOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return nil, errors.New("failed to read auth string")
+		}
+
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, errors.New("no auth string found")
+		}
+
+		if signedToken != string(secret.Data["kotsadm-authstring"]) {
+			return nil, errors.New("invalid authstring")
+		}
+
+		s := Session{
+			ID:        "kots-cli",
+			CreatedAt: time.Now(),
+			ExpiresAt: time.Now().Add(time.Minute),
+		}
+
+		return &s, nil
 	}
 
 	token, err := jwt.Parse(tokenParts[1], func(token *jwt.Token) (interface{}, error) {
