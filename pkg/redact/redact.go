@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	v1 "k8s.io/api/core/v1"
@@ -67,6 +68,25 @@ func GetRedact() (*v1beta1.Redactor, error) {
 		return nil, nil
 	}
 	return redactor, nil
+}
+
+// CleanupSpec attempts to parse the provided spec as a redactor, and then renders it again to clean things
+func CleanupSpec(spec string) (string, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(spec), nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "deserialize redact spec")
+	}
+	redactor, ok := obj.(*v1beta1.Redactor)
+	if !ok {
+		return "", errors.New("not a redact spec")
+	}
+
+	newSpec, err := util.MarshalIndent(2, redactor)
+	if err != nil {
+		return "", errors.Wrap(err, "marshal redact spec")
+	}
+	return string(newSpec), nil
 }
 
 // SetRedactSpec sets the global redact spec to the specified string, and returns a pretty error string + the underlying error

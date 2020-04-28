@@ -99,7 +99,15 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errMessage, err := redact.SetRedactSpec(setSpec)
+	cleanSpec, err := redact.CleanupSpec(setSpec)
+	if err != nil {
+		logger.Error(err)
+		updateRedactResponse.Error = err.Error()
+		JSON(w, 400, updateRedactResponse)
+		return
+	}
+
+	errMessage, err := redact.SetRedactSpec(cleanSpec)
 	if err != nil {
 		logger.Error(err)
 		updateRedactResponse.Error = errMessage
@@ -108,7 +116,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updateRedactResponse.Success = true
-	updateRedactResponse.UpdatedSpec = setSpec
+	updateRedactResponse.UpdatedSpec = cleanSpec
 	JSON(w, 200, updateRedactResponse)
 }
 
