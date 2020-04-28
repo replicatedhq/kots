@@ -245,7 +245,7 @@ func HasKurlRegistry() (bool, error) {
 	}
 
 	if registryCredsSecret != nil {
-		if registryCredsSecret.Type == corev1.SecretTypeDockercfg {
+		if registryCredsSecret.Type == corev1.SecretTypeDockerConfigJson {
 			return true, nil
 		}
 	}
