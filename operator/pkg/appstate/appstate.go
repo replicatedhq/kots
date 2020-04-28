@@ -3,6 +3,7 @@ package appstate
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
@@ -140,7 +141,10 @@ func (m *AppMonitor) run(ctx context.Context) {
 	defer close(m.appStatusCh)
 
 	prevCancel := context.CancelFunc(func() {})
-	defer prevCancel()
+	defer func() {
+		// wrap this in a function to cancel the variable when updated
+		prevCancel()
+	}()
 
 	for {
 		select {
@@ -154,10 +158,12 @@ func (m *AppMonitor) run(ctx context.Context) {
 
 			ctx, cancel := context.WithCancel(ctx)
 			prevCancel = cancel
-			m.runInformers(ctx, informers)
+			go m.runInformers(ctx, informers)
 		}
 	}
 }
+
+type runControllerFunc func(context.Context, kubernetes.Interface, string, []types.StatusInformer, chan<- types.ResourceState)
 
 func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
 	// TODO: informers only work for the target namespace
@@ -174,26 +180,36 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 	}
 	m.appStatusCh <- appStatus // reset last app status
 
+	var shutdown sync.WaitGroup
 	resourceStateCh := make(chan types.ResourceState)
-	go runDeploymentController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
-	go runIngressController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
-	go runPersistentVolumeClaimController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
-	go runServiceController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
-	go runStatefulSetController(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
-
-	go func() {
-		defer close(resourceStateCh)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case resourceState := <-resourceStateCh:
-				appStatus.ResourceStates, _ = resourceStatesApplyNew(appStatus.ResourceStates, informers, resourceState)
-				appStatus.UpdatedAt = time.Now() // TODO: this should come from the informer
-				m.appStatusCh <- appStatus
-			}
-		}
+	defer func() {
+		shutdown.Wait()
+		close(resourceStateCh)
 	}()
+
+	goRun := func(fn runControllerFunc) {
+		shutdown.Add(1)
+		go func() {
+			fn(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+			shutdown.Done()
+		}()
+	}
+	goRun(runDeploymentController)
+	goRun(runIngressController)
+	goRun(runPersistentVolumeClaimController)
+	goRun(runServiceController)
+	goRun(runStatefulSetController)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case resourceState := <-resourceStateCh:
+			appStatus.ResourceStates, _ = resourceStatesApplyNew(appStatus.ResourceStates, informers, resourceState)
+			appStatus.UpdatedAt = time.Now() // TODO: this should come from the informer
+			m.appStatusCh <- appStatus
+		}
+	}
 }
 
 func runInformer(ctx context.Context, informer cache.SharedInformer, eventHandler EventHandler) {
