@@ -33,8 +33,13 @@ In every case, five environment variables are configured for `kotsadm` and `kots
 - `S3_BUCKET_NAME`
 - `S3_BUCKET_ENDPOINT` 
 
-`S3_BUCKET_ENDPOINT` appears to be a boolean, configured whether to use a custom endpoint. Seems to always be `true`, I believe this controls whether to override the default S3 endpoint in our S3 client.
+Per Marc, `S3_BUCKET_ENDPOINT` controls the addressing pattern to be used for the bucket (host vs path based bucket routing)
 
+> My understanding of this param is that it controls whether the client (our s3 internal client) uses path style or dns style bucket naming. (https://aws.amazon.com/blogs/aws/amazon-s3-path-deprecation-plan-the-rest-of-the-story)
+>
+> I believe that minio doesn't currently support bucket dns names in K8s, so we rely on this legacy pattern of addressing buckets
+
+I'd propose that we continue hard-coding this to `"true"` and consider adding a flag for it if necessary, as I don't believe the `"false"` or empty `""` implementation has been tested in quite some time.
 
 
 ### With [kots install](https://kots.io/kots-cli/install/)
@@ -127,15 +132,9 @@ If `--object-store=external`, validation should fail if any of the following is 
 
 Once validated, these options should all be added to the `kotsadmtypes.DeployOptions` object passed into `kotsadm.Deploy()`.
 
-#### Migrating the kotsadm-minio secret
-
-When creating/ensuring the object store secret, rename the secret `kotsadm-minio` to `kotsadm-s3`. We should first check for a `kotsadm-minio` secret and migrate it to `kotsadm-s3`. Field names stay the same. In the odd case that something previously failed mid-migration, and both `kotsadm-minio` and `kotsadm-s3` exist, use the values from `kotsadm-s3` and delete `kotsadm-minio`. 
-
-When ensuring kotsadm and kotsadm-api, patch the `valueFrom` `secretKeyRef` invocations in the environment to pull from the new kotsadm-s3 secret. This can be done transparently by updating the implementation of `kotsadmDeployment` and `kotsadmApiDeployment` functions that build the k8s objects.
-
 #### Mapping user-supplied values when creating the secret
 
-Based on `object-store=external`, pipe in the values of `object-store-external-access-key-id` and `object-store-external-secret-access-key` to the `kotsadm-s3` secret values of `accesskey` and `secretkey`.
+Based on `object-store=external`, pipe in the values of `object-store-external-access-key-id` and `object-store-external-secret-access-key` to the `kotsadm-minio` secret values of `accesskey` and `secretkey`.
 
 Add a new field `bucket-name` to match the field name in the secret created by kURL. If `--object-store=minio`, set this to the current hardcoded value: `kotsadm`. 
 
@@ -148,14 +147,26 @@ Add a new field for `bucket-endpoint`, if `--object-store=external`, either:
 1. If `--object-store-external-endpoint` is not empty, set `endpoint` to the value provided and set `bucket-endpoint` to the string `"true"`
 
 
-
 #### Updating deployed objects
 
 `accesskey` and `secretkey` should continue to be accessed in the same way by both `kotsadm` and `kotsadm-api` deployments.
 
-`kotsadm` and `kotsadm-api` should be modified to pull the `S3_ENDPOINT` field from the `kotsadm-s3` secret rather than hardcoding it to the embedded `kotsadm-minio` service. 
+`kotsadm` and `kotsadm-api` should be modified to pull the `S3_ENDPOINT` field from the `kotsadm-minio` secret rather than hardcoding it to the embedded `kotsadm-minio` service. 
 
-`kotsadm` and `kotsadm-api` should be modified to pull the `S3_BUCKET_NAME` field from the `kotsadm-s3` secret rather than hardcoding it to the default `kotsadm` bucket.
+`kotsadm` and `kotsadm-api` should be modified to pull the `S3_BUCKET_NAME` field from the `kotsadm-minio` secret rather than hardcoding it to the default `kotsadm` bucket.
 
-`kotsadm` and `kotsadm-api` should be modified to pull the `S3_BUCKET_NAME` field from the `kotsadm-s3` secret rather than hardcoding it to the default `kotsadm` bucket.
+`kotsadm` and `kotsadm-api` should continue to hard-code the `S3_BUCKET_ENDPOINT` flag to `true` until we can get a better understanding of the behavior when this is not set.
 
+
+#### Out of Scope
+
+I'd like to propose that the following be considered out scope:
+
+- Usage of a kURL cluster with an external object store
+- Migrating the `kotsadm-minio` secret to match the secret name that kURL uses (`kotsadm-s3`)
+- Allowing for alternative methods of providing AWS credentials, including
+    - pulling from environment variables
+    - pulling from default AWS credentials locations
+    - pulling from other default cloud provider credentials locations (e.g. Azure, GCS)
+    - using instance roles to communicate with the object store
+    - specifying an existing in-cluster secret for s3 credentials
