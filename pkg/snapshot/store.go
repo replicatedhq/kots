@@ -138,10 +138,47 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 
 		// create or update the secret
 	} else if store.Google != nil {
-		if !store.Google.UseInstanceRole {
+		if store.Google.UseInstanceRole {
 			// delete the secret
+			if currentSecretErr == nil {
+				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to delete google secret")
+				}
+			}
 		} else {
 			// create or update the secret
+			if kuberneteserrors.IsNotFound(currentSecretErr) {
+				// create
+				toCreate := corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cloud-credentials",
+						Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+					},
+					Data: map[string][]byte{
+						"cloud": []byte(store.Google.ServiceAccount),
+					},
+				}
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to create aws secret")
+				}
+			} else {
+				// update
+				if currentSecret.Data == nil {
+					currentSecret.Data = map[string][]byte{}
+				}
+
+				currentSecret.Data["cloud"] = []byte(store.Google.ServiceAccount)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update aws secret")
+				}
+			}
 		}
 	} else if store.Azure != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config["resourceGroup"] = store.Azure.ResourceGroup
@@ -338,7 +375,8 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		}
 
 		store.Google = &types.StoreGoogle{
-			ServiceAccount: serviceAccount,
+			ServiceAccount:  serviceAccount,
+			UseInstanceRole: serviceAccount == "",
 		}
 		break
 	}
