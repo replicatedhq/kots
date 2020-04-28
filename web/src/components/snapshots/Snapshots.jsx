@@ -730,7 +730,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Velero is not running </p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
                   Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.
-                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                  <a href="https://velero.io/docs/master/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
                 </p>
               </div>
             </div>
@@ -754,7 +754,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Restic is not working </p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
                   Velero and the restic integration have been detected, but restic is not running successfully. Snapshots will not work until Restic is running reliably.
-                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                  <a href="https://velero.io/docs/master/restic/#troubleshooting" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
                 </p>
               </div>
             </div>
@@ -767,7 +767,7 @@ class Snapshots extends Component {
             <div className="flex flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               {!this.state.snapshotSettings.isVeleroRunning &&
-                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://velero.io/docs/master/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
               <div className="flex1">
                 <Select
                   className="replicated-select-container"
