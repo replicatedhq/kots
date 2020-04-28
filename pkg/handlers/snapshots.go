@@ -188,6 +188,12 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			store.Azure.ClientID = updateGlobalSnapshotSettingsRequest.Azure.ClientID
 		}
 		if updateGlobalSnapshotSettingsRequest.Azure.ClientSecret != "" {
+			if strings.Contains(updateGlobalSnapshotSettingsRequest.Azure.ClientSecret, "REDACTED") {
+				logger.Error(err)
+				globalSnapshotSettingsResponse.Error = "invalid client secret"
+				JSON(w, 400, globalSnapshotSettingsResponse)
+				return
+			}
 			store.Azure.ClientSecret = updateGlobalSnapshotSettingsRequest.Azure.ClientSecret
 		}
 		if updateGlobalSnapshotSettingsRequest.Azure.CloudName != "" {
