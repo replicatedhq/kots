@@ -58,7 +58,7 @@ export default class ConfigureRedactorsModal extends Component {
       },
       method: "GET",
     })
-      .then(async (res) => {
+      .then(async res => {
         const response = await res.json();
         try {
           const r = yaml.safeLoad(response.updatedSpec);
@@ -72,8 +72,7 @@ export default class ConfigureRedactorsModal extends Component {
           this.setState({ loadingRedactor: false, errFetchingRedactors: true });
         }
       })
-      .catch((err) => {
-        console.log(err);
+      .catch(() => {
         this.setState({ loadingRedactor: false, errFetchingRedactors: true });
       });
   }
@@ -107,13 +106,26 @@ export default class ConfigureRedactorsModal extends Component {
       method: "PUT",
       body: JSON.stringify(payload)
     })
-      .then(() => {
-        this.setState({ savingRedactor: false, specSaved: true });
-        setTimeout(() => {
-          this.setState({ specSaved: false });
-        }, 3000);
+      .then(async res => {
+        const body = await res.json();
+        if (!res.ok) {
+          if (isRedactorLink) {
+            this.setState({ savingRedactor: false, errorSavingSpecUri: true, savingSpecUriError: body.error });
+          } else {
+            this.setState({ savingRedactor: false, errorSavingSpec: true, savingSpecError: body.error });
+          }
+        } else {
+          if (isRedactorLink) {
+            this.setState({ savingRedactor: false, specSaved: true });
+          } else {
+            this.setState({ customRedactorSpec: body.updatedSpec, savingRedactor: false, specSaved: true });
+          }
+          setTimeout(() => {
+            this.setState({ specSaved: false });
+          }, 3000);
+        }
       })
-      .catch((err) => {
+      .catch(err => {
         if (isRedactorLink) {
           this.setState({ savingRedactor: false, errorSavingSpecUri: true, savingSpecUriError: err });
         } else {
