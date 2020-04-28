@@ -144,7 +144,7 @@ export default class ConfigureRedactorsModal extends Component {
             <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Provide the URI where your redactor spec is located.</p>
             <input type="text" className="Input" placeholder="github.com/org/myrepo/redactor.yaml" value={redactorUri} autoComplete="" onChange={(e) => { this.setState({ redactorUri: e.target.value }) }} />
             <div className="u-marginTop--10 flex alignItems--center">
-              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Cancel</button>
+              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Close</button>
               <button className="btn primary" onClick={this.saveRedactor} disabled={savingRedactor}>{savingRedactor ? "Saving" : "Save"}</button>
               {this.state.specSaved &&
                 <span className="u-marginLeft--10 flex alignItems--center">
@@ -186,7 +186,7 @@ export default class ConfigureRedactorsModal extends Component {
               />
             </div>
             <div className="u-marginTop--10 flex alignItems--center">
-              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Cancel</button>
+              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Close</button>
               <button className="btn primary" onClick={this.saveRedactor} disabled={savingRedactor}>{savingRedactor ? "Saving spec" : "Save spec"}</button>
               {this.state.specSaved &&
                 <span className="u-marginLeft--10 flex alignItems--center">
@@ -224,7 +224,7 @@ export default class ConfigureRedactorsModal extends Component {
         className={`Modal ${this.state.activeRedactorTab === "linkSpec" ? "SmallSize" : "MediumSize"}`}
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">Configure your redactor spec</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">Configure redaction</p>
           {this.state.errFetchingRedactors ? 
             <div className="u-marginTop--40 flex justifyContent--center">
               <span className="u-fontSize--large u-fontWeight--medium u-color--chestnut u-lineHeight--normal">Failed to fetch custom redactors</span>
