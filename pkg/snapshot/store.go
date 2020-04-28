@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kotsadm/pkg/snapshot/providers"
 	"github.com/replicatedhq/kotsadm/pkg/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -49,6 +50,11 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket = store.Bucket
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
 
+	currentSecret, currentSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+	if currentSecretErr != nil && !kuberneteserrors.IsNotFound(currentSecretErr) {
+		return nil, errors.Wrap(currentSecretErr, "failed to read aws secret")
+	}
+
 	if store.AWS != nil {
 		logger.Debug("updating aws config in global snapshot storage",
 			zap.String("region", store.AWS.Region),
@@ -59,14 +65,9 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		// s3Url can be set by Other and conflicts with S3
 		delete(kotsadmVeleroBackendStorageLocation.Spec.Config, "s3Url")
 
-		awsSecret, awsSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
-		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "failed to read aws secret")
-		}
-
 		if store.AWS.UseInstanceRole {
 			// delete the secret
-			if awsSecretErr == nil {
+			if currentSecretErr == nil {
 				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to delete aws secret")
@@ -99,7 +100,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			}
 
 			// create or update the secret
-			if kuberneteserrors.IsNotFound(awsSecretErr) {
+			if kuberneteserrors.IsNotFound(currentSecretErr) {
 				// create
 				toCreate := corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
@@ -120,12 +121,12 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				}
 			} else {
 				// update
-				if awsSecret.Data == nil {
-					awsSecret.Data = map[string][]byte{}
+				if currentSecret.Data == nil {
+					currentSecret.Data = map[string][]byte{}
 				}
 
-				awsSecret.Data["cloud"] = awsCredentials.Bytes()
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(awsSecret)
+				currentSecret.Data["cloud"] = awsCredentials.Bytes()
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to update aws secret")
 				}
@@ -148,7 +149,47 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["subscriptionId"] = store.Azure.SubscriptionID
 		kotsadmVeleroBackendStorageLocation.Spec.Config["cloudName"] = store.Azure.CloudName
 
+		config := providers.Azure{
+			SubscriptionID: store.Azure.SubscriptionID,
+			TenantID:       store.Azure.TenantID,
+			ClientID:       store.Azure.ClientID,
+			ClientSecret:   store.Azure.ClientSecret,
+			ResourceGroup:  store.Azure.ResourceGroup,
+			CloudName:      store.Azure.CloudName,
+		}
+
 		// create or update the secret
+		if kuberneteserrors.IsNotFound(currentSecretErr) {
+			// create
+			toCreate := corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cloud-credentials",
+					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+				},
+				Data: map[string][]byte{
+					"cloud": providers.RenderAzureConfig(config),
+				},
+			}
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create aws secret")
+			}
+		} else {
+			// update
+			if currentSecret.Data == nil {
+				currentSecret.Data = map[string][]byte{}
+			}
+
+			currentSecret.Data["cloud"] = providers.RenderAzureConfig(config)
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update aws secret")
+			}
+		}
 	}
 
 	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(kotsadmVeleroBackendStorageLocation)
@@ -268,24 +309,16 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		}
 
 		// get the secret
-		azureSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("azure-credentials", metav1.GetOptions{})
+		azureSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read azure secret")
 		}
 
 		if err == nil {
-			tenantID, ok := azureSecret.Data["tenantId"]
-			if ok {
-				store.Azure.TenantID = string(tenantID)
-			}
-			clientID, ok := azureSecret.Data["clientId"]
-			if ok {
-				store.Azure.ClientID = string(clientID)
-			}
-			clientSecret, ok := azureSecret.Data["clientSecret"]
-			if ok {
-				store.Azure.ClientSecret = string(clientSecret)
-			}
+			azureConfig := providers.ParseAzureConfig(azureSecret.Data["cloud"])
+			store.Azure.TenantID = azureConfig.TenantID
+			store.Azure.ClientID = azureConfig.ClientID
+			store.Azure.ClientSecret = azureConfig.ClientSecret
 		}
 		break
 
@@ -352,6 +385,12 @@ func Redact(store *types.Store) error {
 	if store.Google != nil {
 		if store.Google.ServiceAccount != "" {
 			store.Google.ServiceAccount = "--- REDACTED ---"
+		}
+	}
+
+	if store.Azure != nil {
+		if store.Azure.ClientSecret != "" {
+			store.Azure.ClientSecret = "--- REDACTED ---"
 		}
 	}
 
