@@ -14,7 +14,10 @@ kind: Redactor
 metadata:
   name: my-application-name
 spec:
-  redacts:
+  redactors:
+  - name: example replacement
+    values:
+    - abc123
 `;
 
 export default class ConfigureRedactorsModal extends Component {
