@@ -20,7 +20,7 @@ generate: controller-gen client-gen
 
 .PHONY: openapischema
 openapischema: controller-gen
-	$(CONTROLLER_GEN) crd +output:dir=./config/crds  paths=./apis/kos/v1beta1
+	$(CONTROLLER_GEN) crd +output:dir=./config/crds  paths=./apis/kots/v1beta1
 
 .PHONY: schemas
 schemas: fmt generate
