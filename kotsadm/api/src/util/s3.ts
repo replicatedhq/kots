@@ -1,6 +1,8 @@
 import AWS from "aws-sdk";
+import { logger } from "../server/logger";
 import { Params } from "../server/params";
 import * as Minio from "minio";
+import * as util from "util";
 import url from "url";
 
 export function getS3(params: Params): AWS.S3 {
@@ -148,10 +150,23 @@ export async function bucketExists(params: Params, bucketName: string): Promise<
     const s3 = getS3(params);
 
     s3.headObject({ Bucket: bucketName, Key: "no_such_file.tar.gz" }, err => {
+      // minio returns not found
       if (err.code === "NotFound") {
         resolve(true);
         return;
       }
+
+      // Amazon S3 returns BadRequest
+      if (err.code === "BadRequest" && params.s3Endpoint.indexOf("amazonaws.com") !== -1) {
+        resolve(true);
+        return;
+
+      }
+
+      const {code, message, statusCode} = err;
+      const {s3Endpoint, s3Region, s3BucketEndpoint, s3SkipEnsureBucket} = params;
+      logger.debug({msg: "failed to check if bucket exsists",
+        code, message, statusCode, s3Endpoint, s3Region, s3BucketEndpoint, s3SkipEnsureBucket});
 
       resolve(false);
     });

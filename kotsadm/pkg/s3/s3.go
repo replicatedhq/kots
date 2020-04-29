@@ -28,3 +28,7 @@ func GetConfig() *aws.Config {
 
 	return s3Config
 }
+
+func BucketName() string {
+	return os.Getenv("S3_BUCKET_NAME")
+}

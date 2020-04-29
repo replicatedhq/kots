@@ -138,7 +138,25 @@ func InstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to parse timeout value")
 			}
+			objectStoreOptions := kotsadmtypes.StorageOptions{
+				ObjectStoreType: v.GetString("object-store"),
+				AccessKeyID:     v.GetString("object-store-access-key-id"),
+				SecretAccessKey: v.GetString("object-store-secret-access-key"),
+				BucketName:      v.GetString("object-store-bucket-name"),
+				Endpoint:        v.GetString("object-store-endpoint"),
+				Region:          v.GetString("object-store-region"),
+				BucketInPath:    v.GetBool("object-store-bucket-in-path"),
 
+				StorageIncludeMinio:              v.GetBool("deploy-minio"),
+				StorageIncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
+			}
+
+			objectStoreConfig, err := kotsadmtypes.NewObjectStoreConfig(objectStoreOptions)
+			if err != nil {
+				return errors.Wrap(err, "validate object store")
+			}
+
+			deployOptions.ObjectStoreOptions = objectStoreConfig
 			deployOptions.Timeout = timeout
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -235,6 +253,21 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
+
+	cmd.Flags().String("object-store", kotsadmtypes.ObjectStoreTypeInternal, "(alpha) determine object store implementation, options are [internal,external]")
+	cmd.Flags().String("object-store-access-key-id", "", "(alpha) when object-store=external, set an access key id for authentication")
+	cmd.Flags().String("object-store-secret-access-key", "", "(alpha) when object-store=external, set a secret access key for authentication")
+	cmd.Flags().String("object-store-bucket-name", "", "(alpha) when object-store=external, set a bucket name to use")
+	cmd.Flags().String("object-store-endpoint", "", "(alpha) when object-store=external, set a custom endpoint to use")
+	cmd.Flags().String("object-store-region", "us-east-1", "(alpha) when object-store=external, set a custom region to use")
+	cmd.Flags().Bool("object-store-bucket-in-path", true, "(alpha) when object-store=external, determine whether to use a bucket name in the URL path vs using DNS-based bucket addressing")
+	cmd.Flags().MarkHidden("object-store")
+	cmd.Flags().MarkHidden("object-store-access-key-id")
+	cmd.Flags().MarkHidden("object-store-secret-access-key")
+	cmd.Flags().MarkHidden("object-store-bucket-name")
+	cmd.Flags().MarkHidden("object-store-endpoint")
+	cmd.Flags().MarkHidden("object-store-region")
+	cmd.Flags().MarkHidden("object-store-bucket-in-path")
 
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")

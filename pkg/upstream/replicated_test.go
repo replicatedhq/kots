@@ -88,11 +88,11 @@ func Test_releaseToFiles(t *testing.T) {
 				},
 			},
 			expected: []types.UpstreamFile{
-				types.UpstreamFile{
+				{
 					Path:    "deployment.yaml",
 					Content: []byte("a: b"),
 				},
-				types.UpstreamFile{
+				{
 					Path:    "service.yaml",
 					Content: []byte("c: d"),
 				},
@@ -107,11 +107,11 @@ func Test_releaseToFiles(t *testing.T) {
 				},
 			},
 			expected: []types.UpstreamFile{
-				types.UpstreamFile{
+				{
 					Path:    "manifests/deployment.yaml",
 					Content: []byte("a: b"),
 				},
-				types.UpstreamFile{
+				{
 					Path:    "service.yaml",
 					Content: []byte("c: d"),
 				},
@@ -127,15 +127,15 @@ func Test_releaseToFiles(t *testing.T) {
 				},
 			},
 			expected: []types.UpstreamFile{
-				types.UpstreamFile{
+				{
 					Path:    "deployment.yaml",
 					Content: []byte("a: b"),
 				},
-				types.UpstreamFile{
+				{
 					Path:    "service.yaml",
 					Content: []byte("c: d"),
 				},
-				types.UpstreamFile{
+				{
 					Path:    "userdata/values.yaml",
 					Content: []byte("d: e"),
 				},
@@ -172,12 +172,12 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		Spec: kotsv1beta1.ConfigSpec{
 			Groups: []kotsv1beta1.ConfigGroup{
-				kotsv1beta1.ConfigGroup{
+				{
 					Name:  "group_name",
 					Title: "Group Title",
 					Items: []kotsv1beta1.ConfigItem{
 						// should replace default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "1_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -190,7 +190,7 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should preserve value and add default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "2_with_value",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -203,7 +203,7 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should add a new item
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "4_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -227,13 +227,13 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		Spec: kotsv1beta1.ConfigValuesSpec{
 			Values: map[string]kotsv1beta1.ConfigValue{
-				"1_with_default": kotsv1beta1.ConfigValue{
+				"1_with_default": {
 					Default: "default_1",
 				},
-				"2_with_value": kotsv1beta1.ConfigValue{
+				"2_with_value": {
 					Value: "value_2",
 				},
-				"3_with_both": kotsv1beta1.ConfigValue{
+				"3_with_both": {
 					Value:   "value_3",
 					Default: "default_3",
 				},
@@ -245,14 +245,14 @@ func Test_createConfigValues(t *testing.T) {
 
 	// like new install, should match config
 	expected1 := map[string]kotsv1beta1.ConfigValue{
-		"1_with_default": kotsv1beta1.ConfigValue{
+		"1_with_default": {
 			Default: "default_1_new",
 		},
-		"2_with_value": kotsv1beta1.ConfigValue{
+		"2_with_value": {
 			Value:   "value_2_new",
 			Default: "default_2",
 		},
-		"4_with_default": kotsv1beta1.ConfigValue{
+		"4_with_default": {
 			Default: "default_4",
 		},
 	}
@@ -268,18 +268,18 @@ func Test_createConfigValues(t *testing.T) {
 
 	// updating existing values with new config, should do a merge
 	expected3 := map[string]kotsv1beta1.ConfigValue{
-		"1_with_default": kotsv1beta1.ConfigValue{
+		"1_with_default": {
 			Default: "default_1_new",
 		},
-		"2_with_value": kotsv1beta1.ConfigValue{
+		"2_with_value": {
 			Value:   "value_2",
 			Default: "default_2",
 		},
-		"3_with_both": kotsv1beta1.ConfigValue{
+		"3_with_both": {
 			Value:   "value_3",
 			Default: "default_3",
 		},
-		"4_with_default": kotsv1beta1.ConfigValue{
+		"4_with_default": {
 			Default: "default_4",
 		},
 	}

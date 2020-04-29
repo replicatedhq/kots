@@ -3,7 +3,6 @@ package apiserver
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -46,21 +45,27 @@ func waitForDependencies(ctx context.Context) error {
 func waitForS3Bucket(ctx context.Context) error {
 	logger.Debug("waiting for s3 bucket to be created")
 
-	period := 1 * time.Second // TOOD: backoff
+	period := 1 * time.Second
 	for {
-		newSession := awssession.New(kotss3.GetConfig())
+		s3Config := kotss3.GetConfig()
+		bucketName := kotss3.BucketName()
+
+		newSession := awssession.New(s3Config)
 		s3Client := s3.New(newSession)
 
 		_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
-			Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
+			Bucket: aws.String(bucketName),
 		})
 
 		if err == nil {
 			return nil
 		}
 
+		logger.Debugf("Waiting %v seconds after s3 bucket check for %s %s %s failed with %v", period, s3Config.Endpoint, s3Config.Region, bucketName, err)
+
 		select {
 		case <-time.After(period):
+			period *= 2
 			continue
 		case <-ctx.Done():
 			return errors.Wrap(ctx.Err(), "failed to find s3 bucket")
