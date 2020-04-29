@@ -760,7 +760,7 @@ class Snapshots extends Component {
             </div>
             <div className="flex1 u-marginBottom--30">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Deduplication</p>
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a className="replicated-link u-fontSize--small">check out our docs</a>.</p>
+              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">All data in your snapshots will be deduplicated. To learn more about how, <a href="https://restic.readthedocs.io/en/v0.3.2/Design/#backups-and-deduplication" target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--small">check out the Restic docs</a>.</p>
             </div>
             {updateErrorMsg &&
               <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
