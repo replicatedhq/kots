@@ -185,7 +185,7 @@ class GenerateSupportBundle extends React.Component {
               :
                 <div className="flex alignItems--center u-marginTop--20">
                   <button className="btn primary blue" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle}</button>
-                  <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redactor spec</span>
+                  <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
                 </div>
               }
               {showRunCommand ?

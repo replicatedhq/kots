@@ -81,7 +81,7 @@ class SupportBundleList extends React.Component {
                     </div>
                     <div className="RightNode flex-auto flex alignItems--center u-position--relative">
                       <Link to={`${this.props.match.url}/generate`} className="btn secondary">Generate a support bundle</Link>
-                      <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redactor spec</span>
+                      <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
                     </div>
                   </div>
                 </div>
