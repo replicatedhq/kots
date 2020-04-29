@@ -184,7 +184,6 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["resourceGroup"] = store.Azure.ResourceGroup
 		kotsadmVeleroBackendStorageLocation.Spec.Config["storageAccount"] = store.Azure.StorageAccount
 		kotsadmVeleroBackendStorageLocation.Spec.Config["subscriptionId"] = store.Azure.SubscriptionID
-		kotsadmVeleroBackendStorageLocation.Spec.Config["cloudName"] = store.Azure.CloudName
 
 		config := providers.Azure{
 			SubscriptionID: store.Azure.SubscriptionID,
@@ -338,13 +337,6 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 			SubscriptionID: kotsadmVeleroBackendStorageLocation.Spec.Config["subscriptionId"],
 		}
 
-		cloudName, ok := kotsadmVeleroBackendStorageLocation.Spec.Config["cloudName"]
-		if ok {
-			store.Azure.CloudName = cloudName
-		} else {
-			store.Azure.CloudName = "AzurePublicCloud"
-		}
-
 		// get the secret
 		azureSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -356,7 +348,13 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 			store.Azure.TenantID = azureConfig.TenantID
 			store.Azure.ClientID = azureConfig.ClientID
 			store.Azure.ClientSecret = azureConfig.ClientSecret
+			store.Azure.CloudName = azureConfig.CloudName
 		}
+
+		if store.Azure.CloudName == "" {
+			store.Azure.CloudName = "AzurePublicCloud"
+		}
+
 		break
 
 	case "gcp":
