@@ -103,10 +103,10 @@ This covers a proposal for `kots install`. It includes migrating the `kotsadm-mi
 
 
 - Add a flag to the kots CLI --object-store=external options are `minio,external`, flags whether to use an external object store. Used so as not to overload access-key-id and friends with toggling this external object store functionality on/off. I'm on the fence about requiring this to be passed, maybe we could simplify and remove it. Defaults to `minio`
-- Add a flag to the kots CLI --object-store-external-access-key-id
-- Add a flag to the kots CLI --object-store-external-secret-access-key
-- Add a flag to the kots CLI --object-store-external-bucket-name
-- Add a flag to the kots CLI --object-store-external-endpoint  but can be empty to use Amazon S3
+- Add a flag to the kots CLI --object-store-access-key-id
+- Add a flag to the kots CLI --object-store-secret-access-key
+- Add a flag to the kots CLI --object-store-bucket-name
+- Add a flag to the kots CLI --object-store-endpoint  but can be empty to use Amazon S3
 
 **Question:** should the object store types `minio` and `external` should be constants in the `types` package? Or a separate configuration package? https://github.com/replicatedhq/kots/blob/master/pkg/kotsadm/types/constants.go
 
@@ -117,24 +117,24 @@ This covers a proposal for `kots install`. It includes migrating the `kotsadm-mi
 
 If `--object-store=minio`, validation should fail if any of the following is set:
 
-- `--object-store-external-access-key-id`
-- `--object-store-external-secret-access-key`
-- `--object-store-external-bucket-name`
-- `--object-store-external-endpoint`
+- `--object-store-access-key-id`
+- `--object-store-secret-access-key`
+- `--object-store-bucket-name`
+- `--object-store-endpoint`
 
 
 If `--object-store=external`, validation should fail if any of the following is unset:
 
-- `--object-store-external-access-key-id`
-- `--object-store-external-secret-access-key`
-- `--object-store-external-bucket-name`
+- `--object-store-access-key-id`
+- `--object-store-secret-access-key`
+- `--object-store-bucket-name`
 
 
 Once validated, these options should all be added to the `kotsadmtypes.DeployOptions` object passed into `kotsadm.Deploy()`.
 
 #### Mapping user-supplied values when creating the secret
 
-Based on `object-store=external`, pipe in the values of `object-store-external-access-key-id` and `object-store-external-secret-access-key` to the `kotsadm-minio` secret values of `accesskey` and `secretkey`.
+Based on `object-store=external`, pipe in the values of `object-store-access-key-id` and `object-store-secret-access-key` to the `kotsadm-minio` secret values of `accesskey` and `secretkey`.
 
 Add a new field `bucket-name` to match the field name in the secret created by kURL. If `--object-store=minio`, set this to the current hardcoded value: `kotsadm`. 
 
@@ -143,8 +143,8 @@ Add a new field `endpoint` to match the field name in the secret created by kURL
 
 Add a new field for `bucket-endpoint`, if `--object-store=external`, either:
 
-1. If `--object-store-external-endpoint` is empty, set `endpoint` and `bucket-endpoint` to an empty string `""`
-1. If `--object-store-external-endpoint` is not empty, set `endpoint` to the value provided and set `bucket-endpoint` to the string `"true"`
+1. If `--object-store-endpoint` is empty, set `endpoint` and `bucket-endpoint` to an empty string `""`
+1. If `--object-store-endpoint` is not empty, set `endpoint` to the value provided and set `bucket-endpoint` to the string `"true"`
 
 
 #### Updating deployed objects
