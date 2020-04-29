@@ -37,8 +37,7 @@ spec:
           description: HelmChartSpec defines the desired state of HelmChartSpec
           properties:
             builder:
-              additionalProperties:
-                type: object
+              additionalProperties: {}
               type: object
             chart:
               properties:
@@ -58,8 +57,7 @@ spec:
               items:
                 properties:
                   values:
-                    additionalProperties:
-                      type: object
+                    additionalProperties: {}
                     type: object
                   when:
                     type: string
@@ -68,8 +66,7 @@ spec:
                 type: object
               type: array
             values:
-              additionalProperties:
-                type: object
+              additionalProperties: {}
               type: object
           required:
           - chart
