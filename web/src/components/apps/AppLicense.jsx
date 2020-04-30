@@ -77,7 +77,7 @@ class AppLicense extends Component {
       return;
     }
 
-    this.syncAppLicense(content);
+    this.syncAppLicense(contentStr);
   }
 
   syncAppLicense = (licenseData) => {
