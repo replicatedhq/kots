@@ -357,7 +357,7 @@ class AppDetailPage extends Component {
                 onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
               >
                 kubectl krew install kots
-                {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug} --dest ~/${this.props.match.params.slug}`}
+                {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug}`}
               </CodeSnippet>
               <div className="u-marginTop--10 flex">
                 <button onClick={this.toggleDisplayDownloadModal} className="btn blue primary">Ok, got it!</button>
