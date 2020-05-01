@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -94,11 +95,18 @@ func (f BaseFile) transpileHelmHooksToKotsHooks() error {
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
 	o := OverlySimpleGVK{}
 
-	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+	// check if this is a yaml file
+	if ext := filepath.Ext(f.Path); ext != ".yaml" && ext != ".yml" {
 		return false, nil
 	}
 
+	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal yaml document")
+	}
+
+	// check if this is a kubernetes document
 	if o.APIVersion == "" || o.Kind == "" {
+		// should this be an error?
 		return false, nil
 	}
 
