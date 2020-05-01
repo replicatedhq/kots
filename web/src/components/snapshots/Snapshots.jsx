@@ -676,14 +676,14 @@ class Snapshots extends Component {
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
             <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure snapshots</p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-              In order to configure and use Snapshots (backup and restore), please install <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
+              In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
             </p>
             <div className="flex justifyContent--center u-marginTop--40">
               <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
             </div>
             <div className="flex1 flex-column u-marginBottom--50 u-paddingLeft--20">
-              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by <a href="https://velero.io/docs/v1.3.2/basic-install/#install-the-cli" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
-              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 2 </span> Install the Restic integration on your machince by <a href="https://velero.io/docs/v1.3.2/restic/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by <a href="https://kots.io/kotsadm/snapshots/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 2 </span> Install the Restic integration on your machince by <a href="https://kots.io/kotsadm/snapshots/restic/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
               <div className="flex flex1 u-marginTop--20">
                 <div className="flex">
                   <span className="circleNumberGray u-marginRight--10"> 3 </span>
@@ -694,7 +694,7 @@ class Snapshots extends Component {
                     <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon awsIcon u-cursor--pointer" /></a>
                     <a href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon azureIcon u-cursor--pointer" /></a>
                     <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon googleCloudIcon u-cursor--pointer" /></a>
-                    <a href="https://velero.io/docs/v1.3.2/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a>
+                    <a href="https://kots.io/kotsadm/snapshots/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions"> <span className="icon cloudIcon u-cursor--pointer" /> Other </a>
                   </div>
                 </div>
               </div>
@@ -719,7 +719,7 @@ class Snapshots extends Component {
         <div className="snapshot-form-wrapper">
           <div className="flex flex-column justifyContent--center alignItems--center u-marginBottom--20">
             <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora">Snapshots</p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">Snapshots are a way to back up and restore the application and application data. The Admin Console uses <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to enable Snapshots. On this page, you can configure how the Admin Console will use Velero to perform backups and restores.</p>
           </div>
           <form className="flex flex-column">
             <div className={`${this.state.snapshotSettings.isVeleroRunning ? "u-display--none" : "flex flex1 u-marginBottom--30 flex justifyContent--center alignItems--center"}`}>
@@ -730,7 +730,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Velero is not running </p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
                   Velero has been detected, but it's not running successfully. Snapshots will not work until Velero is running reliably.
-                  <a href="https://velero.io/docs/master/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                  <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
                 </p>
               </div>
             </div>
@@ -742,7 +742,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Restic integration not found </p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
                   The Admin Console requires the Velero restic integration to use Snapshots, but it was not found. Please install the Velero restic integration to continue.
-                  <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                  <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
                 </p>
               </div>
             </div>
@@ -754,7 +754,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--larger u-fontWeight--bold"> Restic is not working </p>
                 <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
                   Velero and the restic integration have been detected, but restic is not running successfully. Snapshots will not work until Restic is running reliably.
-                  <a href="https://velero.io/docs/master/restic/#troubleshooting" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+                  <a href="https://kots.io/kotsadm/snapshots/restic-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
                 </p>
               </div>
             </div>
@@ -767,7 +767,7 @@ class Snapshots extends Component {
             <div className="flex flex-column u-marginBottom--20">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
               {!this.state.snapshotSettings.isVeleroRunning &&
-                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://velero.io/docs/master/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
               <div className="flex1">
                 <Select
                   className="replicated-select-container"
