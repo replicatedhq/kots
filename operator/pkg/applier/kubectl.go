@@ -121,7 +121,7 @@ func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]b
 	return stdout, stderr, errors.Wrap(err, "failed to run kubectl delete")
 }
 
-func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool) ([]byte, []byte, error) {
+func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
 	tmp, err := ioutil.TempDir("", "")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create temp directory")
@@ -154,13 +154,19 @@ func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dry
 	}
 
 	kustomizationPath := filepath.Join(tmp, "kustomization.yaml")
-	kustomizationYaml := fmt.Sprintf(`
+	kustomizationYaml := `
+resources:
+- doc.yaml
+`
+	if annotateSlug {
+		kustomizationYaml = fmt.Sprintf(`
 resources:
 - doc.yaml
 
 commonAnnotations:
   kots.io/app-slug: %q
 `, slug)
+	}
 	if err := ioutil.WriteFile(kustomizationPath, []byte(kustomizationYaml), 0644); err != nil {
 		return nil, nil, errors.Wrapf(err, "failed to write %s", kustomizationPath)
 	}

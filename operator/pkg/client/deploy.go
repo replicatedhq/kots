@@ -138,6 +138,10 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		}
 		log.Printf("Namepsace %s successfully cleared of app %s\n", namespace, applicationManifests.AppSlug)
 	}
+	if len(applicationManifests.ClearNamespaces) > 0 {
+		// Extra time in case the app-slug annotation was not being used.
+		time.Sleep(time.Second * 20)
+	}
 
 	return nil
 }
@@ -209,7 +213,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 			}
 
 			log.Printf("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
-			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, true, applicationManifests.Wait)
+			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, true, applicationManifests.Wait, applicationManifests.AnnotateSlug)
 			if dryRunErr != nil {
 				log.Printf("stdout (dryrun) = %s", dryrunStdout)
 				log.Printf("stderr (dryrun) = %s", dryrunStderr)
@@ -234,7 +238,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 		// CRDs don't have namespaces, so we can skip splitting
 
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", applicationManifests.AppSlug, customResourceDefinitions, false, applicationManifests.Wait)
+		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", applicationManifests.AppSlug, customResourceDefinitions, false, applicationManifests.Wait, applicationManifests.AnnotateSlug)
 		if applyErr != nil {
 			log.Printf("stdout (apply CRDS) = %s", applyStdout)
 			log.Printf("stderr (apply CRDS) = %s", applyStderr)
@@ -266,7 +270,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		}
 
 		log.Printf("applying manifest(s) in namespace %s", requestedNamespace)
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, false, applicationManifests.Wait)
+		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, false, applicationManifests.Wait, applicationManifests.AnnotateSlug)
 		if applyErr != nil {
 			log.Printf("stdout (apply) = %s", applyStdout)
 			log.Printf("stderr (apply) = %s", applyStderr)
