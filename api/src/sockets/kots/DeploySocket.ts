@@ -282,6 +282,7 @@ export class KotsDeploySocketService {
                 previous_manifests: "",
                 result_callback: "/api/v1/deploy/result",
                 wait: false,
+                annotate_slug: !!process.env.ANNOTATE_SLUG,
               };
 
               const previousSequence = await this.kotsAppStore.getPreviouslyDeployedSequence(app.id, clusterSocketHistory.clusterId, deployedAppSequence);
