@@ -95,18 +95,17 @@ func (f BaseFile) transpileHelmHooksToKotsHooks() error {
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
 	o := OverlySimpleGVK{}
 
-	// check if this is a yaml file
-	if ext := filepath.Ext(f.Path); ext != ".yaml" && ext != ".yml" {
-		return false, nil
-	}
-
 	if err := yaml.Unmarshal(f.Content, &o); err != nil {
-		return false, errors.Wrap(err, "failed to unmarshal yaml document")
+		// check if this is a yaml file
+		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			fmt.Printf("File %s is failed to unmarshal yaml: %v\n", f.Path, err)
+		}
+		return false, nil
 	}
 
 	// check if this is a kubernetes document
 	if o.APIVersion == "" || o.Kind == "" {
-		// should this be an error?
+		fmt.Printf("File %s is not a kubernetes document\n", f.Path)
 		return false, nil
 	}
 
