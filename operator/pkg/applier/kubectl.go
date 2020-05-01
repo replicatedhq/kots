@@ -126,8 +126,7 @@ func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dry
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create temp directory")
 	}
-	// TODO uncomment
-	// defer os.Remove(tmp)
+	defer os.Remove(tmp)
 
 	args := []string{
 		"apply",

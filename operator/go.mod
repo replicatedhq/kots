@@ -10,8 +10,8 @@ require (
 	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
 	github.com/gin-gonic/gin v1.4.0 // indirect
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-openapi/validate v0.19.5 // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.0 // indirect
