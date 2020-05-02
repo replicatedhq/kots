@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	go_git_config "gopkg.in/src-d/go-git.v4/config"
@@ -201,6 +202,9 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	cmd := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", filepath.Join(archiveDir, "overlays", "downstreams", downstreamName))
 	out, err := cmd.Output()
 	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			logger.Errorf("kustomize stderr: %q", string(ee.Stderr))
+		}
 		return "", errors.Wrap(err, "failed to run kustomize")
 	}
 

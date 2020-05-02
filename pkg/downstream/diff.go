@@ -9,6 +9,7 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -46,10 +47,16 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 	// kustomize build both of these archives before diffing
 	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			logger.Errorf("kustomize stderr: %q", string(ee.Stderr))
+		}
 		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
 	}
 	baseOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			logger.Errorf("kustomize stderr: %q", string(ee.Stderr))
+		}
 		return nil, errors.Wrap(err, "failed to run kustomize on base dir")
 	}
 
