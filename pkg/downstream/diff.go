@@ -44,11 +44,11 @@ func diffContent(updatedContent string, baseContent string) (int, int, error) {
 // archivedirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeVersion string) (*Diff, error) {
 	// kustomize build both of these archives before diffing
-	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).CombinedOutput()
+	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
 	}
-	baseOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).CombinedOutput()
+	baseOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run kustomize on base dir")
 	}

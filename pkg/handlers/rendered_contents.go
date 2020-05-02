@@ -84,7 +84,7 @@ func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 		kustomizeBuildTarget = filepath.Join(archivePath, "overlays", "downstreams", downstreamName)
 	}
 
-	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).CombinedOutput()
+	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).Output()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
