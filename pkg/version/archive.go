@@ -44,6 +44,10 @@ func CreateAppVersionArchive(appID string, sequence int64, archivePath string) e
 
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
 	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
+	region := os.Getenv("S3_REGION")
+	if region == "" {
+		region = "us-east-1"
+	}
 
 	newSession := awssession.New(kotss3.GetConfig())
 

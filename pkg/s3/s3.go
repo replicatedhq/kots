@@ -13,10 +13,15 @@ func GetConfig() *aws.Config {
 		forcePathStyle = true
 	}
 
+	region := os.Getenv("S3_REGION")
+	if region == "" {
+		region = "us-east-1"
+	}
+
 	s3Config := &aws.Config{
 		Credentials:      credentials.NewStaticCredentials(os.Getenv("S3_ACCESS_KEY_ID"), os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
 		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
-		Region:           aws.String("us-east-1"),
+		Region:           aws.String(region),
 		DisableSSL:       aws.Bool(true),
 		S3ForcePathStyle: aws.Bool(forcePathStyle),
 	}
