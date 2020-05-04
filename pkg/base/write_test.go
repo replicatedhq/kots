@@ -14,6 +14,18 @@ kind: Service
 metadata:
   name: service-a`
 
+	TestServiceAnsB = `apiVersion: v1
+kind: Service
+metadata:
+  name: service-a
+  namespace: b`
+
+	TestServiceAnsC = `apiVersion: v1
+kind: Service
+metadata:
+  name: service-a
+  namespace: c`
+
 	TestServiceB = `apiVersion: v1
 kind: Service
 metadata:
@@ -129,6 +141,48 @@ func Test_DeduplicateOnContent(t *testing.T) {
 				},
 			},
 			expectedPatches: []BaseFile{},
+		},
+		{
+			name: "same-name-specified-ns",
+			files: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+				{
+					Path:    "service-a-ns-b",
+					Content: []byte(TestServiceAnsB),
+				},
+				{
+					Path:    "service-a-ns-c",
+					Content: []byte(TestServiceAnsC),
+				},
+				{
+					Path:    "service-a-ns-b-patch",
+					Content: []byte(TestServiceAnsB),
+				},
+			},
+			excludeKotsKinds: true,
+			expectedResources: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+				{
+					Path:    "service-a-ns-b",
+					Content: []byte(TestServiceAnsB),
+				},
+				{
+					Path:    "service-a-ns-c",
+					Content: []byte(TestServiceAnsC),
+				},
+			},
+			expectedPatches: []BaseFile{
+				{
+					Path:    "service-a-ns-b-patch",
+					Content: []byte(TestServiceAnsB),
+				},
+			},
 		},
 	}
 
