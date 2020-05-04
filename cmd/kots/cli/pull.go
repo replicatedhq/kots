@@ -47,6 +47,8 @@ func PullCmd() *cobra.Command {
 				RewriteImageOptions: pull.RewriteImageOptions{
 					Host:      v.GetString("registry-endpoint"),
 					Namespace: v.GetString("image-namespace"),
+					Username:  v.GetString("registry-username"),
+					Password:  v.GetString("registry-password"),
 				},
 			}
 
@@ -84,6 +86,8 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
+	cmd.Flags().String("registry-username", "", "the username of the local docker registry to use when pushing images (with --rewrite-images)")
+	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
 
 	return cmd
 }
