@@ -26,6 +26,12 @@ metadata:
   name: service-a
   namespace: c`
 
+	TestServiceAnsTest = `apiVersion: v1
+kind: Service
+metadata:
+  name: service-a
+  namespace: test`
+
 	TestServiceB = `apiVersion: v1
 kind: Service
 metadata:
@@ -184,6 +190,32 @@ func Test_DeduplicateOnContent(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "base-ns",
+			files: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+				{
+					Path:    "service-a-ns-test-patch",
+					Content: []byte(TestServiceAnsTest),
+				},
+			},
+			excludeKotsKinds: true,
+			expectedResources: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+			},
+			expectedPatches: []BaseFile{
+				{
+					Path:    "service-a-ns-test-patch",
+					Content: []byte(TestServiceAnsTest),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -192,7 +224,7 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			defer scopetest.End()
 			req := require.New(t)
 
-			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds)
+			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds, "test")
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.expectedResources, actualResources)

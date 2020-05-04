@@ -40,7 +40,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
-	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds)
+	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds, b.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to deduplicate content")
 	}
@@ -111,7 +111,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	return nil
 }
 
-func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, []BaseFile, error) {
+func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string) ([]BaseFile, []BaseFile, error) {
 	resources := []BaseFile{}
 	patches := []BaseFile{}
 
@@ -130,7 +130,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool) ([]BaseFile, 
 		}
 
 		if writeToKustomization {
-			thisGVKName := GetGVKWithNameAndNs(file.Content)
+			thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
 			found := foundGVKNamesMap[thisGVKName]
 
 			if !found || thisGVKName == "" {

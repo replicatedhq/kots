@@ -3,7 +3,6 @@ package base
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -44,14 +43,14 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func GetGVKWithNameAndNs(content []byte) string {
+func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	o := OverlySimpleGVK{}
 
 	if err := yaml.Unmarshal(content, &o); err != nil {
 		return ""
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := baseNS
 	if o.Metadata.Namespace != "" {
 		namespace = o.Metadata.Namespace
 	}
