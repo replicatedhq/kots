@@ -14,6 +14,15 @@ type Metadata struct {
 }
 
 type Spec struct {
+	Template    Template    `yaml:"template,omitempty"`
+	JobTemplate JobTemplate `yaml:"jobTemplate,omitempty"`
+}
+
+type JobTemplate struct {
+	Spec JobSpec `yaml:"spec"`
+}
+
+type JobSpec struct {
 	Template Template `yaml:"template"`
 }
 
