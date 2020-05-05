@@ -1,6 +1,7 @@
 package informers
 
 import (
+	"log"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,8 +37,11 @@ func Start() error {
 	go func() {
 		ch := backupWatch.ResultChan()
 		for {
-			obj, ok := <-ch
+			obj, ok := <-ch // this channel gets closed often
 			if !ok {
+				if err := Start(); err != nil {
+					log.Println("Failed to re-start informers", err)
+				}
 				break
 			}
 			if obj.Type == watch.Modified {
