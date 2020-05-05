@@ -47,7 +47,7 @@ kots pull \
 ```
 
 When the above command is run, the following happens:
-1. License file is validated locally
+1. License file is synced with the server (exchanged for an updated version) and validated locally
 2. If `--airgap` is set and `--airgap-package` is not provided, the airgap package is downloaded from replicated.app
 3. The airgap package is validated
   a. checksum
