@@ -270,7 +270,7 @@ func makeKotsadmCollectors() []*v1beta1.Collect {
 				CollectorMeta: v1beta1.CollectorMeta{
 					CollectorName: name,
 				},
-				Name:      "kots/admin_console",
+				Name:      "kots/admin-console",
 				Selector:  []string{fmt.Sprintf("app=%s", name)},
 				Namespace: os.Getenv("POD_NAMESPACE"),
 			},
