@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
+	kotss3 "github.com/replicatedhq/kotsadm/pkg/s3"
 	"go.uber.org/zap"
 )
 
@@ -42,23 +42,10 @@ func CreateAppVersionArchive(appID string, sequence int64, archivePath string) e
 		return errors.Wrap(err, "failed to create archive")
 	}
 
-	forcePathStyle := false
-	if os.Getenv("S3_BUCKET_ENDPOINT") == "true" {
-		forcePathStyle = true
-	}
-
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
 	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
 
-	s3Config := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials(os.Getenv("S3_ACCESS_KEY_ID"), os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
-		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
-		Region:           aws.String("us-east-1"),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}
-
-	newSession := awssession.New(s3Config)
+	newSession := awssession.New(kotss3.GetConfig())
 
 	s3Client := s3.New(newSession)
 
@@ -93,22 +80,10 @@ func GetAppVersionArchive(appID string, sequence int64) (string, error) {
 
 	// Get the archive from object store
 
-	forcePathStyle := false
-	if os.Getenv("S3_BUCKET_ENDPOINT") == "true" {
-		forcePathStyle = true
-	}
+	newSession := awssession.New(kotss3.GetConfig())
 
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
 	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
-
-	s3Config := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials(os.Getenv("S3_ACCESS_KEY_ID"), os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
-		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
-		Region:           aws.String("us-east-1"),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(forcePathStyle),
-	}
-	newSession := awssession.New(s3Config)
 
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
