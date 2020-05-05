@@ -23,7 +23,7 @@ See top section.
 
 ## High-Level Design
 
-This proposal changes the `kots pull` command to download the `.airgap` bundle from the Replicated servers, unless a path is provided on the command line.
+This proposal changes the `kots pull` command to download the `.airgap` bundle from the Replicated servers, unless a path to an airgap bundle is provided on the command line with the `--airgap-package` flag.
 The `--license-file` parameter will be required.
 A local registry will be required, and it must be accessible from the workstation that is orchestrating this process.
 KOTS pull will load the KOTS images into the registry, and write out the application manifests for KOTS (Admin Console).
@@ -74,4 +74,3 @@ When KOTS starts, the automation annotations on the KOTS container will load the
 
 Will it be expected that the local image registry credentials are automatically pass into the cluster, if not overridden on the CLI?
 This could be more elevated permissions than desired.
-
