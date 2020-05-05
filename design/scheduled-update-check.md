@@ -14,8 +14,8 @@ ability for KOTS (Admin Console) to check for updates every X period of time for
 
 ## Background
 
-Many customers assume that scheduled update checks are a given and are surprised when they do not receive 
-updates automatically.
+Many customers assume that scheduled update checks are a given and are surprised when they do
+not receive updates automatically.
 
 ## High-Level Design
 
