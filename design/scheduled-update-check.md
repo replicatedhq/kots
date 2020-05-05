@@ -45,13 +45,12 @@ The "message" key will hold a value as to why the status is "failed".
 By default, when the KOTS Admin Console's api starts:
 
 1. The api will get the configuration values from the database.
-2. If the feature is enabled, start a goroutine service "loop". 
-3. The service sleeps for X period of time.
-4. Use the same logic from the update check request to check for updates for each application.
-5. The update check request logic already creates new versions automatically if there are updates available.
-6. If the api fails to start the service, a "failed" status along with the reason will be saved in
+2. If the feature is enabled, start a cron job schedule which runs every X period of time. 
+3. Use the same logic from the update check request to check for updates for each application.
+4. The update check request logic already creates new versions automatically if there are updates available.
+5. If the api fails to start the cron job, a "failed" status along with the reason will be saved in
 the `update_checker_status` column in the database.
-7. A custom troubleshoot analyzer will be built into kotsadm to detect those failures.
+6. A custom troubleshoot analyzer will be built into kotsadm to detect those failures.
 
 To configure these options:
 
@@ -59,6 +58,6 @@ To configure these options:
 2. Upon clicking the link, a modal will display the values of these options along with the status of the checker.
 3. The modal will have a "Update" button. 
 4. Once the user clicks "Update", a request will be made with the new values to the Admin Console's api.
-5. The request will update the values in the database and kill the current service (if running).
-6. The request will then check if the feature is still enabled and start a new one with the new interval.
+5. The request will update the values in the database and kill the current cron job (if running).
+6. The request will then check if the feature is still enabled and start a new cron job with the new interval.
 7. If any of this fails, the request will return a failure message and the new status which will be displayed.
