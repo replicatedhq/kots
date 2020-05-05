@@ -7,8 +7,9 @@ import isEmpty from "lodash/isEmpty";
 import moment from "moment";
 import dayjs from "dayjs";
 import size from "lodash/size";
-import AirgapUploadProgress from "../AirgapUploadProgress";
+import url from "url";
 
+import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
 
 import {
@@ -38,9 +39,29 @@ export default class DashboardCard extends React.Component {
 
   onActionChange = (selectedOption) => {
     if (selectedOption.uri) {
-      window.open(selectedOption.uri, "_blank");
+      window.open(this.createDashboardActionLink(selectedOption.uri), "_blank");
     }
     this.setState({ selectedAction: selectedOption });
+  }
+
+  createDashboardActionLink = (uri) => {
+    const parsedUrl = url.parse(uri);
+
+    let port;
+    if (parsedUrl.port === "80") {
+      port = "";
+    } else {
+      port = ":" + parsedUrl.port;
+    }
+
+    let path;
+    if (path === "/") {
+      path = "";
+    } else {
+      path = "/"
+    }
+  
+    return `${parsedUrl.protocol}//${window.location.hostname}${port}${path}`;
   }
 
   renderApplicationCard = () => {
@@ -93,7 +114,7 @@ export default class DashboardCard extends React.Component {
               </div>
               :
               <div className="u-marginTop--15">
-                <a href={selectedAction?.uri} target="_blank" rel="noopener noreferrer" className="btn secondary"> {selectedAction.title} </a>
+                <a href={this.createDashboardActionLink(selectedAction?.uri)} target="_blank" rel="noopener noreferrer" className="btn secondary"> {selectedAction.title} </a>
               </div>
             }
           </div>
@@ -202,7 +223,6 @@ export default class DashboardCard extends React.Component {
 
   render() {
     const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg } = this.props;
-
 
     return (
       <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
