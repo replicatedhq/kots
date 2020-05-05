@@ -754,6 +754,8 @@ github.com/replicatedhq/kots v1.15.1 h1:uEOzQrC9/VYsdNtULLHaenZ+BpKxQ+j1jLQzc/zL
 github.com/replicatedhq/kots v1.15.1/go.mod h1:8mbam1nJv/DzA7809Tx0kEL4IBhIYqtzACMsM+eKIOw=
 github.com/replicatedhq/kots v1.15.2-0.20200505172613-3ed849a1e15c h1:Gl+lw4sUxus4jUli8JvjIvX3mOmE1H2Kuta72GP82VA=
 github.com/replicatedhq/kots v1.15.2-0.20200505172613-3ed849a1e15c/go.mod h1:8mbam1nJv/DzA7809Tx0kEL4IBhIYqtzACMsM+eKIOw=
+github.com/replicatedhq/kots v1.15.2 h1:gYv4S/Snc1ltVEX8xw3co9UVgNRNjoulk4O3e57ZmZo=
+github.com/replicatedhq/kots v1.15.2/go.mod h1:8mbam1nJv/DzA7809Tx0kEL4IBhIYqtzACMsM+eKIOw=
 github.com/replicatedhq/kotsadm/operator v0.0.0-20200501000547-b1b5fb425e17 h1:iSEujts7eKt+d/LLAuvATUt3jf8WCOZhSJ/gaynUmiU=
 github.com/replicatedhq/kotsadm/operator v0.0.0-20200501000547-b1b5fb425e17/go.mod h1:6GfvQbCeR02BhpcEcaPTN2J62FA3dnzxRQviEdakB/0=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
