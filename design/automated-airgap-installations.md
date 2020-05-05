@@ -18,6 +18,8 @@ By adding automation of airgapped applications, we can also enable a workflow fo
 
 ## Background
 
+See top section.
+
 
 ## High-Level Design
 
@@ -69,4 +71,7 @@ When KOTS starts, the automation annotations on the KOTS container will load the
 
 
 ## Security Considerations
+
+Will it be expected that the local image registry credentials are automatically pass into the cluster, if not overridden on the CLI?
+This could be more elevated permissions than desired.
 
