@@ -21,7 +21,7 @@ updates automatically.
 
 1. This proposal is only for online installations in KOTS Admin console.
 2. The default period of time (X) is configurable.
-3. The ability to disable this feature completely.
+3. The ability to disable this feature completely. It will be enabled by default.
 
 The update check will happen in a background process/thread which is triggered every X period of time.
 On each trigger, the process will get all available applications and run update checks for each app.
@@ -33,7 +33,7 @@ The update check will automatically create new versions for each update availabl
 added to the `app` table in the postgress database using a migration.
 
 * The `update_checker_enabled` column is a bool and defaults to `true`. 
-* The `update_checker_interval` column is an integer and defaults to `360` minutes.
+* The `update_checker_interval` column is a text and defaults to `6h`.
 * The `update_checker_status` column is a text and defaults to `NULL`
 
 * The `update_checker_enabled` column indicates if the feature is enabled or disabled.
@@ -50,17 +50,15 @@ By default, when the KOTS Admin Console's api starts:
 4. Use the same logic from the update check request to check for updates for each application.
 5. The update check request logic already creates new versions automatically if there are updates available.
 6. If the api fails to start the service, a "failed" status along with the reason will be saved in
-the `update_checker_status` column in the database and displayed in the Admin Console's dashboard page.
+the `update_checker_status` column in the database.
+7. A custom troubleshoot analyzer will be built into kotsadm to detect those failures.
 
 To configure these options:
 
-1. There will be an additional card in the Admin Console's dashboard page.
-2. The card will display the values of these options along with the status of the update checker.
-3. The card will have a "Update" button. 
-4. Upon clicking "Update", a modal will show up which enables the user to edit those values.
-5. The modal will have a "Submit" button. 
-6. Once the user clicks "Submit", a request will be made with the new values to the Admin Console's api.
-7. The request will update the values in the database and kill the current service (if running).
-8. The request will then check if the feature is still enabled and start a new one with the new interval.
-9. If any of this fails, the request will return a failure message and the new status which will be
-displayed on the dashobard card.
+1. There will be a "Configure update checker" link in the Admin Console's version history card & page.
+2. Upon clicking the link, a modal will display the values of these options along with the status of the checker.
+3. The modal will have a "Update" button. 
+4. Once the user clicks "Update", a request will be made with the new values to the Admin Console's api.
+5. The request will update the values in the database and kill the current service (if running).
+6. The request will then check if the feature is still enabled and start a new one with the new interval.
+7. If any of this fails, the request will return a failure message and the new status which will be displayed.
