@@ -61,6 +61,6 @@ To configure these options:
 5. The modal will have a "Submit" button. 
 6. Once the user clicks "Submit", a request will be made with the new values to the Admin Console's api.
 7. The request will update the values in the database and kill the current service (if running).
-8. The request will the check if the feature is still enabled and start a new one with the new interval.
+8. The request will then check if the feature is still enabled and start a new one with the new interval.
 9. If any of this fails, the request will return a failure message and the new status which will be
 displayed on the dashobard card.
