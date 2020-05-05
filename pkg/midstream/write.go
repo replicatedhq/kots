@@ -170,7 +170,7 @@ func removeFromPatches(patches []kustomizetypes.PatchStrategicMerge, filename st
 }
 
 func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
-	return &k8sdoc.Doc{
+	newObj := &k8sdoc.Doc{
 		APIVersion: obj.APIVersion,
 		Kind:       obj.Kind,
 		Metadata: k8sdoc.Metadata{
@@ -178,7 +178,25 @@ func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
 			Namespace: obj.Metadata.Namespace,
 			Labels:    obj.Metadata.Labels,
 		},
-		Spec: k8sdoc.Spec{
+	}
+	switch obj.Kind {
+	case "CronJob":
+		newObj.Spec = k8sdoc.Spec{
+			JobTemplate: k8sdoc.JobTemplate{
+				Spec: k8sdoc.JobSpec{
+					Template: k8sdoc.Template{
+						Spec: k8sdoc.PodSpec{
+							ImagePullSecrets: []k8sdoc.ImagePullSecret{
+								{"name": "kotsadm-replicated-registry"},
+							},
+						},
+					},
+				},
+			},
+		}
+
+	default:
+		newObj.Spec = k8sdoc.Spec{
 			Template: k8sdoc.Template{
 				Spec: k8sdoc.PodSpec{
 					ImagePullSecrets: []k8sdoc.ImagePullSecret{
@@ -186,6 +204,8 @@ func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
 					},
 				},
 			},
-		},
+		}
 	}
+
+	return newObj
 }

@@ -252,6 +252,14 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 			images = append(images, container.Image)
 		}
 
+		for _, container := range parsed.Spec.JobTemplate.Spec.Template.Spec.InitContainers {
+			images = append(images, container.Image)
+		}
+
+		for _, container := range parsed.Spec.JobTemplate.Spec.Template.Spec.Containers {
+			images = append(images, container.Image)
+		}
+
 		if err := handler(images, parsed); err != nil {
 			return err
 		}
