@@ -43,7 +43,8 @@ By default, when the KOTS Admin Console's api starts:
 1. The api will get the configuration values from the database.
 2. If the feature is enabled, start a cron job schedule which runs every X period of time. 
 3. Use the same logic from the update check request to check for updates for each application.
-4. The update check request logic already creates new versions automatically if there are updates available.
+4. The update check request logic already creates new versions automatically if there are updates available,
+and handles the scenario if multiple requests have been made to check for updates.
 
 To configure these options:
 
