@@ -29,7 +29,7 @@ The update check will automatically create new versions for each update availabl
 
 ## Detailed Design
 
-3 new columns (`update_checker_enabled` & `update_checker_interval`) will be 
+2 new columns (`update_checker_enabled` & `update_checker_interval`) will be 
 added to the `app` table in the postgress database using a migration.
 
 * The `update_checker_enabled` column is a bool and defaults to `true`. 
