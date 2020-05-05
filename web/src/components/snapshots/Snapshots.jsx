@@ -683,7 +683,7 @@ class Snapshots extends Component {
             </div>
             <div className="flex1 flex-column u-marginBottom--50 u-paddingLeft--20">
               <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by <a href="https://kots.io/kotsadm/snapshots/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
-              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 2 </span> Install the Restic integration on your machince by <a href="https://kots.io/kotsadm/snapshots/restic/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 2 </span> Install the Restic integration on your machine by <a href="https://kots.io/kotsadm/snapshots/restic/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
               <div className="flex flex1 u-marginTop--20">
                 <div className="flex">
                   <span className="circleNumberGray u-marginRight--10"> 3 </span>
