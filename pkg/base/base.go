@@ -2,7 +2,6 @@ package base
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"strconv"
 
@@ -35,6 +34,7 @@ type OverlySimpleGVK struct {
 
 type OverlySimpleMetadata struct {
 	Name        string                 `yaml:"name"`
+	Namespace   string                 `yaml:"namespace"`
 	Annotations map[string]interface{} `json:"annotations"`
 }
 
@@ -43,16 +43,19 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func GetGVKWithNameHash(content []byte) []byte {
+func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	o := OverlySimpleGVK{}
 
 	if err := yaml.Unmarshal(content, &o); err != nil {
-		return nil
+		return ""
 	}
 
-	h := sha256.New()
-	h.Write([]byte(fmt.Sprintf("%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name)))
-	return h.Sum(nil)
+	namespace := baseNS
+	if o.Metadata.Namespace != "" {
+		namespace = o.Metadata.Namespace
+	}
+
+	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
 }
 
 func (f BaseFile) transpileHelmHooksToKotsHooks() error {
