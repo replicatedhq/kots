@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kotsadm/pkg/automation"
@@ -18,6 +20,13 @@ import (
 
 func Start() {
 	log.Println("kotsadm version", os.Getenv("VERSION"))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	if err := waitForDependencies(ctx); err != nil {
+		panic(err)
+	}
+	cancel()
+
 	// NOTE: This should be removed in 1.15 or a later version.
 	if err := version.PopulateMissingDownstreamVersions(); err != nil {
 		log.Println("Failed to run migrations", err)
