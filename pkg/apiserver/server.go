@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,7 +19,7 @@ import (
 )
 
 func Start() {
-	log.Println("kotsadm version", os.Getenv("VERSION"))
+	log.Printf("kotsadm version %s built with %s\n", os.Getenv("VERSION"), runtime.Version())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	if err := waitForDependencies(ctx); err != nil {
