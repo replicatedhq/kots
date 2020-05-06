@@ -1,8 +1,7 @@
 # GitOps Cluster Tracers
 
-KOTS (Admin Console) does not have the ability to detect the currently deployed application 
-version in a GitOps cluster workflow. This proposal adds tracers (annotations) to the
-application pods so that it can be possible to detect that in the future.
+KOTS (Admin Console) does not have the ability to detect the currently deployed application version in a GitOps cluster workflow.
+This proposal adds tracers (annotations) to the application pods so that it can be possible to detect that in the future.
 
 ## Goals
 
@@ -14,9 +13,7 @@ application pods so that it can be possible to detect that in the future.
 
 ## Background
 
-When customers decide to deploy their application via a GitOps workflow, they will
-probably want to know which version of the app is currently deployed in the cluster,
-which is currently not possible.
+When customers decide to deploy their application via a GitOps workflow, they will probably want to know which version of the app is currently deployed in the cluster, which is currently not possible.
 
 ## High-Level Design
 
@@ -33,8 +30,6 @@ commonAnnotations:
   kots.io/app-sequence: <app-sequence>
 ```
 
-the `<app-slug>` will be obtained from the license
-the `<app-sequence>` will be added to the pull/rewrite options before calling kots.pull or kots.rewrite
+both the `<app-slug>` & `<app-sequence>` will be added to the pull/rewrite options before calling kots.pull or kots.rewrite from the KOTS Admin Console.
 
-The rest of the logic is already implemented. Before creating new commits, `kustomize build` is
-executed to apply those changes to the downstream manifests.
+The rest of the logic is already implemented. Before creating new commits, `kustomize build` is executed to apply those changes to the downstream manifests.
