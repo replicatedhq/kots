@@ -144,6 +144,14 @@ code {
   width: 100%;
   .Input {
     height: 40px;
+    
+    .is-disabled {
+      user-select: none;
+      cursor: not-allowed;
+      background-color: #F8F8F8;
+      border-color: #DFDFDF;
+      color: #717171;
+    }
   }
 }
 .unfork-callout {
