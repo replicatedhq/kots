@@ -1,4 +1,4 @@
-FROM golang:1.12 as deps
+FROM golang:1.14 as deps
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm
 WORKDIR $PROJECTPATH
