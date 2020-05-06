@@ -13,14 +13,26 @@ Required Software:
 
 ## Running
 
-To start, build and run all server components in the Kubernetes cluster with:
+Build Kotsadm go binary:
+
+```
+make kotsadm
+```
+
+Apply Schemahero CRDs
+
+```
+kubectl apply -f migrations/kustomize/base/schemahero.yaml
+```
+
+Next, to start, build and run all server components in the Kubernetes cluster with:
 
 ```
 skaffold dev
 ```
 
 ## Notes:
-- Go code will not be rebuilt automatically.  Run `make kotsadm` to make the new binary and restart the pod.
+- Go code will not be rebuilt automatically.  Run `make kotsadm` again to make the new binary and restart the pod.
 - After installing restic/velero, edit the restic daemonset to change the volume hostPath mount from:
       `/var/lib/kubelet/pods` to `/var/snap/microk8s/common/var/lib/kubelet/pods`
 
