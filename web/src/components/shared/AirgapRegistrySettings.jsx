@@ -189,7 +189,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   render() {
-    const { getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, showRequiredFields, showHostnameAsRequired, showNamespaceAsRequired } = this.props;
+    const { app, getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, showRequiredFields, showHostnameAsRequired, showNamespaceAsRequired } = this.props;
     const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
@@ -236,7 +236,7 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {(showRequiredFields || showHostnameAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-              <input type="text" className="Input" placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
+              <input type="text" className={`Input ${app.isAirgap && "is-disabled"}`} disabled={app.isAirgap} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
             </div>
           </div>
           <div className="flex u-marginBottom--20">
@@ -272,7 +272,7 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace {(showRequiredFields || showNamespaceAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
-              <input type="text" className="Input" placeholder="namespace" value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
+              <input type="text" className={`Input ${app.isAirgap && "is-disabled"}`} placeholder="namespace" disabled={app.isAirgap} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
             </div>
           </div>
         </form>
