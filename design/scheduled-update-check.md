@@ -42,7 +42,7 @@ By default, when the KOTS Admin Console's api starts:
 4. The update check request logic already creates new versions automatically if there are updates available,
 and handles the scenario if multiple requests have been made to check for updates.
 
-To configure these options:
+To configure the update checker spec:
 
 1. There will be a "Configure update checker" link in the Admin Console's version history card & page.
 2. Upon clicking the link, a small modal will display the value of the cron job spec.
