@@ -323,6 +323,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.Preflight = decoded.(*troubleshootv1beta1.Preflight)
 			case "velero.io/v1, Kind=Backup":
 				kotsKinds.Backup = decoded.(*velerov1.Backup)
+			case "app.k8s.io/v1beta1, Kind=Application":
+				kotsKinds.Application = decoded.(*applicationv1beta1.Application)
 			}
 
 			return nil
