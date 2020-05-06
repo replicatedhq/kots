@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -15,7 +16,7 @@ func VersionCmd() *cobra.Command {
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// print basic version info
-			fmt.Printf("Replicated Kots %s\n", version.Version())
+			fmt.Printf("Replicated Kots %s, built with %s\n", version.Version(), runtime.Version())
 
 			// check if this is the latest release, and display possible upgrade instructions
 			isLatest, latestVer, err := version.IsLatestRelease()
