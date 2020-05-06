@@ -25,7 +25,7 @@ Apply Schemahero CRDs
 kubectl apply -f migrations/kustomize/base/schemahero.yaml
 ```
 
-Next, to start, build and run all server components in the Kubernetes cluster with:
+Next, you can build and run all server components in the Kubernetes cluster with:
 
 ```
 skaffold dev
