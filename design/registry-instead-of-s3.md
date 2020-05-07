@@ -40,6 +40,8 @@ There are no changes to any YAML schemas or APIs.
 
 Existing installations will be migrated when a version of KOTS with this functionality is started.
 
+kURL installations would work as-is (they already package docker distribution).
+In a future release, we could remove the rook object store manifest from kURL install scripts.
 
 ## Alternatives Considered
 
