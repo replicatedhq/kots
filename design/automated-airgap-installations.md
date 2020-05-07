@@ -86,4 +86,3 @@ The overlays/automation patches contains the license, config and automation anno
 
 Will it be expected that the local image registry credentials are automatically pass into the cluster, if not overridden on the CLI?
 This could be more elevated permissions than desired.
-
