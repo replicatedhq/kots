@@ -221,7 +221,7 @@ class UploadAirgapBundle extends React.Component {
       onlineInstallErrorMessage: ""
     });
 
-    let app;
+    let resumeResult;
     fetch(`${window.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
       headers: {
@@ -233,12 +233,15 @@ class UploadAirgapBundle extends React.Component {
       }),
     })
     .then(async (result) => {
-      app = await result.json();
+      resumeResult = await result.json();
     })
     .catch(err => {
       this.setState({
+        // TODO: use fewer flags
         fileUploading: false,
         errorMessage: err,
+        preparingOnlineInstall: false,
+        onlineInstallErrorMessage: err,
       });
       return;
     })
@@ -251,36 +254,49 @@ class UploadAirgapBundle extends React.Component {
       count++
       this.moveBar(count);
       if (count > 3) {
-        if (app) {
-          clearInterval(interval);
-          this.props.onUploadSuccess().then(() => {
-            // When successful, refetch all the user's apps with onUploadSuccess
-            const hasPreflight = app.hasPreflight;
-            const isConfigurable = app.isConfigurable;
-            if (isConfigurable) {
-              this.props.history.replace(`/${slug}/config`);
-            } else if (hasPreflight) {
-              fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/run`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "Authorization": Utilities.getToken(),
-                },
-                method: "POST",
-              })
-                .then(async (res) => {
-                  this.props.history.replace("/preflight");
-                })
-                .catch((err) => {
-                  // TODO: UI for this error
-                  console.log(err);
-                });
-            } else {
-              this.props.history.replace(`/app/${slug}`);
-            }
-          });
-
+        if (!resumeResult) {
+          return
         }
+
+        clearInterval(interval);
+
+        if (resumeResult.error) {
+          this.setState({
+            // TODO: use fewer flags
+            fileUploading: false,
+            errorMessage: resumeResult.error,
+            preparingOnlineInstall: false,
+            onlineInstallErrorMessage: resumeResult.error,
+          });
+          return;    
+        }
+
+        this.props.onUploadSuccess().then(() => {
+          // When successful, refetch all the user's apps with onUploadSuccess
+          const hasPreflight = resumeResult.hasPreflight;
+          const isConfigurable = resumeResult.isConfigurable;
+          if (isConfigurable) {
+            this.props.history.replace(`/${slug}/config`);
+          } else if (hasPreflight) {
+            fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/run`, {
+              headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": Utilities.getToken(),
+              },
+              method: "POST",
+            })
+              .then(async (res) => {
+                this.props.history.replace("/preflight");
+              })
+              .catch((err) => {
+                // TODO: UI for this error
+                console.log(err);
+              });
+          } else {
+            this.props.history.replace(`/app/${slug}`);
+          }
+        });
       }
     }, 1000);
   }
