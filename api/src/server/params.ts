@@ -23,6 +23,8 @@ export class Params {
   readonly s3AccessKeyId: string;
   readonly s3SecretAccessKey: string;
   readonly s3BucketEndpoint: string;
+  readonly s3Region: string;
+  readonly s3SkipEnsureBucket: boolean;
   readonly apiAdvertiseEndpoint: string;
   readonly graphqlPremEndpoint: string;
   readonly segmentioAnalyticsKey: string;
@@ -48,6 +50,8 @@ export class Params {
     s3AccessKeyId,
     s3SecretAccessKey,
     s3BucketEndpoint,
+    s3Region,
+    s3SkipEnsureBucket,
     apiAdvertiseEndpoint,
     graphqlPremEndpoint,
     segmentioAnalyticsKey,
@@ -72,6 +76,8 @@ export class Params {
     this.s3AccessKeyId = s3AccessKeyId;
     this.s3SecretAccessKey = s3SecretAccessKey;
     this.s3BucketEndpoint = s3BucketEndpoint;
+    this.s3Region = s3Region;
+    this.s3SkipEnsureBucket = s3SkipEnsureBucket;
     this.apiAdvertiseEndpoint = apiAdvertiseEndpoint;
     this.graphqlPremEndpoint = graphqlPremEndpoint;
     this.segmentioAnalyticsKey = segmentioAnalyticsKey;
@@ -104,6 +110,8 @@ export class Params {
       s3AccessKeyId: params["S3_ACCESS_KEY_ID"],
       s3SecretAccessKey: params["S3_SECRET_ACCESS_KEY"],
       s3BucketEndpoint: params["S3_BUCKET_ENDPOINT"],
+      s3Region: process.env["S3_REGION"] || "us-east-1",
+      s3SkipEnsureBucket: process.env["S3_SKIP_ENSURE_BUCKET"] === "1",
       apiAdvertiseEndpoint: process.env["SHIP_API_ADVERTISE_ENDPOINT"],
       graphqlPremEndpoint: params["GRAPHQL_PREM_ENDPOINT"],
       segmentioAnalyticsKey: params["SEGMENTIO_ANALYTICS_WRITE_KEY"],
@@ -140,7 +148,7 @@ export class Params {
       GRAPHQL_PREM_ENDPOINT: "/graphql/prem_endpoint",
       SEGMENTIO_ANALYTICS_WRITE_KEY: "/shipcloud/segmentio/analytics_write_key",
       ENABLE_KURL: "",
-    }
+    };
     return await lookupParams(paramLookup);
   }
 }

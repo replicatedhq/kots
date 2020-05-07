@@ -24,7 +24,7 @@ export function getS3(params: Params): AWS.S3 {
   return new AWS.S3(s3Params);
 };
 
-export async function ensureBucket(params: Params, bucketName: string): Promise<boolean> {
+export async function ensureBucket(params: Params): Promise<boolean> {
   const parsedEndpoint = url.parse(params.s3Endpoint);
   const minioClient = new Minio.Client({
     endPoint: parsedEndpoint.hostname,
@@ -35,7 +35,7 @@ export async function ensureBucket(params: Params, bucketName: string): Promise<
   });
 
   return new Promise((resolve, reject) => {
-    minioClient.makeBucket(params.shipOutputBucket, "us-east-1", function(err) {
+    minioClient.makeBucket(params.shipOutputBucket, params.s3Region, function(err) {
       if (err) {
         if (err.toString().indexOf("Your previous request to create the named bucket succeeded and you already own it") !== -1) {
           resolve(true);
