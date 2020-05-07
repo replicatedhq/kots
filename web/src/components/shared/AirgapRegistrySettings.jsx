@@ -68,12 +68,22 @@ class AirgapRegistrySettings extends Component {
         namespace,
       })
     })
-      .then(res => res.json())
-      .then((registryDetails) => {
-        this.state.updateChecker.start(this.updateStatus, 1000);
+      .then(async (res) => {
+        const registryDetails = await res.json();
+        if (registryDetails.error) {
+          this.setState({
+            rewriteStatus: "failed",
+            rewriteMessage: registryDetails.error,
+          });
+        } else {
+          this.state.updateChecker.start(this.updateStatus, 1000);
+        }
       })
       .catch((err) => {
-        console.error(err);
+        this.setState({
+          rewriteStatus: "failed",
+          rewriteMessage: err,
+        });
       });
   }
 
