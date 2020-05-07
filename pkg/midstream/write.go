@@ -61,11 +61,13 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	if m.Kustomization.CommonAnnotations == nil {
-		m.Kustomization.CommonAnnotations = make(map[string]string)
+	if options.AppSlug != "" {
+		if m.Kustomization.CommonAnnotations == nil {
+			m.Kustomization.CommonAnnotations = make(map[string]string)
+		}
+		m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
+		m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
 	}
-	m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
-	m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
 
 	m.mergeKustomization(existingKustomization)
 
@@ -92,8 +94,13 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
 	mergedCommonAnnotations := existing.CommonAnnotations
-	for key, value := range m.Kustomization.CommonAnnotations {
-		mergedCommonAnnotations[key] = value
+	if mergedCommonAnnotations == nil {
+		mergedCommonAnnotations = make(map[string]string)
+	}
+	if m.Kustomization.CommonAnnotations != nil {
+		for key, value := range m.Kustomization.CommonAnnotations {
+			mergedCommonAnnotations[key] = value
+		}
 	}
 	m.Kustomization.CommonAnnotations = mergedCommonAnnotations
 }
