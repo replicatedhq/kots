@@ -257,35 +257,38 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
+		Success: false,
+	}
+
 	resumeInstallOnlineRequest := ResumeInstallOnlineRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&resumeInstallOnlineRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		resumeInstallOnlineResponse.Error = err.Error()
+		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		resumeInstallOnlineResponse.Error = err.Error()
+		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
+		resumeInstallOnlineResponse.Error = "Unauthorized"
+		JSON(w, 401, resumeInstallOnlineResponse)
 		return
-	}
-
-	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
-		Success: false,
 	}
 
 	a, err := app.GetFromSlug(resumeInstallOnlineRequest.Slug)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		w.WriteHeader(500)
+		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -300,7 +303,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		w.WriteHeader(500)
+		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -310,7 +313,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		w.WriteHeader(500)
+		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
 
