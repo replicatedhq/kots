@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/session"
 	"github.com/replicatedhq/kotsadm/pkg/snapshot"
@@ -199,8 +200,9 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		if updateGlobalSnapshotSettingsRequest.Azure.CloudName != "" {
 			store.Azure.CloudName = updateGlobalSnapshotSettingsRequest.Azure.CloudName
 		}
-
-		// TODO what's required to validate this?
+		if updateGlobalSnapshotSettingsRequest.Azure.StorageAccount != "" {
+			store.Azure.StorageAccount = updateGlobalSnapshotSettingsRequest.Azure.StorageAccount
+		}
 
 	} else if updateGlobalSnapshotSettingsRequest.Other != nil {
 		if store.Other == nil {
@@ -234,6 +236,13 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			JSON(w, 400, globalSnapshotSettingsResponse)
 			return
 		}
+	}
+
+	if err := snapshot.ValidateStore(store); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = errors.Cause(err).Error()
+		JSON(w, 400, globalSnapshotSettingsResponse)
+		return
 	}
 
 	updatedBackupStorageLocation, err := snapshot.UpdateGlobalStore(store)

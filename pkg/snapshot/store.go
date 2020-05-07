@@ -3,7 +3,21 @@ package snapshot
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"strings"
+	"time"
 
+	storagemgmt "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-02-01/storage"
+	"github.com/Azure/azure-sdk-for-go/storage"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/adal"
+	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kotsadm/pkg/snapshot/providers"
@@ -405,6 +419,159 @@ func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 	}
 
 	return nil, errors.New("global config not found")
+}
+
+func ValidateStore(store *types.Store) error {
+	if store.AWS != nil {
+		if err := validateAWS(store.AWS, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate AWS configuration")
+		}
+		return nil
+	}
+
+	if store.Azure != nil {
+		if err := validateAzure(store.Azure, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate Azure configuration")
+		}
+		return nil
+	}
+
+	if store.Google != nil {
+		return nil // TODO: implement
+	}
+
+	if store.Other != nil {
+		if err := validateOther(store.Other, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate S3-compatible configuration")
+		}
+		return nil
+	}
+
+	return errors.New("no valid configuration found")
+}
+
+func validateAWS(storeAWS *types.StoreAWS, bucket string) error {
+	s3Config := &aws.Config{
+		Region:           aws.String(storeAWS.Region),
+		DisableSSL:       aws.Bool(false),
+		S3ForcePathStyle: aws.Bool(false), // TODO: this may need to be configurable
+	}
+
+	if storeAWS.UseInstanceRole {
+		s3Config.Credentials = credentials.NewChainCredentials([]credentials.Provider{
+			&ec2rolecreds.EC2RoleProvider{
+				Client:       ec2metadata.New(session.New()),
+				ExpiryWindow: 5 * time.Minute,
+			},
+		})
+	} else {
+		s3Config.Credentials = credentials.NewStaticCredentials(storeAWS.AccessKeyID, storeAWS.SecretAccessKey, "")
+	}
+
+	newSession := session.New(s3Config)
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucket),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "bucket does not exist")
+	}
+
+	return nil
+}
+
+func validateAzure(storeAzure *types.StoreAzure, bucket string) error {
+	// Mostly copied from Velero Azure plugin
+
+	env, err := azure.EnvironmentFromName(storeAzure.CloudName)
+	if err != nil {
+		return errors.Wrap(err, "failed to find azure env")
+	}
+
+	oauthConfig, err := adal.NewOAuthConfig(env.ActiveDirectoryEndpoint, storeAzure.TenantID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get OAuthConfig")
+	}
+
+	spt, err := adal.NewServicePrincipalToken(*oauthConfig, storeAzure.ClientID, storeAzure.ClientSecret, env.ResourceManagerEndpoint)
+	if err != nil {
+		return errors.Wrap(err, "failed to get service principal token")
+	}
+
+	storageAccountsClient := storagemgmt.NewAccountsClientWithBaseURI(env.ResourceManagerEndpoint, storeAzure.SubscriptionID)
+	storageAccountsClient.Authorizer = autorest.NewBearerAuthorizer(spt)
+
+	res, err := storageAccountsClient.ListKeys(context.TODO(), storeAzure.ResourceGroup, storeAzure.StorageAccount)
+	if err != nil {
+		return errors.Wrap(err, "failed to list account keys")
+	}
+	if res.Keys == nil || len(*res.Keys) == 0 {
+		return errors.New("No storage keys found")
+	}
+
+	var storageKey string
+	for _, key := range *res.Keys {
+		// uppercase both strings for comparison because the ListKeys call returns e.g. "FULL" but
+		// the storagemgmt.Full constant in the SDK is defined as "Full".
+		if strings.ToUpper(string(key.Permissions)) == strings.ToUpper(string(storagemgmt.Full)) {
+			storageKey = *key.Value
+			break
+		}
+	}
+
+	if storageKey == "" {
+		return errors.New("No storage key with Full permissions found")
+	}
+
+	storageClient, err := storage.NewBasicClientOnSovereignCloud(storeAzure.StorageAccount, storageKey, env)
+	if err != nil {
+		return errors.Wrap(err, "failed to get storage client")
+	}
+
+	blobClient := storageClient.GetBlobService()
+	container := blobClient.GetContainerReference(bucket)
+	if container == nil {
+		return errors.Errorf("unable to get container reference for bucket %s", bucket)
+	}
+
+	exists, err := container.Exists()
+	if err != nil {
+		return errors.Wrap(err, "failed to check container existence")
+	}
+
+	if !exists {
+		return errors.New("container does not exist")
+	}
+
+	return nil
+}
+
+func validateOther(storeOther *types.StoreOther, bucket string) error {
+	s3Config := &aws.Config{
+		Region:           aws.String(storeOther.Region),
+		Endpoint:         aws.String(storeOther.Endpoint),
+		DisableSSL:       aws.Bool(true), // TODO: this needs to be configurable
+		S3ForcePathStyle: aws.Bool(true), // TODO: this may need to be configurable
+	}
+
+	if storeOther.AccessKeyID != "" && storeOther.SecretAccessKey != "" {
+		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
+	}
+
+	newSession := session.New(s3Config)
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucket),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "bucket does not exist")
+	}
+
+	return nil
 }
 
 func Redact(store *types.Store) error {
