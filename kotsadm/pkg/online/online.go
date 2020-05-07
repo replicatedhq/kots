@@ -141,6 +141,8 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		CreateAppDir:        false,
 		ConfigFile:          configFile,
 		ReportWriter:        pipeWriter,
+		AppSlug:             pendingApp.Slug,
+		AppSequence:         0,
 	}
 
 	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {

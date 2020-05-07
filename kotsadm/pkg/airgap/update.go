@@ -127,6 +127,11 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
+	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new app sequence")
+	}
+
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
@@ -159,6 +164,8 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 			Username:   registrySettings.Username,
 			Password:   string(decryptedPassword),
 		},
+		AppSlug:     a.Slug,
+		AppSequence: appSequence,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

@@ -76,12 +76,17 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "update app license")
 		}
 
+		appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get new app sequence")
+		}
+
 		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		if err := render.RenderDir(archiveDir, a.ID, registrySettings); err != nil {
+		if err := render.RenderDir(archiveDir, a.ID, appSequence, registrySettings); err != nil {
 			return nil, errors.Wrap(err, "failed to render new version")
 		}
 
