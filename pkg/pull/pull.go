@@ -45,6 +45,8 @@ type PullOptions struct {
 	RewriteImageOptions RewriteImageOptions
 	HelmOptions         []string
 	ReportWriter        io.Writer
+	AppSlug             string
+	AppSequence         int64
 }
 
 type RewriteImageOptions struct {
@@ -422,6 +424,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:      pullOptions.AppSlug,
+		AppSequence:  pullOptions.AppSequence,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")

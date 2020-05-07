@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -23,6 +24,8 @@ const (
 type WriteOptions struct {
 	MidstreamDir string
 	BaseDir      string
+	AppSlug      string
+	AppSequence  int64
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
@@ -58,6 +61,12 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
+	if m.Kustomization.CommonAnnotations == nil {
+		m.Kustomization.CommonAnnotations = make(map[string]string)
+	}
+	m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
+	m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
+
 	m.mergeKustomization(existingKustomization)
 
 	if err := m.writeKustomization(options); err != nil {
@@ -81,6 +90,12 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
+
+	mergedCommonAnnotations := existing.CommonAnnotations
+	for key, value := range m.Kustomization.CommonAnnotations {
+		mergedCommonAnnotations[key] = value
+	}
+	m.Kustomization.CommonAnnotations = mergedCommonAnnotations
 }
 
 func (m *Midstream) writeKustomization(options WriteOptions) error {
