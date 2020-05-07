@@ -166,9 +166,6 @@ func (m *AppMonitor) run(ctx context.Context) {
 type runControllerFunc func(context.Context, kubernetes.Interface, string, []types.StatusInformer, chan<- types.ResourceState)
 
 func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
-	// TODO: informers only work for the target namespace
-	// add support for additional namespaces
-
 	informers = normalizeStatusInformers(informers, m.targetNamespace)
 
 	log.Printf("Running informers: %#v", informers)
@@ -187,18 +184,41 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 		close(resourceStateCh)
 	}()
 
-	goRun := func(fn runControllerFunc) {
+	// Collect namespace/kind pairs
+	namespaceKinds := make(map[string]map[string][]types.StatusInformer)
+	for _, informer := range informers {
+		kindsInNs, ok := namespaceKinds[informer.Namespace]
+		if !ok {
+			kindsInNs = make(map[string][]types.StatusInformer)
+		}
+		kindsInNs[informer.Kind] = append(kindsInNs[informer.Kind], informer)
+		namespaceKinds[informer.Namespace] = kindsInNs
+	}
+
+	goRun := func(fn runControllerFunc, namespace string, informers []types.StatusInformer) {
 		shutdown.Add(1)
 		go func() {
-			fn(ctx, m.clientset, m.targetNamespace, informers, resourceStateCh)
+			fn(ctx, m.clientset, namespace, informers, resourceStateCh)
 			shutdown.Done()
 		}()
 	}
-	goRun(runDeploymentController)
-	goRun(runIngressController)
-	goRun(runPersistentVolumeClaimController)
-	goRun(runServiceController)
-	goRun(runStatefulSetController)
+
+	kindImpls := map[string]runControllerFunc{
+		DeploymentResourceKind:            runDeploymentController,
+		IngressResourceKind:               runIngressController,
+		PersistentVolumeClaimResourceKind: runPersistentVolumeClaimController,
+		ServiceResourceKind:               runServiceController,
+		StatefulSetResourceKind:           runStatefulSetController,
+	}
+	for namespace, kinds := range namespaceKinds {
+		for kind, informers := range kinds {
+			if impl, ok := kindImpls[kind]; ok {
+				goRun(impl, namespace, informers)
+			} else {
+				log.Printf("Informer requested for unsupported resource kind %v", kind)
+			}
+		}
+	}
 
 	for {
 		select {
