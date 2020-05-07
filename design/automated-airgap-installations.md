@@ -15,6 +15,7 @@ By adding automation of airgapped applications, we can also enable a workflow fo
 - Distribution of the KOTS CLI as part of the application
 - Support for environments without a local registry
 - Support for non-Linux based container runtimes
+- Bundled, offline (airgap) packages for the KOTS Admin Console
 
 ## Background
 
@@ -23,7 +24,7 @@ See top section.
 
 ## High-Level Design
 
-This proposal changes the `kots pull` command to download the `.airgap` bundle from the Replicated servers, unless a path is provided on the command line.
+This proposal changes the `kots pull` command to download the `.airgap` bundle from the Replicated servers, unless a path to an airgap bundle is provided on the command line with the `--airgap-package` flag.
 The `--license-file` parameter will be required.
 A local registry will be required, and it must be accessible from the workstation that is orchestrating this process.
 KOTS pull will load the KOTS images into the registry, and write out the application manifests for KOTS (Admin Console).
@@ -63,9 +64,20 @@ When the above command is run, the following happens:
 8. A kustomize patch is created in ./app-slug/overlays/{registry-endpoint}/kustomization.yaml to change the images and inject image pull secrets
 9. The application automation patch (license, config, etc) are written to ./app-slug/overlays/automation/kustomization.yaml (referring to #7 as base)
   a. the automation annotation should include the image pull secret name and the application bundle image/tag from #6
-9. Instructions are provided to run `kubectl apply -k ./app-slug/overlays/local/kustomization` to continue
+10. Instructions are provided to run `kubectl apply -k ./app-slug/overlays/local/kustomization` to continue
 
 When KOTS starts, the automation annotations on the KOTS container will load the license, config values, and pull the application airgap from the registry.
+The in-cluster components will not need outbound Internet access, and nothing in KOTS will initialize a connection if the `--airgap` and `--airgap-package` flags are provided.
+This proposal does *NOT* make any guarantees that the KOTS CLI operates in an airgap environment.
+An extension of this will be needed to allow the KOTS Admin Console components to be delivered as a locally-referencable package before this guarantee can be made.
+
+**Description of new overlays:**
+The locally created kustomization yaml and manifests in steps 7, 8 and 9 (deployed in 10) do not contain the application.
+These manifests and overlays contain a customized version of the Admin Console that's configured to preload and pull the airgap bundle that was uploaded in step 6.
+
+The base is the same for all KOTS installs -- this is just the common KOTS Admin Console manifests.
+The overlays/{registry-endpoint} contains the image pull secrets for the local environment.
+The overlays/automation patches contains the license, config and automation annotations for KOTS -- this is specific to automating the Admin Console bootstrapping.
 
 ## Alternatives Considered
 
