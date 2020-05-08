@@ -1,0 +1,135 @@
+users:
+  - id: "solo-account"
+    created_at: "2019-04-10 12:34:56.789"
+    type: github
+    github:
+      username: "lonely-github-dev"
+      github_id: 1111
+      avatar_url: "https://avatars3.githubusercontent.com/u/123456?v=4"
+      email: "solo-account@replicated.com"
+    sessions:
+      - solo-account-session-1
+
+clusters:
+  - id: "solo-account-cluster-1"
+    title: "Solo Cluster"
+    slug: "solo-cluster"
+    created_at: "2019-04-10 12:34:56.789"
+    updated_at: "2019-04-11 01:23:45.567"
+    token: "solo-account-cluster-token"
+    cluster_type: "ship"
+    github: ~
+    users:
+      - "solo-account"
+  - id: "solo-account-cluster-2"
+    title: "Solo GitHub Cluster"
+    slug: "solo-cluster-2"
+    created_at: "2019-04-10 12:34:56.789"
+    updated_at: "2019-04-11 01:23:45.567"
+    token: ~
+    cluster_type: "gitops"
+    github:
+      owner: "lonely-github-dev"
+      repo: "gitops-deploy"
+      branch: "master"
+      installation_id: 99999
+    users:
+      - "solo-account"
+
+watches:
+  - id: "solo-account-watch-1"
+    current_state: |
+      {
+        "v1": {
+          "config": {},
+          "releaseName": "factorio",
+          "helmValuesDefaults": "# Factorio image version\n# ref: https://quay.io/repository/games_on_k8s/factorio?tab=tags\nimage: quay.io/games_on_k8s/factorio\nimageTag: \"0.14.22\"\n\n# Configure resource requests and limits\n# ref: http://kubernetes.io/docs/user-guide/compute-resources/\nresources:\n  requests:\n    memory: 512Mi\n    cpu: 500m\n\n# Most of these map to environment variables. See docker-factorio for details:\n# https://github.com/games-on-k8s/docker-factorio/blob/master/README.md#environment-variable-reference\nfactorioServer:\n  name: Kubernetes Server\n  description: Factorio running on Kubernetes\n  port: 34197\n  # Lock this server down with a password.\n  # password: change.me\n  maxPlayers: 255\n  # Publishes this server in the server browser if true.\n  # You'll want to set Factorio.User below if true, as it becomes required.\n  isPublic: false\n  verifyIdentity: false\n  # Allows or disallows console commands. Must be one of: `true`, `false`, or `admins-only`.\n  allowCommands: admins-only\n  # Pause the server when nobody is connected?\n  noAutoPause: \"false\"\n  # You'll want to change this to NodePort if you are on AWS.\n  serviceType: LoadBalancer\n\n  autosave:\n    # Auto-save interval in minutes.\n    interval: 2\n    slots: 3\n\n  rcon:\n    enabled: false\n    port: 27015\n    # Empty value here enables an auto-generated password.\n    password: \"\"\n    serviceType: LoadBalancer\n\nfactorio:\n  # Your factorio.com User/pass is needed if factorioServer.IsPublic is true.\n  user:\n    username: your.username\n    password: your.password\n\npersistence:\n  ## factorio data Persistent Volume Storage Class\n  ## If defined, storageClassName: \u003cstorageClass\u003e\n  ## If set to \"-\", storageClassName: \"\", which disables dynamic provisioning\n  ## If undefined (the default) or set to null, no storageClassName spec is\n  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on\n  ##   GKE, AWS \u0026 OpenStack)\n  ##\n  # storageClass: \"-\"\n  savedGames:\n    # Set this to false if you don't care to persist saved games between restarts.\n    enabled: true\n    size: 1Gi\n  mods:\n    enabled: false\n    size: 128Mi\n",
+          "upstream": "https://github.com/helm/charts/tree/ffb84f85a861e765caade879491a75a6dd3091a5/stable/factorio",
+          "metadata": {
+            "applicationType": "helm",
+            "icon": "https://us1.factorio.com/assets/img/factorio-logo.png",
+            "name": "factorio",
+            "releaseNotes": "Add appVersion key for factorio (#4718)\n\n* Add appVersion key for factorio\n\nThe key \"appVersion\" is needed for ci testing, it's missing in this yaml. That sometimes will cause testing failure.\n\n* Missing starting space in line 20\n\nMissing starting space in line 20",
+            "license": {
+              "assignee": "",
+              "createdAt": "0001-01-01T00:00:00Z",
+              "expiresAt": "0001-01-01T00:00:00Z",
+              "id": "",
+              "type": ""
+            },
+            "sequence": 0,
+            "version": "0.3.1"
+          },
+          "contentSHA": "126fa6eb8f09171050751c65a386f41aef4fe9ebe00c8b1e66f2c4e60319ec4e"
+        }
+      }
+    metadata: "{}"
+    title: "Solo Account Watch"
+    icon_uri: "https://us1.factorio.com/assets/img/factorio-logo.png"
+    created_at: "2019-04-10 12:34:56.789"
+    updated_at: "2019-04-11 01:23:45.567"
+    slug: "solo-account/solo-account-watch"
+    parent_watch_id: ~
+    current_sequence: 0
+    users:
+      - "solo-account"
+    cluster: "solo-account-cluster-1"
+    downstream_tokens: ~
+    versions:
+      - created_at: "2019-04-10 12:34:56.789"
+        version_label: "0.3.1"
+        status: "deployed"
+        source_branch: ~
+        sequence: 0
+        pullrequest_number: ~
+        output: H4sIAHCUulwAA+0b/XPauLI/56/QkB/avgk2NhgSZjo3XEL7mMsHF5L0esNMKmwBfrEtnyXD0U7/97crf2AICdc3hU5fvdOObWm1Wu2XViui6S92DrVarWVZRD2bybNmNpJnCsSoN6ymZZhGs0ZqhlGv1V8Qa/esvXgRC0kjYMWnkf0cHqCNx8/0p+vInz8IaDqfscijC7E7Q/ga/QMm6L9uWI1S//sATY9Y4LCIOdqC+t5O5gB5NBuNJ/XfaBitdf23WuYLUtsJN2vwk+ufhu4di4TLgzaZGQcOlbR9QMiY2pJHLq+GVIg5j5w2Ye9PDNu15h/+uPzkmCeLPztv3hQxY8GigPosxzRs824x8t/KP39XmJHNgwK9SgXaYAyEn9XWBzeAlwGzIyYPfCZpxpRHR8wT+EYIDcP2cu7sRXVFzGNUsGU3tCaMPcaXixDar0L6V8wOqtXqwZo8Ml6imWuzXTMjQmYjwZBHUlGurqEqitjbJvWGcdJKviMuuc29Nrk966sWMOgJk32FVxgqgBX82MJzIpJzTp1fqUcDm0WPBMP+lizAV6HPjBEIJRPUGQs9vvBZsHPFZbKSzA89KllCvDgpQnHiLZNnBBHAUCV1A1hu1lIlLJgt6WSKeds5vbm67l3dD7rXd93r+8vORTdHImRGvRiwfotH4BpMMqEsCQT6JJ2z7uD0ute/6V1dPqbzNuWXRHEQuMGE8KBA+2mi/avrm8fUKsqEKk8Pu+j8cd8/73zoXg82jDYt65mxvcF9//bX897phpFj6gn2zNjr7u+3vevu/S0I9R6k2nvbO+1slshWWp3z86v396dXFxedy7MNy6CO7waiygNv8TSRS6BzewNy7ABL/wsTMHjQueve9y5vwE4655vE+U/GD86vbjbpor4c7Pp0Ak1/xXShuVyfACVxz4P7h2OhZ/bermlGQzPN1UH92PP63HPtRZt0vDlkhHn/U06Y9ecBK1tA7kD9tWC1iV6h43EsQ4iY4HFks8IU2AghW8iVNvDcMG4TC3bzlVaf+TyCZUF+ceHmPTPuxT674HGwyryPLX0qp22i81DmYtMFnRXcLFvGauszw33uPB5daEz4KYScTfRDjMECwq+8U+inHnX9ogxsbLjcrLAq0nKUTSzjmh/KxZkbtcnnLwcbeHtyU+xv4mTHYb+4gCxgUxssQ1xwh6V75jWjzvvIlewKNq+DR+azbjgCKCufMd65B987Hds7aLompm640yrAV53/a3j+N+tGszz/7QM0fQS+t9si0Nef/02AUv/7gFT/Tp6476AMsOX8b7Za6/q3zFajPP/vA8pjXXmsK44uj3XlsS7rL491/7/Huiz+p/v/ktTM/uYZwJb9v9YwrfX936o1y/1/H1DWuzfUu7+3UvYIqf8LddsidnMHuNX/jcaa/zcsyyr9fx9Q3v8t7/++ty6+B6T+/wBuwH33E5VgCd86Cmzzf8My1vy/WTPrpf/vAxJnA6+DQDDLAgF8FpLzKlmrDkHLo3wR2lRGWw0LDYVN5ad0rh8Asv1/RXffeI5t/l+3zPX8H/6V/r8PKK/2fm7I7v/AvCXT/iN48O3n2OL/VrO2/vu/Rt0q6/97gc/gKpWZUWmTz8ppKpCkj90Jfn85SlpSJ8biU0WVRROHraTdU+b5d1ixFGdsTGNPCsQ6XJa1VRmSpMnFMDgENx23yVTKULR1PStpRizkwoURi83VzV8kHb2RdCKGwT8phqZYN3TSJsNKWhkdVoaKgVO1xjhieQDJQwehgUM813elWGEVOH3Ia/I4q8NtoeOZpzqJXYfpNvfDWLJqHpL0YbAMT8OgEJ3wY616mTTlZc6EzQsuJOFjIqdMMOLTkEiOFxZuxANMxsiMRi4decAQHJcYAZYegJ9MBGTMI0jdJHU9nPMwF/nEldN4pAHHieyqcC5D2a2N10ceH+k+hY0g0q+7nbOLruY7hwUGqhkDsOoxixgE5WGQDU/uRNRik5D/6L4EuyC025EbSrUBPX8TguiFYhB+HpJz4BkE5Ir0KAlCmAdkDisklGTHSi3BXZ4y7SkNJkzzGXb49O++Rxd4LURMy0pw+/HIcwUIfoW4G6Aysq9RxOcCW0FFUczSWT7w+KXnkTkFBYG+BJP5urRbRIedk8+zQUeECuJKaAR1wGxoJC7+GhuJuUKxYeN26QnFLMzrjhc9B6TvykWh45B0PKArCCrdFTT5AG8W3GPw9H2wbDCUCwh4MBuIFv6DcX9ELj4ekY+KErzA+I+F+5OPihNF7jQlsnK/koqLgisUZTOfsoAEfMSdBSwD+QiYLZnzi7IH3oklV2PQO5M1VDaKL9FUogT4vIRcAAt9KL4FjwmNcCWk836g2BRJ4fLmUUkPHQpWAbNimpF6IIgMGlTiAZoFK59RD1UMa4vRyxOsrAeMI2kQHgcnJvWEJlY1UnosQF9wCkrJDNZsQUKbTdrF0nxyyUOm4DXpOAw9isPqhAUsgu3YWTVgUjBgkFYl5ea5JedXQ7lsozzzQv8naJA6kkUlBYw5MCmIdtWHtV5qh4iUWzrGvnThy9IP6CTSss91plVn9ons5bcedqKSw8N8ZoKZZiERJUkmSgZJSkcgJRUiHdMbQxgZuwFzjrKUT3Un1yXDGE4YdrFdtbDlYHRRsK1hpTqsbKRQwfb51LWnyrWUspwFLBFEEkZ85uLOBvFqSTIOUo7IK3QKJ9kZX6NzpbMFsecdgSc8mk9dWYOkU2KoYXkEfsBhe4SQWCC3nBt0RMirSWimzoCrAE+lkUN4kBN691v3CHuVSMwmuQpZMJDUfnidoCRGUuSnnQhFuRam5+9wu8i9Z4ArSR1TmXzmlQ4PXkpio3NCV6rlhAJROw4EIDlnECFgh4T0S2a+lnsQWllq3+6nJIFXoZo74hlnS3HNY9xQs/wkDoWMGPUxK9mwA2L6okOUASZ0wGP6eDw6boyPLXrcNBjkqzalDjtunTRODNqyaNNx6jV4tTBlBg709XwoOyblKRW0wREJ3EcV19BRFSswbzoEEFyIIkUGY2FoRUfVQRkMOHT9yfKuzuMTroXBZEkm2JyjFZI4DoENMTqOgwe39OxHHthCpQu5+706bLSM49fopf8iW5AR6QbMEtuHlSXisFKIKjjAdglML8GMj2DPeykg0gpl1GpfBVwsPmjkZkrBWmA7lC7aytyF/cBONphkNMzsepC+aQl7FykVZUrqJaQ2hnRI5GCXM2uIthVpKas0VUUx1bS6ZiTX8Fk6jJfgEJAG/+4ggmE2x7TJRsdjMIqWUbPgAGPYTYvWj5vjhkHZuDFmJ2zEajX7eGSwZnNs2g3WrNWNEwYvSPvLwZfvlv8X/v5vZ78D/frf/zUMo1X+/m8fsK7/XVwEbKv/1az1+79Wyyz//m8v8FT9H6vCqvavabqWFInLCloJJZRQQgkllFBCCSWUUEIJJZRQwg8I/wUlhYxXAFAAAA==
+    has_preflight: false
+
+imageBatches:
+  - id: "solo-account-image-batch-watch-1"
+    user_id: "solo-account"
+    images_input: |
+      postgres:10.7,docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee
+      quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64:0.22.0
+      localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e
+    created_at: "2019-04-10 12:34:56.789"
+    batch_watches:
+      - id: "solo-account-image-watch-1"
+        batch_id: "solo-account-image-batch-watch-1"
+        image_name: "postgres:10.7,docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee"
+        checked_at: "2019-05-07 22:43:05.058779"
+        is_private: false
+        versions_behind: 3
+        detected_version: "10.7"
+        latest_version: "11.2.0"
+        compatible_version: ""
+        check_error: ""
+        docker_pullable: "docker-pullable://postgres@sha256:810537dac6e7420c72a23b043b5dfe3ab493808e211f4ce69f7d1b7da1717cee"
+        path: '[{"sort":3,"version":"11.2","date":"2019-04-25T00:27:55.227279355Z"},{"sort":2,"version":"11.1","date":"2019-02-06T08:16:44.722701909Z"},{"sort":1,"version":"11.0","date":"2018-10-18T23:39:51.864511929Z"},{"sort":0,"version":"10.7","date":"2019-04-25T00:28:05.286902175Z"}]'
+        started_processing_at: "2019-05-07 22:42:55.209635"
+      - id: "solo-account-image-watch-2"
+        batch_id: "solo-account-image-batch-watch-1"
+        image_name: "quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64:0.22.0"
+        checked_at: "2019-05-07 22:43:05.058779"
+        is_private: false
+        versions_behind: 0
+        detected_version: "0.22.0"
+        latest_version: ""
+        compatible_version: ""
+        check_error: ""
+        docker_pullable: "docker-pullable://quay.io/kubernetes-ingress-controller/nginx-ingress-controller-amd64@sha256:ac313435c48901034af0224f2aaa6997ca648c9384145ad05f7e0e51998bae64"
+        path: ""
+        started_processing_at: "2019-05-07 22:42:55.209635"
+      - id: "solo-account-image-watch-3"
+        batch_id: "solo-account-image-batch-watch-1"
+        image_name: "localhost:32000/kotsadm-worker:c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
+        checked_at: "2019-05-07 22:43:05.058779"
+        is_private: true
+        versions_behind: 0
+        detected_version: "c7d3ee4@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
+        latest_version: ""
+        compatible_version: ""
+        check_error: 'list tags: Get https://index.docker.io/v2/localhost:32000/kotsadm-worker/tags/list: http: non-successful response (status=401 body="{"errors":[{"code":"UNAUTHORIZED","message":"authentication required","detail":[{"Type":"repository","Class":"","Name":"localhost:32000/kotsadm-worker","Action":"pull"}]}]}\n")'
+        docker_pullable: "docker-pullable://localhost:32000/kotsadm-worker@sha256:3af0e0a451dbc4c8a6d541e94ebbac59612f1c2fba7fec5a61f7dfc5ed9f343e"
+        path: ""
+        started_processing_at: "2019-05-07 22:42:55.209635"

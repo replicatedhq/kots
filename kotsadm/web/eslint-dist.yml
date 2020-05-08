@@ -1,0 +1,44 @@
+parser: babel-eslint
+plugins:
+  - react
+extends:
+  - airbnb/legacy
+  - plugin:react/recommended
+env:
+  browser: true
+globals:
+  ENVIRONMENT: true
+  SHIP_CLUSTER_BUILD_VERSION: true
+  GITHUB_CLIENTID: true
+  BUGSNAG_RELEASE_STAGE: true
+  INTERCOM_APP_ID: true
+rules:
+  id-length:
+    - 2
+    - min: 1
+      properties: never
+      exceptions:
+        - _
+        - $
+  no-underscore-dangle:
+    - 0
+  no-case-declarations:
+    - 0
+  comma-dangle:
+    - 0
+  quotes:
+    - 2
+    - "double"
+  max-len:
+    - 0
+  vars-on-top:
+    - 0
+  func-names:
+    - 0
+  space-before-function-paren:
+    - 2
+    - never
+  react/prop-types:
+    # - 1
+    - 0
+

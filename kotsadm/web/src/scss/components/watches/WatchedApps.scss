@@ -1,0 +1,11 @@
+.ClusterDashboard--wrapper .EmptyState {
+  max-width: 650px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media screen and (min-height: 600px) {
+  .empty-message-wrapper {
+    justify-content: center;
+  }
+}

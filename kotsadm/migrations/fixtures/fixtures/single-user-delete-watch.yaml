@@ -1,0 +1,41 @@
+users:
+  - id: "single-user-delete-watch-account"
+    created_at: "2019-04-18 12:34:56.789"
+    username: "single-user-delete-watch"
+    github_id: 242424
+    avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+    email: "single-user-delete-watch-account@replicated.com"
+    sessions:
+      - single-user-delete-watch-session-1
+
+watches:
+  - id: "single-user-delete-watch-1"
+    current_state: "{}"
+    metadata: "{}"
+    title: "Single User Save This Watch"
+    icon_uri: ""
+    created_at: "2019-04-10 12:34:56.789"
+    updated_at: ~
+    slug: "single-user-delete-watch/single-user-delete-watch-1"
+    parent_watch_id: ~
+    current_sequence: 0
+    users:
+      - "single-user-delete-watch-account"
+    cluster: ~
+    downstream_tokens: ~
+    versions: ~
+  - id: "single-user-delete-watch-2"
+    current_state: "{}"
+    metadata: "{}"
+    title: "Single User Delete This Watch"
+    icon_uri: ""
+    created_at: "2019-04-11 12:34:56.789"
+    updated_at: ~
+    slug: "single-user-delete-watch/single-user-delete-watch-2"
+    parent_watch_id: ~
+    current_sequence: 0
+    users:
+      - "single-user-delete-watch-account"
+    cluster: ~
+    downstream_tokens: ~
+    versions: ~

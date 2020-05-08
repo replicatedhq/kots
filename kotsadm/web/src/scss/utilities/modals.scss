@@ -1,0 +1,84 @@
+/*
+  Styles for the default global modal go here.
+  Specific modal styles should go in their own respective css files.
+*/
+
+.ReactModal__Overlay {
+  background-color: rgba(50,50,50,.4) !important;
+  z-index: 500;
+  overflow: auto;
+
+  .Modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid #DFDFDF;
+    border-radius: 6px;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    background: #ffffff;
+    transform: translate(-50%, -50%);
+    overflow: auto;
+
+    &.DefaultSize {
+      width: 100%;
+      max-width: 400px;
+    }
+    &.SmallSize {
+      width: 100%;
+      max-width: 500px;
+    }
+    &.MediumSize {
+      width: 100%;
+      max-width: 700px;
+    }
+    &.FullSize {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+    }
+    
+    .Modal-header {
+      padding: 20px 25px 0;
+      margin: 0;
+    }
+
+    .Modal-header p {
+      font-size: 20px;
+      font-weight: 700;
+      color: #4A4A4A;
+      line-height: 34px;
+      margin: 0;
+    }
+    .Modal-header.has-border {
+      border-bottom: 1px solid #DFDFDF;
+      padding-bottom: 18px;
+    }
+    .Modal-body {
+      padding: 20px 25px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  .ReactModal__Content.AddNewClusterModal--wrapper,
+  .ReactModal__Content.SetUpAutoPRsModal--wrapper {
+    overflow: visible;
+    .Modal-body {
+      overflow: visible;
+    }
+  }
+
+  .u-modalPadding { padding: 25px; }
+
+}
+
+  
+@media screen and (max-height: 43em) {
+  .Modal {
+    top: 60px;
+    transform: translate(-50%, 0);
+  }
+}
+  

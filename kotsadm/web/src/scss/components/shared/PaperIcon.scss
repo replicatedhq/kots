@@ -1,0 +1,14 @@
+.PaperIcon {
+  background-color: #FFFFFF;
+  border-radius: 100%;
+  box-shadow: 0 0 4px 0 rgba(0,0,0,0.2);
+  transition: box-shadow .2s ease;
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      box-shadow: 0 0 4px rgba(0,0,0,0.4);
+    }
+  }
+}

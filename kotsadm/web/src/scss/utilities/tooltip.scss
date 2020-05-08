@@ -1,0 +1,20 @@
+.__react_component_tooltip.replicated-tooltip.show {
+  opacity: 1;
+}
+.__react_component_tooltip.type-dark.replicated-tooltip {
+  color: #ffffff;
+  font-weight: 500;
+  background-color: #193B5B;
+}
+.__react_component_tooltip.type-dark.place-top.replicated-tooltip:after {
+  border-top-color: #193B5B;
+}
+.__react_component_tooltip.type-dark.place-right.replicated-tooltip:after {
+  border-right-color: #193B5B;
+}
+.__react_component_tooltip.type-dark.place-left.replicated-tooltip:after {
+  border-left-color: #193B5B;
+}
+.__react_component_tooltip.type-dark.place-bottom.replicated-tooltip:after {
+  border-bottom-color: #193B5B;
+}

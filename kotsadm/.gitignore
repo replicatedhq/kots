@@ -1,0 +1,8 @@
+.vscode/
+supportbundle.tar.gz
+/troubleshoot.so
+/kots.so
+vendor
+bin
+kustomize/overlays/github/
+.idea/

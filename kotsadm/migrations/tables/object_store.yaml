@@ -1,0 +1,23 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: object-store
+spec:
+  database: kotsadm-postgres
+  name: object_store
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - filepath
+      columns:
+      - name: filepath
+        type: text
+        constraints:
+          notNull: true
+      - name: encoded_block
+        type: text
+        constraints:
+          notNull: true

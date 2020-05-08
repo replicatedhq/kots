@@ -1,0 +1,155 @@
+users:
+  - id: "gitops-cluster-account"
+    created_at: "2019-04-20 12:34:56.789"
+    username: "gitops-cluster-dev"
+    github_id: 3333
+    avatar_url: "https://avatars3.githubusercontent.com/u/234568?v=4"
+    email: "gitops-cluster-account@replicated.com"
+    sessions:
+      - gitops-cluster-account-session-1
+
+clusters:
+  - id: gitops-cluster-1
+    title: GitOps Cluster 1
+    slug: "gitoops-cluster-1"
+    created_at: "2019-04-20 12:34:56.789"
+    updated_at: ~
+    token: ~
+    cluster_type: "gitops"
+    github:
+      owner: "gitops-cluster-dev"
+      repo: "gitops-deploy"
+      branch: "release"
+      installation_id: 123456
+    users:
+      - "gitops-cluster-account"
+
+watches:
+  - id: "gitops-grafana-midstream"
+    current_state: |
+      {
+        "v1": {
+          "config": null,
+          "helmValues": "...",
+          "releaseName": "grafana",
+          "helmValuesDefaults": "...",
+          "metadata": {
+            "applicationType": "helm",
+            "icon": "https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png",
+            "name": "grafana",
+            "releaseNotes": "...",
+            "version": "3.3.1"
+          },
+          "contentSHA": "9b71559ee936d80ae974b124e55d130e325a5d9131f7a9a708a166d4652b4758",
+          "lifecycle": {
+            "stepsCompleted": {
+              "intro": true,
+              "kustomize": true,
+              "kustomize-intro": true,
+              "outro": true,
+              "render": true,
+              "values": true
+            }
+          }
+        }
+      }
+    metadata: "{}"
+    title: Grafana
+    icon_uri: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
+    created_at: "2019-04-20 12:34:56.789"
+    updated_at: ~
+    slug: "gitops-cluster-account/gitops-grafana-midstream"
+    parent_watch_id: ~
+    current_sequence: 2
+    users:
+      - gitops-cluster-account
+    cluster: ~
+    downstream_tokens:
+      - "downstream-grafana-1"
+      - "downstream-grafana-2"
+    versions:
+      - created_at: "2019-04-20 12:34:56.789"
+        version_label: "3.3.1"
+        status: "deployed"
+        source_branch: ~
+        sequence: 0
+        pullrequest_number: ~
+        output: H4sIAMQbu1wAA+3VXWvDIBQG4FznV0jvY9Sogf4bt1gmbT6IyaD79Tv9oGy9yCjMbGPvQ0AkQk585cjLLDkhRG0MO4/2MgqlL+MVk5U21kpTC82ElJWsMmbSl5Zlc5zcSKW0bnxeWkfLdruF99f/uI1/BC/7Vz8e3DGmOwiP5K/MKf+KDgLyXwMvR981fvQNP7r2kOQbtB9W64X8VXXL39JBofxrS/mLJNXc+ef5t6GJ0+hdW/TzNMxTIfKfLglW9KH/x5cwJLkEHu//WiqF/r+G+/z3tB99G97cFPrum66EL/s/Zf45/7pWBv1/DfvQNVu22eRuCHQQIqV+nj656OM2LxjnJT2nKS4GAAAAAAAAAAAAAAAAgF/uHU4+MwEAKAAA
+      - created_at: "2019-04-21 12:34:56.789"
+        version_label: "3.3.1"
+        status: "deployed"
+        source_branch: ~
+        sequence: 1
+        pullrequest_number: ~
+        output: H4sIANQbu1wAA+3V3WrDIBgG4BznKqTnMWo0Qu/GLZZJmx80GXRXP9OWtetBRmFmG3sfAiIKMb7mk5ZZcowxrRQ5tfW5ZUKe2wvCK6nqmisdBxjnFVcZUemXlmVTGI2PS2mNf16aF6ftdgvjl+/4aP8IWvav1h/MMaQ7CI/kL9Scf4xfI/810NLbrrHeNvRo2kOSd8T9qKVcyF9U1/+fqzl/XcuMsCSrufPP829dE0ZvTVv00zhMY8Hzn14SrOim/ocXNyS5BB6v/5ILgfq/hvv893E/+ta9mdH13TddCV/W/5j55/y1Fgr1fw171zVbstnkZnDxIISY+qn7ZIIN27wglJbxmbu4GAAAAAAAAAAAAAAAAAB+uXeufqeBACgAAA==
+      - created_at: "2019-04-22 12:34:56.789"
+        version_label: "3.3.2"
+        status: "deployed"
+        source_branch: ~
+        sequence: 2
+        pullrequest_number: ~
+        output: H4sIAOUbu1wAA+3VW2vDIBgG4FznV0jvY4zRCP03brFM2hzQZND9+n09sEMvMgoz29j7EBCJEOOrn7zMkhNCGK3ZuW0urZDq0l6xqla6aSptlGaiqmopMqbTTy3L5jjZQFPpbHhcGkfDdruF99f/eGv/CF4Ozy4c7DGm2wj35C+1ovxr2gjIfw28DK5vXXAtP9rukOQbtB6NUgv5y/r9/NfmlL8xdP5Fktnc+Of5d76NU3C2K4Z5GuepkPlPTwlW9KH+xyc/JrkE7q//qpIS9X8Nt/nvaT2Gzr/YyQ/9N10JX9Z/yvxz/sZIjfq/hr3v2y3bbHI7etoIkVI/dx9sdHGbF4zzkp5TFxcDAAAAAAAAAAAAAAAAwC/3Cnmv5QwAKAAA
+  - id: "gitops-grafana-downstream"
+    current_state: |
+      {
+        "v1": {
+          "config": null,
+          "helmValues": "...",
+          "releaseName": "grafana",
+          "helmValuesDefaults": "...",
+          "metadata": {
+            "applicationType": "helm",
+            "icon": "https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png",
+            "name": "grafana",
+            "releaseNotes": "...",
+            "version": "3.3.1"
+          },
+          "contentSHA": "9b71559ee936d80ae974b124e55d130e325a5d9131f7a9a708a166d4652b4758",
+          "lifecycle": {
+            "stepsCompleted": {
+              "intro": true,
+              "kustomize": true,
+              "kustomize-intro": true,
+              "outro": true,
+              "render": true,
+              "values": true
+            }
+          }
+        }
+      }
+    metadata: "{}"
+    title: Grafana
+    icon_uri: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
+    created_at: "2019-04-21 12:34:56.789"
+    updated_at: ~
+    slug: "gitops-cluster-account/gitops-grafana-downstream"
+    parent_watch_id: gitops-grafana-midstream
+    current_sequence: 1
+    users:
+      - gitops-cluster-account
+    cluster: gitops-cluster-1
+    downstream_tokens: ~
+    versions:
+      - created_at: "2019-04-20 12:34:56.789"
+        version_label: "3.3.1"
+        status: "merged"
+        source_branch: ship-aaaa
+        sequence: 0
+        pullrequest_number: 88
+        output: H4sIAPgbu1wAA+3VXWuDMBQGYK/9FaH3xkSTCP032UyptH6Q6Eb363f6QSleOAqL29j7IISg4DFvPOF5Ep0QotKaXUZzHUWhruMNk6XSxkhdVYIJKUtpEqbjl5YkUxitp1Ja61+XnqPHdruF+7fvuI9/BM/7N+eP9hTibYRn8i+0ovxL2gjIfw08966rnXc1P9n2GOUdtB5GqYX8aXL//015zp/aQMJElGpm/nn+df/ehdE722b9NA7TmIn0p2uC9Tz0/7BvhiiHwPP9X8miQP9fwzz/A61H3zYfdmz67puOhC/7v1az/Kuq0Oj/azg0Xb1lm01qh4Y2QqDUL9MXG1zYphnjPKfrPMW5AAAAAAAAAAAAAAAAAPDLfQJuuN6qACgAAA==
+      - created_at: "2019-04-21 12:34:56.789"
+        version_label: "3.3.1"
+        status: "merged"
+        source_branch: ship-bbbb
+        sequence: 1
+        pullrequest_number: 89
+        output: H4sIABAcu1wAA+3V3WrDIBgG4BznKqTnMWrUQO/GLZaFNj+o6eiufi4tZeQgozCzjb0PAZEE8sXXfNIyS44xVitF5lFfRybkdbwhvJJKa66ZYIRxXrEqIyp9aVk2+WBcLKUz7nntufjY4bBy//Yd9/GPoOVwtu5kLj7dRnggfyWUjPlXXNXIfwu0dLZvrLMNvZjulOQdcT20lCv5x8n9/+dz/rXSGWFJqln45/k3w2vvg7OmK4YpjFMoeP7TNcF2PvV//9KOSQ6Bx/u/5EKg/29hmf8xrsfQtW8mtEP/TUfCl/1fyUX+dS0U+v8Wjm3f7Mlul5uxjRvBx9Tn6ZPx1u/zglBaxutjinMBAAAAAAAAAAAAAAAA4Jd7B6tp3AQAKAAA
+      - created_at: "2019-04-22 12:34:56.789"
+        version_label: "3.3.2"
+        status: "open"
+        source_branch: ship-cccc
+        sequence: 2
+        pullrequest_number: 90
+        output: H4sIABocu1wAA+3VW2uDMBgGYK/9FaH3xiTmAP032UyptB5IdKP79UsPlOKFo7C4jb0PQggKfuaNX2iZJccYM0qRy6ivIxPyOt4QXkmlNdesEoRxXjGdEZW+tCybwmh9LKW1/nXpufjYbrdw//Yd9/GPoGX/5vzRnkK6jfBE/kooGfOvuDLIfw209K6rnXc1Pdn2mOQdcT20lAv5x8n9/xfmnL/RIiMsSTUz/zz/un/vwuidbYt+GodpLET+0zXBeh76f9g3Q5JD4Pn+L7kQ6P9rmOd/iOvRt82HHZu++6Yj4cv+r+Qsf2OEQv9fw6Hp6i3ZbHI7NHEjhJj6ZfpigwvbvCCUlvE6T3EuAAAAAAAAAAAAAAAAAPxyn58uzDUAKAAA
+
+

@@ -1,0 +1,33 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: supportbundle-analysis
+spec:
+  database: kotsadm-postgres
+  name: supportbundle_analysis
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: supportbundle_id
+        type: text
+        constraints:
+          notNull: true
+      - name: error
+        type: text
+      - name: max_severity
+        type: text
+      - name: insights
+        type: text
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true

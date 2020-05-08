@@ -1,0 +1,11 @@
+{
+    "extends": "tslint-config-replicated",
+    "rules": {
+        "await-promise": ["true", "Request"],
+        "no-http-string": false,
+        "promise-function-async": false,
+        "newline-before-return": false,
+        "cyclomatic-complexity": [true, 7],
+        "no-unused-variable": true
+    }
+  }

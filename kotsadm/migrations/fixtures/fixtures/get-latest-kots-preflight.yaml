@@ -1,0 +1,63 @@
+users:
+  - id: "get-latest-kots-preflight-result-user-id"
+    created_at: "2019-09-12 01:13:05.02"
+    type: "github"
+    github:
+      username: "get-latest-kots-preflight-result-github-user"
+      github_id: 99101235
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "get-latest-kots-preflight-result-user-email@replicated.com"
+    sessions:
+      - get-latest-kots-preflight-result-user-session
+
+clusters:
+  - id: "get-latest-kots-preflight-result-cluster-id"
+    cluster_type: "ship"
+    title: "get-latest-kots-preflight-result-cluster-title"
+    slug: "get-latest-kots-preflight-result-cluster-slug"
+    created_at: "2019-09-12 01:13:05.02"
+    updated_at: ~
+    token: ~
+    users:
+      - "get-latest-kots-preflight-result-user-id"
+
+apps:
+  - id: "get-latest-kots-preflight-result-app-id"
+    name: "get-latest-kots-preflight-result-app-name"
+    icon_uri: "kots-app-icon-uri"
+    created_at: "2019-09-12 01:13:05.02"
+    updated_at: "2019-09-12 01:13:05.02"
+    slug: "get-latest-kots-preflight-result-app-slug"
+    current_sequence: 0
+    last_update_check_at: "2019-09-12 01:13:05.02"
+    is_all_users: false
+    upstream_uri: "get-latest-kots-preflight-result-app-upstream-uri"
+    license:
+      apiVersion: "kots.io/v1beta1"
+      kind: License
+      metadata:
+        name: my-customer
+      spec:
+        licenseID: my-awesome-license-id
+        appSlug: get-latest-kots-preflight-result-app-slug
+        endpoint: https://replicated-app:3000
+        signature: IA==
+    registry_hostname: "hostname"
+    registry_username: "username"
+    registry_password: "password"
+    namespace: "kots-namespace"
+    last_registry_sync: "2019-09-12 01:13:05.02"
+    install_state: "installed"
+    users:
+      - get-latest-kots-preflight-result-user-id
+    downstreams:
+      - id: "get-latest-kots-preflight-result-cluster-id"
+    downstream_versions:
+      - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
+        preflight_result_created_at: "2019-09-12 01:13:05.02"
+        cluster_id: "get-latest-kots-preflight-result-cluster-id"
+        sequence: 0
+        version_label: "my-awesome-version"
+        created_at: "2019-09-12 01:13:05.02"
+        applied_at: "2019-09-12 01:13:05.02"
+        status: "pending"

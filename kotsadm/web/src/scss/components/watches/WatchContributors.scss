@@ -1,0 +1,35 @@
+$icon-size: 24px;
+.WatchContributors--wrapper {
+  .watch-icon-wrapper:not(:first-child) {
+    margin-left: -12px;
+  }
+  .contributer-icon {
+    display: block;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 100%;
+    overflow: hidden;
+    width: $icon-size;
+    height: $icon-size;
+    border: 2px solid #ffffff;
+
+    &.additional-contributors {
+      background-color: #326DE6;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 18px;
+    }
+  }
+}
+
+.WatchContributorsModal--wrapper {
+  &.Modal.MediumSize {
+    overflow: visible;
+    .Modal-body {
+      overflow: visible;
+    }
+  }
+}

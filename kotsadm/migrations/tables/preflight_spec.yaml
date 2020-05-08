@@ -1,0 +1,25 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  name: preflight-spec
+spec:
+  database: kotsadm-postgres
+  name: preflight_spec
+  schema:
+    postgres:
+      primaryKey:
+      - watch_id
+      - sequence
+      columns:
+      - name: watch_id
+        type: text
+        constraints:
+          notNull: true
+      - name: sequence
+        type: int
+        constraints:
+          notNull: true
+      - name: spec
+        type: text
+        constraints:
+          notNull: true

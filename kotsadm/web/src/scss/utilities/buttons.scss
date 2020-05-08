@@ -1,0 +1,197 @@
+.button-wrapper {
+  margin-top: 20px;
+  .btn {
+    margin-right: 6px;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.btn {
+  cursor: pointer;
+  padding: 7px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 15px;
+  display: inline-block;
+  border: 0;
+  border-radius: 3px;
+  transition: background-color color border .2s;
+  outline: none;
+  position: relative;
+
+  &.small {
+    padding: 4px 12px 5px;
+  }
+
+  &.large {
+    padding: 11px 12px 12px;
+    font-size: 14px;
+  }
+
+  &.rounded {
+    border-radius: 60px;
+  }
+
+  &.auth {
+    padding: 12px 20px 11px;
+    border-radius: 40px;
+    border-width: 2px;
+    border-style: solid;
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 18px;
+    background-color: #ffffff;
+
+    .icon {
+      vertical-align: -7px;
+      margin-right: 6px;
+      pointer-events: none;
+    }
+  }
+
+  &.primary {
+    background-color: #326DE6;
+    border-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+    color: #ffffff;
+    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+
+    &:not(:disabled):hover {
+      background-color: #265BC7;
+    }
+  }
+
+  &.primary.is-disabled,
+  &.primary.is-disabled:hover,
+  &.primary:disabled,
+  &.primary[disabled] {
+    cursor: not-allowed;
+    border-color: #A3D3E9;
+    color: #ffffff;
+    background-color: #A3D3E9;
+  }
+
+  &.primary.red {
+    background-color: #BC4752;
+    border-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+    color: #ffffff;
+    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+
+    &:not(:disabled):hover {
+      background: #A83F49;
+    }
+  }
+
+  &.primary.red.is-disabled,
+  &.primary.red.is-disabled:hover,
+  &.primary.red:disabled,
+  &.primary.red[disabled] {
+    cursor: not-allowed;
+    border-color: #DDA3A8;
+    color: #ffffff;
+    background-color: #DDA3A8;
+  }
+
+  &.secondary {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #9B9B9B;
+    color: #9B9B9B;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #717171;
+      color: #717171;
+    }
+  }
+
+  &.secondary.red {
+    background-color: #ffffff;
+    border: 1px solid #BC4752;
+    box-shadow: none;
+    color: #BC4752;
+
+    &:not(:disabled):hover {
+      border-color: #A83F49;
+      color: #A83F49;
+    }
+  }
+
+  &.secondary.blue {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #326DE6;
+    color: #326DE6;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      border-color: #2158CA;
+      color: #2158CA;
+    }
+  }
+
+  &.secondary.smallPadding {
+    padding: 3px 12px 3px;
+  }
+
+
+  &.secondary.is-disabled,
+  &.secondary.is-disabled:hover,
+  &.secondary:disabled,
+  &.secondary[disabled] {
+    cursor: not-allowed;
+    color: #CBD6E3;
+    border-color: #CBD6E3;
+  }
+
+  &.github {
+    border-color: #24292E;
+    color: #24292E;
+
+    &:not(:disabled):hover {
+      background-color: #F4F4F4;
+    }
+  }
+
+  &.gitlab {
+    border-color: #E24329;
+    color: #E24329;
+
+    &:not(:disabled):hover {
+      background-color: #FDF5F4;
+    }
+  }
+
+  &.bitbucket {
+    border-color: #2684FF;
+    color: #2684FF;
+
+    &:not(:disabled):hover {
+      background-color: #F5FAFF;
+    }
+  }
+
+  &.traditional {
+    border-color: #326DE6;
+    color: #326DE6;
+
+    &:not(:disabled):hover {
+      background-color: #F5F8FC;
+    }
+  }
+
+}
