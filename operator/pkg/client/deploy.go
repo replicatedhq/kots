@@ -85,18 +85,25 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		obj, gvk, err := parseK8sYaml([]byte(oldContents))
 		if err != nil {
 			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
-		} else {
-			log.Printf("deleting manifest(s): %s/%s/%s", gvk.Group, gvk.Kind, getObjectName(obj))
 		}
 
-		pvcs, err := getPVCs(targetNamespace, obj, gvk)
-		if err != nil {
-			return errors.Wrap(err, "failed to list PVCs")
+		group := ""
+		kind := ""
+
+		if obj != nil && gvk != nil {
+			group = gvk.Group
+			kind = gvk.Kind
+			log.Printf("deleting manifest(s): %s/%s/%s", group, kind, getObjectName(obj))
+
+			pvcs, err := getPVCs(targetNamespace, obj, gvk)
+			if err != nil {
+				return errors.Wrap(err, "failed to list PVCs")
+			}
+			allPVCs = append(allPVCs, pvcs...)
 		}
-		allPVCs = append(allPVCs, pvcs...)
 
 		wait := applicationManifests.Wait
-		if gvk.Kind == "PersistentVolumeClaim" {
+		if gvk != nil && gvk.Kind == "PersistentVolumeClaim" {
 			// blocking on PVC delete will create a deadlock if
 			// it's used by a pod that has not been deleted yet.
 			wait = false
@@ -108,7 +115,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			log.Printf("stderr (delete) = %s", stderr)
 			log.Printf("error: %s", err.Error())
 		} else {
-			log.Printf("manifest(s) deleted: %s/%s/%s", gvk.Group, gvk.Kind, getObjectName(obj))
+			log.Printf("manifest(s) deleted: %s/%s/%s", group, kind, getObjectName(obj))
 		}
 	}
 
