@@ -39,6 +39,8 @@ type RewriteOptions struct {
 	RegistryUsername  string
 	RegistryPassword  string
 	RegistryNamespace string
+	AppSlug           string
+	AppSequence       int64
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -254,6 +256,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:      rewriteOptions.AppSlug,
+		AppSequence:  rewriteOptions.AppSequence,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")
