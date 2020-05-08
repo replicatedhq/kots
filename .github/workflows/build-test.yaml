@@ -65,9 +65,6 @@ jobs:
 
       - name: run testIM
         run: |
-          cat > license.yml <<EOF
-          ${{ secrets.GITHUB_ACTION_KOTS_QA_LICENSE }}
-          EOF
           ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig admin-console -n automated-$GITHUB_RUN_ID &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --label kotsadm-smoke-test --tunnel --tunnel-port 8800
