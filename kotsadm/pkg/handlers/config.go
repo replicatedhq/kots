@@ -14,6 +14,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
@@ -25,9 +28,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/multitype"
-	"github.com/replicatedhq/kots/pkg/crypto"
 )
 
 type UpdateAppConfigRequest struct {
@@ -238,7 +238,11 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 
 	appSequence := updateApp.CurrentSequence
 	if req.CreateNewVersion {
-		appSequence++
+		appSequence, err = version.GetNextAppSequence(updateApp.ID, &updateApp.CurrentSequence)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to get next app sequence"
+			return updateAppConfigResponse, errors.Wrap(err, "failed to get new app sequence")
+		}
 	}
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(updateApp.ID)

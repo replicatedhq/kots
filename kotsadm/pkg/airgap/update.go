@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -19,9 +22,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	"github.com/replicatedhq/kots/pkg/crypto"
-	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/pull"
 )
 
 func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
@@ -127,6 +127,11 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
+	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new app sequence")
+	}
+
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
@@ -160,7 +165,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 			Password:   string(decryptedPassword),
 		},
 		AppSlug:     a.Slug,
-		AppSequence: a.CurrentSequence + 1,
+		AppSequence: appSequence,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

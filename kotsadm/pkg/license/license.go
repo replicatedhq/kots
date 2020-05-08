@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -76,12 +76,17 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "update app license")
 		}
 
+		appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get new app sequence")
+		}
+
 		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		if err := render.RenderDir(archiveDir, a.ID, a.CurrentSequence+1, registrySettings); err != nil {
+		if err := render.RenderDir(archiveDir, a.ID, appSequence, registrySettings); err != nil {
 			return nil, errors.Wrap(err, "failed to render new version")
 		}
 
