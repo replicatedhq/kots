@@ -1,6 +1,6 @@
 FROM golang:1.14 as deps
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
 WORKDIR $PROJECTPATH
 ADD Makefile $PROJECTPATH/
 # ADD go.mod $PROJECTPATH/

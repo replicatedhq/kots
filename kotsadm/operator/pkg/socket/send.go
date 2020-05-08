@@ -3,7 +3,7 @@ package socket
 import (
 	"encoding/json"
 	"errors"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/protocol"
 	"log"
 	"time"
 )

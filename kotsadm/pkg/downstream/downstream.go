@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
 func ListDownstreamsForApp(appID string) ([]*types.Downstream, error) {

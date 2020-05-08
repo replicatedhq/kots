@@ -9,9 +9,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kotsadm/pkg/user"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"

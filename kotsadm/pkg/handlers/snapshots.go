@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/session"
-	"github.com/replicatedhq/kotsadm/pkg/snapshot"
-	snapshottypes "github.com/replicatedhq/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 )
 
 type GlobalSnapshotSettingsResponse struct {

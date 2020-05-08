@@ -9,10 +9,10 @@ import (
 	"strconv"
 
 	"github.com/mholt/archiver"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 func DownloadApp(w http.ResponseWriter, r *http.Request) {

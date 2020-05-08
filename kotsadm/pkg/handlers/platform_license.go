@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/replicatedhq/kotsadm/pkg/license"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/license"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 )
 
 const (

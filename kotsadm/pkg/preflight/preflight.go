@@ -4,12 +4,12 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
-	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
-	"github.com/replicatedhq/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"go.uber.org/zap"
 )
 

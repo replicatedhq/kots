@@ -1,4 +1,4 @@
-module github.com/replicatedhq/kotsadm/kurl_proxy
+module github.com/replicatedhq/kots/kotsadm/kurl_proxy
 
 go 1.14
 

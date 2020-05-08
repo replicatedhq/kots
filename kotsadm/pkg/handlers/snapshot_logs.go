@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	v1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/label"

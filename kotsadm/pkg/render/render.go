@@ -11,10 +11,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	registrytypes "github.com/replicatedhq/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 )
 
 // RenderFile renders a single file

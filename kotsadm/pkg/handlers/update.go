@@ -10,14 +10,14 @@ import (
 	"github.com/pkg/errors"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/license"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/session"
-	"github.com/replicatedhq/kotsadm/pkg/task"
-	"github.com/replicatedhq/kotsadm/pkg/upstream"
-	"github.com/replicatedhq/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/license"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/upstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 type AppUpdateCheckRequest struct {

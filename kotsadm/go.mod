@@ -1,4 +1,4 @@
-module github.com/replicatedhq/kotsadm
+module github.com/replicatedhq/kots/kotsadm
 
 go 1.14
 

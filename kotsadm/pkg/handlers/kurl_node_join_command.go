@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/replicatedhq/kotsadm/pkg/k8s"
-	"github.com/replicatedhq/kotsadm/pkg/kurl"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 )
 
 type GenerateNodeJoinCommandResponse struct {

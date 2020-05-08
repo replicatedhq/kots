@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"go.uber.org/zap"

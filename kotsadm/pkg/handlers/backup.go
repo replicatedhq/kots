@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/session"
-	"github.com/replicatedhq/kotsadm/pkg/snapshot"
-	snapshottypes "github.com/replicatedhq/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 )
 
 type CreateBackupRequest struct {

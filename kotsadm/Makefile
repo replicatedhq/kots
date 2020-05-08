@@ -7,7 +7,7 @@ BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclud
 
 .PHONY: kotsadm
 kotsadm:
-	go build -tags "$(BUILDTAGS)" -o bin/kotsadm github.com/replicatedhq/kotsadm/cmd/kotsadm
+	go build -tags "$(BUILDTAGS)" -o bin/kotsadm github.com/replicatedhq/kots/kotsadm/cmd/kotsadm
 
 .PHONY: fmt
 fmt:

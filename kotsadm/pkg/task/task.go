@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
 func SetTaskStatus(id string, message string, status string) error {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"k8s.io/client-go/kubernetes"
 )
 

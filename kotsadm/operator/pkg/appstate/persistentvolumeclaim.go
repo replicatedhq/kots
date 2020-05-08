@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/appstate/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

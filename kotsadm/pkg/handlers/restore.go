@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/replicatedhq/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/session"
-	"github.com/replicatedhq/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 )
 
 type CreateRestoreRequest struct {
