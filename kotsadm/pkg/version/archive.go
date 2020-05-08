@@ -12,8 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	kotss3 "github.com/replicatedhq/kotsadm/pkg/s3"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	"go.uber.org/zap"
 )
 

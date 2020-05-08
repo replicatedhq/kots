@@ -14,12 +14,12 @@ import (
 
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/operator/pkg/applier"
-	"github.com/replicatedhq/kotsadm/operator/pkg/appstate"
-	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket"
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/transport"
-	"github.com/replicatedhq/kotsadm/operator/pkg/util"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/applier"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/appstate"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/appstate/types"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )

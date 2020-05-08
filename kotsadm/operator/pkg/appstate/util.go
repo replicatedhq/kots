@@ -3,7 +3,7 @@ package appstate
 import (
 	"sort"
 
-	"github.com/replicatedhq/kotsadm/operator/pkg/appstate/types"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/appstate/types"
 )
 
 func normalizeStatusInformers(informers []types.StatusInformer, targetNamespace string) (next []types.StatusInformer) {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 )
 
 func archiveToFileTree(archivePath string) (*types.FileTree, error) {

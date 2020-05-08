@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

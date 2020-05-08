@@ -99,7 +99,7 @@ steps:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go14-node10
-          workdir: /go/src/github.com/replicatedhq/kotsadm
+          workdir: /go/src/github.com/replicatedhq/kots/kotsadm
           environment:
             - SCOPE_DSN_PUBLIC
             - BUILDKITE_REPO
@@ -120,7 +120,7 @@ steps:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go14-node10
-          workdir: /go/src/github.com/replicatedhq/kotsadm
+          workdir: /go/src/github.com/replicatedhq/kots/kotsadm
           environment:
             - SCOPE_DSN_PUBLIC
             - BUILDKITE_REPO
@@ -144,7 +144,7 @@ steps:
       - docker#v3.5.0:
           always-pull: true
           image: replicated/gitops-builder:buildkite-go14-node10
-          workdir: /go/src/github.com/replicatedhq/kotsadm
+          workdir: /go/src/github.com/replicatedhq/kots/kotsadm
           environment:
             - SCOPE_DSN_PUBLIC
             - BUILDKITE_REPO

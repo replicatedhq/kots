@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/config"
-	"github.com/replicatedhq/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kotsadm/pkg/gitops"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kotsadm/pkg/version/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/config"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
 
 // CreateFirstVersion works much likst CreateVersion except that it assumes version 0

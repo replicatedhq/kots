@@ -10,9 +10,9 @@ import (
 	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
-	kotss3 "github.com/replicatedhq/kotsadm/pkg/s3"
-	"github.com/replicatedhq/kotsadm/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/segmentio/ksuid"
 )
 

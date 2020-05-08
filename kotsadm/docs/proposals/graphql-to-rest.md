@@ -39,7 +39,7 @@ Remove operator and make that part of kotsadm directly as a new command. When ru
 
 ## Rest API
 
-Current GraphQL schema is defined: https://github.com/replicatedhq/kotsadm/blob/61e89966eefb76fd02d276d21314389997105818/api/src/schema/query.ts and https://github.com/replicatedhq/kotsadm/blob/61e89966eefb76fd02d276d21314389997105818/api/src/schema/mutation.ts. There are also numerous Rest APIs defined in https://github.com/replicatedhq/kotsadm/tree/61e89966eefb76fd02d276d21314389997105818/api/src/controllers. Some of these are deprecated from Ship, and not needed.
+Current GraphQL schema is defined: https://github.com/replicatedhq/kots/kotsadm/blob/61e89966eefb76fd02d276d21314389997105818/api/src/schema/query.ts and https://github.com/replicatedhq/kots/kotsadm/blob/61e89966eefb76fd02d276d21314389997105818/api/src/schema/mutation.ts. There are also numerous Rest APIs defined in https://github.com/replicatedhq/kots/kotsadm/tree/61e89966eefb76fd02d276d21314389997105818/api/src/controllers. Some of these are deprecated from Ship, and not needed.
 
 New Rest API (Go version) will be:
 

@@ -2,8 +2,8 @@ package license
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
 func updateAppLicense(a *app.App, licenseData string) error {

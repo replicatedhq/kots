@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kotsadm/pkg/app"
-	"github.com/replicatedhq/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kotsadm/pkg/task"
-	"github.com/replicatedhq/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 func DownloadUpdate(appID string, archiveDir string, toCursor string) error {

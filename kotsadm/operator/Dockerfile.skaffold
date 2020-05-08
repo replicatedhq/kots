@@ -36,7 +36,7 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${T
   cd /tmp && tar xzvf support-bundle.tar.gz && \
   mv /tmp/support-bundle /root/.krew/bin/kubectl-support_bundle
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/operator
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD Makefile ./
 ADD go.mod ./

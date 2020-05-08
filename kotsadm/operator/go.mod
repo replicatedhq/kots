@@ -1,4 +1,4 @@
-module github.com/replicatedhq/kotsadm/operator
+module github.com/replicatedhq/kots/kotsadm/operator
 
 go 1.14
 

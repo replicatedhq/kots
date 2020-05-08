@@ -31,7 +31,7 @@ test: fmt vet pacts
 
 .PHONY: build
 build:
-	go build -o bin/kotsadm-operator github.com/replicatedhq/kotsadm/operator/cmd/kotsadm-operator
+	go build -o bin/kotsadm-operator github.com/replicatedhq/kots/kotsadm/operator/cmd/kotsadm-operator
 
 .PHONY: run
 run: bin

@@ -1,6 +1,6 @@
 FROM golang:1.14
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kotsadm/kurl_proxy
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/kurl_proxy
 WORKDIR $PROJECTPATH
 ADD Makefile ./
 ADD go.mod ./

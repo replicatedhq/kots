@@ -9,7 +9,7 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 

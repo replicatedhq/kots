@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kotsadm/pkg/automation"
-	"github.com/replicatedhq/kotsadm/pkg/handlers"
-	"github.com/replicatedhq/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
+	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
 )
 
 func Start() {

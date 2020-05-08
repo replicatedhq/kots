@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/replicatedhq/kotsadm/operator/pkg/socket/protocol"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/protocol"
 )
 
 const (
