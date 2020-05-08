@@ -1,0 +1,13 @@
+bases:
+  - ../../base
+  - ./minio
+  - ../../../web/kustomize/overlays/dev
+  - ../../../api/kustomize/overlays/dev
+  - ../../../operator/kustomize/overlays/dev
+  - ../../../migrations/kustomize/overlays/dev
+
+resources:
+  - ./nodeport.yaml
+
+patches:
+  - ./deployment.yaml

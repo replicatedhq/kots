@@ -1,0 +1,3 @@
+version: "1"
+domain: replicated.com
+repo: github.com/replicatedhq/kotsadm/operator

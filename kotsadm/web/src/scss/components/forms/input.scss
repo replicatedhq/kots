@@ -1,0 +1,125 @@
+.Input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #DFDFDF;
+  border-radius: 4px;
+  outline: 0;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: normal;
+  color: #323232;
+  padding: 7px 12px 8px;
+  transition: border .2s;
+  height: 38px;
+
+  &.width-auto {
+    width: auto;
+  }
+
+  &:active,
+  &:focus {
+    border-color: #4990E2;
+  }
+
+  &.larger {
+    padding: 11px 12px 12px;
+  }
+
+  &.jumbo {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &.has-error,
+  &.has-error:focus,
+  &.has-error:active {
+    border-color: #EE5042;
+  }
+  &.is-disabled {
+    user-select: none;
+    cursor: not-allowed;
+    background-color: #F8F8F8;
+    border-color: #DFDFDF;
+    color: #717171;
+  }
+}
+
+.Input::placeholder {
+  color: #C4C7CA;
+}
+
+.hidden-input {
+  position: absolute;
+  left: -1000px;
+  top: -1000px;
+  opacity: 0;
+}
+
+/* Switch style checkbox */
+
+input.Checkbox-toggle {
+  opacity: .01;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+  cursor: pointer;
+}
+.Checkbox--switch {
+  display: inline-block;
+  border-radius: 100px;
+  background: #f8f8f8;
+  transition: all .2s ease;
+  padding: 2px;
+  width: 38px;
+  height: 20px;
+  max-height: 18px;
+  position: relative;
+  cursor: pointer;
+  vertical-align: bottom;
+  border: 1px solid #DFDFDF;
+}
+.Checkbox--switch.is-disabled {
+  border: 1px solid #DFDFDF;
+  opacity: 0.7;
+}
+.Checkbox--switch::before {
+  display: none;
+}
+.Checkbox--switch::after {
+  position: relative;
+  display: block;
+  content: "";
+  top: -1px;
+  width: 48%;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid #DFDFDF;
+  left: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: left 0.2s ease-in-out, padding 0.2s ease, margin 0.2s ease;
+  box-shadow: 0px 2px 2px 0px rgba(0,0,0,0.10), inset -2px -2px 2px 0px rgba(23,16,52,0.05);
+  z-index: 1;
+}
+.Checkbox--switch::after:hover,
+.Checkbox--switch::after:active,
+.Checkbox--switch::after.is-checked {
+  border: 1px solid #DFDFDF;
+  background: #ffffff;
+}
+
+.Checkbox--switch.is-checked {
+  background: #326DE6;
+  border: 1px solid #326DE6;
+}
+.Checkbox--switch.is-checked::after {
+  left: 49%;
+}

@@ -1,0 +1,276 @@
+$cell-width: 140px;
+
+.VersionHistoryDeploymentRow {
+  padding: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #C4C7CA;
+  border-top: none;
+  border-right: none;
+  border-left: none;
+  background-color: #ffffff;
+
+  &.active-deploy-row {
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-color: #44bb66;
+
+    &.failed {
+      border-color: #BC4752;
+    }
+  }
+
+  .DiffSummary {
+    font-size: 12px;
+    margin-top: 5px;
+  
+    .files {
+      color: #9B9B9B;
+    }
+  
+    .lines-added {
+      color: #44bb66;
+    }
+  
+    .lines-removed {
+      color: #BC4752;
+    }
+  }
+
+  &.is-new {
+    -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
+    -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
+    -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
+    animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
+    animation:         newVersion 9s ease forwards;
+  }
+  
+}
+
+.upstream-version-box-wrapper {
+  background-color: #F5F8FC;
+  border-radius: 4px;
+  padding: 15px;
+  width: 100%;
+  max-width: 560px;
+
+  .watch-icon {
+    width: 48px;
+    height: 48px;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 40px;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  }
+
+}
+
+.checking-update-error-wrapper {
+  background-color: #FBECEA;
+  border-radius: 4px;
+  padding: 15px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.airgap-upload-error-wrapper {
+  background-color: #FBECEA;
+  border-radius: 4px;
+  padding: 0px 5px 0px 5px;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+.watch-cell {
+  width: $cell-width;
+}
+
+.ActiveDownstreamVersionRow--wrapper,
+.NodeRow--wrapper {
+  padding: 12px;
+  border-top: 1px solid #DFDFDF;
+
+  &.is-expired {
+    background-color: #F8F8F8;
+  }
+
+  &.is-deleting {
+    background-color: #F8F8F8;
+  }
+}
+
+.NodeRow--items p {
+  max-width: 180px;
+
+  .icon {
+    vertical-align: -3px;
+    margin-right: 4px;
+  }
+
+  .node-status {
+    width: 6px;
+    height: 6px;
+    border-radius: 100%;
+    margin-right: 4px;
+    display: inline-block;
+    vertical-align: 1px;
+    background-color: #44bb66;
+
+    &.disconnected {
+      background-color: #BC4752;
+    }
+  }
+}
+
+.gh-version-detail-text {
+  position: relative;
+  top: 1px;
+}
+
+.ActiveRelease-wrapper {
+  .no-current-version {
+    background-color: #F5F8FC;
+    margin-top: 16px;
+    border-radius: 4px;
+    padding: 16px 12px;
+  }
+}
+
+.ReactModal__Overlay .SkipModal .btn.secondary {
+  background-color: #FFFFFF;
+  margin-left: 15px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #6D7278;
+  color: #6D7278;
+  box-shadow: none;
+}
+
+.release-notes-link {
+  color: #326DE6;
+
+  &:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
+
+.logs-modal {
+  height: 70%;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+}
+
+.monaco-editor-wrapper {
+  margin-top: 12px;
+  border-radius: 4px;
+}
+
+.action-tab-bar .tab-item {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9B9B9B;
+  padding: 0 10px;
+  border-right: 1px solid #DFDFDF;
+  line-height: 15px;
+  cursor: pointer;
+  transition: color .2s;
+  position: relative;
+
+  &:hover {
+    color: #717171;
+  }
+
+  &.is-active {
+    color: #4A4A4A;
+    font-weight: 600;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -16px;
+      display: block;
+      width: 8px;
+      height: 8px;
+      transform: rotate(45deg);
+      background-color: #ffffff;
+      border-top: 1px solid #DFDFDF;
+      border-left: 1px solid #DFDFDF;
+      left: 50%;
+      margin-left: -4px;
+    }
+  }
+
+  &.blue.is-active::after {
+    background-color: #F5F8FC;
+  }
+
+  &:last-child {
+    border-right: none
+  }
+}
+
+.TableDiff--Wrapper {
+  position: relative;
+  width: 95%;
+  max-width: 1000px;
+}
+
+.DiffOverlay {
+  width: calc(100% + 2px);
+  background: white;
+  position: absolute;
+}
+
+.overlay {
+  user-select: none;
+  cursor: pointer;
+  a, button {
+    pointer-events: none;
+  }
+}
+
+.overlay.selected {
+  background: rgba(51, 122, 183, .1);
+}
+
+.checkbox {
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  border: solid 1px #326DE6;
+  border-radius: 3px;
+}
+
+.checkbox.checked {
+  background-color: #326DE6;
+  background-image: url("../../../images/main_spritesheet.svg");
+  background-position: 1px -431px;
+}
+
+.checkbox.disabled {
+  border: solid 1px #C4C7CA;
+}
+
+
+@-webkit-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@-moz-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@-o-keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+@keyframes newVersion {
+  0%   { background-color: #DFF3F8; }
+  100% { background-color: #FFFFFF; }
+}
+

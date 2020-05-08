@@ -1,0 +1,78 @@
+.integration-card-wrapper {
+  width: 100%;
+  .integration-card {
+    border-radius: 4px;
+    border: 1px solid #DFDFDF;
+    padding: 11px 11px 0;
+  }
+  .integration-card .watch-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    border-radius: 100%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    overflow: hidden;
+    display: block;
+  }
+  .button-wrapper {
+    padding: 4px 0;
+    margin-top: 16px;
+    border-top: 1px solid #DFDFDF;
+
+    .card-action {
+      padding: 8px 6px;
+      border-radius: 4px;
+      transition: background-color .3s;
+  
+      &:hover {
+        background-color: #F5F8FC;
+      }
+    }
+  }
+}
+
+.integration-cards-wrapper .add-new-integration {
+  background-size: 75px auto;
+  min-width: 76px;
+  min-height: 197px;
+}
+
+/* ≥ 768px */
+@media screen and (min-width: 48em) {
+  .integration-card-wrapper {
+    max-width: 345px;
+    padding-right: 20px;
+    &:nth-child(2n) {
+      padding-right: 0;
+    }
+  }  
+}
+
+/* ≥ 960px */
+@media screen and (min-width: 60em) {
+  .integration-card-wrapper {
+    max-width: 290px;
+    &:nth-child(2n) {
+      padding-right: 20px;
+    }
+
+    &:nth-child(3n) {
+      padding-right: 0;
+    }
+  } 
+}
+
+
+/* ≥ 1280px */
+@media screen and (min-width: 80em) {
+  .integration-card-wrapper {
+    &:nth-child(3n) {
+      padding-right: 20px;
+    }
+    &:nth-child(4n) {
+      padding-right: 0;
+    }
+  }
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="80px" height="230px" viewBox="0 0 80 230" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 52.1 (67048) - http://www.bohemiancoding.com/sketch -->
+    <title>Rectangle 4</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="80" height="230" rx="4"></rect>
+        <mask id="mask-2" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox" x="0" y="0" width="80" height="230" fill="white">
+            <use xlink:href="#path-1"></use>
+        </mask>
+    </defs>
+    <g id="Ship-as-a-service" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-dasharray="5,5">
+        <g id="Ship-dashboard-" transform="translate(-710.000000, -251.000000)" fill="#FFFFFF" fill-rule="nonzero" stroke="#62A7CF" stroke-width="2">
+            <g id="Data-Dog" transform="translate(30.000000, 133.000000)">
+                <g id="Group-19" transform="translate(680.000000, 118.000000)">
+                    <use id="Rectangle-4" mask="url(#mask-2)" xlink:href="#path-1"></use>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

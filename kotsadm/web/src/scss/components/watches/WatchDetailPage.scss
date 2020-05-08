@@ -1,0 +1,173 @@
+.WatchDetailPage--wrapper {
+
+  .watch-detail-header {
+    padding: 30px 20px;
+    background: rgb(255,255,255);
+    background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(244,249,246,1) 100%);
+
+    .watch-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 100%;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow: hidden;
+      display: block;
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
+      background-color: #ffffff;
+    }
+
+    p {
+      font-size: 24px;
+    }
+  }
+
+  .details-subnav {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0 20px;
+    background-color: #f8f8f8;
+    border-top: 1px solid #DFDFDF;
+    border-bottom: 1px solid #DFDFDF;
+    ul {
+      margin: 0 auto;
+    }
+    ul li {
+      display: inline-block;
+      margin: 0 20px;
+      position: relative;
+      &:first-child { margin-left: 0; }
+      &:last-child { margin-right: 0; }
+
+      a {
+        position: relative;
+        padding: 12px 10px 11px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #9B9B9B;
+        display: inline-block;
+        transition: color .2s;
+
+        &:hover {
+          color: #717171;
+        }
+      }
+
+      &.is-active a {
+        color: #4a4a4a;
+
+        &:hover {
+          color: #4a4a4a;
+        }
+        &:after {
+          content: "";
+          width: 100%;
+          height: 2px;
+          position: absolute;
+          display: block;
+          background-color: #326de6;
+          bottom: 0;
+          left: 0;
+        }
+      }
+    }
+
+    .subnav-badge {
+      width: 6px;
+      height: 6px;
+      position: absolute;
+      border-radius: 100%;
+      background-color: #BC4752;
+      top: 17px;
+      right: 0;
+    }
+  }
+
+  .DetailPageApplication--wrapper {
+    .full-width-container {
+      max-width: 90%;
+      width: 100%;
+    }
+
+    .unfork-icon-wrapper {
+      height: 62px;
+    }
+
+    .unfork-item {
+      max-width: 380px;
+
+      .ClusterScopeBatchPath--wrapper {
+        padding-right: 0;
+      }
+    }
+
+  }
+
+  .DetailPageApplication {
+    max-width: 800px;
+    width: 100%;
+
+    .DetailPageApplication--appIcon {
+      width: 80px;
+      height: 80px;
+      background-size: cover;
+      background-repeat: no-repeat;
+      border-radius: 100%;
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
+
+      .PaperIcon {
+        top: 5px;
+        right: -12px;
+      }
+    }
+
+    .midstream-banner {
+      padding: 8px 12px;
+      background-color: #F5F8FC;
+      text-align: center;
+    }
+
+    .detail-right-sidebar {
+      max-width: 200px;
+    }
+    .icon.downloadAssets--small {
+      vertical-align: -3px;
+    }
+
+    .DetailPage--downstreamRow {
+      padding: 11px 12px 12px;
+      border-bottom: 1px solid #C4C8CA;
+    }
+
+  }
+
+  .TroubleshootCode--wrapper {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+    code {
+      white-space: pre-wrap;
+      padding: 10px;
+      background: #4A4A4A;
+      color: white;
+      margin: 12px 0;
+    }
+  }
+
+}
+
+
+.AirgapSettings--wrapper {
+  max-width: 415px;
+  width: 100%;
+
+  .test-connection-box {
+    padding: 14px 12px;
+    border-radius: 4px;
+    background-color: #F5F8FC;
+    border: 1px solid #C4C8CA;
+  }
+}

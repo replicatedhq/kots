@@ -1,0 +1,48 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  name: cluster
+spec:
+  database: kotsadm-postgres
+  name: cluster
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      indexes:
+      - columns:
+        - token
+        name: cluster_token_key
+        isUnique: true
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: title
+        type: text
+        constraints:
+          notNull: true
+      - name: slug
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: timestamp without time zone
+      - name: token
+        type: text
+      - name: cluster_type
+        type: text
+        constraints:
+          notNull: true
+        default: 'gitops'
+      - name: is_all_users
+        type: boolean
+        constraints:
+          notNull: true
+        default: "false"
+

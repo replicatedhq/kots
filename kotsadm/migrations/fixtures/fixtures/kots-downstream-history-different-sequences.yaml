@@ -1,0 +1,86 @@
+users:
+  - id: "kots-different-sequence-user-id"
+    created_at: "2019-04-18 12:34:56.789"
+    type: "github"
+    github:
+      username: "kots-different-sequence-github-user"
+      github_id: 9910124
+      avatar_url: "https://avatars3.githubusercontent.com/u/234567?v=4"
+      email: "kots-different-sequence-user-email@replicated.com"
+    sessions:
+      - kots-different-sequence-user-session
+
+clusters:
+  - id: "kots-different-sequence-cluster-id"
+    cluster_type: "ship"
+    title: "kots-different-sequence-cluster-title"
+    slug: "kots-different-sequence-cluster-slug"
+    created_at: "2019-04-20 12:34:56.789"
+    updated_at: ~
+    token: ~
+    users:
+      - "kots-different-sequence-user-id"
+
+apps:
+  - id: "kots-different-sequence-app-id"
+    name: "kots-app-name"
+    icon_uri: "kots-app-icon-uri"
+    created_at: "2019-04-18 12:34:56.789"
+    updated_at: "2019-04-18 01:23:45.567"
+    slug: "kots-different-sequence-app-slug"
+    current_sequence: 2
+    last_update_check_at: "2019-04-19 01:23:45.567"
+    is_all_users: false
+    upstream_uri: "kots-different-sequence-app-upstream-uri"
+    license:
+      apiVersion: "kots.io/v1beta1"
+      kind: License
+      metadata:
+        name: my-customer
+      spec:
+        licenseID: my-awesome-license-id
+        appSlug: kots-app-slug
+        endpoint: https://replicated-app:3000
+        signature: IA==
+    registry_hostname: "hostname"
+    registry_username: "username"
+    registry_password: "password"
+    namespace: "kots-namespace"
+    last_registry_sync: "2019-04-19 01:23:45.567"
+    install_state: "installed"
+    users:
+      - kots-different-sequence-user-id
+    downstreams:
+      - id: "kots-different-sequence-cluster-id"
+        sequence: 1
+    downstream_versions:
+      - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
+        preflight_result_created_at: "2019-04-19 01:23:45.567"
+        cluster_id: "kots-different-sequence-cluster-id"
+        sequence: 0
+        version_label: "my-other-awesome-version"
+        created_at: "2019-04-19 01:23:45.567"
+        applied_at: "2019-04-19 01:23:45.567"
+        status: "deployed"
+      - preflight_result: "{\"results\":[{\"isWarn\":true,\"title\":\"Required Kubernetes Version\",\"message\":\"Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.\",\"uri\":\"https://kubernetes.io\"}]}"
+        preflight_result_created_at: "2019-04-19 01:23:45.567"
+        cluster_id: "kots-different-sequence-cluster-id"
+        sequence: 1
+        version_label: "my-other-awesome-version-2"
+        created_at: "2019-04-19 01:23:45.567"
+        applied_at: "2019-04-19 01:23:45.567"
+        status: "deployed"
+    versions:
+      - sequence: 0
+        update_cursor: 1
+        created_at: "2019-04-20 01:20:00.000"
+        version_label: "my-other-awesome-version"
+      - sequence: 1
+        update_cursor: 2
+        created_at: "2019-04-20 01:20:00.000"
+        version_label: "my-other-awesome-version-2"
+      - sequence: 2
+        update_cursor: 3
+        created_at: "2019-04-20 01:20:00.000"
+        version_label: "my-other-awesome-version-3"
+        release_notes: "# Markdown string here"

@@ -1,0 +1,632 @@
+/* Icon classes */
+.icon.no-connection-icon {
+  background-position: 0 -837px;
+  width: 194px;
+  height: 60px;
+}
+
+.icon.kots-login-icon {
+  background-position: -105px -669px;
+  width: 128px;
+  height: 50px;
+}
+.icon.github-button-icon {
+  background-position: 0 -94px;
+  width: 30px;
+  height: 29px;
+}
+.icon.gitlab-button-icon {
+  background-position: -32px -94px;
+  width: 31px;
+  height: 29px;
+}
+.icon.bitbucket-button-icon {
+  background-position: -65px -94px;
+  width: 33px;
+  height: 29px;
+}
+.icon.traditional-button-icon {
+  background-position: -129px -94px;
+  width: 27px;
+  height: 26px;
+}
+.icon.integration-icon-email {
+  background-position: 0 -125px;
+  width: 52px;
+  height: 36px;
+}
+.icon.integration-icon-webhook {
+  background-position: -54px -125px;
+  width: 33px;
+  height: 36px;
+}
+.icon.integration-icon-github {
+  background-position: -89px -125px;
+  width: 38px;
+  height: 36px;
+}
+.icon.integration-card-icon-email {
+  background-position: 0 -163px;
+  width: 26px;
+  height: 18px;
+}
+.icon.integration-card-icon-webhook {
+  background-position: -28px -163px;
+  width: 18px;
+  height: 18px;
+}
+.icon.integration-card-icon-github,
+.icon.clusterType.git,
+.icon.gitopsService--github,
+.icon.gitopsService--github_enterprise {
+  background-position: -48px -163px;
+  width: 19px;
+  height: 18px;
+}
+.icon.gitopsService--gitlab,
+.icon.gitopsService--gitlab_enterprise {
+  background-position: -109px -163px;
+  width: 21px;
+  height: 19px;
+}
+.icon.gitopsService--bitbucket,
+.icon.gitopsService--bitbucket_server {
+  background-position: -132px -163px;
+  width: 22px;
+  height: 19px;
+}
+.icon.gitopsService--other {
+  background-position: -156px -163px;
+  width: 22px;
+  height: 12px;
+}
+.icon.integration-card-icon-github-add-new {
+  background-position: -85px -163px;
+  width: 22px;
+  height: 22px;
+}
+.icon.ship-complete-yml-dl {
+  background-position: 0 -183px;
+  width: 37px;
+  height: 44px;
+}
+.icon.github-icon {
+  background-position: -39px -183px;
+  width: 46px;
+  height: 44px;
+}
+.icon.bitbucket-icon {
+  background-position: -123px -185px;
+  width: 44px;
+  height: 40px;
+}
+.icon.gitlab-icon {
+  background-position: -170px -183px;
+  width: 44px;
+  height: 44px;
+}
+.icon.success-checkmark-icon {
+  background-position: 0 -229px;
+  width: 40px;
+  height: 41px;
+}
+.icon.error-checkmark-icon {
+  background-position: -42px -229px;
+  width: 40px;
+  height: 41px;
+}
+.icon.checkmark-icon {
+  background-position: 0 -271px;
+  width: 16px;
+  height: 16px;
+}
+.icon.error-small {
+  background-position: -36px -271px;
+  width: 16px;
+  height: 16px;
+}
+.icon.downloadAssets--small {
+  background-position: -69px -163px;
+  width: 14px;
+  height: 16px;
+}
+.icon.exclamationMark--icon {
+  background-position: -18px -271px;
+  width: 16px;
+  height: 16px;
+}
+.icon.backArrow-icon {
+  background-position: -54px -271px;
+  width: 7px;
+  height: 12px;
+}
+.icon.blueCircleMinus--icon {
+  background-position: -63px -271px;
+  width: 17px;
+  height: 16px;
+}
+.icon.grayQuestionMark--icon {
+  background-position: -82px -271px;
+  width: 16px;
+  height: 16px;
+}
+.icon.grayCircleMinus--icon {
+  background-position: -108px -271px;
+  width: 16px;
+  height: 16px;
+}
+.icon.warn-icon {
+  width: 16px;
+  height: 16px;
+}
+.icon.u-betaBadge {
+  background-position: -88px -189px;
+  width: 33px;
+  height: 16px;
+}
+.icon.u-superWarning--large {
+  background-position: -42px -229px;
+  width: 40px;
+  height: 40px;
+}
+.icon.u-unforkIcon {
+  background-position: -66px 0;
+  width: 18px;
+  height: 18px;
+}
+.icon.clusterType.ship {
+  background-position: -105px 0;
+  width: 17px;
+  height: 18px;
+}
+.icon.u-manageQuestionIcon {
+  background-position: -85px 0;
+  width: 18px;
+  height: 18px;
+}
+.icon.u-arrow {
+  background-position: -101px -275px;
+  width: 5px;
+  height: 9px;
+}
+.icon.ship-medium-size {
+  background-position: -66px -32px;
+  width: 41px;
+  height: 44px;
+}
+.icon.u-grayX-icon {
+  background-position: -32px -719px;
+  width: 14px;
+  height: 14px;
+
+  &:hover {
+    background-position: -48px -719px;
+  }
+}
+.icon.ship-small-size {
+  background-position: -17px -719px;
+  width: 13px;
+  height: 14px;
+}
+.icon.github-small-size {
+  background-position: 0 -719px;
+  width: 15px;
+  height: 14px;
+}
+.icon.edit-icon {
+  background-position: -63px -719px;
+  width: 15px;
+  height: 14px;
+}
+
+/* Analyzer icons */
+
+/* default catch all "info" icon */
+.icon[class*=" analysis"] {
+  background-position: -55px -363px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-docker_container {
+  background-position: 0 -341px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-docker_whale {
+  background-position: 0 -377px;
+  width: 22px;
+  height: 16px;
+}
+.icon.analysis-no_docker {
+  background-position: 0 -413px;
+  width: 22px;
+  height: 16px;
+}
+.icon.analysis-os_ubuntu {
+  background-position: 0 -359px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_alpine {
+  background-position: 0 -307px;
+  width: 18px;
+  height: 16px;
+}
+.icon.analysis-os_centos {
+  background-position: -29px -289px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_rhel {
+  background-position: -29px -307px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_memory {
+  background-position: -29px -380px;
+  width: 24px;
+  height: 16px;
+}
+.icon.analysis-os_disk_space {
+  background-position: -29px -360px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-os_uptime {
+  background-position: -29px -397px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-os_cpu {
+  background-position: -29px -342px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-os_loadavg {
+  background-position: -56px -325px;
+  width: 21px;
+  height: 16px;
+}
+.icon.analysis-os_debian {
+  background-position: -29px -324px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-replicated_version {
+  background-position: 0 -395px;
+  width: 14px;
+  height: 16px;
+}
+.icon.analysis-gray_checkmark {
+  background-position: -55px -363px;
+  width: 17px;
+  height: 17px;
+}
+.icon.analysis-disk {
+  background-position: -55px -385px;
+  width: 12px;
+  height: 16px;
+}
+.icon.analysis-disk_full {
+  background-position: -68px -385px;
+  width: 14px;
+  height: 17px;
+}
+.icon.analysis-logs {
+  background-position: -29px -416px;
+  width: 14px;
+  height: 16px;
+}
+.icon.analysis-no_logs {
+  background-position: -29px -434px;
+  width: 14px;
+  height: 16px;
+}
+.icon[class*=" analysis-datacenter"]  {
+  background-position: -55px -943px;
+  width: 12px;
+  height: 16px;
+}
+.icon.analysis-datacenter_aws {
+  background-position: 0 -324px;
+  width: 27px;
+  height: 16px;
+}
+.icon.analysis-datacenter_gce {
+  background-position: 0 -289px;
+  width: 15px;
+  height: 16px;
+}
+.icon.analysis-datacenter_azure {
+  background-position: -55px -289px;
+  width: 21px;
+  height: 16px;
+}
+.icon.analysis-datacenter_unknown {
+  background-position: -55px -346px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_cluster_version {
+  background-position: -74px -345px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_storage_class {
+  background-position: -133px -53px;
+  width: 16px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_custom_resource_definition {
+  background-position: -175px -71px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_ingress {
+  background-position: -153px -53px;
+  width: 20px;
+  height: 13px;
+}
+.icon.analysis-kubernetes_analyze_secret {
+  background-position: -199px -53px;
+  width: 13px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_image_pull_secret {
+  background-position: -170px -35px;
+  width: 19px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_deployment_status {
+  background-position: -214px -53px;
+  width: 17px;
+  height: 17px;
+}
+.icon.analysis-kubernetes_statefulset_status {
+  background-position: -207px -35px;
+  width: 23px;
+  height: 14px;
+}
+.icon.analysis-kubernetes_container_runtime {
+  background-position: -175px -53px;
+  width: 22px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_distribution {
+  background-position: -148px -35px;
+  width: 20px;
+  height: 14px;
+}
+.icon.analysis-kubernetes_node_resources {
+  background-position: -191px -35px;
+  width: 14px;
+  height: 16px;
+}
+.icon.analysis-kubernetes_text_analyze {
+  background-position: -133px -35px;
+  width: 13px;
+  height: 16px; 
+}
+
+.icon.helm {
+  background-position: -83px -289px;
+  width: 23px;
+  height: 23px;
+}
+
+.icon.folder-unfork {
+  background-position: 0px -452px;
+  width: 181px;
+  height: 62px;
+}
+
+.icon.airgapBundleIcon {
+  background-position: 0 -775px;
+  width: 150px;
+  height: 60px;
+}
+
+.icon.onlyAirgapBundleIcon {
+  background-position: -90px -775px;
+  width: 60px;
+  height: 60px;
+}
+
+.icon.onlyNoConnectionIcon {
+  background-position: 0px -789px;
+  width: 80px;
+  height: 34px;
+}
+
+.icon.connectionEstablished {
+  background-position: -129px -4px;
+  width: 71px;
+  height: 19px;
+}
+
+.icon.errorWarningIcon {
+  background-position: -126px -272px;
+  width: 40px;
+  height: 37px;
+}
+
+.icon.diffReleasesIcon {
+  background-position: -54px -405px;
+  width: 23px;
+  height: 18px;
+}
+
+.icon.versionHistoryIcon {
+  background-position: -74px -364px;
+  width: 17px;
+  height: 16px;
+}
+
+.icon.applicationIcon {
+  background-position: -94px -319px;
+  width: 40px;
+  height: 40px;
+}
+
+.icon.versionIcon {
+  background-position: -94px -361px;
+  width: 40px;
+  height: 40px;
+}
+
+.icon.licenseIcon {
+  background-position: -94px -403px;
+  width: 40px;
+  height: 40px;
+}
+
+.icon.grayedLicenseIcon {
+  background-position: -137px -403px;
+  width: 40px;
+  height: 40px;
+}
+
+.icon.spinnerRed {
+  background-position: -135px -322px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon.spinnerOrange {
+  background-position: -135px -341px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon.gitopsLogo {
+  background-position: 0 -899px;
+  width: 209px;
+  height: 49px;
+}
+
+.icon.pullRequestOptionIcon {
+  background-position: -131px -538px;
+  width: 30px;
+  height: 30px;
+}
+
+.icon.commitOptionIcon {
+  background-position: -130px -518px;
+  width: 31px;
+  height: 10px;
+}
+
+.icon.singleOptionIcon {
+  background-position: -130px -589px;
+  width: 25px;
+  height: 31px;
+}
+
+.icon.fullFilesOptionIcon {
+  background-position: -131px -624px;
+  width: 29px;
+  height: 31px;
+}
+
+.icon.kubernetesLogoSmall {
+  background-position: -74px -345px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon.graphIcon {
+  background-position: 0px -954px;
+  width: 105px;
+  height: 115px;
+}
+
+.icon.graphPieIcon {
+  background-position: -124px -954px;
+  width: 102px;
+  height: 115px;
+}
+
+.icon.communityIcon {
+  background-position: -155px -773px;
+  width: 65px;
+  height: 64px;
+}
+
+.icon.snapshotIcon {
+  background-position: -138px -360px;
+  width: 42px;
+  height: 42px;
+}
+
+.icon.snapshotSettingsIcon {
+  background-position: -129px -125px;
+  width: 16px;
+  height: 17px;
+}
+
+.icon.snapshotScheduleIcon {
+  background-position: -129px -143px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon.snapshotDestination--aws {
+  background-position: -168px -229px;
+  width: 12px;
+  height: 14px;
+}
+.icon.snapshotDestination--azure {
+  background-position: -168px -245px;
+  width: 16px;
+  height: 14px;
+}
+.icon.snapshotDestination--gcp {
+  background-position: -168px -262px;
+  width: 16px;
+  height: 15px;
+}
+.icon.snapshotDestination--other {
+  background-position: -168px -279px;
+  width: 16px;
+  height: 16px;
+}
+.icon.awsIcon {
+  background-position: -158px -316px;
+  width: 32px;
+  height: 19px;
+}
+.icon.azureIcon {
+  background-position: -105px -724px;
+  width: 66px;
+  height: 19px;
+}
+.icon.googleCloudIcon {
+  background-position: -103px -748px;
+  width: 122px;
+  height: 19px;
+}
+.icon.cloudIcon {
+  background-position: -202px -313px;
+  width: 29px;
+  height: 19px;
+}
+.icon.blueWarningIcon {
+  background-position: -157px -26px;
+  width: 88px;
+  height: 88px;
+}
+.icon.yellowWarningIcon {
+  background-position: -182px -435px;
+  width: 55px;
+  height: 55px;
+}
+.icon.redWarningIcon {
+  background-position: -182px -490px;
+  width: 55px;
+  height: 55px;
+}
+.icon.redactor-spec-icon {
+  background-position: -202px -295px;
+  width: 17px;
+  height: 16px;
+}

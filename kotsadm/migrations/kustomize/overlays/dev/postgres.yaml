@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  type: NodePort
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    nodePort: 30432
+  selector:
+    app: postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ship-postgres
+  labels:
+    app: postgres
+type: Opaque
+data:
+  uri: "cG9zdGdyZXNxbDovL3NoaXBjbG91ZDpwYXNzd29yZEBwb3N0Z3Jlcy9zaGlwY2xvdWQ/Y29ubmVjdF90aW1lb3V0PTEwJmFwcGxpY2F0aW9uX25hbWU9c2hpcCZzc2xtb2RlPWRpc2FibGU="
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        runAsUser: 999 # the default 'postgres' user
+        fsGroup: 999
+      containers:
+      - name: postgres
+        image: postgres:10.7
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_USER
+          value: shipcloud
+        - name: POSTGRES_PASSWORD
+          value: password
+        - name: POSTGRES_DB
+          value: shipcloud
+        ports:
+        - name: postgres
+          containerPort: 5432
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -i
+            - -c
+            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -i
+            - -c
+            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
+          initialDelaySeconds: 1
+          timeoutSeconds: 1
+          periodSeconds: 1
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/postgresql/data
+
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+      - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: 1Gi

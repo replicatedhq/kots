@@ -1,0 +1,46 @@
+.AppSnapshotsEmptyState--wrapper {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.dashboard-card-wrapper {
+  padding: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.16);
+  border-radius: 4px;
+}
+
+.RestoreWarning--wrapper {
+  background-color: #FFF1DA;
+  color: #DB9016;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  text-align: center;
+  border-top: 1px solid #DFDFDF;
+  border-right: 1px solid #DFDFDF;
+  border-left: 1px solid #DFDFDF;
+  &:last-child {
+    border-bottom: 1px solid #DFDFDF;
+  }
+}
+
+.FailedRestore--wrapper {
+  max-width: 900px;
+  width: 100%;
+  margin:0 auto;
+}
+
+.RestoreError--wrapper {
+  background-color: #FBEDEB;
+  color: #BC4752;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  text-align: center;
+  border-top: 1px solid #DFDFDF;
+  border-right: 1px solid #DFDFDF;
+  border-left: 1px solid #DFDFDF;
+  &:last-child {
+    border-bottom: 1px solid #DFDFDF;
+  }
+}

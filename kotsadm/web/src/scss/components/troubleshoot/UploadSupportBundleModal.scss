@@ -1,0 +1,101 @@
+#UploadSupportBundleModal,
+.UploadLicenseFile--wrapper {
+  .FileUpload-wrapper {
+    cursor: default;
+    border-radius: 4px;
+    border: 1px dashed #C4C7CA;
+    padding: 20px 15px 18px;
+    margin-bottom: 10px;
+
+    &.has-file {
+      border: 1px solid #44bb66;
+      color: #44bb66;
+      padding: 12px;
+
+      &.has-error {
+       border: 1px solid #BC4752;
+       background-color: #FFF9F9;
+       color: #BC4752;
+      }
+    }
+
+
+  }
+
+  .console-code {
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #f8f8f2;
+    font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
+    background-color: #272822;
+    border-radius: 4px;
+  }
+
+  /*
+  .UploadSuccess-wrapper .checkmark {
+    display: inline-block;
+    background: url("../../../images/checkmark@2x.png");
+    background-size: 100%;
+    background-repeat: no-repeat;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 18px;
+  }*/
+
+  .UploadSuccess-wrapper p.sub {
+    font-size: 16px;
+    line-height: 24px;
+    color: #9B9B9B;
+  }
+
+  .required-label {
+    font-size: 14px;
+    position: relative;
+    top: -1px;
+    margin-left: 3px;
+    font-weight: 500;
+    color: #BC4752;
+  }
+  .UploadBundleSelect--wrapper {
+    max-height: 2000px;
+    .UploadBundleSelect-menu {
+    max-height: 1000px;
+    }
+  }
+
+  .InitialCommand--wrapper {
+    cursor: default;
+    border-radius: 4px;
+    border: 1px dashed #C4C7CA;
+    padding: 7px 6px;
+    margin-bottom: 10px;
+    max-height: 300px;
+    height: 190px;
+    .InitialCommand-text {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #F8F8F8;
+      text-align: center;
+      font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
+      padding: 29px 25px;
+      font-size: 10px;
+      border-radius: 4px;
+      line-height: 22px;
+      color: #323232;
+      max-height: 160px;
+      height: 130px;
+    }
+  }
+}
+.UploadLicenseFile--wrapper .FileUpload-wrapper {
+  margin-bottom: 0;
+}
+
+.ExpandedError--wrapper {
+  max-width: 350px;
+  padding: 8px;
+  border: 1px solid #DFDFDF;
+  background: #EFEFEF;
+  border-radius: 4px;
+}

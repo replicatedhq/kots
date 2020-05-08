@@ -1,0 +1,8 @@
+bases:
+  - ../../base
+
+resources:
+  - ./nodeport.yaml
+
+patchesStrategicMerge:
+  - ./deployment.yaml

@@ -1,0 +1,117 @@
+.verison-history-wrapper {
+	padding: 30px 200px;
+}
+
+.timeline {
+	text-align: left;
+}
+
+.line {
+	border-left: 2px solid #DFDFDF;;
+	height:35px;
+	text-align: left; 
+	margin-left:4px;
+}
+
+.dot {
+	height: 7px;
+	width: 7px;
+	background-color: #DFDFDF;
+	border-radius: 50%;
+	margin-left:2px;
+	margin-top:3px;
+	margin-bottom:3px;
+}
+
+.timeline:last-child .line:last-child {
+  visibility: hidden;
+}
+
+.version-card-header-wrapper {
+	.icon-wrapper {
+		height: 25px;
+	}
+
+	.checkmark-icon::after {
+		content: "";
+		height: 15px;
+		border-left: 2px solid #DFDFDF;;
+		position: relative;
+		bottom: -28px;
+		left: 6px;
+	}
+}
+
+.verison-card-wrapper {
+	padding: 10px 0 12px 12px;
+
+	.VerisonCard--Row {
+		width: 100%;
+	}
+
+	.verison-card {
+		border: 1px solid #DFDFDF;
+		border-radius: 4px;
+		box-shadow: 0 0 3px rgba(0,0,0,0.06);
+		width: 100%;
+		transition: box-shadow .2s ease-in-out;
+	}
+
+	.verison-card-selected {
+		border: 1px solid #4990E2;
+		background-color: #F5F8FC;
+		border-radius: 4px;
+		box-shadow: 0 0 3px rgba(0,0,0,0.06);
+		width: 100%;
+	}
+
+	.select-view.verison-card:hover {
+		box-shadow: 0 0 5px rgba(0,0,0,0.25);
+	}
+
+	.content-section {
+		padding: 15px;
+	}
+
+	.merged {
+		border-color: #4A4A4A;
+		background-color: #FAFAFA;
+		color: #4A4A4A;
+		padding: 4px 12px 2px;
+    border-radius: 40px;
+    border-width: 2px;
+    border-style: solid;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+		line-height: 18px;
+  }
+
+ .pending {
+		border-color: #EBB55C;
+		background-color: #FFFAF3;
+		color: #EBB55C;
+		padding: 4px 12px 2px;
+    border-radius: 40px;
+    border-width: 2px;
+    border-style: solid;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+	}
+	
+	.ignored {
+		border-color: #C4C8CA;
+		background-color: #FAFAFA;
+		color: #C4C8CA;
+		padding: 4px 12px 2px;
+		border-radius: 40px;
+    border-width: 2px;
+    border-style: solid;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 18px;
+  }
+}

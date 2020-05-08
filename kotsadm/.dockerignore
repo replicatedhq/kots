@@ -1,0 +1,9 @@
+web/node_modules
+web/src
+api
+dev
+docs
+kustomize
+migrations
+minio
+operator

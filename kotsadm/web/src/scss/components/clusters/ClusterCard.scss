@@ -1,0 +1,48 @@
+.installed-cluster-wrapper {
+  max-width: 330px;
+  width: 100%;
+
+  .deployed-cluster {
+    border: solid 1px #DFDFDF;
+    border-radius: 4px;
+    padding: 12px 12px 0px 12px;
+    margin-right: 20px;
+    .status-icon {
+      position: relative;
+      top: 4px;
+    }
+    .path {
+      word-break: break-all;
+      line-height: 1;
+    }
+    .card-action-wrapper {
+      position: relative;
+      padding: 4px;
+  
+      &:after {
+        position: absolute;
+        content: "";
+        right: 0;
+        top: 10px;
+        height: 16px;
+        width: 1px;
+        background-color: #DFDFDF;
+      }
+      &:last-child:after {
+        display: none;
+      }
+    }
+    .card-action {
+      padding: 8px 6px;
+      border-radius: 4px;
+      transition: background-color .3s;
+  
+      &:hover {
+        background-color: #F5F8FC;
+      }
+      &.deployment:hover {
+        background-color: #ECF8EF;
+      }
+    }
+  }
+}

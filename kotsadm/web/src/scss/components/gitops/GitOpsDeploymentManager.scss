@@ -1,0 +1,69 @@
+.GitOpsDeploymentManager--wrapper {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ConfiguredGitOps--wrapper {
+  max-width: 580px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.ActionStepContent--widthRestrict {
+  width: 760px;
+}
+
+.GitOpsDeploy--step {
+  background-color: #ffffff;
+  margin-bottom: 40px;
+  text-align: center;
+  position: relative;
+
+  &:last-child::after {
+    display: none;
+  }
+
+  .step-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4A4A4A;
+    margin-bottom: 12px;
+    line-height: 28px;
+  }
+
+  .step-sub {
+    font-size: 14px;
+    font-weight: 500;
+    color: #9B9B9B;
+    margin-bottom: 20px;
+    line-height: 22px;
+  }
+}
+
+.separator {
+  width: 100%;
+  height: 1px;
+  background: #C4C8CA;
+  margin-bottom: 25px;
+}
+
+.appIcon {
+  width: 36px;
+  height: 36px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: 100%;
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
+}
+
+.gitops-action-link {
+  color: #326DE6;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 12px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,24 @@
+apiVersion: schemas.schemahero.io/v1alpha2
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: api-task-status
+spec:
+  database: kotsadm-postgres
+  name: api_task_status
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: updated_at
+        type: timestamp without time zone
+      - name: current_message
+        type: text
+      - name: status
+        type: text

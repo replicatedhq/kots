@@ -1,0 +1,34 @@
+.Footer-wrapper {
+  background-color: #F8F8F8;
+}
+.FooterContent-wrapper {
+  padding: 12px 0;
+  margin: 0 auto;
+}
+.FooterItem-wrapper a:hover {
+  text-decoration: underline;
+}
+.FooterItem,
+a.FooterItem {
+  font-size: 12px;
+  padding: 0 10px;
+  position: relative;
+  color: #9B9B9B;
+  font-weight: 500;
+}
+.FooterItem-wrapper:first-child .FooterItem {
+  padding-left: 0;
+}
+.FooterItem-wrapper:last-child .FooterItem {
+  padding-right: 0;
+}
+.FooterItem-wrapper:not(:last-child) .FooterItem::after {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 1px;
+  height: 12px;
+  right: 0;
+  top: 2px;
+  background-color: #DFDFDF;
+}
