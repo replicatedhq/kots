@@ -279,7 +279,13 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 		Endpoint:      proxyInfo.Registry,
 		ProxyEndpoint: proxyInfo.Proxy,
 	}
-	newImage, err := image.RewritePrivateImage(registryOptions, imageRef, ctx.license.Spec.AppSlug)
+
+	licenseAppSlug := ""
+	if ctx.license != nil {
+		licenseAppSlug = ctx.license.Spec.AppSlug
+	}
+
+	newImage, err := image.RewritePrivateImage(registryOptions, imageRef, licenseAppSlug)
 	if err != nil {
 		// TODO: log
 		return ""
@@ -306,11 +312,16 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		}
 		secret = s
 	} else {
+		licenseIDString := ""
+		if ctx.license != nil {
+			licenseIDString = ctx.license.Spec.LicenseID
+		}
+
 		proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
 		s, err := registry.PullSecretForRegistries(
 			proxyInfo.ToSlice(),
-			ctx.license.Spec.LicenseID,
-			ctx.license.Spec.LicenseID,
+			licenseIDString,
+			licenseIDString,
 			"default", // this value doesn't matter
 		)
 		if err != nil {
