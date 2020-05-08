@@ -84,7 +84,7 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, appID string, appSequence int64, registrySettings *registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -135,6 +135,8 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		K8sNamespace:     appNamespace,
 		CopyImages:       false,
 		IsAirgap:         a.IsAirgap,
+		AppSlug:          a.Slug,
+		AppSequence:      appSequence,
 	}
 
 	if registrySettings != nil {

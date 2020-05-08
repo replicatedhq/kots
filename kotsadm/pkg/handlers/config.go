@@ -236,12 +236,21 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 		return updateAppConfigResponse, err
 	}
 
+	appSequence := updateApp.CurrentSequence
+	if req.CreateNewVersion {
+		appSequence, err = version.GetNextAppSequence(updateApp.ID, &updateApp.CurrentSequence)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to get next app sequence"
+			return updateAppConfigResponse, errors.Wrap(err, "failed to get new app sequence")
+		}
+	}
+
 	registrySettings, err := registry.GetRegistrySettingsForApp(updateApp.ID)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get registry settings"
 		return updateAppConfigResponse, err
 	}
-	err = render.RenderDir(archiveDir, updateApp.ID, registrySettings)
+	err = render.RenderDir(archiveDir, updateApp.ID, appSequence, registrySettings)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err

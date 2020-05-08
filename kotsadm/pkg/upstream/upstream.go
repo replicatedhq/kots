@@ -69,9 +69,19 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	a, err := app.Get(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
 	appNamespace := os.Getenv("POD_NAMESPACE")
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get new app sequence")
 	}
 
 	pullOptions := kotspull.PullOptions{
@@ -85,6 +95,8 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
 		ReportWriter:        pipeWriter,
+		AppSlug:             a.Slug,
+		AppSequence:         appSequence,
 	}
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(appID)
@@ -131,11 +143,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 		return nil // ?
-	}
-
-	a, err := app.Get(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
 	}
 
 	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence)

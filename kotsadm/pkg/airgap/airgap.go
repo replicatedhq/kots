@@ -205,6 +205,8 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 			Username:   username,
 			Password:   password,
 		},
+		AppSlug:     pendingApp.Slug,
+		AppSequence: 0,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
