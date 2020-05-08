@@ -752,8 +752,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be h1:ta7tUOvsPHVHGom5hKW5VXNc2xZIkfCKP8iaqOyYtUQ=
 github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDFMn7db1kT65GmV94GzpX9Qdi7N/pQlwb+AN8wh+Q=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
-github.com/replicatedhq/kots v1.15.3-0.20200506223221-57cb35299f1a h1:Mv4363GkURRHnY2Gc4yff5DdHxri2VvidnA+zRlUljA=
-github.com/replicatedhq/kots v1.15.3-0.20200506223221-57cb35299f1a/go.mod h1:75+q98hCN7KFP/wnsZes5762UZ6tR3Up+EAdbAck7RU=
+github.com/replicatedhq/kots v1.15.3-0.20200508174743-846a053fa0d2 h1:BuRsOAtWupuYasdwxkY0jVoVNDThqO46MxcJ6T0UXuc=
+github.com/replicatedhq/kots v1.15.3-0.20200508174743-846a053fa0d2/go.mod h1:75+q98hCN7KFP/wnsZes5762UZ6tR3Up+EAdbAck7RU=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
