@@ -11,9 +11,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
-	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
@@ -23,6 +20,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/rewrite"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -167,11 +167,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new app sequence")
-	}
-
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
@@ -202,7 +197,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryPassword:  password,
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
-		AppSequence:       appSequence,
+		AppSequence:       a.CurrentSequence + 1,
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {

@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/crypto"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -19,6 +17,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/crypto"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
 func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
@@ -79,11 +79,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new app sequence")
-	}
-
 	pullOptions := kotspull.PullOptions{
 		LicenseFile:         filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
 		Namespace:           appNamespace,
@@ -96,7 +91,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		CreateAppDir:        false,
 		ReportWriter:        pipeWriter,
 		AppSlug:             a.Slug,
-		AppSequence:         appSequence,
+		AppSequence:         a.CurrentSequence + 1,
 	}
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(appID)

@@ -14,21 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
 
-// GetNextAppSequence determines next available sequence for this app
-// we shouldn't assume that a.CurrentSequence is accurate. Returns 0 if currentSequence is nil
-func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
-	newSequence := 0
-	if currentSequence != nil {
-		db := persistence.MustGetPGSession()
-		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-		if err := row.Scan(&newSequence); err != nil {
-			return 0, errors.Wrap(err, "failed to find current max sequence in row")
-		}
-		newSequence++
-	}
-	return int64(newSequence), nil
-}
-
 // CreateFirstVersion works much likst CreateVersion except that it assumes version 0
 // and never attempts to calculate a diff, or look at previous versions
 func CreateFirstVersion(appID string, filesInDir string, source string) (int64, error) {
@@ -96,11 +81,16 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 	}
 	defer tx.Rollback()
 
-	n, err := GetNextAppSequence(appID, currentSequence)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get new app sequence")
+	newSequence := 0
+	if currentSequence != nil {
+		// determine next available sequence for this app - we shouldn't assume that a.CurrentSequence is accurate
+		row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
+		err = row.Scan(&newSequence)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to find current max sequence in row")
+		}
+		newSequence++
 	}
-	newSequence := int(n)
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
 supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
