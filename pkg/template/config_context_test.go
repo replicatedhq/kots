@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/base64"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -8,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/stretchr/testify/require"
 	"go.undefinedlabs.com/scopeagent"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuilder_NewConfigContext(t *testing.T) {
@@ -401,6 +403,10 @@ func Test_localImageName(t *testing.T) {
 		},
 	}
 
+	ctxWithNothing := ConfigCtx{
+		LocalRegistry: LocalRegistry{},
+	}
+
 	tests := []struct {
 		name     string
 		ctx      ConfigCtx
@@ -437,6 +443,12 @@ func Test_localImageName(t *testing.T) {
 			image:    "registry.replicated.com/kots/myimage:v1.13.0",
 			expected: "registry.replicated.com/kots/myimage:v1.13.0",
 		},
+		{
+			name:     "do not panic when no license or registry are provided",
+			ctx:      ctxWithNothing,
+			image:    "quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+			expected: "proxy.replicated.com/proxy//quay.io/replicated/myimage@sha256:45b23dee08af5e43a7fea6c4cf9c25ccf269ee113168c19722f87876677c5cb2",
+		},
 	}
 
 	for _, test := range tests {
@@ -448,6 +460,71 @@ func Test_localImageName(t *testing.T) {
 
 			newName := test.ctx.localImageName(test.image)
 			req.Equal(test.expected, newName)
+		})
+	}
+}
+
+func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
+	tests := []struct {
+		name          string
+		LocalRegistry LocalRegistry
+		license       *kotsv1beta1.License
+		want          string
+	}{
+		{
+			name: "nil license",
+			LocalRegistry: LocalRegistry{
+				Host:      "",
+				Namespace: "",
+				Username:  "",
+				Password:  "",
+			},
+			license: nil,
+			want:    `{"auths":{"proxy.replicated.com":{"auth":"Og=="},"registry.replicated.com":{"auth":"Og=="}}}`,
+		},
+		{
+			name: "licenseid abc",
+			LocalRegistry: LocalRegistry{
+				Host:      "",
+				Namespace: "",
+				Username:  "",
+				Password:  "",
+			},
+			license: &kotsv1beta1.License{
+				TypeMeta:   metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "abc",
+				},
+				Status: kotsv1beta1.LicenseStatus{},
+			},
+			want: `{"auths":{"proxy.replicated.com":{"auth":"YWJjOmFiYw=="},"registry.replicated.com":{"auth":"YWJjOmFiYw=="}}}`,
+		},
+		{
+			name: "localregistry set",
+			LocalRegistry: LocalRegistry{
+				Host:      "example.com:5000",
+				Namespace: "",
+				Username:  "user",
+				Password:  "password",
+			},
+			want: `{"auths":{"example.com:5000":{"auth":"dXNlcjpwYXNzd29yZA=="}}}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scopetest := scopeagent.StartTest(t)
+			defer scopetest.End()
+
+			req := require.New(t)
+
+			ctx := ConfigCtx{
+				LocalRegistry: tt.LocalRegistry,
+				license:       tt.license,
+			}
+			want := base64.StdEncoding.EncodeToString([]byte(tt.want))
+			got := ctx.localRegistryImagePullSecret()
+			req.Equal(want, got)
 		})
 	}
 }
