@@ -75,6 +75,7 @@ class Snapshots extends Component {
     gcsBucket: "",
     gcsPath: "",
     gcsServiceAccount: "",
+    gcsJsonFile: "",
     gcsUseIam: false,
 
     s3CompatibleBucket: "",
@@ -153,6 +154,7 @@ class Snapshots extends Component {
       useIamAws,
       gcsUseIam,
       gcsServiceAccount,
+      gcsJsonFile,
       azureResourceGroupName,
       azureStorageAccountId,
       azureSubscriptionId,
@@ -173,7 +175,9 @@ class Snapshots extends Component {
       )
     }
     if (provider === "gcp") {
-      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount)
+      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount ||
+        snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
+      )
     }
     if (provider === "azure") {
       return (
@@ -219,7 +223,8 @@ class Snapshots extends Component {
         case "gcp":
           return {
             gcp: {
-              serviceAccount: !this.state.gcsUseIam ? this.state.gcsServiceAccount : "",
+              serviceAccount: this.state.gcsUseIam ? this.state.gcsServiceAccount : "",
+              jsonFile: !this.state.gcsUseIam ? this.state.gcsJsonFile : "",
               useInstanceRole: this.state.gcsUseIam
             }
           }
@@ -331,6 +336,7 @@ class Snapshots extends Component {
         gcsBucket: store.bucket,
         gcsPath: store.path,
         gcsServiceAccount: store?.gcp?.serviceAccount || "",
+        gcsJsonFile: store?.gcp?.jsonFile || "",
         gcsUseIam: store?.gcp?.useInstanceRole
       });
     }
@@ -373,7 +379,7 @@ class Snapshots extends Component {
   }
 
   onGcsEditorChange = (value) => {
-    this.setState({ gcsServiceAccount: value });
+    this.setState({ gcsJsonFile: value });
   }
 
   onSubmit = async (e) => {
@@ -579,15 +585,25 @@ class Snapshots extends Component {
                 </label>
               </div>
             </div>
+
+            {gcsUseIam &&
+              <div className="flex u-marginBottom--30">
+                <div className="flex1 u-paddingRight--5">
+                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
+                  <input type="text" className="Input" placeholder="" value={this.state.gcsServiceAccount} onChange={(e) => { this.handleFormChange("gcsServiceAccount", e) }} />
+                </div>
+              </div>
+            }
+
             {!gcsUseIam &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
+                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">JSON File</p>
                   <div className="gcs-editor">
                     <MonacoEditor
                       ref={(editor) => { this.monacoEditor = editor }}
                       language="json"
-                      value={this.state.gcsServiceAccount}
+                      value={this.state.gcsJsonFile}
                       height="420"
                       width="100%"
                       onChange={this.onGcsEditorChange}
