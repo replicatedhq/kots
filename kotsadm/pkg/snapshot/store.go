@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	gcpstorage "cloud.google.com/go/storage"
 	storagemgmt "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2018-02-01/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
@@ -25,6 +26,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"go.uber.org/zap"
+	"google.golang.org/api/option"
 	"gopkg.in/ini.v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -153,6 +155,8 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		// create or update the secret
 	} else if store.Google != nil {
 		if store.Google.UseInstanceRole {
+			kotsadmVeleroBackendStorageLocation.Spec.Config["serviceAccount"] = store.Google.ServiceAccount
+
 			// delete the secret
 			if currentSecretErr == nil {
 				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
@@ -161,6 +165,8 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				}
 			}
 		} else {
+			delete(kotsadmVeleroBackendStorageLocation.Spec.Config, "serviceAccount")
+
 			// create or update the secret
 			if kuberneteserrors.IsNotFound(currentSecretErr) {
 				// create
@@ -174,7 +180,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 						Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
 					},
 					Data: map[string][]byte{
-						"cloud": []byte(store.Google.ServiceAccount),
+						"cloud": []byte(store.Google.JSONFile),
 					},
 				}
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
@@ -187,7 +193,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 					currentSecret.Data = map[string][]byte{}
 				}
 
-				currentSecret.Data["cloud"] = []byte(store.Google.ServiceAccount)
+				currentSecret.Data["cloud"] = []byte(store.Google.JSONFile)
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to update aws secret")
@@ -372,23 +378,23 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		break
 
 	case "gcp":
-		// get the secret
 		currentSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read google secret")
 		}
 
-		serviceAccount := ""
+		jsonFile := ""
 		if err == nil {
-			currentServiceAccount, ok := currentSecret.Data["cloud"]
+			currentJSONFile, ok := currentSecret.Data["cloud"]
 			if ok {
-				serviceAccount = string(currentServiceAccount)
+				jsonFile = string(currentJSONFile)
 			}
 		}
 
 		store.Google = &types.StoreGoogle{
-			ServiceAccount:  serviceAccount,
-			UseInstanceRole: serviceAccount == "",
+			ServiceAccount:  kotsadmVeleroBackendStorageLocation.Spec.Config["serviceAccount"],
+			JSONFile:        jsonFile,
+			UseInstanceRole: jsonFile == "",
 		}
 		break
 	}
@@ -437,7 +443,10 @@ func ValidateStore(store *types.Store) error {
 	}
 
 	if store.Google != nil {
-		return nil // TODO: implement
+		if err := validateGCP(store.Google, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate GCP configuration")
+		}
+		return nil
 	}
 
 	if store.Other != nil {
@@ -548,6 +557,26 @@ func validateAzure(storeAzure *types.StoreAzure, bucket string) error {
 	return nil
 }
 
+func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
+	ctx := context.Background()
+	if storeGoogle.UseInstanceRole {
+		// TODO: validate IAM access
+	} else {
+		client, err := gcpstorage.NewClient(ctx, option.WithCredentialsJSON([]byte(storeGoogle.JSONFile)))
+		if err != nil {
+			return errors.Wrap(err, "failed to create storage client")
+		}
+
+		_, err = client.Bucket(bucket).Attrs(ctx)
+		if err != nil {
+			// if there is no bucket, this will be gcpstorage.ErrBucketNotExist
+			return errors.Wrap(err, "failed to get bucket attributes")
+		}
+	}
+
+	return nil
+}
+
 func validateOther(storeOther *types.StoreOther, bucket string) error {
 	s3Config := &aws.Config{
 		Region:           aws.String(storeOther.Region),
@@ -586,8 +615,8 @@ func Redact(store *types.Store) error {
 	}
 
 	if store.Google != nil {
-		if store.Google.ServiceAccount != "" {
-			store.Google.ServiceAccount = "--- REDACTED ---"
+		if store.Google.JSONFile != "" {
+			store.Google.JSONFile = "--- REDACTED ---"
 		}
 	}
 

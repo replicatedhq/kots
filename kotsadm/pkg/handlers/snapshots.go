@@ -148,26 +148,36 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 
 		store.Google.UseInstanceRole = updateGlobalSnapshotSettingsRequest.Google.UseInstanceRole
 		if store.Google.UseInstanceRole {
-			store.Google.ServiceAccount = ""
-		} else {
+			store.Google.JSONFile = ""
 			if updateGlobalSnapshotSettingsRequest.Google.ServiceAccount != "" {
-				if strings.Contains(updateGlobalSnapshotSettingsRequest.Google.ServiceAccount, "REDACTED") {
+				store.Google.ServiceAccount = updateGlobalSnapshotSettingsRequest.Google.ServiceAccount
+			}
+		} else {
+			if updateGlobalSnapshotSettingsRequest.Google.JSONFile != "" {
+				if strings.Contains(updateGlobalSnapshotSettingsRequest.Google.JSONFile, "REDACTED") {
 					logger.Error(err)
-					globalSnapshotSettingsResponse.Error = "invalid gcp service account"
+					globalSnapshotSettingsResponse.Error = "invalid JSON file"
 					JSON(w, 400, globalSnapshotSettingsResponse)
 					return
 				}
-				store.Google.ServiceAccount = updateGlobalSnapshotSettingsRequest.Google.ServiceAccount
+				store.Google.JSONFile = updateGlobalSnapshotSettingsRequest.Google.JSONFile
 			}
 		}
 
-		if !store.Google.UseInstanceRole {
+		if store.Google.UseInstanceRole {
 			if store.Google.ServiceAccount == "" {
 				globalSnapshotSettingsResponse.Error = "missing service account"
 				JSON(w, 400, globalSnapshotSettingsResponse)
 				return
 			}
+		} else {
+			if store.Google.JSONFile == "" {
+				globalSnapshotSettingsResponse.Error = "missing JSON file"
+				JSON(w, 400, globalSnapshotSettingsResponse)
+				return
+			}
 		}
+
 	} else if updateGlobalSnapshotSettingsRequest.Azure != nil {
 		if store.Azure == nil {
 			store.Azure = &snapshottypes.StoreAzure{}

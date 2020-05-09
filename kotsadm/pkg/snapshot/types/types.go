@@ -10,6 +10,7 @@ type StoreAWS struct {
 }
 
 type StoreGoogle struct {
+	JSONFile        string `json:"jsonFile"`
 	ServiceAccount  string `json:"serviceAccount"`
 	UseInstanceRole bool   `json:"useInstanceRole"`
 }
