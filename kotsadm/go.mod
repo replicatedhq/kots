@@ -11,6 +11,8 @@ require (
 	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
+	github.com/containerd/containerd v1.3.2
+	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.4.0
@@ -25,9 +27,11 @@ require (
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.1.0 // indirect
+	github.com/opencontainers/image-spec v1.0.1
 	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.15.3-0.20200508174743-846a053fa0d2
+	github.com/replicatedhq/kots v1.15.3-0.20200512202738-aaa332813ead
+	github.com/replicatedhq/kotsadm v1.15.0-beta.2
 	github.com/replicatedhq/troubleshoot v0.9.31
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/segmentio/ksuid v1.0.2

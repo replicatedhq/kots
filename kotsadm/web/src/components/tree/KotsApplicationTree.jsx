@@ -1,86 +1,31 @@
 import * as React from "react";
-import { compose, withApollo, graphql } from "react-apollo";
+import { compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import { getFileFormat, rootPath } from "../../utilities/utilities";
+import { getFileFormat, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
+import keys from "lodash/keys";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
 import CodeSnippet from "../shared/CodeSnippet";
 
 import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
-import { getKotsApplicationTree, getKotsFiles, } from "../../queries/AppsQueries";
 
 import "../../scss/components/troubleshoot/FileTree.scss";
 
 class KotsApplicationTree extends React.Component {
-
-  state = {
-    files: [],
-    selectedFile: "/",
-    fileContents: [],
-    fileLoading: false,
-    fileLoadErr: false,
-    fileLoadErrMessage: "",
-    line: null,
-    activeMarkers: [],
-    analysisError: false,
-    displayInstructionsModal: false,
-  };
-
-  hasContentAlready = (path) => {
-    const { fileContents } = this.state;
-    let i;
-    for (i = 0; i < fileContents.length; i++) {
-      if (fileContents[i].key === path) { return true; }
-    }
-    return false;
-  }
-
-  buildFileContent = (data) => {
-    const nextFiles = this.state.fileContents;
-    const key = Object.keys(data);
-    let newObj = {};
-    newObj.content = data[key];
-    newObj.key = key[0];
-    nextFiles.push(newObj);
-    this.setState({ fileContents: nextFiles });
-  }
-
-  async setSelectedFile(path) {
-    const newPath = rootPath(path);
-    this.setState({ selectedFile: newPath });
-    if (this.hasContentAlready(newPath)) { return; } // Don't go fetch it if we already have that content in our state
-    this.fetchFiles(newPath)
-  }
-
-  fetchFiles = (path) => {
-    const { params } = this.props.match;
-    const slug = params.slug;
-    const sequence = parseInt(params.sequence);
-    this.setState({ fileLoading: true, fileLoadErr: false });
-    this.props.client.query({
-      query: getKotsFiles,
-      variables: {
-        slug: slug,
-        sequence,
-        fileNames: [path]
-      }
-    })
-      .then((res) => {
-        this.buildFileContent(JSON.parse(res.data.getKotsFiles));
-        this.setState({ fileLoading: false });
-      })
-      .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            fileLoading: false,
-            fileLoadErr: true,
-            fileLoadErrMessage: msg,
-          });
-        });
-      })
+  constructor() {
+    super();
+    this.state = {
+      files: [],
+      selectedFile: "/",
+      line: null,
+      activeMarkers: [],
+      analysisError: false,
+      displayInstructionsModal: false,
+      applicationTree: {},
+    };
   }
 
   setFileTree = () => {
@@ -92,32 +37,43 @@ class KotsApplicationTree extends React.Component {
     this.setState({ files: sortedTree });
   }
 
-  componentDidUpdate(lastProps, lastState) {
-    const { getKotsApplicationTree } = this.props;
-    if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
-      this.setFileTree();
-    }
-    if (getKotsApplicationTree?.getKotsApplicationTree !== lastProps.getKotsApplicationTree?.getKotsApplicationTree) {
-      this.setState({
-        fileTree: getKotsApplicationTree.getKotsApplicationTree
-      });
+  fetchApplicationTree = () => {
+    const url = `${window.env.API_ENDPOINT}/app/${this.props.match.params.slug}/sequence/${this.props.match.params.sequence}/contents`;
+    fetch(url, {
+      headers: {
+        "Authorization": Utilities.getToken()
+      },
+      method: "GET",
+    })
+    .then(res => res.json())
+    .then(async (files) => {
+      this.setState({applicationTree: files});
+    })
+    .catch((err) => {
+      throw err;
+    });
+  }
+
+  compoenntDidUpdate(lastProps, lastState) {
+    if (this.props.match.params.slug != lastProps.match.params.slug || this.props.match.params.sequence != lastProps.match.params.sequence) {
+      this.fetchApplicationTree();
     }
   }
 
   componentDidMount() {
-    const { getKotsApplicationTree } = this.props;
-    if (this.state.fileTree) {
-      this.setFileTree();
-    }
-    if (getKotsApplicationTree?.getKotsApplicationTree) {
-      this.setState({
-        fileTree: getKotsApplicationTree.getKotsApplicationTree
-      })
-    }
+    this.fetchApplicationTree();
   }
 
   toggleInstructionsModal = () => {
-    this.setState({ displayInstructionsModal: !this.state.displayInstructionsModal });
+    this.setState({
+      displayInstructionsModal: !this.state.displayInstructionsModal,
+    });
+  }
+
+  setSelectedFile = (path) => {
+    this.setState({
+      selectedFile: path,
+    });
   }
 
   back = () => {
@@ -125,9 +81,10 @@ class KotsApplicationTree extends React.Component {
   }
 
   render() {
-    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading, displayInstructionsModal } = this.state;
-    const fileToView = find(fileContents, ["key", selectedFile]);
-    const format = getFileFormat(selectedFile);
+    const { fileLoadErr, fileLoadErrMessage, displayInstructionsModal } = this.state;
+
+    const file = this.state.applicationTree.files ? this.state.applicationTree.files[this.state.selectedFile] : "";
+    const contents = file ? new Buffer(file, "base64").toString() : "";
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
@@ -135,16 +92,16 @@ class KotsApplicationTree extends React.Component {
         <div className="flex flex1">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
             <div className="u-overflow--auto dirtree">
-              {this.props.getKotsApplicationTree.loading ?
+              {!this.state.applicationTree.files ?
                 <ul className="FileTree-wrapper">
                   <li>Loading file explorer</li>
                 </ul>
                 :
                 <FileTree
-                  files={files}
+                  files={Utilities.arrangeIntoTree(keys(this.state.applicationTree.files))}
                   isRoot={true}
                   keepOpenPaths={["overlays", "base"]}
-                  topLevelPaths={files?.map(f => f.path)}
+                  topLevelPaths={Utilities.arrangeIntoTree(keys(this.state.applicationTree.files)).map(f => f.path)}
                   handleFileSelect={(path) => this.setSelectedFile(path)}
                   selectedFile={this.state.selectedFile}
                 />
@@ -152,7 +109,7 @@ class KotsApplicationTree extends React.Component {
             </div>
           </div>
           <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
-            {selectedFile === "" || selectedFile === "/" ?
+            {this.state.selectedFile === "" || this.state.selectedFile === "/" ?
               <div className="flex-column flex1 alignItems--center justifyContent--center">
                 <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the file explorer to view it here.</p>
               </div>
@@ -164,15 +121,13 @@ class KotsApplicationTree extends React.Component {
                     <button className="btn secondary" onClick={this.handleDownload}>Download tar.gz</button>
                   </div>
                 </div>
-                : fileLoading || !fileToView ?
-                  <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <Loader size="50" />
-                  </div>
-                  :
+                :
                   <MonacoEditor
-                    ref={(editor) => { this.monacoEditor = editor }}
-                    language={format}
-                    value={fileToView.content}
+                    ref={(editor) => {
+                      this.monacoEditor = editor;
+                    }}
+                    language={"yaml"}
+                    value={contents}
                     height="100%"
                     width="100%"
                     options={{
@@ -250,21 +205,5 @@ class KotsApplicationTree extends React.Component {
 }
 
 export default withRouter(compose(
-  withApollo,
   withRouter,
-  graphql(getKotsApplicationTree, {
-    name: "getKotsApplicationTree",
-    options: props => {
-      const { params } = props.match;
-      const slug = params.slug;
-      const sequence = parseInt(params.sequence);
-      return {
-        variables: {
-          slug,
-          sequence,
-        },
-        fetchPolicy: "no-cache"
-      };
-    }
-  }),
 )(KotsApplicationTree));

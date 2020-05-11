@@ -12,9 +12,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/crypto"
-	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -22,6 +19,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/pull"
 )
 
 func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {

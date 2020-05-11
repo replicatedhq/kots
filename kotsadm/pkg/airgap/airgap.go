@@ -13,14 +13,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

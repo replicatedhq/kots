@@ -2,37 +2,19 @@ package supportbundle
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/segmentio/ksuid"
 )
-
-func SetBundleAnalysis(id string, insights []byte) error {
-	db := persistence.MustGetPGSession()
-	query := `update supportbundle set status = $1 where id = $2`
-
-	_, err := db.Exec(query, "analyzed", id)
-	if err != nil {
-		return errors.Wrap(err, "failed to insert support bundle")
-	}
-
-	query = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`
-	_, err = db.Exec(query, ksuid.New().String(), id, insights, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "failed to insert insights")
-	}
-
-	return nil
-}
 
 func CreateBundle(requestedID string, appID string, archivePath string) (*types.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
@@ -45,9 +27,25 @@ func CreateBundle(requestedID string, appID string, archivePath string) (*types.
 		id = requestedID
 	}
 
-	// upload the file to s3
-	if err := uploadBundleToS3(id, archivePath); err != nil {
-		return nil, errors.Wrap(err, "failed to upload to s3")
+	storageBaseURI := os.Getenv("STORAGE_BASEURI")
+	if storageBaseURI == "" {
+		// KOTS 1.15 and earlier only supported s3 and there was no configuration
+		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
+	}
+
+	parsedURI, err := url.Parse(storageBaseURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse storage base uri")
+	}
+
+	if parsedURI.Scheme == "docker" {
+		if err := uploadBundleToDocker(id, archivePath, storageBaseURI); err != nil {
+			return nil, errors.Wrap(err, "failed to upload to s3")
+		}
+	} else if parsedURI.Scheme == "s3" {
+		if err := uploadBundleToS3(id, archivePath); err != nil {
+			return nil, errors.Wrap(err, "failed to upload to s3")
+		}
 	}
 
 	fileTree, err := archiveToFileTree(archivePath)
@@ -73,27 +71,37 @@ func CreateBundle(requestedID string, appID string, archivePath string) (*types.
 	}, nil
 }
 
-func uploadBundleToS3(id string, archivePath string) error {
-	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
-	key := aws.String(filepath.Join("supportbundles", id, "supportbundle.tar.gz"))
-
-	newSession := awssession.New(kotss3.GetConfig())
-
-	s3Client := s3.New(newSession)
-
-	f, err := os.Open(archivePath)
+func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, error) {
+	bundleArchive, err := GetSupportBundle(bundleID)
 	if err != nil {
-		return errors.Wrap(err, "failed to open archive file")
+		return nil, errors.Wrap(err, "failed to get bundle")
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	tmpDir, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tmp dir")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(bundleArchive, tmpDir); err != nil {
+		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 
-	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Body:   f,
-		Bucket: bucket,
-		Key:    key,
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to upload to s3")
+	files := map[string][]byte{}
+	for _, filename := range filenames {
+		content, err := ioutil.ReadFile(filepath.Join(tmpDir, filename))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read  file")
+		}
+
+		files[filename] = content
 	}
 
-	return nil
+	return files, nil
 }

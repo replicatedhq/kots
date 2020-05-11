@@ -89,28 +89,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return details;
     },
 
-    // TODO: This code is currently duplicated between kots apps and wathes.
-    // It should be refactored so that you can get a file tree/download files
-    // by a id/sequence number regardless of the app type.
-    async getKotsApplicationTree(root: any, args: any, context: Context): Promise<string> {
-      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId);
-      const tree = await app.generateFileTreeIndex(args.sequence);
-      if (_.isEmpty(tree) || !tree[0].children) {
-        throw new ReplicatedError(`Unable to get files for app with ID of ${app.id}`);
-      }
-      return JSON.stringify(tree);
-    },
-
-    async getKotsFiles(root: any, args: any, context: Context): Promise<string> {
-      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId);
-      const jsonFiles: string = await app.getFilesJSON(args.sequence, args.fileNames);
-      if (jsonFiles.length >= 5000000) {
-        throw new ReplicatedError(`File is too large, the maximum allowed length is 5000000 but found ${jsonFiles.length}`);
-      }
-      return jsonFiles;
-    },
 
     async getAppConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);

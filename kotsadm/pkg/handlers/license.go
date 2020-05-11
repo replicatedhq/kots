@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
@@ -16,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
 type SyncLicenseRequest struct {

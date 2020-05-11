@@ -140,12 +140,6 @@ export const getSupportBundleRaw = `
 
 export const getSupportBundle = gql(getSupportBundleRaw);
 
-export const supportBundleFiles = gql`
-  query supportBundleFiles($bundleId: ID!, $fileNames: [String!]) {
-    supportBundleFiles(bundleId: $bundleId, fileNames: $fileNames)
-  }
-`;
-
 export const getSupportBundleCommand = gql`
   query getSupportBundleCommand($watchSlug: String) {
     getSupportBundleCommand(watchSlug: $watchSlug)

@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -15,6 +16,7 @@ type Handlers struct {
 
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

@@ -6,6 +6,8 @@ import sortBy from "lodash/sortBy";
 import jwt from "jsonwebtoken";
 import cronstrue from "cronstrue";
 import size from "lodash/size";
+import each from "lodash/each";
+import find from "lodash/find";
 import { default as download } from "downloadjs";
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -465,5 +467,34 @@ export const Utilities = {
     }
 
     return status;
+  },
+
+  arrangeIntoTree(paths) {
+    const tree = [];
+    each(paths, (path) => {
+      const pathParts = path.split("/");
+      if (pathParts[0] === "") {
+        pathParts.shift(); // remove first blank element from the parts array.
+      }
+      let currentLevel = tree; // initialize currentLevel to root
+      each(pathParts, (part) => {
+        // check to see if the path already exists.
+        const existingPath = find(currentLevel, ["name", part]);
+        if (existingPath) {
+          // the path to this item was already in the tree, so don't add it again.
+          // set the current level to this path's children
+          currentLevel = existingPath.children;
+        } else {
+          const newPart = {
+            name: part,
+            path: `${path}`,
+            children: [],
+          };
+          currentLevel.push(newPart);
+          currentLevel = newPart.children;
+        }
+      });
+    });
+    return tree;
   }
 };
