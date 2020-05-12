@@ -224,12 +224,12 @@ class Dashboard extends Component {
     try {
       const readable = getReadableCronDescriptor(updateCheckerSpec);
       if (readable.includes("undefined")) {
-        return null;
+        return "";
       } else {
         return readable;
       }
     } catch(error) {
-      return null;
+      return "";
     }
   }
 
