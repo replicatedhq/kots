@@ -20,6 +20,7 @@ export const listAppsRaw = `
         isGitOpsSupported
         allowSnapshots
         licenseType
+        updateCheckerSpec
         currentVersion {
           title
           status
@@ -104,6 +105,7 @@ export const getKotsAppRaw = `
       isGitOpsSupported
       allowRollback
       allowSnapshots
+      updateCheckerSpec
       currentVersion {
         title
         status

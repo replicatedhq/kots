@@ -4,6 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
+import ReactTooltip from "react-tooltip"
 import MonacoEditor from "react-monaco-editor";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Dropzone from "react-dropzone";
@@ -16,7 +17,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
-import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl, getReadableCronDescriptor } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
 import get from "lodash/get";
@@ -53,7 +54,10 @@ class AppVersionHistory extends Component {
     secondSequence: 0,
     updateChecker: new Repeater(),
     uploadTotal: 0,
-    uploadSent: 0
+    uploadSent: 0,
+    showUpdateCheckerModal: false,
+    updateCheckerSpec: "",
+    submitUpdateCheckerSpecErr: ""
   }
 
   componentDidMount() {
@@ -67,6 +71,16 @@ class AppVersionHistory extends Component {
       if (firstSequence !== undefined && secondSequence !== undefined) { // undefined because a sequence can be zero!
         this.setState({ showDiffOverlay: true, firstSequence, secondSequence });
       }
+    }
+
+    if (this.props.app) {
+      this.setState({ updateCheckerSpec: this.props.app.updateCheckerSpec });
+    }
+  }
+
+  componentDidUpdate(lastProps) {
+    if (this.props.app && this.props.app?.updateCheckerSpec !== lastProps.app?.updateCheckerSpec) {
+      this.setState({ updateCheckerSpec: this.props.app.updateCheckerSpec });
     }
   }
 
@@ -96,6 +110,73 @@ class AppVersionHistory extends Component {
     this.setState({
       downstreamReleaseNotes: null
     });
+  }
+
+  hideUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: false
+    });
+  }
+
+  showUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: true
+    });
+  }
+
+  onSubmitUpdateCheckerSpec = () => {
+    const { updateCheckerSpec } = this.state;
+    const { app } = this.props;
+
+    this.setState({
+      submitUpdateCheckerSpecErr: ""
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheckerspec`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "PUT",
+      body: JSON.stringify({
+        updateCheckerSpec: updateCheckerSpec,
+      })
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          this.setState({
+            submitUpdateCheckerSpecErr: text
+          });
+          return;
+        }
+
+        this.setState({
+          submitUpdateCheckerSpecErr: "",
+          showUpdateCheckerModal: false
+        });
+        
+        this.props.refreshAppData();
+      })
+      .catch((err) => {
+        this.setState({
+          submitUpdateCheckerSpecErr: String(err)
+        });
+      });
+  }
+
+  getReadableCronExpression = () => {
+    const { updateCheckerSpec } = this.state;
+    try {
+      const readable = getReadableCronDescriptor(updateCheckerSpec);
+      if (readable.includes("undefined")) {
+        return null;
+      } else {
+        return readable;
+      }
+    } catch(error) {
+      return null;
+    }
   }
 
   getVersionDiffSummary = version => {
@@ -738,7 +819,10 @@ class AppVersionHistory extends Component {
       uploadingAirgapFile,
       uploadTotal,
       uploadSent,
-      noUpdateAvailiableText
+      noUpdateAvailiableText,
+      showUpdateCheckerModal,
+      updateCheckerSpec,
+      submitUpdateCheckerSpecErr,
     } = this.state;
 
     if (!app) {
@@ -822,6 +906,7 @@ class AppVersionHistory extends Component {
       data?.stopPolling();
     }
 
+    const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -862,7 +947,11 @@ class AppVersionHistory extends Component {
                       <button className="btn secondary blue">Upload new version</button>
                     </Dropzone>
                     : showOnlineUI ?
-                      <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                      <div className="flex alignItems--center">
+                        <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                        <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={this.showUpdateCheckerModal} data-tip="Configure update checker"></span>
+                        <ReactTooltip effect="solid" className="replicated-tooltip" />
+                      </div>
                       : null
                 }
                 {updateText}
@@ -1119,7 +1208,7 @@ class AppVersionHistory extends Component {
           onRequestClose={this.hideDownstreamReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
-          className="Modal LargeSize"
+          className="Modal MediumSize"
         >
           <div className="flex-column">
             <MarkdownRenderer>
@@ -1128,6 +1217,39 @@ class AppVersionHistory extends Component {
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
             <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={showUpdateCheckerModal}
+          onRequestClose={this.hideUpdateCheckerModal}
+          contentLabel="Update Checker"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="u-position--relative flex-column u-padding--20">
+            <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure update checker</span>
+            <div className="info-box u-marginBottom--20">
+              <span className="u-fontSize--small u-textAlign--center">
+                You can enter <span className="u-fontWeight--bold u-color--tuna">@never</span> to disable scheduled update checks
+              </span>
+            </div>
+            <div className="flex-column flex1 u-paddingLeft--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+              <input
+                type="text"
+                className="Input u-marginBottom--5"
+                placeholder="0 0 * * MON"
+                value={updateCheckerSpec}
+                onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
+              />
+              {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
+              {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">{submitUpdateCheckerSpecErr}</span>}
+            </div>
+            <div className="flex u-marginTop--20">
+              <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
+              <button className="btn secondary u-marginLeft--10" onClick={this.hideUpdateCheckerModal}>Cancel</button>
+            </div>
           </div>
         </Modal>
       </div>

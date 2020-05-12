@@ -30,6 +30,7 @@ require (
 	github.com/replicatedhq/kots v1.15.3-0.20200508174743-846a053fa0d2
 	github.com/replicatedhq/troubleshoot v0.9.31
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
 	github.com/smartystreets/assertions v1.0.0 // indirect
@@ -43,7 +44,6 @@ require (
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	google.golang.org/api v0.6.1-0.20190607001116-5213b8090861
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0

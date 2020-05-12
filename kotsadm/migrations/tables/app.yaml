@@ -70,3 +70,6 @@ spec:
         type: text
       - name: restore_undeploy_status
         type: text
+      - name: update_checker_spec
+        type: text
+        default: '@daily'
