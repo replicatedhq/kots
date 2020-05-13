@@ -96,15 +96,6 @@ func Configure(appID string) error {
 		availableUpdates, err := CheckForUpdates(a)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", a.Slug))
-			if errors.Cause(err) != sql.ErrNoRows {
-				return
-			}
-			// check if app was deleted and stop its job if so
-			_, err = app.Get(a.ID)
-			if err != nil && errors.Cause(err) == sql.ErrNoRows {
-				logger.Debug("app was not found, stopping its job", zap.String("slug", a.Slug))
-				Stop(a.ID)
-			}
 			return
 		}
 
