@@ -8,9 +8,10 @@ import get from "lodash/get";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
+import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
-import { Utilities, getReadableCronDescriptor } from "../../utilities/utilities";
+import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
@@ -52,9 +53,7 @@ class Dashboard extends Component {
     viewAirgapUpdateError: false,
     airgapUpdateError: "",
     startSnapshotErrorMsg: "",
-    showUpdateCheckerModal: false,
-    updateCheckerSpec: "",
-    submitUpdateCheckerSpecErr: ""
+    showUpdateCheckerModal: false
   }
 
   toggleConfigureGraphs = () => {
@@ -115,10 +114,6 @@ class Dashboard extends Component {
         }
       }
     }
-
-    if (app && app?.updateCheckerSpec !== lastProps.app?.updateCheckerSpec) {
-      this.setState({ updateCheckerSpec: app.updateCheckerSpec });
-    }
   }
 
   componentDidMount() {
@@ -129,7 +124,6 @@ class Dashboard extends Component {
 
     if (app) {
       this.setWatchState(app);
-      this.setState({ updateCheckerSpec: app.updateCheckerSpec });
     }
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
@@ -174,63 +168,6 @@ class Dashboard extends Component {
     this.setState({
       showUpdateCheckerModal: true
     });
-  }
-
-  onSubmitUpdateCheckerSpec = () => {
-    const { updateCheckerSpec } = this.state;
-    const { app } = this.props;
-
-    this.setState({
-      submitUpdateCheckerSpecErr: ""
-    });
-
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheckerspec`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "PUT",
-      body: JSON.stringify({
-        updateCheckerSpec: updateCheckerSpec,
-      })
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          this.setState({
-            submitUpdateCheckerSpecErr: text
-          });
-          return;
-        }
-
-        this.setState({
-          submitUpdateCheckerSpecErr: "",
-          showUpdateCheckerModal: false
-        });
-        
-        if (this.props.refreshAppData) {
-          this.props.refreshAppData();
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          submitUpdateCheckerSpecErr: String(err)
-        });
-      });
-  }
-
-  getReadableCronExpression = () => {
-    const { updateCheckerSpec } = this.state;
-    try {
-      const readable = getReadableCronDescriptor(updateCheckerSpec);
-      if (readable.includes("undefined")) {
-        return "";
-      } else {
-        return readable;
-      }
-    } catch(error) {
-      return "";
-    }
   }
 
   updateStatus = () => {
@@ -523,9 +460,6 @@ class Dashboard extends Component {
       showConfigureGraphs,
       promValue,
       savingPromValue,
-      showUpdateCheckerModal,
-      updateCheckerSpec,
-      submitUpdateCheckerSpecErr,
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
@@ -554,7 +488,6 @@ class Dashboard extends Component {
       );
     }
 
-    const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -714,38 +647,18 @@ class Dashboard extends Component {
           </Modal>
         }
 
-        <Modal
-          isOpen={showUpdateCheckerModal}
-          onRequestClose={this.hideUpdateCheckerModal}
-          contentLabel="Update Checker"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="u-position--relative flex-column u-padding--20">
-            <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure update checker</span>
-            <div className="info-box u-marginBottom--20">
-              <span className="u-fontSize--small u-textAlign--center">
-                You can enter <span className="u-fontWeight--bold u-color--tuna">@never</span> to disable scheduled update checks
-              </span>
-            </div>
-            <div className="flex-column flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
-              <input
-                type="text"
-                className="Input u-marginBottom--5"
-                placeholder="0 0 * * MON"
-                value={updateCheckerSpec}
-                onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
-              />
-              {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
-              {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">{submitUpdateCheckerSpecErr}</span>}
-            </div>
-            <div className="flex u-marginTop--20">
-              <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
-              <button className="btn secondary u-marginLeft--10" onClick={this.hideUpdateCheckerModal}>Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        {this.state.showUpdateCheckerModal &&
+          <UpdateCheckerModal
+            isOpen={this.state.showUpdateCheckerModal}
+            onRequestClose={this.hideUpdateCheckerModal}
+            updateCheckerSpec={app.updateCheckerSpec}
+            appSlug={app.slug}
+            onUpdateCheckerSpecSubmitted={() => {
+              this.hideUpdateCheckerModal();
+              this.props.refreshAppData();
+            }}
+          />
+        }
       </div>
     );
   }
