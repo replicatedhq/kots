@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -54,6 +55,21 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		updateCheckerSpecResponse.Error = "failed to get app from slug"
+		JSON(w, 500, updateCheckerSpecResponse)
+		return
+	}
+
+	if foundApp.IsAirgap {
+		logger.Error(errors.New("airgap scheduled update checks are not supported"))
+		updateCheckerSpecResponse.Error = "airgap scheduled update checks are not supported"
+		JSON(w, 400, updateCheckerSpecResponse)
+		return
+	}
+
 	// validate cron spec
 	cronSpec := updateCheckerSpecRequest.UpdateCheckerSpec
 	if cronSpec != "@never" {
@@ -64,14 +80,6 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 			JSON(w, 500, updateCheckerSpecResponse)
 			return
 		}
-	}
-
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
-	if err != nil {
-		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to get app from slug"
-		JSON(w, 500, updateCheckerSpecResponse)
-		return
 	}
 
 	if err := app.SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
