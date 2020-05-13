@@ -1,23 +1,21 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
-	golog "log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/renderutil"
-	"k8s.io/helm/pkg/strvals"
-	"k8s.io/helm/pkg/timeconv"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/releaseutil"
+	"helm.sh/helm/v3/pkg/strvals"
 )
 
 func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
@@ -52,36 +50,60 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
-	marshalledVals, err := yaml.Marshal(vals)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal helm values")
+	// config := &chart.Config{Raw: string(marshalledVals), Values: map[string]*chart.Value{}}
+
+	// renderOpts := renderutil.Options{
+	// 	ReleaseOptions: chartutil.ReleaseOptions{
+	// 		Name:      u.Name,
+	// 		IsInstall: true,
+	// 		IsUpgrade: false,
+	// 		Time:      timeconv.Now(),
+	// 		Namespace: renderOptions.Namespace,
+	// 	},
+	// 	KubeVersion: "1.16.0",
+	// }
+
+	cfg := &action.Configuration{
+		Log: renderOptions.Log.Debug,
 	}
+	client := action.NewInstall(cfg)
+	client.DryRun = true
+	client.ReleaseName = u.Name
+	client.Replace = true
+	client.ClientOnly = true
+	// client.IncludeCRDs = includeCrds
+	client.Namespace = renderOptions.Namespace
 
-	config := &chart.Config{Raw: string(marshalledVals), Values: map[string]*chart.Value{}}
-
-	c, err := chartutil.Load(chartPath)
+	chartRequested, err := loader.Load(chartPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load chart")
 	}
 
-	renderOpts := renderutil.Options{
-		ReleaseOptions: chartutil.ReleaseOptions{
-			Name:      u.Name,
-			IsInstall: true,
-			IsUpgrade: false,
-			Time:      timeconv.Now(),
-			Namespace: renderOptions.Namespace,
-		},
-		KubeVersion: "1.16.0",
+	if req := chartRequested.Metadata.Dependencies; req != nil {
+		if err := action.CheckDependencies(chartRequested, req); err != nil {
+			return nil, errors.Wrap(err, "failed dependency check")
+		}
 	}
 
-	// Silence the go logger because helm will complain about some of our template strings
-	golog.SetOutput(ioutil.Discard)
-	defer golog.SetOutput(os.Stdout)
-	rendered, err := renderutil.Render(c, config, renderOpts)
+	rel, err := client.Run(chartRequested, vals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render chart")
 	}
+
+	var manifests bytes.Buffer
+	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
+	for _, m := range rel.Hooks {
+		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+	}
+	rendered := releaseutil.SplitManifests(manifests.String())
+
+	// Silence the go logger because helm will complain about some of our template strings
+	// golog.SetOutput(ioutil.Discard)
+	// defer golog.SetOutput(os.Stdout)
+	// rendered, err := renderutil.Render(chartRequested, config, renderOpts)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "failed to render chart")
+	// }
 
 	baseFiles := []BaseFile{}
 	for k, v := range rendered {
