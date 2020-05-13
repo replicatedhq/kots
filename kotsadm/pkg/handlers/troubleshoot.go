@@ -128,7 +128,7 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
-func UploadTroubleshootBundle(w http.ResponseWriter, r *http.Request) {
+func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleContents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)

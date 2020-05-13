@@ -14,6 +14,10 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
+type GetAppContentsResponse struct {
+	Files map[string][]byte `json:"files"`
+}
+
 func GetAppContents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -78,5 +82,9 @@ func GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, 200, map[string]interface{}{"files": archiveFiles})
+	getAppContentsResponse := GetAppContentsResponse{
+		Files: archiveFiles,
+	}
+
+	JSON(w, 200, getAppContentsResponse)
 }
