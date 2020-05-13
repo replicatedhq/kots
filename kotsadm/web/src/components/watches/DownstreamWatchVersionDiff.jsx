@@ -1,17 +1,10 @@
 import React from "react";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import map from "lodash/map";
-import groupBy from "lodash/groupBy";
-import filter from "lodash/filter";
-import flatMap from "lodash/flatMap";
-import size from "lodash/size";
 
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 import DiffEditor from "../shared/DiffEditor";
-
-import { getKotsApplicationTree, getKotsFiles } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
 
@@ -159,6 +152,5 @@ class DownstreamWatchVersionDiff extends React.Component {
 }
 
 export default withRouter(compose(
-  withApollo,
   withRouter
 )(DownstreamWatchVersionDiff));

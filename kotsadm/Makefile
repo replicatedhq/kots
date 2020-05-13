@@ -15,7 +15,7 @@ fmt:
 
 .PHONY: vet
 vet:
-	go vet ./pkg/... ./cmd/...
+	go vet -tags "$(BUILDTAGS)" ./pkg/... ./cmd/...
 
 .PHONY: test
 test: fmt vet

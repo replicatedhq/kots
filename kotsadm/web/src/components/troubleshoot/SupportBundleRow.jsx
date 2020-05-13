@@ -7,6 +7,7 @@ import filter from "lodash/filter";
 import sortBy from "lodash/sortBy";
 import isEmpty from "lodash/isEmpty";
 import { Utilities, parseIconUri } from "../../utilities/utilities";
+import download from "downloadjs";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
@@ -34,17 +35,19 @@ class SupportBundleRow extends React.Component {
   }
 
   downloadBundle = async (bundle) => {
-    const bundleId = bundle.id;
-    const hiddenIFrameID = "hiddenDownloader";
-    let iframe = document.getElementById(hiddenIFrameID);
-    const url = `${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
-    if (iframe === null) {
-      iframe = document.createElement("iframe");
-      iframe.id = hiddenIFrameID;
-      iframe.style.display = "none";
-      document.body.appendChild(iframe);
-    }
-    iframe.src = url;
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+    .then(async (result) => {
+      const blob = result.blob();
+      download(blob, "supportbundle.tar.gz", "application/gzip")
+    })
+    .catch(err => {
+      console.log(err);
+    })
   }
 
   renderInsightIcon = (bundle, i, insight) => {

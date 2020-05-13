@@ -2,15 +2,14 @@ import * as React from "react";
 import { withRouter, Switch, Route, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import dayjs from "dayjs";
-import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import { getSupportBundle } from "../../queries/TroubleshootQueries";
-import { updateSupportBundle } from "../../mutations/TroubleshootMutations";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
+import download from "downloadjs";
 
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
@@ -42,17 +41,19 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   downloadBundle = async (bundle) => {
-    const bundleId = bundle.id;
-    const hiddenIFrameID = "hiddenDownloader";
-    let iframe = document.getElementById(hiddenIFrameID);
-    const url = `${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/download?token=${Utilities.getToken()}`;
-    if (iframe === null) {
-      iframe = document.createElement("iframe");
-      iframe.id = hiddenIFrameID;
-      iframe.style.display = "none";
-      document.body.appendChild(iframe);
-    }
-    iframe.src = url;
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+    .then(async (result) => {
+      const blob = result.blob();
+      download(blob, "supportbundle.tar.gz", "application/gzip")
+    })
+    .catch(err => {
+      console.log(err);
+    })
   }
 
   toggleAnalysisAction = (active) => {

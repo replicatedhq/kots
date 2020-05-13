@@ -8,8 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
@@ -18,6 +16,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/upstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type AppUpdateCheckRequest struct {

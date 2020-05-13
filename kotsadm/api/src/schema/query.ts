@@ -31,8 +31,6 @@ export const Query = `
 
     getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
 
-    getKotsApplicationTree(slug: String!, sequence: Int!): String
-    getKotsFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
     getAppConfigGroups(slug: String!, sequence: Int!): [KotsConfigGroup]
     getKotsDownstreamOutput(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsDownstreamOutput
     templateConfigGroups(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): [KotsConfigGroup]

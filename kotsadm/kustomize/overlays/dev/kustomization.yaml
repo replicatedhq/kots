@@ -8,6 +8,6 @@ bases:
 
 resources:
   - ./nodeport.yaml
-
+  - ./distribution/distribution.yaml
 patches:
   - ./deployment.yaml

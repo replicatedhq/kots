@@ -55,11 +55,13 @@ func Start() {
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
+
+	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
 	r.Path("/api/v1/troubleshoot/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetTroubleshoot)
-	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
-
-	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
+	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UploadSupportBundle)
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundleFiles)
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSupportBundle)
 	r.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
 	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
@@ -78,6 +80,7 @@ func Start() {
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRenderedContents)
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppContents)
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
@@ -113,14 +116,10 @@ func Start() {
 
 	// KURL
 	r.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
-	r.Path("/api/v1/kurl/generate-node-join-command-worker").
-		Methods("OPTIONS", "POST").
-		HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
-	r.Path("/api/v1/kurl/generate-node-join-command-master").
-		Methods("OPTIONS", "POST").
-		HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
+	r.Path("/api/v1/kurl/generate-node-join-command-worker").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
+	r.Path("/api/v1/kurl/generate-node-join-command-master").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
 
-	// Prom
+	// Prometheus
 	r.HandleFunc("/api/v1/prometheus", handlers.NotImplemented)
 
 	// GitOps
