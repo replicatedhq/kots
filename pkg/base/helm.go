@@ -50,19 +50,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
-	// config := &chart.Config{Raw: string(marshalledVals), Values: map[string]*chart.Value{}}
-
-	// renderOpts := renderutil.Options{
-	// 	ReleaseOptions: chartutil.ReleaseOptions{
-	// 		Name:      u.Name,
-	// 		IsInstall: true,
-	// 		IsUpgrade: false,
-	// 		Time:      timeconv.Now(),
-	// 		Namespace: renderOptions.Namespace,
-	// 	},
-	// 	KubeVersion: "1.16.0",
-	// }
-
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
@@ -85,6 +72,9 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
+	// Silence the go logger because helm will complain about some of our template strings
+	// golog.SetOutput(ioutil.Discard)
+	// defer golog.SetOutput(os.Stdout)
 	rel, err := client.Run(chartRequested, vals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render chart")
@@ -96,14 +86,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}
 	rendered := releaseutil.SplitManifests(manifests.String())
-
-	// Silence the go logger because helm will complain about some of our template strings
-	// golog.SetOutput(ioutil.Discard)
-	// defer golog.SetOutput(os.Stdout)
-	// rendered, err := renderutil.Render(chartRequested, config, renderOpts)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "failed to render chart")
-	// }
 
 	baseFiles := []BaseFile{}
 	for k, v := range rendered {
