@@ -9,6 +9,7 @@ import (
 type RenderOptions struct {
 	SplitMultiDocYAML      bool
 	Namespace              string
+	HelmVersion            string
 	HelmOptions            []string
 	LocalRegistryHost      string
 	LocalRegistryNamespace string

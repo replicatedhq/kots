@@ -42,6 +42,7 @@ func PullCmd() *cobra.Command {
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
 				CreateAppDir:        true,
+				HelmVersion:         v.GetString("helm-version"),
 				HelmOptions:         v.GetStringSlice("set"),
 				RewriteImages:       v.GetBool("rewrite-images"),
 				RewriteImageOptions: pull.RewriteImageOptions{
@@ -88,6 +89,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-username", "", "the username of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
+	cmd.Flags().String("helm-version", "v2", "the Helm version with which to render the Helm Chart")
 
 	return cmd
 }

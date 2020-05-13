@@ -17,12 +17,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"k8s.io/helm/cmd/helm/search"
-	"k8s.io/helm/pkg/downloader"
-	"k8s.io/helm/pkg/getter"
-	"k8s.io/helm/pkg/helm/environment"
-	"k8s.io/helm/pkg/helm/helmpath"
-	"k8s.io/helm/pkg/repo"
+	"helm.sh/helm/v3/cmd/helm/search"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/downloader"
+	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
@@ -44,11 +43,11 @@ func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
 
 	var updates []Update
 	for _, result := range i.All() {
-		if result.Chart.GetName() != chartName {
+		if result.Chart.Name != chartName {
 			continue
 		}
 
-		updates = append(updates, Update{Cursor: result.Chart.GetVersion()})
+		updates = append(updates, Update{Cursor: result.Chart.Version})
 	}
 	return updates, nil
 }
@@ -77,11 +76,11 @@ func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {
 	if chartVersion == "" {
 		highestChartVersion := semver.MustParse("0.0.0")
 		for _, result := range i.All() {
-			if result.Chart.GetName() != chartName {
+			if result.Chart.Name != chartName {
 				continue
 			}
 
-			v, err := semver.NewVersion(result.Chart.GetVersion())
+			v, err := semver.NewVersion(result.Chart.Version)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to parse chart version")
 			}
@@ -95,18 +94,19 @@ func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {
 	}
 
 	for _, result := range i.All() {
-		if result.Chart.GetName() != chartName {
+		if result.Chart.Name != chartName {
 			continue
 		}
 
-		if result.Chart.GetVersion() != chartVersion {
+		if result.Chart.Version != chartVersion {
 			continue
 		}
 
 		dl := downloader.ChartDownloader{
-			HelmHome: helmpath.Home(helmHome),
-			Out:      os.Stdout,
-			Getters:  getter.All(environment.EnvSettings{}),
+			Out:              os.Stdout,
+			Getters:          getter.All(&cli.EnvSettings{}),
+			RepositoryConfig: getReposFile(helmHome),
+			RepositoryCache:  getCachePath(helmHome),
 		}
 
 		archiveDir, err := ioutil.TempDir("", "archive")
@@ -115,12 +115,12 @@ func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {
 		}
 		defer os.RemoveAll(archiveDir)
 
-		chartRef, err := repo.FindChartInRepoURL(repoURI, result.Chart.GetName(), chartVersion, "", "", "", getter.All(environment.EnvSettings{}))
+		chartRef, err := repo.FindChartInRepoURL(repoURI, result.Chart.Name, chartVersion, "", "", "", getter.All(&cli.EnvSettings{}))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find chart in repo url")
 		}
 
-		_, _, err = dl.DownloadTo(chartRef, result.Chart.GetVersion(), archiveDir)
+		_, _, err = dl.DownloadTo(chartRef, result.Chart.Version, archiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download chart")
 		}
@@ -167,41 +167,35 @@ func helmLoadRepositoriesIndex(helmHome, repoName, repoURI string) (*search.Inde
 	if err := os.MkdirAll(filepath.Join(helmHome, "repository"), 0755); err != nil {
 		return nil, errors.Wrap(err, "failed to make directory for helm home")
 	}
-	reposFile := filepath.Join(helmHome, "repository", "repositories.yaml")
-
-	repoIndexFile, err := ioutil.TempFile("", "index")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temporary index file")
-	}
-	defer os.Remove(repoIndexFile.Name())
-
-	cacheIndexFile, err := ioutil.TempFile("", "cache")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create cache index file")
-	}
-	defer os.Remove(cacheIndexFile.Name())
 
 	repoYAML := `apiVersion: v1
 generated: "2019-05-29T14:31:58.906598702Z"
 repositories: []`
-	if err := ioutil.WriteFile(reposFile, []byte(repoYAML), 0644); err != nil {
+	if err := ioutil.WriteFile(getReposFile(helmHome), []byte(repoYAML), 0644); err != nil {
 		return nil, err
 	}
 
 	c := repo.Entry{
-		Name:  repoName,
-		Cache: repoIndexFile.Name(),
-		URL:   repoURI,
+		Name: repoName,
+		URL:  repoURI,
 	}
-	r, err := repo.NewChartRepository(&c, getter.All(environment.EnvSettings{}))
+	r, err := repo.NewChartRepository(&c, getter.All(&cli.EnvSettings{}))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create chart repository")
 	}
-	if err := r.DownloadIndexFile(cacheIndexFile.Name()); err != nil {
+	r.CachePath = getCachePath(helmHome)
+
+	indexFilePath, err := r.DownloadIndexFile()
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to download index file")
 	}
 
-	rf, err := repo.LoadRepositoriesFile(reposFile)
+	ind, err := repo.LoadIndexFile(indexFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load index file")
+	}
+
+	rf, err := repo.LoadFile(getReposFile(helmHome))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load repositories file")
 	}
@@ -210,11 +204,6 @@ repositories: []`
 	i := search.NewIndex()
 	for _, re := range rf.Repositories {
 		n := re.Name
-		ind, err := repo.LoadIndexFile(repoIndexFile.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load index file")
-		}
-
 		i.AddRepo(n, ind, true)
 	}
 
@@ -318,4 +307,12 @@ func readTarGz(source string) ([]types.UpstreamFile, error) {
 	}
 
 	return upstreamFiles, nil
+}
+
+func getReposFile(helmHome string) string {
+	return filepath.Join(helmHome, "repository", "repositories.yaml")
+}
+
+func getCachePath(helmHome string) string {
+	return filepath.Join(helmHome, "repository", "cache")
 }

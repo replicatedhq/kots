@@ -21,8 +21,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/helm/pkg/chartutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -177,6 +177,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
 			SplitMultiDocYAML: true,
 			Namespace:         namespace,
+			HelmVersion:       kotsHelmChart.Spec.HelmVersion,
 			HelmOptions:       localValues,
 			ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
 			Log:               nil,
@@ -384,13 +385,13 @@ func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, k
 
 		for _, chartFile := range files {
 			if chartFile.Path == "Chart.yaml" {
-				chartManifest, err := chartutil.UnmarshalChartfile(chartFile.Content)
-				if err != nil {
+				chartManifest := new(chart.Metadata)
+				if err := yaml.Unmarshal(chartFile.Content, chartManifest); err != nil {
 					return nil, errors.Wrap(err, "failed to unmarshal chart yaml")
 				}
 
-				if chartManifest.GetName() == kotsHelmChart.Spec.Chart.Name {
-					if chartManifest.GetVersion() == kotsHelmChart.Spec.Chart.ChartVersion {
+				if chartManifest.Name == kotsHelmChart.Spec.Chart.Name {
+					if chartManifest.Version == kotsHelmChart.Spec.Chart.ChartVersion {
 						return upstreamFile.Content, nil
 					}
 				}
