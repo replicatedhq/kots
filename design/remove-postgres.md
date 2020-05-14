@@ -29,6 +29,18 @@ This design is cautious to design for the size limitations of a single object in
 ## Detailed Design
 
 Digging into what's stored, the details here focus on the new location for the data currently in the database.
+All database tables are defined as [SchemaHero](https://schemahero.io) tables here: https://github.com/replicatedhq/kots/tree/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables.
+Many of these tables are not used, some are critical.
+
+| Table Name | Status | Plan |
+|------------|--------|------|
+| [api-task-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/api_task_status.yaml) | | |
+| [app](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app.yaml) | Critical | Migration defined in App & App Version |
+| [app-downstream](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream.yaml) | | |
+| [app-downstream-output](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream_output.yaml) | Unused | Drop |
+| [app-downstream-version](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream_version.yaml) | Critical | Migration defined in App & App Version |
+| [app-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_status.yaml) | | |
+| [app-version](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_version.yaml) | Critical | Migration defined in App & App Version |
 
 ### App & AppVersion
 
