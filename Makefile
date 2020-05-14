@@ -33,11 +33,11 @@ define LDFLAGS
 "
 endef
 
-BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+BUILDFLAGS = -tags "netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" -installsuffix netgo
 
 .PHONY: test
 test:
-	go test -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
+	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
 
 .PHONY: integration-cli
 integration-cli:
@@ -45,15 +45,15 @@ integration-cli:
 
 .PHONY: ci-test
 ci-test:
-	go test -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
+	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
 kots: fmt vet
-	go build ${LDFLAGS} -o bin/kots -tags "$(BUILDTAGS)" github.com/replicatedhq/kots/cmd/kots
+	CGOENABLED=0 go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: ffi
 ffi: fmt vet
-	go build ${LDFLAGS} -o bin/kots.so -tags "$(BUILDTAGS)" -buildmode=c-shared ./ffi/...
+	go build ${LDFLAGS} -o bin/kots.so -buildmode=c-shared ./ffi/...
 
 .PHONY: fmt
 fmt:
@@ -61,7 +61,7 @@ fmt:
 
 .PHONY: vet
 vet:
-	go vet -tags "$(BUILDTAGS)" ./pkg/... ./cmd/... ./ffi/...
+	go vet $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/...
 
 .PHONY: gosec
 gosec:
