@@ -58,6 +58,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 				Selector: []string{
 					"component=velero",
 					"deploy=velero",
+					"app.kubernetes.io/name=velero",
 				},
 			},
 		},
@@ -76,6 +77,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 				Selector: []string{
 					"component=velero",
 					"name=restic",
+					"app.kubernetes.io/name=velero",
 				},
 			},
 		},
