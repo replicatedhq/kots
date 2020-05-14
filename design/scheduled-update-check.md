@@ -32,7 +32,7 @@ update available in an app.
 
 A new column `update_checker_spec` will be added to the `app` table in the postgress database 
 using a migration. The column is a text and defaults to `@daily`, which will indicate that the cron job
-will run daily at 1 AM.
+will run daily at midnight.
 
 By default, when the KOTS Admin Console's api starts:
 
