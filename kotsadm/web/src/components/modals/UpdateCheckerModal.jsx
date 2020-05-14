@@ -32,9 +32,9 @@ export default class UpdateCheckerModal extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const text = await res.text();
+          const response = await res.json();
           this.setState({
-            submitUpdateCheckerSpecErr: text
+            submitUpdateCheckerSpecErr: response?.error
           });
           return;
         }
@@ -100,7 +100,7 @@ export default class UpdateCheckerModal extends React.Component {
               onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
             />
             {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
-            {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">{submitUpdateCheckerSpecErr}</span>}
+            {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
           </div>
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>

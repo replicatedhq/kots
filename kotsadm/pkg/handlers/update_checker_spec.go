@@ -92,7 +92,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 	// reconfigure update checker for the app
 	if err := updatechecker.Configure(foundApp.ID); err != nil {
 		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to restart update checker cron job"
+		updateCheckerSpecResponse.Error = "failed to reconfigure update checker cron job"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
 	}

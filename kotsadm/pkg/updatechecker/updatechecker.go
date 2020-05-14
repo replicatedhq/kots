@@ -1,7 +1,6 @@
 package updatechecker
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,7 +20,7 @@ import (
 )
 
 // jobs maps app ids to their cron jobs
-var jobs map[string]*cron.Cron
+var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
 
 // Start will start the update checker
@@ -39,7 +38,7 @@ func Start() error {
 			continue
 		}
 		if err := Configure(a.ID); err != nil {
-			return errors.Wrapf(err, "failed to configure app %s", a.Slug)
+			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
 	}
 
@@ -50,7 +49,7 @@ func Start() error {
 // if enabled, and cron job was NOT found: add a new cron job to check app updates
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
-// returns a "not supported" error for airgap applications
+// no-op for airgap applications
 func Configure(appID string) error {
 	a, err := app.Get(appID)
 	if err != nil {
@@ -58,7 +57,7 @@ func Configure(appID string) error {
 	}
 
 	if a.IsAirgap {
-		return errors.New("airgap scheduled update checks are not supported")
+		return nil
 	}
 
 	logger.Debug("configure update checker for app",
@@ -70,10 +69,6 @@ func Configure(appID string) error {
 	if a.UpdateCheckerSpec == "@never" || a.UpdateCheckerSpec == "" {
 		Stop(a.ID)
 		return nil
-	}
-
-	if jobs == nil {
-		jobs = make(map[string]*cron.Cron)
 	}
 
 	job, ok := jobs[a.ID]
