@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	v1 "k8s.io/api/apps/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -65,13 +66,12 @@ func DetectVelero() (*VeleroStatus, error) {
 		Plugins: []string{},
 	}
 
-	deployments, err := clientset.AppsV1().Deployments(veleroNamespace).List(metav1.ListOptions{
-		LabelSelector: "component=velero",
-	})
+	possibleDeployments, err := listPossibleVeleroDeployments(clientset, veleroNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list deployments")
+		return nil, errors.Wrap(err, "failed to list possible velero deployments")
 	}
-	for _, deployment := range deployments.Items {
+
+	for _, deployment := range possibleDeployments {
 		for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
 			// the default installation is to name these like "velero-plugin-for-aws"
 			veleroStatus.Plugins = append(veleroStatus.Plugins, initContainer.Name)
@@ -93,13 +93,11 @@ func DetectVelero() (*VeleroStatus, error) {
 	}
 DeploymentFound:
 
-	daemonsets, err := clientset.AppsV1().DaemonSets(veleroNamespace).List(metav1.ListOptions{
-		LabelSelector: "component=velero",
-	})
+	daemonsets, err := listPossibleResticDaemonsets(clientset, veleroNamespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list daemonsets")
+		return nil, errors.Wrap(err, "failed to list restic daemonsets")
 	}
-	for _, daemonset := range daemonsets.Items {
+	for _, daemonset := range daemonsets {
 		matches := dockerImageNameRegex.FindStringSubmatch(daemonset.Spec.Template.Spec.Containers[0].Image)
 		if len(matches) == 5 {
 			status := "NotReady"
@@ -119,4 +117,44 @@ DeploymentFound:
 ResticFound:
 
 	return &veleroStatus, nil
+}
+
+// listPossibleVeleroDeployments filters with a label selector based on how we've found velero deployed
+// using the CLI or the Helm Chart.
+func listPossibleVeleroDeployments(clientset *kubernetes.Clientset, namespace string) ([]v1.Deployment, error) {
+	deployments, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{
+		LabelSelector: "component=velero",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list deployments")
+	}
+
+	helmDeployments, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=velero",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list helm deployments")
+	}
+
+	return append(deployments.Items, helmDeployments.Items...), nil
+}
+
+// listPossibleResticDaemonsets filters with a label selector based on how we've found restic deployed
+// using the CLI or the Helm Chart.
+func listPossibleResticDaemonsets(clientset *kubernetes.Clientset, namespace string) ([]v1.DaemonSet, error) {
+	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(metav1.ListOptions{
+		LabelSelector: "component=velero",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list daemonsets")
+	}
+
+	helmDaemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=velero",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list helm daemonsets")
+	}
+
+	return append(daemonsets.Items, helmDaemonsets.Items...), nil
 }
