@@ -90,6 +90,10 @@ class AppSnapshots extends Component {
 
   listSnapshots() {
     const { app } = this.props;
+    this.setState({
+      snapshotsListErr: false,
+      snapshotsListErrMsg: ""
+    })
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
       method: "GET",
       headers: {
@@ -114,7 +118,7 @@ class AppSnapshots extends Component {
       .catch(err => {
         this.setState({
           snapshotsListErr: true,
-          snapshotsListErrMsg: err
+          snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again"
         })
       })
   }
@@ -345,10 +349,10 @@ class AppSnapshots extends Component {
       restoreInProgressErrMsg
     } = this.state;
     const { app } = this.props;
-    const appTitle = app.name;
+    const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots.length === 0) || startingSnapshot) {
+    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -381,7 +385,7 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots.length === 0) {
+    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots?.length === 0) {
       return (
         <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
           <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
@@ -426,7 +430,7 @@ class AppSnapshots extends Component {
                 </ReactTooltip>}
             </div>
           </div>
-          {snapshots.map((snapshot) => (
+          {snapshots?.map((snapshot) => (
             <AppSnapshotsRow
               key={`snapshot-${snapshot.name}-${snapshot.started}`}
               snapshot={snapshot}
