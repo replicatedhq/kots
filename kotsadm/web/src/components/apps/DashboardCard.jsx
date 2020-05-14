@@ -48,20 +48,13 @@ export default class DashboardCard extends React.Component {
     const parsedUrl = url.parse(uri);
 
     let port;
-    if (parsedUrl.port === "80") {
+    if (!parsedUrl.port) {
       port = "";
     } else {
       port = ":" + parsedUrl.port;
     }
 
-    let path;
-    if (path === "/") {
-      path = "";
-    } else {
-      path = "/"
-    }
-
-    return `${parsedUrl.protocol}//${window.location.hostname}${port}${path}`;
+    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.path}`;
   }
 
   renderApplicationCard = () => {
