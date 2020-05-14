@@ -42,12 +42,13 @@ By default, when the KOTS Admin Console's api starts:
 4. The update check request logic already creates new versions automatically if there are updates available,
 and handles the scenario if multiple requests have been made to check for updates.
 
+Note: A cron job will also be added when creating a new app.
+
 To configure the update checker spec:
 
 1. There will be a "Configure update checker" link in the Admin Console's version history card & page.
 2. Upon clicking the link, a small modal will display the value of the cron job spec.
 3. The modal will have a "Update" button. 
 4. Once the user clicks "Update", a request will be made with the new spec to the Admin Console's api.
-5. The request will update the spec in the database and kill the current cron job (if running).
-6. The request will then check if the feature is still enabled and start a new cron job with the new spec.
-7. If any of this fails, the request will return a failure message which will be displayed in the modal.
+5. The request will update the spec in the database and reconfigure the cron job.
+6. If any of this fails, the request will return a failure message which will be displayed in the modal.
