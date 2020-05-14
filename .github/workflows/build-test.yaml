@@ -30,6 +30,12 @@ jobs:
           name: kots
           path: bin/kots
 
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - run: cd kotsadm && ./build-ttl-ci.sh --uuid=automated-$GITHUB_RUN_ID
+
   validate:
     runs-on: ubuntu-18.04
     needs: build-kots
@@ -53,7 +59,15 @@ jobs:
         run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns --ignore-not-found automated-$GITHUB_RUN_ID
 
       - name: install qa app
-        run: ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig install qakots/github-actions --port-forward=false -n automated-$GITHUB_RUN_ID --shared-password password
+        run: |
+          ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig \
+          install qakots/github-actions \
+          --port-forward=false \
+          -n automated-$GITHUB_RUN_ID \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-$GITHUB_RUN_ID \
+          --kotsadm-tag 2h
 
       - uses: actions/setup-node@v1
         with:
