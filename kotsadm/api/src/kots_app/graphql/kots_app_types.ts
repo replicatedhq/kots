@@ -21,6 +21,7 @@ const KotsApp = `
     kustomizeVersion: String
     allowSnapshots: Boolean
     licenseType: String
+    updateCheckerSpec: String
   }
 `;
 

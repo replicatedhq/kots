@@ -7,47 +7,46 @@ require (
 	github.com/Azure/azure-sdk-for-go v35.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.9.0
 	github.com/Azure/go-autorest/autorest/adal v0.5.0
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Microsoft/hcsshim v0.8.8-0.20200225064221-b400e4ffeccc // indirect
-	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/aws/aws-sdk-go v1.25.18
+	github.com/bitly/go-simplejson v0.5.0 // indirect
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
+	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
+	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/frankban/quicktest v1.7.3 // indirect
-	github.com/go-logr/zapr v0.1.1 // indirect
+	github.com/garyburd/redigo v1.6.0 // indirect
+	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/gorilla/handlers v1.4.2 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kubernetes-sigs/application v0.8.1 // indirect
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1
-	github.com/pierrec/lz4 v2.4.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.3-0.20200512202738-aaa332813ead
 	github.com/replicatedhq/kotsadm v1.15.0-beta.2
 	github.com/replicatedhq/troubleshoot v0.9.31
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0
-	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.6.2
+	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/vmware-tanzu/velero v1.2.0
-	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	github.com/xeipuuv/gojsonschema v1.1.0 // indirect
-	go.uber.org/multierr v1.5.0 // indirect
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.7 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	google.golang.org/api v0.6.1-0.20190607001116-5213b8090861
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
@@ -58,6 +57,7 @@ require (
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/cluster-bootstrap v0.17.3
 	k8s.io/kubernetes v1.17.3
+	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.1
 	sigs.k8s.io/controller-runtime v0.4.0
 )

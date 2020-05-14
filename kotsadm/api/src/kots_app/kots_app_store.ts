@@ -1381,7 +1381,7 @@ order by adv.sequence desc`;
   }
 
   async getApp(id: string): Promise<KotsApp> {
-    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status from app where id = $1`;
+    const q = `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec from app where id = $1`;
     const v = [id];
 
     const result = await this.pool.query(q, v);
@@ -1421,6 +1421,7 @@ order by adv.sequence desc`;
     kotsApp.snapshotSchedule = row.snapshot_schedule;
     kotsApp.restoreInProgressName = row.restore_in_progress_name;
     kotsApp.restoreUndeployStatus = row.restore_undeploy_status;
+    kotsApp.updateCheckerSpec = row.update_checker_spec;
 
     return kotsApp;
   }

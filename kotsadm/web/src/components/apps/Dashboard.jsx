@@ -8,6 +8,7 @@ import get from "lodash/get";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
+import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
@@ -51,7 +52,8 @@ class Dashboard extends Component {
     viewAirgapUploadError: false,
     viewAirgapUpdateError: false,
     airgapUpdateError: "",
-    startSnapshotErrorMsg: ""
+    startSnapshotErrorMsg: "",
+    showUpdateCheckerModal: false
   }
 
   toggleConfigureGraphs = () => {
@@ -154,6 +156,18 @@ class Dashboard extends Component {
       .catch((err) => {
         this.setState({ errorCheckingUpdate: true });
       });
+  }
+
+  hideUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: false
+    });
+  }
+
+  showUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: true
+    });
   }
 
   updateStatus = () => {
@@ -445,7 +459,7 @@ class Dashboard extends Component {
       appLicense,
       showConfigureGraphs,
       promValue,
-      savingPromValue
+      savingPromValue,
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
@@ -527,6 +541,7 @@ class Dashboard extends Component {
                 checkingForUpdateError={this.state.checkingForUpdateError}
                 viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
                 viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
+                showUpdateCheckerModal={this.showUpdateCheckerModal}
               />
               {app.allowSnapshots && isVeleroInstalled ?
                 <div className="small-dashboard-wrapper flex-column flex">
@@ -630,6 +645,19 @@ class Dashboard extends Component {
               <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewAirgapUpdateError}>Ok, got it!</button>
             </div>
           </Modal>
+        }
+
+        {this.state.showUpdateCheckerModal &&
+          <UpdateCheckerModal
+            isOpen={this.state.showUpdateCheckerModal}
+            onRequestClose={this.hideUpdateCheckerModal}
+            updateCheckerSpec={app.updateCheckerSpec}
+            appSlug={app.slug}
+            onUpdateCheckerSpecSubmitted={() => {
+              this.hideUpdateCheckerModal();
+              this.props.refreshAppData();
+            }}
+          />
         }
       </div>
     );

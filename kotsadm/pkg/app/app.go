@@ -23,6 +23,7 @@ type App struct {
 
 	// Additional fields will be added here as implementation is moved from node to go
 	RestoreInProgressName string
+	UpdateCheckerSpec     string
 }
 
 func Get(id string) (*App, error) {
@@ -30,15 +31,16 @@ func Get(id string) (*App, error) {
 		zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, slug, name, current_sequence, is_airgap, restore_in_progress_name from app where id = $1`
+	query := `select id, slug, name, current_sequence, is_airgap, restore_in_progress_name, update_checker_spec from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := App{}
 
 	var currentSequence sql.NullInt64
 	var restoreInProgressName sql.NullString
+	var updateCheckerSpec sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap, &restoreInProgressName); err != nil {
+	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap, &restoreInProgressName, &updateCheckerSpec); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -49,8 +51,49 @@ func Get(id string) (*App, error) {
 	}
 
 	app.RestoreInProgressName = restoreInProgressName.String
+	app.UpdateCheckerSpec = updateCheckerSpec.String
 
 	return &app, nil
+}
+
+func ListInstalled() ([]*App, error) {
+	logger.Debug("getting all users apps")
+
+	db := persistence.MustGetPGSession()
+	query := `select id from app where install_state = 'installed'`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+
+	apps := []*App{}
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		app, err := Get(appID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app")
+		}
+		apps = append(apps, app)
+	}
+
+	return apps, nil
+}
+
+func SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
+	logger.Debug("setting update checker spec",
+		zap.String("appID", appID))
+
+	db := persistence.MustGetPGSession()
+	query := `update app set update_checker_spec = $1 where id = $2`
+	_, err := db.Exec(query, updateCheckerSpec, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
 }
 
 func GetFromSlug(slug string) (*App, error) {

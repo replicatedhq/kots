@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Dropzone from "react-dropzone";
+import ReactTooltip from "react-tooltip"
 
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
@@ -178,7 +179,11 @@ export default class DashboardCard extends React.Component {
               <button className="btn secondary blue">Upload new version</button>
             </Dropzone>
             : showOnlineUI ?
-              <button className="btn primary lightBlie blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
+              <div className="flex alignItems--center">
+                <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
+                <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure update checker"></span>
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              </div>
               : null
         }
         {updateText}

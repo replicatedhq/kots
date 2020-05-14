@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 )
 
 func Start() {
@@ -29,6 +30,10 @@ func Start() {
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)
+	}
+
+	if err := updatechecker.Start(); err != nil {
+		log.Println("Failed to start update checker", err)
 	}
 
 	if err := automation.AutomateInstall(); err != nil {
@@ -94,6 +99,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SyncLicense)
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)
+	r.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateCheckerSpec)
 
 	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)

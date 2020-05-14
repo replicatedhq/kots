@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,6 +59,9 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 			}
 			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
+			}
+			if err := updatechecker.Configure(pendingApp.ID); err != nil {
+				logger.Error(errors.Wrap(err, "faild to configure update checker"))
 			}
 		} else {
 			if err := task.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {

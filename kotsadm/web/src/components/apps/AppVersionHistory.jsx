@@ -4,6 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
+import ReactTooltip from "react-tooltip"
 import MonacoEditor from "react-monaco-editor";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Dropzone from "react-dropzone";
@@ -15,6 +16,7 @@ import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -53,7 +55,8 @@ class AppVersionHistory extends Component {
     secondSequence: 0,
     updateChecker: new Repeater(),
     uploadTotal: 0,
-    uploadSent: 0
+    uploadSent: 0,
+    showUpdateCheckerModal: false
   }
 
   componentDidMount() {
@@ -95,6 +98,18 @@ class AppVersionHistory extends Component {
   hideDownstreamReleaseNotes = () => {
     this.setState({
       downstreamReleaseNotes: null
+    });
+  }
+
+  hideUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: false
+    });
+  }
+
+  showUpdateCheckerModal = () => {
+    this.setState({
+      showUpdateCheckerModal: true
     });
   }
 
@@ -738,7 +753,8 @@ class AppVersionHistory extends Component {
       uploadingAirgapFile,
       uploadTotal,
       uploadSent,
-      noUpdateAvailiableText
+      noUpdateAvailiableText,
+      showUpdateCheckerModal,
     } = this.state;
 
     if (!app) {
@@ -862,7 +878,11 @@ class AppVersionHistory extends Component {
                       <button className="btn secondary blue">Upload new version</button>
                     </Dropzone>
                     : showOnlineUI ?
-                      <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                      <div className="flex alignItems--center">
+                        <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
+                        <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={this.showUpdateCheckerModal} data-tip="Configure update checker"></span>
+                        <ReactTooltip effect="solid" className="replicated-tooltip" />
+                      </div>
                       : null
                 }
                 {updateText}
@@ -1119,7 +1139,7 @@ class AppVersionHistory extends Component {
           onRequestClose={this.hideDownstreamReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
-          className="Modal LargeSize"
+          className="Modal MediumSize"
         >
           <div className="flex-column">
             <MarkdownRenderer>
@@ -1130,6 +1150,19 @@ class AppVersionHistory extends Component {
             <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
           </div>
         </Modal>
+
+        {showUpdateCheckerModal &&
+          <UpdateCheckerModal
+            isOpen={showUpdateCheckerModal}
+            onRequestClose={this.hideUpdateCheckerModal}
+            updateCheckerSpec={app.updateCheckerSpec}
+            appSlug={app.slug}
+            onUpdateCheckerSpecSubmitted={() => {
+              this.hideUpdateCheckerModal();
+              this.props.refreshAppData();
+            }}
+          />
+        }
       </div>
     );
   }

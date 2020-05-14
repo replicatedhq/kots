@@ -261,6 +261,7 @@ class AppDetailPage extends Component {
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
+                        refreshAppData={refreshAppData}
                       />}
                     />
 

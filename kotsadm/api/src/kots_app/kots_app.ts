@@ -38,6 +38,7 @@ export class KotsApp {
   snapshotSchedule?: string;
   restoreInProgressName?: string;
   restoreUndeployStatus?: string;
+  updateCheckerSpec?: string;
 
   // Version Methods
   public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
