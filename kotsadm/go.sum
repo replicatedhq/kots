@@ -15,6 +15,7 @@ github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774 h1:SCbEWT58NSt7
 github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774/go.mod h1:6/0dYRLLXyJjbkIPeeGyoJ/eKOSI0eU6eTlCBYibgd0=
 github.com/Azure/azure-sdk-for-go v35.0.0+incompatible h1:PkmdmQUmeSdQQ5258f4SyCf2Zcz0w67qztEg37cOR7U=
 github.com/Azure/azure-sdk-for-go v35.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
+github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/Azure/go-autorest/autorest v0.9.0 h1:MRvx8gncNaXJqOoLmhNjUAKh33JJF8LyxPhomEtOsjs=
 github.com/Azure/go-autorest/autorest v0.9.0/go.mod h1:xyHB1BMZT0cuDHU7I0+g046+BFDTQ8rEZB0s4Yfa6bI=
@@ -787,17 +788,6 @@ github.com/replicatedhq/kots v1.15.3-0.20200512202738-aaa332813ead h1:SFN9yjLLjK
 github.com/replicatedhq/kots v1.15.3-0.20200512202738-aaa332813ead/go.mod h1:75+q98hCN7KFP/wnsZes5762UZ6tR3Up+EAdbAck7RU=
 github.com/replicatedhq/kots v1.15.3 h1:E9QdndpInUq+y12F2Ux3hBUim2WvmfXqeJKbV4zODYs=
 github.com/replicatedhq/kots v1.15.3/go.mod h1:8mbam1nJv/DzA7809Tx0kEL4IBhIYqtzACMsM+eKIOw=
-github.com/replicatedhq/kotsadm v1.15.0-beta.2 h1:uXdr0p9vjwz3NKDhyRYgl07vC5ztHnwurx2FsiOiaBI=
-github.com/replicatedhq/kotsadm v1.15.0-beta.2/go.mod h1:+eCMVGxRvj3AbnBMwy46LkS10OhTdEk0N1DlIuWpR20=
-github.com/replicatedhq/kotsadm v1.15.0-beta.3/go.mod h1:2ojECILxv826Imofl8inT+b+8B5JGv7p4SUsku8GOck=
-github.com/replicatedhq/kotsadm v1.15.0-beta.4/go.mod h1:ij6WVQfVNTgGxM8lp0njOaIu6txKIgw2Z39WEMCJFLc=
-github.com/replicatedhq/kotsadm v1.15.0-beta.5/go.mod h1:cqiTjMz5GuNUGe2mA5Y63CMl6ueSfdy1kjhsiS6/+hQ=
-github.com/replicatedhq/kotsadm v1.15.0/go.mod h1:VHKWHu7vZNZGIQel/AvIUmw2g/Pa2/Azcwo+ecqzfcA=
-github.com/replicatedhq/kotsadm v1.15.1/go.mod h1:bc8AIyl8j6399RiX1bmq05vrUAnTJlTldTa+9sRG22U=
-github.com/replicatedhq/kotsadm v1.15.2/go.mod h1:nz4VT3LAfROEaiTrDfFsMloEC/wdlwRcWAoy7djKXNQ=
-github.com/replicatedhq/kotsadm v1.15.3 h1:zI/iha8TIAlDmp2o+G61Segl/rUD/5xfVgSVUzFqKOA=
-github.com/replicatedhq/kotsadm v1.15.3/go.mod h1:/daSSECVmRR2fgZkTf7Oen46HGh6J0SwWAqBgpoy3hk=
-github.com/replicatedhq/kotsadm/operator v0.0.0-20200501000547-b1b5fb425e17/go.mod h1:6GfvQbCeR02BhpcEcaPTN2J62FA3dnzxRQviEdakB/0=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
 github.com/replicatedhq/troubleshoot v0.9.27 h1:51ouEai9xSp7E9+Jbd+Oz1wxu5jFJbXSvLr3Vq6ivTk=
