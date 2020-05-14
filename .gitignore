@@ -17,3 +17,6 @@ vendor
 
 # scope test logs
 scope-go-*.log
+
+# goreleaser
+dist/
