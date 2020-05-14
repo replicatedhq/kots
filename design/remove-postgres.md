@@ -30,7 +30,8 @@ This design is cautious to design for the size limitations of a single object in
 
 Digging into what's stored, the details here focus on the new location for the data currently in the database.
 All database tables are defined as [SchemaHero](https://schemahero.io) tables here: https://github.com/replicatedhq/kots/tree/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables.
-Many of these tables are not used, some are critical.
+Many of these tables were used in Ship, but never used in KOTS, while others are critical.
+
 
 | Table Name | Status | Plan |
 |------------|--------|------|
@@ -41,6 +42,53 @@ Many of these tables are not used, some are critical.
 | [app-downstream-version](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream_version.yaml) | Critical | Migration defined in App & App Version |
 | [app-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_status.yaml) | | |
 | [app-version](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_version.yaml) | Critical | Migration defined in App & App Version |
+| [cluster](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/cluster.yaml) | Critical | |
+| [cluster-github](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/cluster_github.yaml) | Unused | Drop |
+| [email-noitification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/email_notification.yaml) | Unused | Drop |
+| [feature](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/feature.yaml) | Unused | Drop |
+| [github-install](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/github_install.yaml) | Unused | Drop |
+| [github-nonce](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/github_nonce.yaml) | Unused | Drop |
+| [github-user](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/github_user.yaml) | Unused | Drop |
+| [helm-chart](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/helm_chart.yaml) | Unused | Drop |
+| [helm-chart-source](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/helm_chart_source.yaml) | Unused | Drop |
+| [image-watch](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/image_watch.yaml) | Unused | Drop |
+| [image-watch-batch](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/image_watch_batch.yaml) | Unused | Drop |
+| [kotsadm-params](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/kotsadm_params.yaml) | | |
+| [object-store](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/object_store.yaml) | | |
+| [pending-pullrequest-notification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/pending_pullrequest_notification.yaml) | Unused | Drop |
+| [pending-supportbundle](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/pending_support_bundle.yaml) | | |
+| [preflight-result](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/preflight_result.yaml) | | |
+| [preflight-spec](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/preflight_spec.yaml) | | |
+| [pullrequest-history](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/pullrequest_history.yaml) | Unused | Drop |
+| [pullrequest-notification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/pullrequest_notification.yaml) | Unused | Drop |
+| [scheduled-snapshots](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/scheduled_snapshots.yaml) | | |
+| [session](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/session.yaml) | | |
+| [ship-edit](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_edit.yaml) | Unused | Drop |
+| [ship-init](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_init.yaml) | Unused | Drop |
+| [ship-init-pending](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_init_pending.yaml) | Unused | Drop |
+| [ship-init-pending-user](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_init_pending_user.yaml) | Unused | Drop |
+| [ship-notification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_notification.yaml) | Unused | Drop |
+| [ship-output-files](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_output_files.yaml) | Unused | Drop |
+| [ship-unfork](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_unfork.yaml) | Unused | Drop |
+| [ship-update](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_update.yaml) | Unused | Drop |
+| [ship-user](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_user.yaml) | Unused | Drop |
+| [ship-user-local](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/ship_user_local.yaml) | Unused | Drop |
+| [supportbundle](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/supportbundle.yaml) | Critical | Migration Defined in Support Bundle & Analysis |
+| [supportbundle](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/supportbundle_analysis.yaml) | Critical | Migration Defined in Support Bundle & Analysis |
+| [track-scm-leads](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/track_scm_leads.yaml) | Unusued | Drop |
+| [user-app](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/user_app.yaml) | Unused | Drop |
+| [user-cluster](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/user_cluster.yaml) | Unused | Drop |
+| [user-feature](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/user_feature.yaml) | Unused | Drop |
+| [user-watch](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/user_watch.yaml) | Unused | Drop |
+| [watch](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch.yaml) | Unused | Drop |
+| [watch-cluster](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_cluster.yaml) | Unused | Drop |
+| [watch-downstream-token](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_downstream_token.yaml) | Unused | Drop |
+| [watch-feature](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_feature.yaml) | Unused | Drop |
+| [watch-license]https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_license.yaml) | Unused | Drop |
+| [watch-troubleshoot-analyzer](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_troubleshoot_analyzer.yaml) | Unused | Drop |
+| [watch-troubleshoot-collector](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_troubleshoot_collector.yaml) | Unused | Drop |
+| [watch-version](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_version.yaml) | Unused | Drop |
+| [webhook-notification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/webhook_notification.yaml) | Unused | Drop |
 
 ### App & AppVersion
 
