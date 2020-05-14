@@ -16,7 +16,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
-	applicationv1beta1 "sigs.k8s.io/application/pkg/apis/app/v1beta1"
+	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
 func init() {
