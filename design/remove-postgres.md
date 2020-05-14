@@ -47,7 +47,7 @@ Many of these tables were used in Ship, but never used in KOTS, while others are
 
 | Table Name | Status | Plan |
 |------------|--------|------|
-| [api-task-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/api_task_status.yaml) | | |
+| [api-task-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/api_task_status.yaml) | Used | TBD |
 | [app-downstream](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream.yaml) | | |
 | [app-status](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_status.yaml) | | |
 | [kotsadm-params](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/kotsadm_params.yaml) | | |
@@ -55,8 +55,8 @@ Many of these tables were used in Ship, but never used in KOTS, while others are
 | [pending-supportbundle](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/pending_support_bundle.yaml) | | |
 | [preflight-result](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/preflight_result.yaml) | | |
 | [preflight-spec](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/preflight_spec.yaml) | | |
-| [scheduled-snapshots](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/scheduled_snapshots.yaml) | | |
-| [session](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/session.yaml) | | |
+| [scheduled-snapshots](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/scheduled_snapshots.yaml) | Used | TBD |
+| [session](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/session.yaml) | Used | TBD |
 
 ### Tables without data to drop
 
@@ -64,7 +64,7 @@ Many of these tables were used in Ship, but never used in KOTS, while others are
 |------------|--------|------|
 | [app-downstream-output](https://github.com/replicatedhq/kots/blob/master/kotsadm/migrations/tables/app_downstream_output.yaml) | Unused | Drop |
 | [cluster-github](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/cluster_github.yaml) | Unused | Drop |
-| [email-noitification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/email_notification.yaml) | Unused | Drop |
+| [email-notification](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/email_notification.yaml) | Unused | Drop |
 | [feature](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/feature.yaml) | Unused | Drop |
 | [github-install](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/github_install.yaml) | Unused | Drop |
 | [github-nonce](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/github_nonce.yaml) | Unused | Drop |
