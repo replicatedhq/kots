@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	HelmV3ManifestNameRegex = regexp.MustCompile("# Source: [^/]+/(.+)\n")
+	HelmV3ManifestNameRegex = regexp.MustCompile("^# Source: [^/]+/(.+)\n")
 )
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
