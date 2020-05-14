@@ -68,7 +68,14 @@ func (c *Client) runHooksInformer() error {
 					}
 
 					fmt.Printf("attempting to %s delete job %s\n", reason, job.Name)
-					if err := clientset.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{}); err != nil {
+
+					grace := int64(0)
+					policy := metav1.DeletePropagationBackground
+					opts := &metav1.DeleteOptions{
+						GracePeriodSeconds: &grace,
+						PropagationPolicy:  &policy,
+					}
+					if err := clientset.BatchV1().Jobs(job.Namespace).Delete(job.Name, opts); err != nil {
 						fmt.Printf("error deleting job: %s\n", err.Error())
 						return
 					}
