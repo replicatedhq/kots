@@ -3,12 +3,17 @@ package base
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/releaseutil"
+)
+
+var (
+	HelmV3ManifestNameRegex = regexp.MustCompile("# Source: [^/]+/(.+)\n")
 )
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
@@ -45,5 +50,17 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}
 
-	return releaseutil.SplitManifests(manifests.String()), nil
+	resources := map[string]string{}
+
+	splitManifests := releaseutil.SplitManifests(manifests.String())
+	for _, manifest := range splitManifests {
+		submatch := HelmV3ManifestNameRegex.FindStringSubmatch(manifest)
+		if len(submatch) == 0 {
+			continue
+		}
+		manifestName := submatch[1]
+		resources[manifestName] = HelmV3ManifestNameRegex.ReplaceAllString(manifest, "")
+	}
+
+	return resources, nil
 }
