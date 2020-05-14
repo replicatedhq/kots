@@ -24,7 +24,7 @@ openapischema: controller-gen
 
 .PHONY: schemas
 schemas: fmt generate
-	go build ${LDFLAGS} -o bin/schemagen github.com/replicatedhq/kots/kotskinds/schemagen
+	go build ${LDFLAGS} -o bin/schemagen ./schemagen
 	./bin/schemagen --output-dir ./schemas
 
 .PHONY: fmt

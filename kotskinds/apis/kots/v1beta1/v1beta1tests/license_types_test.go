@@ -7,8 +7,8 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/client-go/kubernetes/scheme"
 	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Test_License(t *testing.T) {

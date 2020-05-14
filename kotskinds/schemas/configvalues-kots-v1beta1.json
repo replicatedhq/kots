@@ -28,10 +28,16 @@
               "data": {
                 "type": "string"
               },
+              "dataPlaintext": {
+                "type": "string"
+              },
               "default": {
                 "type": "string"
               },
               "value": {
+                "type": "string"
+              },
+              "valuePlaintext": {
                 "type": "string"
               }
             }

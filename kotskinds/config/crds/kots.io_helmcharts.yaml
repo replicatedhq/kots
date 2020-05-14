@@ -51,6 +51,8 @@ spec:
               type: object
             exclude:
               type: string
+            helmVersion:
+              type: string
             namespace:
               type: string
             optionalValues:

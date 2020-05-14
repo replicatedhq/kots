@@ -243,6 +243,7 @@ type OptionalValue struct {
 type HelmChartSpec struct {
 	Chart          ChartIdentifier             `json:"chart"`
 	Exclude        string                      `json:"exclude,omitempty"`
+	HelmVersion    string                      `json:"helmVersion,omitempty"`
 	Namespace      string                      `json:"namespace,omitempty"`
 	Values         map[string]MappedChartValue `json:"values,omitempty"`
 	OptionalValues []*OptionalValue            `json:"optionalValues,omitempty"`

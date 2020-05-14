@@ -43,6 +43,7 @@ type PullOptions struct {
 	Silent              bool
 	RewriteImages       bool
 	RewriteImageOptions RewriteImageOptions
+	HelmVersion         string
 	HelmOptions         []string
 	ReportWriter        io.Writer
 	AppSlug             string
@@ -216,6 +217,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:      true,
 		Namespace:              pullOptions.Namespace,
+		HelmVersion:            pullOptions.HelmVersion,
 		HelmOptions:            pullOptions.HelmOptions,
 		LocalRegistryHost:      pullOptions.RewriteImageOptions.Host,
 		LocalRegistryNamespace: pullOptions.RewriteImageOptions.Namespace,

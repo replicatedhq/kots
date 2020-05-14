@@ -7,8 +7,8 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/client-go/kubernetes/scheme"
 	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Test_HelmChart(t *testing.T) {
@@ -17,6 +17,9 @@ kind: HelmChart
 metadata:
   name: test
 spec:
+  # helmVersion identifies the Helm Version used to render the Chart. Default is v2.
+  helmVersion: v3
+
   # chart identifies a matching chart from a .tgz
   chart:
     name: test
@@ -57,6 +60,8 @@ spec:
 	assert.Equal(t, "HelmChart", gvk.Kind)
 
 	helmChart := obj.(*kotsv1beta1.HelmChart)
+
+	assert.Equal(t, "v3", helmChart.Spec.HelmVersion)
 
 	assert.Equal(t, "test", helmChart.Spec.Chart.Name)
 	assert.Equal(t, "1.5.0-beta.2", helmChart.Spec.Chart.ChartVersion)

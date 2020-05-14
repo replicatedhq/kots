@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.1.0
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.25.18
@@ -48,13 +49,16 @@ require (
 	go.undefinedlabs.com/scopeagent v0.1.12
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	gopkg.in/yaml.v2 v2.2.8
+	helm.sh/helm/v3 v3.1.2
 	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.2
 	k8s.io/apimachinery v0.17.4
 	k8s.io/cli-runtime v0.17.4
 	k8s.io/client-go v0.17.4
+	k8s.io/code-generator v0.18.3-beta.0 // indirect
 	k8s.io/helm v2.14.3+incompatible
 	sigs.k8s.io/controller-runtime v0.4.0
+	sigs.k8s.io/controller-tools v0.2.8 // indirect
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.2.0
 )
