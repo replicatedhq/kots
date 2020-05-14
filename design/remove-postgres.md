@@ -84,7 +84,7 @@ Many of these tables were used in Ship, but never used in KOTS, while others are
 | [watch-cluster](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_cluster.yaml) | Unused | Drop |
 | [watch-downstream-token](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_downstream_token.yaml) | Unused | Drop |
 | [watch-feature](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_feature.yaml) | Unused | Drop |
-| [watch-license]https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_license.yaml) | Unused | Drop |
+| [watch-license](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_license.yaml) | Unused | Drop |
 | [watch-troubleshoot-analyzer](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_troubleshoot_analyzer.yaml) | Unused | Drop |
 | [watch-troubleshoot-collector](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_troubleshoot_collector.yaml) | Unused | Drop |
 | [watch-version](https://github.com/replicatedhq/kots/blob/00ca0ddbfdfe0811618db04e4f3998c35a4adf34/kotsadm/migrations/tables/watch_version.yaml) | Unused | Drop |
