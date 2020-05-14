@@ -154,7 +154,11 @@ func generateSchemaFromCRD(crd []byte, outfile string) error {
 	// whoa now
 	// working around the fact that controller-gen doesn't have tags to generate oneOf schemas, so this is hacky.
 	// going to work to add an issue there to support and if they accept, this terrible thing can go away
-	boolStringed := strings.ReplaceAll(string(b), `"type": "BoolString"`, `"oneOf": [{"type": "string"},{"type": "boolean"}]`)
+	replacer := strings.NewReplacer(
+		`"type": "BoolString"`, `"oneOf": [{"type": "string"},{"type": "boolean"}]`,
+		`"type": "QuotedBool"`, `"oneOf": [{"type": "string"},{"type": "boolean"}]`,
+	)
+	boolStringed := replacer.Replace(string(b))
 
 	err = ioutil.WriteFile(outfile, []byte(boolStringed), 0644)
 	if err != nil {
