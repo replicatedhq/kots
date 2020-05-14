@@ -280,7 +280,7 @@ class Root extends Component {
                   listApps={listApps}
                   isSnapshotsSupported={this.isSnapshotsSupported()}
                 />
-                <div className="flex1 flex-column u-overflow--hidden">
+                <div className="flex1 flex-column u-overflow--auto">
                   <Switch>
 
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />
