@@ -38,7 +38,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56
-	github.com/replicatedhq/troubleshoot v0.9.27
+	github.com/replicatedhq/troubleshoot v0.9.31
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
@@ -51,10 +51,9 @@ require (
 	k8s.io/api v0.17.4
 	k8s.io/apiextensions-apiserver v0.17.2
 	k8s.io/apimachinery v0.17.4
-	k8s.io/cli-runtime v0.17.0
+	k8s.io/cli-runtime v0.17.4
 	k8s.io/client-go v0.17.4
 	k8s.io/helm v2.14.3+incompatible
-	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c // indirect
 	sigs.k8s.io/controller-runtime v0.4.0
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.2.0

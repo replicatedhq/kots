@@ -24,7 +24,6 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 	velerov1.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
-
 }
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in

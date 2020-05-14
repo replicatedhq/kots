@@ -19,44 +19,6 @@ interface BundleUploadedBody {
 
 @Controller("/api/v1/troubleshoot")
 export class TroubleshootAPI {
-  @Put("/:appId/:supportBundleId")
-  public async bundleUpload(
-    @Res() response: Response,
-    @Req() request: Request,
-    @PathParams("appId") appId: string,
-    @PathParams("supportBundleId") supportBundleId: string,
-  ): Promise<any> {
-    const bundleFile = request.app.locals.bundleFile;
-    let analyzedBundle;
-
-    try {
-      const stores = request.app.locals.stores;
-
-      const exists = await stores.troubleshootStore.supportBundleExists(supportBundleId);
-      if (exists) {
-        response.send(403);
-        return;
-      }
-
-      // upload it to s3
-      const params = await Params.getParams();
-      const buffer = fs.readFileSync(bundleFile);
-      await putObject(params, path.join(params.shipOutputBucket.trim(), "supportbundles", supportBundleId, "supportbundle.tar.gz"), buffer, params.shipOutputBucket);
-      const fileInfo = await stores.troubleshootStore.getSupportBundleFileInfo(supportBundleId);
-
-      logger.debug({ msg: `creating support bundle record with id ${supportBundleId} via upload callback` });
-
-      await stores.troubleshootStore.createSupportBundle(appId, fileInfo.ContentLength, supportBundleId);
-
-      const analyzers = await stores.troubleshootStore.tryGetAnalyzersForKotsApp(appId);
-      await performAnalysis(supportBundleId, analyzers, stores);
-
-      analyzedBundle = await stores.troubleshootStore.getSupportBundle(supportBundleId);
-    } finally {
-      fs.unlinkSync(bundleFile);
-      response.send(200, analyzedBundle);
-    }
-  }
 
   @Post("/analyzebundle/:supportBundleId")
   public async analyzeBundle(
@@ -108,30 +70,6 @@ export class TroubleshootAPI {
     response.send(204, "");
   }
 
-  @Get(`/supportbundle/:bundleId/download`)
-  async downloadSupportBundle(
-    @Req() request: Request,
-    @Res() response: Response,
-    @PathParams("bundleId") bundleId: string,
-    @QueryParams("token") token: string,
-  ): Promise<any | ErrorResponse> {
-    const session: Session = await request.app.locals.stores.sessionStore.decode(token);
-    if (!session || !session.userId) {
-      response.status(401);
-      return {};
-    }
-
-    const supportBundle = await request.app.locals.stores.troubleshootStore.getSupportBundle(bundleId);
-
-    if (!supportBundle) {
-      response.status(404);
-      return {};
-    }
-
-    response.setHeader("Content-Disposition", `attachment; filename=supportbundle.tar.gz`);
-    response.setHeader("Content-Type", "application/tar+gzip");
-    await s3getBundle(bundleId, response);
-  }
 }
 
 async function performAnalysis(supportBundleId: string, analyzers: string, stores: Stores) {

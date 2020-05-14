@@ -2,14 +2,13 @@ import * as React from "react";
 import AceEditor from "react-ace";
 import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import { getFileFormat, rootPath } from "../../utilities/utilities";
+import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import has from "lodash/has";
 
 import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
-import { supportBundleFiles } from "../../queries/TroubleshootQueries";
 
 import "../../scss/components/troubleshoot/FileTree.scss";
 
@@ -47,9 +46,10 @@ class AnalyzerFileTree extends React.Component {
     const nextFiles = this.state.fileContents;
     const key = Object.keys(data);
     let newObj = {};
-    newObj.content = data[key];
+    newObj.content = new Buffer(data[key], "base64").toString();
     newObj.key = key[0];
     nextFiles.push(newObj);
+
     this.setState({ fileContents: nextFiles });
   }
 
@@ -63,27 +63,34 @@ class AnalyzerFileTree extends React.Component {
   }
 
   fetchFiles = (bundleId, path) => {
-    this.setState({ fileLoading: true, fileLoadErr: false });
-    this.props.client.query({
-      query: supportBundleFiles,
-      variables: {
-        bundleId: bundleId,
-        fileNames: [path]
-      }
+    if (path === "/") {
+      return;
+    }
+
+    this.setState({
+      fileLoading: true,
+      fileLoadErr: false,
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/files?filename=${encodeURIComponent(path)}`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
     })
-      .then((res) => {
-        this.buildFileContent(JSON.parse(res.data.supportBundleFiles));
-        this.setState({ fileLoading: false });
+    .then(async (result) => {
+      const data = await result.json();
+      this.buildFileContent(data.files);
+      this.setState({ fileLoading: false });
+    })
+    .catch(err => {
+      this.setState({
+        fileLoading: false,
+        fileLoadErr: true,
+        fileLoadErrMessage: err,
       })
-      .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            fileLoading: false,
-            fileLoadErr: true,
-            fileLoadErrMessage: msg,
-          });
-        });
-      })
+    });
   }
 
   setFileTree = () => {
