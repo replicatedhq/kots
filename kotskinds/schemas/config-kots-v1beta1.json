@@ -122,7 +122,7 @@
                     },
                     "when": {
                       "description": "QuotedBool is a string type that can also unmarshal raw yaml bools.",
-                      "type": "QuotedBool"
+                      "oneOf": [{"type": "string"},{"type": "boolean"}]
                     },
                     "write_once": {
                       "type": "boolean"
