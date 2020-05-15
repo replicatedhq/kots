@@ -423,7 +423,10 @@ export default compose(
     }
   }),
   graphql(isVeleroInstalled, {
-    name: "isVeleroInstalled"
+    name: "isVeleroInstalled",
+    options: {
+      fetchPolicy: "no-cache"
+    }
   }),
   graphql(createKotsDownstream, {
     props: ({ mutate }) => ({
