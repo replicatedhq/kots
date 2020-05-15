@@ -2,9 +2,11 @@ package upstream
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -12,16 +14,17 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	renderDir := options.RootDir
 	if options.CreateAppDir {
-		renderDir = path.Join(renderDir, u.Name)
+		renderDir = filepath.Join(renderDir, u.Name)
 	}
 
-	renderDir = path.Join(renderDir, "upstream")
+	renderDir = filepath.Join(renderDir, "upstream")
 
 	if options.IncludeAdminConsole {
 		adminConsoleFiles, err := generateAdminConsoleFiles(renderDir, options.SharedPassword)
@@ -35,9 +38,9 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	var previousInstallationContent []byte
 	_, err := os.Stat(renderDir)
 	if err == nil {
-		_, err = os.Stat(path.Join(renderDir, "userdata", "installation.yaml"))
+		_, err = os.Stat(filepath.Join(renderDir, "userdata", "installation.yaml"))
 		if err == nil {
-			c, err := ioutil.ReadFile(path.Join(renderDir, "userdata", "installation.yaml"))
+			c, err := ioutil.ReadFile(filepath.Join(renderDir, "userdata", "installation.yaml"))
 			if err != nil {
 				return errors.Wrap(err, "failed to read existing installation")
 			}
@@ -62,7 +65,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	}
 
 	for _, file := range u.Files {
-		fileRenderPath := path.Join(renderDir, file.Path)
+		fileRenderPath := filepath.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
@@ -105,14 +108,38 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			EncryptionKey: encryptionKey,
 		},
 	}
-	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {
-		if err := os.MkdirAll(path.Join(renderDir, "userdata"), 0755); err != nil {
+	if _, err := os.Stat(filepath.Join(renderDir, "userdata")); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Join(renderDir, "userdata"), 0755); err != nil {
 			return errors.Wrap(err, "failed to create userdata dir")
 		}
 	}
-	err = ioutil.WriteFile(path.Join(renderDir, "userdata", "installation.yaml"), mustMarshalInstallation(&installation), 0644)
+	err = ioutil.WriteFile(filepath.Join(renderDir, "userdata", "installation.yaml"), mustMarshalInstallation(&installation), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write installation")
+	}
+
+	// finally, load the config, config values from what's on disk, and encrypt any plain text
+	// we have to do this so late because the encryption key is not generated until very
+	// late in the process
+	config, configValues, _, err := findConfig(renderDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to find config in dir")
+	}
+
+	updatedConfigValues, err := EncryptConfigValues(config, configValues, &installation)
+	if err != nil {
+		return errors.Wrap(err, "failed to find encrypt config values")
+	}
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(updatedConfigValues, &b); err != nil {
+		return errors.Wrap(err, "failed to encode config values")
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(renderDir, "userdata", "config.yaml"), b.Bytes(), 0644); err != nil {
+		return errors.Wrap(err, "failed to write config values")
 	}
 
 	return nil
@@ -140,4 +167,52 @@ func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 	}
 
 	return b.Bytes()
+}
+
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.Installation, error) {
+	if localPath == "" {
+		return nil, nil, nil, nil
+	}
+
+	var config *kotsv1beta1.Config
+	var values *kotsv1beta1.ConfigValues
+	var installation *kotsv1beta1.Installation
+
+	err := filepath.Walk(localPath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			content, err := ioutil.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, gvk, err := decode(content, nil, nil)
+			if err != nil {
+				return nil
+			}
+
+			if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
+				config = obj.(*kotsv1beta1.Config)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
+				values = obj.(*kotsv1beta1.ConfigValues)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
+				installation = obj.(*kotsv1beta1.Installation)
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
+	}
+
+	return config, values, installation, nil
 }

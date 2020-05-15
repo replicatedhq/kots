@@ -117,6 +117,9 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 	}
 	configFile := ""
 	if configValues != "" {
+		logger.Debug("saving config values for installation",
+			zap.String("configValues", configValues))
+
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
 			finalError = err

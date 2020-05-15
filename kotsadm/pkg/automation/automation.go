@@ -37,7 +37,6 @@ func AutomateInstall() error {
 	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
 		LabelSelector: "kots.io/automation=license",
 	})
-
 	if err != nil {
 		return errors.Wrap(err, "failed to list license secrets")
 	}

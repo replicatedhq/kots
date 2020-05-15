@@ -11,6 +11,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/upstream"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -52,48 +53,12 @@ func (k *KotsKinds) EncryptConfigValues() error {
 		return nil
 	}
 
-	cipher, err := crypto.AESCipherFromString(k.Installation.Spec.EncryptionKey)
+	updatedConfigValues, err := upstream.EncryptConfigValues(k.Config, k.ConfigValues, &k.Installation)
 	if err != nil {
-		return errors.Wrap(err, "failed to create cipher from installation spec")
+		return errors.Wrap(err, "failed to encrypt config values")
 	}
 
-	updated := map[string]kotsv1beta1.ConfigValue{}
-
-	for name, configValue := range k.ConfigValues.Spec.Values {
-		updated[name] = configValue
-
-		if configValue.ValuePlaintext != "" {
-			// ensure it's a password type
-			configItemType := ""
-
-			for _, group := range k.Config.Spec.Groups {
-				for _, item := range group.Items {
-					if item.Name == name {
-						configItemType = item.Type
-						goto Found
-					}
-				}
-			}
-		Found:
-
-			if configItemType == "" {
-				return errors.Errorf("Cannot encrypt item %q because item type was not found", name)
-			}
-			if configItemType != "password" {
-				return errors.Errorf("Cannot encrypt item %q because item type was %q (not password)", name, configItemType)
-			}
-
-			encrypted := cipher.Encrypt([]byte(configValue.ValuePlaintext))
-			encoded := base64.StdEncoding.EncodeToString(encrypted)
-
-			configValue.Value = encoded
-			configValue.ValuePlaintext = ""
-
-			updated[name] = configValue
-		}
-	}
-
-	k.ConfigValues.Spec.Values = updated
+	k.ConfigValues = updatedConfigValues
 
 	return nil
 }
@@ -122,6 +87,7 @@ func (k *KotsKinds) DecryptConfigValues() error {
 			if err != nil {
 				continue
 			}
+
 			decrypted, err := cipher.Decrypt(decoded)
 			if err != nil {
 				continue
