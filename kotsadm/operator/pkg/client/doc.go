@@ -7,25 +7,27 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func splitMutlidocYAMLIntoCRDsAndOthers(multidoc []byte) ([]byte, []byte, error) {
-	crds := []string{}
+func splitMutlidocYAMLIntoFirstApplyAndOthers(multidoc []byte) ([]byte, []byte, error) {
+	firstApply := []string{}
 	other := []string{}
 
 	docs := strings.Split(string(multidoc), "\n---\n")
 	for _, doc := range docs {
 		if IsCRD([]byte(doc)) {
-			crds = append(crds, doc)
+			firstApply = append(firstApply, doc)
+		} else if IsNamespace([]byte(doc)) {
+			firstApply = append(firstApply, doc)
 		} else {
 			other = append(other, doc)
 		}
 	}
 
 	// if there were no crds, don't return the touched docs, keep the original
-	if len(crds) == 0 {
+	if len(firstApply) == 0 {
 		return nil, multidoc, nil
 	}
 
-	return []byte(strings.Join(crds, "\n---\n")), []byte(strings.Join(other, "\n---\n")), nil
+	return []byte(strings.Join(firstApply, "\n---\n")), []byte(strings.Join(other, "\n---\n")), nil
 }
 
 func docsByNamespace(multidoc []byte, defaultNamespace string) (map[string][]byte, error) {
