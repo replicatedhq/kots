@@ -46,6 +46,16 @@ func IsCRD(content []byte) bool {
 	return o.APIVersion == "apiextensions.k8s.io/v1beta1" && o.Kind == "CustomResourceDefinition"
 }
 
+func IsNamespace(content []byte) bool {
+	o := OverlySimpleGVKWithName{}
+
+	if err := yaml.Unmarshal(content, &o); err != nil {
+		return false
+	}
+
+	return o.APIVersion == "v1" && o.Kind == "Namespace"
+}
+
 func findPodsByOwner(name string, namespace string, gvk *k8sschema.GroupVersionKind) ([]*corev1.Pod, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {

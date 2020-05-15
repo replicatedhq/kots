@@ -200,14 +200,14 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		return nil, errors.Wrap(err, "failed to decode manifests")
 	}
 
-	customResourceDefinitions, otherDocs, err := splitMutlidocYAMLIntoCRDsAndOthers(decoded)
+	firstApplyDocs, otherDocs, err := splitMutlidocYAMLIntoFirstApplyAndOthers(decoded)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to split decoded into crds and other")
 	}
 
 	// We don't dry run if there's a crd becasue there's a likely chance that the
 	// other docs has a custom resource using it
-	shouldDryRun := customResourceDefinitions == nil
+	shouldDryRun := firstApplyDocs == nil
 	if shouldDryRun {
 		byNamespace, err := docsByNamespace(decoded, targetNamespace)
 		if err != nil {
@@ -240,15 +240,15 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 	}
 
-	if len(customResourceDefinitions) > 0 {
-		log.Println("applying custom resource definition(s)")
+	if len(firstApplyDocs) > 0 {
+		log.Println("applying first apply docs (CRDs, Namespaces)")
 
 		// CRDs don't have namespaces, so we can skip splitting
 
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", applicationManifests.AppSlug, customResourceDefinitions, false, applicationManifests.Wait, applicationManifests.AnnotateSlug)
+		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", applicationManifests.AppSlug, firstApplyDocs, false, applicationManifests.Wait, applicationManifests.AnnotateSlug)
 		if applyErr != nil {
-			log.Printf("stdout (apply CRDS) = %s", applyStdout)
-			log.Printf("stderr (apply CRDS) = %s", applyStderr)
+			log.Printf("stdout (first apply) = %s", applyStdout)
+			log.Printf("stderr (first apply) = %s", applyStderr)
 			log.Printf("error (CRDS): %s", applyErr.Error())
 
 			if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
