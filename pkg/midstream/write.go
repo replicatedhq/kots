@@ -26,7 +26,7 @@ type WriteOptions struct {
 	BaseDir      string
 	AppSlug      string
 	AppSequence  int64
-	IsGitOps		 bool
+	IsGitOps     bool
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
@@ -97,8 +97,8 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	// common annotations
 	mergedCommonAnnotations := existing.CommonAnnotations
 	if mergedCommonAnnotations != nil {
-		delete(mergedCommonAnnotations, "kots.io/app-slug");
-		delete(mergedCommonAnnotations, "kots.io/app-sequence");
+		delete(mergedCommonAnnotations, "kots.io/app-slug")
+		delete(mergedCommonAnnotations, "kots.io/app-sequence")
 	}
 	if m.Kustomization.CommonAnnotations != nil {
 		if mergedCommonAnnotations == nil {

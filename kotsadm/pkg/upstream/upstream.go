@@ -97,7 +97,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		ReportWriter:        pipeWriter,
 		AppSlug:             a.Slug,
 		AppSequence:         appSequence,
-		IsGitOps: 					a.IsGitOps,
+		IsGitOps:            a.IsGitOps,
 	}
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(appID)

@@ -203,7 +203,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
 		AppSequence:       appSequence,
-		IsGitOps: 				a.IsGitOps,
+		IsGitOps:          a.IsGitOps,
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {

@@ -48,7 +48,7 @@ type PullOptions struct {
 	ReportWriter        io.Writer
 	AppSlug             string
 	AppSequence         int64
-	IsGitOps       			bool
+	IsGitOps            bool
 }
 
 type RewriteImageOptions struct {
@@ -429,7 +429,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
 		AppSequence:  pullOptions.AppSequence,
-		IsGitOps:  		pullOptions.IsGitOps,
+		IsGitOps:     pullOptions.IsGitOps,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")

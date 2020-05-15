@@ -8,10 +8,10 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 )
@@ -26,7 +26,7 @@ type App struct {
 	// Additional fields will be added here as implementation is moved from node to go
 	RestoreInProgressName string
 	UpdateCheckerSpec     string
-	IsGitOps							bool
+	IsGitOps              bool
 }
 
 func Get(id string) (*App, error) {
