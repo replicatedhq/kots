@@ -26,6 +26,7 @@ type WriteOptions struct {
 	BaseDir      string
 	AppSlug      string
 	AppSequence  int64
+	IsGitOps		 bool
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
@@ -61,7 +62,7 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	if options.AppSlug != "" {
+	if options.IsGitOps && options.AppSlug != "" {
 		if m.Kustomization.CommonAnnotations == nil {
 			m.Kustomization.CommonAnnotations = make(map[string]string)
 		}
@@ -93,11 +94,16 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
+	// common annotations
 	mergedCommonAnnotations := existing.CommonAnnotations
-	if mergedCommonAnnotations == nil {
-		mergedCommonAnnotations = make(map[string]string)
+	if mergedCommonAnnotations != nil {
+		delete(mergedCommonAnnotations, "kots.io/app-slug");
+		delete(mergedCommonAnnotations, "kots.io/app-sequence");
 	}
 	if m.Kustomization.CommonAnnotations != nil {
+		if mergedCommonAnnotations == nil {
+			mergedCommonAnnotations = make(map[string]string)
+		}
 		for key, value := range m.Kustomization.CommonAnnotations {
 			mergedCommonAnnotations[key] = value
 		}

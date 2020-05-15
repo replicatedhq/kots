@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 )
@@ -24,6 +26,7 @@ type App struct {
 	// Additional fields will be added here as implementation is moved from node to go
 	RestoreInProgressName string
 	UpdateCheckerSpec     string
+	IsGitOps							bool
 }
 
 func Get(id string) (*App, error) {
@@ -53,6 +56,12 @@ func Get(id string) (*App, error) {
 	app.RestoreInProgressName = restoreInProgressName.String
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 
+	isGitOps, err := IsGitOpsEnabled(id)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if gitops is enabled")
+	}
+	app.IsGitOps = isGitOps
+
 	return &app, nil
 }
 
@@ -80,6 +89,25 @@ func ListInstalled() ([]*App, error) {
 	}
 
 	return apps, nil
+}
+
+func IsGitOpsEnabled(appID string) (bool, error) {
+	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list downstreams")
+	}
+
+	for _, d := range downstreams {
+		downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, d.ClusterID)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get downstream gitops")
+		}
+		if downstreamGitOps != nil {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {

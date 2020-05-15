@@ -41,6 +41,7 @@ type RewriteOptions struct {
 	RegistryNamespace string
 	AppSlug           string
 	AppSequence       int64
+	IsGitOps       		bool
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -258,6 +259,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      rewriteOptions.AppSlug,
 		AppSequence:  rewriteOptions.AppSequence,
+		IsGitOps:  		rewriteOptions.IsGitOps,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")
