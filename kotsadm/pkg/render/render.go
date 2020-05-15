@@ -137,6 +137,7 @@ func RenderDir(archiveDir string, appID string, appSequence int64, registrySetti
 		IsAirgap:         a.IsAirgap,
 		AppSlug:          a.Slug,
 		AppSequence:      appSequence,
+		IsGitOps:         a.IsGitOps,
 	}
 
 	if registrySettings != nil {

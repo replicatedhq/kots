@@ -5,11 +5,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type AppUpdateCheckRequest struct {
@@ -48,7 +48,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableUpdates, err := updatechecker.CheckForUpdates(foundApp);
+	availableUpdates, err := updatechecker.CheckForUpdates(foundApp)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
