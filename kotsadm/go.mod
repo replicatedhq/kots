@@ -30,7 +30,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.3
-	github.com/replicatedhq/troubleshoot v0.9.31
+	github.com/replicatedhq/troubleshoot v0.9.33
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
@@ -63,10 +63,10 @@ require (
 )
 
 replace (
-	github.com/replicatedhq/kots => ../
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
+	github.com/replicatedhq/kots => ../
 	k8s.io/api => k8s.io/api v0.17.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.3
