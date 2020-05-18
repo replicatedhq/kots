@@ -194,6 +194,7 @@ class AppVersionHistory extends Component {
     const needsConfiguration = version.status === "pending_config";
     const showActions = !isPastVersion || app.allowRollback;
     const isSecondaryBtn = isPastVersion || needsConfiguration;
+    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
 
     return (
       <div>
@@ -207,7 +208,7 @@ class AppVersionHistory extends Component {
               "Configure" :
               downstream.currentVersion?.sequence == undefined ?
                 "Deploy" :
-                isPastVersion ?
+                isRollback ?
                   "Rollback" :
                   isCurrentVersion ?
                     "Deployed" :
