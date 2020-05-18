@@ -334,22 +334,53 @@ func (ctx StaticCtx) namespace() string {
 }
 
 func (ctx StaticCtx) tlsCert(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
-	if p, ok := tlsMap[certName]; ok {
-		if p.Cn == cn {
-			return p.Cert
-		}
+	key := fmt.Sprintf("%s:%s", certName, cn)
+	if p, ok := tlsMap[key]; ok {
+		return p.Cert
 	}
 
 	p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
-	tlsMap[certName] = p
+	tlsMap[key] = p
+	tlsMap[certName] = p // backwards compatibility for tlsKey without cn argument
 	return p.Cert
 }
 
-func (ctx StaticCtx) tlsKey(certName string) string {
-	if p, ok := tlsMap[certName]; ok {
+func (ctx StaticCtx) tlsKey(certName string, args ...interface{}) string {
+	if len(args) != 4 {
+		if p, ok := tlsMap[certName]; ok {
+			return p.Key
+		}
+		return ""
+	}
+
+	cn, ok := args[0].(string)
+	if !ok {
+		return ""
+	}
+
+	ips, ok := args[1].([]interface{})
+	if args[1] != nil && !ok {
+		return ""
+	}
+
+	alternateDNS, ok := args[2].([]interface{})
+	if args[2] != nil && !ok {
+		return ""
+	}
+
+	daysValid, ok := args[3].(int)
+	if !ok {
+		return ""
+	}
+
+	key := fmt.Sprintf("%s:%s", certName, cn)
+	if p, ok := tlsMap[key]; ok {
 		return p.Key
 	}
-	return ""
+
+	p := genSelfSignedCert(cn, ips, alternateDNS, daysValid)
+	tlsMap[key] = p
+	return p.Key
 }
 
 func genSelfSignedCert(cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) TLSPair {
