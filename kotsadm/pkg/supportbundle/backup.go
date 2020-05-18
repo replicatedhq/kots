@@ -47,44 +47,29 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	var collectors troubleshootcollect.Collectors
-	collectors = append(collectors, &troubleshootcollect.Collector{
-		Collect: &troubleshootv1beta1.Collect{
-			Logs: &troubleshootv1beta1.Logs{
-				CollectorMeta: troubleshootv1beta1.CollectorMeta{
-					CollectorName: "velero",
-				},
-				Name:      "velero",
-				Namespace: backupNamespace,
-				Selector: []string{
-					"component=velero",
-					"deploy=velero",
-					"app.kubernetes.io/name=velero",
-				},
-			},
-		},
-		Redact:       true,
-		ClientConfig: restConfig,
-		Namespace:    backupNamespace,
-	})
-	collectors = append(collectors, &troubleshootcollect.Collector{
-		Collect: &troubleshootv1beta1.Collect{
-			Logs: &troubleshootv1beta1.Logs{
-				CollectorMeta: troubleshootv1beta1.CollectorMeta{
-					CollectorName: "restic",
-				},
-				Name:      "restic",
-				Namespace: backupNamespace,
-				Selector: []string{
-					"component=velero",
-					"name=restic",
-					"app.kubernetes.io/name=velero",
+
+	selectors := []string{
+		"component=velero",
+		"app.kubernetes.io/name=velero",
+	}
+
+	for _, selector := range selectors {
+		collectors = append(collectors, &troubleshootcollect.Collector{
+			Collect: &troubleshootv1beta1.Collect{
+				Logs: &troubleshootv1beta1.Logs{
+					CollectorMeta: troubleshootv1beta1.CollectorMeta{
+						CollectorName: "velero",
+					},
+					Name:      "velero",
+					Namespace: backupNamespace,
+					Selector:  []string{selector},
 				},
 			},
-		},
-		Redact:       true,
-		ClientConfig: restConfig,
-		Namespace:    backupNamespace,
-	})
+			Redact:       true,
+			ClientConfig: restConfig,
+			Namespace:    backupNamespace,
+		})
+	}
 
 	// make a temp file to store the bundle in
 	bundlePath, err := ioutil.TempDir("", "troubleshoot")

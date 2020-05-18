@@ -25,6 +25,36 @@ type VeleroStatus struct {
 	ResticStatus  string
 }
 
+func DetectVeleroNamespace() (string, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		// can't detect velero
+		return "", nil
+	}
+
+	for _, backupStorageLocation := range backupStorageLocations.Items {
+		if backupStorageLocation.Name == "default" {
+			return backupStorageLocation.Namespace, nil
+		}
+	}
+
+	return "", nil
+}
+
 func DetectVelero() (*VeleroStatus, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -36,26 +66,9 @@ func DetectVelero() (*VeleroStatus, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	veleroNamespace, err := DetectVeleroNamespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
-	}
-
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		return nil, nil
-	}
-
-	if err != nil {
-		// can't detect velero
-		return nil, nil
-	}
-
-	veleroNamespace := ""
-	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "default" {
-			veleroNamespace = backupStorageLocation.Namespace
-		}
+		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
 
 	if veleroNamespace == "" {

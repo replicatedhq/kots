@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -436,6 +437,7 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeKotsadmCollectors()...)
 	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeRookCollectors()...)
 	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeKurlCollectors()...)
+	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeVeleroCollectors()...)
 	return existingSpec
 }
 
@@ -536,6 +538,40 @@ func makeKurlCollectors() []*v1beta1.Collect {
 		})
 	}
 	return rookCollectors
+}
+
+func makeVeleroCollectors() []*v1beta1.Collect {
+	collectors := []*v1beta1.Collect{}
+
+	veleroNamespace, err := snapshot.DetectVeleroNamespace()
+	if err != nil {
+		logger.Error(err)
+		return collectors
+	}
+
+	if veleroNamespace == "" {
+		return collectors
+	}
+
+	selectors := []string{
+		"component=velero",
+		"app.kubernetes.io/name=velero",
+	}
+
+	for _, selector := range selectors {
+		collectors = append(collectors, &v1beta1.Collect{
+			Logs: &v1beta1.Logs{
+				CollectorMeta: v1beta1.CollectorMeta{
+					CollectorName: "velero",
+				},
+				Name:      "velero",
+				Selector:  []string{selector},
+				Namespace: veleroNamespace,
+			},
+		})
+	}
+
+	return collectors
 }
 
 func getAppTroubleshoot(slug string) (string, error) {
