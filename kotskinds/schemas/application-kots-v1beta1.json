@@ -17,7 +17,6 @@
       "description": "ApplicationSpec defines the desired state of ApplicationSpec",
       "type": "object",
       "required": [
-        "requireMinimalRBACPrivileges",
         "title"
       ],
       "properties": {

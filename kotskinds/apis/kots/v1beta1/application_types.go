@@ -55,7 +55,7 @@ type ApplicationSpec struct {
 	KustomizeVersion             string            `json:"kustomizeVersion,omitempty"`
 	AdditionalImages             []string          `json:"additionalImages,omitempty"`
 	AdditionalNamespaces         []string          `json:"additionalNamespaces,omitempty"`
-	RequireMinimalRBACPrivileges bool              `json:"requireMinimalRBACPrivileges"`
+	RequireMinimalRBACPrivileges bool              `json:"requireMinimalRBACPrivileges,omitempty"`
 }
 
 type ApplicationPort struct {
