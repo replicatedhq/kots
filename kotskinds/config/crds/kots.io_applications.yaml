@@ -110,7 +110,6 @@ spec:
             title:
               type: string
           required:
-          - requireMinimalRBACPrivileges
           - title
           type: object
         status:
