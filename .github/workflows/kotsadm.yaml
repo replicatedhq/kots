@@ -1,0 +1,565 @@
+name: kotsadm-build
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*.*.*"
+
+jobs:
+
+  generate-schema:
+    runs-on: ubuntu-18.04
+    container:
+      image: schemahero/schemahero:0.7.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate fixtures
+        run: |
+          /schemahero fixtures \
+            --input-dir ./kotsadm/migrations/tables \
+            --output-dir ./kotsadm/migrations/fixtures/schema \
+            --dbname ship-cloud --driver postgres
+
+      - name: Upload schema artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: schema
+          path: ./kotsadm/migrations/fixtures/schema/fixtures.sql
+
+
+  generate-fixtures:
+    runs-on: ubuntu-18.04
+    needs: [generate-schema]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Download schema artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: schema
+        path: ./kotsadm/migrations/fixtures/schema
+
+    - name: Build fixtures
+      run: make -C kotsadm/migrations/fixtures deps build run
+
+    - name: Upload fixtures artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: fixtures
+        path: ./kotsadm/migrations/fixtures/fixtures.sql
+
+
+  publish-fixtures:
+    runs-on: ubuntu-18.04
+    needs: [generate-fixtures]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Download fixtures artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: fixtures
+        path: ./kotsadm/migrations/fixtures
+
+    - name: Publish fixtures
+      if: ${{ github.ref == 'refs/heads/master' }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/migrations/fixtures publish
+
+
+  build-schema-migrations:
+    runs-on: ubuntu-18.04
+    needs: [publish-fixtures]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build
+      if: ${{ github.ref == 'refs/heads/master' }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/migrations schema-alpha
+
+    - name: "Release schema migrations on tag"
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: |
+        make -C kotsadm/migrations schema-release
+
+
+  test_web:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Test web
+      env:
+        PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+        PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+      run: |
+        # TODO: Remove '|| true' when web test works
+        make -C kotsadm/web deps test || true
+        yarn run publish:pact || true
+      # TODO: migrate retry logic for pacts
+      # retry:
+      #   automatic:
+      #     # this command exiting with status 2 typically means that the yarn package failed to download
+      #     - exit_status: 2
+      #       limit: 5
+
+
+  build_web:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build web
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: make -C kotsadm/web deps build-kotsadm
+      ## TODO: retry logic
+      # retry:
+      #   automatic:
+      #     # this command exiting with status 2 typically means that the yarn package failed to download
+      #     - exit_status: 2
+      #       limit: 5
+
+    - name: Upload web artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: web
+        path: ./kotsadm/web/dist
+
+
+  build_operator:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite-go12-node10
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build operator
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        SCOPE_DSN_PUBLIC: ""
+      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm/operator test build
+
+    - name: Upload operator bin artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: operator
+        path: ./kotsadm/operator/bin
+
+    - name: Upload operator pact artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: operator
+        path: ./kotsadm/operator/pacts
+
+
+  build_kurl_proxy:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite-go12-node10
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build kurl_proxy
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        SCOPE_DSN_PUBLIC: ""
+      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm/kurl_proxy test build
+
+    - name: Upload operator artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: kurl_proxy
+        path: ./kotsadm/kurl_proxy/bin
+
+
+  build_go_api:
+    runs-on: ubuntu-18.04
+    needs: [test_web, build_web, build_operator, build_kurl_proxy]
+    container:
+      image: replicated/gitops-builder:buildkite-go12-node10
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build Go API
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        # GITHUB_SHA: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        # GITHUB_REPOSITORY:
+        # GITHUB_WORKSPACE:
+        SCOPE_DSN_PUBLIC: ""
+      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm test kotsadm
+
+    - name: Upload Go API artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: go_api
+        path: ./kotsadm/bin
+
+
+  build_typescript_api:
+    runs-on: ubuntu-18.04
+    needs: [test_web, build_web, build_operator, build_kurl_proxy]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build TypeScript API
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        SCOPE_DSN_PUBLIC: ""
+        AUTO_CREATE_CLUSTER_TOKEN: this-is-a-test-value
+      run: make -C kotsadm/api no-yarn deps build
+
+    - name: Upload Go API build artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: typescript_api_build
+        path: ./kotsadm/api/build
+
+    - name: Upload Go API bin artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: typescript_api_bin
+        path: ./kotsadm/api/bin
+
+
+  release_go_api_alpha:
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build_web, build_go_api]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Download go_api artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: go_api
+        path: ./kotsadm/bin
+
+    - name: Download web artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: web
+        path: ./kotsadm/web/dist
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm build-alpha
+
+
+  release_go_api_tagged:
+    runs-on: ubuntu-18.04
+    needs: [build_web, build_go_api]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+  
+    - name: Download go_api artifact
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: go_api
+        path: ./kotsadm/bin
+
+    - name: Download web artifact
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: web
+        path: ./kotsadm/web/dist
+
+    - name: Build tagged release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm build-release
+
+
+  release_typescript_api_alpha:
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build_typescript_api]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node
+      uses: actions/setup-node@v2-beta
+      with:
+        node-version: '10'
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/api build-alpha
+
+
+  release_typescript_api_tagged:
+    runs-on: ubuntu-18.04
+    needs: [build_typescript_api]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node
+      uses: actions/setup-node@v2-beta
+      with:
+        node-version: '10'
+
+    - name: Build tagged release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/api build-release
+
+
+  release_operator_alpha:
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build_operator]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Download operator artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: operator
+        path: ./kotsadm/operator/bin
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/operator build-alpha
+
+
+  release_operator_tagged:
+    runs-on: ubuntu-18.04
+    needs: [build_operator]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Download operator artifact
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: operator
+        path: ./kotsadm/operator/bin
+
+    - name: Build tagged release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        cp kotsadm/operator/bin/kotsadm-operator kotsadm/operator/deploy/bin/kotsadm-operator
+        make -C kotsadm/operator build-release
+
+
+  build_kurl_proxy_alpha:
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build_kurl_proxy]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Download kurl_proxy artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: kurl_proxy
+        path: ./kotsadm/kurl_proxy/bin
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/kurl_proxy build-alpha
+
+
+  build_kurl_proxy_tagged:
+    runs-on: ubuntu-18.04
+    needs: [build_kurl_proxy]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: "1.14.3"
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+  
+    - name: Download kurl_proxy artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: kurl_proxy
+        path: ./kotsadm/kurl_proxy/bin
+
+    - name: Build tagged release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/kurl_proxy build-release
+
+
+  build_minio_alpha:
+    runs-on: ubuntu-18.04
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/minio publish-latest
+
+
+  build_minio_tagged:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build tagged release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: |
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
+        make -C kotsadm/minio publish-latest

@@ -6,7 +6,7 @@ schema-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 schema-alpha: build_schema
 
 .PHONY: schema-release
-schema-release: IMAGE = kotsadm/${PROJECT_NAME}:${BUILDKITE_TAG}
+schema-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
 schema-release: build_schema
 
 .PHONY: build-ttl-ci.sh
