@@ -12,7 +12,7 @@ const KotsApp = `
     bundleCommand: String
     isAirgap: Boolean
     downstreams: [KotsDownstream]
-    currentVersion: KotsVersion
+    currentVersion: KotsAppVersion
     hasPreflight: Boolean
     isConfigurable: Boolean
     isGitOpsSupported: Boolean
@@ -88,7 +88,29 @@ const KotsVersion = `
     preflightResultCreatedAt: String
     commitUrl: String
     gitDeployable: Boolean
-    hasError: Boolean
+  }
+`;
+
+const InstallationYamlError = `
+  type InstallationYamlError {
+    path: String!
+    error: String
+  }
+`
+
+// midstream
+const KotsAppVersion = `
+  type KotsAppVersion {
+    title: String!
+    status: String!
+    createdOn: String!
+    sequence: Int
+    releaseNotes: String
+    deployedAt: String
+    preflightResult: String
+    preflightResultCreatedAt: String
+    backupSpec: String
+    yamlErrors: [InstallationYamlError]
   }
 `;
 
@@ -260,6 +282,8 @@ export default [
   KotsAppLink,
   KotsDownstream,
   KotsVersion,
+  KotsAppVersion,
+  InstallationYamlError,
   KotsDownstreamOutput,
   ResourceState,
 

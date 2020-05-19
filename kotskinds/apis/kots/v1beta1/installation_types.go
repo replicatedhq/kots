@@ -37,7 +37,7 @@ type InstallationImage struct {
 }
 
 type InstallationYAMLError struct {
-	Path  string `json:"path,omitempty"`
+	Path  string `json:"path"`
 	Error string `json:"error,omitempty"`
 }
 

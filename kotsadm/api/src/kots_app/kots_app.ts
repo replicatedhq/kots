@@ -16,6 +16,7 @@ import { Cluster } from "../cluster";
 import * as _ from "lodash";
 import yaml from "js-yaml";
 import { ApplicationSpec } from "./kots_app_spec";
+import { InstallationYAMLError } from "./kots_installation_spec";
 
 export class KotsApp {
   id: string;
@@ -29,7 +30,7 @@ export class KotsApp {
   currentSequence?: number;
   lastUpdateCheckAt?: Date;
   bundleCommand: string;
-  currentVersion: KotsVersion;
+  currentVersion: KotsAppVersion;
   airgapUploadPending: boolean;
   isAirgap: boolean;
   hasPreflight: boolean;
@@ -41,7 +42,7 @@ export class KotsApp {
   updateCheckerSpec?: string;
 
   // Version Methods
-  public async getCurrentAppVersion(stores: Stores): Promise<KotsVersion | undefined> {
+  public async getCurrentAppVersion(stores: Stores): Promise<KotsAppVersion | undefined> {
     // this is to get the current version of the upsteam from the app_version table
     // annoying to have a separate method for this but the others require a clusteId.
     // good candidate for a refactor
@@ -580,6 +581,19 @@ export interface KotsAppLink {
   uri: string;
 }
 
+export interface KotsAppVersion {
+  title: string;
+  status: string;
+  createdOn: string;
+  sequence: number;
+  releaseNotes: string;
+  deployedAt: string;
+  preflightResult: string;
+  preflightResultCreatedAt: string;
+  backupSpec?: string;
+  yamlErrors?: InstallationYAMLError[];
+}
+
 export interface KotsVersion {
   title: string;
   status: string;
@@ -590,12 +604,10 @@ export interface KotsVersion {
   deployedAt: string;
   preflightResult: string;
   preflightResultCreatedAt: string;
-  hasError?: boolean;
   source?: string;
   diffSummary?: string;
   commitUrl?: string;
   gitDeployable?: boolean;
-  backupSpec?: string;
 }
 
 export interface AppRegistryDetails {

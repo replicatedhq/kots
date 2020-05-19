@@ -10,6 +10,7 @@ import fs from "fs";
 import {
   extractDownstreamNamesFromTarball,
   extractInstallationSpecFromTarball,
+  extractRawInstallationSpecFromTarball,
   extractPreflightSpecFromTarball,
   extractSupportBundleSpecFromTarball,
   extractAppSpecFromTarball,
@@ -260,6 +261,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const installationSpec = await extractInstallationSpecFromTarball(buffer);
+  const rawInstallationSpec = await extractRawInstallationSpecFromTarball(buffer);
   const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
@@ -287,6 +289,7 @@ async function saveUpdateVersion(archive: string, app: KotsApp, stores: Stores, 
     preflightSpec,
     appSpec,
     kotsAppSpec,
+    rawInstallationSpec,
     kotsAppLicense,
     configSpec,
     configValues,
@@ -360,7 +363,7 @@ export async function kotsAppFromData(out: string, kotsApp: KotsApp, stores: Sto
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const installationSpec = await extractInstallationSpecFromTarball(buffer);
-
+  const rawInstallationSpec = await extractRawInstallationSpecFromTarball(buffer);
   const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
@@ -393,6 +396,7 @@ export async function kotsAppFromData(out: string, kotsApp: KotsApp, stores: Sto
     preflightSpec,
     appSpec,
     kotsAppSpec,
+    rawInstallationSpec,
     kotsAppLicense,
     configSpec,
     configValues,
@@ -436,6 +440,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
   await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
   const installationSpec = await extractInstallationSpecFromTarball(buffer);
+  const rawInstallationSpec = await extractRawInstallationSpecFromTarball(buffer);
   const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
   const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
   const preflightSpec = await extractPreflightSpecFromTarball(buffer);
@@ -461,6 +466,7 @@ export async function kotsAppFromAirgapData(out: string, app: KotsApp, stores: S
     preflightSpec,
     appSpec,
     kotsAppSpec,
+    rawInstallationSpec,
     kotsAppLicense,
     configSpec,
     configValues,

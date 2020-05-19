@@ -70,6 +70,10 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to marshal kots app spec")
 	}
+	kotsInstallationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Installation")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal kots installation spec")
+	}
 	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to marshal backup spec")
@@ -103,8 +107,8 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 	newSequence := int(n)
 
 	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
-supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 ON CONFLICT(app_id, sequence) DO UPDATE SET
 created_at = EXCLUDED.created_at,
 version_label = EXCLUDED.version_label,
@@ -117,6 +121,7 @@ analyzer_spec = EXCLUDED.analyzer_spec,
 preflight_spec = EXCLUDED.preflight_spec,
 app_spec = EXCLUDED.app_spec,
 kots_app_spec = EXCLUDED.kots_app_spec,
+kots_installation_spec = EXCLUDED.kots_installation_spec,
 kots_license = EXCLUDED.kots_license,
 config_spec = EXCLUDED.config_spec,
 config_values = EXCLUDED.config_values,
@@ -132,6 +137,7 @@ backup_spec = EXCLUDED.backup_spec`
 		preflightSpec,
 		appSpec,
 		kotsAppSpec,
+		kotsInstallationSpec,
 		licenseSpec,
 		configSpec,
 		configValuesSpec,
