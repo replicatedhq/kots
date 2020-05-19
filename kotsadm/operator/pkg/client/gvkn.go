@@ -19,9 +19,8 @@ type OverlySimpleGVKWithName struct {
 }
 
 type OverlySimpleMetadata struct {
-	Name        string                 `yaml:"name"`
-	Namespace   string                 `yaml:"namespace"`
-	Annotations map[string]interface{} `json:"annotations"`
+	Name      string `yaml:"name"`
+	Namespace string `yaml:"namespace"`
 }
 
 func GetGVKWithNameAndNs(content []byte, baseNS string) string {
