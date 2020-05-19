@@ -106,6 +106,31 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
+
+	if files := b.ListUnparseableFiles(); len(files) > 0 {
+		unparseableFiles := make([]kotsv1beta1.UnparseableFile, 0, len(files))
+		for _, f := range files {
+			file := kotsv1beta1.UnparseableFile{
+				Path: f.Path,
+			}
+			if f.Error != nil {
+				file.Error = f.Error.Error()
+			}
+			unparseableFiles = append(unparseableFiles, file)
+		}
+
+		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to load installation")
+		}
+		newInstallation.Spec.UnparseableFiles = unparseableFiles
+
+		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to save installation")
+		}
+	}
+
 	log.FinishSpinner()
 
 	writeBaseOptions := base.WriteOptions{

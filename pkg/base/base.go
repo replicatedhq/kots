@@ -16,15 +16,17 @@ import (
 )
 
 type Base struct {
-	Path      string
-	Namespace string
-	Files     []BaseFile
-	Bases     []Base
+	Path             string
+	Namespace        string
+	Files            []BaseFile
+	UnparseableFiles []BaseFile
+	Bases            []Base
 }
 
 type BaseFile struct {
 	Path    string
 	Content []byte
+	Error   error
 }
 
 type OverlySimpleGVK struct {
@@ -90,6 +92,14 @@ func (f BaseFile) transpileHelmHooksToKotsHooks() error {
 	return nil
 }
 
+type ParseError struct {
+	Err error
+}
+
+func (e ParseError) Error() string {
+	return e.Err.Error()
+}
+
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
@@ -98,14 +108,17 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 	if err := yaml.Unmarshal(f.Content, &o); err != nil {
 		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
-			fmt.Printf("File %s is failed to unmarshal yaml: %v\n", f.Path, err)
+			return false, ParseError{Err: err}
 		}
 		return false, nil
 	}
 
 	// check if this is a kubernetes document
 	if o.APIVersion == "" || o.Kind == "" {
-		fmt.Printf("File %s is not a kubernetes document\n", f.Path)
+		// check if this is a yaml file
+		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			return false, ParseError{Err: errors.New("not a kubernetes document")}
+		}
 		return false, nil
 	}
 
@@ -124,12 +137,14 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 			if strVal, ok := val.(string); ok {
 				boolVal, err := strconv.ParseBool(strVal)
 				if err != nil {
+					// should this be a ParseError?
 					return true, errors.Errorf("unable to parse %s as bool in exclude annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
 				}
 
 				return !boolVal, nil
 			}
 
+			// should this be a ParseError?
 			return true, errors.Errorf("unexpected type in exclude annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
 		}
 
@@ -141,12 +156,14 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 			if strVal, ok := val.(string); ok {
 				boolVal, err := strconv.ParseBool(strVal)
 				if err != nil {
+					// should this be a ParseError?
 					return true, errors.Errorf("unable to parse %s as bool in wen annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
 				}
 
 				return boolVal, nil
 			}
 
+			// should this be a ParseError?
 			return true, errors.Errorf("unexpected type in when annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
 		}
 	}
@@ -166,4 +183,12 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 	}
 
 	return true, nil
+}
+
+func (b Base) ListUnparseableFiles() []BaseFile {
+	unparseableFiles := append([]BaseFile{}, b.UnparseableFiles...)
+	for _, b := range b.Bases {
+		unparseableFiles = append(unparseableFiles, b.ListUnparseableFiles()...)
+	}
+	return unparseableFiles
 }

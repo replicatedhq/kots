@@ -60,22 +60,22 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "all unique",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 			},
@@ -85,32 +85,32 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "duplicated service",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 			},
 			expectedPatches: []BaseFile{
 				{
-					Path:    "service-b.yaml",
+					Path:    "service-b",
 					Content: []byte(TestServiceB),
 				},
 			},
@@ -119,30 +119,30 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "same-name-different-gvk",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceB),
 				},
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestPodNamedServiceA),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceB),
 				},
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestPodNamedServiceA),
 				},
 			},
@@ -152,40 +152,40 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "same-name-specified-ns",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-a-ns-b.yaml",
+					Path:    "service-a-ns-b",
 					Content: []byte(TestServiceAnsB),
 				},
 				{
-					Path:    "service-a-ns-c.yaml",
+					Path:    "service-a-ns-c",
 					Content: []byte(TestServiceAnsC),
 				},
 				{
-					Path:    "service-a-ns-b-patch.yaml",
+					Path:    "service-a-ns-b-patch",
 					Content: []byte(TestServiceAnsB),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-a-ns-b.yaml",
+					Path:    "service-a-ns-b",
 					Content: []byte(TestServiceAnsB),
 				},
 				{
-					Path:    "service-a-ns-c.yaml",
+					Path:    "service-a-ns-c",
 					Content: []byte(TestServiceAnsC),
 				},
 			},
 			expectedPatches: []BaseFile{
 				{
-					Path:    "service-a-ns-b-patch.yaml",
+					Path:    "service-a-ns-b-patch",
 					Content: []byte(TestServiceAnsB),
 				},
 			},
@@ -194,24 +194,24 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "base-ns",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "service-a-ns-test-patch.yaml",
+					Path:    "service-a-ns-test-patch",
 					Content: []byte(TestServiceAnsTest),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 			},
 			expectedPatches: []BaseFile{
 				{
-					Path:    "service-a-ns-test-patch.yaml",
+					Path:    "service-a-ns-test-patch",
 					Content: []byte(TestServiceAnsTest),
 				},
 			},
@@ -220,18 +220,18 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			name: "not yaml",
 			files: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 				{
-					Path:    "not-yaml.txt",
+					Path:    "not-yaml",
 					Content: []byte("not yaml"),
 				},
 			},
 			excludeKotsKinds: true,
 			expectedResources: []BaseFile{
 				{
-					Path:    "service-a.yaml",
+					Path:    "service-a",
 					Content: []byte(TestServiceA),
 				},
 			},
