@@ -1,7 +1,6 @@
 package client
 
 import (
-	"crypto/sha256"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -24,16 +23,19 @@ type OverlySimpleMetadata struct {
 	Namespace string `yaml:"namespace"`
 }
 
-func GetGVKWithName(content []byte) string {
+func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	o := OverlySimpleGVKWithName{}
 
 	if err := yaml.Unmarshal(content, &o); err != nil {
 		return ""
 	}
 
-	h := sha256.New()
-	h.Write([]byte(fmt.Sprintf("%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name)))
-	return fmt.Sprintf("%x", h.Sum(nil))
+	namespace := baseNS
+	if o.Metadata.Namespace != "" {
+		namespace = o.Metadata.Namespace
+	}
+
+	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
 }
 
 func IsCRD(content []byte) bool {

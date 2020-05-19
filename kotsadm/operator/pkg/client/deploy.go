@@ -15,6 +15,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	k8sschema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,6 +27,8 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+var metadataAccessor = meta.NewAccessor()
 
 type applyResult struct {
 	hasErr      bool
@@ -44,18 +47,23 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		return errors.Wrap(err, "failed to decode manifests")
 	}
 
+	targetNamespace := c.TargetNamespace
+	if applicationManifests.Namespace != "." {
+		targetNamespace = applicationManifests.Namespace
+	}
+
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
 	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
 	decodedPreviousMap := map[string]string{}
 	for _, decodedPreviousString := range decodedPreviousStrings {
-		decodedPreviousMap[GetGVKWithName([]byte(decodedPreviousString))] = decodedPreviousString
+		decodedPreviousMap[GetGVKWithNameAndNs([]byte(decodedPreviousString), targetNamespace)] = decodedPreviousString
 	}
 
 	// now get the current names
 	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
 	decodedCurrentMap := map[string]string{}
 	for _, decodedCurrentString := range decodedCurrentStrings {
-		decodedCurrentMap[GetGVKWithName([]byte(decodedCurrentString))] = decodedCurrentString
+		decodedCurrentMap[GetGVKWithNameAndNs([]byte(decodedCurrentString), targetNamespace)] = decodedCurrentString
 	}
 
 	// now remove anything that's in previous but not in current
@@ -71,10 +79,6 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, "", "", config)
-	targetNamespace := c.TargetNamespace
-	if applicationManifests.Namespace != "." {
-		targetNamespace = applicationManifests.Namespace
-	}
 
 	allPVCs := make([]string, 0)
 	for k, oldContents := range decodedPreviousMap {
@@ -89,13 +93,22 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 
 		group := ""
 		kind := ""
+		namespace := targetNamespace
+		name := ""
+
+		if obj != nil {
+			if n, _ := metadataAccessor.Namespace(obj); n != "" {
+				namespace = n
+			}
+			name, _ = metadataAccessor.Name(obj)
+		}
 
 		if obj != nil && gvk != nil {
 			group = gvk.Group
 			kind = gvk.Kind
-			log.Printf("deleting manifest(s): %s/%s/%s", group, kind, getObjectName(obj))
+			log.Printf("deleting manifest(s): %s/%s/%s", group, kind, name)
 
-			pvcs, err := getPVCs(targetNamespace, obj, gvk)
+			pvcs, err := getPVCs(namespace, obj, gvk)
 			if err != nil {
 				return errors.Wrap(err, "failed to list PVCs")
 			}
@@ -109,13 +122,13 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			wait = false
 		}
 
-		stdout, stderr, err := kubernetesApplier.Remove(targetNamespace, []byte(oldContents), wait)
+		stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(oldContents), wait)
 		if err != nil {
 			log.Printf("stdout (delete) = %s", stdout)
 			log.Printf("stderr (delete) = %s", stderr)
 			log.Printf("error: %s", err.Error())
 		} else {
-			log.Printf("manifest(s) deleted: %s/%s/%s", group, kind, getObjectName(obj))
+			log.Printf("manifest(s) deleted: %s/%s/%s", group, kind, name)
 		}
 	}
 
@@ -375,14 +388,6 @@ func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, e
 		return nil, nil, errors.Wrap(err, "failed to decode k8s yaml")
 	}
 	return obj, gvk, err
-}
-
-func getObjectName(obj k8sruntime.Object) string {
-	// TODO: something like...
-	// if o, ok := obj.(metav1.ObjectMeta); ok {
-	// 	return o.Name
-	// }
-	return ""
 }
 
 func getPVCs(targetNamespace string, obj k8sruntime.Object, gvk *k8sschema.GroupVersionKind) ([]string, error) {
