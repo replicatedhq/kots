@@ -64,15 +64,17 @@ type ConfigCtx struct {
 	ItemValues    map[string]ItemValue
 	LocalRegistry LocalRegistry
 
-	license *kotsv1beta1.License // Another agument for unifying all these contexts
+	license         *kotsv1beta1.License // Another agument for unifying all these contexts
+	unsignedLicense *kotsv1beta1.UnsignedLicense
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, unsignedLicense *kotsv1beta1.UnsignedLicense) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
-		ItemValues:    existingValues,
-		LocalRegistry: localRegistry,
-		license:       license,
+		ItemValues:      existingValues,
+		LocalRegistry:   localRegistry,
+		license:         license,
+		unsignedLicense: unsignedLicense,
 	}
 
 	builder := Builder{

@@ -173,7 +173,14 @@ func CheckForUpdates(a *app.App) (int64, error) {
 		Silent:         false,
 	}
 
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
+	upstreamURI := ""
+	if kotsKinds.License != nil {
+		upstreamURI = fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug)
+	} else if kotsKinds.UnsignedLicense != nil {
+		upstreamURI = kotsKinds.UnsignedLicense.Spec.Endpoint
+	}
+
+	updates, err := kotspull.GetUpdates(upstreamURI, getUpdatesOptions)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get updates")
 	}

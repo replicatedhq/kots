@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
@@ -172,13 +173,66 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate the license
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(uploadLicenseRequest.LicenseData))
+	unverifiedLicense, unsignedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(uploadLicenseRequest.LicenseData))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(400)
 		return
 	}
 
+	if unverifiedLicense != nil {
+		uploadSignedLicense(w, uploadLicenseRequest, unverifiedLicense)
+		return
+	}
+
+	if unsignedLicense != nil {
+		uploadUnsignedLicense(w, uploadLicenseRequest, unsignedLicense)
+		return
+	}
+
+}
+
+func uploadUnsignedLicense(w http.ResponseWriter, uploadLicenseRequest UploadLicenseRequest, unsignedLicense *kotsv1beta1.UnsignedLicense) {
+	uploadLicenseResponse := UploadLicenseResponse{
+		Success: false,
+	}
+
+	desiredAppName := strings.Replace(unsignedLicense.Spec.Slug, "-", " ", 0)
+
+	a, err := app.Create(desiredAppName, unsignedLicense.Spec.Endpoint, uploadLicenseRequest.LicenseData, false)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
+	pendingApp := online.PendingApp{
+		ID:          a.ID,
+		Slug:        a.Slug,
+		Name:        a.Name,
+		LicenseData: uploadLicenseRequest.LicenseData,
+	}
+	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, unsignedLicense.Spec.Endpoint)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
+	uploadLicenseResponse.IsAirgap = false
+	uploadLicenseResponse.HasPreflight = kotsKinds.Preflight != nil
+	uploadLicenseResponse.Success = true
+	uploadLicenseResponse.Slug = a.Slug
+	uploadLicenseResponse.NeedsRegistry = false
+	uploadLicenseResponse.IsConfigurable = kotsKinds.Config != nil
+
+	JSON(w, 200, uploadLicenseResponse)
+	return
+}
+
+func uploadSignedLicense(w http.ResponseWriter, uploadLicenseRequest UploadLicenseRequest, unverifiedLicense *kotsv1beta1.License) {
 	uploadLicenseResponse := UploadLicenseResponse{
 		Success: false,
 	}
@@ -309,7 +363,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 
 	pendingApp.LicenseData = licenseData
 
-	kotsLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseData))
+	kotsLicense, _, err := kotsutil.LoadLicenseFromBytes([]byte(licenseData))
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()

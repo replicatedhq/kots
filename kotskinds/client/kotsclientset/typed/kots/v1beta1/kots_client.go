@@ -32,6 +32,7 @@ type KotsV1beta1Interface interface {
 	HelmChartsGetter
 	InstallationsGetter
 	LicensesGetter
+	UnsignedLicensesGetter
 }
 
 // KotsV1beta1Client is used to interact with features provided by the kots.io group.
@@ -65,6 +66,10 @@ func (c *KotsV1beta1Client) Installations(namespace string) InstallationInterfac
 
 func (c *KotsV1beta1Client) Licenses(namespace string) LicenseInterface {
 	return newLicenses(c, namespace)
+}
+
+func (c *KotsV1beta1Client) UnsignedLicenses(namespace string) UnsignedLicenseInterface {
+	return newUnsignedLicenses(c, namespace)
 }
 
 // NewForConfig creates a new KotsV1beta1Client for the given config.

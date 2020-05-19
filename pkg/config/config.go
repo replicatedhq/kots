@@ -30,12 +30,19 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(licenseData), nil, nil)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to decode license data")
+		return "", errors.Wrap(err, "failed to decode license data to use templating config")
 	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+
+	var license *kotsv1beta1.License
+	var unsignedLicense *kotsv1beta1.UnsignedLicense
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
+		license = obj.(*kotsv1beta1.License)
+	} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "UnsignedLicense" {
+		unsignedLicense = obj.(*kotsv1beta1.UnsignedLicense)
+	} else {
 		return "", errors.Errorf("expected License, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
 	}
-	license := obj.(*kotsv1beta1.License)
 
 	obj, gvk, err = decode([]byte(configSpecData), nil, nil) // TODO fix decode of boolstrings
 	if err != nil {
@@ -53,7 +60,7 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 		templateContext = map[string]template.ItemValue{}
 	}
 
-	builder, configVals, err := template.NewBuilder(config.Spec.Groups, templateContext, localRegistry, nil, license)
+	builder, configVals, err := template.NewBuilder(config.Spec.Groups, templateContext, localRegistry, nil, license, unsignedLicense)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
 	}

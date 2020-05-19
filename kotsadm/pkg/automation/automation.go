@@ -49,7 +49,7 @@ func AutomateInstall() error {
 			continue
 		}
 
-		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		unverifiedLicense, _, err := kotsutil.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.New("license data did not unmarshal"))
 			continue

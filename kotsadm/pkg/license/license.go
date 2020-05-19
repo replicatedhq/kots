@@ -33,7 +33,8 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 	}
 
 	if kotsKinds.License == nil {
-		return nil, errors.New("app does not contain a license")
+		// this is not an error if there is no license
+		return nil, nil
 	}
 
 	latestLicense := kotsKinds.License

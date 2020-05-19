@@ -32,7 +32,7 @@ type Document struct {
 }
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
+	config, configValues, license, unsignedLicense, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Password:  renderOptions.LocalRegistryPassword,
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license)
+	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license, unsignedLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}
@@ -332,10 +332,11 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, error) {
+func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.UnsignedLicense, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
+	var unsignedLicense *kotsv1beta1.UnsignedLicense
 
 	for _, file := range u.Files {
 		document := &Document{}
@@ -346,9 +347,9 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode(file.Content, nil, nil)
 		if err != nil {
-			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
-				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, nil, nil, errors.Wrap(err, errMessage)
+			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License" || document.Kind == "UnsignedLicense") {
+				errMessage := fmt.Sprintf("failed to decode %s", file.Path)
+				return nil, nil, nil, nil, errors.Wrap(err, errMessage)
 			}
 			continue
 		}
@@ -359,10 +360,12 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 			values = obj.(*kotsv1beta1.ConfigValues)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 			license = obj.(*kotsv1beta1.License)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "UnsignedLicense" {
+			unsignedLicense = obj.(*kotsv1beta1.UnsignedLicense)
 		}
 	}
 
-	return config, values, license, nil
+	return config, values, license, unsignedLicense, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive

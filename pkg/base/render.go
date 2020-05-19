@@ -30,5 +30,9 @@ func RenderUpstream(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*B
 		return renderReplicated(u, renderOptions)
 	}
 
+	if u.Type == "private" {
+		return renderReplicated(u, renderOptions)
+	}
+
 	return nil, errors.New("unknown upstream type")
 }

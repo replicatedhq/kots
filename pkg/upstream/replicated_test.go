@@ -177,7 +177,7 @@ func Test_createConfigValues(t *testing.T) {
 					Title: "Group Title",
 					Items: []kotsv1beta1.ConfigItem{
 						// should replace default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "1_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -190,7 +190,7 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should preserve value and add default
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "2_with_value",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -203,7 +203,7 @@ func Test_createConfigValues(t *testing.T) {
 							},
 						},
 						// should add a new item
-						kotsv1beta1.ConfigItem{
+						{
 							Name: "4_with_default",
 							Type: "string",
 							Default: multitype.BoolOrString{
@@ -227,13 +227,13 @@ func Test_createConfigValues(t *testing.T) {
 		},
 		Spec: kotsv1beta1.ConfigValuesSpec{
 			Values: map[string]kotsv1beta1.ConfigValue{
-				"1_with_default": kotsv1beta1.ConfigValue{
+				"1_with_default": {
 					Default: "default_1",
 				},
-				"2_with_value": kotsv1beta1.ConfigValue{
+				"2_with_value": {
 					Value: "value_2",
 				},
-				"3_with_both": kotsv1beta1.ConfigValue{
+				"3_with_both": {
 					Value:   "value_3",
 					Default: "default_3",
 				},
@@ -245,45 +245,45 @@ func Test_createConfigValues(t *testing.T) {
 
 	// like new install, should match config
 	expected1 := map[string]kotsv1beta1.ConfigValue{
-		"1_with_default": kotsv1beta1.ConfigValue{
+		"1_with_default": {
 			Default: "default_1_new",
 		},
-		"2_with_value": kotsv1beta1.ConfigValue{
+		"2_with_value": {
 			Value:   "value_2_new",
 			Default: "default_2",
 		},
-		"4_with_default": kotsv1beta1.ConfigValue{
+		"4_with_default": {
 			Default: "default_4",
 		},
 	}
-	values1, err := createConfigValues(applicationName, config, nil, nil, nil)
+	values1, err := createConfigValues(applicationName, config, nil, nil, nil, nil)
 	req.NoError(err)
 	assert.Equal(t, expected1, values1.Spec.Values)
 
 	// Like an app without a config, should have exact same values
 	expected2 := configValues.Spec.Values
-	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil)
+	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, nil)
 	req.NoError(err)
 	assert.Equal(t, expected2, values2.Spec.Values)
 
 	// updating existing values with new config, should do a merge
 	expected3 := map[string]kotsv1beta1.ConfigValue{
-		"1_with_default": kotsv1beta1.ConfigValue{
+		"1_with_default": {
 			Default: "default_1_new",
 		},
-		"2_with_value": kotsv1beta1.ConfigValue{
+		"2_with_value": {
 			Value:   "value_2",
 			Default: "default_2",
 		},
-		"3_with_both": kotsv1beta1.ConfigValue{
+		"3_with_both": {
 			Value:   "value_3",
 			Default: "default_3",
 		},
-		"4_with_default": kotsv1beta1.ConfigValue{
+		"4_with_default": {
 			Default: "default_4",
 		},
 	}
-	values3, err := createConfigValues(applicationName, config, configValues, nil, nil)
+	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, nil)
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
 }

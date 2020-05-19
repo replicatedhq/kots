@@ -28,7 +28,7 @@ require (
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4 // indirect
-	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible
 	github.com/manifoldco/promptui v0.3.2
 	github.com/mattn/go-isatty v0.0.9
 	github.com/mholt/archiver v3.1.1+incompatible

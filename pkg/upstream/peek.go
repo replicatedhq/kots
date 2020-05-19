@@ -45,8 +45,11 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 		// TODO
 	}
 	if u.Scheme == "http" || u.Scheme == "https" {
-		// return getUpdatesHttp(upstreamURI)
-		// TODO
+		cursor := ReplicatedCursor{
+			ChannelName: fetchOptions.CurrentChannel,
+			Cursor:      fetchOptions.CurrentCursor,
+		}
+		return getUpdatesHttp(u, fetchOptions.LocalPath, cursor, fetchOptions.CurrentVersionLabel, fetchOptions.UnsignedLicense)
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

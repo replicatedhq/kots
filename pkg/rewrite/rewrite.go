@@ -31,6 +31,7 @@ type RewriteOptions struct {
 	ExcludeKotsKinds  bool
 	Installation      *kotsv1beta1.Installation
 	License           *kotsv1beta1.License
+	UnsignedLicense   *kotsv1beta1.UnsignedLicense
 	ConfigValues      *kotsv1beta1.ConfigValues
 	ReportWriter      io.Writer
 	CopyImages        bool
@@ -64,6 +65,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
 		License:             rewriteOptions.License,
+		UnsignedLicense:     rewriteOptions.UnsignedLicense,
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -229,9 +231,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	} else {
 		// When CopyImages is not set, we only rewrite private images and use license to create secrets
 		// for all objects that have private images
+
+		appSlug := ""
+		if fetchOptions.License != nil {
+			appSlug = fetchOptions.License.Spec.AppSlug
+		} else if fetchOptions.UnsignedLicense != nil {
+			appSlug = fetchOptions.UnsignedLicense.Spec.Slug
+		}
+
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
 			BaseDir: writeBaseOptions.BaseDir,
-			AppSlug: fetchOptions.License.Spec.AppSlug,
+			AppSlug: appSlug,
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
@@ -253,7 +263,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrap(err, "failed to save installation")
 		}
 
-		if len(findResult.Docs) > 0 {
+		if len(findResult.Docs) > 0 && rewriteOptions.License != nil {
 			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 			pullSecret, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),

@@ -18,6 +18,7 @@ type FetchOptions struct {
 	HelmOptions         []string
 	LocalPath           string
 	License             *kotsv1beta1.License
+	UnsignedLicense     *kotsv1beta1.UnsignedLicense
 	ConfigValues        *kotsv1beta1.ConfigValues
 	Airgap              *kotsv1beta1.Airgap
 	EncryptionKey       string
@@ -63,7 +64,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Up
 		return downloadGit(upstreamURI)
 	}
 	if u.Scheme == "http" || u.Scheme == "https" {
-		return downloadHttp(upstreamURI)
+		return downloadHttp(upstreamURI, fetchOptions, fetchOptions.ConfigValues, pickCursor(fetchOptions), cipher)
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)

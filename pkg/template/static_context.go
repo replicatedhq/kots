@@ -13,6 +13,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -81,6 +82,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["IsKurl"] = ctx.isKurl
 	funcMap["Distribution"] = ctx.distribution
+
+	funcMap["DockerCfgJson"] = ctx.dockerCfgJson
 
 	return funcMap
 }
@@ -494,4 +497,24 @@ func (ctx StaticCtx) distribution() string {
 	provider := analyze.CheckOpenShift(&foundProviders, apiResourceList, workingProvider)
 
 	return provider
+}
+
+func (ctx StaticCtx) dockerCfgJson(hostname string, username string, password string) string {
+	auth := fmt.Sprintf("%s:%s", username, password)
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+
+	dockercfg := map[string]interface{}{
+		"auths": map[string]interface{}{
+			hostname: map[string]string{
+				"auth": encodedAuth,
+			},
+		},
+	}
+
+	b, err := json.Marshal(dockercfg)
+	if err != nil {
+		return ""
+	}
+
+	return base64.StdEncoding.EncodeToString(b)
 }

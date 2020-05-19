@@ -69,7 +69,7 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
@@ -90,7 +90,7 @@ func RenderDir(archiveDir string, appID string, appSequence int64, registrySetti
 		return errors.Wrap(err, "failed to load installation from path")
 	}
 
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
+	license, unsignedLicense, err := kotsutil.LoadLicenseFromPath(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load license from path")
 	}
@@ -121,9 +121,15 @@ func RenderDir(archiveDir string, appID string, appSequence int64, registrySetti
 		return errors.Wrap(err, "failed to get app")
 	}
 
-	reOptions := rewrite.RewriteOptions{
+	upstreamURI := ""
+	if license != nil {
+		upstreamURI = fmt.Sprintf("replicated://%s", license.Spec.AppSlug)
+	} else if unsignedLicense != nil {
+		upstreamURI = unsignedLicense.Spec.Endpoint
+	}
+	rewriteOptions := rewrite.RewriteOptions{
 		RootDir:          archiveDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamURI:      upstreamURI,
 		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
 		Installation:     installation,
 		Downstreams:      downstreamNames,
@@ -131,6 +137,7 @@ func RenderDir(archiveDir string, appID string, appSequence int64, registrySetti
 		CreateAppDir:     false,
 		ExcludeKotsKinds: true,
 		License:          license,
+		UnsignedLicense:  unsignedLicense,
 		ConfigValues:     configValues,
 		K8sNamespace:     appNamespace,
 		CopyImages:       false,
@@ -156,13 +163,13 @@ func RenderDir(archiveDir string, appID string, appSequence int64, registrySetti
 			return errors.Wrap(err, "failed to decrypt")
 		}
 
-		reOptions.RegistryEndpoint = registrySettings.Hostname
-		reOptions.RegistryNamespace = registrySettings.Namespace
-		reOptions.RegistryUsername = registrySettings.Username
-		reOptions.RegistryPassword = string(decryptedPassword)
+		rewriteOptions.RegistryEndpoint = registrySettings.Hostname
+		rewriteOptions.RegistryNamespace = registrySettings.Namespace
+		rewriteOptions.RegistryUsername = registrySettings.Username
+		rewriteOptions.RegistryPassword = string(decryptedPassword)
 	}
 
-	err = rewrite.Rewrite(reOptions)
+	err = rewrite.Rewrite(rewriteOptions)
 	if err != nil {
 		return errors.Wrap(err, "rewrite directory")
 	}

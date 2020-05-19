@@ -102,7 +102,7 @@ func RenderFile(socket string, filePath string, archivePath string, registryJson
 			Password:  registryInfo.Password,
 		}
 
-		builder, configVals, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, cipher, license)
+		builder, configVals, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, cipher, license, nil)
 		if err != nil {
 			fmt.Printf("failed to create config context %s\n", err.Error())
 			ffiResult = NewFFIResult(1).WithError(err)

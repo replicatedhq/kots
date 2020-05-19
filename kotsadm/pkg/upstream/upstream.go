@@ -131,7 +131,14 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		}
 	}
 
-	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
+	uri := ""
+	if beforeKotsKinds.License != nil {
+		uri = fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug)
+	} else if beforeKotsKinds.UnsignedLicense != nil {
+		uri = beforeKotsKinds.UnsignedLicense.Spec.Endpoint
+	}
+
+	if _, err := kotspull.Pull(uri, pullOptions); err != nil {
 		finalError = err
 		return errors.Wrap(err, "failed to pull")
 	}

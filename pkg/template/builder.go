@@ -21,9 +21,9 @@ type Builder struct {
 }
 
 // NewBuilder creates a builder with StaticCtx, LicenseCtx and ConfigCtx.
-func NewBuilder(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (Builder, map[string]ItemValue, error) {
+func NewBuilder(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, unsignedLicense *kotsv1beta1.UnsignedLicense) (Builder, map[string]ItemValue, error) {
 	b := Builder{}
-	configCtx, err := b.newConfigContext(configGroups, existingValues, localRegistry, cipher, license)
+	configCtx, err := b.newConfigContext(configGroups, existingValues, localRegistry, cipher, license, unsignedLicense)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}
