@@ -225,15 +225,10 @@
 }
 
 .action-content {
-  margin-top: 12px;
   background-color: #ffffff;
   padding: 16px 14px;
   border-top: 1px solid #DFDFDF;
   border-radius: 0 0 4px 4px;
-
-  &.blue {
-    background-color: #F5F8FC;
-  }
 }
 
 .action-tab-bar .tab-item {
@@ -280,6 +275,39 @@
   }
 }
 
+.SupportBundleTabs--wrapper {
+  .tab-items .tab-item {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9B9B9B;
+    padding: 12px 30px 7px;
+    line-height: 14px;
+    cursor: pointer;
+    transition: color .2s;
+    position: relative;
+  
+    &:hover {
+      color: #717171;
+    }
+  
+    &.is-active {
+      color: #4A4A4A;
+      font-weight: 600;
+  
+      &::after {
+        content: "";
+        width: 100%;
+        height: 2px;
+        position: absolute;
+        display: block;
+        background-color: #326de6;
+        bottom: 0;
+        left: 0;
+      }
+    }
+  }
+}
+
 .upload-date-container {
   max-width: 542px;
   .input-with-icon input {
@@ -303,6 +331,29 @@
 }
 .CreateAction > span:hover .u-backArrowIcon {
   transform: translateX(-2px);
+}
+
+.Timeline--wrapper {
+  width: 100%;
+  padding: 0 0 0 15px;
+  border-left: 2px solid #C4C4C4;
+
+  .section {
+    position: relative
+  }
+
+  .section:before {
+    content: "";
+    display: block;
+    height: 20px;
+    border-left: 2px solid #c4c4c4;
+    border-bottom: 2px solid #c4c4c4;
+    border-radius: 0 0 0 100px;
+    position: absolute;
+    top: 5px;
+    left: -17px;
+    width: 10px;
+  }
 }
 
 /* ≥ 960px */
