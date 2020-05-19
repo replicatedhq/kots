@@ -16,11 +16,11 @@ import (
 )
 
 type Base struct {
-	Path             string
-	Namespace        string
-	Files            []BaseFile
-	UnparseableFiles []BaseFile
-	Bases            []Base
+	Path       string
+	Namespace  string
+	Files      []BaseFile
+	ErrorFiles []BaseFile
+	Bases      []Base
 }
 
 type BaseFile struct {
@@ -185,10 +185,10 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 	return true, nil
 }
 
-func (b Base) ListUnparseableFiles() []BaseFile {
-	unparseableFiles := append([]BaseFile{}, b.UnparseableFiles...)
+func (b Base) ListErrorFiles() []BaseFile {
+	files := append([]BaseFile{}, b.ErrorFiles...)
 	for _, b := range b.Bases {
-		unparseableFiles = append(unparseableFiles, b.ListUnparseableFiles()...)
+		files = append(files, b.ListErrorFiles()...)
 	}
-	return unparseableFiles
+	return files
 }

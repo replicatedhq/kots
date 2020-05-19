@@ -100,7 +100,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				base.Files = append(base.Files, f)
 			} else if err != nil {
 				f.Error = err
-				base.UnparseableFiles = append(base.UnparseableFiles, f)
+				base.ErrorFiles = append(base.ErrorFiles, f)
 			}
 		}
 	}
@@ -191,7 +191,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
 		}
 
-		helmBaseFiles, helmBaseUnparseableFiles := []BaseFile{}, []BaseFile{}
+		helmBaseFiles, helmBaseYAMLErrorFiles := []BaseFile{}, []BaseFile{}
 		for _, helmBaseFile := range helmBase.Files {
 			filePath := filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path)
 
@@ -217,7 +217,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				helmBaseFiles = append(helmBaseFiles, baseFile)
 			} else if err != nil {
 				baseFile.Error = err
-				helmBaseUnparseableFiles = append(helmBaseUnparseableFiles, baseFile)
+				helmBaseYAMLErrorFiles = append(helmBaseYAMLErrorFiles, baseFile)
 			}
 		}
 
