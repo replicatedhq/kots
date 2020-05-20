@@ -223,18 +223,23 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 	defer os.RemoveAll(workDir)
 
+	remoteRepoIsEmpty := false
 	cloned, err := git.PlainClone(workDir, false, &git.CloneOptions{
 		URL:               gitOpsConfig.CloneURL(),
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	})
-	if err != nil {
+	if errors.Cause(err) == transport.ErrEmptyRemoteRepository {
+		remoteRepoIsEmpty = true
+	} else if err != nil {
 		return "", errors.Wrap(err, "failed to clone repo")
 	}
 
-	workTree, err := cloned.Worktree()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get worktree")
+	if remoteRepoIsEmpty {
+		cloned, err = initializeGitRepo(gitOpsConfig, workDir, out, auth, appSlug, appName, newSequence)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to initialize repo")
+		}
 	}
 
 	err = cloned.Fetch(&git.FetchOptions{
@@ -243,6 +248,11 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch from repo")
+	}
+
+	workTree, err := cloned.Worktree()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get worktree")
 	}
 
 	// try to check out the branch if it exists
@@ -262,13 +272,15 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		}
 	}
 
-	// if the file has not changed, end now
-	currentRevision, err := ioutil.ReadFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read current file")
-	}
-	if string(currentRevision) == string(out) {
-		return "", nil
+	if !remoteRepoIsEmpty {
+		// if the file has not changed, end now
+		currentRevision, err := ioutil.ReadFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)))
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read current file")
+		}
+		if string(currentRevision) == string(out) {
+			return "", nil
+		}
 	}
 
 	err = ioutil.WriteFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), out, 0644)
@@ -301,4 +313,55 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
+}
+
+func initializeGitRepo(gitOpsConfig *GitOpsConfig, workDir string, output []byte, auth transport.AuthMethod, appSlug string, appName string, sequence int) (*git.Repository, error) {
+	repo, err := git.PlainInit(workDir, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init repo")
+	}
+
+	_, err = repo.CreateRemote(&go_git_config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{gitOpsConfig.CloneURL()},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create remote")
+	}
+
+	workTree, err := repo.Worktree()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get worktree")
+	}
+
+	err = ioutil.WriteFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), output, 0644)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write updated app yaml")
+	}
+
+	_, err = workTree.Add(strings.TrimPrefix(filepath.Join(gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), "/"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to add to worktree")
+	}
+
+	// commit it
+	_, err = workTree.Commit(fmt.Sprintf("Initial commit of %s with version %d", appName, sequence), &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "KOTS Admin Console",
+			Email: "help@replicated.com",
+			When:  time.Now(),
+		},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to commit")
+	}
+
+	err = repo.Push(&git.PushOptions{
+		Auth: auth,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to push")
+	}
+
+	return repo, nil
 }
