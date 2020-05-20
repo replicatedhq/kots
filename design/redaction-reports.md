@@ -1,6 +1,6 @@
 # Redaction Reports
 
-Support bundles are sanatized with user-provided redactors.
+Support bundles are sanitized with user-provided redactors.
 Statistics on what redactors were activated and where should be provided.
 
 ## Goals
@@ -76,4 +76,3 @@ When kotsadm generates troubleshoot specs, RedactURI will be populated with the 
 ## Security Considerations
 
 Some information leakage from redaction reports is possible, but should be minimal - limited to 'this was an IP address' and similar.
-
