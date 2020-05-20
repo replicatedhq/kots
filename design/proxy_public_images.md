@@ -45,9 +45,8 @@ The call to `IsPrivateImage` function will skipped when `ProxyPublicImages` is s
 
 ## Alternatives Considered
 
-An alternative to this method is to push images to private repos.  These can be hosted by any registry, including registry.replicated.com.  The downside of this method is the the requirement that vendors modify their CI process or make currently public repos private.
+An alternative to this method is to push images to private repos.  These can be hosted by any registry, including registry.replicated.com.  The downside of this method is the requirement that vendors modify their CI process or make currently public repos private.
 
 ## Security Considerations
 
 There are no known impacts on security.
-
