@@ -1158,6 +1158,7 @@ class AppVersionHistory extends Component {
             onRequestClose={this.hideUpdateCheckerModal}
             updateCheckerSpec={app.updateCheckerSpec}
             appSlug={app.slug}
+            gitopsEnabled={gitopsEnabled}
             onUpdateCheckerSpecSubmitted={() => {
               this.hideUpdateCheckerModal();
               this.props.refreshAppData();

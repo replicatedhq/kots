@@ -109,7 +109,7 @@ export default class UpdateCheckerModal extends React.Component {
   }
 
   render() {
-    const { isOpen, onRequestClose } = this.props;
+    const { isOpen, onRequestClose, gitopsEnabled } = this.props;
     const { updateCheckerSpec, selectedSchedule, submitUpdateCheckerSpecErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
@@ -125,9 +125,15 @@ export default class UpdateCheckerModal extends React.Component {
       >
         <div className="u-position--relative flex-column u-padding--20">
           <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure automatic updates</span>
-          <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
-            Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
-          </p>
+          {gitopsEnabled ? 
+            <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
+              Configure how often you would like to automatically check for updates.<br/>A commit will be made if an update was found.
+            </p>
+            :
+            <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
+              Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
+            </p>
+          }
           <div className="info-box u-marginBottom--20">
             <span className="u-fontSize--small">
               You can enter <span className="u-fontWeight--bold u-color--tuna">@never</span> to disable scheduled update checks

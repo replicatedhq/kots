@@ -120,9 +120,9 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstreams, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
-    const updatesText = downstreams?.pendingVersions?.length > 0 || app.isAirgap ? null : "No updates available.";
-    const isUpdateAvailable = downstreams?.pendingVersions?.length > 0;
+    const { app, currentVersion, downstream, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
+    const updatesText = downstream?.pendingVersions?.length > 0 || app.isAirgap ? null : "No updates available.";
+    const isUpdateAvailable = downstream?.pendingVersions?.length > 0;
 
     let checkingUpdateTextShort = checkingUpdateText;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
