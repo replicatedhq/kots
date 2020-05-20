@@ -1,14 +1,41 @@
 import React from "react";
 import Modal from "react-modal";
+import Select from "react-select";
+import find from "lodash/find";
 import { Utilities, getReadableCronDescriptor } from "../../utilities/utilities";
+
+const SCHEDULES = [
+  {
+    value: "@hourly",
+    label: "Hourly",
+  },
+  {
+    value: "@daily",
+    label: "Daily",
+  },
+  {
+    value: "@weekly",
+    label: "Weekly",
+  },
+  {
+    value: "custom",
+    label: "Custom",
+  }
+];
 
 export default class UpdateCheckerModal extends React.Component {
   constructor(props) {
     super(props);
 
+    let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
+    if (!selectedSchedule) {
+      selectedSchedule = find(SCHEDULES, { value: "custom" });
+    }
+
     this.state = {
       updateCheckerSpec: props.updateCheckerSpec,
-      submitUpdateCheckerSpecErr: ""
+      submitUpdateCheckerSpecErr: "",
+      selectedSchedule,
     };
   }
 
@@ -68,9 +95,22 @@ export default class UpdateCheckerModal extends React.Component {
     }
   }
 
+  handleScheduleChange = selectedSchedule => {
+    let updateCheckerSpec;
+    if (selectedSchedule.value != "custom") {
+      updateCheckerSpec = selectedSchedule.value;
+    } else {
+      updateCheckerSpec = "0 2 * * WED,SAT"; // arbitrary choice
+    }
+    this.setState({
+      selectedSchedule,
+      updateCheckerSpec,
+    });
+  }
+
   render() {
     const { isOpen, onRequestClose } = this.props;
-    const { updateCheckerSpec, submitUpdateCheckerSpecErr } = this.state;
+    const { updateCheckerSpec, selectedSchedule, submitUpdateCheckerSpecErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
@@ -81,25 +121,44 @@ export default class UpdateCheckerModal extends React.Component {
         shouldReturnFocusAfterClose={false}
         contentLabel="Update Checker"
         ariaHideApp={false}
-        className="Modal"
+        className="Modal SmallSize"
       >
         <div className="u-position--relative flex-column u-padding--20">
-          <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure update checker</span>
+          <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure automatic updates</span>
+          <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
+            Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
+          </p>
           <div className="info-box u-marginBottom--20">
-            <span className="u-fontSize--small u-textAlign--center">
+            <span className="u-fontSize--small">
               You can enter <span className="u-fontWeight--bold u-color--tuna">@never</span> to disable scheduled update checks
             </span>
           </div>
           <div className="flex-column flex1 u-paddingLeft--5">
             <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
-            <input
-              type="text"
-              className="Input u-marginBottom--5"
-              placeholder="0 0 * * MON"
-              value={updateCheckerSpec}
-              onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
-            />
-            {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
+            <div className="flex flex1">
+              <Select
+                className="replicated-select-container flex1"
+                classNamePrefix="replicated-select"
+                placeholder="Select an interval"
+                options={SCHEDULES}
+                isSearchable={false}
+                getOptionValue={(schedule) => schedule.label}
+                value={selectedSchedule}
+                onChange={this.handleScheduleChange}
+                isOptionSelected={(option) => { option.value === selectedSchedule }}
+                menuPlacement="top"
+              />
+              <div className="flex-column flex2 u-marginLeft--10">
+                <input
+                  type="text"
+                  className="Input u-marginBottom--5"
+                  placeholder="0 0 * * MON"
+                  value={updateCheckerSpec}
+                  onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
+                />
+                {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
+              </div>
+            </div>
             {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
           </div>
           <div className="flex u-marginTop--20">

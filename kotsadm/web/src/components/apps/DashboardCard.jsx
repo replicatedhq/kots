@@ -181,7 +181,7 @@ export default class DashboardCard extends React.Component {
             : showOnlineUI ?
               <div className="flex alignItems--center">
                 <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
-                <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure update checker"></span>
+                <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure automatic updates"></span>
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </div>
               : null
