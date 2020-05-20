@@ -45,3 +45,5 @@ spec:
         type: timestamp without time zone
       - name: is_archived
         type: boolean
+      - name: redact_report
+        type: text
