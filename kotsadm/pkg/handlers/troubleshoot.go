@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
+	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,17 @@ type GetSupportBundleFilesResponse struct {
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
+}
+
+type GetSupportBundleRedactionsResponse struct {
+	Redactions redact2.RedactionList `json:"redactions"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type PutSupportBundleRedactions struct {
+	Redactions redact2.RedactionList `json:"redactions"`
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
@@ -306,13 +318,17 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 
 	// determine an upload URL
 	var uploadURL string
+	var redactURL string
 	randomBundleID := strings.ToLower(rand.String(32))
 	if r.Header.Get("Bundle-Upload-Host") != "" {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", r.Header.Get("Bundle-Upload-Host"), foundApp.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", r.Header.Get("Bundle-Upload-Host"), randomBundleID)
 	} else if inCluster == "true" {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
 	} else {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), foundApp.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
 	}
 
 	licenseString, err := license.GetCurrentLicenseString(foundApp)
@@ -326,8 +342,9 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	tsSpec.Spec.AfterCollection = []*v1beta1.AfterCollection{
 		{
 			UploadResultsTo: &v1beta1.ResultRequest{
-				URI:    uploadURL,
-				Method: "PUT",
+				URI:       uploadURL,
+				Method:    "PUT",
+				RedactURI: redactURL,
 			},
 		},
 	}
@@ -351,6 +368,80 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write([]byte(fullTroubleshoot))
+}
+
+func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		getSupportBundleRedactionsResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, getSupportBundleRedactionsResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		getSupportBundleRedactionsResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, getSupportBundleRedactionsResponse)
+		return
+	}
+
+	bundleID := mux.Vars(r)["bundleId"]
+	redactions, err := supportbundle.GetRedactions(bundleID)
+	if err != nil {
+		logger.Error(err)
+		getSupportBundleRedactionsResponse.Error = fmt.Sprintf("failed to find redactions for bundle %s", bundleID)
+		JSON(w, 400, getSupportBundleRedactionsResponse)
+		return
+	}
+
+	getSupportBundleRedactionsResponse.Success = true
+	getSupportBundleRedactionsResponse.Redactions = redactions
+
+	JSON(w, 200, getSupportBundleRedactionsResponse)
+}
+
+func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	redactionsBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	redactions := PutSupportBundleRedactions{}
+	err = json.Unmarshal(redactionsBody, &redactions)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	bundleID := mux.Vars(r)["bundleId"]
+	err = supportbundle.SetRedactions(bundleID, redactions.Redactions)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	w.WriteHeader(201)
+	return
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace

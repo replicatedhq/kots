@@ -66,6 +66,8 @@ func Start() {
 	r.Path("/api/v1/troubleshoot/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetTroubleshoot)
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UploadSupportBundle)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundleFiles)
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundleRedactions)
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handlers.SetSupportBundleRedactions)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSupportBundle)
 	r.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
