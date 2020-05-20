@@ -25,16 +25,55 @@ Kots stores this in postgres, and makes it available to the UI via a REST api.
 
 ## Detailed Design
 
-A detailed design describing how the changes to the product should be made.
+Redactions are collected and stored as the following objects by troubleshoot:
+```go
+type RedactionList struct {
+	ByRedactor map[string][]Redaction
+	ByFile     map[string][]Redaction
+}
 
-The names of types, fields, interfaces, and methods should be agreed on here, not debated in code review.
-The same applies to changes in CRDs, YAML examples, and so on.
+type Redaction struct {
+	RedactorName      string
+	CharactersRemoved int
+	Line              int
+	File              string
+}
+```
 
-Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
+These are then exposed via GET at `/api/v1/troubleshoot/supportbundle/{bundleId}/redactions` with a response type that includes error/success:
+
+```go
+type GetSupportBundleRedactionsResponse struct {
+	Redactions redact.RedactionList `json:"redactions"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+```
+
+Redactions can be set for a bundle with a PUT to the same path (`/api/v1/troubleshoot/supportbundle/{bundleId}/redactions`) with the following structure:
+```go
+type PutSupportBundleRedactions struct {
+	Redactions redact.RedactionList `json:"redactions"`
+}
+```
+
+Redaction reports will be stored as a new mediumtext column 'redactions' in the 'supportbundle' table.
+
+Within troubleshoot, the ResultRequest type is modified to add a URI to upload redaction reports to:
+```go
+type ResultRequest struct {
+	URI       string `json:"uri" yaml:"uri"`
+	Method    string `json:"method" yaml:"method"`
+	RedactURI string `json:"redactUri" yaml:"redactUri"` // the URI to POST redaction reports to
+}
+```
+
+When kotsadm generates troubleshoot specs, RedactURI will be populated with the proper value. (This is already done for URI here)
 
 ## Alternatives Considered
 
-If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
-
 ## Security Considerations
+
+Some information leakage from redaction reports is possible, but should be minimal - limited to 'this was an IP address' and similar.
 
