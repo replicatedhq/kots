@@ -10,7 +10,9 @@ import _ from "lodash";
 import yaml from "js-yaml";
 import { base64Decode, getPreflightResultState, base64Encode } from '../util/utilities';
 import { ApplicationSpec } from "./kots_app_spec";
+import { InstallationSpec } from "./kots_installation_spec";
 import { logger } from "../server/logger";
+import { KotsAppVersion } from "./kots_app";
 
 export enum UndeployStatus {
   InProcess = "in_process",
@@ -544,7 +546,8 @@ export class KotsAppStore {
     analyzersSpec: any,
     preflightSpec: any,
     appSpec: any,
-    kotsAppSpec: any,
+    kotsAppSpec: string | null,
+    kotsInstallationSpec: string | null,
     kotsAppLicense: any,
     configSpec: any,
     configValues: any,
@@ -553,8 +556,8 @@ export class KotsAppStore {
     backupSpec: any,
   ): Promise<void> {
     const q = `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
-        supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_license, config_spec, config_values, backup_spec)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       ON CONFLICT(app_id, sequence) DO UPDATE SET
       created_at = EXCLUDED.created_at,
       version_label = EXCLUDED.version_label,
@@ -567,6 +570,7 @@ export class KotsAppStore {
       preflight_spec = EXCLUDED.preflight_spec,
       app_spec = EXCLUDED.app_spec,
       kots_app_spec = EXCLUDED.kots_app_spec,
+      kots_installation_spec = EXCLUDED.kots_installation_spec,
       kots_license = EXCLUDED.kots_license,
       config_spec = EXCLUDED.config_spec,
       config_values = EXCLUDED.config_values,
@@ -586,6 +590,7 @@ export class KotsAppStore {
       preflightSpec,
       appSpec,
       kotsAppSpec,
+      kotsInstallationSpec,
       kotsAppLicense,
       configSpec,
       configValues,
@@ -964,7 +969,7 @@ order by adv.sequence desc`;
     return versionItem;
   }
 
-  async getCurrentAppVersion(appId: string): Promise<KotsVersion | undefined> {
+  async getCurrentAppVersion(appId: string): Promise<KotsAppVersion | undefined> {
     let q = `select current_sequence from app where id = $1`;
     let v = [
       appId,
@@ -979,7 +984,10 @@ order by adv.sequence desc`;
       return;
     }
 
-    q = `select created_at, version_label, release_notes, status, sequence, applied_at, backup_spec from app_version where app_id = $1 and sequence = $2`;
+    q = `select created_at, version_label, release_notes, status, sequence,
+applied_at, backup_spec, kots_installation_spec
+from app_version
+where app_id = $1 and sequence = $2`;
     v = [
       appId,
       sequence,
@@ -995,7 +1003,7 @@ order by adv.sequence desc`;
 
     // There is no parent sequence on midstream versions
 
-    const versionItem: KotsVersion = {
+    const versionItem: KotsAppVersion = {
       title: row.version_label,
       status: row.status || "",
       createdOn: row.created_at,
@@ -1006,6 +1014,15 @@ order by adv.sequence desc`;
       preflightResultCreatedAt: row.preflight_result_created_at,
       backupSpec: row.backup_spec,
     };
+
+    if (row.kots_installation_spec) {
+      try {
+        const installationSpec = yaml.safeLoad(row.kots_installation_spec).spec as InstallationSpec;
+        versionItem.yamlErrors = installationSpec.yamlErrors;
+      } catch (err) {
+        console.log("Failed to unmarshal installation spec yaml", err);
+      }
+    }
 
     return versionItem;
   }
@@ -1026,6 +1043,24 @@ order by adv.sequence desc`;
       return undefined;
     }
     return yaml.safeLoad(spec).spec as ApplicationSpec;
+  }
+
+  async getKotsInstallationSpec(appId: string, sequence: number): Promise<InstallationSpec | undefined> {
+    const q = `select kots_installation_spec from app_version where app_id = $1 and sequence = $2`;
+    const v = [
+      appId,
+      sequence,
+    ];
+
+    const result = await this.pool.query(q, v);
+    if (!result.rows.length) {
+      return undefined;
+    }
+    const spec: string = result.rows[0].kots_installation_spec;
+    if (!spec) {
+      return undefined;
+    }
+    return yaml.safeLoad(spec).spec as InstallationSpec;
   }
 
   async getAppSpec(appId: string, sequence: number): Promise<string | undefined> {

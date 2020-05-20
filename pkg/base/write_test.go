@@ -216,6 +216,27 @@ func Test_DeduplicateOnContent(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "not yaml",
+			files: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+				{
+					Path:    "not-yaml",
+					Content: []byte("not yaml"),
+				},
+			},
+			excludeKotsKinds: true,
+			expectedResources: []BaseFile{
+				{
+					Path:    "service-a",
+					Content: []byte(TestServiceA),
+				},
+			},
+			expectedPatches: []BaseFile{},
+		},
 	}
 
 	for _, test := range tests {

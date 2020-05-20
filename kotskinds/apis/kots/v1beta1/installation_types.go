@@ -22,17 +22,23 @@ import (
 
 // InstallationSpec defines the desired state of InstallationSpec
 type InstallationSpec struct {
-	UpdateCursor  string              `json:"updateCursor,omitempty"`
-	ChannelName   string              `json:"channelName,omitempty"`
-	VersionLabel  string              `json:"versionLabel,omitempty"`
-	ReleaseNotes  string              `json:"releaseNotes,omitempty"`
-	EncryptionKey string              `json:"encryptionKey,omitempty"`
-	KnownImages   []InstallationImage `json:"knownImages,omitempty"`
+	UpdateCursor  string                  `json:"updateCursor,omitempty"`
+	ChannelName   string                  `json:"channelName,omitempty"`
+	VersionLabel  string                  `json:"versionLabel,omitempty"`
+	ReleaseNotes  string                  `json:"releaseNotes,omitempty"`
+	EncryptionKey string                  `json:"encryptionKey,omitempty"`
+	KnownImages   []InstallationImage     `json:"knownImages,omitempty"`
+	YAMLErrors    []InstallationYAMLError `json:"yamlErrors,omitempty"`
 }
 
 type InstallationImage struct {
 	Image     string `json:"image,omitempty"`
 	IsPrivate bool   `json:"isPrivate,omitempty"`
+}
+
+type InstallationYAMLError struct {
+	Path  string `json:"path"`
+	Error string `json:"error,omitempty"`
 }
 
 // InstallationStatus defines the observed state of Installation

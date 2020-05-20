@@ -122,7 +122,10 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 	for _, file := range singleDocs {
 		writeToKustomization, err := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to check if file should be included")
+			// should we do anything with errors here?
+			if _, ok := err.(ParseError); !ok {
+				return nil, nil, errors.Wrap(err, "failed to check if file should be included")
+			}
 		}
 
 		if !writeToKustomization {

@@ -92,10 +92,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		for _, f := range baseFiles {
 			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to check if base file %s should be included", f.Path)
+				if _, ok := err.(ParseError); !ok {
+					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
+				}
 			}
 			if include {
 				base.Files = append(base.Files, f)
+			} else if err != nil {
+				f.Error = err
+				base.ErrorFiles = append(base.ErrorFiles, f)
 			}
 		}
 	}
@@ -186,25 +191,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
 		}
 
-		helmBaseFiles := []BaseFile{}
+		helmBaseFiles, helmBaseYAMLErrorFiles := []BaseFile{}, []BaseFile{}
 		for _, helmBaseFile := range helmBase.Files {
 			filePath := filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path)
-
-			// this is a little bit of an abuse of the next function
-			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", filePath)
-			}
-
-			if !include {
-				continue
-			}
 
 			upstreamFile := upstreamtypes.UpstreamFile{
 				Path:    filePath,
 				Content: helmBaseFile.Content,
 			}
-
 			u.Files = append(u.Files, upstreamFile)
 
 			baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
@@ -212,7 +206,19 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", filePath)
 			}
 
-			helmBaseFiles = append(helmBaseFiles, baseFile)
+			// this is a little bit of an abuse of the next function
+			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
+			if err != nil {
+				if _, ok := err.(ParseError); !ok {
+					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", filePath)
+				}
+			}
+			if include {
+				helmBaseFiles = append(helmBaseFiles, baseFile)
+			} else if err != nil {
+				baseFile.Error = err
+				helmBaseYAMLErrorFiles = append(helmBaseYAMLErrorFiles, baseFile)
+			}
 		}
 
 		if kotsHelmChart.Spec.Namespace != "" {

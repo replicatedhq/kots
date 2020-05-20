@@ -132,6 +132,7 @@ func Test_ShouldBeIncludedInBaseKustomization(t *testing.T) {
 		content          []byte
 		excludeKotsKinds bool
 		expected         bool
+		wantParseError   bool
 	}{
 		{
 			name:             "NOTES.txt",
@@ -396,13 +397,24 @@ spec:
 			excludeKotsKinds: true,
 			expected:         true,
 		},
+		{
+			name:           "is invalid yaml",
+			path:           "invalid.yaml",
+			content:        []byte(`{{`),
+			wantParseError: true,
+		},
+		{
+			name:           "not kubernetes yaml",
+			path:           "notkubernetes.yaml",
+			content:        []byte(`test: 123`),
+			wantParseError: true,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			scopetest := scopeagent.StartTest(t)
 			defer scopetest.End()
-			req := require.New(t)
 
 			b := BaseFile{
 				Path:    test.path,
@@ -410,7 +422,11 @@ spec:
 			}
 
 			actual, err := b.ShouldBeIncludedInBaseKustomization(test.excludeKotsKinds)
-			req.NoError(err)
+			if test.wantParseError {
+				assert.IsType(t, ParseError{}, err)
+				return
+			}
+			require.NoError(t, err)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

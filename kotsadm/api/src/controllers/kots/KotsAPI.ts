@@ -9,6 +9,7 @@ import * as _ from "lodash";
 import {
   extractDownstreamNamesFromTarball,
   extractInstallationSpecFromTarball,
+  extractRawInstallationSpecFromTarball,
   extractPreflightSpecFromTarball,
   extractAppSpecFromTarball,
   extractKotsAppSpecFromTarball,
@@ -171,6 +172,7 @@ export class KotsAPI {
     await putObject(params, objectStorePath, buffer, params.shipOutputBucket);
 
     const installationSpec = await extractInstallationSpecFromTarball(buffer);
+    const rawInstallationSpec = await extractRawInstallationSpecFromTarball(buffer);
     const supportBundleSpec = await extractSupportBundleSpecFromTarball(buffer);
     const analyzersSpec = await extractAnalyzerSpecFromTarball(buffer);
     const preflightSpec = await extractPreflightSpecFromTarball(buffer);
@@ -183,7 +185,7 @@ export class KotsAPI {
     const configValues = await extractConfigValuesFromTarball(buffer);
     const backupSpec = await extractBackupSpecFromTarball(buffer);
 
-    await request.app.locals.stores.kotsAppStore.createMidstreamVersion(
+    await (request.app.locals.stores.kotsAppStore as KotsAppStore).createMidstreamVersion(
       kotsApp.id,
       0,
       installationSpec.versionLabel,
@@ -196,6 +198,7 @@ export class KotsAPI {
       preflightSpec,
       appSpec,
       kotsAppSpec,
+      rawInstallationSpec,
       kotsAppLicense,
       configSpec,
       configValues,
@@ -311,12 +314,13 @@ export async function uploadUpdate(stores, slug, buffer, source) {
   const appTitle = await extractAppTitleFromTarball(buffer);
   const appIcon = await extractAppIconFromTarball(buffer);
   const installationSpec = await extractInstallationSpecFromTarball(buffer);
+  const rawInstallationSpec = await extractRawInstallationSpecFromTarball(buffer);
   const kotsAppLicense = await extractKotsAppLicenseFromTarball(buffer);
   const configSpec = await extractConfigSpecFromTarball(buffer);
   const configValues = await extractConfigValuesFromTarball(buffer);
   const backupSpec = await extractBackupSpecFromTarball(buffer);
 
-  await stores.kotsAppStore.createMidstreamVersion(
+  await (stores.kotsAppStore as KotsAppStore).createMidstreamVersion(
     kotsApp.id,
     newSequence,
     installationSpec.versionLabel,
@@ -329,6 +333,7 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     preflightSpec,
     appSpec,
     kotsAppSpec,
+    rawInstallationSpec,
     kotsAppLicense,
     configSpec,
     configValues,

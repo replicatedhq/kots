@@ -27,6 +27,10 @@ export const listAppsRaw = `
           createdOn
           sequence
           deployedAt
+          yamlErrors {
+            path
+            error
+          }
         }
         lastUpdateCheckAt
         downstreams {
@@ -113,6 +117,10 @@ export const getKotsAppRaw = `
         sequence
         releaseNotes
         deployedAt
+        yamlErrors {
+          path
+          error
+        }
       }
       lastUpdateCheckAt
       bundleCommand

@@ -38,6 +38,8 @@ spec:
         type: text
       - name: kots_app_spec
         type: text
+      - name: kots_installation_spec
+        type: text
       - name: kots_license
         type: text
       - name: config_spec

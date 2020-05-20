@@ -266,6 +266,11 @@ export class Schema {
           appSpec = yaml.safeDump(version.kots_app_spec);
         }
 
+        let installationSpec = null;
+        if (version.kots_installation_spec) {
+          installationSpec = yaml.safeDump(version.kots_installation_spec);
+        }
+
         let preflightSpec = null;
         if (version.preflight_spec) {
           preflightSpec = yaml.safeDump(version.preflight_spec);
@@ -286,9 +291,10 @@ export class Schema {
             supportbundle_spec,
             preflight_spec,
             release_notes,
-            kots_app_spec
+            kots_app_spec,
+            kots_installation_spec
           ) VALUES (
-            %L, ${version.sequence}, ${version.update_cursor}, %L, %L, %L, %L, %L, %L
+            %L, ${version.sequence}, ${version.update_cursor}, %L, %L, %L, %L, %L, %L, %L
             )`,
             app.id,
             version.created_at,
@@ -296,7 +302,8 @@ export class Schema {
             supportbundleSpec,
             preflightSpec,
             version.release_notes,
-            appSpec
+            appSpec,
+            installationSpec,
           )
         )
       }
