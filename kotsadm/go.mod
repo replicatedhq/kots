@@ -30,7 +30,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.3
-	github.com/replicatedhq/troubleshoot v0.9.34-0.20200520142846-fb2f028fb5ed
+	github.com/replicatedhq/troubleshoot v0.9.34
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
@@ -46,7 +46,6 @@ require (
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	google.golang.org/api v0.6.1-0.20190607001116-5213b8090861
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
