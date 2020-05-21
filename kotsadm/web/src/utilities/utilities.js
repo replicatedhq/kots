@@ -173,6 +173,13 @@ export function getCronFrequency(schedule) {
 }
 
 export function getReadableCronDescriptor(expression) {
+  if (expression == "@hourly") {
+    expression = "0 * * * *"
+  } else if (expression == "@daily") {
+    expression = "0 0 * * *"
+  } else if (expression == "@weekly") {
+    expression = "0 0 * * 0"
+  }
   return cronstrue.toString(expression);
 }
 

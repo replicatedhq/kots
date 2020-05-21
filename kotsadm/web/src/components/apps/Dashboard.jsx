@@ -35,7 +35,7 @@ class Dashboard extends Component {
     appName: "",
     iconUri: "",
     currentVersion: {},
-    downstreams: [],
+    downstream: [],
     links: [],
     checkingForUpdates: false,
     checkingUpdateMessage: "Checking for updates",
@@ -92,7 +92,7 @@ class Dashboard extends Component {
       appName: app.name,
       iconUri: app.iconUri,
       currentVersion: app.downstreams[0]?.currentVersion,
-      downstreams: app.downstreams[0],
+      downstream: app.downstreams[0],
       links: app.downstreams[0]?.links
     });
   }
@@ -449,7 +449,7 @@ class Dashboard extends Component {
       appName,
       iconUri,
       currentVersion,
-      downstreams,
+      downstream,
       links,
       checkingForUpdates,
       checkingUpdateMessage,
@@ -464,7 +464,7 @@ class Dashboard extends Component {
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
 
-    const latestPendingVersion = downstreams?.pendingVersions?.find(version => Math.max(version.sequence));
+    const latestPendingVersion = downstream?.pendingVersions?.find(version => Math.max(version.sequence));
     const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
     const currentSequence = currentVersion ? currentVersion.sequence : 0;
 
@@ -522,7 +522,7 @@ class Dashboard extends Component {
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
-                downstreams={downstreams}
+                downstream={downstream}
                 app={app}
                 url={this.props.match.url}
                 checkingForUpdates={checkingForUpdates}
@@ -653,6 +653,7 @@ class Dashboard extends Component {
             onRequestClose={this.hideUpdateCheckerModal}
             updateCheckerSpec={app.updateCheckerSpec}
             appSlug={app.slug}
+            gitopsEnabled={downstream?.gitops?.enabled}
             onUpdateCheckerSpecSubmitted={() => {
               this.hideUpdateCheckerModal();
               this.props.refreshAppData();

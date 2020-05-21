@@ -881,7 +881,7 @@ class AppVersionHistory extends Component {
                     : showOnlineUI ?
                       <div className="flex alignItems--center">
                         <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
-                        <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={this.showUpdateCheckerModal} data-tip="Configure update checker"></span>
+                        <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={this.showUpdateCheckerModal} data-tip="Configure automatic updates"></span>
                         <ReactTooltip effect="solid" className="replicated-tooltip" />
                       </div>
                       : null
@@ -1158,6 +1158,7 @@ class AppVersionHistory extends Component {
             onRequestClose={this.hideUpdateCheckerModal}
             updateCheckerSpec={app.updateCheckerSpec}
             appSlug={app.slug}
+            gitopsEnabled={gitopsEnabled}
             onUpdateCheckerSpecSubmitted={() => {
               this.hideUpdateCheckerModal();
               this.props.refreshAppData();
