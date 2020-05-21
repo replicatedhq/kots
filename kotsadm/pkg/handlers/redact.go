@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type UpdateRedactRequest struct {
@@ -25,6 +27,28 @@ type GetRedactResponse struct {
 	Success     bool   `json:"success"`
 	Error       string `json:"error,omitempty"`
 	UpdatedSpec string `json:"updatedSpec"`
+}
+
+type GetRedactorResponse struct {
+	Redactor string              `json:"redactor"`
+	Metadata redact.RedactorList `json:"redactorMetadata"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type ListRedactorsResponse struct {
+	Redactors []redact.RedactorList `json:"redactors"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type PostRedactorMetadata struct {
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
+	New         bool   `json:"new"`
+	Redactor    string `json:"redactor"`
 }
 
 func UpdateRedact(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +74,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		updateRedactResponse.Error = "failed to parse authorization header"
+		updateRedactResponse.Error = "no session in auth header"
 		JSON(w, 401, updateRedactResponse)
 		return
 	}
@@ -99,15 +123,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleanSpec, err := redact.CleanupSpec(setSpec)
-	if err != nil {
-		logger.Error(err)
-		updateRedactResponse.Error = err.Error()
-		JSON(w, 400, updateRedactResponse)
-		return
-	}
-
-	errMessage, err := redact.SetRedactSpec(cleanSpec)
+	errMessage, err := redact.SetRedactSpec(setSpec)
 	if err != nil {
 		logger.Error(err)
 		updateRedactResponse.Error = errMessage
@@ -115,8 +131,15 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data, errMessage, err := redact.GetRedactSpec()
+	if err != nil {
+		logger.Error(err)
+		updateRedactResponse.Error = errMessage
+		JSON(w, 500, updateRedactResponse)
+	}
+
 	updateRedactResponse.Success = true
-	updateRedactResponse.UpdatedSpec = cleanSpec
+	updateRedactResponse.UpdatedSpec = data
 	JSON(w, 200, updateRedactResponse)
 }
 
@@ -143,7 +166,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getRedactResponse.Error = "failed to parse authorization header"
+		getRedactResponse.Error = "no session in auth header"
 		JSON(w, 401, getRedactResponse)
 		return
 	}
@@ -158,4 +181,183 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 	getRedactResponse.Success = true
 	getRedactResponse.UpdatedSpec = data
 	JSON(w, 200, getRedactResponse)
+}
+
+func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	getRedactorResponse := GetRedactorResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		getRedactorResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, getRedactorResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		getRedactorResponse.Error = "no session in auth header"
+		JSON(w, 401, getRedactorResponse)
+		return
+	}
+
+	redactorSlug := mux.Vars(r)["slug"]
+
+	redactorObj, err := redact.GetRedactBySlug(redactorSlug)
+	if err != nil {
+		logger.Error(err)
+		getRedactorResponse.Error = "failed to get redactor"
+		JSON(w, http.StatusInternalServerError, getRedactorResponse)
+		return
+	}
+
+	marshalled, err := util.MarshalIndent(2, redactorObj.Redact)
+	if err != nil {
+		logger.Error(err)
+		getRedactorResponse.Error = "failed to marshal redactor"
+		JSON(w, http.StatusInternalServerError, getRedactorResponse)
+		return
+	}
+
+	getRedactorResponse.Success = true
+	getRedactorResponse.Redactor = string(marshalled)
+	getRedactorResponse.Metadata = redactorObj.Metadata
+	JSON(w, http.StatusOK, getRedactorResponse)
+	return
+}
+
+func ListRedactors(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	listRedactorsResponse := ListRedactorsResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		listRedactorsResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, listRedactorsResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		listRedactorsResponse.Error = "no session in auth header"
+		JSON(w, 401, listRedactorsResponse)
+		return
+	}
+
+	redactors, err := redact.GetRedactInfo()
+	if err != nil {
+		logger.Error(err)
+		listRedactorsResponse.Error = "failed to get redactors"
+		JSON(w, http.StatusInternalServerError, listRedactorsResponse)
+		return
+	}
+
+	listRedactorsResponse.Success = true
+	listRedactorsResponse.Redactors = redactors
+	JSON(w, http.StatusOK, listRedactorsResponse)
+	return
+}
+
+func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	metadataResponse := GetRedactorResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, metadataResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		metadataResponse.Error = "no session in auth header"
+		JSON(w, 401, metadataResponse)
+		return
+	}
+
+	redactorSlug := mux.Vars(r)["slug"]
+
+	updateRedactRequest := PostRedactorMetadata{}
+	if err := json.NewDecoder(r.Body).Decode(&updateRedactRequest); err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to decode request body"
+		JSON(w, 400, metadataResponse)
+		return
+	}
+
+	newRedactor, err := redact.SetRedactYaml(redactorSlug, updateRedactRequest.Description, updateRedactRequest.Enabled, updateRedactRequest.New, []byte(updateRedactRequest.Redactor))
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to update redactor"
+		JSON(w, 400, metadataResponse)
+		return
+	}
+
+	marshalled, err := util.MarshalIndent(2, newRedactor.Redact)
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to marshal redactor"
+		JSON(w, http.StatusInternalServerError, metadataResponse)
+		return
+	}
+
+	metadataResponse.Success = true
+	metadataResponse.Metadata = newRedactor.Metadata
+	metadataResponse.Redactor = string(marshalled)
+	JSON(w, http.StatusOK, metadataResponse)
+	return
+}
+
+func DeleteRedact(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	redactorSlug := mux.Vars(r)["slug"]
+	err = redact.DeleteRedact(redactorSlug)
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return
 }
