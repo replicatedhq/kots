@@ -81,12 +81,12 @@ build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 build-alpha: build_and_push
 
 .PHONY: build-release
-build-release: IMAGE = kotsadm/${PROJECT_NAME}:${BUILDKITE_TAG}
+build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
 build-release: build_and_push
 
 .PHONY: build_and_push
 build_and_push:
-	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${BUILDKITE_COMMIT:0:7}" --no-cache .
+	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg commit="$${GIT_COMMIT:0:7}" --no-cache .
 	docker push ${IMAGE}
 
 .PHONY: no-yarn

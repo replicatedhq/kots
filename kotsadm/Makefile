@@ -33,13 +33,13 @@ build-ttl-ci.sh:
 
 .PHONY: build-alpha
 build-alpha:
-	docker build -f deploy/Dockerfile --build-arg version=${BUILDKITE_COMMIT} -t kotsadm/kotsadm:alpha .
+	docker build -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .
 	docker push kotsadm/kotsadm:alpha
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile --build-arg version=${BUILDKITE_TAG} -t kotsadm/kotsadm:${BUILDKITE_TAG} .
-	docker push kotsadm/kotsadm:${BUILDKITE_TAG}
+	docker build -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
+	docker push kotsadm/kotsadm:${GIT_TAG}
 
 .PHONY: project-pact-tests
 project-pact-tests:

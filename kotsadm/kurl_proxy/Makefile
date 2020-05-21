@@ -25,5 +25,5 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile -t kotsadm/kurl-proxy:${BUILDKITE_TAG} .
-	docker push kotsadm/kurl-proxy:${BUILDKITE_TAG}
+	docker build -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GIT_TAG} .
+	docker push kotsadm/kurl-proxy:${GIT_TAG}
