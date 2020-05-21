@@ -608,6 +608,7 @@ export interface KotsVersion {
   diffSummary?: string;
   commitUrl?: string;
   gitDeployable?: boolean;
+  yamlErrors?: InstallationYAMLError[];
 }
 
 export interface AppRegistryDetails {
