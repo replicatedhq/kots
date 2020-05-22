@@ -7,6 +7,8 @@ import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";
 
+import { Utilities } from "../../utilities/utilities";
+
 const redactor = {
   id: "1",
   name: "my-demo-redactor",
@@ -35,10 +37,18 @@ class EditRedactor extends Component {
     createErrMsg: ""
   };
 
-  createRedactor = () => {
+  createRedactor = (name, slug, enabled, newRedactor, yaml) => {
     this.setState({ creatingRedactor: true, createErrMsg: "" });
 
-    fetch(`${window.env.API_ENDPOINT}/redact/metadata/${name}`, {
+    const payload = {
+      name: name,
+      slug: slug,
+      enabled: enabled,
+      new: newRedactor,
+      redactor: yaml
+    }
+
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/${name}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -47,7 +57,6 @@ class EditRedactor extends Component {
       body: JSON.stringify(payload)
     })
       .then(async (res) => {
-
         const createResponse = await res.json();
         if (!res.ok) {
           this.setState({
@@ -59,7 +68,7 @@ class EditRedactor extends Component {
 
         if (createResponse.success) {
           this.setState({
-            snapshotSettings: settingsResponse,
+            newRedactor: createResponse,
             creatingRedactor: false,
             createConfirm: true,
             createErrMsg: ""
@@ -70,7 +79,7 @@ class EditRedactor extends Component {
         } else {
           this.setState({
             creatingRedactor: false,
-            createErrMsg: settingsResponse.error
+            createErrMsg: createResponse.error
           })
         }
       })
@@ -102,7 +111,11 @@ class EditRedactor extends Component {
   }
 
   onSaveRedactor = () => {
-    console.log("save redactor")
+    if (this.props.match.params.id) {
+      console.log("a")
+    } else {
+      this.createRedactor("", "", this.state.redactorEnabled, true, this.state.redactorYaml)
+    }
   }
 
   toggleEditRedactorName = () => {
@@ -157,7 +170,8 @@ class EditRedactor extends Component {
               </div> :
               <div className="flex flex1 alignItems--center">
                 <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
-                <span className="replicated-link u-fontSize--normal" onClick={this.toggleEditRedactorName}> Edit </span>
+                {this.props.match.params.id &&
+                  <span className="replicated-link u-fontSize--normal" onClick={this.toggleEditRedactorName}> Edit </span>}
               </div>
 
             }
