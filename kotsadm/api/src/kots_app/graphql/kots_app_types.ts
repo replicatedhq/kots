@@ -73,6 +73,13 @@ const KotsGitOpsInput = `
   }
 `;
 
+const InstallationYamlError = `
+  type InstallationYamlError {
+    path: String!
+    error: String
+  }
+`
+
 const KotsVersion = `
   type KotsVersion {
     title: String!
@@ -88,15 +95,9 @@ const KotsVersion = `
     preflightResultCreatedAt: String
     commitUrl: String
     gitDeployable: Boolean
+    yamlErrors: [InstallationYamlError]
   }
 `;
-
-const InstallationYamlError = `
-  type InstallationYamlError {
-    path: String!
-    error: String
-  }
-`
 
 // midstream
 const KotsAppVersion = `
