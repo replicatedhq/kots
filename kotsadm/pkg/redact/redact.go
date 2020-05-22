@@ -142,35 +142,9 @@ func SetRedactSpec(spec string) (string, error) {
 		return "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-redact", metav1.GetOptions{})
+	configMap, errMsg, err := getConfigmap()
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			// not a not found error, so a real error
-			return "failed to get kotsadm-redact configMap", errors.Wrap(err, "failed to get kotsadm-redact configMap")
-		} else {
-			// not found, so create it fresh
-			newMap := v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kotsadm-redact",
-					Namespace: os.Getenv("POD_NAMESPACE"),
-					Labels: map[string]string{
-						"kots.io/kotsadm": "true",
-					},
-				},
-				Data: map[string]string{
-					"kotsadm-redact": spec,
-				},
-			}
-			_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(&newMap)
-			if err != nil {
-				return "failed to create kotsadm-redact configMap", errors.Wrap(err, "failed to create kotsadm-redact configMap")
-			}
-			return "", nil
-		}
+		return errMsg, err
 	}
 
 	newMap, err := splitRedactors(spec, configMap.Data)
@@ -329,8 +303,27 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 			// not a not found error, so a real error
 			return nil, "failed to get kotsadm-redact configMap", errors.Wrap(err, "failed to get kotsadm-redact configMap")
 		} else {
-			// not found, so return empty string
-			return nil, "", nil
+			// not found, so create one and return it
+			newMap := v1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kotsadm-redact",
+					Namespace: os.Getenv("POD_NAMESPACE"),
+					Labels: map[string]string{
+						"kots.io/kotsadm": "true",
+					},
+				},
+				Data: map[string]string{},
+			}
+			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(&newMap)
+			if err != nil {
+				return nil, "failed to create kotsadm-redact configMap", errors.Wrap(err, "failed to create kotsadm-redact configMap")
+			}
+
+			return createdMap, "", nil
 		}
 	}
 	return configMap, "", nil
