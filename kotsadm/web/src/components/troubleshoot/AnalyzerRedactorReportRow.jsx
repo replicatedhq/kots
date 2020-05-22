@@ -42,7 +42,10 @@ class AnalyzerRedactorReportRow extends React.Component {
           <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> 1 redaction </span> </p>
           <div className="flex flex1 alignItems--center">
             <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
-            <span className="icon gray-forward-icon u-marginLeft--10" style={{ marginTop: "4px" }} />
+            <div class="arrow">
+              <div class="line"></div>
+              <div class="point"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -78,7 +81,7 @@ class AnalyzerRedactorReportRow extends React.Component {
               </div>
             </div>
             {this.state.toggleDetails &&
-              <div className="Timeline--wrapper" style={{ marginLeft: "35px"}}>
+              <div className="Timeline--wrapper" style={{ marginLeft: "43px" }}>
                 {redactorFiles.length > 0 && redactorFiles?.map((file, i) => {
                   return this.renderRedactorFiles(file, i)
                 })}

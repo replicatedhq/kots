@@ -334,6 +334,7 @@
 }
 
 .Timeline--wrapper {
+  position: relative;
   width: 100%;
   padding: 0 0 0 15px;
   border-left: 2px solid #C4C4C4;
@@ -354,7 +355,60 @@
     left: -17px;
     width: 10px;
   }
+
+  .section:after {
+    content: "";
+    position: absolute;
+    top: 25px;
+    left: -6px;
+    border: 1px solid #c4c4c4;
+    border-radius: 20px;
+  }
 }
+
+.Timeline--wrapper:before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  border: 1px solid #c4c4c4;
+  height: 1px;
+  border-radius: 20px 20px 0 0;
+}
+
+.Timeline--wrapper:after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: -2px;
+  border: 1px solid #c4c4c4;
+  height: 1px;
+  border-radius: 20px;
+}
+
+.arrow {
+  margin-left: 10px;
+  margin-bottom: 6px;
+  .line {
+    position: absolute;
+    margin-top: -1.1px;
+    height: 9.68px;
+    border: 1px solid #9B9B9B;
+    transform: rotate(-90deg);
+    border-radius: 20px;
+  }
+  .point {
+    position: absolute;
+    width: 6.01px;
+    height: 5.95px;
+    border-top: 2px solid #9B9B9B;
+    border-left: 2px solid #9B9B9B;
+    border-bottom-left-radius: 2px;
+    border-top-right-radius: 2px;
+    transform: rotate(-220deg);
+  }
+}
+
 
 /* ≥ 960px */
 @media screen and (min-width: 60em) {
