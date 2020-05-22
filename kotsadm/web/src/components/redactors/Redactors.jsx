@@ -31,6 +31,7 @@ const redactors = [
 
 class Redactors extends Component {
   state = {
+    redactors: [],
     sortedRedactors: [],
     selectedOption: {
       value: "createdAt",
@@ -48,7 +49,7 @@ class Redactors extends Component {
       redactorsErrMsg: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/redacts`, {
+    fetch(`${window.env.API_ENDPOINT}/redacts`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -57,11 +58,18 @@ class Redactors extends Component {
     })
       .then(res => res.json())
       .then(result => {
-        console.log(result)
-        this.setState({
-          isLoadingRedactors: false,
-          redactorsErrMsg: "",
-        })
+        if (result.success) {
+          this.setState({
+            redactors: result.redactors,
+            isLoadingRedactors: false,
+            redactorsErrMsg: "",
+          })
+        } else {
+          this.setState({
+            isLoadingRedactors: false,
+            redactorsErrMsg: result.error,
+          })
+        }
       })
       .catch(err => {
         this.setState({
