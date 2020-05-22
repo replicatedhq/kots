@@ -372,6 +372,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to load installation")
 		}
 
+		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load application")
+		}
+
 		// Rewrite private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
 			BaseDir: writeBaseOptions.BaseDir,
@@ -380,7 +385,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
-			Installation: newInstallation,
+			Installation:     newInstallation,
+			AllImagesPrivate: application.Spec.ProxyPublicImages,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {

@@ -388,6 +388,11 @@ func Test_localImageName(t *testing.T) {
 				Endpoint: "replicated.registry.com",
 			},
 		},
+		app: &kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				ProxyPublicImages: false,
+			},
+		},
 	}
 
 	ctxWithoutRegistry := ConfigCtx{
@@ -397,6 +402,27 @@ func Test_localImageName(t *testing.T) {
 			Spec: kotsv1beta1.LicenseSpec{
 				AppSlug:  "myslug",
 				Endpoint: "replicated.registry.com",
+			},
+		},
+		app: &kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				ProxyPublicImages: false,
+			},
+		},
+	}
+
+	ctxWithoutRegistryProxyAll := ConfigCtx{
+		LocalRegistry: LocalRegistry{},
+
+		license: &kotsv1beta1.License{
+			Spec: kotsv1beta1.LicenseSpec{
+				AppSlug:  "myslug",
+				Endpoint: "replicated.registry.com",
+			},
+		},
+		app: &kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				ProxyPublicImages: true,
 			},
 		},
 	}
@@ -424,6 +450,12 @@ func Test_localImageName(t *testing.T) {
 			ctx:      ctxWithoutRegistry,
 			image:    "redis:latest",
 			expected: "redis:latest",
+		},
+		{
+			name:     "do not rewrite public image",
+			ctx:      ctxWithoutRegistryProxyAll,
+			image:    "redis:latest",
+			expected: "proxy.replicated.com/proxy/myslug/redis:latest",
 		},
 		{
 			name:     "rewrite private image to proxy",

@@ -35,7 +35,13 @@ func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageR
 		additionalImages = options.Application.Spec.AdditionalImages
 	}
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.DryRun, options.IsAirgap, checkedImages)
+
+	rewriteAll := options.IsAirgap
+	if options.Application != nil && options.Application.Spec.ProxyPublicImages {
+		rewriteAll = true
+	}
+
+	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.DryRun, rewriteAll, checkedImages)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}

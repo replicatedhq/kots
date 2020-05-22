@@ -65,6 +65,7 @@ type ConfigCtx struct {
 	LocalRegistry LocalRegistry
 
 	license *kotsv1beta1.License // Another agument for unifying all these contexts
+	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
@@ -264,14 +265,16 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 
 	// Not airgap and no local registry.  Rewrite images that are private only.
 
-	isPrivate, err := image.IsPrivateImage(imageRef)
-	if err != nil {
-		// TODO: log
-		return ""
-	}
+	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
+		isPrivate, err := image.IsPrivateImage(imageRef)
+		if err != nil {
+			// TODO: log
+			return ""
+		}
 
-	if !isPrivate {
-		return imageRef
+		if !isPrivate {
+			return imageRef
+		}
 	}
 
 	proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)

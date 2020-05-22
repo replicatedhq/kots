@@ -48,7 +48,7 @@ type ImageInfo struct {
 	IsPrivate bool
 }
 
-func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string, additionalImages []string, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string, additionalImages []string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 
 	err := filepath.Walk(upstreamDir,
@@ -66,7 +66,7 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 				return err
 			}
 
-			newImagesSubset, err := copyImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, dryRun, isAirgap, checkedImages, newImages)
+			newImagesSubset, err := copyImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, dryRun, allImagesPrivate, checkedImages, newImages)
 			if err != nil {
 				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
@@ -80,7 +80,7 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 	}
 
 	for _, additionalImage := range additionalImages {
-		newImagesSubset, err := copyImageBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, additionalImage, dryRun, isAirgap, checkedImages)
+		newImagesSubset, err := copyImageBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, additionalImage, dryRun, allImagesPrivate, checkedImages)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to addditional image: %s", additionalImage)
 		}
@@ -90,7 +90,7 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo) ([]string, []*k8sdoc.Doc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool) ([]string, []*k8sdoc.Doc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objects := make([]*k8sdoc.Doc, 0) // all objects where images are referenced from
@@ -113,6 +113,15 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo) ([
 			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
 				numPrivateImages := 0
 				for _, image := range images {
+					if allPrivate {
+						checkedImages[image] = ImageInfo{
+							IsPrivate: true,
+						}
+						numPrivateImages = numPrivateImages + 1
+						uniqueImages[image] = true
+						continue
+					}
+
 					isPrivate := false
 					if i, ok := checkedImages[image]; ok {
 						isPrivate = i.IsPrivate
@@ -188,8 +197,8 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 	return objects, nil
 }
 
-func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imageName string, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
-	newImage, err := copyOneImage(srcRegistry, destRegistry, imageName, appSlug, reportWriter, log, dryRun, isAirgap, checkedImages)
+func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imageName string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+	newImage, err := copyOneImage(srcRegistry, destRegistry, imageName, appSlug, reportWriter, log, dryRun, allImagesPrivate, checkedImages)
 	if err != nil {
 		log.FinishChildSpinner()
 		return nil, errors.Wrapf(err, "failed to transfer image %s", imageName)
@@ -198,7 +207,7 @@ func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptio
 	return newImage, nil
 }
 
-func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, dryRun, isAirgap bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
+func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
 	savedImages := make(map[string]bool)
 	newImages := []kustomizeimage.Image{}
 
@@ -213,7 +222,7 @@ func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.Regist
 			}
 
 			log.ChildActionWithSpinner("Transferring image %s", image)
-			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, dryRun, isAirgap, checkedImages)
+			newImage, err := copyOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, dryRun, allImagesPrivate, checkedImages)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrapf(err, "failed to transfer image %s", image)
@@ -260,7 +269,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.Logger, dryRun, isAirgap bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.Logger, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read default policy")
@@ -278,11 +287,11 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		sourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
 
-	isPrivate := isAirgap // rewrite all images with airgap
+	isPrivate := allImagesPrivate // rewrite all images with airgap
 	if i, ok := checkedImages[image]; ok {
 		isPrivate = i.IsPrivate
 	} else {
-		if !isAirgap {
+		if !allImagesPrivate {
 			p, err := IsPrivateImage(image)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to check if image is private")
