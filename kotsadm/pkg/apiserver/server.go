@@ -71,6 +71,16 @@ func Start() {
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSupportBundle)
 	r.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
+	// redactor routes
+	r.Path("/api/v1/redact/set").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateRedact)
+	r.Path("/api/v1/redact/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedact)
+	r.Path("/api/v1/troubleshoot/redacts").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListRedactors)
+	r.Path("/api/v1/troubleshoot/redact/metadata/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactMetadata)
+	r.Path("/api/v1/troubleshoot/redact/metadata/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadata)
+	r.Path("/api/v1/troubleshoot/redact/individual/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactYaml)
+	r.Path("/api/v1/troubleshoot/redact/individual/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactYaml)
+	r.Path("/api/v1/troubleshoot/redact/individual/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
+
 	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
 	r.PathPrefix("/api/v1/kots/").Methods("HEAD", "GET", "POST", "PUT", "DELETE").HandlerFunc(handlers.NodeProxy(upstream))
 
@@ -115,10 +125,6 @@ func Start() {
 
 	// Find a home snapshot routes
 	r.Path("/api/v1/snapshot/{backup}/logs").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSnapshotLogs)
-
-	// redactor routes
-	r.Path("/api/v1/redact/set").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateRedact)
-	r.Path("/api/v1/redact/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedact)
 
 	// TODO
 
