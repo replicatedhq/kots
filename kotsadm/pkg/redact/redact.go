@@ -174,6 +174,10 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 		return nil, err
 	}
 
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
 	redactorEntry := RedactorMetadata{}
 	redactString, ok := configMap.Data[slug]
 	if !ok || newRedact {
@@ -187,6 +191,11 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 				newRedactorSpec.Name = name
 			}
 			slug = getSlug(newRedactorSpec.Name)
+		}
+
+		if _, ok := configMap.Data[slug]; ok {
+			// the target slug already exists - this is an error
+			return nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
 		}
 
 		// create the new redactor
@@ -209,6 +218,12 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 
 		if slug != getSlug(newRedactorSpec.Name) && newRedactorSpec.Name != "" {
 			// changing name
+
+			if _, ok := configMap.Data[getSlug(newRedactorSpec.Name)]; ok {
+				// the target slug already exists - this is an error
+				return nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
+			}
+
 			delete(configMap.Data, slug)
 			slug = getSlug(newRedactorSpec.Name)
 			redactorEntry.Metadata.Slug = slug
