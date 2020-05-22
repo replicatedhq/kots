@@ -161,7 +161,7 @@ func SetRedactSpec(spec string) (string, error) {
 }
 
 // updates/creates an individual redact with the provided metadata and yaml
-func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
+func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
 	// parse yaml as redactor
 	newRedactorSpec := v1beta1.Redact{}
 	err := yaml.Unmarshal(yamlBytes, &newRedactorSpec)
@@ -181,15 +181,12 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 	redactorEntry := RedactorMetadata{}
 	redactString, ok := configMap.Data[slug]
 	if !ok || newRedact {
-		// if name is not set in yaml or the request, take the name from the slug
+		// if name is not set in yaml, autogenerate a name
 		// if name is set, create the slug from the name
-		if newRedactorSpec.Name == "" && name == "" {
-			newRedactorSpec.Name = slug
+		if newRedactorSpec.Name == "" {
+			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(configMap.Data)+1)
+			slug = getSlug(newRedactorSpec.Name)
 		} else {
-			// name in request overrides name in yaml
-			if name != "" {
-				newRedactorSpec.Name = name
-			}
 			slug = getSlug(newRedactorSpec.Name)
 		}
 
@@ -209,11 +206,6 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 		err = json.Unmarshal([]byte(redactString), &redactorEntry)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
-		}
-
-		// name in request overrides name in spec
-		if name != newRedactorSpec.Name && name != "" {
-			newRedactorSpec.Name = name
 		}
 
 		if slug != getSlug(newRedactorSpec.Name) && newRedactorSpec.Name != "" {
