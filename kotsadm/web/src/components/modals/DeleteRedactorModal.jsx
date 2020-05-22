@@ -3,7 +3,7 @@ import Modal from "react-modal";
 import dayjs from "dayjs";
 
 export default function DeleteRedactorModal(props) {
-  const { deleteRedactorModal, toggleConfirmDeleteModal, redactorToDelete, handleDeleteRedactor, deleteErr, deleteErrorMsg } = props;
+  const { deleteRedactorModal, toggleConfirmDeleteModal, redactorToDelete, handleDeleteRedactor, deletingRedactor, deleteErrMsg } = props;
 
   return (
     <Modal
@@ -19,8 +19,8 @@ export default function DeleteRedactorModal(props) {
           <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--more">
             Delete redactor
               </p>
-          {deleteErr ?
-            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{deleteErrorMsg}</p>
+          {deleteErrMsg ?
+            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{deleteErrMsg}</p>
             : null}
           <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">
             Are you sure you want to delete a redactor? This action cannot be reversed.
@@ -40,9 +40,10 @@ export default function DeleteRedactorModal(props) {
                 </button>
             <button
               className="btn primary red"
+              disabled={deletingRedactor}
               onClick={() => { handleDeleteRedactor(redactorToDelete) }}
             >
-              Delete redactor
+              {deletingRedactor ? "Deleting" : "Delete redactor"}
             </button>
           </div>
         </div>

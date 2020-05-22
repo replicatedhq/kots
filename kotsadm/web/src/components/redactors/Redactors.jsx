@@ -23,7 +23,9 @@ class Redactors extends Component {
     deleteRedactorModal: false,
     redactorToDelete: {},
     isLoadingRedactors: false,
-    redactorsErrMsg: ""
+    redactorsErrMsg: "",
+    deletingRedactor: false,
+    deleteErrMsg: ""
   };
 
   getRedactors = () => {
@@ -80,7 +82,7 @@ class Redactors extends Component {
     if (value === "createdAt") {
       this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)) });
     } else {
-      this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.updatedOn) - dayjs(a.updatedOn)) });
+      this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt)) });
     }
   }
 
@@ -93,7 +95,30 @@ class Redactors extends Component {
   };
 
   handleDeleteRedactor = redactor => {
-    console.log("deleting", redactor)
+    this.setState({ deletingRedactor: true, deleteErrMsg: "" });
+
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/${redactor.slug}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json"
+      }
+    })
+      .then(() => {
+        this.setState({
+          deletingRedactor: false,
+          deleteErrMsg: "",
+          deleteRedactorModal: false
+        }, () => {
+          this.getRedactors();
+        });
+      })
+      .catch((err) => {
+        this.setState({
+          deletingRedactor: false,
+          deleteErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+        });
+      });
   }
 
 
@@ -114,7 +139,7 @@ class Redactors extends Component {
         label: "Sort by: Created At"
       },
       {
-        value: "updatedOn",
+        value: "updatedAt",
         label: "Sort by: Updated on"
       }
     ]
@@ -160,8 +185,8 @@ class Redactors extends Component {
             toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
             handleDeleteRedactor={this.handleDeleteRedactor}
             redactorToDelete={this.state.redactorToDelete}
-            deleteErr={this.state.deleteErr}
-            deleteErrorMsg={this.state.deleteErrorMsg}
+            deletingRedactor={this.state.deletingRedactor}
+            deleteErrMsg={this.state.deleteErrMsg}
           />
         }
       </div>

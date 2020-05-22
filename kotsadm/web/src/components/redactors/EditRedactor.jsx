@@ -17,6 +17,10 @@ class EditRedactor extends Component {
     redactorName: "",
     creatingRedactor: false,
     createErrMsg: "",
+    createConfirm: false,
+    editingRedactor: false,
+    editingErrMsg: "",
+    editConfirm: false,
     isLoadingRedactor: false,
     redactorErrMsg: ""
   };
@@ -61,6 +65,60 @@ class EditRedactor extends Component {
           redactorErrMsg: err,
         })
       })
+  }
+
+  editRedactor = (slug, enabled, yaml) => {
+    this.setState({ editingRedactor: true, editingErrMsg: "" });
+
+    const payload = {
+      slug: slug,
+      enabled: enabled,
+      redactor: yaml
+    }
+
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/${slug}`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const editResponse = await res.json();
+        if (!res.ok) {
+          this.setState({
+            editingRedactor: false,
+            editingErrMsg: editResponse.error
+          })
+          return;
+        }
+
+        if (editResponse.success) {
+          this.setState({
+            redactorYaml: editResponse.redactor,
+            redactorName: editResponse.redactorMetadata.name,
+            redactorEnabled: editResponse.redactorMetadata.enabled,
+            editingRedactor: false,
+            editConfirm: true,
+            createErrMsg: ""
+          });
+          setTimeout(() => {
+            this.setState({ editConfirm: false })
+          }, 3000);
+        } else {
+          this.setState({
+            editingRedactor: false,
+            editingErrMsg: editResponse.error
+          })
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          editingRedactor: false,
+          editingErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+        });
+      });
   }
 
   createRedactor = (enabled, newRedactor, yaml) => {
@@ -124,12 +182,10 @@ class EditRedactor extends Component {
   }
 
   componentDidMount() {
-    //TODO get redactor for id
     if (this.props.match.params.slug) {
       this.getRedactor(this.props.match.params.slug);
-      // this.setState({ redactorEnabled: redactor.status === "enabled" ? true : false, redactorYaml: redactor.yaml, redactorName: redactor.name });
     } else {
-      const defaultYaml=`name: ""
+      const defaultYaml = `name: ""
 files: []
 values: []
 regex: []
@@ -145,7 +201,7 @@ yaml: []`
 
   onSaveRedactor = () => {
     if (this.props.match.params.slug) {
-      console.log("a")
+      this.editRedactor(this.props.match.params.slug, this.state.redactorEnabled, this.state.redactorYaml);
     } else {
       this.createRedactor(this.state.redactorEnabled, true, this.state.redactorYaml);
     }
@@ -153,7 +209,7 @@ yaml: []`
 
 
   render() {
-    const { isLoadingRedactor } = this.state;
+    const { isLoadingRedactor, createConfirm, editConfirm, creatingRedactor, editingRedactor } = this.state;
 
     if (isLoadingRedactor) {
       return (
@@ -162,6 +218,7 @@ yaml: []`
         </div>
       )
     }
+
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
         <Helmet>
@@ -173,9 +230,9 @@ yaml: []`
                 Back to redactors
             </Link>
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween u-marginTop--10">
-              <div className="flex flex1 alignItems--center">
-                <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
-              </div>
+            <div className="flex flex1 alignItems--center">
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
+            </div>
             <div className="flex justifyContent--flexEnd">
               <div className="toggle flex flex1">
                 <div className="flex flex1">
@@ -224,7 +281,13 @@ yaml: []`
               <Link to="/redactors" className="btn secondary"> Cancel </Link>
             </div>
             <div className="flex">
-              <button type="button" className="btn primary blue" onClick={this.onSaveRedactor}> Save redactor </button>
+              {createConfirm || editConfirm &&
+                <div className="u-marginRight--10 flex alignItems--center">
+                  <span className="icon checkmark-icon" />
+                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">{createConfirm ? "Redactor created" : "Redactor updated"}</span>
+                </div>
+              }
+              <button type="button" className="btn primary blue" onClick={this.onSaveRedactor} disabled={creatingRedactor || editingRedactor}>{(creatingRedactor || editingRedactor) ? "Saving" : "Save redactor"} </button>
             </div>
           </div>
         </div>
