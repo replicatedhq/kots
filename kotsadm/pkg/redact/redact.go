@@ -174,6 +174,10 @@ func SetRedactYaml(name, slug, description string, enabled, newRedact bool, yaml
 		return nil, err
 	}
 
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
 	redactorEntry := RedactorMetadata{}
 	redactString, ok := configMap.Data[slug]
 	if !ok || newRedact {
