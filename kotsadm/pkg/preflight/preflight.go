@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstreamversion"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
@@ -19,7 +20,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(appID, int64(sequence))
+	status, err := downstreamversion.GetVersionStatus(appID, int64(sequence))
 	if err != nil {
 		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
 	}
@@ -34,7 +35,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 
 	if renderedKotsKinds.Preflight != nil {
 		// set the status to pending_preflights
-		if err := downstream.SetDownstreamVersionPendingPreflight(appID, int64(sequence)); err != nil {
+		if err := downstreamversion.SetVersionStatusPendingPreflight(appID, int64(sequence)); err != nil {
 			return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 		}
 
@@ -74,7 +75,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			logger.Debug("preflight checks completed")
 		}()
 	} else {
-		if err := downstream.SetDownstreamVersionReady(appID, int64(sequence)); err != nil {
+		if err := downstreamversion.SetVersionStatusReady(appID, int64(sequence)); err != nil {
 			return errors.Wrap(err, "failed to set downstream version ready")
 		}
 	}

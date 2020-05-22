@@ -75,7 +75,7 @@ func (g *GitOpsConfig) CloneURL() string {
 	return ""
 }
 
-// GetDownstreamGitOps will return the gitops config for a downstrea,
+// GetDownstreamGitOps will return the gitops config for a downstream,
 // This implementation copies how it works in typescript.
 func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) {
 	cfg, err := config.GetConfig()
@@ -110,7 +110,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 
 	configMapData := map[string]string{}
 	if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
-		return nil, errors.Wrap(err, "faield to unmarshal configmap data")
+		return nil, errors.Wrap(err, "failed to unmarshal configmap data")
 	}
 
 	repoURI := configMapData["repoUri"]
@@ -163,6 +163,56 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 	return nil, nil
 }
 
+// SetGitOpsError updates the gitops error description in the gitops configmap for an app downstream
+func SetGitOpsError(appID string, clusterID string, errMsg string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "gitops config map not found")
+	}
+
+	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
+	configMapDataEncoded, ok := configMap.Data[configMapDataKey]
+	if !ok {
+		return errors.New("gitops config key not found in config map data")
+	}
+	configMapDataDecoded, err := base64.StdEncoding.DecodeString(configMapDataEncoded)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode configmap data")
+	}
+
+	configMapData := map[string]string{}
+	if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
+		return errors.Wrap(err, "failed to unmarshal configmap data")
+	}
+
+	// set error in config map data
+	configMapData["lastError"] = errMsg
+
+	configMapDataMarshalled, err := json.Marshal(configMapData)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal configmap data")
+	}
+	configMapDataEncoded = base64.StdEncoding.EncodeToString([]byte(configMapDataMarshalled))
+
+	configMap.Data[configMapDataKey] = configMapDataEncoded
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
 func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {
 	provider := ""
 	publicKey := ""
@@ -192,6 +242,17 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 	return provider, publicKey, privateKey, repoURI, nil
 }
 
+func getAuth(gitOpsConfig *GitOpsConfig) (transport.AuthMethod, error) {
+	var auth transport.AuthMethod
+	signer, err := ssh.ParsePrivateKey([]byte(gitOpsConfig.PrivateKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse deploy key")
+	}
+	auth = &go_git_ssh.PublicKeys{User: "git", Signer: signer}
+	auth.(*go_git_ssh.PublicKeys).HostKeyCallback = ssh.InsecureIgnoreHostKey()
+	return auth, nil
+}
+
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -208,14 +269,10 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", errors.Wrap(err, "failed to run kustomize")
 	}
 
-	// using the deploy key, create the commit in a new branch
-	var auth transport.AuthMethod
-	signer, err := ssh.ParsePrivateKey([]byte(gitOpsConfig.PrivateKey))
+	auth, err := getAuth(gitOpsConfig)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to parse deploy key")
+		return "", errors.Wrap(err, "failed to get auth")
 	}
-	auth = &go_git_ssh.PublicKeys{User: "git", Signer: signer}
-	auth.(*go_git_ssh.PublicKeys).HostKeyCallback = ssh.InsecureIgnoreHostKey()
 
 	workDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
@@ -223,23 +280,13 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 	defer os.RemoveAll(workDir)
 
-	remoteRepoIsEmpty := false
 	cloned, err := git.PlainClone(workDir, false, &git.CloneOptions{
 		URL:               gitOpsConfig.CloneURL(),
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	})
-	if errors.Cause(err) == transport.ErrEmptyRemoteRepository {
-		remoteRepoIsEmpty = true
-	} else if err != nil {
+	if err != nil {
 		return "", errors.Wrap(err, "failed to clone repo")
-	}
-
-	if remoteRepoIsEmpty {
-		cloned, err = initializeGitRepo(gitOpsConfig, workDir, out, auth, appSlug, appName, newSequence)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to initialize repo")
-		}
 	}
 
 	err = cloned.Fetch(&git.FetchOptions{
@@ -272,18 +319,24 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		}
 	}
 
-	if !remoteRepoIsEmpty {
-		// if the file has not changed, end now
-		currentRevision, err := ioutil.ReadFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)))
+	filePath := filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug))
+	_, err = os.Stat(filePath)
+	if err == nil { // if the file has not changed, end now
+		currentRevision, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to read current file")
 		}
 		if string(currentRevision) == string(out) {
 			return "", nil
 		}
+	} else if os.IsNotExist(err) { // create subdirectory if not exist
+		err := os.MkdirAll(filepath.Join(workDir, gitOpsConfig.Path), 0644)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to mkdir for file")
+		}
 	}
 
-	err = ioutil.WriteFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), out, 0644)
+	err = ioutil.WriteFile(filePath, out, 0644)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write updated app yaml")
 	}
@@ -315,7 +368,45 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
 }
 
-func initializeGitRepo(gitOpsConfig *GitOpsConfig, workDir string, output []byte, auth transport.AuthMethod, appSlug string, appName string, sequence int) (*git.Repository, error) {
+// TestGitOpsConnection tests the connection to the git repo
+func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
+	auth, err := getAuth(gitOpsConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to get auth")
+	}
+
+	workDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(workDir)
+
+	// clone the repo to test the connection
+	_, err = git.PlainClone(workDir, false, &git.CloneOptions{
+		URL:               gitOpsConfig.CloneURL(),
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		Auth:              auth,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to clone repo")
+	}
+
+	return nil
+}
+
+// InitializeGitRepo initializes the remote repo with a README file
+func InitializeGitRepo(gitOpsConfig *GitOpsConfig) (*git.Repository, error) {
+	auth, err := getAuth(gitOpsConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get auth")
+	}
+
+	workDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(workDir)
+
 	repo, err := git.PlainInit(workDir, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init repo")
@@ -334,18 +425,24 @@ func initializeGitRepo(gitOpsConfig *GitOpsConfig, workDir string, output []byte
 		return nil, errors.Wrap(err, "failed to get worktree")
 	}
 
-	err = ioutil.WriteFile(filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), output, 0644)
+	// a template readme for initializing the repo
+	templateReadme := `# README #
+
+This README has been auto-generated by the KOTS Admin Console
+`
+
+	err = ioutil.WriteFile(filepath.Join(workDir, "README.md"), []byte(templateReadme), 0644)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write updated app yaml")
+		return nil, errors.Wrap(err, "failed to write README file")
 	}
 
-	_, err = workTree.Add(strings.TrimPrefix(filepath.Join(gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug)), "/"))
+	_, err = workTree.Add("README.md")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to add to worktree")
 	}
 
 	// commit it
-	_, err = workTree.Commit(fmt.Sprintf("Initial commit of %s with version %d", appName, sequence), &git.CommitOptions{
+	_, err = workTree.Commit("Initial commit", &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "KOTS Admin Console",
 			Email: "help@replicated.com",

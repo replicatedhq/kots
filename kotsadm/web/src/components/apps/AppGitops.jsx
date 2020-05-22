@@ -5,8 +5,8 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { testGitOpsConnection, disableAppGitops, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
-import { getServiceSite, getAddKeyUri, requiresHostname } from "../../utilities/utilities";
+import { disableAppGitops, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
+import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
@@ -81,7 +81,7 @@ class AppGitops extends Component {
     );
   }
 
-  handleTestConnection = async () => {
+  initGitOpsConnection = async () => {
     this.setState({ testingConnection: true });
     const appId = this.props.app?.id;
     let clusterId;
@@ -90,7 +90,14 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.testGitOpsConnection(appId, clusterId);
+      await fetch(`${window.env.API_ENDPOINT}/gitops/${appId}/${clusterId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": Utilities.getToken(),
+        },
+        method: "POST",
+      });
       await this.props.refetch();
     } catch (err) {
       console.log(err);
@@ -153,7 +160,7 @@ class AppGitops extends Component {
       await this.props.refetch();
       
       if (newUri !== oldUri || gitops?.branch !== branch) {
-        await this.handleTestConnection();
+        await this.initGitOpsConnection();
       }
 
       this.setState({ showGitOpsSettings: false, ownerRepo });
@@ -334,7 +341,7 @@ class AppGitops extends Component {
 
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
-                    <button className="btn secondary blue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
+                    <button className="btn secondary blue u-marginRight--10" disabled={testingConnection} onClick={this.initGitOpsConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
                     <button className="btn primary blue" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
                   </div>
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
@@ -369,11 +376,6 @@ class AppGitops extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(testGitOpsConnection, {
-    props: ({ mutate }) => ({
-      testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
   graphql(disableAppGitops, {
     props: ({ mutate }) => ({
       disableAppGitops: (appId, clusterId) => mutate({ variables: { appId, clusterId } })

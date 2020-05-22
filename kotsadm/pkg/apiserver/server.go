@@ -129,7 +129,7 @@ func Start() {
 	r.HandleFunc("/api/v1/prometheus", handlers.NotImplemented)
 
 	// GitOps
-	r.HandleFunc("/api/v1/gitops", handlers.NotImplemented)
+	r.Path("/api/v1/gitops/{appId}/{clusterId}").Methods("OPTIONS", "POST").HandlerFunc(handlers.InitGitOpsConnection)
 
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {

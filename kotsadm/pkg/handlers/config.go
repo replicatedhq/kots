@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstreamversion"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
@@ -280,7 +280,7 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 		}
 	}
 
-	if err := downstream.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
+	if err := downstreamversion.SetVersionStatusPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
 		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
 		return updateAppConfigResponse, err
 	}

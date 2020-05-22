@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstreamversion"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
@@ -73,7 +73,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+	status, err := downstreamversion.GetVersionStatus(appID, sequence)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find downstream version"
