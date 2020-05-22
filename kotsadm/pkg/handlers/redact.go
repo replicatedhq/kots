@@ -30,7 +30,8 @@ type GetRedactResponse struct {
 }
 
 type GetRedactorResponse struct {
-	Redactor string `json:"redactor"`
+	Redactor string              `json:"redactor"`
+	Metadata redact.RedactorList `json:"redactorMetadata"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -47,13 +48,8 @@ type PostRedactorMetadata struct {
 	Name        string `json:"name"`
 	Enabled     bool   `json:"enabled"`
 	Description string `json:"description"`
-}
-
-type RedactorMetadataResponse struct {
-	Redactor redact.RedactorList `json:"redactor"`
-
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	New         bool   `json:"new"`
+	Redactor    string `json:"redactor"`
 }
 
 func UpdateRedact(w http.ResponseWriter, r *http.Request) {
@@ -188,51 +184,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getRedactResponse)
 }
 
-func GetRedactMetadata(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	getMetadataResponse := RedactorMetadataResponse{
-		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getMetadataResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getMetadataResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getMetadataResponse.Error = "no session in auth header"
-		JSON(w, 401, getMetadataResponse)
-		return
-	}
-
-	redactorSlug := mux.Vars(r)["slug"]
-
-	redactorObj, err := redact.GetRedactBySlug(redactorSlug)
-	if err != nil {
-		logger.Error(err)
-		getMetadataResponse.Error = "failed to get redactor"
-		JSON(w, http.StatusInternalServerError, getMetadataResponse)
-		return
-	}
-
-	getMetadataResponse.Success = true
-	getMetadataResponse.Redactor = redactorObj.Metadata
-	JSON(w, http.StatusOK, getMetadataResponse)
-	return
-}
-
-func GetRedactYaml(w http.ResponseWriter, r *http.Request) {
+func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
 
@@ -280,6 +232,7 @@ func GetRedactYaml(w http.ResponseWriter, r *http.Request) {
 
 	getRedactorResponse.Success = true
 	getRedactorResponse.Redactor = string(marshalled)
+	getRedactorResponse.Metadata = redactorObj.Metadata
 	JSON(w, http.StatusOK, getRedactorResponse)
 	return
 }
@@ -326,11 +279,11 @@ func ListRedactors(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func SetRedactMetadata(w http.ResponseWriter, r *http.Request) {
+func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
 
-	metadataResponse := RedactorMetadataResponse{
+	metadataResponse := GetRedactorResponse{
 		Success: false,
 	}
 
@@ -351,80 +304,34 @@ func SetRedactMetadata(w http.ResponseWriter, r *http.Request) {
 
 	redactorSlug := mux.Vars(r)["slug"]
 
-	updateMetadataRequest := PostRedactorMetadata{}
-	if err := json.NewDecoder(r.Body).Decode(&updateMetadataRequest); err != nil {
+	updateRedactRequest := PostRedactorMetadata{}
+	if err := json.NewDecoder(r.Body).Decode(&updateRedactRequest); err != nil {
 		logger.Error(err)
 		metadataResponse.Error = "failed to decode request body"
 		JSON(w, 400, metadataResponse)
 		return
 	}
 
-	newMetadata, err := redact.SetRedactMetadata(updateMetadataRequest.Name, redactorSlug, updateMetadataRequest.Description, updateMetadataRequest.Enabled)
+	newRedactor, err := redact.SetRedactYaml(updateRedactRequest.Name, redactorSlug, updateRedactRequest.Description, updateRedactRequest.Enabled, updateRedactRequest.New, []byte(updateRedactRequest.Redactor))
 	if err != nil {
 		logger.Error(err)
-		metadataResponse.Error = "failed to update metadata"
+		metadataResponse.Error = "failed to update redactor"
 		JSON(w, 400, metadataResponse)
 		return
 	}
 
+	marshalled, err := util.MarshalIndent(2, newRedactor.Redact)
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to marshal redactor"
+		JSON(w, http.StatusInternalServerError, metadataResponse)
+		return
+	}
+
 	metadataResponse.Success = true
-	metadataResponse.Redactor = *newMetadata
+	metadataResponse.Metadata = newRedactor.Metadata
+	metadataResponse.Redactor = string(marshalled)
 	JSON(w, http.StatusOK, metadataResponse)
-	return
-}
-
-func SetRedactYaml(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	setYamlResponse := RedactorMetadataResponse{
-		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		setYamlResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, setYamlResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		setYamlResponse.Error = "no session in auth header"
-		JSON(w, 401, setYamlResponse)
-		return
-	}
-
-	redactorSlug := mux.Vars(r)["slug"]
-
-	updateMetadataRequest := PostRedactorMetadata{}
-	if err := json.NewDecoder(r.Body).Decode(&updateMetadataRequest); err != nil {
-		logger.Error(err)
-		setYamlResponse.Error = "failed to decode request body"
-		JSON(w, 400, setYamlResponse)
-		return
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		logger.Error(err)
-		setYamlResponse.Error = "failed to read body"
-		JSON(w, 500, setYamlResponse)
-		return
-	}
-
-	updatedRedactor, err := redact.SetRedactYaml(redactorSlug, body)
-	if err != nil {
-		logger.Error(err)
-		setYamlResponse.Error = "failed to update metadata"
-		JSON(w, 400, setYamlResponse)
-		return
-	}
-
-	setYamlResponse.Success = true
-	setYamlResponse.Redactor = *updatedRedactor
-	JSON(w, http.StatusOK, setYamlResponse)
 	return
 }
 
