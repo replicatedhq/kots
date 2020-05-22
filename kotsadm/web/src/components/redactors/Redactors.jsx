@@ -59,6 +59,7 @@ class Redactors extends Component {
       .then(res => res.json())
       .then(result => {
         if (result.success) {
+          console.log(result)
           this.setState({
             redactors: result.redactors,
             isLoadingRedactors: false,
@@ -115,8 +116,12 @@ class Redactors extends Component {
 
   render() {
     const { sortedRedactors, selectedOption, deleteRedactorModal } = this.state;
-
-    console.log(1111)
+    // Name        string    `json:"name"`
+    // Slug        string    `json:"slug"`
+    // Created     time.Time `json:"createdAt"`
+    // Updated     time.Time `json:"updatedAt"`
+    // Enabled     bool      `json:"enabled"`
+    // Description string    `json:"description"`
 
     const selectOptions = [
       {

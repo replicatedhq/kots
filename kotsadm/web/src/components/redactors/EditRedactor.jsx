@@ -30,8 +30,57 @@ class EditRedactor extends Component {
     redactorEnabled: false,
     redactorYaml: "",
     isEditingRedactorName: false,
-    redactorName: ""
+    redactorName: "",
+    creatingRedactor: false,
+    createErrMsg: ""
   };
+
+  createRedactor = () => {
+    this.setState({ creatingRedactor: true, createErrMsg: "" });
+
+    fetch(`${window.env.API_ENDPOINT}/redact/metadata/${name}`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+
+        const createResponse = await res.json();
+        if (!res.ok) {
+          this.setState({
+            creatingRedactor: false,
+            createErrMsg: createResponse.error
+          })
+          return;
+        }
+
+        if (createResponse.success) {
+          this.setState({
+            snapshotSettings: settingsResponse,
+            creatingRedactor: false,
+            createConfirm: true,
+            createErrMsg: ""
+          });
+          setTimeout(() => {
+            this.setState({ createConfirm: false })
+          }, 3000);
+        } else {
+          this.setState({
+            creatingRedactor: false,
+            createErrMsg: settingsResponse.error
+          })
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          creatingRedactor: false,
+          createErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+        });
+      });
+  }
 
   handleEnableRedactor = () => {
     this.setState({
