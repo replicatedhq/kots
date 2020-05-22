@@ -46,7 +46,7 @@ The `get` method of `/api/v1/redact/spec/{slug}` will return the following struc
 ```go
 type GetRedactorsResponse struct {
 	Redactor string       `json:"redactor"`
-    Metadata RedactorList `json:"redactorMetadata"`
+	Metadata RedactorList `json:"redactorMetadata"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -59,8 +59,8 @@ type PostRedactorMetadata struct {
 	Name        string `json:"name"`
 	Enabled     bool   `json:"enabled"`
 	Description string `json:"description"`
-    New         bool   `json:"new"`
-    Redacto     string `json:"redactor"`
+	New         bool   `json:"new"`
+	Redactor    string `json:"redactor"`
 }
 ```
 
