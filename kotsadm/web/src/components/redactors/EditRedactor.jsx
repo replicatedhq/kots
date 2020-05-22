@@ -7,25 +7,8 @@ import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";
 
+import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
-
-// const redactor = {
-//   id: "1",
-//   name: "my-demo-redactor",
-//   createdAt: "2020-05-10T21:17:37.002Z",
-//   updatedOn: "2020-05-18T22:17:37.002Z",
-//   details: "Redact all AWS secrets",
-//   status: "enabled",
-//   yaml: `apiVersion: troubleshoot.replicated.com/v1beta1
-// kind: Redactor
-// metadata:
-//   name: my-application-name
-// spec:
-//   redactors:
-//   - name: example replacement
-//     values:
-//     - abc123`
-// }
 
 class EditRedactor extends Component {
   state = {
@@ -33,21 +16,63 @@ class EditRedactor extends Component {
     redactorYaml: "",
     redactorName: "",
     creatingRedactor: false,
-    createErrMsg: ""
+    createErrMsg: "",
+    isLoadingRedactor: false,
+    redactorErrMsg: ""
   };
 
-  createRedactor = (name, slug, enabled, newRedactor, yaml) => {
+  getRedactor = (slug) => {
+    this.setState({
+      isLoadingRedactor: true,
+      redactorErrMsg: ""
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/${slug}`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          this.setState({
+            redactorYaml: result.redactor,
+            redactorName: result.redactorMetadata.name,
+            redactorEnabled: result.redactorMetadata.enabled,
+            isLoadingRedactor: false,
+            redactorErrMsg: "",
+          }, () => {
+            if (this.state.selectedOption) {
+              this.sortRedactors(this.state.selectedOption.value);
+            }
+          })
+        } else {
+          this.setState({
+            isLoadingRedactor: false,
+            redactorErrMsg: result.error,
+          })
+        }
+      })
+      .catch(err => {
+        this.setState({
+          isLoadingRedactor: false,
+          redactorErrMsg: err,
+        })
+      })
+  }
+
+  createRedactor = (enabled, newRedactor, yaml) => {
     this.setState({ creatingRedactor: true, createErrMsg: "" });
 
     const payload = {
-      name: name,
-      slug: slug,
       enabled: enabled,
       new: newRedactor,
       redactor: yaml
     }
 
-    fetch(`${window.env.API_ENDPOINT}/redact/spec/${name}`, {
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/new`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -101,9 +126,16 @@ class EditRedactor extends Component {
   componentDidMount() {
     //TODO get redactor for id
     if (this.props.match.params.slug) {
+      this.getRedactor(this.props.match.params.slug);
       // this.setState({ redactorEnabled: redactor.status === "enabled" ? true : false, redactorYaml: redactor.yaml, redactorName: redactor.name });
     } else {
-      this.setState({ redactorEnabled: false, redactorYaml: "", redactorName: "New redactor" });
+      const defaultYaml=`name: ""
+files: []
+values: []
+regex: []
+multiLine: []
+yaml: []`
+      this.setState({ redactorEnabled: false, redactorYaml: defaultYaml, redactorName: "New redactor" });
     }
   }
 
@@ -115,12 +147,21 @@ class EditRedactor extends Component {
     if (this.props.match.params.slug) {
       console.log("a")
     } else {
-      this.createRedactor(this.state.redactorName, "", this.state.redactorEnabled, true, this.state.redactorYaml)
+      this.createRedactor(this.state.redactorEnabled, true, this.state.redactorYaml);
     }
   }
 
 
   render() {
+    const { isLoadingRedactor } = this.state;
+
+    if (isLoadingRedactor) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
+    }
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
         <Helmet>

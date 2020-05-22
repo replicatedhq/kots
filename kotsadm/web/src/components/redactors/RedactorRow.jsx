@@ -27,7 +27,7 @@ class RedactorRow extends React.Component {
     const { redactor } = this.props;
 
     return (
-      <div className="flex flex-auto ActiveDownstreamVersionRow--wrapper" key={redactor?.name}>
+      <div className="flex flex-auto ActiveDownstreamVersionRow--wrapper" key={redactor?.slug}>
         <div className="flex-column flex1">
           <div className="flex flex1 alignItems--center u-marginBottom--small">
             <span className={`status-indicator u-marginBottom--10 ${this.state.redactorEnabled ? "enabled" : "disabled"}`} />
@@ -37,7 +37,7 @@ class RedactorRow extends React.Component {
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--nevada u-marginLeft--10"> {redactor?.description} </p>
         </div>
         <div className="flex alignItems--center">
-          <Link to={`/redactors/${redactor?.id}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit redactor</Link>
+          <Link to={`/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit redactor</Link>
           <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleDeleteClick(redactor)}>Delete</span>
           <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
             <input

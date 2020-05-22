@@ -78,7 +78,6 @@ class Redactors extends Component {
 
   sortRedactors = value => {
     if (value === "createdAt") {
-      console.log(this.state.redactors)
       this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)) });
     } else {
       this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.updatedOn) - dayjs(a.updatedOn)) });
@@ -149,7 +148,7 @@ class Redactors extends Component {
           <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
           {sortedRedactors?.map((redactor) => (
             <RedactorRow
-              key={`redactor-${redactor.id}`}
+              key={`redactor-${redactor.slug}`}
               redactor={redactor}
               toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
             />
