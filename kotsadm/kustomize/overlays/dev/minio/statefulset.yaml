@@ -6,6 +6,7 @@ metadata:
     release: minio
   name: minio
 spec:
+  serviceName: minio
   selector:
     matchLabels:
       app: minio
