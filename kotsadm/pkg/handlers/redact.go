@@ -79,7 +79,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		updateRedactResponse.Error = "failed to parse authorization header"
+		updateRedactResponse.Error = "no session in auth header"
 		JSON(w, 401, updateRedactResponse)
 		return
 	}
@@ -171,7 +171,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getRedactResponse.Error = "failed to parse authorization header"
+		getRedactResponse.Error = "no session in auth header"
 		JSON(w, 401, getRedactResponse)
 		return
 	}
@@ -211,7 +211,7 @@ func GetRedactMetadata(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getMetadataResponse.Error = "failed to parse authorization header"
+		getMetadataResponse.Error = "no session in auth header"
 		JSON(w, 401, getMetadataResponse)
 		return
 	}
@@ -255,7 +255,7 @@ func GetRedactYaml(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getRedactorResponse.Error = "failed to parse authorization header"
+		getRedactorResponse.Error = "no session in auth header"
 		JSON(w, 401, getRedactorResponse)
 		return
 	}
@@ -307,7 +307,7 @@ func ListRedactors(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		listRedactorsResponse.Error = "failed to parse authorization header"
+		listRedactorsResponse.Error = "no session in auth header"
 		JSON(w, 401, listRedactorsResponse)
 		return
 	}
@@ -344,7 +344,7 @@ func SetRedactMetadata(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		metadataResponse.Error = "failed to parse authorization header"
+		metadataResponse.Error = "no session in auth header"
 		JSON(w, 401, metadataResponse)
 		return
 	}
@@ -391,7 +391,7 @@ func SetRedactYaml(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		setYamlResponse.Error = "failed to parse authorization header"
+		setYamlResponse.Error = "no session in auth header"
 		JSON(w, 401, setYamlResponse)
 		return
 	}

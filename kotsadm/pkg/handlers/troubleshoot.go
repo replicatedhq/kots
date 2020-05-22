@@ -75,7 +75,7 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getSupportBundleFilesResponse.Error = "failed to parse authorization header"
+		getSupportBundleFilesResponse.Error = "no session in auth header"
 		JSON(w, 401, getSupportBundleFilesResponse)
 		return
 	}
@@ -393,7 +393,7 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		getSupportBundleRedactionsResponse.Error = "failed to parse authorization header"
+		getSupportBundleRedactionsResponse.Error = "no session in auth header"
 		JSON(w, 401, getSupportBundleRedactionsResponse)
 		return
 	}
