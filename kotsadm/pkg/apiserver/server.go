@@ -75,10 +75,8 @@ func Start() {
 	r.Path("/api/v1/redact/set").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateRedact)
 	r.Path("/api/v1/redact/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedact)
 	r.Path("/api/v1/redacts").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListRedactors)
-	r.Path("/api/v1/redact/metadata/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactMetadata)
-	r.Path("/api/v1/redact/metadata/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadata)
-	r.Path("/api/v1/redact/spec/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactYaml)
-	r.Path("/api/v1/redact/spec/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactYaml)
+	r.Path("/api/v1/redact/spec/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactMetadataAndYaml)
+	r.Path("/api/v1/redact/spec/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadataAndYaml)
 	r.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
 
 	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
