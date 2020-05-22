@@ -9,29 +9,28 @@ import "brace/theme/chrome";
 
 import { Utilities } from "../../utilities/utilities";
 
-const redactor = {
-  id: "1",
-  name: "my-demo-redactor",
-  createdAt: "2020-05-10T21:17:37.002Z",
-  updatedOn: "2020-05-18T22:17:37.002Z",
-  details: "Redact all AWS secrets",
-  status: "enabled",
-  yaml: `apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Redactor
-metadata:
-  name: my-application-name
-spec:
-  redactors:
-  - name: example replacement
-    values:
-    - abc123`
-}
+// const redactor = {
+//   id: "1",
+//   name: "my-demo-redactor",
+//   createdAt: "2020-05-10T21:17:37.002Z",
+//   updatedOn: "2020-05-18T22:17:37.002Z",
+//   details: "Redact all AWS secrets",
+//   status: "enabled",
+//   yaml: `apiVersion: troubleshoot.replicated.com/v1beta1
+// kind: Redactor
+// metadata:
+//   name: my-application-name
+// spec:
+//   redactors:
+//   - name: example replacement
+//     values:
+//     - abc123`
+// }
 
 class EditRedactor extends Component {
   state = {
     redactorEnabled: false,
     redactorYaml: "",
-    isEditingRedactorName: false,
     redactorName: "",
     creatingRedactor: false,
     createErrMsg: ""
@@ -68,7 +67,9 @@ class EditRedactor extends Component {
 
         if (createResponse.success) {
           this.setState({
-            newRedactor: createResponse,
+            redactorYaml: createResponse.redactor,
+            redactorName: createResponse.redactorMetadata.name,
+            redactorEnabled: createResponse.redactorMetadata.enabled,
             creatingRedactor: false,
             createConfirm: true,
             createErrMsg: ""
@@ -99,8 +100,8 @@ class EditRedactor extends Component {
 
   componentDidMount() {
     //TODO get redactor for id
-    if (this.props.match.params.id) {
-      this.setState({ redactorEnabled: redactor.status === "enabled" ? true : false, redactorYaml: redactor.yaml, redactorName: redactor.name });
+    if (this.props.match.params.slug) {
+      // this.setState({ redactorEnabled: redactor.status === "enabled" ? true : false, redactorYaml: redactor.yaml, redactorName: redactor.name });
     } else {
       this.setState({ redactorEnabled: false, redactorYaml: "", redactorName: "New redactor" });
     }
@@ -111,37 +112,13 @@ class EditRedactor extends Component {
   }
 
   onSaveRedactor = () => {
-    if (this.props.match.params.id) {
+    if (this.props.match.params.slug) {
       console.log("a")
     } else {
-      this.createRedactor("", "", this.state.redactorEnabled, true, this.state.redactorYaml)
+      this.createRedactor(this.state.redactorName, "", this.state.redactorEnabled, true, this.state.redactorYaml)
     }
   }
 
-  toggleEditRedactorName = () => {
-    const isEditingRedactorName = !this.state.isEditingRedactorName;
-    if (isEditingRedactorName) {
-      this.tempName = this.state.redactorName;
-    }
-    this.setState({ isEditingRedactorName });
-  }
-
-  handleFormChange = (field, e) => {
-    let nextState = {};
-    nextState[field] = e.target.value;
-    this.setState(nextState);
-  }
-
-  onEditRedactorName = () => {
-    console.log("editing name")
-    const sameRedactorName = this.state.redactorName === this.tempName;
-    this.tempName = "";
-
-    if (sameRedactorName) {
-      this.setState({ isEditingRedactorName: false });
-      return;
-    }
-  }
 
   render() {
     return (
@@ -155,26 +132,9 @@ class EditRedactor extends Component {
                 Back to redactors
             </Link>
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween u-marginTop--10">
-            {this.state.isEditingRedactorName ?
-              <div className="flex flex-auto u-paddingTop--more u-paddingBottom--more">
-                <div className="flex">
-                  <input
-                    type="text"
-                    className="Input"
-                    placeholder="Redactor Name"
-                    value={this.state.redactorName}
-                    onChange={(e) => { this.handleFormChange("redactorName", e); }}
-                  />
-                  <button className="btn primary blue flex-auto u-marginLeft--5" onClick={() => this.onEditRedactorName()}>Done</button>
-                </div>
-              </div> :
               <div className="flex flex1 alignItems--center">
                 <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
-                {this.props.match.params.id &&
-                  <span className="replicated-link u-fontSize--normal" onClick={this.toggleEditRedactorName}> Edit </span>}
               </div>
-
-            }
             <div className="flex justifyContent--flexEnd">
               <div className="toggle flex flex1">
                 <div className="flex flex1">

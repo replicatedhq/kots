@@ -7,27 +7,10 @@ import Select from "react-select";
 
 import RedactorRow from "./RedactorRow";
 import DeleteRedactorModal from "../modals/DeleteRedactorModal";
+import Loader from "../shared/Loader";
 
 import { Utilities } from "../../utilities/utilities";
 
-const redactors = [
-  {
-    id: "1",
-    name: "my-demo-redactor",
-    createdAt: "2020-05-10T21:17:37.002Z",
-    updatedOn: "2020-05-18T22:17:37.002Z",
-    details: "Redact all AWS secrets",
-    status: "enabled"
-  },
-  {
-    id: "2",
-    name: "my-other-redactor",
-    createdAt: "2020-05-11T21:20:37.002Z",
-    updatedOn: "2020-05-16T19:17:30.002Z",
-    details: "Redact ip address’s from 10.0.0.0 - 10.255.255.255",
-    status: "disabled"
-  },
-]
 
 class Redactors extends Component {
   state = {
@@ -59,11 +42,14 @@ class Redactors extends Component {
       .then(res => res.json())
       .then(result => {
         if (result.success) {
-          console.log(result)
           this.setState({
             redactors: result.redactors,
             isLoadingRedactors: false,
             redactorsErrMsg: "",
+          }, () => {
+            if (this.state.selectedOption) {
+              this.sortRedactors(this.state.selectedOption.value);
+            }
           })
         } else {
           this.setState({
@@ -88,16 +74,14 @@ class Redactors extends Component {
 
   componentDidMount() {
     this.getRedactors();
-    if (this.state.selectedOption) {
-      this.sortRedactors(this.state.selectedOption.value);
-    }
   }
 
   sortRedactors = value => {
     if (value === "createdAt") {
-      this.setState({ sortedRedactors: redactors.sort((a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)) });
+      console.log(this.state.redactors)
+      this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)) });
     } else {
-      this.setState({ sortedRedactors: redactors.sort((a, b) => dayjs(b.updatedOn) - dayjs(a.updatedOn)) });
+      this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.updatedOn) - dayjs(a.updatedOn)) });
     }
   }
 
@@ -115,13 +99,15 @@ class Redactors extends Component {
 
 
   render() {
-    const { sortedRedactors, selectedOption, deleteRedactorModal } = this.state;
-    // Name        string    `json:"name"`
-    // Slug        string    `json:"slug"`
-    // Created     time.Time `json:"createdAt"`
-    // Updated     time.Time `json:"updatedAt"`
-    // Enabled     bool      `json:"enabled"`
-    // Description string    `json:"description"`
+    const { sortedRedactors, selectedOption, deleteRedactorModal, isLoadingRedactors } = this.state;
+
+    if (isLoadingRedactors) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
+    }
 
     const selectOptions = [
       {

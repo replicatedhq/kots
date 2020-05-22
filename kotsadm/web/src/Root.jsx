@@ -305,7 +305,7 @@ class Root extends Component {
                     <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute exact path="/redactors/:id" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute
                       path={["/apps", "/app/:slug/:tab?"]}
                       render={
