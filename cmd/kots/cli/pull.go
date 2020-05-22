@@ -38,6 +38,7 @@ func PullCmd() *cobra.Command {
 				Downstreams:         v.GetStringSlice("downstream"),
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
+				ConfigFile:          ExpandDir(v.GetString("config-values")),
 				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
 				SharedPassword:      v.GetString("shared-password"),
@@ -81,6 +82,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 	cmd.Flags().String("local-path", "", "specify a local-path to pull a locally available replicated app (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().Bool("exclude-kots-kinds", true, "set to true to exclude rendering kots custom objects to the base directory")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
