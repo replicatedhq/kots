@@ -74,7 +74,7 @@ func Start() {
 	// redactor routes
 	r.Path("/api/v1/redact/set").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateRedact)
 	r.Path("/api/v1/redact/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedact)
-	r.Path("/api/v1/troubleshoot/redacts").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListRedactors)
+	r.Path("/api/v1/troubleshoot/redact/list").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListRedactors)
 	r.Path("/api/v1/troubleshoot/redact/metadata/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactMetadata)
 	r.Path("/api/v1/troubleshoot/redact/metadata/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadata)
 	r.Path("/api/v1/troubleshoot/redact/individual/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactYaml)
