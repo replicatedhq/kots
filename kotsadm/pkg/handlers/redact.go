@@ -45,7 +45,6 @@ type ListRedactorsResponse struct {
 }
 
 type PostRedactorMetadata struct {
-	Name        string `json:"name"`
 	Enabled     bool   `json:"enabled"`
 	Description string `json:"description"`
 	New         bool   `json:"new"`
@@ -312,7 +311,7 @@ func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newRedactor, err := redact.SetRedactYaml(updateRedactRequest.Name, redactorSlug, updateRedactRequest.Description, updateRedactRequest.Enabled, updateRedactRequest.New, []byte(updateRedactRequest.Redactor))
+	newRedactor, err := redact.SetRedactYaml(redactorSlug, updateRedactRequest.Description, updateRedactRequest.Enabled, updateRedactRequest.New, []byte(updateRedactRequest.Redactor))
 	if err != nil {
 		logger.Error(err)
 		metadataResponse.Error = "failed to update redactor"
