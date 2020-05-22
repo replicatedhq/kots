@@ -8,6 +8,8 @@ import Select from "react-select";
 import RedactorRow from "./RedactorRow";
 import DeleteRedactorModal from "../modals/DeleteRedactorModal";
 
+import { Utilities } from "../../utilities/utilities";
+
 const redactors = [
   {
     id: "1",
@@ -35,9 +37,39 @@ class Redactors extends Component {
       label: "Sort by: Created At"
     },
     deleteRedactorModal: false,
-    redactorToDelete: {}
-
+    redactorToDelete: {},
+    isLoadingRedactors: false,
+    redactorsErrMsg: ""
   };
+
+  getRedactors = () => {
+    this.setState({
+      isLoadingRedactors: true,
+      redactorsErrMsg: ""
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/redacts`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    })
+      .then(res => res.json())
+      .then(result => {
+        console.log(result)
+        this.setState({
+          isLoadingRedactors: false,
+          redactorsErrMsg: "",
+        })
+      })
+      .catch(err => {
+        this.setState({
+          isLoadingRedactors: false,
+          redactorsErrMsg: err,
+        })
+      })
+  }
 
   handleSortChange = selectedOption => {
     this.setState({ selectedOption }, () => {
@@ -46,6 +78,7 @@ class Redactors extends Component {
   }
 
   componentDidMount() {
+    this.getRedactors();
     if (this.state.selectedOption) {
       this.sortRedactors(this.state.selectedOption.value);
     }
@@ -74,6 +107,8 @@ class Redactors extends Component {
 
   render() {
     const { sortedRedactors, selectedOption, deleteRedactorModal } = this.state;
+
+    console.log(1111)
 
     const selectOptions = [
       {
