@@ -38,11 +38,10 @@ func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 			Registry: "registry.staging.replicated.com",
 			Proxy:    "proxy.staging.replicated.com",
 		}
-	case "localhost":
-		// TODO: not real info
+	case "replicated-app":
 		return &RegistryProxyInfo{
-			Registry: "localhost:1234",
-			Proxy:    "localhost:1234",
+			Registry: "registry:3000", // TODO: not real info
+			Proxy:    "registry-proxy:3000",
 		}
 	default:
 		return defaultInfo
