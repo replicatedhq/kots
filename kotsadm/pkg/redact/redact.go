@@ -220,18 +220,22 @@ func SetRedactYaml(slug string, yamlBytes []byte) (*RedactorList, error) {
 	redactorEntry := RedactorMetadata{}
 	redactString, ok := configMap.Data[slug]
 	if !ok {
+		// if name is not set, take the name from the slug
+		// if name is set, create the slug from the name
+		if newRedactorSpec.Name == "" {
+			newRedactorSpec.Name = slug
+		} else {
+			slug = getSlug(newRedactorSpec.Name)
+		}
+
 		// new redactor
 		redactorEntry.Metadata = RedactorList{
-			Name:        getSlug(newRedactorSpec.Name),
+			Name:        newRedactorSpec.Name,
 			Slug:        slug,
 			Created:     time.Now(),
 			Updated:     time.Now(),
 			Enabled:     true,
 			Description: "",
-		}
-		if redactorEntry.Metadata.Name == "" {
-			newRedactorSpec.Name = slug
-			redactorEntry.Metadata.Name = slug
 		}
 	} else {
 		// unmarshal existing redactor, check if name changed
