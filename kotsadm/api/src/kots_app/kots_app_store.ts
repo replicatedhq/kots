@@ -707,9 +707,14 @@ export class KotsAppStore {
          adv.preflight_result_created_at,
          adv.git_commit_url,
          adv.git_deployable,
-         ado.is_error AS has_error
+         ado.is_error AS has_error,
+         av.kots_installation_spec
         FROM
           app_downstream_version AS adv
+        LEFT JOIN
+          app_version AS av
+        ON
+          adv.app_id = av.app_id AND adv.sequence = av.sequence
         LEFT JOIN
           app_downstream_output AS ado
         ON
@@ -748,6 +753,14 @@ export class KotsAppStore {
         commitUrl: row.git_commit_url || "",
         gitDeployable: row.git_deployable
       };
+      if (row.kots_installation_spec) {
+        try {
+          const installationSpec = yaml.safeLoad(row.kots_installation_spec).spec as InstallationSpec;
+          versionItem.yamlErrors = installationSpec.yamlErrors;
+        } catch (err) {
+          console.log(`Failed to unmarshal installation spec yaml for sequence ${versionItem.sequence}`, err);
+        }
+      }
       versionItems.push(versionItem);
     }
 
@@ -772,11 +785,13 @@ export class KotsAppStore {
       sequence = -1;
     }
 
-    q = `select created_at, version_label, status, sequence, parent_sequence,
-applied_at, source, diff_summary, preflight_result, preflight_result_created_at, git_commit_url, git_deployable
-from app_downstream_version
-where app_id = $1 and cluster_id = $3 and sequence > $2
-order by sequence desc`;
+    q = `select adv.created_at, adv.version_label, adv.status, adv.sequence, adv.parent_sequence,
+adv.applied_at, adv.source, adv.diff_summary, adv.preflight_result, adv.preflight_result_created_at, adv.git_commit_url, adv.git_deployable,
+av.kots_installation_spec
+from app_downstream_version as adv
+left join app_version as av on adv.app_id = av.app_id and adv.sequence = av.sequence
+where adv.app_id = $1 and adv.cluster_id = $3 and adv.sequence > $2
+order by adv.sequence desc`;
 
     v = [
       appId,
@@ -805,6 +820,14 @@ order by sequence desc`;
         commitUrl: row.git_commit_url || "",
         gitDeployable: row.git_deployable
       };
+      if (row.kots_installation_spec) {
+        try {
+          const installationSpec = yaml.safeLoad(row.kots_installation_spec).spec as InstallationSpec;
+          versionItem.yamlErrors = installationSpec.yamlErrors;
+        } catch (err) {
+          console.log(`Failed to unmarshal installation spec yaml for sequence ${versionItem.sequence}`, err);
+        }
+      }
       versionItems.push(versionItem);
     }
 
@@ -928,8 +951,10 @@ order by sequence desc`;
 
     q = `select adv.created_at, adv.version_label, adv.status, adv.sequence,
 adv.parent_sequence, adv.applied_at, adv.source, adv.diff_summary, adv.preflight_result,
-adv.preflight_result_created_at, adv.git_commit_url, adv.git_deployable, ado.is_error AS has_error
+adv.preflight_result_created_at, adv.git_commit_url, adv.git_deployable, ado.is_error AS has_error,
+av.kots_installation_spec
 from app_downstream_version as adv
+left join app_version as av on adv.app_id = av.app_id and adv.sequence = av.sequence
 left join app_downstream_output as ado
 on adv.app_id = ado.app_id and adv.cluster_id = ado.cluster_id and adv.sequence = ado.downstream_sequence
 where adv.app_id = $1 and adv.cluster_id = $3 and adv.sequence = $2
@@ -965,6 +990,14 @@ order by adv.sequence desc`;
       commitUrl: row.git_commit_url || "",
       gitDeployable: row.git_deployable
     };
+    if (row.kots_installation_spec) {
+      try {
+        const installationSpec = yaml.safeLoad(row.kots_installation_spec).spec as InstallationSpec;
+        versionItem.yamlErrors = installationSpec.yamlErrors;
+      } catch (err) {
+        console.log(`Failed to unmarshal installation spec yaml for sequence ${versionItem.sequence}`, err);
+      }
+    }
 
     return versionItem;
   }
@@ -1020,7 +1053,7 @@ where app_id = $1 and sequence = $2`;
         const installationSpec = yaml.safeLoad(row.kots_installation_spec).spec as InstallationSpec;
         versionItem.yamlErrors = installationSpec.yamlErrors;
       } catch (err) {
-        console.log("Failed to unmarshal installation spec yaml", err);
+        console.log(`Failed to unmarshal installation spec yaml for sequence ${versionItem.sequence}`, err);
       }
     }
 

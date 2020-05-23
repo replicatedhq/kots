@@ -28,6 +28,7 @@ export async function sendInitialGitCommitsForAppDownstream(stores: Stores, appI
   }
 
   const pendingVersions = await stores.kotsAppStore.listPendingVersions(appId, clusterId);
+  pendingVersions.sort((p1, p2) => p1.sequence > p2.sequence ? 1 : p1.sequence < p2.sequence ? -1 : 0); // sort ascending
   for (const pendingVersion of pendingVersions) {
     const commitMessage = `Updating ${app.name} to version ${pendingVersion.sequence}`;
     await createGitCommitForVersion(stores, appId, clusterId, pendingVersion.parentSequence!, commitMessage);

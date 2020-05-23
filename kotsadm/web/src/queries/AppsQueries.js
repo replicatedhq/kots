@@ -41,6 +41,10 @@ export const listAppsRaw = `
             createdOn
             sequence
             deployedAt
+            yamlErrors {
+              path
+              error
+            }
           }
           gitops {
             enabled
@@ -59,6 +63,10 @@ export const listAppsRaw = `
             createdOn
             sequence
             deployedAt
+            yamlErrors {
+              path
+              error
+            }
           }
           pastVersions {
             title
@@ -66,6 +74,10 @@ export const listAppsRaw = `
             createdOn
             sequence
             deployedAt
+            yamlErrors {
+              path
+              error
+            }
           }
           cluster {
             id
@@ -79,6 +91,10 @@ export const listAppsRaw = `
               createdOn
               sequence
               deployedAt
+              yamlErrors {
+                path
+                error
+              }
             }
             shipOpsRef {
               token
@@ -139,6 +155,10 @@ export const getKotsAppRaw = `
           source
           releaseNotes
           parentSequence
+          yamlErrors {
+            path
+            error
+          }
         }
         pendingVersions {
           title
@@ -147,6 +167,10 @@ export const getKotsAppRaw = `
           sequence
           deployedAt
           parentSequence
+          yamlErrors {
+            path
+            error
+          }
         }
         pastVersions {
           title
@@ -155,6 +179,10 @@ export const getKotsAppRaw = `
           sequence
           deployedAt
           parentSequence
+          yamlErrors {
+            path
+            error
+          }
         }
         gitops {
           enabled
@@ -180,6 +208,10 @@ export const getKotsAppRaw = `
             createdOn
             sequence
             deployedAt
+            yamlErrors {
+              path
+              error
+            }
           }
           shipOpsRef {
             token
@@ -206,6 +238,10 @@ export const listDownstreamsForAppRaw = `
         createdOn
         sequence
         deployedAt
+        yamlErrors {
+          path
+          error
+        }
       }
       shipOpsRef {
         token
