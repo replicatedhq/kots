@@ -7,118 +7,37 @@ import (
 	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
-func TestCleanupSpec(t *testing.T) {
+func Test_getSlug(t *testing.T) {
 	tests := []struct {
-		name    string
-		spec    string
-		want    string
-		wantErr bool
+		name  string
+		input string
+		want  string
 	}{
 		{
-			name: "basic valid spec",
-			spec: `
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Redactor
-metadata:
-  name: my-redactor-name
-spec:
-  redactors:
-  - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
-  - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: 'S3_ENDPOINT'
-      redactor: '("value": ").*(")'
-    yaml:
-    - "abc.xyz.*"
-`,
-			want: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
-metadata:
-  name: my-redactor-name
-spec:
-  redactors:
-  - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
-  - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*
-`,
+			name:  "all alphanumeric",
+			input: "aBC123",
+			want:  "aBC123",
 		},
 		{
-			name: "no items spec",
-			spec: `
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Redactor
-metadata:
-  name: my-redactor-name
-spec:
-  redactors:
-`,
-			want: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
-metadata:
-  name: my-redactor-name
-`,
+			name:  "dashes",
+			input: "abc-123",
+			want:  "abc-123",
 		},
 		{
-			name:    "empty spec",
-			wantErr: true,
-			spec:    ``,
+			name:  "spaces",
+			input: "abc 123",
+			want:  "abc-123",
 		},
 		{
-			name:    "missing group/version",
-			wantErr: true,
-			spec: `
-kind: Redactor
-metadata:
-  name: my-redactor-name
-spec:
-  redactors:
-  - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
-`,
-		},
-		{
-			name:    "missing kind",
-			wantErr: true,
-			spec: `
-apiVersion: troubleshoot.replicated.com/v1beta1
-metadata:
-  name: my-redactor-name
-spec:
-  redactors:
-  - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
-`,
+			name:  "aymbols",
+			input: "abc%^123!@#",
+			want:  "abc123",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-
-			got, err := CleanupSpec(tt.spec)
-			if tt.wantErr {
-				req.Error(err)
-			} else {
-				req.NoError(err)
-				req.Equal(tt.want, got)
-			}
+			req.Equal(tt.want, getSlug(tt.input))
 		})
 	}
 }
