@@ -452,7 +452,7 @@ func Test_localImageName(t *testing.T) {
 			expected: "redis:latest",
 		},
 		{
-			name:     "do not rewrite public image",
+			name:     "rewrite public image when ProxyPublicImages: true",
 			ctx:      ctxWithoutRegistryProxyAll,
 			image:    "redis:latest",
 			expected: "proxy.replicated.com/proxy/myslug/redis:latest",
