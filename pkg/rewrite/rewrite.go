@@ -199,6 +199,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		images = copyResult.Images
 		objects = affectedObjects
 	} else {
+		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
+		if err != nil {
+			return errors.Wrap(err, "failed to load application")
+		}
+
 		// When CopyImages is not set, we only rewrite private images and use license to create secrets
 		// for all objects that have private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
@@ -208,7 +213,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
-			Installation: rewriteOptions.Installation,
+			Installation:     rewriteOptions.Installation,
+			AllImagesPrivate: application.Spec.ProxyPublicImages,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
