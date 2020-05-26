@@ -1,18 +1,17 @@
 import * as React from "react";
-import { ping } from "@src/queries/AppsQueries";
 
 export default class ConnectionTerminated extends React.Component {
 
   state = {
     seconds: 1,
-    reconnectAttepts: 1,
+    reconnectAttempts: 1,
   }
 
   countdown = (seconds) => {
     this.setState({ seconds });
     if (seconds === 0) {
       this.setState({
-        reconnectAttepts: this.state.reconnectAttepts + 1
+        reconnectAttempts: this.state.reconnectAttempts + 1
       }, () => {
         this.ping();
       });
@@ -25,15 +24,13 @@ export default class ConnectionTerminated extends React.Component {
   }
 
   ping = async () => {
-    const { reconnectAttepts } = this.state;
-    await this.props.gqlClient.query({
-      query: ping,
-      fetchPolicy: "no-cache"
+    const { reconnectAttempts } = this.state;
+    await fetch(`${window.env.API_ENDPOINT}/ping`, {
     }).then(() => {
       this.props.setTerminatedState(false);
     }).catch(() => {
       this.props.setTerminatedState(true);
-      const seconds = reconnectAttepts > 10 ? 10 : reconnectAttepts;
+      const seconds = reconnectAttempts > 10 ? 10 : reconnectAttempts;
       this.countdown(seconds);
     });
   }

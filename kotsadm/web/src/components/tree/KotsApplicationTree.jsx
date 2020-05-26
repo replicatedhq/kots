@@ -35,7 +35,7 @@ class KotsApplicationTree extends React.Component {
     .then(async (res) => {
       const files = res?.files || {};
       const paths = keys(files);
-      const applicationTree = Utilities.arrangeIntoTree(paths);
+      const applicationTree = Utilities.arrangeIntoApplicationTree(paths);
       this.setState({
         files,
         applicationTree,
@@ -46,7 +46,7 @@ class KotsApplicationTree extends React.Component {
     });
   }
 
-  compoenntDidUpdate(lastProps, lastState) {
+  componentDidUpdate(lastProps, lastState) {
     if (this.props.match.params.slug != lastProps.match.params.slug || this.props.match.params.sequence != lastProps.match.params.sequence) {
       this.fetchApplicationTree();
     }
