@@ -229,6 +229,10 @@
   padding: 16px 14px;
   border-top: 1px solid #DFDFDF;
   border-radius: 0 0 4px 4px;
+
+  &.old {
+    margin-top: 12px;
+  }
 }
 
 .action-tab-bar .tab-item {
@@ -336,8 +340,27 @@
 .Timeline--wrapper {
   position: relative;
   width: 100%;
-  padding: 0 0 0 15px;
-  border-left: 2px solid #C4C4C4;
+  padding-left: 15px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    border: 1px solid #c4c4c4;
+    height: 1px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -2px;
+    width: 2px;
+    top: 0;
+    bottom: 35px;
+    background-color: #C4C4C4;
+  }
 
   .section {
     position: relative
@@ -349,7 +372,7 @@
     height: 20px;
     border-left: 2px solid #c4c4c4;
     border-bottom: 2px solid #c4c4c4;
-    border-radius: 0 0 0 100px;
+    border-bottom-left-radius: 100px;
     position: absolute;
     top: 5px;
     left: -17px;
@@ -366,47 +389,9 @@
   }
 }
 
-.Timeline--wrapper:before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  border: 1px solid #c4c4c4;
-  height: 1px;
-  border-radius: 20px 20px 0 0;
-}
-
-.Timeline--wrapper:after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: -2px;
-  border: 1px solid #c4c4c4;
-  height: 1px;
-  border-radius: 20px;
-}
-
-.arrow {
+.ActiveDownstreamVersionRow--wrapper .icon.u-iconFullArrowGray {
   margin-left: 10px;
-  margin-bottom: 6px;
-  .line {
-    position: absolute;
-    margin-top: -1.1px;
-    height: 9.68px;
-    border: 1px solid #9B9B9B;
-    transform: rotate(-90deg);
-    border-radius: 20px;
-  }
-  .point {
-    position: absolute;
-    width: 6.01px;
-    height: 5.95px;
-    border-top: 2px solid #9B9B9B;
-    border-left: 2px solid #9B9B9B;
-    border-bottom-left-radius: 2px;
-    border-top-right-radius: 2px;
-    transform: rotate(-220deg);
-  }
+  top: 2px;
 }
 
 

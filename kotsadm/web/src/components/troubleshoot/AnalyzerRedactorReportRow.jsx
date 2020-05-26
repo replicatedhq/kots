@@ -40,13 +40,9 @@ class AnalyzerRedactorReportRow extends React.Component {
         </div>
         <div className="flex flex-column">
           <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> 1 redaction </span> </p>
-          <div className="flex flex1 alignItems--center">
-            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
-            <div class="arrow">
-              <div class="line"></div>
-              <div class="point"></div>
+            <div className="flex flex1 alignItems--center">
+              <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
             </div>
-          </div>
         </div>
       </div>
     )

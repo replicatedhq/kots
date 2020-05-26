@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 
 import AnalyzerRedactorReportRow from "./AnalyzerRedactorReportRow";
@@ -80,12 +80,13 @@ export class AnalyzerRedactorReport extends Component {
 
     return (
       <div className="flex flex-column">
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small u-marginBottom--20">Below is list of the redactors that were applied when collecting this support bundle. You can see how many files each redactor affected and how many values were redacted. To re-generate a support bundle with more or fewer rules applied,
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small u-marginBottom--20">Below is a list of the redactors that were applied when collecting this support bundle. You can see how many files each redactor affected and how many values were redacted. To re-generate a support bundle with more or fewer rules applied,
          go to  <Link to="/redactors" className="replicated-link"> your redactor list </Link> enable/disable any of the redactor, and generate a new support bundle.</p>
         {!isEmpty(redactions) && Object.keys(redactions?.byRedactor).map((redactor) => ( 
           <AnalyzerRedactorReportRow
             key={`redactor-${redactor}`}
             redactor={redactor}
+            match={this.props.match}
             redactorFiles={redactions?.byRedactor[redactor]}
           />  
         ))}
@@ -94,4 +95,4 @@ export class AnalyzerRedactorReport extends Component {
   }
 }
 
-export default AnalyzerRedactorReport;
+export default withRouter(AnalyzerRedactorReport);
