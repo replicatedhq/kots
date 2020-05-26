@@ -55,6 +55,9 @@ func Start() {
 	r.Path("/graphql").Methods("OPTIONS").HandlerFunc(handlers.CORS)
 	r.Path("/graphql").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
+	// Api ping
+	r.HandleFunc("/api/v1/ping", handlers.Ping)
+
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))

@@ -1,15 +1,13 @@
 import * as React from "react";
 import { compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
-import { getFileFormat, Utilities } from "../../utilities/utilities";
-import sortBy from "lodash/sortBy";
-import find from "lodash/find";
+import { Utilities } from "../../utilities/utilities";
+import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
 import CodeSnippet from "../shared/CodeSnippet";
 
-import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
 
 import "../../scss/components/troubleshoot/FileTree.scss";
@@ -18,23 +16,11 @@ class KotsApplicationTree extends React.Component {
   constructor() {
     super();
     this.state = {
-      files: [],
+      files: {},
       selectedFile: "/",
-      line: null,
-      activeMarkers: [],
-      analysisError: false,
       displayInstructionsModal: false,
-      applicationTree: {},
+      applicationTree: [],
     };
-  }
-
-  setFileTree = () => {
-    if (!this.state.fileTree) { return; }
-    const parsedTree = JSON.parse(this.state.fileTree);
-    let sortedTree = sortBy(parsedTree, (dir) => {
-      dir.children ? dir.children.length : []
-    });
-    this.setState({ files: sortedTree });
   }
 
   fetchApplicationTree = () => {
@@ -46,15 +32,21 @@ class KotsApplicationTree extends React.Component {
       method: "GET",
     })
     .then(res => res.json())
-    .then(async (files) => {
-      this.setState({applicationTree: files});
+    .then(async (res) => {
+      const files = res?.files || {};
+      const paths = keys(files);
+      const applicationTree = Utilities.arrangeIntoApplicationTree(paths);
+      this.setState({
+        files,
+        applicationTree,
+      });
     })
     .catch((err) => {
       throw err;
     });
   }
 
-  compoenntDidUpdate(lastProps, lastState) {
+  componentDidUpdate(lastProps, lastState) {
     if (this.props.match.params.slug != lastProps.match.params.slug || this.props.match.params.sequence != lastProps.match.params.sequence) {
       this.fetchApplicationTree();
     }
@@ -81,10 +73,10 @@ class KotsApplicationTree extends React.Component {
   }
 
   render() {
-    const { fileLoadErr, fileLoadErrMessage, displayInstructionsModal } = this.state;
+    const { displayInstructionsModal, files, applicationTree, selectedFile } = this.state;
 
-    const file = this.state.applicationTree.files ? this.state.applicationTree.files[this.state.selectedFile] : "";
-    const contents = file ? new Buffer(file, "base64").toString() : "";
+    const contents = files[selectedFile] ? new Buffer(files[selectedFile], "base64").toString() : "";
+    const topLevelPaths = applicationTree.map(f => f.path);
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
@@ -92,19 +84,18 @@ class KotsApplicationTree extends React.Component {
         <div className="flex flex1">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
             <div className="u-overflow--auto dirtree">
-              {!this.state.applicationTree.files ?
+              <FileTree
+                files={applicationTree}
+                isRoot={true}
+                keepOpenPaths={["overlays", "base"]}
+                topLevelPaths={topLevelPaths}
+                handleFileSelect={this.setSelectedFile}
+                selectedFile={this.state.selectedFile}
+              />
+              {isEmpty(applicationTree) &&
                 <ul className="FileTree-wrapper">
                   <li>Loading file explorer</li>
                 </ul>
-                :
-                <FileTree
-                  files={Utilities.arrangeIntoTree(keys(this.state.applicationTree.files))}
-                  isRoot={true}
-                  keepOpenPaths={["overlays", "base"]}
-                  topLevelPaths={Utilities.arrangeIntoTree(keys(this.state.applicationTree.files)).map(f => f.path)}
-                  handleFileSelect={(path) => this.setSelectedFile(path)}
-                  selectedFile={this.state.selectedFile}
-                />
               }
             </div>
           </div>
@@ -113,32 +104,24 @@ class KotsApplicationTree extends React.Component {
               <div className="flex-column flex1 alignItems--center justifyContent--center">
                 <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the file explorer to view it here.</p>
               </div>
-              : fileLoadErr ?
-                <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a problem getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
-                  <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download a tar.gz of the resources and have access to all of the files</p>
-                  <div className="u-marginTop--20">
-                    <button className="btn secondary" onClick={this.handleDownload}>Download tar.gz</button>
-                  </div>
-                </div>
-                :
-                  <MonacoEditor
-                    ref={(editor) => {
-                      this.monacoEditor = editor;
-                    }}
-                    language={"yaml"}
-                    value={contents}
-                    height="100%"
-                    width="100%"
-                    options={{
-                      readOnly: true,
-                      contextmenu: false,
-                      minimap: {
-                        enabled: false
-                      },
-                      scrollBeyondLastLine: false,
-                    }}
-                  />
+              : 
+              <MonacoEditor
+                ref={(editor) => {
+                  this.monacoEditor = editor;
+                }}
+                language={"yaml"}
+                value={contents}
+                height="100%"
+                width="100%"
+                options={{
+                  readOnly: true,
+                  contextmenu: false,
+                  minimap: {
+                    enabled: false
+                  },
+                  scrollBeyondLastLine: false,
+                }}
+              />
             }
           </div>
         </div>

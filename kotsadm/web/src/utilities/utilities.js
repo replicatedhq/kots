@@ -484,7 +484,9 @@ export const Utilities = {
         pathParts.shift(); // remove first blank element from the parts array.
       }
       let currentLevel = tree; // initialize currentLevel to root
+      let currentPath = "";
       each(pathParts, (part) => {
+        currentPath = currentPath + "/" + part;
         // check to see if the path already exists.
         const existingPath = find(currentLevel, ["name", part]);
         if (existingPath) {
@@ -494,7 +496,7 @@ export const Utilities = {
         } else {
           const newPart = {
             name: part,
-            path: `${path}`,
+            path: currentPath,
             children: [],
           };
           currentLevel.push(newPart);
@@ -503,5 +505,21 @@ export const Utilities = {
       });
     });
     return tree;
+  },
+
+  arrangeIntoApplicationTree(paths) {
+    const tree = this.arrangeIntoTree(paths);
+    return sortBy(tree, (file) => {
+      switch (file.path) {
+        case "/upstream":
+          return 1;
+        case "/base":
+          return 2;
+        case "/overlays":
+          return 3;
+        default:
+          return 4;
+      }
+    });
   }
 };
