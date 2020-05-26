@@ -21,7 +21,7 @@ import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 import RestoreCompleted from "./components/RestoreCompleted";
 
-import { ping, getKotsMetadata, listApps } from "@src/queries/AppsQueries";
+import { listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -184,9 +184,7 @@ class Root extends Component {
   }
 
   ping = async (tries = 0) => {
-    await GraphQLClient.query({
-      query: ping,
-      fetchPolicy: "no-cache"
+    await fetch(`${window.env.API_ENDPOINT}/ping`, {
     }).then(() => {
       this.setState({ connectionTerminated: false });
     }).catch(() => {
@@ -196,7 +194,6 @@ class Root extends Component {
         }, 1000);
         return;
       }
-
       this.setState({ connectionTerminated: true });
     });
   }

@@ -276,7 +276,9 @@ export class KotsApp {
         pathParts.shift(); // remove first blank element from the parts array.
       }
       let currentLevel = tree; // initialize currentLevel to root
+      let currentPath = "";
       _.each(pathParts, (part) => {
+        currentPath = currentPath + "/" + part;
         // check to see if the path already exists.
         const existingPath = _.find(currentLevel, ["name", part]);
         if (existingPath) {
@@ -286,7 +288,7 @@ export class KotsApp {
         } else {
           const newPart = {
             name: part,
-            path: `${path}`,
+            path: currentPath,
             children: [],
           };
           currentLevel.push(newPart);
