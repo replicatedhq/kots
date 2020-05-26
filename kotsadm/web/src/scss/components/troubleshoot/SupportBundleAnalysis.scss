@@ -225,14 +225,13 @@
 }
 
 .action-content {
-  margin-top: 12px;
   background-color: #ffffff;
   padding: 16px 14px;
   border-top: 1px solid #DFDFDF;
   border-radius: 0 0 4px 4px;
 
-  &.blue {
-    background-color: #F5F8FC;
+  &.old {
+    margin-top: 12px;
   }
 }
 
@@ -280,6 +279,39 @@
   }
 }
 
+.SupportBundleTabs--wrapper {
+  .tab-items .tab-item {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9B9B9B;
+    padding: 12px 30px 7px;
+    line-height: 14px;
+    cursor: pointer;
+    transition: color .2s;
+    position: relative;
+  
+    &:hover {
+      color: #717171;
+    }
+  
+    &.is-active {
+      color: #4A4A4A;
+      font-weight: 600;
+  
+      &::after {
+        content: "";
+        width: 100%;
+        height: 2px;
+        position: absolute;
+        display: block;
+        background-color: #326de6;
+        bottom: 0;
+        left: 0;
+      }
+    }
+  }
+}
+
 .upload-date-container {
   max-width: 542px;
   .input-with-icon input {
@@ -304,6 +336,64 @@
 .CreateAction > span:hover .u-backArrowIcon {
   transform: translateX(-2px);
 }
+
+.Timeline--wrapper {
+  position: relative;
+  width: 100%;
+  padding-left: 15px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    border: 1px solid #c4c4c4;
+    height: 1px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: -2px;
+    width: 2px;
+    top: 0;
+    bottom: 35px;
+    background-color: #C4C4C4;
+  }
+
+  .section {
+    position: relative
+  }
+
+  .section:before {
+    content: "";
+    display: block;
+    height: 20px;
+    border-left: 2px solid #c4c4c4;
+    border-bottom: 2px solid #c4c4c4;
+    border-bottom-left-radius: 100px;
+    position: absolute;
+    top: 5px;
+    left: -17px;
+    width: 10px;
+  }
+
+  .section:after {
+    content: "";
+    position: absolute;
+    top: 25px;
+    left: -6px;
+    border: 1px solid #c4c4c4;
+    border-radius: 20px;
+  }
+}
+
+.ActiveDownstreamVersionRow--wrapper .icon.u-iconFullArrowGray {
+  margin-left: 10px;
+  top: 2px;
+}
+
 
 /* ≥ 960px */
 @media screen and (min-width: 60em) {

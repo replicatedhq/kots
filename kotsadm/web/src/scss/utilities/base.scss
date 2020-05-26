@@ -92,6 +92,12 @@ body a {
   &.deleting::before {
     background-color: #F7B500;
   }
+  &.enabled::before {
+    background-color: #44bb66;
+  }
+  &.disabled::before {
+    background-color: #C4C7CA;
+  }
 }
 
 code {

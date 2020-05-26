@@ -235,7 +235,7 @@ export default class ConfigureRedactorsModal extends Component {
                 <span className={`${this.state.activeRedactorTab === "linkSpec" ? "is-active" : ""} tab-item`} onClick={() => this.toggleRedactorAction("linkSpec")}>Link to a spec</span>
                 <span className={`${this.state.activeRedactorTab === "writeSpec" ? "is-active" : ""} tab-item`} onClick={() => this.toggleRedactorAction("writeSpec")}>Write your own spec</span>
               </div>
-              <div className="flex-column flex1 action-content">
+              <div className="flex-column flex1 action-content old">
                 {this.state.loadingRedactor ?
                   <div className="flex1 flex-column justifyContent--center alignItems--center">
                     <Loader size="60" />
