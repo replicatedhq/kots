@@ -63,11 +63,19 @@ export class SupportBundleAnalysis extends React.Component {
     });
   }
 
+  componentDidUpdate = (lastProps) => {
+    const { location } = this.props;
+    if (location !== lastProps.location) {
+      this.setState({
+        activeTab: location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1  ? "redactorReport" : "bundleAnalysis"
+      });
+    }
+  }
 
   render() {
     const { watch, getSupportBundle } = this.props;
     const bundle = getSupportBundle?.getSupportBundle;
-
+    
     if (getSupportBundle.loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">

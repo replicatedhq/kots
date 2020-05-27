@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom"
 import groupBy from "lodash/groupBy";
 
 class AnalyzerRedactorReportRow extends React.Component {
@@ -34,16 +35,20 @@ class AnalyzerRedactorReportRow extends React.Component {
   }
 
   renderRedactorFiles = (file, totalFileRedactions, i) => {
+    const { match } = this.props;
     return (
       <div className="flex flex1 alignItems--center section u-marginTop--10" key={`${file.file}-${i}`}>
         <div className="flex u-marginRight--10">
           <span className={`icon redactor-${this.getRedactorExtension(file?.file)}-icon`} />
         </div>
         <div className="flex flex-column">
-          <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> {totalFileRedactions} redaction{totalFileRedactions.length === 1 ? "" : "s"} </span> </p>
+          <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> {totalFileRedactions} redaction{totalFileRedactions === 1 ? "" : "s"} </span> </p>
+          <Link to={`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${file?.file}`}>
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
+              <div className="icon u-iconFullArrowGray" />
             </div>
+          </Link>
         </div>
       </div>
     )
