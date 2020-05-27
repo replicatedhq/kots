@@ -102,6 +102,25 @@ class AnalyzerFileTree extends React.Component {
     this.setState({ files: sortedTree });
   }
 
+  setMarkersFromHash = () => {
+    const { hash } = this.props.location;
+    let newMarkers = [];
+    const lines = hash.substring(1).split(",");
+    lines.forEach(line => {
+      newMarkers.push({
+        startRow: parseInt(line) - 1,
+        endRow: parseInt(line),
+        className: "active-highlight",
+        type: "background"
+      })
+    });
+    this.setState({ activeMarkers: newMarkers }, () => {
+      // Clear hash from URL to prevent highlighting again on a refresh
+      const splitLocation = this.props.location.pathname.split("#");
+      this.props.history.replace(splitLocation[0]);
+    })
+  }
+
   componentDidUpdate(lastProps, lastState) {
     const { bundle } = this.props;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
@@ -117,14 +136,7 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          let newMarker = [];
-          newMarker.push({
-            startRow: parseInt(this.props.location.hash.substring(2)) - 1,
-            endRow: parseInt(this.props.location.hash.substring(2)),
-            className: "active-highlight",
-            type: "background"
-          })
-          this.setState({ activeMarkers: newMarker })
+          this.setMarkersFromHash();
         }
       }
     }
@@ -145,14 +157,7 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          let newMarker = [];
-          newMarker.push({
-            startRow: parseInt(this.props.location.hash.substring(2)) - 1,
-            endRow: parseInt(this.props.location.hash.substring(2)),
-            className: "active-highlight",
-            type: "background"
-          })
-          this.setState({ activeMarkers: newMarker })
+          this.setMarkersFromHash();
         }
       }
     }
