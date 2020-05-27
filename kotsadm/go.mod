@@ -30,7 +30,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v1.15.3
-	github.com/replicatedhq/troubleshoot v0.9.35
+	github.com/replicatedhq/troubleshoot v0.9.36
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
