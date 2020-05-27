@@ -28,8 +28,8 @@ type BoolOrString struct {
 type BoolOrStringType int
 
 const (
-	Bool   BoolOrStringType = iota // The BoolOrString holds an bool.
-	String                         // The BoolOrString holds a string.
+	String BoolOrStringType = iota // The BoolOrString holds a string.
+	Bool                           // The BoolOrString holds an bool.
 )
 
 // FromBool creates an BoolOrString object with a bool value.
