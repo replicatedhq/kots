@@ -34,8 +34,21 @@ class AnalyzerRedactorReportRow extends React.Component {
     }
   }
 
+  goToFile = (filePath) => {
+    const { match, history, redactorFiles } = this.props;
+    const filteredFiles = redactorFiles.filter(f => f.file === filePath);
+    let rowString = "#";
+    filteredFiles.forEach((file, i) => {
+      if (i === 0) {
+        rowString = `${rowString}${file.line}`;
+      } else {
+        rowString = `${rowString},${file.line}`;
+      }
+    });
+    history.push(`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}${rowString}`);
+  }
+
   renderRedactorFiles = (file, totalFileRedactions, i) => {
-    const { match } = this.props;
     return (
       <div className="flex flex1 alignItems--center section u-marginTop--10" key={`${file.file}-${i}`}>
         <div className="flex u-marginRight--10">
@@ -43,12 +56,10 @@ class AnalyzerRedactorReportRow extends React.Component {
         </div>
         <div className="flex flex-column">
           <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> {totalFileRedactions} redaction{totalFileRedactions === 1 ? "" : "s"} </span> </p>
-          <Link to={`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${file?.file}`}>
-            <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
-              <div className="icon u-iconFullArrowGray" />
-            </div>
-          </Link>
+          <div className="flex flex1 alignItems--center u-cursor--pointer" onClick={() => this.goToFile(file?.file)}>
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
+            <div className="icon u-iconFullArrowGray" />
+          </div>
         </div>
       </div>
     )
