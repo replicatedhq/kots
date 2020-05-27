@@ -149,35 +149,48 @@ class Redactors extends Component {
         <Helmet>
           <title>Redactors </title>
         </Helmet>
-        <div className="Redactors--wrapper flex1 flex-column u-width--full">
-          <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
-            <div className="flex flex1">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10"> Redactors </p>
-              <div style={{ width: "220px" }}>
-                <Select
-                  className="replicated-select-container"
-                  classNamePrefix="replicated-select"
-                  options={selectOptions}
-                  value={selectedOption}
-                  getOptionValue={(option) => option.label}
-                  isOptionSelected={(option) => { option.value === selectedOption }}
-                  onChange={this.handleSortChange}
+        <div className="Redactors--wrapper flex1 flex-column u-width--full alignItems--center">
+          {sortedRedactors?.length > 0 ?
+            <div className="flex1 flex-column">
+              <div className="flex flex-auto alignItems--center justifyContent--spaceBetween">
+                <div className="flex flex1 alignItems--center">
+                  <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">Redactors</p>
+                  <div style={{ width: "220px" }}>
+                    <Select
+                      className="replicated-select-container"
+                      classNamePrefix="replicated-select"
+                      options={selectOptions}
+                      value={selectedOption}
+                      getOptionValue={(option) => option.label}
+                      isOptionSelected={(option) => { option.value === selectedOption }}
+                      onChange={this.handleSortChange}
+                    />
+                  </div>
+                </div>
+                <div className="flex justifyContent--flexEnd">
+                  <Link to="/redactors/new" className="btn primary blue">Create new redactor</Link>
+                </div>
+              </div>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
+              <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
+              {sortedRedactors?.map((redactor) => (
+                <RedactorRow
+                  key={`redactor-${redactor.slug}`}
+                  redactor={redactor}
+                  toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
                 />
+              ))}
+            </div>
+            :
+            <div className="flex-column flex1 alignItems--center u-textAlign--center justifyContent--center u-width--half">
+              <p className="u-fontSize--20 u-fontWeight--bold u-color--tundora u-lineHeight--normal">Configure custom redactors</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
+              <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
+              <div className="u-marginTop--30">
+                <Link to="/redactors/new" className="btn primary blue">Create new redactor</Link>
               </div>
             </div>
-            <div className="flex justifyContent--flexEnd">
-              <Link to="/redactors/new" className="btn primary blue"> Create new redactor </Link>
-            </div>
-          </div>
-          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
-          <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
-          {sortedRedactors?.map((redactor) => (
-            <RedactorRow
-              key={`redactor-${redactor.slug}`}
-              redactor={redactor}
-              toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-            />
-          ))}
+          }
         </div>
         {deleteRedactorModal &&
           <DeleteRedactorModal
