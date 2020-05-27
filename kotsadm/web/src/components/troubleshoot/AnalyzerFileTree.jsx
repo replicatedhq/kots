@@ -115,8 +115,8 @@ class AnalyzerFileTree extends React.Component {
       });
 
       if (this.props.location !== lastProps.location && this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
@@ -143,8 +143,8 @@ class AnalyzerFileTree extends React.Component {
         fileTree: bundle.treeIndex
       })
       if (this.props.location) {
-        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/") })
-        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(8, this.props.location.pathname.length).join("/"))
+        this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
+        this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
           let newMarker = [];
           newMarker.push({
