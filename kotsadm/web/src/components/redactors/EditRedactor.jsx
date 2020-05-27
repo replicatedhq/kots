@@ -253,7 +253,7 @@ yaml: []`
             </div>
           </div>
           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small">For more information about creating redactors,
-          <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
+          <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
           <div className="flex1 u-marginTop--30 u-border--gray">
             <AceEditor
               ref={(input) => this.refAceEditor = input}
