@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
-import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
+// import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
 import { getSupportBundle } from "../../queries/TroubleshootQueries";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
@@ -16,7 +16,7 @@ export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
     this.state = {
-      activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : props.location.pathname.indexOf("/redactor") !== -1  ? "redactorReport" : "bundleAnalysis",
+      activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : "bundleAnalysis",
       filterTiles: "0"
     };
   }
@@ -67,7 +67,7 @@ export class SupportBundleAnalysis extends React.Component {
     const { location } = this.props;
     if (location !== lastProps.location) {
       this.setState({
-        activeTab: location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1  ? "redactorReport" : "bundleAnalysis"
+        activeTab: location.pathname.indexOf("/contents") !== -1 ? "fileTree" : "bundleAnalysis"
       });
     }
   }
@@ -86,7 +86,7 @@ export class SupportBundleAnalysis extends React.Component {
 
     const insightsUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug`;
     const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
-    const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
+    // const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
 
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
@@ -135,7 +135,7 @@ export class SupportBundleAnalysis extends React.Component {
                   <div className="tab-items flex">
                     <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`} className={`${this.state.activeTab === "bundleAnalysis" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("bundleAnalysis")}>Analysis overview</Link>
                     <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`} className={`${this.state.activeTab === "fileTree" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("fileTree")}>File inspector</Link>
-                    <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`} className={`${this.state.activeTab === "redactorReport" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("redactorReport")}>Redactor report</Link>
+                    {/* <Link to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`} className={`${this.state.activeTab === "redactorReport" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleAnalysisAction("redactorReport")}>Redactor report</Link> */}
                   </div>
                   <div className="flex-column flex1 action-content">
                     <Switch>
@@ -154,12 +154,12 @@ export class SupportBundleAnalysis extends React.Component {
                           downloadBundle={() => this.downloadBundle(bundle)}
                         />
                       } />
-                      <Route exact path={redactorUrl} render={() =>
+                      {/* <Route exact path={redactorUrl} render={() =>
                         <AnalyzerRedactorReport
                           watchSlug={watch.slug}
                           bundle={bundle}
                         />
-                      } />
+                      } /> */}
                     </Switch>
                   </div>
                 </div>
