@@ -1,19 +1,11 @@
 
 import React from "react";
-import { Link } from "react-router-dom"
 import groupBy from "lodash/groupBy";
 
 class AnalyzerRedactorReportRow extends React.Component {
   state = {
-    redactorEnabled: true,
     toggleDetails: false
   };
-
-  handleEnableRedactor = () => {
-    this.setState({
-      redactorEnabled: !this.state.redactorEnabled,
-    });
-  }
 
   toggleDetails = () => {
     this.setState({ toggleDetails: !this.state.toggleDetails });
@@ -26,7 +18,6 @@ class AnalyzerRedactorReportRow extends React.Component {
 
   getRedactorExtension = (file) => {
     const extensionFile = this.calculateRedactorFileName(file);
-
     if (extensionFile.split(".").pop() !== "yaml" && extensionFile.split(".").pop() !== "json") {
       return "text";
     } else {
@@ -102,17 +93,6 @@ class AnalyzerRedactorReportRow extends React.Component {
                 })}
               </div>
             }
-          </div>
-        </div>
-        <div className="flex">
-          <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
-            <input
-              type="checkbox"
-              className="Checkbox-toggle"
-              name="isRedactorEnabled"
-              checked={this.state.redactorEnabled}
-              onChange={(e) => { this.handleEnableRedactor(e) }}
-            />
           </div>
         </div>
       </div>

@@ -659,6 +659,21 @@
   background-position: -108px -289px;
   width: 13px;
   height: 11px;
+
+  &.previous {
+    top: 1px;
+    transform: rotate(180deg);
+  }
+}
+.icon.u-iconFullArrowBlue {
+  background-position: -108px -301px;
+  width: 13px;
+  height: 11px;
+
+  &.previous {
+    top: 1px;
+    transform: rotate(180deg);
+  }
 }
 .icon.external-link-icon {
   background-position: -105px -749px;

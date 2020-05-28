@@ -155,6 +155,63 @@
   }
 }
 
+.redactor-pager {
+  position: absolute;
+  z-index: 10;
+  border-radius: 40px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+
+  div {
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4a4a4a;
+
+    &.arrow-wrapper {
+      position: relative;
+      transition: background-color .2s;
+
+      &::before {
+        content: "";
+        position: absolute;
+        display: block;
+        width: 1px;
+        height: 12px;
+        background-color: #C4C8CA;
+        top: 10px;
+      }
+
+      &.can-scroll:hover {
+        background-color: #f8f8f8;
+        cursor: pointer;
+        &::before {
+          height: 100%;
+          top: 0;
+        }
+      }
+
+      &.prev {
+        padding: 10px 10px 9px 15px;
+        border-radius: 40px 0 0 40px;
+        &::before {
+          right: 0;
+        }
+      }
+      &.next {
+        padding: 10px 15px 9px 10px;
+        border-radius: 0 40px 40px 0;
+        &::before {
+          left: 0;
+        }
+      }
+    }
+  }
+}
+
 .DisplayInstructionsModal--wrapper {
   .instruction-modal-number {
     font-size: 14px;

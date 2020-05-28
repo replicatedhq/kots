@@ -233,24 +233,26 @@ yaml: []`
             <div className="flex flex1 alignItems--center">
               <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
             </div>
-            <div className="flex justifyContent--flexEnd">
-              <div className="toggle flex flex1">
-                <div className="flex flex1">
-                  <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
-                    <input
-                      type="checkbox"
-                      className="Checkbox-toggle"
-                      name="isRedactorEnabled"
-                      checked={this.state.redactorEnabled}
-                      onChange={(e) => { this.handleEnableRedactor(e) }}
-                    />
+            {!this.props.isNew &&
+              <div className="flex justifyContent--flexEnd">
+                <div className="toggle flex flex1">
+                  <div className="flex flex1">
+                    <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
+                      <input
+                        type="checkbox"
+                        className="Checkbox-toggle"
+                        name="isRedactorEnabled"
+                        checked={this.state.redactorEnabled}
+                        onChange={(e) => { this.handleEnableRedactor(e) }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex1 u-marginLeft--5">
+                    <p className="u-fontWeight--medium u-color--tundora u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
                   </div>
                 </div>
-                <div className="flex flex1 u-marginLeft--5">
-                  <p className="u-fontWeight--medium u-color--tundora u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
-                </div>
               </div>
-            </div>
+            }
           </div>
           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small">For more information about creating redactors,
           <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
