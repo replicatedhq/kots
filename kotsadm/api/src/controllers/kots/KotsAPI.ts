@@ -95,6 +95,15 @@ export class KotsAPI {
 
           if (mapped) {
             ports.push(mapped);
+          } else {
+            // get list of app port urls
+            const appPorts: string[] = [];
+            for (const port of parsedKotsAppSpec.ports) {
+              if (port && port.applicationUrl) {
+                appPorts.push(port.applicationUrl)
+              }
+            }
+            console.log(`no match found for link ${link.url} in app ports ${appPorts.join(", ")}`)
           }
         }
       }
