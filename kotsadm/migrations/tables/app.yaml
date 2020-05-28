@@ -72,4 +72,4 @@ spec:
         type: text
       - name: update_checker_spec
         type: text
-        default: '@daily'
+        default: '@default'

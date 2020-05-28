@@ -18,9 +18,13 @@ const SCHEDULES = [
     label: "Weekly",
   },
   {
+    value: "@default",
+    label: "Default",
+  },
+  {
     value: "custom",
     label: "Custom",
-  }
+  },
 ];
 
 export default class UpdateCheckerModal extends React.Component {
@@ -97,7 +101,7 @@ export default class UpdateCheckerModal extends React.Component {
 
   handleScheduleChange = selectedSchedule => {
     let updateCheckerSpec;
-    if (selectedSchedule.value != "custom") {
+    if (selectedSchedule.value !== "custom") {
       updateCheckerSpec = selectedSchedule.value;
     } else {
       updateCheckerSpec = "0 2 * * WED,SAT"; // arbitrary choice
@@ -160,9 +164,20 @@ export default class UpdateCheckerModal extends React.Component {
                   className="Input u-marginBottom--5"
                   placeholder="0 0 * * MON"
                   value={updateCheckerSpec}
-                  onChange={(e) => this.setState({ updateCheckerSpec: e.target.value })}
+                  onChange={(e) => {
+                    const schedule = find(SCHEDULES, { value: e.target.value });
+                    const selectedSchedule = schedule ? schedule : find(SCHEDULES, { value: "custom" });
+                    this.setState({ updateCheckerSpec: e.target.value, selectedSchedule });
+                  }}
                 />
-                {humanReadableCron && <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>}
+                {selectedSchedule.value === "@default" ?
+                  <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">Every 4 hours</span>
+                  :
+                  humanReadableCron ?
+                    <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>
+                    :
+                    null
+                }
               </div>
             </div>
             {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}

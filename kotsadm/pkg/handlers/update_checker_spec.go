@@ -72,7 +72,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 
 	// validate cron spec
 	cronSpec := updateCheckerSpecRequest.UpdateCheckerSpec
-	if cronSpec != "@never" {
+	if cronSpec != "@never" && cronSpec != "@default" {
 		_, err := cron.ParseStandard(cronSpec)
 		if err != nil {
 			logger.Error(err)
