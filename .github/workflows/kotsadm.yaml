@@ -64,6 +64,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Download fixtures artifact
       uses: actions/download-artifact@v2
       with:
@@ -73,7 +78,6 @@ jobs:
     - name: Publish fixtures
       if: ${{ github.ref == 'refs/heads/master' }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/migrations/fixtures publish
 
 
@@ -84,6 +88,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
@@ -92,7 +101,6 @@ jobs:
     - name: Build
       if: ${{ github.ref == 'refs/heads/master' }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/migrations schema-alpha
 
     - name: "Release schema migrations on tag"
@@ -100,7 +108,6 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/migrations schema-release
 
 
@@ -304,6 +311,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Setup Go
       uses: actions/setup-go@v1
       with:
@@ -325,7 +337,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm build-alpha
 
 
@@ -335,6 +346,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
       uses: actions/setup-go@v1
@@ -365,7 +381,6 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm build-release
 
 
@@ -377,6 +392,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Setup Node
       uses: actions/setup-node@v2-beta
       with:
@@ -386,7 +406,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/api build-alpha
 
 
@@ -396,6 +415,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Node
       uses: actions/setup-node@v2-beta
@@ -407,7 +431,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/api build-release
 
 
@@ -418,6 +441,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
       uses: actions/setup-go@v1
@@ -434,7 +462,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/operator build-alpha
 
 
@@ -444,6 +471,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
       uses: actions/setup-go@v1
@@ -467,7 +499,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         cp kotsadm/operator/bin/kotsadm-operator kotsadm/operator/deploy/bin/kotsadm-operator
         make -C kotsadm/operator build-release
 
@@ -480,6 +511,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Setup Go
       uses: actions/setup-go@v1
       with:
@@ -495,7 +531,6 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/kurl_proxy build-alpha
 
 
@@ -505,6 +540,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
       uses: actions/setup-go@v1
@@ -527,7 +567,6 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/kurl_proxy build-release
 
 
@@ -538,11 +577,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/minio publish-latest
 
 
@@ -551,6 +594,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
@@ -562,5 +610,4 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
         make -C kotsadm/minio publish-latest
