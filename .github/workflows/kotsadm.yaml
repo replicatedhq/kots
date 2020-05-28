@@ -507,6 +507,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
+        mkdir -p kotsadm/operator/deploy/bin
         cp kotsadm/operator/bin/kotsadm-operator kotsadm/operator/deploy/bin/kotsadm-operator
         make -C kotsadm/operator build-release
 

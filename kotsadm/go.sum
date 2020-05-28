@@ -773,10 +773,6 @@ github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDF
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56 h1:W4lzQxpdUPFVTjs6zCDFGyAbPfow28zbFU65QCQf+SY=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200306230415-b6d377a48a56/go.mod h1:Vp5X4tM0KmahplYOvdRqs2NY2qy1amZ89zZBm9CDENw=
-github.com/replicatedhq/troubleshoot v0.9.34 h1:Rh85hEbVNNWQ9ULipSQn2WMmfQBvJu05Y9OX5JtmKvw=
-github.com/replicatedhq/troubleshoot v0.9.34/go.mod h1:wNGrTNsxvcGRCI7oe3NsfwQKTUsDW+6SvXdh3lJxMms=
-github.com/replicatedhq/troubleshoot v0.9.35 h1:Sd1ESpkN0yoe6bu39QzumdQ6vDm553TMVr2b9ONWW38=
-github.com/replicatedhq/troubleshoot v0.9.35/go.mod h1:GZMgRUceKXGF+A9kTbiYud6h3pKmH8UF9GfezXUIhCY=
 github.com/replicatedhq/troubleshoot v0.9.36 h1:lrMOTJFQ/q5u1TVaHBHYBv4mLhmHtxnJQJf88eLgtFo=
 github.com/replicatedhq/troubleshoot v0.9.36/go.mod h1:GZMgRUceKXGF+A9kTbiYud6h3pKmH8UF9GfezXUIhCY=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
