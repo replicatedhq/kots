@@ -296,7 +296,7 @@ jobs:
         AUTO_CREATE_CLUSTER_TOKEN: this-is-a-test-value
       run: make -C kotsadm/api no-yarn deps build
 
-    - name: Upload Go API build artifact
+    - name: Upload TypeScript API build artifact
       uses: actions/upload-artifact@v2
       with:
         name: typescript_api_build
@@ -433,10 +433,16 @@ jobs:
       with:
         node-version: '10'
 
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      shell: bash
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
-        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
         make -C kotsadm/api build-release
 
@@ -622,4 +628,4 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        make -C kotsadm/minio publish-latest
+        make -C kotsadm/minio publish-release
