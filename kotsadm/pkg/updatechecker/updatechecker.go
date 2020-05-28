@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
@@ -66,9 +67,19 @@ func Configure(appID string) error {
 	mtx.Lock()
 	defer mtx.Unlock()
 
-	if a.UpdateCheckerSpec == "@never" || a.UpdateCheckerSpec == "" {
+	cronSpec := a.UpdateCheckerSpec
+
+	if cronSpec == "@never" || cronSpec == "" {
 		Stop(a.ID)
 		return nil
+	}
+
+	if cronSpec == "@default" {
+		// check for updates every 4 hours
+		t := time.Now()
+		m := t.Minute()
+		h := t.Hour() % 4
+		cronSpec = fmt.Sprintf("%d %d/4 * * *", m, h)
 	}
 
 	job, ok := jobs[a.ID]
@@ -85,7 +96,7 @@ func Configure(appID string) error {
 		))
 	}
 
-	_, err = job.AddFunc(a.UpdateCheckerSpec, func() {
+	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", a.Slug))
 
 		availableUpdates, err := CheckForUpdates(a)
