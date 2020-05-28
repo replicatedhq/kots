@@ -87,6 +87,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build
@@ -142,6 +143,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build web
@@ -176,6 +178,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build operator
@@ -211,6 +214,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build kurl_proxy
@@ -240,6 +244,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build Go API
@@ -272,6 +277,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build TypeScript API
@@ -343,6 +349,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
   
     - name: Download go_api artifact
@@ -452,6 +459,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Download operator artifact
@@ -513,6 +521,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
   
     - name: Download kurl_proxy artifact
@@ -554,6 +563,7 @@ jobs:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
       id: get_tag
+      shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
     - name: Build tagged release
