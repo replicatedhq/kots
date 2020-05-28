@@ -170,13 +170,13 @@ export class NavBar extends PureComponent {
                         </span>
                       </div>
                     }
-                    {/* <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "redactors" })}>
+                    <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "redactors" })}>
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToRedactors}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
                           <span>Redactors</span>
                         </span>
                       </span>
-                    </div> */}
+                    </div>
                   </div>
                 )}
               </div>
