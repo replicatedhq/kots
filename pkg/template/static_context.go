@@ -82,6 +82,9 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["IsKurl"] = ctx.isKurl
 	funcMap["Distribution"] = ctx.distribution
 
+	funcMap["HTTPProxy"] = ctx.httpProxy
+	funcMap["NoProxy"] = ctx.noProxy
+
 	return funcMap
 }
 
@@ -494,4 +497,12 @@ func (ctx StaticCtx) distribution() string {
 	provider := analyze.CheckOpenShift(&foundProviders, apiResourceList, workingProvider)
 
 	return provider
+}
+
+func (ctx StaticCtx) httpProxy() string {
+	return os.Getenv("HTTP_PROXY")
+}
+
+func (ctx StaticCtx) noProxy() string {
+	return os.Getenv("NO_PROXY")
 }

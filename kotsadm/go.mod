@@ -46,6 +46,7 @@ require (
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	google.golang.org/api v0.6.1-0.20190607001116-5213b8090861
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
