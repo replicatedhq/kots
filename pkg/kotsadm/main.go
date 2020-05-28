@@ -276,6 +276,10 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		return errors.Wrap(err, "failed to ensure api exists")
 	}
 
+	if err := ensureOperator(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure operator")
+	}
+
 	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 	if err := waitForKotsadm(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for API")
@@ -284,10 +288,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		return errors.Wrap(err, "failed to wait for API")
 	}
 	log.FinishSpinner()
-
-	if err := ensureOperator(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure operator")
-	}
 
 	return nil
 }
