@@ -26,7 +26,7 @@ class AnalyzerRedactorReportRow extends React.Component {
   }
 
   goToFile = (filePath) => {
-    const { match, history, redactorFiles } = this.props;
+    const { match, history, redactorFiles, redactor } = this.props;
     const filteredFiles = redactorFiles.filter(f => f.file === filePath);
     let rowString = "#";
     filteredFiles.forEach((file, i) => {
@@ -36,7 +36,7 @@ class AnalyzerRedactorReportRow extends React.Component {
         rowString = `${rowString},${file.line}`;
       }
     });
-    history.push(`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}${rowString}`);
+    history.push(`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`);
   }
 
   renderRedactorFiles = (file, totalFileRedactions, i) => {
