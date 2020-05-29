@@ -49,8 +49,10 @@ export class SupportBundleAnalysis extends React.Component {
       }
     })
       .then(async (result) => {
-        const blob = result.blob();
-        download(blob, "supportbundle.tar.gz", "application/gzip")
+        if (result.ok) {
+          const blob = await result.blob();
+          download(blob, "supportbundle.tar.gz", "application/gzip")
+        }
       })
       .catch(err => {
         console.log(err);
