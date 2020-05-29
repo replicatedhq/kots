@@ -37,7 +37,7 @@ class RedactorRow extends React.Component {
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--nevada u-marginLeft--10"> {redactor?.description} </p>
         </div>
         <div className="flex alignItems--center">
-          <Link to={`/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit redactor</Link>
+          <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit redactor</Link>
           <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleDeleteClick(redactor)}>Delete</span>
           <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
             <input
