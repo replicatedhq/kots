@@ -102,16 +102,30 @@ func InstallCmd() *cobra.Command {
 				configValues = parsedConfigValues
 			}
 
+			// alpha enablement here
+			// if deploy minio is set and there's no storage base uri, set it
+			// this is likely not going to be the final state of how this is configured
+			if v.GetBool("deploy-dockerdistribution") {
+				if v.GetString("storage-base-uri") == "" {
+					v.Set("storage-base-uri", "docker://kotsadm-storage-registry:5000")
+					v.Set("storage-base-uri-plainhttp", true)
+				}
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
-				Namespace:             namespace,
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				Context:               v.GetString("context"),
-				SharedPassword:        v.GetString("shared-password"),
-				ServiceType:           v.GetString("service-type"),
-				NodePort:              v.GetInt32("node-port"),
-				ApplicationMetadata:   applicationMetadata,
-				License:               license,
-				ConfigValues:          configValues,
+				Namespace:                 namespace,
+				KubernetesConfigFlags:     kubernetesConfigFlags,
+				Context:                   v.GetString("context"),
+				SharedPassword:            v.GetString("shared-password"),
+				ServiceType:               v.GetString("service-type"),
+				NodePort:                  v.GetInt32("node-port"),
+				ApplicationMetadata:       applicationMetadata,
+				License:                   license,
+				ConfigValues:              configValues,
+				StorageBaseURI:            v.GetString("storage-base-uri"),
+				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
+				IncludeMinio:              v.GetBool("deploy-minio"),
+				IncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -211,6 +225,17 @@ func InstallCmd() *cobra.Command {
 	// flags that are not fully supported or generally available yet
 	cmd.Flags().MarkHidden("service-type")
 	cmd.Flags().MarkHidden("node-port")
+
+	// options for the alpha feature of using a reg instead of s3 for storage
+	// this was introduced as alpha in kots 1.16.0
+	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
+	cmd.Flags().Bool("deploy-minio", true, "when set, kots install will deploy a local minio instance for storage")
+	cmd.Flags().Bool("deploy-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
+	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
+	cmd.Flags().MarkHidden("storage-base-uri")
+	cmd.Flags().MarkHidden("deploy-minio")
+	cmd.Flags().MarkHidden("deploy-dockerdistribution")
+	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	return cmd
 }

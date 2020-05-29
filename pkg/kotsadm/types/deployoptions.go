@@ -7,22 +7,26 @@ import (
 )
 
 type DeployOptions struct {
-	Namespace              string
-	KubernetesConfigFlags  *genericclioptions.ConfigFlags
-	Context                string
-	SharedPassword         string
-	SharedPasswordBcrypt   string
-	S3AccessKey            string
-	S3SecretKey            string
-	JWT                    string
-	PostgresPassword       string
-	APIEncryptionKey       string
-	AutoCreateClusterToken string
-	ServiceType            string
-	NodePort               int32
-	ApplicationMetadata    []byte
-	LimitRange             *corev1.LimitRange
-	IsOpenShift            bool
-	License                *kotsv1beta1.License
-	ConfigValues           *kotsv1beta1.ConfigValues
+	Namespace                 string
+	KubernetesConfigFlags     *genericclioptions.ConfigFlags
+	Context                   string
+	SharedPassword            string
+	SharedPasswordBcrypt      string
+	S3AccessKey               string
+	S3SecretKey               string
+	JWT                       string
+	PostgresPassword          string
+	APIEncryptionKey          string
+	AutoCreateClusterToken    string
+	ServiceType               string
+	NodePort                  int32
+	ApplicationMetadata       []byte
+	LimitRange                *corev1.LimitRange
+	IsOpenShift               bool
+	License                   *kotsv1beta1.License
+	ConfigValues              *kotsv1beta1.ConfigValues
+	StorageBaseURI            string
+	StorageBaseURIPlainHTTP   bool
+	IncludeMinio              bool
+	IncludeDockerDistribution bool
 }
