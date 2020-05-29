@@ -37,10 +37,8 @@ export const Query = `
 
     validateRegistryInfo(slug: String, endpoint: String, username: String, password: String, org: String): String!
 
-    listKotsSupportBundles(kotsSlug: String!): [SupportBundle]
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
-    supportBundleFiles(bundleId: ID!, fileNames: [String!]): String
     getSupportBundleCommand(watchSlug: String): String
 
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult

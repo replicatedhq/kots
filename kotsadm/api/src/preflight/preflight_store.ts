@@ -20,20 +20,6 @@ export class PreflightStore {
     private readonly pool: pg.Pool
   ) {}
 
-  async getKotsPreflightSpec(appId: string, sequence: number): Promise<string> {
-    const q = `
-      SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2
-    `;
-
-    const result = await this.pool.query(q, [appId, sequence]);
-
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`Unable to find Preflight Spec with appId ${appId}`);
-    }
-
-    return result.rows[0].preflight_spec;
-  }
-
   async getKotsPreflightResult(appId: string, clusterId: string, sequence: number): Promise<PreflightResult> {
     const q =
       `SELECT

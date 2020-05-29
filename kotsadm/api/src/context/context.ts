@@ -6,7 +6,6 @@ import { isAfter } from "date-fns";
 import { Cluster } from "../cluster";
 import _ from "lodash";
 import { Stores } from "../schema/stores";
-import slugify from "slugify";
 import { KotsApp } from "../kots_app";
 
 export class Context {
@@ -28,10 +27,6 @@ export class Context {
     return this.session.type;
   }
 
-  public getGitHubToken(): string {
-    return this.session.scmToken;
-  }
-
   public getUserId(): string {
     return this.session.userId;
   }
@@ -45,15 +40,8 @@ export class Context {
   }
 
   public requireValidSession(): ReplicatedError | null {
-    if (this.sessionType() === "github") {
-      if (this.getGitHubToken().length === 0) {
-        return new ReplicatedError("Unauthorized");
-      }
-    } else {
-      // ship
-      if (this.getUserId() === "") {
-        return new ReplicatedError("Unauthorized");
-      }
+    if (this.getUserId() === "") {
+      return new ReplicatedError("Unauthorized");
     }
 
     const currentTime = new Date(Date.now()).toUTCString();
@@ -62,17 +50,6 @@ export class Context {
     }
 
     return null;
-  }
-
-  public async getUsername(): Promise<string> {
-    const shipUser = await this.stores.userStore.getUser(this.getUserId());
-    if (shipUser.githubUser) {
-      return shipUser.githubUser.login;
-    } else if (shipUser.shipUser) {
-      return slugify(`${shipUser.shipUser.firstName}-${shipUser.shipUser.lastName}`).toLowerCase();
-    }
-
-    throw new ReplicatedError("unable to get username");
   }
 
   public async listClusters(): Promise<Cluster[]> {

@@ -1,49 +1,14 @@
 import { addWeeks } from "date-fns";
 import jwt from "jsonwebtoken";
-import randomstring from "randomstring";
-
 import { Params } from "../server/params";
 import pg from "pg";
 import { Session } from "./session";
 import { ReplicatedError } from "../server/errors";
 import * as k8s from "@kubernetes/client-node";
-import {base64Decode} from "../util/utilities";
-
-export type InstallationMap = {
-  [key: string]: number;
-};
+import { base64Decode } from "../util/utilities";
 
 export class SessionStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
-
-  /**
-   * Creates a signed JWT for authenticaion
-   * @param userId - string of user_id from the database
-   */
-  async createPasswordSession(userId: string): Promise<string> {
-    const sessionId = randomstring.generate({ capitalization: "lowercase" });
-    const currentUtcDate = new Date(Date.now()).toUTCString();
-    const expirationDate = addWeeks(currentUtcDate, 2);
-
-    const q = `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`;
-    const v = [
-      sessionId,
-      userId,
-      "{}",
-      expirationDate,
-    ];
-
-    await this.pool.query(q, v);
-
-    return jwt.sign(
-      {
-        type: "ship",
-        sessionId,
-        isSingleTenant: true,
-      },
-      this.params.sessionKey
-    );
-  }
 
   public async deleteSession(sessionId: string): Promise<void> {
     const q = `delete from session where id = $1`;
