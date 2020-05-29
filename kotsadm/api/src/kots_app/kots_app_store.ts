@@ -1175,12 +1175,13 @@ where app_id = $1 and sequence = $2`;
     ];
 
     const result = await this.pool.query(q, v);
+    const rows = result.rows;
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0 || !rows[0].sequence) {
       return 0;
     }
 
-    return parseInt(result.rows[0].sequence);
+    return parseInt(rows[0].sequence);
   }
 
   async getMidstreamUpdateCursor(appId: string): Promise<UpdateCursor> {
@@ -1503,7 +1504,7 @@ where app_id = $1 and sequence = $2`;
 
     const result = await this.pool.query(q, v);
     if (result.rowCount == 0) {
-      throw new ReplicatedError("License type not found");
+      return "";
     }
 
     const row = result.rows[0];
