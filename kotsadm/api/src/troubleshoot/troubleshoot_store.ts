@@ -2,11 +2,9 @@ import pg from "pg";
 import randomstring from "randomstring";
 import _ from "lodash";
 import { Params } from "../server/params";
-import { getFileInfo } from "../util/s3";
 import { ReplicatedError } from "../server/errors";
-import { Collector, SupportBundle, SupportBundleInsight, SupportBundleStatus } from "./";
+import { SupportBundle, SupportBundleInsight } from "./";
 import { SupportBundleAnalysis } from "./supportbundle";
-import { Analyzer } from "./analyzer";
 import { getLicenseType } from "../util/utilities";
 
 export class TroubleshootStore {
@@ -14,58 +12,6 @@ export class TroubleshootStore {
     private readonly pool: pg.Pool,
     private readonly params: Params,
   ) {
-  }
-
-  public async tryGetAnalyzersForKotsApp(id: string): Promise<Analyzer | void> {
-    const q = `select analyzer_spec from app_version
-      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
-      where app.id = $1`;
-    const v = [id];
-
-    const result = await this.pool.query(q, v);
-
-    let analyzer: Analyzer = new Analyzer();
-    if (result.rowCount === 0) {
-      return;
-    }
-
-    return result.rows[0].analyzer_spec;
-  }
-
-  public async tryGetCollectorForKotsSlug(slug: string): Promise<Collector | void> {
-    const q = `select supportbundle_spec from app_version
-      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
-      where app.slug = $1`;
-    const v = [slug];
-
-    const result = await this.pool.query(q, v);
-
-    let collector: Collector = new Collector();
-    if (result.rowCount === 0) {
-      return;
-    }
-
-    return result.rows[0].supportbundle_spec;
-  }
-
-  public async setAnalysisResult(supportBundleId: string, insights: string): Promise<void> {
-    const id = randomstring.generate({ capitalization: "lowercase" });
-    const q = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`;
-    const v = [
-      id,
-      supportBundleId,
-      insights,
-      new Date(),
-    ];
-
-    await this.pool.query(q, v);
-  }
-
-  public getDefaultCollector(): Collector {
-    const collector: Collector = new Collector();
-    collector.spec = `TODO`;
-
-    return collector;
   }
 
   public async getSupportBundle(id: string): Promise<SupportBundle> {
@@ -204,23 +150,6 @@ export class TroubleshootStore {
     return id;
   }
 
-  public async supportBundleExists(id: string): Promise<boolean> {
-    const q = `SELECT count(1) AS count FROM supportbundle WHERE id = $1`;
-    const v = [id];
-    const result = await this.pool.query(q, v);
-
-    return result.rows[0].count === "1";
-  }
-
-  public async assignTreeIndex(id: string, index: string): Promise<boolean> {
-    const q = `update supportbundle set tree_index = $1 where id = $2`;
-
-    const v = [index, id];
-    const result = await this.pool.query(q, v);
-
-    return result.rows.length !== 0;
-  }
-
   public async listSupportBundles(appOrWatchId: string): Promise<SupportBundle[]> {
     const q = `select id from supportbundle where watch_id = $1 order by created_at`;
     const v = [appOrWatchId];
@@ -230,40 +159,6 @@ export class TroubleshootStore {
       supportBundles.push(await this.getSupportBundle(row.id));
     }
     return supportBundles;
-  }
-
-  public async createSupportBundle(appOrWatchId: string, size: number, id?: string): Promise<SupportBundle> {
-    if (!id) {
-      id = randomstring.generate({ capitalization: "lowercase" });
-    }
-    const createdAt = new Date();
-    const status: SupportBundleStatus = "pending";
-
-    const q = `insert into supportbundle (id, slug, watch_id, size, status, created_at) values ($1, $2, $3, $4, $5, $6)`;
-    let v = [
-      id,
-      id, // TODO: slug
-      appOrWatchId,
-      size,
-      status,
-      createdAt,
-    ]
-    await this.pool.query(q, v);
-    return await this.getSupportBundle(id);
-  }
-
-  public async markSupportBundleUploaded(id: string): Promise<void> {
-    const status: SupportBundleStatus = "uploaded";
-
-    const q = `update supportbundle set status = $2, uploaded_at = $3 where id = $1`;
-    const v = [id, status, new Date()];
-    await this.pool.query(q, v);
-  }
-
-  public async updateSupportBundleStatus(id: string, status: SupportBundleStatus): Promise<void> {
-    const q = `update supportbundle set status = $2 where id = $1`;
-    const v = [id, status];
-    await this.pool.query(q, v);
   }
 
   async getSupportBundleCommand(watchSlug?: string): Promise<string> {
@@ -276,15 +171,5 @@ export class TroubleshootStore {
     kubectl support-bundle ${url}
     `;
     return bundleCommand;
-  }
-
-  public async getSupportBundleFileInfo(supportBundleId: string): Promise<any> {
-    const params = {
-      Bucket: this.params.shipOutputBucket,
-      Key: `supportbundles/${supportBundleId}/supportbundle.tar.gz`,
-    };
-
-    const info = await getFileInfo(this.params, params);
-    return info
   }
 }

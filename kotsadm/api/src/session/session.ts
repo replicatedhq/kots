@@ -11,7 +11,6 @@ export class Session {
   public userId: string;
   public expiresAt: Date;
   public metadata: string;
-  public scmToken: string;
   public type: string;
 
   public async getToken(): Promise<string> {
