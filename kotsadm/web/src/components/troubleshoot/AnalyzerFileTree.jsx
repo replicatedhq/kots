@@ -236,7 +236,7 @@ class AnalyzerFileTree extends React.Component {
                   <div className={`arrow-wrapper prev ${isFirstRedaction ? "": "can-scroll"}`} onClick={isFirstRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex - 1)}>
                     <span className={`icon u-iconFullArrow${isFirstRedaction ? "Gray" : "Blue clickable"} previous`} />
                   </div>
-                  <div>Viewing redaction {this.state.currentViewIndex + 1} of {this.state.activeMarkers.length}</div>
+                  <div>Redaction {this.state.currentViewIndex + 1} of {this.state.activeMarkers.length}</div>
                   <div className={`arrow-wrapper next ${isLastRedaction ? "": "can-scroll"}`} onClick={isLastRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex + 1)}>
                     <span className={`icon u-iconFullArrow${isLastRedaction ? "Gray" : "Blue clickable"}`} />
                   </div>
