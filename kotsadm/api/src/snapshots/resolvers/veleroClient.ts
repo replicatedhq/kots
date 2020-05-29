@@ -66,7 +66,7 @@ export class VeleroClient {
     if (!cluster) {
       throw new Error("No cluster available from kubeconfig");
     }
-    this.server = cluster.server;
+    this.server = "https://kubernetes.default"
   }
 
   // tslint:disable-next-line cyclomatic-complexity

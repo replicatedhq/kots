@@ -53,7 +53,7 @@ kots: fmt vet
 
 .PHONY: ffi
 ffi: fmt vet
-	go build ${LDFLAGS} -o bin/kots.so -buildmode=c-shared ./ffi/...
+	go build ${LDFLAGS} $(BUILDFLAGS) -o bin/kots.so -buildmode=c-shared ./ffi/...
 
 .PHONY: fmt
 fmt:
