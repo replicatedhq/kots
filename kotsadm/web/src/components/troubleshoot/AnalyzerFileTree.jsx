@@ -6,7 +6,8 @@ import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import has from "lodash/has";
-
+import queryString from "query-string";
+import ReactTooltip from "react-tooltip"
 import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
 
@@ -29,7 +30,6 @@ class AnalyzerFileTree extends React.Component {
       fileLoadErr: false,
       fileLoadErrMessage: "",
       activeMarkers: [],
-      redactionMarkersSet: false,
       analysisError: false,
       currentViewIndex: 0
     };
@@ -105,8 +105,12 @@ class AnalyzerFileTree extends React.Component {
     this.setState({ files: sortedTree });
   }
 
-  setMarkersFromHash = () => {
-    const { hash } = this.props.location;
+  setRedactorMarkersFromHash = () => {
+    const { hash, search } = this.props.location;
+    let redactorFileName = "";
+    if (search) {
+      redactorFileName = queryString.parse(search);
+    }
     let newMarkers = [];
     const lines = hash.substring(1).split(",");
     lines.forEach(line => {
@@ -117,7 +121,7 @@ class AnalyzerFileTree extends React.Component {
         type: "background"
       })
     });
-    this.setState({ activeMarkers: newMarkers, redactionMarkersSet: true }, () => {
+    this.setState({ activeMarkers: newMarkers, redactionMarkersSet: true, redactorFileName: redactorFileName.file }, () => {
       // Clear hash from URL to prevent highlighting again on a refresh
       const splitLocation = this.props.location.pathname.split("#");
       this.props.history.replace(splitLocation[0]);
@@ -146,7 +150,7 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          this.setMarkersFromHash();
+          this.setRedactorMarkersFromHash();
         }
       }
     }
@@ -172,7 +176,7 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          this.setMarkersFromHash();
+          this.setRedactorMarkersFromHash();
         }
       }
     }
@@ -236,7 +240,10 @@ class AnalyzerFileTree extends React.Component {
                   <div className={`arrow-wrapper prev ${isFirstRedaction ? "": "can-scroll"}`} onClick={isFirstRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex - 1)}>
                     <span className={`icon u-iconFullArrow${isFirstRedaction ? "Gray" : "Blue clickable"} previous`} />
                   </div>
-                  <div>Redaction {this.state.currentViewIndex + 1} of {this.state.activeMarkers.length}</div>
+                  <div className="flex alignItems--center">
+                    <span>Redaction {this.state.currentViewIndex + 1} of {this.state.activeMarkers.length}</span>
+                    <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10" data-tip data-for="current-redator-filename" />
+                  </div>
                   <div className={`arrow-wrapper next ${isLastRedaction ? "": "can-scroll"}`} onClick={isLastRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex + 1)}>
                     <span className={`icon u-iconFullArrow${isLastRedaction ? "Gray" : "Blue clickable"}`} />
                   </div>
@@ -286,6 +293,7 @@ class AnalyzerFileTree extends React.Component {
                         }}
                       />
               }
+              <ReactTooltip id="current-redator-filename" type="light" effect="solid" borderColor="#C4C4C4" textColor="#4A4A4A" border={true} className="u-color--tundora">Viewing redactions from <span className="u-fontWeight--bold">{this.state.redactorFileName}</span></ReactTooltip>
             </div>
           </div>
         }
