@@ -154,6 +154,8 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 					Fail: &troubleshootv1beta1.SingleOutcome{
 						Message: "Velero has errors",
 					},
+				},
+				{
 					Pass: &troubleshootv1beta1.SingleOutcome{
 						Message: "Velero does not have errors",
 					},
@@ -174,6 +176,8 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 					Fail: &troubleshootv1beta1.SingleOutcome{
 						Message: "Restic volume error",
 					},
+				},
+				{
 					Pass: &troubleshootv1beta1.SingleOutcome{
 						Message: "No restic volume error",
 					},

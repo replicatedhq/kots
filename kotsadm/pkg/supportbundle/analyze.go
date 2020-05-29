@@ -60,10 +60,14 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta1.Analyzer) error {
 						When:    "> 1",
 						Message: "At least 2 replicas of the Admin Console API is running and ready",
 					},
+				},
+				{
 					Warn: &troubleshootv1beta1.SingleOutcome{
 						When:    "= 1",
 						Message: "Only 1 replica of the Admin Console API is running and ready",
 					},
+				},
+				{
 					Fail: &troubleshootv1beta1.SingleOutcome{
 						When:    "= 0",
 						Message: "There are no replicas of the Admin Console API running and ready",
@@ -86,6 +90,8 @@ func injectOperatorReplicaAnalyzer(analyzer *troubleshootv1beta1.Analyzer) error
 						When:    "= 1",
 						Message: "Exactly 1 replica of the Admin Console Operator is running and ready",
 					},
+				},
+				{
 					Fail: &troubleshootv1beta1.SingleOutcome{
 						Message: "There is not exactly 1 replica of the Admin Console Operator running and ready",
 					},
@@ -105,6 +111,8 @@ func injectNoGvisorAnalyzer(analyzer *troubleshootv1beta1.Analyzer) error {
 						When:    "== gvisor",
 						Message: "The Admin Console does not support using the gvisor runtime",
 					},
+				},
+				{
 					Pass: &troubleshootv1beta1.SingleOutcome{
 						Message: "A supported container runtime is present on all nodes",
 					},
@@ -130,6 +138,8 @@ func injectIfMissingKubernetesVersionAnalyzer(analyzer *troubleshootv1beta1.Anal
 						When:    "< 1.16.0",
 						Message: "The Admin Console requires at least Kubernetes 1.16.0",
 					},
+				},
+				{
 					Pass: &troubleshootv1beta1.SingleOutcome{
 						Message: "Your cluster meets the recommended and required versions of Kubernetes",
 					},

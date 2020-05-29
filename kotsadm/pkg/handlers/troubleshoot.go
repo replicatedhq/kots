@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,6 +31,7 @@ import (
 	"github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -214,14 +216,16 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(analyzer)
-	if err != nil {
+	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(analyzer, &b); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(tmpFile.Name(), string(b))
+	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(tmpFile.Name(), b.String())
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
