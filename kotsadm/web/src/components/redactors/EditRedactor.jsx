@@ -182,8 +182,8 @@ class EditRedactor extends Component {
   }
 
   componentDidMount() {
-    if (this.props.match.params.slug) {
-      this.getRedactor(this.props.match.params.slug);
+    if (this.props.match.params.redactorSlug) {
+      this.getRedactor(this.props.match.params.redactorSlug);
     } else {
       const defaultYaml = `name: ""
 files: []
@@ -200,8 +200,8 @@ yaml: []`
   }
 
   onSaveRedactor = () => {
-    if (this.props.match.params.slug) {
-      this.editRedactor(this.props.match.params.slug, this.state.redactorEnabled, this.state.redactorYaml);
+    if (this.props.match.params.redactorSlug) {
+      this.editRedactor(this.props.match.params.redactorSlug, this.state.redactorEnabled, this.state.redactorYaml);
     } else {
       this.createRedactor(this.state.redactorEnabled, true, this.state.redactorYaml);
     }
@@ -225,13 +225,12 @@ yaml: []`
           <title>Redactors</title>
         </Helmet>
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
-          <Link to="/redactors" className="replicated-link u-fontSize--normal">
-            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-                Back to redactors
-            </Link>
-          <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween u-marginTop--10">
+          <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
+            <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="replicated-link u-marginRight--5">Redactors</Link> > <span className="u-marginLeft--5">{this.state.redactorName}</span>
+          </div>
+          <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10"> {this.state.redactorName} </p>
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">{this.state.redactorName}</p>
             </div>
             {!this.props.isNew &&
               <div className="flex justifyContent--flexEnd">

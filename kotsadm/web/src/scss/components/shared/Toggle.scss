@@ -1,0 +1,33 @@
+.Toggle {
+  background-color: #f8f8f8;
+  border-radius: 4px;
+  box-shadow: 0 0 3px rgba(0,0,0,.15);
+  padding: 4px;
+
+  .Toggle-item {
+    color: #9B9B9B;
+    background-color: transparent;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    margin-right: 8px;
+    transition: background-color .2s, color .2s;
+  
+    &:last-child {
+      margin-right: 0;
+    }
+
+    &:hover {
+      cursor: pointer;
+      color: #323232;
+    }
+
+    &.is-active {
+      color: #323232;
+      background-color: #ffffff;
+      box-shadow: 0 0 2px rgba(0,0,0,.1);
+    }
+  }
+}

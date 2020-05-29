@@ -25,15 +25,13 @@ import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
-import SupportBundleList from "../troubleshoot/SupportBundleList";
-import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
-import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import AppSettings from "./AppSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
 import AppSnapshotSchedule from "./AppSnapshotSchedule";
 import AppSnapshotDetail from "./AppSnapshotDetail";
 import AppSnapshotRestore from "./AppSnapshotRestore";
+import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -287,19 +285,10 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/troubleshoot" render={() =>
-                      <SupportBundleList
-                        watch={app}
-                      />
-                    } />
-                    <Route exact path="/app/:slug/troubleshoot/generate" render={() =>
-                      <GenerateSupportBundle
-                        watch={app}
-                      />
-                    } />
-                    <Route path="/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
-                      <SupportBundleAnalysis
-                        watch={app}
+                    <Route path="/app/:slug/troubleshoot" render={() =>
+                      <TroubleshootContainer
+                        app={app}
+                        appName={appName}
                       />
                     } />
                     <Route exact path="/app/:slug/license" render={() =>

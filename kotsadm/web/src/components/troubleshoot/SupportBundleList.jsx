@@ -4,7 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
-
+import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
@@ -46,7 +46,7 @@ class SupportBundleList extends React.Component {
     if (downstreams.length) {
       if (listSupportBundles?.length) {
         bundlesNode = (
-          listSupportBundles.map(bundle => (
+          listSupportBundles.sort((a, b) => new Date (b.createdAt) - new Date(a.createdAt)).map(bundle => (
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
@@ -69,6 +69,22 @@ class SupportBundleList extends React.Component {
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="flex1 flex-column">
+          <div className="flex justifyContent--center u-paddingBottom--30">
+            <Toggle
+              items={[
+                {
+                  title: "Support bundles",
+                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`),
+                  isActive: true
+                },
+                {
+                  title: "Redactors",
+                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot/redactors`),
+                  isActive: false
+                }
+              ]}
+            />
+          </div>
           <div className="flex flex1">
             <div className="flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
