@@ -165,6 +165,10 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 	deployOptions.IsOpenShift = isOpenshift(clientset)
 
+	if err := ensureStorage(deployOptions, clientset, log); err != nil {
+		return errors.Wrap(err, "failed to deplioyt backing storage")
+	}
+
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
 	}
@@ -224,6 +228,22 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	return nil
 }
 
+func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	if deployOptions.IncludeDockerDistribution {
+		if err := ensureDistribution(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure docker distribution")
+		}
+	} else if deployOptions.IncludeMinio {
+		// note that this is an else if.  if docker distribution _replaces_ minio
+		// in a kots install
+		if err := ensureMinio(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure minio")
+		}
+	}
+
+	return nil
+}
+
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	// check additional namespaces early in case there are rbac issues we don't
 	// leave the cluster in a partially deployed state
@@ -250,10 +270,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureConfigValuesSecret(&deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure config values secret")
 		}
-	}
-
-	if err := ensureMinio(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure minio")
 	}
 
 	if err := ensurePostgres(deployOptions, clientset); err != nil {
