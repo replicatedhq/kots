@@ -2,6 +2,7 @@ package kurl
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -33,6 +34,8 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 	}
 
 	data := cm.Data
+	proxyAddr := os.Getenv("HTTP_PROXY")
+	noProxyAddrs := os.Getenv("NO_PROXY")
 
 	bootstrapTokenExpiration, err := time.Parse(time.RFC3339, data[bootstrapTokenExpirationKey])
 	if err != nil {
@@ -43,6 +46,8 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 
 	if ok, _ := strconv.ParseBool(data["airgap"]); ok {
 		command = append(command, "cat join.sh | sudo bash -s airgap")
+	} else if proxyAddr != "" {
+		command = append(command, fmt.Sprintf("curl -sSL -x %s %s/%s/join.sh | sudo bash -s", proxyAddr, data["kurl_url"], data["installer_id"]))
 	} else {
 		command = append(command, fmt.Sprintf("curl -sSL %s/%s/join.sh | sudo bash -s", data["kurl_url"], data["installer_id"]))
 	}
@@ -54,6 +59,10 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 		fmt.Sprintf("docker-registry-ip=%s", data["docker_registry_ip"]),
 		fmt.Sprintf("kubernetes-version=%s", versionInfo.GitVersion),
 	)
+
+	if proxyAddr != "" && noProxyAddrs != "" {
+		command = append(command, fmt.Sprintf("additional-no-proxy-addresses=%s", noProxyAddrs))
+	}
 
 	if master {
 		command = append(command,
