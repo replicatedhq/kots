@@ -29,7 +29,7 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots v1.16.0-beta.2.0.20200601163501-6a7f1a0c7576
+	github.com/replicatedhq/kots v1.16.0-beta.2.0.20200601170352-fede9cc96528
 	github.com/replicatedhq/troubleshoot v0.9.36
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron/v3 v3.0.0
