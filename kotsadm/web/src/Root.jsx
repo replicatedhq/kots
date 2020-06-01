@@ -87,6 +87,7 @@ class Root extends Component {
     },
     rootDidInitialWatchFetch: false,
     connectionTerminated: false,
+    snapshotInProgressApps: []
   };
   /**
    * Sets the Theme State for the whole application
@@ -182,13 +183,16 @@ class Root extends Component {
         this.setState({ fetchingMetadata: false });
         throw err;
       });
-
   }
 
   ping = async (tries = 0) => {
-    await fetch(`${window.env.API_ENDPOINT}/ping`, {
-    }).then(() => {
-      this.setState({ connectionTerminated: false });
+    let apps = this.state.listApps;
+    const appSlugs = apps?.map(a => a.slug);
+    const url = `${window.env.API_ENDPOINT}/ping?slugs=${appSlugs}`
+    await fetch(url, {
+    }).then(async (result) => {
+      const body = await result.json();
+      this.setState({ connectionTerminated: false, snapshotInProgressApps: body.snapshotInProgressApps });
     }).catch(() => {
       if (tries < 2) {
         setTimeout(() => {
@@ -196,7 +200,7 @@ class Root extends Component {
         }, 1000);
         return;
       }
-      this.setState({ connectionTerminated: true });
+      this.setState({ connectionTerminated: true, snapshotInProgressApps: [] });
     });
   }
 
@@ -315,6 +319,8 @@ class Root extends Component {
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
                             appName={this.state.selectedAppName}
+                            snapshotInProgressApps={this.state.snapshotInProgressApps}
+                            ping={this.ping}
                           />
                         )
                       }
