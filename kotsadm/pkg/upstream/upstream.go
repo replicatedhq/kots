@@ -21,7 +21,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
-func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
+func DownloadUpdate(appID string, archiveDir string, toCursor string) (finalError error) {
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
@@ -37,7 +37,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("update-download"); err != nil {
@@ -52,7 +51,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to read kots kinds before update")
 	}
 
@@ -132,13 +130,11 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to pull")
 	}
 
 	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to read kots kinds after update")
 	}
 
@@ -148,17 +144,14 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create version")
 	}
 
 	if err := version.CreateAppVersionArchive(appID, newSequence, archiveDir); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
 	}
 
 	if err := preflight.Run(appID, newSequence, archiveDir); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to run preflights")
 	}
 
