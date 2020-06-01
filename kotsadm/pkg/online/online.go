@@ -119,10 +119,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 	if configValues != "" {
 		// logger.Debug("saving config values for installation",
 		// 	zap.String("configValues", configValues))
-
-		// HACK
-		// After 2 long days of debugging, a little clarity about how the works has been gained
-
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
 			finalError = err

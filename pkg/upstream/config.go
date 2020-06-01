@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -55,6 +56,7 @@ func EncryptConfigValues(config *kotsv1beta1.Config, configValues *kotsv1beta1.C
 			configValue.Value = encoded
 			configValue.ValuePlaintext = ""
 
+			fmt.Printf("\n\nupdating config value to %#v\n", configValue)
 			updated[name] = configValue
 		}
 	}
