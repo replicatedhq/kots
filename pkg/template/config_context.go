@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
@@ -222,6 +223,14 @@ func (ctx ConfigCtx) configOptionEquals(name string, value string) bool {
 		return false
 	}
 
+	if multitype.IsTrue(value) {
+		return multitype.IsTrue(val)
+	}
+
+	if multitype.IsFalse(value) {
+		return multitype.IsFalse(val)
+	}
+
 	return value == val
 }
 
@@ -229,6 +238,14 @@ func (ctx ConfigCtx) configOptionNotEquals(name string, value string) bool {
 	val, err := ctx.getConfigOptionValue(name)
 	if err != nil {
 		return false
+	}
+
+	if multitype.IsTrue(value) {
+		return !multitype.IsTrue(val)
+	}
+
+	if multitype.IsFalse(value) {
+		return !multitype.IsFalse(val)
 	}
 
 	return value != val

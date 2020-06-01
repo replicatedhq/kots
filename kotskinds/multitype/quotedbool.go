@@ -16,10 +16,31 @@ import (
 // +kubebuilder:validation:Type=QuotedBool
 type QuotedBool string
 
+var trueValues = []string{"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON", "1"}
+var falseValues = []string{"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF", "0", ""}
+
+// IsTrue returns true if the string value maps to a true QuotedBool
+func IsTrue(value string) bool {
+	for _, v := range trueValues {
+		if value == v {
+			return true
+		}
+	}
+	return false
+}
+
+// IsFalse returns true if the string value maps to a false QuotedBool
+func IsFalse(value string) bool {
+	for _, v := range falseValues {
+		if value == v {
+			return true
+		}
+	}
+	return false
+}
+
 // UnmarshalJSON implements the json.Unmarshaller interface.
 func (b *QuotedBool) UnmarshalJSON(value []byte) error {
-	trueValues := []string{"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON", "1"}
-	falseValues := []string{"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF", "0"}
 	for _, v := range trueValues {
 		if string(value) == v {
 			*b = "true"
