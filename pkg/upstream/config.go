@@ -2,7 +2,6 @@ package upstream
 
 import (
 	"encoding/base64"
-	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
