@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -125,12 +126,18 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		return errors.Wrap(err, "failed to find config in dir")
 	}
 
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var debug bytes.Buffer
+	if err := s.Encode(configValues, &debug); err != nil {
+		panic(err)
+	}
+	fmt.Printf("\n\n\n\n\n%s\n\n\n\n\n", debug.Bytes())
+
 	updatedConfigValues, err := EncryptConfigValues(config, configValues, &installation)
 	if err != nil {
 		return errors.Wrap(err, "failed to find encrypt config values")
 	}
-
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(updatedConfigValues, &b); err != nil {
