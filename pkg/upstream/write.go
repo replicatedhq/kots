@@ -2,7 +2,6 @@ package upstream
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -121,32 +119,32 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	// finally, load the config, config values from what's on disk, and encrypt any plain text
 	// we have to do this so late because the encryption key is not generated until very
 	// late in the process
-	config, configValues, _, err := findConfig(renderDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to find config in dir")
-	}
+	// config, configValues, _, err := findConfig(renderDir)
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to find config in dir")
+	// }
 
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	// s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	var debug bytes.Buffer
-	if err := s.Encode(configValues, &debug); err != nil {
-		panic(err)
-	}
-	fmt.Printf("\n\n\n\n\n%s\n\n\n\n\n", debug.Bytes())
+	// var debug bytes.Buffer
+	// if err := s.Encode(configValues, &debug); err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("\n\n\n\n\nHERE!\n %s\n\n\n\n\n", debug.Bytes())
 
-	updatedConfigValues, err := EncryptConfigValues(config, configValues, &installation)
-	if err != nil {
-		return errors.Wrap(err, "failed to find encrypt config values")
-	}
+	// updatedConfigValues, err := EncryptConfigValues(config, configValues, &installation)
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to find encrypt config values")
+	// }
 
-	var b bytes.Buffer
-	if err := s.Encode(updatedConfigValues, &b); err != nil {
-		return errors.Wrap(err, "failed to encode config values")
-	}
+	// var b bytes.Buffer
+	// if err := s.Encode(updatedConfigValues, &b); err != nil {
+	// 	return errors.Wrap(err, "failed to encode config values")
+	// }
 
-	if err := ioutil.WriteFile(filepath.Join(renderDir, "userdata", "config.yaml"), b.Bytes(), 0644); err != nil {
-		return errors.Wrap(err, "failed to write config values")
-	}
+	// if err := ioutil.WriteFile(filepath.Join(renderDir, "userdata", "config.yaml"), b.Bytes(), 0644); err != nil {
+	// 	return errors.Wrap(err, "failed to write config values")
+	// }
 
 	return nil
 }
