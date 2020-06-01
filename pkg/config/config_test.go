@@ -156,12 +156,12 @@ spec:
   - items:
     - default: embedded
       items:
-      - value: false
-        default: false
+      - value: ""
+        default: ""
         name: external
         title: External
-      - value: false
-        default: false
+      - value: ""
+        default: ""
         name: embedded
         title: Embedded DB
       name: db_type

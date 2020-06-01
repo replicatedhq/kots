@@ -28,8 +28,8 @@ type BoolOrString struct {
 type BoolOrStringType int
 
 const (
-	Bool   BoolOrStringType = iota // The BoolOrString holds an bool.
-	String                         // The BoolOrString holds a string.
+	String BoolOrStringType = iota // The BoolOrString holds a string.
+	Bool                           // The BoolOrString holds an bool.
 )
 
 // FromBool creates an BoolOrString object with a bool value.
@@ -57,14 +57,14 @@ func (boolstr *BoolOrString) UnmarshalJSON(value []byte) error {
 	return json.Unmarshal(value, &boolstr.BoolVal)
 }
 
-// String returns the string value, '1' for true, or '' for false.
+// String returns the string value, '1' for true, or '0' for false.
 func (boolstr *BoolOrString) String() string {
 	if boolstr.Type == String {
 		return boolstr.StrVal
 	} else if boolstr.BoolVal {
 		return "1"
 	} else {
-		return ""
+		return "0"
 	}
 }
 
