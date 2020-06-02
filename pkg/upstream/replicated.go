@@ -21,6 +21,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -729,7 +730,7 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 // GetApplicationMetadata will return any available application yaml from
 // the upstream. If there is no application.yaml, it will return
 // a placeholder one
-func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
+func GetApplicationMetadata(upstream *url.URL, log *logger.Logger) ([]byte, error) {
 	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
@@ -738,13 +739,14 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 	if metadata == nil {
 		otherMetadata, err := getApplicationMetadataFromHost("staging.replicated.app", upstream)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get metadata from staging.replicated.app")
+			otherMetadata = nil
 		}
 
 		metadata = otherMetadata
 	}
 
 	if metadata == nil {
+		log.Info("unable to find metadata for upstream %q", upstream.String())
 		metadata = []byte(DefaultMetadata)
 	}
 

@@ -61,7 +61,7 @@ type RewriteImageOptions struct {
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
+func PullApplicationMetadata(upstreamURI string, log *logger.Logger) ([]byte, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse uri")
@@ -72,7 +72,7 @@ func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
 		return nil, nil
 	}
 
-	data, err := upstream.GetApplicationMetadata(u)
+	data, err := upstream.GetApplicationMetadata(u, log)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get application metadata")
 	}
