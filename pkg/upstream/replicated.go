@@ -736,15 +736,6 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 	}
 
 	if metadata == nil {
-		otherMetadata, err := getApplicationMetadataFromHost("staging.replicated.app", upstream)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get metadata from staging.replicated.app")
-		}
-
-		metadata = otherMetadata
-	}
-
-	if metadata == nil {
 		metadata = []byte(DefaultMetadata)
 	}
 
