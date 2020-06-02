@@ -407,6 +407,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to load application")
 		}
 
+		allPrivate := false
+		if application != nil {
+			allPrivate = application.Spec.ProxyPublicImages
+		}
+
 		// Rewrite private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
 			BaseDir: writeBaseOptions.BaseDir,
@@ -416,7 +421,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
 			Installation:     newInstallation,
-			AllImagesPrivate: application.Spec.ProxyPublicImages,
+			AllImagesPrivate: allPrivate,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
