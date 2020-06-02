@@ -31,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+const (
+	PasswordMask = "***HIDDEN***"
+)
+
 func GetRegistrySettingsForApp(appID string) (*types.RegistrySettings, error) {
 	db := persistence.MustGetPGSession()
 	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
@@ -63,18 +67,28 @@ func UpdateRegistry(appID string, hostname string, username string, password str
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
 
-	cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return errors.Wrap(err, "failed to create aes cipher")
-	}
-
-	passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
-
 	db := persistence.MustGetPGSession()
-	query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4 where id = $5`
-	_, err = db.Exec(query, hostname, username, passwordEnc, namespace, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to update registry settings")
+
+	if password == PasswordMask {
+		// password unchanged - don't update it
+		query := `update app set registry_hostname = $1, registry_username = $2, namespace = $3 where id = $4`
+		_, err := db.Exec(query, hostname, username, namespace, appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to update registry settings")
+		}
+	} else {
+		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+		if err != nil {
+			return errors.Wrap(err, "failed to create aes cipher")
+		}
+
+		passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
+
+		query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4 where id = $5`
+		_, err = db.Exec(query, hostname, username, passwordEnc, namespace, appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to update registry settings")
+		}
 	}
 
 	return nil
