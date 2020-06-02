@@ -77,7 +77,7 @@ func InstallCmd() *cobra.Command {
 			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
 			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
 
-			applicationMetadata, err := pull.PullApplicationMetadata(upstream, log)
+			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 			if err != nil {
 				return errors.Wrap(err, "failed to pull app metadata")
 			}
