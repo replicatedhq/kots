@@ -35,7 +35,7 @@ func runSchemaHeroMigrations(deployOptions types.DeployOptions, clientset *kuber
 	log := logger.NewLogger()
 
 	log.ChildActionWithSpinner("Waiting for datastore to be ready")
-	_, err := waitForHealthyPostgres(deployOptions.Namespace, clientset)
+	_, err := waitForHealthyPostgres(deployOptions.Namespace, clientset, deployOptions.Timeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to find healthy postgres pod")
 	}
@@ -49,7 +49,7 @@ func runSchemaHeroMigrations(deployOptions types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (string, error) {
+func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset, timeout time.Duration) (string, error) {
 	start := time.Now()
 
 	for {
@@ -66,8 +66,8 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset) (
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > time.Duration(time.Minute) {
-			return "", errors.New("timeout waiting for postgres pod")
+		if time.Now().Sub(start) > time.Duration(timeout) {
+			return "", &types.ErrorTimeout{Message: "timeout waiting for postgres pod"}
 		}
 	}
 }
