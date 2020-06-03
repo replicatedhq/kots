@@ -221,7 +221,8 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps } = this.props;
+    const isSnapshotInProgress = !!snapshotInProgressApps?.find(a => a === app?.slug);
 
     return (
       <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
@@ -242,7 +243,10 @@ export default class DashboardCard extends React.Component {
                 size(appLicense) > 0 ?
                   <Link to={`${url}/license`} className="card-link"> View license details </Link>
                   : isSnapshotAllowed ?
-                    <span className="status-indicator completed"> Enabled </span>
+                    isSnapshotInProgress ?
+                      <Loader size="16" />
+                      :
+                      <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>

@@ -262,6 +262,8 @@ class AppDetailPage extends Component {
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                         refreshAppData={refreshAppData}
+                        snapshotInProgressApps={this.props.snapshotInProgressApps}
+                        ping={this.props.ping}
                       />}
                     />
 

@@ -426,6 +426,7 @@ class Dashboard extends Component {
         this.setState({
           startingSnapshot: false
         });
+        this.props.ping();
         this.props.history.push(`/app/${app.slug}/snapshots`)
       } else {
         const body = await result.json();
@@ -549,11 +550,13 @@ class Dashboard extends Component {
                     cardName="Snapshots"
                     cardIcon="snapshotIcon"
                     url={this.props.match.url}
+                    app={app}
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
                     startManualSnapshot={this.startManualSnapshot}
                     startSnapshotErr={this.state.startSnapshotErr}
                     startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
+                    snapshotInProgressApps={this.props.snapshotInProgressApps}
                   />
                   <DashboardCard
                     cardName="License"
