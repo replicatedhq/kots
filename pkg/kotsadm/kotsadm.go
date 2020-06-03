@@ -17,8 +17,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var timeoutWaitingForKotsadm = time.Duration(time.Minute * 2)
-
 func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -75,8 +73,8 @@ func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > timeoutWaitingForKotsadm {
-			return errors.New("timeout waiting for kotsadm pod")
+		if time.Now().Sub(start) > deployOptions.Timeout {
+			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
 		}
 	}
 }

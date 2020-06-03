@@ -114,6 +114,8 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 		return errors.Wrap(err, "failed to read deploy options")
 	}
 
+	deployOptions.Timeout = upgradeOptions.Timeout
+
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
 	}
@@ -298,7 +300,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 	if err := waitForKotsadm(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to wait for API")
+		return errors.Wrap(err, "failed to wait for web")
 	}
 	if err := waitForAPI(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for API")

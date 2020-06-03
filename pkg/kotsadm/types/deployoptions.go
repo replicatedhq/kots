@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -29,4 +31,5 @@ type DeployOptions struct {
 	StorageBaseURIPlainHTTP   bool
 	IncludeMinio              bool
 	IncludeDockerDistribution bool
+	Timeout                   time.Duration
 }
