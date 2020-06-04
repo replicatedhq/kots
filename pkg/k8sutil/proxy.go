@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -30,7 +31,7 @@ func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWa
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > timeoutWaitingForWeb {
-			return "", errors.New("timeout waiting for kotsadm pod")
+			return "", &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
 		}
 	}
 }

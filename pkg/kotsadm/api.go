@@ -16,8 +16,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var timeoutWaitingForAPI = time.Duration(time.Minute * 2)
-
 func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -74,8 +72,8 @@ func waitForAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Client
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > timeoutWaitingForAPI {
-			return errors.New("timeout waiting for api pod")
+		if time.Now().Sub(start) > deployOptions.Timeout {
+			return &types.ErrorTimeout{Message: "timeout waiting for api pod"}
 		}
 	}
 }

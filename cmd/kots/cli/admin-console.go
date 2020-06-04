@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,6 +35,9 @@ func AdminConsoleCmd() *cobra.Command {
 
 			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*5)
 			if err != nil {
+				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					return errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
+				}
 				return errors.Wrap(err, "failed to wait for web")
 			}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -53,6 +54,13 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
 			}
 
+			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
+			if err != nil {
+				return errors.Wrap(err, "failed to parse timeout value")
+			}
+
+			upgradeOptions.Timeout = timeout
+
 			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
 			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
 			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
@@ -81,6 +89,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-registry")

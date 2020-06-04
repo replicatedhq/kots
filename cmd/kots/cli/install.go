@@ -15,6 +15,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -126,10 +127,21 @@ func InstallCmd() *cobra.Command {
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
 				IncludeMinio:              v.GetBool("deploy-minio"),
 				IncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
+				Timeout:                   time.Minute * 2,
 			}
+
+			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
+			if err != nil {
+				return errors.Wrap(err, "failed to parse timeout value")
+			}
+
+			deployOptions.Timeout = timeout
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
+				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
+				}
 				return errors.Wrap(err, "failed to deploy")
 			}
 
@@ -139,8 +151,11 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, time.Minute*3)
+			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 			if err != nil {
+				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					return errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
+				}
 				return errors.Wrap(err, "failed to wait for web")
 			}
 
@@ -202,6 +217,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
+	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
