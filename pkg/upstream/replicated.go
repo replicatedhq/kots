@@ -548,10 +548,6 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 				return nil, errors.Wrap(err, "failed to render config item default")
 			}
 
-			if renderedValue == "" && renderedDefault == "" && foundValue == "" {
-				continue
-			}
-
 			if foundValue != "" {
 				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
 					Value:   foundValue,
