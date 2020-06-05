@@ -585,7 +585,7 @@ class SnapshotStorageDestination extends Component {
     });
 
     return (
-      <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper justifyContent--center">
+      <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper">
         {isEmptyView ?
           <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={toggleSnapshotView}>
             <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />

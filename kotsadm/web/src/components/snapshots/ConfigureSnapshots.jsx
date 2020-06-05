@@ -5,7 +5,7 @@ export default function ConfigureSnapshots(props) {
   const { snapshotSettings, hideCheckVeleroButton, toggleSnapshotView, fetchSnapshotSettings, renderNotVeleroMessage } = props;
 
   return (
-    <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper justifyContent--center">
+    <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper">
       <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure application snapshots</p>
       <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
         In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
