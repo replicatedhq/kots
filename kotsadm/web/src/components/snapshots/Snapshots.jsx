@@ -137,7 +137,7 @@ class Snapshots extends Component {
     }
 
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-marginTop--10 u-paddingBottom--20 alignItems--center">
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
