@@ -1,4 +1,5 @@
 import React from "react";
+import SnapshotInstallationBox from "./SnapshotInstallationBox";
 
 export default function ConfigureSnapshots(props) {
   const { snapshotSettings, hideCheckVeleroButton, toggleSnapshotView, fetchSnapshotSettings, renderNotVeleroMessage } = props;
@@ -43,18 +44,12 @@ export default function ConfigureSnapshots(props) {
             <button className="btn primary blue" onClick={() => toggleSnapshotView(true)}>Continue to storage destination</button>
           </div>
         </div>
-
-        <div className="CheckVelero--wrapper flex1 flex-column justifyContent--center">
-          <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">Check Velero installation</p>
-          {!hideCheckVeleroButton ?
-            <div className="u-marginTop--12">
-              <button className="btn secondary blue" onClick={() => fetchSnapshotSettings(true)}>Check for Velero</button>
-            </div>
-            : renderNotVeleroMessage()
-          }
-          {snapshotSettings?.veleroVersion !== "" ?
-            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--tuna"><span className="icon checkmark-icon u-marginRight--5" />Velero is installed on your cluster</span> : null}
-        </div>
+        <SnapshotInstallationBox
+          fetchSnapshotSettings={fetchSnapshotSettings}
+          renderNotVeleroMessage={renderNotVeleroMessage}
+          snapshotSettings={snapshotSettings}
+          hideCheckVeleroButton={hideCheckVeleroButton}
+        />
       </div>
     </div>
   );
