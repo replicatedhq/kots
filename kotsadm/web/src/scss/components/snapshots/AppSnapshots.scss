@@ -1,5 +1,5 @@
 .AppSnapshotsEmptyState--wrapper {
-  max-width: 600px;
+  max-width: 1000px;
   width: 100%;
   margin: 0 auto;
 }
@@ -23,6 +23,18 @@
   &:last-child {
     border-bottom: 1px solid #DFDFDF;
   }
+}
+
+.InstallVelero--wrapper {
+  max-width: 650px;
+}
+
+.CheckVelero--wrapper {
+  background: #F8F8F8;
+  border: 1px solid #C4C8CA;
+  border-radius: 4px;
+  max-height: 90px;
+  padding: 20px;
 }
 
 .FailedRestore--wrapper {
