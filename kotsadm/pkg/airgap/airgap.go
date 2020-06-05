@@ -33,7 +33,7 @@ type PendingApp struct {
 
 func GetPendingAirgapUploadApp() (*PendingApp, error) {
 	db := persistence.MustGetPGSession()
-	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error')`
+	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error') order by created_at desc limit 1`
 	row := db.QueryRow(query)
 
 	id := ""
