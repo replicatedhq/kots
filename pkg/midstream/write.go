@@ -94,21 +94,22 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
-	// common annotations
-	mergedCommonAnnotations := existing.CommonAnnotations
-	if mergedCommonAnnotations != nil {
-		delete(mergedCommonAnnotations, "kots.io/app-slug")
-		delete(mergedCommonAnnotations, "kots.io/app-sequence")
+	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
+	delete(m.Kustomization.CommonAnnotations, "kots.io/app-slug")
+	delete(m.Kustomization.CommonAnnotations, "kots.io/app-sequence")
+
+	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
+}
+
+func mergeMaps(new map[string]string, existing map[string]string) map[string]string {
+	merged := existing
+	if merged == nil {
+		merged = make(map[string]string)
 	}
-	if m.Kustomization.CommonAnnotations != nil {
-		if mergedCommonAnnotations == nil {
-			mergedCommonAnnotations = make(map[string]string)
-		}
-		for key, value := range m.Kustomization.CommonAnnotations {
-			mergedCommonAnnotations[key] = value
-		}
+	for key, value := range existing {
+		merged[key] = value
 	}
-	m.Kustomization.CommonAnnotations = mergedCommonAnnotations
+	return merged
 }
 
 func (m *Midstream) writeKustomization(options WriteOptions) error {

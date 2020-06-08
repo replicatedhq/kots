@@ -58,10 +58,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-minio",
 			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -75,11 +72,8 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kotsadm-minio",
-						Labels: map[string]string{
-							types.KotsadmKey: types.KotsadmLabelValue,
-							types.VeleroKey:  types.VeleroLabelValue,
-						},
+						Name:   "kotsadm-minio",
+						Labels: types.GetKotsadmLabels(),
 					},
 					Spec: corev1.PersistentVolumeClaimSpec{
 						AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -95,11 +89,9 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":            "kotsadm-minio",
-						types.KotsadmKey: types.KotsadmLabelValue,
-						types.VeleroKey:  types.VeleroLabelValue,
-					},
+					Labels: types.GetKotsadmLabels(map[string]string{
+						"app": "kotsadm-minio",
+					}),
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &securityContext,
@@ -220,10 +212,7 @@ func minioService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-minio",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{

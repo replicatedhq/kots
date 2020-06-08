@@ -15,11 +15,9 @@ func configValuesSecret(namespace string, configValues string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-default-configvalues",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey:     types.KotsadmLabelValue,
+			Labels: types.GetKotsadmLabels(map[string]string{
 				"kots.io/automation": "configvalues",
-				types.VeleroKey:      types.VeleroLabelValue,
-			},
+			}),
 		},
 		Data: map[string][]byte{
 			"configvalues": []byte(configValues),
