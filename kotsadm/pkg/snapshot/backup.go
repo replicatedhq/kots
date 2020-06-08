@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
@@ -26,6 +27,18 @@ import (
 )
 
 func CreateBackup(a *app.App) error {
+	if err := createApplicationBackup(a); err != nil {
+		return errors.Wrap(err, "failed to create application backup")
+	}
+
+	if err := createAdminConsoleBackup(); err != nil {
+		return errors.Wrap(err, "failed to create admin console backup")
+	}
+
+	return nil
+}
+
+func createApplicationBackup(a *app.App) error {
 	logger.Debug("creating backup",
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", a.CurrentSequence))
@@ -77,8 +90,7 @@ func CreateBackup(a *app.App) error {
 
 	veleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
 	veleroBackup.Annotations = map[string]string{
-		"kots.io/snapshot-trigger": "manual",
-		// "kots.io/app-slug":         "", // @areed i don't understand why we need both the slug and id here
+		"kots.io/snapshot-trigger":   "manual",
 		"kots.io/app-id":             a.ID,
 		"kots.io/app-sequence":       strconv.FormatInt(a.CurrentSequence, 10),
 		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
@@ -86,6 +98,64 @@ func CreateBackup(a *app.App) error {
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
 	veleroBackup.Spec.StorageLocation = "default"
+
+	if veleroBackup.Spec.LabelSelector == nil {
+		veleroBackup.Spec.LabelSelector = &metav1.LabelSelector{}
+	}
+
+	veleroBackup.Spec.LabelSelector.MatchLabels = map[string]string{
+		"app": a.Slug,
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(veleroBackup)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero backup")
+	}
+
+	return nil
+}
+
+func createAdminConsoleBackup() error {
+	logger.Debug("creating admin console backup")
+
+	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	veleroBackup := &velerov1.Backup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:         "",
+			GenerateName: "kotsadm-",
+			Namespace:    kotsadmVeleroBackendStorageLocation.Namespace,
+			Annotations: map[string]string{
+				"kots.io/snapshot-trigger":   "manual",
+				"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
+				kotstypes.VeleroKey:          kotstypes.VeleroLabelConsoleValue,
+			},
+		},
+		Spec: velerov1.BackupSpec{
+			StorageLocation: "default",
+			IncludedNamespaces: []string{
+				os.Getenv("POD_NAMESPACE"),
+			},
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					kotstypes.VeleroKey: kotstypes.VeleroLabelConsoleValue,
+				},
+			},
+		},
+	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -219,6 +289,107 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 				// if _, err = veleroClient.Backups(backendStorageLocation.Namespace).UpdateStatus(&veleroBackup); err != nil {
 				// 	return nil, errors.Wrap(err, "failed to update velero backup")
 				// }
+			}
+		}
+
+		backups = append(backups, &backup)
+	}
+
+	return backups, nil
+}
+
+func ListKotsadmBackups() ([]*types.Backup, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	backendStorageLocation, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list velero backups")
+	}
+
+	backups := []*types.Backup{}
+
+	for _, veleroBackup := range veleroBackups.Items {
+		// TODO: Enforce version?
+		if veleroBackup.Annotations["kots.io/backup-type"] != "admin-console" {
+			continue
+		}
+
+		backup := types.Backup{
+			Name:   veleroBackup.Name,
+			Status: string(veleroBackup.Status.Phase),
+			AppID:  "",
+		}
+
+		if veleroBackup.Status.StartTimestamp != nil {
+			backup.StartedAt = &veleroBackup.Status.StartTimestamp.Time
+		}
+		if veleroBackup.Status.CompletionTimestamp != nil {
+			backup.FinishedAt = &veleroBackup.Status.CompletionTimestamp.Time
+		}
+		if veleroBackup.Status.Expiration != nil {
+			backup.ExpiresAt = &veleroBackup.Status.Expiration.Time
+		}
+		if backup.Status == "" {
+			backup.Status = "New"
+		}
+
+		trigger, ok := veleroBackup.Annotations["kots.io/snapshot-trigger"]
+		if ok {
+			backup.Trigger = trigger
+		}
+
+		volumeCount, volumeCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-count"]
+		if volumeCountOk {
+			i, err := strconv.Atoi(volumeCount)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to convert volume-count")
+			}
+			backup.VolumeCount = i
+		}
+
+		volumeSuccessCount, volumeSuccessCountOk := veleroBackup.Annotations["kots.io/snapshot-volume-success-count"]
+		if volumeSuccessCountOk {
+			i, err := strconv.Atoi(volumeSuccessCount)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to convert volume-success-count")
+			}
+			backup.VolumeSuccessCount = i
+		}
+
+		volumeBytes, volumeBytesOk := veleroBackup.Annotations["kots.io/snapshot-volume-bytes"]
+		if volumeBytesOk {
+			i, err := strconv.ParseInt(volumeBytes, 10, 64)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to convert volume-bytes")
+			}
+			backup.VolumeBytes = i
+			backup.VolumeSizeHuman = units.HumanSize(float64(i))
+		}
+
+		if backup.Status != "New" && backup.Status != "InProgress" {
+			if !volumeBytesOk || !volumeSuccessCountOk {
+				// save computed summary as annotations if snapshot is finished
+				vc, vsc, vb, err := getSnapshotVolumeSummary(&veleroBackup)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to get volume summary")
+				}
+
+				backup.VolumeCount = vc
+				backup.VolumeSuccessCount = vsc
+				backup.VolumeBytes = vb
 			}
 		}
 

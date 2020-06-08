@@ -21,11 +21,8 @@ func apiClusterRole() *rbacv1.ClusterRole {
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-api-role",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-api-role",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -48,10 +45,7 @@ func apiRole(namespace string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-api-role",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
@@ -90,11 +84,8 @@ func apiClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBi
 			Kind:       "CluserRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-api-rolebinding",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-api-rolebinding",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -122,10 +113,7 @@ func apiRoleBinding(namespace string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-api-rolebinding",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -153,10 +141,7 @@ func apiServiceAccount(namespace string) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-api",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 	}
 
@@ -178,12 +163,12 @@ func updateApiDeployment(deployment *appsv1.Deployment, deployOptions types.Depl
 		deployment.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
-	deployment.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelValue
+	deployment.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelConsoleValue
 	if deployment.Spec.Template.ObjectMeta.Labels == nil {
 		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
-	deployment.Spec.Template.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelValue
+	deployment.Spec.Template.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelConsoleValue
 
 	// security context (added in 1.11.0)
 	deployment.Spec.Template.Spec.SecurityContext = &securityContext
@@ -241,10 +226,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-api",
 			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -254,11 +236,9 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":            "kotsadm-api",
-						types.KotsadmKey: types.KotsadmLabelValue,
-						types.VeleroKey:  types.VeleroLabelValue,
-					},
+					Labels: types.GetKotsadmLabels(map[string]string{
+						"app": "kotsadm-api",
+					}),
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext:    &securityContext,
@@ -421,10 +401,7 @@ func apiService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-api-node",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{

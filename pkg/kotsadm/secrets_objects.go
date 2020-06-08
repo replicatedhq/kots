@@ -22,10 +22,7 @@ func jwtSecret(namespace string, jwt string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-session",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
 			"key": []byte(jwt),
@@ -48,10 +45,7 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-postgres",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
 			"uri":      []byte(fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", password)),
@@ -71,10 +65,7 @@ func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-password",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
 			"passwordBcrypt": []byte(bcryptPassword),
@@ -93,10 +84,7 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-minio",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
 			"accesskey": []byte(accessKey),
@@ -116,10 +104,7 @@ func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-encryption",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
 			"encryptionKey": []byte(key),
@@ -138,6 +123,7 @@ func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: deployOptions.Namespace,
 			Name:      types.ClusterTokenSecret,
+			Labels:    types.GetKotsadmLabels(),
 		},
 		StringData: map[string]string{
 			types.ClusterTokenSecret: deployOptions.AutoCreateClusterToken,

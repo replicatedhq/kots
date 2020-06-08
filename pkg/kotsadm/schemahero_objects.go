@@ -29,10 +29,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &securityContext,

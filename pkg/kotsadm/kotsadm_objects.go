@@ -21,11 +21,8 @@ func kotsadmClusterRole() *rbacv1.ClusterRole {
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-role",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-role",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -48,10 +45,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-role",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
@@ -95,11 +89,8 @@ func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRo
 			Kind:       "CluserRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-rolebinding",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-rolebinding",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -127,10 +118,7 @@ func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-rolebinding",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -158,10 +146,7 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 	}
 
@@ -225,10 +210,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -238,11 +220,9 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":            "kotsadm",
-						types.KotsadmKey: types.KotsadmLabelValue,
-						types.VeleroKey:  types.VeleroLabelValue,
-					},
+					Labels: types.GetKotsadmLabels(map[string]string{
+						"app": "kotsadm",
+					}),
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext:    &securityContext,
@@ -390,10 +370,7 @@ func kotsadmService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{

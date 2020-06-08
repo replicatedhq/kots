@@ -416,11 +416,11 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "not a backup")
+		return nil, errors.Wrap(err, "failed to decode content")
 	}
 
 	if gvk.String() != "velero.io/v1, Kind=Backup" {
-		return nil, errors.New("not a backup")
+		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
 	}
 
 	return obj.(*velerov1.Backup), nil

@@ -118,3 +118,46 @@ func ListBackups(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, 200, listBackupsResponse)
 }
+
+type ListKotsadmBackupsResponse struct {
+	Error   string                  `json:"error,omitempty"`
+	Backups []*snapshottypes.Backup `json:"backups"`
+}
+
+func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	listBackupsResponse := ListKotsadmBackupsResponse{}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		listBackupsResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, listBackupsResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		listBackupsResponse.Error = "authorization header does not contain a valid session"
+		JSON(w, 401, listBackupsResponse)
+		return
+	}
+
+	backups, err := snapshot.ListKotsadmBackups()
+	if err != nil {
+		logger.Error(err)
+		listBackupsResponse.Error = "failed to list backups"
+		JSON(w, 500, listBackupsResponse)
+		return
+	}
+	listBackupsResponse.Backups = backups
+
+	JSON(w, 200, listBackupsResponse)
+}
