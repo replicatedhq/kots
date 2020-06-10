@@ -96,21 +96,30 @@ func Configure(appID string) error {
 		))
 	}
 
+	jobAppID := a.ID
+	jobAppSlug := a.Slug
 	_, err = job.AddFunc(cronSpec, func() {
-		logger.Debug("checking updates for app", zap.String("slug", a.Slug))
+		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(a)
+		// get latest app info from db
+		jobApp, err := app.Get(jobAppID)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", a.Slug))
+			logger.Error(errors.Wrapf(err, "failed to get app info from db for app %s", jobAppSlug))
+			return
+		}
+
+		availableUpdates, err := CheckForUpdates(jobApp)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobApp.Slug))
 			return
 		}
 
 		if availableUpdates > 0 {
 			logger.Debug("updates found for app",
-				zap.String("slug", a.Slug),
+				zap.String("slug", jobApp.Slug),
 				zap.Int64("available updates", availableUpdates))
 		} else {
-			logger.Debug("no updates found for app", zap.String("slug", a.Slug))
+			logger.Debug("no updates found for app", zap.String("slug", jobApp.Slug))
 		}
 	})
 	if err != nil {
