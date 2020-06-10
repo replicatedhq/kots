@@ -48,7 +48,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableUpdates, err := updatechecker.CheckForUpdates(foundApp)
+	availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

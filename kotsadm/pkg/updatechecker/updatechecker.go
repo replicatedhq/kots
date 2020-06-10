@@ -101,25 +101,18 @@ func Configure(appID string) error {
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		// get latest app info from db
-		jobApp, err := app.Get(jobAppID)
+		availableUpdates, err := CheckForUpdates(jobAppID)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get app info from db for app %s", jobAppSlug))
-			return
-		}
-
-		availableUpdates, err := CheckForUpdates(jobApp)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobApp.Slug))
+			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
 		}
 
 		if availableUpdates > 0 {
 			logger.Debug("updates found for app",
-				zap.String("slug", jobApp.Slug),
+				zap.String("slug", jobAppSlug),
 				zap.Int64("available updates", availableUpdates))
 		} else {
-			logger.Debug("no updates found for app", zap.String("slug", jobApp.Slug))
+			logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
 		}
 	})
 	if err != nil {
@@ -147,7 +140,7 @@ func Stop(appID string) {
 
 // CheckForUpdates checks (and downloads) latest updates for a specific app
 // returns the number of available updates
-func CheckForUpdates(a *app.App) (int64, error) {
+func CheckForUpdates(appID string) (int64, error) {
 	currentStatus, err := task.GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
@@ -160,6 +153,11 @@ func CheckForUpdates(a *app.App) (int64, error) {
 
 	if err := task.ClearTaskStatus("update-download"); err != nil {
 		return 0, errors.Wrap(err, "failed to clear task status")
+	}
+
+	a, err := app.Get(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get app")
 	}
 
 	// sync license, this method is only called when online
