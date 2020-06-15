@@ -326,6 +326,10 @@ func getSlug(name string) string {
 	name = strings.ReplaceAll(name, " ", "-")
 
 	name = regexp.MustCompile(`[^\w\d-_]`).ReplaceAllString(name, "")
+
+	if name == "kotsadm-redact" {
+		name = "kotsadm-redact-metadata"
+	}
 	return name
 }
 
@@ -369,9 +373,13 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 func splitRedactors(spec string, existingMap map[string]string) (map[string]string, error) {
 	fmt.Printf("running migration from combined kotsadm-redact doc")
 
+	if existingMap == nil {
+		existingMap = make(map[string]string, 0)
+	}
+
 	redactor, err := parseRedact([]byte(spec))
 	if err != nil {
-		return nil, errors.Wrap(err, "deserialize combined redact spec")
+		return nil, errors.Wrap(err, "split redactors")
 	}
 
 	for idx, redactorSpec := range redactor.Spec.Redactors {
