@@ -45,6 +45,10 @@ func GetRedactSpec() (string, string, error) {
 		return "", errstr, err
 	}
 
+	return getRedactSpec(configMap)
+}
+
+func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 	redactObj, err := buildFullRedact(configMap)
 	if err != nil {
 		return "", "failed to build full redact yaml", err
@@ -161,60 +165,75 @@ func SetRedactSpec(spec string) (string, error) {
 
 // updates/creates an individual redact with the provided metadata and yaml
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
-	// parse yaml as redactor
-	newRedactorSpec, err := parseRedact(yamlBytes)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to parse new redact yaml")
-	}
-
 	configMap, _, err := getConfigmap()
 	if err != nil {
 		return nil, err
 	}
 
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
+	newData, redactorEntry, err := setRedactYaml(slug, description, enabled, newRedact, time.Now(), yamlBytes, configMap.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap.Data = newData
+
+	_, err = writeConfigmap(configMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write configMap with updated redact")
+	}
+	return redactorEntry, nil
+}
+
+func setRedactYaml(slug, description string, enabled, newRedact bool, currentTime time.Time, yamlBytes []byte, data map[string]string) (map[string]string, *RedactorMetadata, error) {
+	// parse yaml as redactor
+	newRedactorSpec, err := parseRedact(yamlBytes)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to parse new redact yaml")
+	}
+
+	if data == nil {
+		data = map[string]string{}
 	}
 
 	redactorEntry := RedactorMetadata{}
-	redactString, ok := configMap.Data[slug]
+	redactString, ok := data[slug]
 	if !ok || newRedact {
 		// if name is not set in yaml, autogenerate a name
 		// if name is set, create the slug from the name
 		if newRedactorSpec.Name == "" {
-			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(configMap.Data)+1)
+			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(data)+1)
 			slug = getSlug(newRedactorSpec.Name)
 		} else {
 			slug = getSlug(newRedactorSpec.Name)
 		}
 
-		if _, ok := configMap.Data[slug]; ok {
+		if _, ok := data[slug]; ok {
 			// the target slug already exists - this is an error
-			return nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
+			return nil, nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
 		}
 
 		// create the new redactor
 		redactorEntry.Metadata = RedactorList{
 			Name:    newRedactorSpec.Name,
 			Slug:    slug,
-			Created: time.Now(),
+			Created: currentTime,
 		}
 	} else {
 		// unmarshal existing redactor, check if name changed
 		err = json.Unmarshal([]byte(redactString), &redactorEntry)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
+			return nil, nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
 		}
 
 		if slug != getSlug(newRedactorSpec.Name) && newRedactorSpec.Name != "" {
 			// changing name
 
-			if _, ok := configMap.Data[getSlug(newRedactorSpec.Name)]; ok {
+			if _, ok := data[getSlug(newRedactorSpec.Name)]; ok {
 				// the target slug already exists - this is an error
-				return nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
+				return nil, nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
 			}
 
-			delete(configMap.Data, slug)
+			delete(data, slug)
 			slug = getSlug(newRedactorSpec.Name)
 			redactorEntry.Metadata.Slug = slug
 			redactorEntry.Metadata.Name = newRedactorSpec.Name
@@ -228,22 +247,18 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 
 	redactorEntry.Metadata.Enabled = enabled
 	redactorEntry.Metadata.Description = description
-	redactorEntry.Metadata.Updated = time.Now()
+	redactorEntry.Metadata.Updated = currentTime
 
 	redactorEntry.Redact = string(yamlBytes)
 
 	jsonBytes, err := json.Marshal(redactorEntry)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
+		return nil, nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
 	}
 
-	configMap.Data[slug] = string(jsonBytes)
+	data[slug] = string(jsonBytes)
 
-	_, err = writeConfigmap(configMap)
-	if err != nil {
-		return nil, errors.Wrapf(err, "write configMap with updated redact")
-	}
-	return &redactorEntry, nil
+	return data, &redactorEntry, nil
 }
 
 func DeleteRedact(slug string) error {
@@ -395,7 +410,7 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			redactorSpec.Name = redactorName
 		}
 
-		newSpec, err := json.Marshal(v1beta1.Redactor{
+		newSpec, err := util.MarshalIndent(2, v1beta1.Redactor{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Redactor",
 				APIVersion: "troubleshoot.replicated.com/v1beta1",
