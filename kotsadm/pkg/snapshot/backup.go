@@ -104,7 +104,7 @@ func createApplicationBackup(a *app.App) error {
 	}
 
 	veleroBackup.Spec.LabelSelector.MatchLabels = map[string]string{
-		"app": a.Slug,
+		"kots.io/app-slug": a.Slug,
 	}
 
 	cfg, err := config.GetConfig()

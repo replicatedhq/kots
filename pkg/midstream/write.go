@@ -70,6 +70,14 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
 	}
 
+	// This check is to not break deployments on existing installations
+	if existingKustomization == nil {
+		if m.Kustomization.CommonLabels == nil {
+			m.Kustomization.CommonLabels = make(map[string]string)
+		}
+		m.Kustomization.CommonLabels["kots.io/app-slug"] = options.AppSlug
+	}
+
 	m.mergeKustomization(existingKustomization)
 
 	if err := m.writeKustomization(options); err != nil {
