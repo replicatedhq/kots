@@ -36,7 +36,7 @@ type RedactorList struct {
 type RedactorMetadata struct {
 	Metadata RedactorList `json:"metadata"`
 
-	Redact v1beta1.Redact `json:"redact"`
+	Redact string `json:"redact"`
 }
 
 // GetRedactSpec returns the redaction yaml spec, a pretty error string, and the underlying error
@@ -232,7 +232,7 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 	redactorEntry.Metadata.Description = description
 	redactorEntry.Metadata.Updated = time.Now()
 
-	redactorEntry.Redact = newRedactorSpec
+	redactorEntry.Redact = string(yamlBytes)
 
 	jsonBytes, err := json.Marshal(redactorEntry)
 	if err != nil {
@@ -344,9 +344,9 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 	}
 
 	for k, v := range config.Data {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
 		if k == "kotsadm-redact" {
 			// this is the key used for the combined redact list
-			decode := scheme.Codecs.UniversalDeserializer().Decode
 			obj, _, err := decode([]byte(v), nil, nil)
 			if err != nil {
 				return nil, errors.Wrap(err, "deserialize combined redact spec")
@@ -364,7 +364,14 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 			return nil, errors.Wrapf(err, "unable to parse key %s", k)
 		}
 		if redactorEntry.Metadata.Enabled {
-			full.Spec.Redactors = append(full.Spec.Redactors, &redactorEntry.Redact)
+			obj, _, err := decode([]byte(v), nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "deserialize combined redact spec")
+			}
+			redactor, ok := obj.(*v1beta1.Redactor)
+			if ok && redactor != nil {
+				full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
+			}
 		}
 	}
 	return full, nil
@@ -404,7 +411,7 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 				Updated: time.Now(),
 				Enabled: true,
 			},
-			Redact: *redactorSpec,
+			Redact: spec,
 		}
 
 		jsonBytes, err := json.Marshal(newRedactor)
