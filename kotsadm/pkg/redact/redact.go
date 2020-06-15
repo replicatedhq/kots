@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -163,8 +162,7 @@ func SetRedactSpec(spec string) (string, error) {
 // updates/creates an individual redact with the provided metadata and yaml
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
 	// parse yaml as redactor
-	newRedactorSpec := v1beta1.Redact{}
-	err := yaml.Unmarshal(yamlBytes, &newRedactorSpec)
+	newRedactorSpec, err := parseRedact(yamlBytes)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to parse new redact yaml")
 	}
@@ -344,15 +342,9 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 	}
 
 	for k, v := range config.Data {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
 		if k == "kotsadm-redact" {
-			// this is the key used for the combined redact list
-			obj, _, err := decode([]byte(v), nil, nil)
-			if err != nil {
-				return nil, errors.Wrap(err, "deserialize combined redact spec")
-			}
-			redactor, ok := obj.(*v1beta1.Redactor)
-			if ok && redactor != nil {
+			redactor, err := parseRedact([]byte(v))
+			if err == nil && redactor != nil {
 				full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
 			}
 			continue
@@ -364,14 +356,11 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 			return nil, errors.Wrapf(err, "unable to parse key %s", k)
 		}
 		if redactorEntry.Metadata.Enabled {
-			obj, _, err := decode([]byte(v), nil, nil)
+			redactor, err := parseRedact([]byte(redactorEntry.Redact))
 			if err != nil {
-				return nil, errors.Wrap(err, "deserialize combined redact spec")
+				return nil, errors.Wrapf(err, "unable to parse redactor %s", k)
 			}
-			redactor, ok := obj.(*v1beta1.Redactor)
-			if ok && redactor != nil {
-				full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
-			}
+			full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
 		}
 	}
 	return full, nil
@@ -380,14 +369,9 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 func splitRedactors(spec string, existingMap map[string]string) (map[string]string, error) {
 	fmt.Printf("running migration from combined kotsadm-redact doc")
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(spec), nil, nil)
+	redactor, err := parseRedact([]byte(spec))
 	if err != nil {
 		return nil, errors.Wrap(err, "deserialize combined redact spec")
-	}
-	redactor, ok := obj.(*v1beta1.Redactor)
-	if !ok {
-		return nil, errors.Wrap(err, "combined redact spec at kotsadm-redact is not a redactor")
 	}
 
 	for idx, redactorSpec := range redactor.Spec.Redactors {
@@ -403,6 +387,19 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			redactorSpec.Name = redactorName
 		}
 
+		newSpec, err := json.Marshal(v1beta1.Redactor{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Redactor",
+				APIVersion: "troubleshoot.replicated.com/v1beta1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: redactorName,
+			},
+			Spec: v1beta1.RedactorSpec{
+				Redactors: []*v1beta1.Redact{redactorSpec},
+			},
+		})
+
 		newRedactor := RedactorMetadata{
 			Metadata: RedactorList{
 				Name:    redactorName,
@@ -411,7 +408,7 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 				Updated: time.Now(),
 				Enabled: true,
 			},
-			Redact: spec,
+			Redact: string(newSpec),
 		}
 
 		jsonBytes, err := json.Marshal(newRedactor)
@@ -424,4 +421,17 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 	delete(existingMap, "kotsadm-redact")
 
 	return existingMap, nil
+}
+
+func parseRedact(spec []byte) (*v1beta1.Redactor, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode(spec, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "deserialize combined redact spec")
+	}
+	redactor, ok := obj.(*v1beta1.Redactor)
+	if ok && redactor != nil {
+		return redactor, nil
+	}
+	return nil, errors.New("not a redactor")
 }
