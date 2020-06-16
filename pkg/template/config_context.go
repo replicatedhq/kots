@@ -118,15 +118,12 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 			configItem := configItemsByName[node]
 
-			if !isReadOnly(configItem) {
-				// if item is editable and the live state is valid, skip the rest of this -
-				_, ok := configCtx.ItemValues[node]
-				if ok {
-					continue
-				}
+			// only evaluate templates for items that don't have values otherwise template result will replace the value
+			_, ok := configCtx.ItemValues[node]
+			if ok {
+				continue
 			}
 
-			// build "default" and "value"
 			builtDefault, _ := builder.String(configItem.Default.String())
 			builtValue, _ := builder.String(configItem.Value.String())
 			itemValue := ItemValue{
