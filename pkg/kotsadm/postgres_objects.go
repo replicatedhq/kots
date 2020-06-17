@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,8 +49,6 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 		}
 	}
 
-	backupSize := resource.MustParse("1Gi")
-
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -91,12 +88,6 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 					Labels: types.GetKotsadmLabels(map[string]string{
 						"app": "kotsadm-postgres",
 					}),
-					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/bin/bash", "-c", "PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U kotsadm -h 127.0.0.1 > /backup/kotsadm-postgres.sql"]`,
-						"pre.hook.backup.velero.io/timeout": "3m",
-						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
-					},
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &securityContext,
@@ -106,15 +97,6 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 									ClaimName: "kotsadm-postgres",
-								},
-							},
-						},
-						{
-							Name: "backup",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									Medium:    corev1.StorageMediumMemory,
-									SizeLimit: &backupSize,
 								},
 							},
 						},
@@ -134,10 +116,6 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 								{
 									Name:      "kotsadm-postgres",
 									MountPath: "/var/lib/postgresql/data",
-								},
-								{
-									Name:      "backup",
-									MountPath: "/backup",
 								},
 							},
 							Env: []corev1.EnvVar{
