@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -129,7 +130,7 @@ func ensureOperatorRBAC(deployOptions types.DeployOptions, clientset *kubernetes
 }
 
 func ensureOperatorClusterRole(clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().ClusterRoles().Create(operatorClusterRole())
+	_, err := clientset.RbacV1().ClusterRoles().Create(context.TODO(), operatorClusterRole(), metav1.CreateOptions{})
 	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
 		return nil
 	}
@@ -138,7 +139,7 @@ func ensureOperatorClusterRole(clientset *kubernetes.Clientset) error {
 }
 
 func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().Roles(namespace).Create(operatorRole(namespace))
+	_, err := clientset.RbacV1().Roles(namespace).Create(context.TODO(), operatorRole(namespace), metav1.CreateOptions{})
 	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
 		return nil
 	}
@@ -147,9 +148,9 @@ func ensureOperatorRole(namespace string, clientset *kubernetes.Clientset) error
 }
 
 func ensureOperatorClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
-	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get("kotsadm-operator-rolebinding", metav1.GetOptions{})
+	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		_, err := clientset.RbacV1().ClusterRoleBindings().Create(operatorClusterRoleBinding(serviceAccountNamespace))
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), operatorClusterRoleBinding(serviceAccountNamespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create cluster rolebinding")
 		}
@@ -170,7 +171,7 @@ func ensureOperatorClusterRoleBinding(serviceAccountNamespace string, clientset 
 		Namespace: serviceAccountNamespace,
 	})
 
-	_, err = clientset.RbacV1().ClusterRoleBindings().Update(clusterRoleBinding)
+	_, err = clientset.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterRoleBinding, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create cluster rolebinding")
 	}
@@ -179,7 +180,7 @@ func ensureOperatorClusterRoleBinding(serviceAccountNamespace string, clientset 
 }
 
 func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().RoleBindings(namespace).Create(operatorRoleBinding(namespace))
+	_, err := clientset.RbacV1().RoleBindings(namespace).Create(context.TODO(), operatorRoleBinding(namespace), metav1.CreateOptions{})
 	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
 		return errors.Wrap(err, "failed to create rolebinding")
 	}
@@ -187,13 +188,13 @@ func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset
 }
 
 func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get("kotsadm-operator", metav1.GetOptions{})
+	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get serviceaccount")
 		}
 
-		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(operatorServiceAccount(namespace))
+		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), operatorServiceAccount(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create serviceaccount")
 		}
@@ -203,13 +204,13 @@ func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Client
 }
 
 func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-operator", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(operatorDeployment(deployOptions))
+		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), operatorDeployment(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
@@ -221,7 +222,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 		return errors.Wrap(err, "failed to merge deployment")
 	}
 
-	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(existingDeployment)
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update operator deployment")
 	}

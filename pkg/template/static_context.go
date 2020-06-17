@@ -6,6 +6,7 @@ package template
 
 import (
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -453,7 +454,7 @@ func (ctx StaticCtx) isKurl() bool {
 		return false
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(kurlConfigMapNamespace).Get(kurlConfigMapName, metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(kurlConfigMapNamespace).Get(context.TODO(), kurlConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
@@ -472,7 +473,7 @@ func (ctx StaticCtx) distribution() string {
 		return ""
 	}
 
-	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return ""
 	}

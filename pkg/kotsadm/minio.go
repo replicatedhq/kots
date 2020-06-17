@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -48,13 +49,13 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 }
 
 func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-minio", metav1.GetOptions{})
+	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(minioStatefulset(deployOptions))
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), minioStatefulset(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}
@@ -64,13 +65,13 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 }
 
 func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-minio", metav1.GetOptions{})
+	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(minioService(namespace))
+		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), minioService(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create service")
 		}

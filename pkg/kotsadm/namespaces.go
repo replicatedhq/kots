@@ -1,6 +1,8 @@
 package kotsadm
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -35,7 +37,7 @@ func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset *k
 			continue
 		}
 
-		_, err := clientset.CoreV1().Namespaces().Get(additionalNamespace, metav1.GetOptions{})
+		_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), additionalNamespace, metav1.GetOptions{})
 		if kuberneteserrors.IsNotFound(err) {
 			log.ChildActionWithSpinner("Creating namespace %s", additionalNamespace)
 			namespace := &corev1.Namespace{
@@ -48,7 +50,7 @@ func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset *k
 				},
 			}
 
-			_, err = clientset.CoreV1().Namespaces().Create(namespace)
+			_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to create namespace")
