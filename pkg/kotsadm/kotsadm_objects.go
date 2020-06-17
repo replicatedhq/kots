@@ -6,10 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -202,6 +204,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
+	backupSize := resource.MustParse("1Gi")
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -223,11 +227,57 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					Labels: types.GetKotsadmLabels(map[string]string{
 						"app": "kotsadm",
 					}),
+					Annotations: map[string]string{
+						"backup.velero.io/backup-volumes":   "backup",
+						"pre.hook.backup.velero.io/command": `["/bin/bash", "-c", "PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]`,
+						"pre.hook.backup.velero.io/timeout": "3m",
+						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
+					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext:    &securityContext,
+					SecurityContext: &securityContext,
+					Volumes: []corev1.Volume{
+						{
+							Name: "backup",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									Medium:    corev1.StorageMediumMemory,
+									SizeLimit: &backupSize,
+								},
+							},
+						},
+					},
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
+					InitContainers: []corev1.Container{
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
+							ImagePullPolicy: corev1.PullAlways,
+							Name:            "kotsadm-restore",
+							Command: []string{
+								"/restore-db.sh",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "POSTGRES_PASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
+										},
+									},
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
@@ -251,6 +301,12 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name: "SHARED_PASSWORD_BCRYPT",
@@ -271,6 +327,17 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 												Name: "kotsadm-session",
 											},
 											Key: "key",
+										},
+									},
+								},
+								{
+									Name: "POSTGRES_PASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
 										},
 									},
 								},
