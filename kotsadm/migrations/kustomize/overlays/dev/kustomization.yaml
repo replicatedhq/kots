@@ -4,4 +4,3 @@ bases:
 resources:
   - ./postgres.yaml
   - ./kotsadm-postgres.yaml
-  - ./schemahero.yaml
