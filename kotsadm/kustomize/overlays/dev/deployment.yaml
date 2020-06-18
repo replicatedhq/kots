@@ -4,9 +4,20 @@ metadata:
   name: kotsadm
 spec:
   template:
+    metadata:
+      labels:
+        kots.io/backup-type: admin-console
+      annotations:
+        backup.velero.io/backup-volumes: backup
+        kots.io/backup-type: admin-console
+        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U shipcloud -h postgres > /backup/kotsadm-postgres.sql"]'
+        pre.hook.backup.velero.io/timeout: 3m
     spec:
       containers:
         - name: kotsadm-api
+          volumeMounts:
+            - mountPath: /backup
+              name: backup  
           env:
             - name: DISABLE_SPA_SERVING
               value: "1"
@@ -46,3 +57,9 @@ spec:
             #   value: "docker://kotsadm-storage-registry:5000"
             # - name: STORAGE_BASEURI_PLAINHTTP
             #   value: "true"
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+          name: backup
+        
