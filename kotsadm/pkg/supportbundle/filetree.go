@@ -82,8 +82,9 @@ func archiveToFileTree(archivePath string) (*types.FileTree, error) {
 }
 
 func getDirectoryNode(directory string, directories []string, files []string) (*types.FileTreeNode, error) {
+	_, f := filepath.Split(directory)
 	node := types.FileTreeNode{
-		Name: directory,
+		Name: f,
 		Path: directory,
 	}
 
