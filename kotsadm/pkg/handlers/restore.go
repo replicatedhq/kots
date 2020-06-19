@@ -4,18 +4,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
-
-type CreateRestoreRequest struct {
-}
 
 type CreateRestoreResponse struct {
 	Success bool   `json:"success"`
@@ -26,6 +23,11 @@ type GetRestoreStatusResponse struct {
 	Status      string `json:"status,omitempty"`
 	RestoreName string `json:"restore_name,omitempty"`
 	Error       string `json:"error,omitempty"`
+}
+
+type CreateKotsadmRestoreResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
 }
 
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
@@ -167,4 +169,68 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, response)
+}
+
+func CreateKotsadmRestore(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	createRestoreResponse := CreateKotsadmRestoreResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, createRestoreResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		createRestoreResponse.Error = "failed to find valid session"
+		JSON(w, 401, createRestoreResponse)
+		return
+	}
+
+	snapshotName := mux.Vars(r)["snapshotName"]
+
+	backup, err := snapshot.GetBackup(snapshotName)
+	if err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to find backup"
+		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	if backup.Annotations[types.VeleroKey] != types.VeleroLabelConsoleValue {
+		logger.Errorf("not a kotsadm backup annotation: %s", backup.Annotations[types.VeleroKey])
+		createRestoreResponse.Error = "not a kotsadm backup"
+		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	if err := snapshot.DeleteRestore(snapshotName); err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to delete restore"
+		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	if err := snapshot.CreateRestore(snapshotName); err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to initiate restore"
+		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	createRestoreResponse.Success = true
+
+	JSON(w, 200, createRestoreResponse)
 }
