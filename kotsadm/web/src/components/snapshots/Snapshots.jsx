@@ -140,7 +140,7 @@ class Snapshots extends Component {
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
-        {(toggleSnapshotView || (snapshotSettings?.isVeleroRunning && snapshotSettings?.isResticRunning)) ?
+        {(toggleSnapshotView || (snapshotSettings?.veleroVersion !== "")) ?
           <SnapshotStorageDestination
             snapshotSettings={snapshotSettings}
             updateSettings={this.updateSettings}
