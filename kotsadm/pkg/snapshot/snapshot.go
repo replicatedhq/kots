@@ -7,5 +7,4 @@ import (
 
 func init() {
 	veleroscheme.AddToScheme(scheme.Scheme)
-
 }

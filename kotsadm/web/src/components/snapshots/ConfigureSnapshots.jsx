@@ -15,10 +15,9 @@ export default function ConfigureSnapshots(props) {
           <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
           <div className="flex1 flex-column u-marginBottom--30">
             <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by <a href="https://kots.io/kotsadm/snapshots/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
-            <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 2 </span> Install the Restic integration on your machine by <a href="https://kots.io/kotsadm/snapshots/restic/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
             <div className="flex flex1 u-marginTop--20">
               <div className="flex">
-                <span className="circleNumberGray u-marginRight--10"> 3 </span>
+                <span className="circleNumberGray u-marginRight--10"> 2 </span>
               </div>
               <div className="flex flex-column">
                 <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"> Run the commands from the instructions for your cloud provider </p>
@@ -38,7 +37,7 @@ export default function ConfigureSnapshots(props) {
                 </div>
               </div>
             </div>
-            <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 4 </span> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
+            <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
           </div>
           <div className="flex">
             <button className="btn primary blue" onClick={() => toggleSnapshotView(true)}>Continue to storage destination</button>

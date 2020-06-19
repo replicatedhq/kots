@@ -567,9 +567,13 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 			return errors.Wrap(err, "failed to create storage client")
 		}
 
-		_, err = client.Bucket(bucket).Attrs(ctx)
+		objectsItr := client.Bucket(bucket).Objects(ctx, &gcpstorage.Query{})
+		_, err = objectsItr.Next()
 		if err != nil {
-			// if there is no bucket, this will be gcpstorage.ErrBucketNotExist
+			if strings.Contains(err.Error(), "no more items in iterator") {
+				return nil
+			}
+
 			return errors.Wrap(err, "failed to get bucket attributes")
 		}
 	}
