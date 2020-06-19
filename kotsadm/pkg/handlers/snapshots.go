@@ -266,6 +266,14 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// most plugins (all?) require that velero be restared after updating
+	if err := snapshot.RestartVelero(); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to try to restart velero"
+		JSON(w, 400, globalSnapshotSettingsResponse)
+		return
+	}
+
 	updatedStore, err := snapshot.GetGlobalStore(updatedBackupStorageLocation)
 	if err != nil {
 		logger.Error(err)
