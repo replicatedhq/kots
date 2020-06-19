@@ -464,3 +464,75 @@ func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, e
 
 	return &registrySettings, nil
 }
+
+func GetKotsadmBackupDetail(backupName string) (*types.BackupDetail, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	backendStorageLocation, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	backup, err := veleroClient.Backups(backendStorageLocation.Namespace).Get(context.TODO(), backupName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get backup")
+	}
+
+	backupVolumes, err := veleroClient.PodVolumeBackups(backendStorageLocation.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", backupName),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list volumes")
+	}
+
+	result := &types.BackupDetail{
+		Name:       backup.Name,
+		Status:     string(backup.Status.Phase),
+		Namespaces: backup.Spec.IncludedNamespaces,
+		Hooks:      make([]types.SnapshotHook, 0), // TODO:
+		Volumes:    make([]types.SnapshotVolume, 0),
+		Errors:     make([]types.SnapshotError, 0), // TODO
+		Warnings:   make([]types.SnapshotError, 0), // TODO
+	}
+
+	totalBytesDone := int64(0)
+	totalVolumes := 0
+	completedVolumes := 0
+	for _, backupVolume := range backupVolumes.Items {
+		totalVolumes += 1
+		totalBytesDone += backupVolume.Status.Progress.BytesDone
+		if backupVolume.Status.Phase == "Completed" {
+			completedVolumes += 1
+		}
+
+		v := types.SnapshotVolume{
+			Name:           backupVolume.Name,
+			SizeBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.TotalBytes)),
+			DoneBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.BytesDone)),
+			// TODO: v.CompletionPercent,
+			// TODO: v.TimeRemainingSeconds,
+			Phase: string(backupVolume.Status.Phase),
+		}
+
+		if backupVolume.Status.StartTimestamp != nil {
+			v.StartedAt = &backupVolume.Status.StartTimestamp.Time
+		}
+		if backupVolume.Status.CompletionTimestamp != nil {
+			v.FinishedAt = &backupVolume.Status.CompletionTimestamp.Time
+		}
+
+		result.Volumes = append(result.Volumes, v)
+	}
+
+	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone))
+
+	return result, nil
+}
