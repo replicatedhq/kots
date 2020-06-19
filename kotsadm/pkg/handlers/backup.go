@@ -107,6 +107,19 @@ func ListBackups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	veleroStatus, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		listBackupsResponse.Error = "failed to detect velero"
+		JSON(w, 500, listBackupsResponse)
+		return
+	}
+
+	if veleroStatus == nil {
+		JSON(w, 200, listBackupsResponse)
+		return
+	}
+
 	backups, err := snapshot.ListBackupsForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
