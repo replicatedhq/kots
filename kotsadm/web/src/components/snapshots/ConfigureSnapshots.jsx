@@ -40,7 +40,7 @@ export default function ConfigureSnapshots(props) {
             <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
           </div>
           <div className="flex">
-            <button className="btn primary blue" onClick={() => toggleSnapshotView(true)}>Continue to storage destination</button>
+            <button className="btn primary blue" onClick={() => toggleSnapshotView(true)} disabled={snapshotSettings?.veleroVersion === ""}>Continue to storage destination</button>
           </div>
         </div>
         <SnapshotInstallationBox

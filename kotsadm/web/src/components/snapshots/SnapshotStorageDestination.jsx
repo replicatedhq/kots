@@ -581,36 +581,38 @@ class SnapshotStorageDestination extends Component {
     const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, toggleSnapshotView, isEmptyView } = this.props;
 
     const availableDestinations = [];
-    for (const veleroPlugin of snapshotSettings.veleroPlugins) {
-      switch (veleroPlugin) {
-        case "velero-plugin-for-gcp":
-          availableDestinations.push({
-            value: "gcp",
-            label: "Google Cloud Storage",
-          });
-          break;
-        case "velero-plugin-for-aws":
-          availableDestinations.push({
-            value: "aws",
-            label: "Amazon S3",
-          });
-          availableDestinations.push({
-            value: "other",
-            label: "Other S3-Compatible Storage",
-          });
-          if (snapshotSettings.isKurl) {
+    if (snapshotSettings?.veleroPlugins) {
+      for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
+        switch (veleroPlugin) {
+          case "velero-plugin-for-gcp":
             availableDestinations.push({
-              value: "internal",
-              label: "Internal Storage",
+              value: "gcp",
+              label: "Google Cloud Storage",
             });
-          }
-          break;
-        case "velero-plugin-for-azure":
-          availableDestinations.push({
-            value: "azure",
-            label: "Azure Blob Storage",
-          });
-          break;
+            break;
+          case "velero-plugin-for-aws":
+            availableDestinations.push({
+              value: "aws",
+              label: "Amazon S3",
+            });
+            availableDestinations.push({
+              value: "other",
+              label: "Other S3-Compatible Storage",
+            });
+            if (snapshotSettings.isKurl) {
+              availableDestinations.push({
+                value: "internal",
+                label: "Internal Storage",
+              });
+            }
+            break;
+          case "velero-plugin-for-azure":
+            availableDestinations.push({
+              value: "azure",
+              label: "Azure Blob Storage",
+            });
+            break;
+        }
       }
     }
 

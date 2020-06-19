@@ -47,7 +47,7 @@ class Snapshots extends Component {
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
         })
-        if (!result.isVeleroRunning) {
+        if (result.veleroVersion === "") {
           setTimeout(() => {
             this.setState({ hideCheckVeleroButton: false });
           }, 5000);
@@ -56,7 +56,6 @@ class Snapshots extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
