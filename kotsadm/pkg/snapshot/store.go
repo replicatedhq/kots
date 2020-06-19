@@ -574,7 +574,6 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 				return nil
 			}
 
-			// if there is no bucket, this will be gcpstorage.ErrBucketNotExist
 			return errors.Wrap(err, "failed to get bucket attributes")
 		}
 	}

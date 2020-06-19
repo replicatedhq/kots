@@ -39,12 +39,7 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isKurlEnabled := false
-
-	_, err = kurl.ReadConfigMap(clientset)
-	if err == nil {
-		isKurlEnabled = true
-	}
+	isKurlEnabled := kurl.IsKurl()
 
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
