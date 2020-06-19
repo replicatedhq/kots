@@ -197,7 +197,7 @@ func RestartVelero() error {
 	}
 
 	for _, veleroDeployment := range veleroDeployments {
-		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(veleroDeployment.Labels).String(),
 		})
 		if err != nil {
@@ -205,7 +205,7 @@ func RestartVelero() error {
 		}
 
 		for _, pod := range pods.Items {
-			if err := clientset.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete velero deployment")
 			}
 
@@ -218,7 +218,7 @@ func RestartVelero() error {
 	}
 
 	for _, resticDaemonSet := range resticDaemonSets {
-		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(resticDaemonSet.Labels).String(),
 		})
 		if err != nil {
@@ -226,7 +226,7 @@ func RestartVelero() error {
 		}
 
 		for _, pod := range pods.Items {
-			if err := clientset.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{}); err != nil {
 				return errors.Wrap(err, "failed to delete restic daemonset")
 			}
 
