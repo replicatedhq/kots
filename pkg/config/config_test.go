@@ -177,7 +177,7 @@ spec:
     title: ""
 status: {}
 `,
-			expectOldFail: true,
+			expectOldFail: false,
 		},
 		{
 			name: "one long 'value' template function",

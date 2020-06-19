@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout
@@ -213,7 +213,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout
@@ -243,7 +243,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [test_web, build_web, build_operator, build_kurl_proxy]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout

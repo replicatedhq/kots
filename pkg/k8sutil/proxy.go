@@ -1,6 +1,7 @@
 package k8sutil
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWa
 
 	for {
 		// todo, find service, not pod
-		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to list pods")
 		}

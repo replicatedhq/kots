@@ -2,6 +2,7 @@ package k8sutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -261,7 +262,7 @@ func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localP
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	svc, err := clientset.CoreV1().Services(namespace).Get(serviceName, metav1.GetOptions{})
+	svc, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get service")
 	}
@@ -336,7 +337,7 @@ func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localP
 func getFirstPod(clientset *kubernetes.Clientset, namespace string, selector string) (string, error) {
 	options := metav1.ListOptions{LabelSelector: selector}
 
-	podList, err := clientset.CoreV1().Pods(namespace).List(options)
+	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), options)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
 	}

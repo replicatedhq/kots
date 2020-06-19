@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -29,7 +30,7 @@ func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kub
 		return errors.Wrap(err, "failed to encode config values")
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(configValuesSecret(deployOptions.Namespace, b.String()))
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), configValuesSecret(deployOptions.Namespace, b.String()), metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create config values secret")
 	}
@@ -38,7 +39,7 @@ func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kub
 }
 
 func getConfigValuesSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
-	configValuesSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-default-configvalues", metav1.GetOptions{})
+	configValuesSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-default-configvalues", metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil

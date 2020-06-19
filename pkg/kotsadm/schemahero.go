@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset, t
 	start := time.Now()
 
 	for {
-		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm-postgres"})
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm-postgres"})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to list pods")
 		}
@@ -73,7 +74,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset, t
 }
 
 func createSchemaHeroPod(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(migrationsPod(deployOptions))
+	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(context.TODO(), migrationsPod(deployOptions), metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create pod")
 	}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -51,7 +52,7 @@ func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Failed to create kubernetes clientset")
 	}
 
-	secret, err := client.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-authstring", metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.New("no authstring found in cluster")
 	}

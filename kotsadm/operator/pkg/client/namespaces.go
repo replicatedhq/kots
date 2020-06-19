@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"log"
 
 	"github.com/pkg/errors"
@@ -58,11 +59,11 @@ func (c *Client) runNamespacesInformer() error {
 				secret := obj.(*corev1.Secret)
 				secret.Namespace = addedNamespace.Name
 
-				foundSecret, err := clientset.CoreV1().Secrets(addedNamespace.Name).Get(secret.Name, metav1.GetOptions{})
+				foundSecret, err := clientset.CoreV1().Secrets(addedNamespace.Name).Get(context.TODO(), secret.Name, metav1.GetOptions{})
 				if err != nil {
 					if kuberneteserrors.IsNotFound(err) {
 						// create it
-						_, err := clientset.CoreV1().Secrets(addedNamespace.Name).Create(secret)
+						_, err := clientset.CoreV1().Secrets(addedNamespace.Name).Create(context.TODO(), secret, metav1.CreateOptions{})
 						if err != nil {
 							log.Print(err)
 							return
@@ -74,7 +75,7 @@ func (c *Client) runNamespacesInformer() error {
 				} else {
 					// Update it
 					foundSecret.Data[".dockerconfigjson"] = secret.Data[".dockerconfigjson"]
-					if _, err := clientset.CoreV1().Secrets(addedNamespace.Name).Update(secret); err != nil {
+					if _, err := clientset.CoreV1().Secrets(addedNamespace.Name).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 						log.Print(err)
 						return
 					}

@@ -2,6 +2,7 @@ package registry
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"fmt"
@@ -246,7 +247,7 @@ func HasKurlRegistry() (bool, error) {
 		return false, errors.Wrap(err, "failed to create clientset")
 	}
 
-	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get("registry-creds", metav1.GetOptions{})
+	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return false, nil
 	}

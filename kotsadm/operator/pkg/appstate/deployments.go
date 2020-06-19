@@ -27,10 +27,10 @@ func runDeploymentController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.AppsV1().Deployments(targetNamespace).List(options)
+			return clientset.AppsV1().Deployments(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.AppsV1().Deployments(targetNamespace).Watch(options)
+			return clientset.AppsV1().Deployments(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(

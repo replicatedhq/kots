@@ -1,6 +1,7 @@
 package gitops
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -88,12 +89,12 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-gitops", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}

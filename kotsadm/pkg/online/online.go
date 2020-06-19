@@ -2,6 +2,7 @@ package online
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -222,7 +223,7 @@ func readConfigValuesFromInClusterSecret() (string, error) {
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
-	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
+	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=configvalues",
 	})
 	if err != nil {
@@ -238,7 +239,7 @@ func readConfigValuesFromInClusterSecret() (string, error) {
 		}
 
 		// delete it, these are one time use secrets
-		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(configValuesSecret.Name, &metav1.DeleteOptions{})
+		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(context.TODO(), configValuesSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Errorf("error deleting config values secret: %v", err)
 		}
