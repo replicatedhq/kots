@@ -1,10 +1,12 @@
 package redact
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -156,7 +158,7 @@ func SetRedactSpec(spec string) (string, error) {
 	}
 
 	configMap.Data = newMap
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return "failed to update kotsadm-redact configMap", errors.Wrap(err, "failed to update kotsadm-redact configMap")
 	}
@@ -287,7 +289,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 		return nil, "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-redact", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-redact", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not a not found error, so a real error
@@ -308,7 +310,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 				},
 				Data: map[string]string{},
 			}
-			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(&newMap)
+			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &newMap, metav1.CreateOptions{})
 			if err != nil {
 				return nil, "failed to create kotsadm-redact configMap", errors.Wrap(err, "failed to create kotsadm-redact configMap")
 			}
@@ -330,7 +332,7 @@ func writeConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
+	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update configmap")
 	}
@@ -360,7 +362,14 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 		Spec: v1beta1.RedactorSpec{},
 	}
 
-	for k, v := range config.Data {
+	keys := []string{}
+	for k, _ := range config.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := config.Data[k]
 		if k == "kotsadm-redact" {
 			redactor, err := parseRedact([]byte(v))
 			if err == nil && redactor != nil {

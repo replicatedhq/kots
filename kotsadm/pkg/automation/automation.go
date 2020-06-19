@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -34,7 +35,7 @@ func AutomateInstall() error {
 		return errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
+	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=license",
 	})
 
@@ -87,7 +88,7 @@ func AutomateInstall() error {
 		}
 
 		// delete the license secret
-		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(licenseSecret.Name, &metav1.DeleteOptions{})
+		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error(err)
 			// this is going to create a new app on each start now!

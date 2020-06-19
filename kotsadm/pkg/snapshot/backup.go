@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
@@ -117,7 +118,7 @@ func createApplicationBackup(a *app.App) error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(veleroBackup)
+	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero backup")
 	}
@@ -167,7 +168,7 @@ func createAdminConsoleBackup() error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(veleroBackup)
+	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), veleroBackup, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create velero backup")
 	}
@@ -191,7 +192,7 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(metav1.ListOptions{})
+	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
@@ -314,7 +315,7 @@ func ListKotsadmBackups() ([]*types.Backup, error) {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(metav1.ListOptions{})
+	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list velero backups")
 	}
@@ -410,7 +411,7 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (int, int, int64, e
 		return 0, 0, int64(0), errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroPodBackupVolumes, err := veleroClient.PodVolumeBackups(veleroBackup.Namespace).List(metav1.ListOptions{
+	veleroPodBackupVolumes, err := veleroClient.PodVolumeBackups(veleroBackup.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(veleroBackup.Name)),
 	})
 	if err != nil {

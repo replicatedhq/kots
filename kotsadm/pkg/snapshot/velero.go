@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ func DetectVeleroNamespace() (string, error) {
 		return "", errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(context.TODO(), metav1.ListOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return "", nil
 	}
@@ -135,14 +136,14 @@ ResticFound:
 // listPossibleVeleroDeployments filters with a label selector based on how we've found velero deployed
 // using the CLI or the Helm Chart.
 func listPossibleVeleroDeployments(clientset *kubernetes.Clientset, namespace string) ([]v1.Deployment, error) {
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{
+	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list deployments")
 	}
 
-	helmDeployments, err := clientset.AppsV1().Deployments(namespace).List(metav1.ListOptions{
+	helmDeployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/name=velero",
 	})
 	if err != nil {
@@ -155,14 +156,14 @@ func listPossibleVeleroDeployments(clientset *kubernetes.Clientset, namespace st
 // listPossibleResticDaemonsets filters with a label selector based on how we've found restic deployed
 // using the CLI or the Helm Chart.
 func listPossibleResticDaemonsets(clientset *kubernetes.Clientset, namespace string) ([]v1.DaemonSet, error) {
-	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(metav1.ListOptions{
+	daemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list daemonsets")
 	}
 
-	helmDaemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(metav1.ListOptions{
+	helmDaemonsets, err := clientset.AppsV1().DaemonSets(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/name=velero",
 	})
 	if err != nil {

@@ -73,17 +73,19 @@ metadata:
 spec:
   redactors: #there are comments here
   - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
+    fileSelector:
+      file: data/my-password-dump
+    removals:
+      values:
+      - abc123
   - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*`,
+    removals:
+      regex:
+      - redactor: (another)(?P<mask>.*)(here)
+      - selector: S3_ENDPOINT
+        redactor: '("value": ").*(")'
+      yamlPath:
+      - abc.xyz.*`,
 				},
 			},
 			want: `kind: Redactor
@@ -93,17 +95,19 @@ metadata:
 spec:
   redactors:
   - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
+    fileSelector:
+      file: data/my-password-dump
+    removals:
+      values:
+      - abc123
   - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*
+    removals:
+      regex:
+      - redactor: (another)(?P<mask>.*)(here)
+      - selector: S3_ENDPOINT
+        redactor: '("value": ").*(")'
+      yamlPath:
+      - abc.xyz.*
 `,
 			errstring: "",
 		},
@@ -113,8 +117,8 @@ spec:
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
 				Data: map[string]string{
-					"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    file: data/my-password-dump\n    values:\n    - abc123\n"}`,
-					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    regex:\n    - (another)(?P\u003cmask\u003e.*)(here)\n    multiLine:\n    - selector: S3_ENDPOINT\n      redactor: '(\"value\": \").*(\")'\n    yaml:\n    - abc.xyz.*\n"}`,
+					"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    fileSelector:\n      file: data/my-password-dump\n    removals:\n      values:\n      - abc123\n"}`,
+					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`,
 				},
 			},
 			want: `kind: Redactor
@@ -123,18 +127,20 @@ metadata:
   name: kotsadm-redact
 spec:
   redactors:
-  - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
   - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*
+    removals:
+      regex:
+      - redactor: (another)(?P<mask>.*)(here)
+      - selector: S3_ENDPOINT
+        redactor: '("value": ").*(")'
+      yamlPath:
+      - abc.xyz.*
+  - name: replace password
+    fileSelector:
+      file: data/my-password-dump
+    removals:
+      values:
+      - abc123
 `,
 			errstring: "",
 		},
@@ -167,17 +173,19 @@ metadata:
 spec:
   redactors:
   - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
+    fileSelector:
+      file: data/my-password-dump
+    removals:
+      values:
+      - abc123
   - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*
+    removals:
+      regex:
+      - redactor: (another)(?P<mask>.*)(here)
+      - selector: S3_ENDPOINT
+        redactor: '("value": ").*(")'
+      yamlPath:
+      - abc.xyz.*
 `,
 			want: map[string]RedactorMetadata{
 				"all-files": {
@@ -193,13 +201,13 @@ metadata:
 spec:
   redactors:
   - name: all files
-    regex:
-    - (another)(?P<mask>.*)(here)
-    multiLine:
-    - selector: S3_ENDPOINT
-      redactor: '("value": ").*(")'
-    yaml:
-    - abc.xyz.*
+    removals:
+      regex:
+      - redactor: (another)(?P<mask>.*)(here)
+      - selector: S3_ENDPOINT
+        redactor: '("value": ").*(")'
+      yamlPath:
+      - abc.xyz.*
 `,
 				},
 				"replace-password": {
@@ -215,9 +223,11 @@ metadata:
 spec:
   redactors:
   - name: replace password
-    file: data/my-password-dump
-    values:
-    - abc123
+    fileSelector:
+      file: data/my-password-dump
+    removals:
+      values:
+      - abc123
 `,
 				},
 			},
