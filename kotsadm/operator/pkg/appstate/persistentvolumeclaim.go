@@ -27,10 +27,10 @@ func runPersistentVolumeClaimController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.CoreV1().PersistentVolumeClaims(targetNamespace).List(options)
+			return clientset.CoreV1().PersistentVolumeClaims(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.CoreV1().PersistentVolumeClaims(targetNamespace).Watch(options)
+			return clientset.CoreV1().PersistentVolumeClaims(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(
