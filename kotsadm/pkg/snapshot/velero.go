@@ -9,6 +9,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -171,4 +172,66 @@ func listPossibleResticDaemonsets(clientset *kubernetes.Clientset, namespace str
 	}
 
 	return append(daemonsets.Items, helmDaemonsets.Items...), nil
+}
+
+// RestartVelero will restart velero (and restic)
+func RestartVelero() error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	namespace, err := DetectVeleroNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to detect velero namespace")
+	}
+
+	veleroDeployments, err := listPossibleVeleroDeployments(clientset, namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to list velero deployments")
+	}
+
+	for _, veleroDeployment := range veleroDeployments {
+		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
+			LabelSelector: labels.SelectorFromSet(veleroDeployment.Labels).String(),
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods in velero deployment")
+		}
+
+		for _, pod := range pods.Items {
+			if err := clientset.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete velero deployment")
+			}
+
+		}
+	}
+
+	resticDaemonSets, err := listPossibleResticDaemonsets(clientset, namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to list restic daemonsets")
+	}
+
+	for _, resticDaemonSet := range resticDaemonSets {
+		pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
+			LabelSelector: labels.SelectorFromSet(resticDaemonSet.Labels).String(),
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods in restic daemonset")
+		}
+
+		for _, pod := range pods.Items {
+			if err := clientset.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete restic daemonset")
+			}
+
+		}
+	}
+
+	return nil
 }

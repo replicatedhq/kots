@@ -580,7 +580,41 @@ class SnapshotStorageDestination extends Component {
   render() {
     const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, toggleSnapshotView, isEmptyView } = this.props;
 
-    const selectedDestination = DESTINATIONS.find((d) => {
+    const availableDestinations = [];
+    for (const veleroPlugin of snapshotSettings.veleroPlugins) {
+      switch (veleroPlugin) {
+        case "velero-plugin-for-gcp":
+          availableDestinations.push({
+            value: "gcp",
+            label: "Google Cloud Storage",
+          });
+          break;
+        case "velero-plugin-for-aws":
+          availableDestinations.push({
+            value: "aws",
+            label: "Amazon S3",
+          });
+          availableDestinations.push({
+            value: "other",
+            label: "Other S3-Compatible Storage",
+          });
+          if (snapshotSettings.isKurl) {
+            availableDestinations.push({
+              value: "internal",
+              label: "Internal Storage",
+            });
+          }
+          break;
+        case "velero-plugin-for-azure":
+          availableDestinations.push({
+            value: "azure",
+            label: "Azure Blob Storage",
+          });
+          break;
+      }
+    }
+
+    const selectedDestination = availableDestinations.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
 
@@ -607,14 +641,13 @@ class SnapshotStorageDestination extends Component {
                   className="replicated-select-container"
                   classNamePrefix="replicated-select"
                   placeholder="Select unit"
-                  options={DESTINATIONS}
+                  options={availableDestinations}
                   isSearchable={false}
                   getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
                   getOptionValue={(destination) => destination.label}
                   value={selectedDestination}
                   onChange={this.handleDestinationChange}
                   isOptionSelected={(option) => { option.value === selectedDestination }}
-                  isDisabled={true}
                 />
               </div>
             </div>

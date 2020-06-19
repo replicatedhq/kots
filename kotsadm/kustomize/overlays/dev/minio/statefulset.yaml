@@ -4,6 +4,7 @@ metadata:
   labels:
     app: minio
     release: minio
+    kots.io/backup-type: admin-console
   name: minio
 spec:
   serviceName: minio
@@ -16,6 +17,10 @@ spec:
       labels:
         app: minio
         release: minio
+        kots.io/backup-type: admin-console
+      annotations:
+        backup.velero.io/backup-volumes: miniodata
+        kots.io/backup-type: admin-console  
       name: minio
     spec:
       securityContext:

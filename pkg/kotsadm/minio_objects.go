@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -92,6 +93,10 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					Labels: types.GetKotsadmLabels(map[string]string{
 						"app": "kotsadm-minio",
 					}),
+					Annotations: map[string]string{
+						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir",
+						kotstypes.VeleroKey:               kotstypes.VeleroLabelConsoleValue,
+					},
 				},
 				Spec: corev1.PodSpec{
 					SecurityContext: &securityContext,

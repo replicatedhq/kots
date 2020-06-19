@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -19,6 +20,21 @@ const bootstrapTokenExpirationKey = "bootstrap_token_expiration"
 
 const certKey = "cert_key"
 const certsExpirationKey = "upload_certs_expiration"
+
+func IsKurl() bool {
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(err)
+		return false
+	}
+
+	_, err = ReadConfigMap(clientset)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
 
 // ReadConfigMap will read the Kurl config from a configmap
 func ReadConfigMap(client kubernetes.Interface) (*corev1.ConfigMap, error) {

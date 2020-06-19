@@ -34,6 +34,16 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapshotProgress(slugs []string, pingResponse *PingResponse) {
+	veleroStatus, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		pingResponse.Error = "failed to detect velero"
+	}
+
+	if veleroStatus == nil {
+		return
+	}
+
 	for _, slug := range slugs {
 		currentApp, err := app.GetFromSlug(slug)
 		if err != nil {
