@@ -2,7 +2,7 @@ import React, { Component } from "react";
 
 export default class SnapshotInstallationBox extends Component {
   renderVeleroErrors = (snapshotSettings) => {
-    if (!snapshotSettings?.isVeleroRunning) {
+    if (!snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion !== "") {
       return (
         <div className="flex u-marginTop--20">
           <div className="flex u-marginRight--20">
