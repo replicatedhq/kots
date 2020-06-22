@@ -21,6 +21,9 @@ import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
 import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
+import UploadLicenseFile from "./components/UploadLicenseFile";
+import BackupRestore from "./components/BackupRestore";
+import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 
 import { listApps } from "@src/queries/AppsQueries";
@@ -30,8 +33,6 @@ import NavBar from "./components/shared/NavBar";
 // Import Ship Init component CSS first
 import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
-import UploadLicenseFile from "./components/UploadLicenseFile";
-import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import connectHistory from "./services/matomo";
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
@@ -298,6 +299,7 @@ class Root extends Component {
                     <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
                     <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
+                    <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={listApps?.length} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />

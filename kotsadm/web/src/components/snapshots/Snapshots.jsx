@@ -126,6 +126,7 @@ class Snapshots extends Component {
 
   render() {
     const { isLoadingSnapshotSettings, toggleSnapshotView, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView } = this.state;
+    const isLicenseUpload = !!this.props.history.location.search;
 
     if (isLoadingSnapshotSettings) {
       return (
@@ -136,7 +137,7 @@ class Snapshots extends Component {
     }
 
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-marginTop--10 u-paddingBottom--20 alignItems--center">
+      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
@@ -151,7 +152,8 @@ class Snapshots extends Component {
             renderNotVeleroMessage={this.renderNotVeleroMessage}
             toggleSnapshotView={this.toggleSnapshotView}
             isEmptyView={isEmptyView}
-            hideCheckVeleroButton={hideCheckVeleroButton} /> :
+            hideCheckVeleroButton={hideCheckVeleroButton}
+            isLicenseUpload={isLicenseUpload} /> :
           <ConfigureSnapshots
             toggleSnapshotView={this.toggleSnapshotView}
             snapshotSettings={snapshotSettings}

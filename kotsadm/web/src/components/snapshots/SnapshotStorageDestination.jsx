@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Select from "react-select";
 import { compose, withApollo } from "react-apollo";
-import { withRouter } from "react-router-dom"
+import { withRouter, Link } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import find from "lodash/find";
 
@@ -578,7 +578,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   render() {
-    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, toggleSnapshotView, isEmptyView } = this.props;
+    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, toggleSnapshotView, isEmptyView, isLicenseUpload } = this.props;
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
@@ -620,16 +620,27 @@ class SnapshotStorageDestination extends Component {
       return d.value === this.state.selectedDestination.value;
     });
 
+
     return (
-      <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper">
-        {isEmptyView ?
-          <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={toggleSnapshotView}>
-            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+      <div className={`flex1 flex-column ${isLicenseUpload ? "" : "AppSnapshotsEmptyState--wrapper"}`}>
+        {isLicenseUpload ?
+          isEmptyView ?
+            <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={toggleSnapshotView}>
+              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
             Back
           </div>
+            :
+            <Link to="/restore" className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-cursor--pointer">
+              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+          Back to license upload
+        </Link>
           : null}
-        <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora u-marginTop--12">Configure storage destination</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">To begin with snapshots you need to configure where you want them to be stored. Snapshots can be stored on Amazon S3, Google Cloud Storage, Azure Blob Storage, and other S3 compatible storage providers.</p>
+        <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora u-marginTop--12">{isLicenseUpload ? "Select a snapshot to restore from" : "Configure storage destination"}</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">
+          {isLicenseUpload ? "Choose the snapshot backup that you want to restore your application from." :
+            "To begin with snapshots you need to configure where you want them to be stored. Snapshots can be stored on Amazon S3, Google Cloud Storage, Azure Blob Storage, and other S3 compatible storage providers."
+          }
+        </p>
         <div className="flex u-marginTop--20">
           <form className="flex flex-column snapshot-form-wrapper u-marginRight--50">
             {updateErrorMsg &&
@@ -657,7 +668,8 @@ class SnapshotStorageDestination extends Component {
               <div>
                 {this.renderDestinationFields()}
                 <div className="flex u-marginBottom--30">
-                  <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update settings"}</button>
+                  {isLicenseUpload ? <Link to="/restore" className="btn secondary blue u-marginRight--10">Cancel</Link> : null}
+                  <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : isLicenseUpload ? "Use bucket" : "Update settings"}</button>
                   {updateConfirm &&
                     <div className="u-marginLeft--10 flex alignItems--center">
                       <span className="icon checkmark-icon" />
@@ -669,12 +681,14 @@ class SnapshotStorageDestination extends Component {
             }
           </form>
 
-          <SnapshotInstallationBox
-            fetchSnapshotSettings={this.props.fetchSnapshotSettings}
-            renderNotVeleroMessage={this.props.renderNotVeleroMessage}
-            snapshotSettings={snapshotSettings}
-            hideCheckVeleroButton={this.props.hideCheckVeleroButton}
-          />
+          {!isLicenseUpload &&
+            <SnapshotInstallationBox
+              fetchSnapshotSettings={this.props.fetchSnapshotSettings}
+              renderNotVeleroMessage={this.props.renderNotVeleroMessage}
+              snapshotSettings={snapshotSettings}
+              hideCheckVeleroButton={this.props.hideCheckVeleroButton}
+            />
+          }
         </div>
       </div>
     );
