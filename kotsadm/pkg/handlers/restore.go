@@ -58,11 +58,34 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backup, err := snapshot.GetBackup(mux.Vars(r)["snapshotName"])
+	snapshotName := mux.Vars(r)["snapshotName"]
+
+	backup, err := snapshot.GetBackup(snapshotName)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
 		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	if backup.Annotations[types.VeleroKey] == types.VeleroLabelConsoleValue {
+		// this is a kotsadm snapshot being restored
+		if err := snapshot.DeleteRestore(snapshotName); err != nil {
+			logger.Error(err)
+			createRestoreResponse.Error = "failed to delete restore"
+			JSON(w, 500, createRestoreResponse)
+			return
+		}
+
+		if err := snapshot.CreateRestore(snapshotName); err != nil {
+			logger.Error(err)
+			createRestoreResponse.Error = "failed to initiate restore"
+			JSON(w, 500, createRestoreResponse)
+			return
+		}
+
+		createRestoreResponse.Success = true
+		JSON(w, 200, createRestoreResponse)
 		return
 	}
 
@@ -107,14 +130,14 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := snapshot.DeleteRestore(mux.Vars(r)["snapshotName"]); err != nil {
+	if err := snapshot.DeleteRestore(snapshotName); err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
 		JSON(w, 500, createRestoreResponse)
 		return
 	}
 
-	err = app.InitiateRestore(mux.Vars(r)["snapshotName"], appID)
+	err = app.InitiateRestore(snapshotName, appID)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
@@ -169,68 +192,4 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, response)
-}
-
-func CreateKotsadmRestore(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	createRestoreResponse := CreateKotsadmRestoreResponse{
-		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createRestoreResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		createRestoreResponse.Error = "failed to find valid session"
-		JSON(w, 401, createRestoreResponse)
-		return
-	}
-
-	snapshotName := mux.Vars(r)["snapshotName"]
-
-	backup, err := snapshot.GetBackup(snapshotName)
-	if err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to find backup"
-		JSON(w, 500, createRestoreResponse)
-		return
-	}
-
-	if backup.Annotations[types.VeleroKey] != types.VeleroLabelConsoleValue {
-		logger.Errorf("not a kotsadm backup annotation: %s", backup.Annotations[types.VeleroKey])
-		createRestoreResponse.Error = "not a kotsadm backup"
-		JSON(w, 500, createRestoreResponse)
-		return
-	}
-
-	if err := snapshot.DeleteRestore(snapshotName); err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to delete restore"
-		JSON(w, 500, createRestoreResponse)
-		return
-	}
-
-	if err := snapshot.CreateRestore(snapshotName); err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to initiate restore"
-		JSON(w, 500, createRestoreResponse)
-		return
-	}
-
-	createRestoreResponse.Success = true
-
-	JSON(w, 200, createRestoreResponse)
 }
