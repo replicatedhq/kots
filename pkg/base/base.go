@@ -157,7 +157,7 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 				boolVal, err := strconv.ParseBool(strVal)
 				if err != nil {
 					// should this be a ParseError?
-					return true, errors.Errorf("unable to parse %s as bool in wen annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
+					return true, errors.Errorf("unable to parse %s as bool in when annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
 				}
 
 				return boolVal, nil
