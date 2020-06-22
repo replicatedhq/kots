@@ -216,5 +216,7 @@ func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 	}
 	getBackupResponse.BackupDetail = backup
 
+	getBackupResponse.Success = true
+
 	JSON(w, 200, getBackupResponse)
 }
