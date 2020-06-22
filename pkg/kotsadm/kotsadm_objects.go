@@ -229,8 +229,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					}),
 					Annotations: map[string]string{
 						"backup.velero.io/backup-volumes":   "backup",
-						"pre.hook.backup.velero.io/command": `["/bin/bash", "-c", "PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]`,
-						"pre.hook.backup.velero.io/timeout": "3m",
+						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+						"pre.hook.backup.velero.io/timeout": "10m",
 						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
 					},
 				},
@@ -253,7 +253,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
 							ImagePullPolicy: corev1.PullAlways,
-							Name:            "kotsadm-restore",
+							Name:            "restore-db",
 							Command: []string{
 								"/restore-db.sh",
 							},
@@ -274,6 +274,56 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 											Key: "password",
 										},
 									},
+								},
+							},
+						},
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
+							ImagePullPolicy: corev1.PullAlways,
+							Name:            "restore-s3",
+							Command: []string{
+								"/restore-s3.sh",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "S3_ENDPOINT",
+									Value: "http://kotsadm-minio:9000",
+								},
+								{
+									Name:  "S3_BUCKET_NAME",
+									Value: "kotsadm",
+								},
+								{
+									Name: "S3_ACCESS_KEY_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "accesskey",
+										},
+									},
+								},
+								{
+									Name: "S3_SECRET_ACCESS_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "secretkey",
+										},
+									},
+								},
+								{
+									Name:  "S3_BUCKET_ENDPOINT",
+									Value: "true",
 								},
 							},
 						},
