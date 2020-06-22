@@ -1,7 +1,7 @@
 FROM debian:stretch-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 \
+    curl ca-certificates git gnupg2 s3cmd \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
   && curl --fail -N -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
@@ -25,7 +25,9 @@ RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
 USER kotsadm
 ENV HOME /home/kotsadm
 
+COPY ./deploy/backup.sh /backup.sh
 COPY ./deploy/restore-db.sh /restore-db.sh
+COPY ./deploy/restore-s3.sh /restore-s3.sh
 COPY ./bin/kotsadm /kotsadm
 COPY ./web/dist /web/dist
 USER root
