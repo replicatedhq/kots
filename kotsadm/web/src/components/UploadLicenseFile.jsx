@@ -90,6 +90,15 @@ class UploadLicenseFile extends React.Component {
       if (count > 3) {
         if (data) {
           clearInterval(interval);
+
+          if (!data.success) {
+            this.setState({
+              fileUploading: false,
+              errorMessage: data.error,
+            });
+            return;
+          }
+
           // When successful, refetch all the user's apps with onUploadSuccess
           onUploadSuccess().then(() => {
             if (data.isAirgap) {
