@@ -11,8 +11,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -73,7 +73,7 @@ func AutomateInstall() error {
 			continue
 		}
 		verifiedLicense = latestLicense
-	
+
 		// check license expiration
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 		if err != nil {
