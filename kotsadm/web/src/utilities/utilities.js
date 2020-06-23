@@ -152,7 +152,7 @@ export function getCronInterval(frequency) {
   switch (frequency) {
   case "0 * * * *":
     return "hourly";
-  case "0 0 1 * *":
+  case "0 0 * * *":
     return "daily";
   case "0 0 * * MON":
     return "weekly";
@@ -166,7 +166,7 @@ export function getCronFrequency(schedule) {
     case "hourly":
       return "0 * * * *"
     case "daily":
-      return "0 0 1 * *";
+      return "0 0 * * *";
     default:
       return "0 0 * * MON";
   }
