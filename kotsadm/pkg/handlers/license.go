@@ -187,7 +187,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
-		JSON(w, 200, uploadLicenseResponse)
+		JSON(w, 400, uploadLicenseResponse)
 		return
 	}
 
@@ -213,7 +213,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 	if expired {
 		uploadLicenseResponse.Error = "License is expired"
-		JSON(w, 200, uploadLicenseResponse)
+		JSON(w, 400, uploadLicenseResponse)
 		return
 	}
 
