@@ -2,6 +2,7 @@ import * as React from "react";
 import { compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "../../utilities/utilities";
+import Helmet from "react-helmet";
 import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
 import MonacoEditor from "react-monaco-editor";
@@ -80,6 +81,10 @@ class KotsApplicationTree extends React.Component {
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
+        <Helmet>
+          <title>{`${this.props.app?.name} Files`}</title>
+        </Helmet>
+
         <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="u-textDecoration--underline u-fontWeight--bold u-cursor--pointer">Click here</span> to learn how</div>
         <div className="flex flex1">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">

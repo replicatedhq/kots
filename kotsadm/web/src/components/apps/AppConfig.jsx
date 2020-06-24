@@ -4,6 +4,7 @@ import { compose, withApollo, graphql } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
+import Helmet from "react-helmet";
 import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
@@ -226,12 +227,17 @@ class AppConfig extends Component {
 
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
+        <Helmet>
+          <title>{`${app.name} Config`}</title>
+        </Helmet>
+        
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className={classNames("ConfigOuterWrapper u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
           <div className="ConfigInnerWrapper u-padding--15">
             <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
           </div>
         </div>
+
         {savingConfig ?
           <div className="u-marginTop--20 u-marginBottom--auto">
             <Loader size="30" />
