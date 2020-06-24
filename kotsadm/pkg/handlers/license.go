@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
@@ -186,7 +187,33 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
-		JSON(w, 200, uploadLicenseResponse)
+		JSON(w, 400, uploadLicenseResponse)
+		return
+	}
+
+	if !verifiedLicense.Spec.IsAirgapSupported {
+		// sync license
+		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+		if err != nil {
+			logger.Error(err)
+			uploadLicenseResponse.Error = err.Error()
+			JSON(w, 500, uploadLicenseResponse)
+			return
+		}
+		verifiedLicense = latestLicense
+	}
+
+	// check license expiration
+	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+	if expired {
+		uploadLicenseResponse.Error = "License is expired"
+		JSON(w, 400, uploadLicenseResponse)
 		return
 	}
 

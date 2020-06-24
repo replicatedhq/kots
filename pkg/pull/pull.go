@@ -161,7 +161,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		if expired, err := licenseIsExpired(fetchOptions.License); err != nil {
+		if expired, err := LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
 			return "", util.ActionableError{Message: "License is expired"}
@@ -641,7 +641,7 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	return nil
 }
 
-func licenseIsExpired(license *kotsv1beta1.License) (bool, error) {
+func LicenseIsExpired(license *kotsv1beta1.License) (bool, error) {
 	val, found := license.Spec.Entitlements["expires_at"]
 	if !found {
 		return false, nil
