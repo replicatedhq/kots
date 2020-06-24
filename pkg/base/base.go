@@ -127,7 +127,21 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 		if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
 			return false, nil
 		}
+
+		if o.APIVersion == "kots.io/v1beta1" {
+			return false, nil
+		}
+
+		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
+			return false, nil
+		}
+
+		// In addition to kotskinds, we exclude the application crd for now
+		if o.APIVersion == "app.k8s.io/v1beta1" {
+			return false, nil
+		}
 	}
+
 	if o.Metadata.Annotations != nil {
 		if val, ok := o.Metadata.Annotations["kots.io/exclude"]; ok {
 			if boolVal, ok := val.(bool); ok {
@@ -165,20 +179,6 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 
 			// should this be a ParseError?
 			return true, errors.Errorf("unexpected type in when annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
-		}
-	}
-	if excludeKotsKinds {
-		if o.APIVersion == "kots.io/v1beta1" {
-			return false, nil
-		}
-
-		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
-			return false, nil
-		}
-
-		// In addition to kotskinds, we exclude the application crd for now
-		if o.APIVersion == "app.k8s.io/v1beta1" {
-			return false, nil
 		}
 	}
 
