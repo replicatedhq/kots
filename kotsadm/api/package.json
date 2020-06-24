@@ -12,7 +12,7 @@
     "@octokit/webhooks": "^6.2.2",
     "@tsed/common": "^5.32.1",
     "@tsed/core": "^5.32.1",
-    "@tsed/di": "^5.32.1",
+    "@tsed/di": "^5.56.0",
     "@tsed/multipartfiles": "^5.32.1",
     "@tsed/socketio": "^5.32.1",
     "@types/fs-extra": "^8.0.1",
