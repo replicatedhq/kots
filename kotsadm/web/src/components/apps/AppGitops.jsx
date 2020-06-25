@@ -255,6 +255,7 @@ class AppGitops extends Component {
             <GitOpsRepoDetails
               stepTitle={`GitOps settings for ${appTitle}`}
               appName={appTitle}
+              hostname={gitops?.hostname}
               ownerRepo={ownerRepo}
               branch={gitops?.branch}
               path={gitops?.path}
@@ -288,6 +289,7 @@ class AppGitops extends Component {
                 <GitOpsRepoDetails
                   stepTitle={`GitOps settings for ${appTitle}`}
                   appName={appTitle}
+                  hostname={gitops?.hostname}
                   ownerRepo={ownerRepo}
                   branch={gitops?.branch}
                   path={gitops?.path}

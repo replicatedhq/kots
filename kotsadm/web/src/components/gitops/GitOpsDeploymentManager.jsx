@@ -353,6 +353,7 @@ class GitOpsDeploymentManager extends React.Component {
         return (
           <GitOpsRepoDetails
             appName={this.props.appName}
+            hostname={hostname}
             selectedService={selectedService}
             onFinishSetup={this.finishSetup}
             ctaLoadingText="Finishing setup"

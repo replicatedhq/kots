@@ -8,6 +8,7 @@ class GitOpsRepoDetails extends React.Component {
   static propTypes = {
     appName: PropTypes.string.isRequired,
     selectedService: PropTypes.object.isRequired,
+    hostname: PropTypes.string,
     ownerRepo: PropTypes.string,
     branch: PropTypes.string,
     path: PropTypes.string,
@@ -17,6 +18,7 @@ class GitOpsRepoDetails extends React.Component {
   }
 
   static defaultProps = {
+    hostname: "",
     ownerRepo: "",
     branch: "",
     path: "",
@@ -30,6 +32,7 @@ class GitOpsRepoDetails extends React.Component {
     const {
       appName,
       selectedService,
+      hostname = "",
       ownerRepo = "",
       branch = "",
       path = "",
@@ -41,6 +44,7 @@ class GitOpsRepoDetails extends React.Component {
       appName,
       selectedService,
       providerError: null,
+      hostname,
       ownerRepo,
       branch,
       path,
@@ -129,6 +133,7 @@ class GitOpsRepoDetails extends React.Component {
       appName,
       selectedService,
       providerError,
+      hostname,
       ownerRepo,
       branch,
       path,
@@ -139,7 +144,7 @@ class GitOpsRepoDetails extends React.Component {
     } = this.state;
 
     const provider = selectedService?.value;
-    const serviceSite = getServiceSite(provider);
+    const serviceSite = getServiceSite(provider, hostname);
 
     const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
 
@@ -173,7 +178,7 @@ class GitOpsRepoDetails extends React.Component {
               }
             </div>
 
-            <p className="step-sub">When an update is available{appName ? ` to ${appName}` : ""}, how should the updates YAML be delivered{selectedService?.label === "Other" ? " to your GitOps provider" : requiresHostname(provider) ? "" : ` to ${serviceSite}`}?</p>
+            <p className="step-sub">When an update is available{appName ? ` to ${appName}` : ""}, how should the updates YAML be delivered to{selectedService?.label === "Other" ? " your GitOps provider" : ` ${serviceSite}`}?</p>
             <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
               <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
                 <div className={`BoxedCheckbox flex-auto flex ${action === "commit" ? "is-active" : ""}`}>
