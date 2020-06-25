@@ -283,6 +283,9 @@ export class KotsAppStore {
       case "github":
         cloneUri = `git@github.com:${uriParts[3]}/${uriParts[4]}.git`;
         break;
+      case "github_enterprise":
+        cloneUri = `git@${uriParts[2]}:${uriParts[3]}/${uriParts[4]}.git`;
+        break;
       case "gitlab":
         cloneUri = `git@gitlab.com:${uriParts[3]}/${uriParts[4]}.git`;
         break;

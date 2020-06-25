@@ -125,7 +125,7 @@ class AppGitops extends Component {
     const gitops = downstream?.gitops;
     const provider = gitops?.provider;
     const hostname = gitops?.hostname;
-    const serviceSite = getServiceSite(provider);
+    const serviceSite = getServiceSite(provider, hostname);
 
     const newUri = `https://${serviceSite}/${ownerRepo}`;
     const gitOpsInput = {
@@ -191,7 +191,7 @@ class AppGitops extends Component {
 
   getProviderIconClassName = provider => {
     switch (provider) {
-      case "github":
+      case "github" || "github_enterprise":
         return "github-icon";
       case "gitlab":
         return "gitlab-icon";
