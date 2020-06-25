@@ -2,11 +2,15 @@ import React from "react";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
 
 export default function ConfigureSnapshots(props) {
-  const { snapshotSettings, hideCheckVeleroButton, toggleSnapshotView, fetchSnapshotSettings, renderNotVeleroMessage } = props;
+  const { snapshotSettings, hideCheckVeleroButton, fetchSnapshotSettings, renderNotVeleroMessage, isLicenseUpload, history } = props;
 
   return (
     <div className="flex1 flex-column AppSnapshotsEmptyState--wrapper">
-      <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure application snapshots</p>
+      {isLicenseUpload && <div className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-cursor--pointer" onClick={() => history.goBack()}>
+        <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+            Back to license upload
+        </div>}
+      <p className={`u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10 ${isLicenseUpload && "u-marginTop--12"}`}>Configure application snapshots</p>
       <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
         In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> to the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
           </p>
@@ -38,9 +42,6 @@ export default function ConfigureSnapshots(props) {
               </div>
             </div>
             <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
-          </div>
-          <div className="flex">
-            <button className="btn primary blue" onClick={() => toggleSnapshotView(true)} disabled={snapshotSettings?.veleroVersion === ""}>Continue to storage destination</button>
           </div>
         </div>
         <SnapshotInstallationBox
