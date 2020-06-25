@@ -78,9 +78,13 @@ func InstallCmd() *cobra.Command {
 			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
 			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
 
-			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
-			if err != nil {
-				return errors.Wrap(err, "failed to pull app metadata")
+			var applicationMetadata []byte
+
+			if !v.GetBool("offline") {
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream)
+				if err != nil {
+					return errors.Wrap(err, "failed to pull app metadata")
+				}
 			}
 
 			var license *kotsv1beta1.License
@@ -130,6 +134,18 @@ func InstallCmd() *cobra.Command {
 				Timeout:                   time.Minute * 2,
 			}
 
+			if v.GetBool("yaml") {
+				manifests, err := kotsadm.YAML(deployOptions)
+				if err != nil {
+					return errors.Wrap(err, "failed to generate yaml")
+				}
+
+				for _, manifest := range manifests {
+					fmt.Printf("---\n%s\n", manifest)
+				}
+
+				return nil
+			}
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
 			if err != nil {
 				return errors.Wrap(err, "failed to parse timeout value")
@@ -221,6 +237,11 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
+
+	cmd.Flags().Bool("yaml", false, "when set, only generate the yaml, do not install")
+	cmd.Flags().Bool("offline", false, "when set, do no make outbound requests to the internet")
+	cmd.Flags().MarkHidden("yaml")
+	cmd.Flags().MarkHidden("offline")
 
 	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
