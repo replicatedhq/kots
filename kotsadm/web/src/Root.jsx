@@ -51,7 +51,7 @@ const GraphQLClient = ShipClientGQL(
 
 class ProtectedRoute extends Component {
   render() {
-    const redirectURL = `/secure-console?next=${this.props.location.pathname}${this.props.location.search}`;
+    const redirectURL = `jelena/secure-console?next=${this.props.location.pathname}${this.props.location.search}`;
 
     return (
       <Route path={this.props.path} render={(innerProps) => {
@@ -211,9 +211,10 @@ class Root extends Component {
 
     if (Utilities.isLoggedIn()) {
       this.refetchListApps().then(listApps => {
-        if (listApps.length > 0 && window.location.pathname === "/apps") {
+        console.log(555, this.getPath(window.location.pathname))
+        if (listApps.length > 0 && this.getPath(window.location.pathname) === "/test/") {
           const { slug } = listApps[0];
-          history.replace(`/app/${slug}`);
+          history.replace(`/test/app/${slug}`);
         }
       });
     }
@@ -249,6 +250,14 @@ class Root extends Component {
     return !!find(apps, app => app.allowSnapshots);
   }
 
+  getPath = (path) => {
+    if (window.env.SUBPATH !== "") {
+      return window.env.SUBPATH + path;
+    } else {
+      return path;
+    }
+  }
+
   render() {
     const {
       themeState,
@@ -256,6 +265,8 @@ class Root extends Component {
       rootDidInitialWatchFetch,
       connectionTerminated,
     } = this.state;
+
+    console.log("---_",window.env.SUBPATH)
 
     return (
       <div className="flex-column flex1">
@@ -287,7 +298,7 @@ class Root extends Component {
                 <div className="flex1 flex-column u-overflow--auto">
                   <Switch>
 
-                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />
+                    <Route exact path={this.getPath("/")} component={() => <Redirect to={Utilities.isLoggedIn() ? `${this.getPath("/apps")}` : `${this.getPath("/secure-console")}`} />} />
                     <Route exact path="/crashz" render={() => {
                       const Crashz = () => {
                         throw new Error("Crashz!");
@@ -310,7 +321,7 @@ class Root extends Component {
                     <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
                     <ProtectedRoute
-                      path={["/apps", "/app/:slug/:tab?"]}
+                      path={[`${this.getPath("/apps")}`, `${this.getPath("/app/:slug/:tab?")}`]}
                       render={
                         props => (
                           <AppDetailPage
@@ -323,6 +334,7 @@ class Root extends Component {
                             appName={this.state.selectedAppName}
                             snapshotInProgressApps={this.state.snapshotInProgressApps}
                             ping={this.ping}
+                            getPath={this.getPath}
                           />
                         )
                       }

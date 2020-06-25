@@ -75,9 +75,9 @@ class AppDetailPage extends Component {
     }
 
     // Used for a fresh reload
-    if (history.location.pathname === "/apps") {
-      this.checkForFirstApp();
-    }
+    // if (this.props.getPath && this.props.getPath(history.location.pathname === "/jelena/apps")) {
+    //   this.checkForFirstApp();
+    // }
 
     // enforce initial app configuration (if exists)
     const { getKotsAppQuery } = this.props;
@@ -146,7 +146,8 @@ class AppDetailPage extends Component {
     const firstApp = listApps?.find(app => app.name);
 
     if (firstApp) {
-      history.replace(`/app/${firstApp.slug}`);
+      const path = this.props.getPath(`/app/${firstApp.slug}`);
+      history.replace(path);
     } else {
       history.replace("/upload-license");
     }
@@ -155,9 +156,9 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
-    if (history.location.pathname === "/apps") {
-      return this.checkForFirstApp();
-    }
+    // if (history.location.pathname === "/jelena/apps") {
+    //   return this.checkForFirstApp();
+    // }
   }
 
   render() {
@@ -249,7 +250,7 @@ class AppDetailPage extends Component {
                     isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                   />
                   <Switch>
-                    <Route exact path="/app/:slug" render={() =>
+                    <Route exact path={`${this.props.getPath("/app/:slug")}`} render={() =>
                       <Dashboard
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
@@ -267,9 +268,9 @@ class AppDetailPage extends Component {
                       />}
                     />
 
-                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} appNameSpace={this.props.appNameSpace} />} />
+                    <Route exact path={`${this.props.getPath("/app/:slug/tree/:sequence")}`} render={props => <DownstreamTree {...props} appNameSpace={this.props.appNameSpace} />} />
 
-                    <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
+                    <Route exact path={["/jelena/app/:slug/version-history", "/jelena/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
@@ -280,59 +281,59 @@ class AppDetailPage extends Component {
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
-                    <Route exact path="/app/:slug/config/:sequence?" render={() =>
+                    <Route exact path="/jelena/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
+                    <Route exact path="/jelena/app/:slug/config/:sequence?" render={() =>
                       <AppConfig
                         app={app}
                         refreshAppData={refreshAppData}
                       />
                     } />
-                    <Route exact path="/app/:slug/troubleshoot" render={() =>
+                    <Route exact path="/jelena/app/:slug/troubleshoot" render={() =>
                       <SupportBundleList
                         watch={app}
                       />
                     } />
-                    <Route exact path="/app/:slug/troubleshoot/generate" render={() =>
+                    <Route exact path="/jelena/app/:slug/troubleshoot/generate" render={() =>
                       <GenerateSupportBundle
                         watch={app}
                       />
                     } />
-                    <Route path="/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
+                    <Route path="/jelena/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
                       <SupportBundleAnalysis
                         watch={app}
                       />
                     } />
-                    <Route exact path="/app/:slug/license" render={() =>
+                    <Route exact path="/jelena/app/:slug/license" render={() =>
                       <AppLicense
                         app={app}
                         syncCallback={this.refetchGraphQLData}
                       />
                     } />
-                    <Route exact path="/app/:slug/registry-settings" render={() =>
+                    <Route exact path="/jelena/app/:slug/registry-settings" render={() =>
                       <AppSettings
                         app={app}
                       />
                     } />
-                    <Route exact path="/app/:slug/gitops" render={() =>
+                    <Route exact path="/jelena/app/:slug/gitops" render={() =>
                       <AppGitops
                         app={app}
                         history={this.props.history}
                         refetch={() => this.props.getKotsAppQuery.refetch()}
                       />
                     } />
-                    <Route exact path="/app/:slug/snapshots" render={() =>
+                    <Route exact path="/jelena/app/:slug/snapshots" render={() =>
                       <AppSnapshots
                         app={app}
                         refetch={() => this.props.getKotsAppQuery.refetch()}
                       />
                     } />
-                    <Route exact path="/app/:slug/snapshots/schedule" render={() =>
+                    <Route exact path="/jelena/app/:slug/snapshots/schedule" render={() =>
                       <AppSnapshotSchedule app={app} />
                     } />
-                    <Route exact path="/app/:slug/snapshots/:id" render={() =>
+                    <Route exact path="/jelena/app/:slug/snapshots/:id" render={() =>
                       <AppSnapshotDetail app={app} />
                     } />
-                    <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
+                    <Route exact path="/jelena/app/:slug/snapshots/:id/restore" render={() =>
                       <AppSnapshotRestore app={app} />
                     } />
                     <Route component={NotFound} />
