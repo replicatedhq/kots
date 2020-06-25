@@ -54,7 +54,7 @@ class BackupRestore extends React.Component {
       .then(res => res.json())
       .then(result => {
         this.setState({
-          backups: result.backups,
+          backups: result.backups.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
           isLoadingBackups: false,
           backupsErr: false,
           backupsErrMsg: "",
