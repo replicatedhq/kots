@@ -634,7 +634,10 @@ class SnapshotStorageDestination extends Component {
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
           Back to license upload
         </Link>
-          : null}
+          : <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
+            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+            Back
+        </div>}
         <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora u-marginTop--12">{isLicenseUpload ? "Select a snapshot to restore from" : "Configure storage destination"}</p>
         <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">
           {isLicenseUpload ? "Choose the snapshot backup that you want to restore your application from." :

@@ -155,7 +155,6 @@ class Snapshots extends Component {
             hideCheckVeleroButton={hideCheckVeleroButton}
             isLicenseUpload={isLicenseUpload} /> :
           <ConfigureSnapshots
-            toggleSnapshotView={this.toggleSnapshotView}
             snapshotSettings={snapshotSettings}
             fetchSnapshotSettings={this.fetchSnapshotSettings}
             renderNotVeleroMessage={this.renderNotVeleroMessage}

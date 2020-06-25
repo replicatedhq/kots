@@ -10,6 +10,7 @@ import { Utilities } from "../utilities/utilities";
 import RestoreSnapshotRow from "./RestoreSnapshotRow";
 import UploadLicenseFile from "./UploadLicenseFile";
 import Loader from "./shared/Loader";
+import ConfigureSnapshots from "./snapshots/ConfigureSnapshots";
 
 class BackupRestore extends React.Component {
   state = {
@@ -21,7 +22,8 @@ class BackupRestore extends React.Component {
     snapshotSettings: null,
     isLoadingSnapshotSettings: true,
     snapshotSettingsErr: false,
-    snapshotSettingsErrMsg: ""
+    snapshotSettingsErrMsg: "",
+    hideCheckVeleroButton: false
   }
 
   useBackup = (backup) => {
@@ -54,14 +56,13 @@ class BackupRestore extends React.Component {
       .then(res => res.json())
       .then(result => {
         this.setState({
-          backups: result.backups,
+          backups: result.backups?.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
           isLoadingBackups: false,
           backupsErr: false,
           backupsErrMsg: "",
         })
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           isLoadingBackups: false,
           backupsErr: true,
@@ -70,11 +71,12 @@ class BackupRestore extends React.Component {
       })
   }
 
-  fetchSnapshotSettings = () => {
+  fetchSnapshotSettings = (isCheckForVelero) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: ""
+      snapshotSettingsErrMsg: "",
+      hideCheckVeleroButton: isCheckForVelero ? true : false
     });
 
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
@@ -92,9 +94,15 @@ class BackupRestore extends React.Component {
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
         })
+        if (result.veleroVersion === "") {
+          setTimeout(() => {
+            this.setState({ hideCheckVeleroButton: false });
+          }, 5000);
+        } else {
+          this.setState({ hideCheckVeleroButton: false });
+        }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
@@ -162,57 +170,20 @@ class BackupRestore extends React.Component {
     )
   }
 
-  renderVeleroResticErrors = () => {
-    const { snapshotSettings } = this.state;
+  renderNotVeleroMessage = () => {
+    return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
+  }
 
+  navigateToSnapshotConfiguration = () => {
     return (
-      <div className="flex flex-column">
-        <Link to="/upload-license" className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-cursor--pointer">
-          <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-          Back to license upload
-        </Link>
-        <div className={`${snapshotSettings?.isVeleroRunning ? "u-display--none" : "Error--wrapper flex u-marginTop--20"}`}>
-          <div className="flex u-marginRight--20">
-            <span className="icon yellowWarningIcon" />
-          </div>
-          <div className="flex flex-column">
-            <p className="u-color--selectiveYellow u-fontSize--larger u-fontWeight--bold"> Velero is not running </p>
-            <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero has been detected but is not running successfully. In order to restore your application from a backup Velero must be running.
-    <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
-            </p>
-          </div>
-        </div>
-        <div className={`${snapshotSettings?.veleroVersion !== "" && snapshotSettings?.resticVersion === "" ? "Error--wrapper flex u-marginTop--20" : "u-display--none"}`}>
-          <div className="flex u-marginRight--20">
-            <span className="icon yellowWarningIcon" />
-          </div>
-          <div className="flex flex-column">
-            <p className="u-color--selectiveYellow u-fontSize--larger u-fontWeight--bold"> Restic integration not found </p>
-            <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Using snapshots requires the Velero restic integration, but it was not found. Please install the Velero restic integration to continue.
-    <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
-            </p>
-          </div>
-        </div>
-        <div className={`${snapshotSettings?.veleroVersion !== "" && snapshotSettings?.resticVersion !== "" && !snapshotSettings?.isResticRunning ? "Error--wrapper flex u-marginTop--20" : "u-display--none"}`}>
-          <div className="flex u-marginRight--20">
-            <span className="icon yellowWarningIcon" />
-          </div>
-          <div className="flex flex-column">
-            <p className="u-color--selectiveYellow u-fontSize--larger u-fontWeight--bold"> Restic is not working </p>
-            <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-              Velero and the restic integration have been detected, but restic is not running successfully. To continue configuring and using snapshots Restic has to be running reliably.
-    <a href="https://kots.io/kotsadm/snapshots/restic-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
-            </p>
-          </div>
-        </div>
-
-        <div className="SnapshotSelection--wrapper flex1 alignItems--center u-marginTop--30">
-          <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> Cannot select a snapshot backup</p>
-          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-marginTop--12"> To select a snapshot backup Velero and Restic need to be running. </p>
-        </div>
-      </div>
+      <ConfigureSnapshots
+        snapshotSettings={this.state.snapshotSettings}
+        fetchSnapshotSettings={this.fetchSnapshotSettings}
+        renderNotVeleroMessage={this.renderNotVeleroMessage}
+        hideCheckVeleroButton={this.state.hideCheckVeleroButton}
+        isLicenseUpload={true}
+        history={this.props.history}
+      />
     )
   }
 
@@ -246,7 +217,7 @@ class BackupRestore extends React.Component {
         <Helmet>
           <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        {!snapshotSettings?.isVeleroRunning || !snapshotSettings?.isResticRunning ? this.renderVeleroResticErrors()
+        {!snapshotSettings?.isVeleroRunning || !snapshotSettings?.isResticRunning ? this.navigateToSnapshotConfiguration()
           :
           isEmpty(selectedBackup) ?
             this.renderSnapshotsListView()
