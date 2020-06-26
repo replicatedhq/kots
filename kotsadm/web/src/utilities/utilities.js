@@ -183,11 +183,19 @@ export function getReadableCronDescriptor(expression) {
   return cronstrue.toString(expression);
 }
 
-export function getServiceSite(provider) {
-  const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
-  const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
-  const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
-  return serviceSite;
+export function getServiceSite(provider, hostname = "") {
+  switch (provider) {
+    case "github":
+      return "github.com";
+    case "github_enterprise":
+      return hostname;
+    case "gitlab":
+      return "gitlab.com";
+    case "bitbucket":
+      return "bitbucket.org";
+    default:
+      return "github.com";
+  }
 }
 
 export function getAddKeyUri(gitUri, provider, ownerRepo) {

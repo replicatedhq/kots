@@ -134,7 +134,7 @@ class GitOpsDeploymentManager extends React.Component {
     } = this.state;
 
     const provider = selectedService.value;
-    const serviceSite = getServiceSite(provider);
+    const serviceSite = getServiceSite(provider, hostname);
     const repoUri = this.isSingleApp() ? `https://${serviceSite}/${ownerRepo}` : "";
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
@@ -353,6 +353,7 @@ class GitOpsDeploymentManager extends React.Component {
         return (
           <GitOpsRepoDetails
             appName={this.props.appName}
+            hostname={hostname}
             selectedService={selectedService}
             onFinishSetup={this.finishSetup}
             ctaLoadingText="Finishing setup"
