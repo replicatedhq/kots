@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"context"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -175,6 +177,71 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
+	}
+
+	return nil
+}
+
+func Delete(options *types.DeleteOptions) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	grace := int64(0)
+	policy := metav1.DeletePropagationBackground
+	opts := metav1.DeleteOptions{
+		GracePeriodSeconds: &grace,
+		PropagationPolicy:  &policy,
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm")
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-api", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm-api")
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-operator", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm-operator")
+	}
+
+	err = clientset.AppsV1().StatefulSets(namespace).Delete(context.TODO(), "kotsadm-postgres", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete statefulset kotsadm-postgres")
+	}
+
+	return nil
+}
+
+func CreateRestoreJob(options *types.RestoreJobOptions) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	isOpenShift := isOpenshift(clientset)
+
+	job := restoreJob(options.BackupName, namespace, isOpenShift)
+	_, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create restore job")
 	}
 
 	return nil

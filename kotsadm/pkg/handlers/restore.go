@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
 
@@ -70,18 +71,15 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 
 	if backup.Annotations[types.VeleroKey] == types.VeleroLabelConsoleValue {
 		// this is a kotsadm snapshot being restored
-		if err := snapshot.DeleteRestore(snapshotName); err != nil {
-			logger.Error(err)
-			createRestoreResponse.Error = "failed to delete restore"
-			JSON(w, 500, createRestoreResponse)
-			return
+		opts := &types.RestoreJobOptions{
+			BackupName: snapshotName,
 		}
-
-		if err := snapshot.CreateRestore(snapshotName); err != nil {
+		if err := kotsadm.CreateRestoreJob(opts); err != nil {
 			logger.Error(err)
 			createRestoreResponse.Error = "failed to initiate restore"
 			JSON(w, 500, createRestoreResponse)
 			return
+
 		}
 
 		createRestoreResponse.Success = true

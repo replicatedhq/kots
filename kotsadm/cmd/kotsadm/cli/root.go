@@ -27,6 +27,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(APICmd())
 	cmd.AddCommand(OperatorCmd())
+	cmd.AddCommand(RestoreCmd())
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
