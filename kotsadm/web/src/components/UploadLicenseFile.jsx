@@ -259,19 +259,21 @@ class UploadLicenseFile extends React.Component {
         <Helmet>
           <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <div className="UploadLicenseFileBox-wrapper u-flexTabletReflow flex-auto">
+        {!fileUploading && <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-textAlign--center u-marginBottom--20"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>}
+        <div className="UploadLicenseFileBox-wrapper u-flexTabletReflow flex-auto justifyContent--center">
           <div className={`flex-auto flex-column ${isBackupRestore ? "backup-restore-wrapper" : "upload-form-wrapper secure-console"} justifyContent--center`}>
             {!fileUploading ?
               <div className="flex flex-column">
-                <div className="flex flex1 alignItems--center">
-                  {logo
-                    ? <span className="icon upload-license-icon" style={{ backgroundImage: `url(${logoUri})` }} />
-                    : !fetchingMetadata ? <span className="icon kots-login-icon" />
-                      : <span style={{ width: "35px", height: "35px" }} />
-                  }
-                  <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-textAlign--center u-marginLeft--10">{`${isBackupRestore ? "Verify your license" : "Upload your license file"} ${applicationName ? `for ${applicationName}` : ""}`}</p>
-                </div>
-                <div className="u-marginTop--20 flex">
+                {applicationName &&
+                  <div className="flex flex1 alignItems--center">
+                    {logo
+                      ? <span className="icon upload-license-icon" style={{ backgroundImage: `url(${logoUri})` }} />
+                      : !fetchingMetadata ? <span className="icon kots-login-icon" />
+                        : <span style={{ width: "35px", height: "35px" }} />
+                    }
+                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-textAlign--center u-marginLeft--10">{applicationName}</p>
+                  </div>}
+                <div className={`flex ${applicationName && "u-marginTop--20"}`}>
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                     <Dropzone
                       className="Dropzone-wrapper"
