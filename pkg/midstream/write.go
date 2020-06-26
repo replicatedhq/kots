@@ -98,13 +98,11 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 
 func mergeMaps(new map[string]string, existing map[string]string) map[string]string {
 	merged := existing
-	if new != nil {
-		if merged == nil {
-			merged = make(map[string]string)
-		}
-		for key, value := range new {
-			merged[key] = value
-		}
+	if merged == nil {
+		merged = make(map[string]string)
+	}
+	for key, value := range new {
+		merged[key] = value
 	}
 	return merged
 }
