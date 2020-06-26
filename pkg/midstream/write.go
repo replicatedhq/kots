@@ -93,6 +93,8 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
+	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
+
 	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
 }
 
