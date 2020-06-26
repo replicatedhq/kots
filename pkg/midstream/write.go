@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -62,14 +61,6 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	if options.IsGitOps && options.AppSlug != "" {
-		if m.Kustomization.CommonAnnotations == nil {
-			m.Kustomization.CommonAnnotations = make(map[string]string)
-		}
-		m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
-		m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
-	}
-
 	// This check is to not break deployments on existing installations
 	if existingKustomization == nil {
 		if m.Kustomization.CommonLabels == nil {
@@ -102,9 +93,9 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
+	delete(existing.CommonAnnotations, "kots.io/app-slug")
+	delete(existing.CommonAnnotations, "kots.io/app-sequence")
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
-	delete(m.Kustomization.CommonAnnotations, "kots.io/app-slug")
-	delete(m.Kustomization.CommonAnnotations, "kots.io/app-sequence")
 
 	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
 }
@@ -114,7 +105,7 @@ func mergeMaps(new map[string]string, existing map[string]string) map[string]str
 	if merged == nil {
 		merged = make(map[string]string)
 	}
-	for key, value := range existing {
+	for key, value := range new {
 		merged[key] = value
 	}
 	return merged
