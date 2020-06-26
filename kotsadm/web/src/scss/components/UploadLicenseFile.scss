@@ -32,19 +32,11 @@
   }
 }
 
-.Error--wrapper {
-  background: #FFFCF5;
-  border: 1px solid #F7B500;
-  box-sizing: border-box;
+.EmptyBackup--wrapper {
   border-radius: 6px;
-  padding: 20px;
-  max-width: 510px;
-}
-
-.SnapshotSelection--wrapper {
-  border-radius: 4px;
   border: 1px dashed #c4c7ca;
-  padding: 20px 15px 18px;
+  padding: 15px;
+  box-sizing: border-box;
   text-align: center;
 }
 

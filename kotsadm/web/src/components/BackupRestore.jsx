@@ -123,21 +123,30 @@ class BackupRestore extends React.Component {
           <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
             Choose the snapshot backup that you want to restore your application from.
         </p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
-            Not seeing the the snapshots you want? <Link to="/snapshots?=license-upload" className="replicated-link">Pull from a different bucket</Link>.
+          {!isEmpty(this.state.backups) &&
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
+              Not seeing the the snapshots you want? <Link to="/snapshots?=license-upload" className="replicated-link">Pull from a different bucket</Link>.
+        </p>}
+        </div>
+        {!isEmpty(this.state.backups) ?
+          <div className="flex flex-column">
+            {this.state.backups?.map((snapshot, i) => {
+              return (
+                <RestoreSnapshotRow
+                  key={`${snapshot.name}-${i}`}
+                  snapshot={snapshot}
+                  useBackup={this.useBackup}
+                />
+              )
+            })}
+          </div> :
+          <div className="EmptyBackup--wrapper flex1 alignItems--center u-marginTop--20">
+            <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> No backups availible </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
+              Not seeing the the snapshots you want? <Link to="/snapshots?=license-upload" className="replicated-link u-fontSize--normal">Check a different bucket</Link>.
         </p>
-        </div>
-        <div className="flex flex-column">
-          {this.state.backups?.map((snapshot, i) => {
-            return (
-              <RestoreSnapshotRow
-                key={`${snapshot.name}-${i}`}
-                snapshot={snapshot}
-                useBackup={this.useBackup}
-              />
-            )
-          })}
-        </div>
+          </div>
+        }
       </div>
     )
   }
