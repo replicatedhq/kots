@@ -37,6 +37,10 @@ The same applies to changes in CRDs, YAML examples, and so on.
 
 Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
 
+## Testing
+
+Write a summary of how this enhancement will be tested to ensure there are no regressions in the future.
+
 ## Alternatives Considered
 
 If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
