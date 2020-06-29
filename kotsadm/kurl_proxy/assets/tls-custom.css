@@ -395,7 +395,7 @@ button.text-button:hover {
 
 .inputkey {
 	top: 40px;
-  left: 59px;
+  left: 49px;
   overflow: hidden;
   position: absolute;
   z-index: -1;
@@ -411,7 +411,7 @@ button.text-button:hover {
 
 .inputcert {
 	top: 40px;
-  left: 80px;
+  left: 70px;
   overflow: hidden;
   position: absolute;
   z-index: -1;
