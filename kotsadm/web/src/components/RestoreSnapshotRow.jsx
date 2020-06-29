@@ -60,14 +60,6 @@ class RestoreSnapshotRow extends React.Component {
     }
   }
 
-  bytesToSize = (bytes) => {
-    var sizes = ["B", "KB", "MB", "GB", "TB"];
-    if (bytes === 0) return "N/A";
-    let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i === 0) return bytes + ' ' + sizes[i];
-    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
-  };
-
 
   render() {
     const { toggleVolumes, backupInfo } = this.state;
@@ -88,7 +80,7 @@ class RestoreSnapshotRow extends React.Component {
                   <span className="icon snapshot-volume-icon" /> {snapshot?.volumeCount} volume{snapshot?.volumeCount === 1 ? "" : "s"}
                   {(!isBackupSelected && snapshot?.volumeCount > 0) ? <span className={`icon ${toggleVolumes ? "up" : "down"}-arrow-icon u-marginLeft--5 u-cursor--pointer`} onClick={this.showVolumes} /> : null} </span>
                 <span className="flex alignItems--center u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
-                  <span className="icon snapshot-volume-size-icon" /> {this.bytesToSize(snapshot?.volumeBytes)} </span>
+                  <span className="icon snapshot-volume-size-icon" /> {Utilities.bytesToSize(snapshot?.volumeBytes)} </span>
               </div>
             </div>
             {toggleVolumes &&
