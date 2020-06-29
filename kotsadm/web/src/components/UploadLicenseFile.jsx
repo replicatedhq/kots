@@ -116,21 +116,7 @@ class UploadLicenseFile extends React.Component {
             }
 
             if (data.hasPreflight) {
-              fetch(`${window.env.API_ENDPOINT}/app/${data.slug}/preflight/run`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "Authorization": Utilities.getToken(),
-                },
-                method: "POST",
-              })
-                .then(async (res) => {
-                  history.replace("/preflight");
-                })
-                .catch((err) => {
-                  // TODO: UI for this error
-                  console.log(err);
-                });
+              history.replace("/preflight");
               return;
             }
 

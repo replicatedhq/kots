@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -190,6 +191,10 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (_ *kotsuti
 
 	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
 		return nil, errors.Wrap(err, "failed to create app version archive")
+	}
+
+	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+		return nil, errors.Wrap(err, "failed to start preflights")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
