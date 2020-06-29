@@ -301,7 +301,7 @@ spec:
           type: text
           read_only: true
           value: ""`),
-			excludeKotsKinds: true,
+			excludeKotsKinds: false,
 			expected:         true,
 		},
 		{
@@ -332,7 +332,7 @@ spec:
           type: text
           read_only: true
           value: ""`),
-			excludeKotsKinds: true,
+			excludeKotsKinds: false,
 			expected:         true,
 		},
 		{
@@ -363,7 +363,7 @@ spec:
           type: text
           read_only: true
           value: ""`),
-			excludeKotsKinds: true,
+			excludeKotsKinds: false,
 			expected:         false,
 		},
 		{
@@ -394,7 +394,7 @@ spec:
           type: text
           read_only: true
           value: ""`),
-			excludeKotsKinds: true,
+			excludeKotsKinds: false,
 			expected:         true,
 		},
 		{
