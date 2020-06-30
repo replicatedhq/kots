@@ -33,9 +33,9 @@ From the public workstation:
 
 From the airgap workstation:
 1. The user will install the kots plugin 
-1. The user will copy the container images in the kotsadm archive to the local registry using the kots kubectl plugin
+1. The user will run a `kubectl kots` command to copy the container images in the kotsadm archive to the local registry, providing registry details for pushing
 1. The user will install kotsadm to the cluster using the kots plugin via `kots install` passing local registry information which will be used to generate the kotsadm yaml and image pull secrets (if neccessary)
-1. The user will install thte application and license using the existing airgap installation process 
+1. The user will install the application and license using the existing airgap installation process 
 
 ## Detailed Design
 
