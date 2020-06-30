@@ -183,11 +183,12 @@ class AppSnapshotDetail extends Component {
               snapshotLogsErrMsg: "An error occurred while viewing snapshot logs. Please try again"
             })
           } else {
-            this.setState({ 
-              snapshotLogs: logs, 
+            this.setState({
+              snapshotLogs: logs,
               snapshotLogsErr: false,
               snapshotLogsErrMsg: "",
-              loadingSnapshotLogs: false });
+              loadingSnapshotLogs: false
+            });
           }
         })
         .catch((err) => {
@@ -435,7 +436,6 @@ class AppSnapshotDetail extends Component {
         </div>)
     }
 
-
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
@@ -533,45 +533,45 @@ class AppSnapshotDetail extends Component {
               </div>
             </div>
 
-
-            <div className="flex flex-auto u-marginBottom--30">
-              <div className="flex-column flex1 u-marginRight--20">
-                <div className="dashboard-card-wrapper flex1">
-                  <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
-                    <div className="flex flex1">
-                      <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Errors and warnings</p>
-                      {snapshotDetails?.errors?.length > 3 && selectedErrorsWarningTab === "Errors" ?
-                        <div className="flex flex1 justifyContent--flexEnd">
-                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors </span>
-                        </div> : null}
-                      {snapshotDetails?.warnings?.length > 3 && selectedErrorsWarningTab === "Warnings" ?
-                        <div className="flex flex1 justifyContent--flexEnd">
-                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings </span>
-                        </div> : null}
+            {!isEmpty(snapshotDetails?.errors) && !isEmpty(snapshotDetails?.warnings) &&
+              <div className="flex flex-auto u-marginBottom--30">
+                <div className="flex-column flex1 u-marginRight--20">
+                  <div className="dashboard-card-wrapper flex1">
+                    <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
+                      <div className="flex flex1">
+                        <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Errors and warnings</p>
+                        {snapshotDetails?.errors?.length > 3 && selectedErrorsWarningTab === "Errors" ?
+                          <div className="flex flex1 justifyContent--flexEnd">
+                            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors </span>
+                          </div> : null}
+                        {snapshotDetails?.warnings?.length > 3 && selectedErrorsWarningTab === "Warnings" ?
+                          <div className="flex flex1 justifyContent--flexEnd">
+                            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings </span>
+                          </div> : null}
+                      </div>
+                      <div className="flex-column flex1">
+                        {this.renderErrorsWarningsTabs()}
+                      </div>
                     </div>
-                    <div className="flex-column flex1">
-                      {this.renderErrorsWarningsTabs()}
+                    <div>
+                      {selectedErrorsWarningTab === "Errors" ?
+                        !isEmpty(snapshotDetails?.errors) ?
+                          this.renderShowAllErrors(snapshotDetails?.errors.slice(0, 3))
+                          :
+                          <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                            <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No errors to display </p>
+                          </div>
+                        : selectedErrorsWarningTab === "Warnings" &&
+                          !isEmpty(snapshotDetails?.warnings) ?
+                          this.renderShowAllWarnings(snapshotDetails?.warnings?.slice(0, 3))
+                          :
+                          <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                            <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No warnings to display </p>
+                          </div>}
                     </div>
-                  </div>
-                  <div>
-                    {selectedErrorsWarningTab === "Errors" ?
-                      !isEmpty(snapshotDetails?.errors) ?
-                        this.renderShowAllErrors(snapshotDetails?.errors.slice(0, 3))
-                        :
-                        <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                          <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No errors to display </p>
-                        </div>
-                      : selectedScriptTab === "Warnings" &&
-                        !isEmpty(snapshotDetails?.warnings) ?
-                        this.renderShowAllWarnings(snapshotDetails?.warnings?.slice(0, 3))
-                        :
-                        <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                          <p className="u-fontSize--large u-fontWeight--normal u-color--dustyGray"> No warnings to display </p>
-                        </div>}
                   </div>
                 </div>
-              </div>
-            </div>
+              </div>}
           </div>}
 
         {showScriptsOutput && scriptOutput &&
