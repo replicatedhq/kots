@@ -306,14 +306,20 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 func DeployVersion(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
 
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
 	query := `update app_downstream set current_sequence = $1 where app_id = $2`
-	_, err := db.Exec(query, sequence, appID)
+	_, err = tx.Exec(query, sequence, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to update app downstream current sequence")
 	}
 
 	query = `update app_downstream_version set status = 'deployed', applied_at = $3 where sequence = $1 and app_id = $2`
-	_, err = db.Exec(query, sequence, appID, time.Now())
+	_, err = tx.Exec(query, sequence, appID, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "failed to update app downstream version status")
 	}
