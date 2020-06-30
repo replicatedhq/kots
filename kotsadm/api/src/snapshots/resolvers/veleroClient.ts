@@ -305,7 +305,7 @@ export class VeleroClient {
 
     _.each(volumeList.items, (pvb) => {
       const sv: SnapshotVolume = {
-        name: pvb.metadata.name,
+        name: pvb.metadata.name
       };
       if (pvb.status) {
         sv.started = pvb.status.startTimestamp;
