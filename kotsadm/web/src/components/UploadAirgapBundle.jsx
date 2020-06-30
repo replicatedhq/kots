@@ -278,21 +278,7 @@ class UploadAirgapBundle extends React.Component {
           if (isConfigurable) {
             this.props.history.replace(`/${slug}/config`);
           } else if (hasPreflight) {
-            fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/run`, {
-              headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": Utilities.getToken(),
-              },
-              method: "POST",
-            })
-              .then(async (res) => {
-                this.props.history.replace("/preflight");
-              })
-              .catch((err) => {
-                // TODO: UI for this error
-                console.log(err);
-              });
+            this.props.history.replace("/preflight");
           } else {
             this.props.history.replace(`/app/${slug}`);
           }
