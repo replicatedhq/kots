@@ -254,6 +254,9 @@ class UploadLicenseFile extends React.Component {
       applicationName = appName;
     }
 
+    // TODO remove when restore is enabled
+    const isRestoreEnabled = false;
+
     return (
       <div className={`UploadLicenseFile--wrapper ${isBackupRestore ? "" : "container"} flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}>
         <Helmet>
@@ -328,7 +331,7 @@ class UploadLicenseFile extends React.Component {
           </div>
         </div>
 
-        {!isBackupRestore &&
+        {!isBackupRestore && isRestoreEnabled &&
           <div className="flex u-marginTop--15 alignItems--center">
             <span className="icon restore-icon" />
             <Link className="u-fontSize--normal u-color--royalBlue u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5" to="/restore">{`Restore ${applicationName ? `${applicationName}` : "app"} from a snapshot`} </Link>
