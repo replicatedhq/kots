@@ -14,7 +14,6 @@
 - Create a single installer for kotsadm + application
 - Create a single download for kotsadm, kots plugin, application and license
 - Automated installs of kotsadm to existing clusters in airgap mode
-- Support private (authenticated) local hosting of kotsadm images
 - Support for installing versions of KOTS different from the KOTS CLI version installed
 
 ## Background
@@ -55,7 +54,7 @@ kubectl kots admin-console push-images ./kotsadm-1.16.1.tar.gz registry.somebigb
   --registry-password abcdef
 ```
 
-`--registry-username` and `--registry-password` are both optional.
+Stretch: `--registry-username` and `--registry-password` are both optional.
 If not present, attempt to authenticate using the already authenticated local docker credentials.
 Stretch: if still not authenticated, prompt for username/password, use these to push but do not save locally.
 Stretch: if username is specified and password is not, prompt for password to use, do not save locally.
@@ -93,8 +92,8 @@ Stretch: Additionally, a new `--yaml` flag will be added to have `kots` only gen
 
 ## Assumptions
 
-- The workstation will have kubectl access to the cluster
-- The workstation must have push access to an image registry that the cluster has pull access 
+- The airgap workstation will have kubectl access to the cluster
+- The airgap workstation must have push access to an image registry that the cluster has pull access 
 - The cluster credentials to pull from the local registry is either unauthenticated or static and persistent credentials (i.e. no Vault integration or other dynamically generated credentials will be supported)
 
 ## Testing
