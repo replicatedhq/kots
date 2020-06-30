@@ -6,7 +6,7 @@
 - Install kotsadm to an existing cluster from a workstation where the workstation does not have internet access at the time of installation
 - Support different credentials for push / pull (workstation / cluster) to the local registry
 - Support temporary/dynamic and persistent/static credentials for pushing kotsadm images to the registry
-- Support only persistent/static credentials for pulling kotsadm images to the registry
+- Support only persistent/static credentials for pulling kotsadm images from the airgapped registry
 - Support different credentials for pushing vs pulling images to the local registry
 
 ## Non Goals
