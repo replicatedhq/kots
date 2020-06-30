@@ -13,7 +13,7 @@
 
 - Create a single installer for kotsadm + application
 - Create a single download for kotsadm, kots plugin, application and license
-- Automated installs of kotsadm to existing clusters in airgap mode
+- Unattended, automatic installs of kotsadm to existing clusters in airgap mode
 - Support for installing versions of KOTS different from the KOTS CLI version installed
 
 ## Background
