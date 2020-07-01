@@ -26,7 +26,7 @@
     "aws-sdk": "^2.449.0",
     "base32": "^0.0.6",
     "basic-auth": "^2.0.0",
-    "bcrypt": "^3.0.6",
+    "bcrypt": "^5.0.0",
     "bluebird": "^3.5.2",
     "body-parser": "^1.19.0",
     "cli-color": "^1.4.0",
