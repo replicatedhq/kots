@@ -324,7 +324,7 @@ func DeployVersion(appID string, sequence int64) error {
 		return errors.Wrap(err, "failed to update app downstream version status")
 	}
 
-	if err = tx.Commit(); err != nil {
+	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "failed to commit")
 	}
 
