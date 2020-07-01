@@ -119,6 +119,7 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
+	defer os.RemoveAll(archiveDir)
 
 	if err := task.SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")

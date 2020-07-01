@@ -296,6 +296,7 @@ func ExtractArchiveToTempDirectory(archiveFilename string) (string, error) {
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
+			OverwriteExisting:      true,
 		},
 	}
 	if err := tarGz.Unarchive(archiveFilename, tmpDir); err != nil {
