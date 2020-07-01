@@ -51,3 +51,5 @@ build-alpha:
 build-release:
 	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${GIT_TAG} .
 	docker push kotsadm/kotsadm-operator:${GIT_TAG}
+	mkdir -p bin/docker-archive
+	skopeo copy docker-daemon:kotsadm/kotsadm-operator:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm-operator.tar
