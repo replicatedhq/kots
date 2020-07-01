@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -48,7 +49,13 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID)
+	deploy := false
+	d := r.URL.Query().Get("deploy")
+	if d != "" {
+		deploy, _ = strconv.ParseBool(d)
+	}
+
+	availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

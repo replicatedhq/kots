@@ -101,7 +101,7 @@ func Configure(appID string) error {
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(jobAppID)
+		availableUpdates, err := CheckForUpdates(jobAppID, false)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
@@ -139,8 +139,9 @@ func Stop(appID string) {
 }
 
 // CheckForUpdates checks (and downloads) latest updates for a specific app
+// if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
-func CheckForUpdates(appID string) (int64, error) {
+func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	currentStatus, err := task.GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
@@ -211,10 +212,19 @@ func CheckForUpdates(appID string) (int64, error) {
 
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		for _, update := range updates {
+		for index, update := range updates {
 			// the latest version is in archive dir
-			if err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor); err != nil {
+			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor)
+			if err != nil {
 				logger.Error(err)
+				continue
+			}
+			// deploy latest version?
+			if deploy && index == len(updates)-1 {
+				err := version.DeployVersion(a.ID, sequence)
+				if err != nil {
+					logger.Error(err)
+				}
 			}
 		}
 	}()
