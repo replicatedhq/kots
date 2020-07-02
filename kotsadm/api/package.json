@@ -13,7 +13,7 @@
     "@tsed/common": "^5.32.1",
     "@tsed/core": "^5.32.1",
     "@tsed/di": "^5.32.1",
-    "@tsed/multipartfiles": "^5.32.1",
+    "@tsed/multipartfiles": "^5.57.5",
     "@tsed/socketio": "^5.32.1",
     "@types/fs-extra": "^8.0.1",
     "@types/github": "^7.1.0",
