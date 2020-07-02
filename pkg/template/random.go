@@ -3,6 +3,7 @@ package template
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"math/big"
 	"regexp/syntax"
 
@@ -70,4 +71,13 @@ func randint(max int) int {
 	}
 
 	return int(res.Int64())
+}
+
+// RandomBytes returns a base64-encoded byte array allowing the full range of byte values.
+func (ctx *StaticCtx) RandomBytes(length uint64) string {
+	buf := make([]byte, length)
+	if _, err := rand.Read(buf); err != nil {
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(buf)
 }
