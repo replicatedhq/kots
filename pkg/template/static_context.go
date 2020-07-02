@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	discovery "k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
@@ -82,6 +83,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["IsKurl"] = ctx.isKurl
 	funcMap["Distribution"] = ctx.distribution
+	funcMap["NodeCount"] = ctx.nodeCount
 
 	funcMap["HTTPProxy"] = ctx.httpProxy
 	funcMap["NoProxy"] = ctx.noProxy
@@ -462,27 +464,39 @@ func (ctx StaticCtx) isKurl() bool {
 	return configMap != nil
 }
 
-func (ctx StaticCtx) distribution() string {
+func getNodes() ([]corev1.Node, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return ""
+		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return ""
+		return nil, err
 	}
 
 	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
+		return nil, err
+	}
+	return nodeList.Items, nil
+}
+
+func (ctx StaticCtx) distribution() string {
+	nodes, err := getNodes()
+	if err != nil {
 		return ""
 	}
-	nodes := nodeList.Items
 
 	foundProviders, workingProvider := analyze.ParseNodesForProviders(nodes)
 
 	if workingProvider != "" {
 		return workingProvider
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return ""
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -498,6 +512,14 @@ func (ctx StaticCtx) distribution() string {
 	provider := analyze.CheckOpenShift(&foundProviders, apiResourceList, workingProvider)
 
 	return provider
+}
+
+func (ctx StaticCtx) nodeCount() int {
+	nodes, err := getNodes()
+	if err != nil {
+		return 0
+	}
+	return len(nodes)
 }
 
 func (ctx StaticCtx) httpProxy() string {
