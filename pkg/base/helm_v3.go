@@ -50,7 +50,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}
 
-	resources := map[string]string{}
+	resources := map[string][]string{}
 
 	splitManifests := releaseutil.SplitManifests(manifests.String())
 	for _, manifest := range splitManifests {
@@ -59,8 +59,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 			continue
 		}
 		manifestName := submatch[1]
-		resources[manifestName] = HelmV3ManifestNameRegex.ReplaceAllString(manifest, "")
+		resources[manifestName] = append(resources[manifestName], HelmV3ManifestNameRegex.ReplaceAllString(manifest, ""))
 	}
 
-	return resources, nil
+	multidocResources := map[string]string{}
+	for manifestName, manifests := range resources {
+		multidocResources[manifestName] = strings.Join(manifests, "\n---\n")
+	}
+	return multidocResources, nil
 }
