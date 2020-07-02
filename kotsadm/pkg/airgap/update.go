@@ -105,6 +105,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
+	defer os.RemoveAll(airgapRoot)
 
 	if err := task.SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")

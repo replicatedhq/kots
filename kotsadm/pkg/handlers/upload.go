@@ -69,6 +69,7 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+	defer os.RemoveAll(archiveDir)
 
 	// encrypt any plain text values
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
