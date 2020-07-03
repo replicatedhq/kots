@@ -43,7 +43,7 @@
     "fs-extra": "^8.1.0",
     "github": "^14.0.0",
     "graphql": "^0.11.7",
-    "graphql-tools": "^2.7.2",
+    "graphql-tools": "^2.24.0",
     "gunzip-maybe": "^1.4.1",
     "http-proxy-middleware": "^0.19.1",
     "js-yaml": "^3.13.1",
