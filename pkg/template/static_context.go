@@ -65,6 +65,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["Base64Encode"] = ctx.base64Encode
 	funcMap["Base64Decode"] = ctx.base64Decode
 	funcMap["Split"] = strings.Split
+	funcMap["RandomBytes"] = ctx.RandomBytes
 	funcMap["RandomString"] = ctx.RandomString
 	funcMap["Add"] = ctx.add
 	funcMap["Sub"] = ctx.sub

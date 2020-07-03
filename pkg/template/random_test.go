@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
@@ -96,5 +97,24 @@ func TestGenerateRandomStringTemplates(t *testing.T) {
 				seenStrings[outputString] = struct{}{}
 			}
 		})
+	}
+}
+
+func TestRandomBytes(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+
+	req := require.New(t)
+	ctx := &StaticCtx{}
+	seenStrings := map[string]struct{}{}
+	for i := 0; i < 100; i++ {
+		str := ctx.RandomBytes(100)
+		bytes, err := base64.StdEncoding.DecodeString(str)
+		req.NoError(err)
+		req.Len(bytes, 100)
+
+		_, ok := seenStrings[str]
+		req.Falsef(ok, "string %q matched an earlier random string of length 100 on iteration %d", str, i)
+		seenStrings[str] = struct{}{}
 	}
 }
