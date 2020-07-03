@@ -14,7 +14,7 @@
     "@tsed/core": "^5.32.1",
     "@tsed/di": "^5.32.1",
     "@tsed/multipartfiles": "^5.32.1",
-    "@tsed/socketio": "^5.32.1",
+    "@tsed/socketio": "^5.57.5",
     "@types/fs-extra": "^8.0.1",
     "@types/github": "^7.1.0",
     "@types/logfmt": "^1.2.1",
