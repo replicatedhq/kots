@@ -106,7 +106,7 @@
   },
   "dependencies": {
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-    "@bugsnag/js": "^6.2.0",
+    "@bugsnag/js": "^6.5.2",
     "@bugsnag/plugin-react": "^6.2.0",
     "@grafana/ui": "^6.4.3",
     "@maji/react-prism": "^1.0.1",

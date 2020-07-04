@@ -749,23 +749,23 @@
     lodash "^4.17.11"
     to-fast-properties "^2.0.0"
 
-"@bugsnag/browser@^6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@bugsnag/browser/-/browser-6.3.0.tgz#0c8bcf3fb2dfe8aa0b97f59cfcd43c55a7bd8fbc"
-  integrity sha512-IS9s4WkgDMn9CE0qoo8mZE7blPvWy8mnFPxO1AAE8oewqUw3hWV5Fv+FFgHe+kB8oLaW+2E1EFG5E7xHS3ytxg==
+"@bugsnag/browser@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@bugsnag/browser/-/browser-6.5.2.tgz#3f8f911dd739d2ace056fd5a38d5d25283ca4bfc"
+  integrity sha512-XFKKorJc92ivLnlHHhLiPvkP03tZ5y7n0Z2xO6lOU7t+jWF5YapgwqQAda/TWvyYO38B/baWdnOpWMB3QmjhkA==
 
-"@bugsnag/js@^6.2.0":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@bugsnag/js/-/js-6.3.1.tgz#403fb84cee9e9da9ee880c4c90d00a9fe19fdc75"
-  integrity sha512-OSJvovnEsAUmh9Hfb9ZmpeZR1v/vFGZml444B1NPmfc0vivlIfSYE4/pTt+rjhVDuCZE+b00pflD/QL7/Tt8kw==
+"@bugsnag/js@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@bugsnag/js/-/js-6.5.2.tgz#810383aa7a2246639041bb9031ab316432959527"
+  integrity sha512-4ibw624fM5+Y/WSuo3T/MsJVtslsPV8X0MxFuRxdvpKVUXX216d8hN8E/bG4hr7aipqQOGhBYDqSzeL2wgmh0Q==
   dependencies:
-    "@bugsnag/browser" "^6.3.0"
-    "@bugsnag/node" "^6.3.1"
+    "@bugsnag/browser" "^6.5.2"
+    "@bugsnag/node" "^6.5.2"
 
-"@bugsnag/node@^6.3.1":
-  version "6.3.1"
-  resolved "https://registry.yarnpkg.com/@bugsnag/node/-/node-6.3.1.tgz#d9835a2ba68e80a30852f61703d252df0899ecba"
-  integrity sha512-KtFh3fR+Yzb3O4IgFLnxMK/yXqDyoR4fl1yl+EghwgkwDc4nETZ/NXpqroaMUtHYNOY+7cTpHaGqlaSTWLGp1Q==
+"@bugsnag/node@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@bugsnag/node/-/node-6.5.2.tgz#7bc2d0d1c7a682784be388404ab728a80b7ae2b9"
+  integrity sha512-KQ1twKoOttMCYsHv7OXUVsommVcrk6RGQ5YoZGlTbREhccbzsvjbiXPKiY31Qc7OXKvaJwSXhnOKrQTpRleFUg==
   dependencies:
     byline "^5.0.0"
     error-stack-parser "^2.0.2"
