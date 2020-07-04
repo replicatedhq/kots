@@ -108,7 +108,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
     "@bugsnag/js": "^6.2.0",
     "@bugsnag/plugin-react": "^6.2.0",
-    "@grafana/ui": "^6.4.3",
+    "@grafana/ui": "^6.7.3",
     "@maji/react-prism": "^1.0.1",
     "@replicatedhq/ship-init": "1.6.22",
     "@types/file-saver": "^2.0.1",
