@@ -177,7 +177,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout
@@ -213,7 +213,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout
@@ -232,7 +232,7 @@ jobs:
         SCOPE_DSN_PUBLIC: ""
       run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm/kurl_proxy test build
 
-    - name: Upload operator artifact
+    - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2
       with:
         name: kurl_proxy
@@ -243,7 +243,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [test_web, build_web, build_operator, build_kurl_proxy]
     container:
-      image: replicated/gitops-builder:buildkite-go12-node10
+      image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
     - name: Checkout
@@ -302,12 +302,6 @@ jobs:
         name: typescript_api_build
         path: ./kotsadm/api/build
 
-    - name: Upload Go API bin artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: typescript_api_bin
-        path: ./kotsadm/api/bin
-
 
   release_go_api_alpha:
     runs-on: ubuntu-18.04
@@ -354,6 +348,8 @@ jobs:
       uses: actions/checkout@v2
 
     - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./kotsadm/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -387,8 +383,17 @@ jobs:
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: |
-        make -C kotsadm build-release
+        DOCKER_CONFIG: ./.docker
+      uses: ./actions/containers
+      with:
+        command: "make -C kotsadm build-release"
+
+    - name: Upload airgap image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: kotsadm-image
+        path: ./kotsadm/bin/docker-archive
 
 
   release_typescript_api_alpha:
@@ -424,6 +429,8 @@ jobs:
       uses: actions/checkout@v2
 
     - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./kotsadm/api/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -443,8 +450,17 @@ jobs:
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: |
-        make -C kotsadm/api build-release
+        DOCKER_CONFIG: ./.docker
+      uses: ./actions/containers
+      with:
+        command: "make -C kotsadm/api build-release"
+
+    - name: Upload airgap image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: kotsadm-api-image
+        path: ./kotsadm/api/bin/docker-archive
 
 
   release_operator_alpha:
@@ -486,6 +502,8 @@ jobs:
       uses: actions/checkout@v2
 
     - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./kotsadm/operator/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -508,15 +526,28 @@ jobs:
         name: operator
         path: ./kotsadm/operator/bin
 
+    - name: Copy binary
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      run: |
+        mkdir -p kotsadm/operator/deploy/bin
+        cp kotsadm/operator/bin/kotsadm-operator kotsadm/operator/deploy/bin/kotsadm-operator
+
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: |
-        mkdir -p kotsadm/operator/deploy/bin
-        cp kotsadm/operator/bin/kotsadm-operator kotsadm/operator/deploy/bin/kotsadm-operator
-        make -C kotsadm/operator build-release
+        DOCKER_CONFIG: ./.docker
+      uses: ./actions/containers
+      with:
+        command: "make -C kotsadm/operator build-release"
+
+    - name: Upload airgap image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: kotsadm-operator-image
+        path: ./kotsadm/operator/bin/docker-archive
 
 
   build_kurl_proxy_alpha:
@@ -613,6 +644,8 @@ jobs:
       uses: actions/checkout@v2
 
     - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./kotsadm/minio/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -627,5 +660,76 @@ jobs:
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        DOCKER_CONFIG: ./.docker
+      uses: ./actions/containers
+      with:
+        command: "make -C kotsadm/minio publish-release"
+
+    - name: Upload airgap image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: kotsadm-minio-image
+        path: ./kotsadm/minio/bin/docker-archive
+
+
+  build_airgap:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_tagged, release_typescript_api_tagged, release_operator_tagged, build_minio_tagged]
+    steps:
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      shell: bash
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+  
+    - name: Download kotsadm image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: kotsadm-image
+        path: ./docker-archive
+
+    - name: Download kotsadm-api image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: kotsadm-api-image
+        path: ./docker-archive
+
+    - name: Download kotsadm-operator image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: kotsadm-operator-image
+        path: ./docker-archive
+
+    - name: Download kotsadm-minio image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: kotsadm-minio-image
+        path: ./docker-archive
+
+    - name: Get Release
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      id: get_release
+      uses: bruceadams/get-release@v1.2.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Make kotsadm airgap archive
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: |
-        make -C kotsadm/minio publish-release
+        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
+
+    - name: Upload airgap bundle
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm.tar.gz
+        asset_path: ./kotsadm.tar.gz
+        asset_name: kotsadm.tar.gz
+        asset_content_type: application/gzip

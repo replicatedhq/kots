@@ -1,6 +1,7 @@
 package informers
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -29,7 +30,7 @@ func Start() error {
 		return errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupWatch, err := veleroClient.Backups("").Watch(metav1.ListOptions{ResourceVersion: "0"})
+	backupWatch, err := veleroClient.Backups("").Watch(context.TODO(), metav1.ListOptions{ResourceVersion: "0"})
 	if err != nil {
 		return errors.Wrap(err, "failed to watch")
 	}
@@ -63,7 +64,7 @@ func Start() error {
 
 						backup.Annotations["kots.io/support-bundle-requested"] = time.Now().UTC().Format(time.RFC3339)
 
-						if _, err := veleroClient.Backups(backup.Namespace).Update(backup); err != nil {
+						if _, err := veleroClient.Backups(backup.Namespace).Update(context.TODO(), backup, metav1.UpdateOptions{}); err != nil {
 							logger.Error(err)
 							continue
 						}
@@ -74,14 +75,14 @@ func Start() error {
 							continue
 						}
 
-						updatedBackup, err := veleroClient.Backups(backup.Namespace).Get(backup.Name, metav1.GetOptions{})
+						updatedBackup, err := veleroClient.Backups(backup.Namespace).Get(context.TODO(), backup.Name, metav1.GetOptions{})
 						if err != nil {
 							logger.Error(err)
 							continue
 						}
 
 						updatedBackup.Annotations["kots.io/support-bundle-id"] = supportBundleID
-						if _, err := veleroClient.Backups(backup.Namespace).Update(updatedBackup); err != nil {
+						if _, err := veleroClient.Backups(backup.Namespace).Update(context.TODO(), updatedBackup, metav1.UpdateOptions{}); err != nil {
 							logger.Error(err)
 							continue
 						}

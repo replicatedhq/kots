@@ -221,16 +221,8 @@ func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	marshalled, err := util.MarshalIndent(2, redactorObj.Redact)
-	if err != nil {
-		logger.Error(err)
-		getRedactorResponse.Error = "failed to marshal redactor"
-		JSON(w, http.StatusInternalServerError, getRedactorResponse)
-		return
-	}
-
 	getRedactorResponse.Success = true
-	getRedactorResponse.Redactor = string(marshalled)
+	getRedactorResponse.Redactor = redactorObj.Redact
 	getRedactorResponse.Metadata = redactorObj.Metadata
 	JSON(w, http.StatusOK, getRedactorResponse)
 	return

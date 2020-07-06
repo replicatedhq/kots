@@ -1,6 +1,7 @@
 package gitops
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -44,7 +45,7 @@ type GitOpsConfig struct {
 
 func (g *GitOpsConfig) CommitURL(hash string) string {
 	switch g.Provider {
-	case "github":
+	case "github", "github_enterprise":
 		return fmt.Sprintf("%s/commit/%s", g.RepoURI, hash)
 
 	case "gitlab":
@@ -66,6 +67,8 @@ func (g *GitOpsConfig) CloneURL() string {
 	switch g.Provider {
 	case "github":
 		return fmt.Sprintf("git@github.com:%s/%s.git", uriParts[3], uriParts[4])
+	case "github_enterprise":
+		return fmt.Sprintf("git@%s:%s/%s.git", uriParts[2], uriParts[3], uriParts[4])
 	case "gitlab":
 		return fmt.Sprintf("git@gitlab.com:%s/%s.git", uriParts[3], uriParts[4])
 	case "bitbucket":
@@ -88,12 +91,12 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-gitops", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}

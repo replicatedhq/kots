@@ -40,14 +40,18 @@ body a {
 
 .snapshotOptions {
   display: flex;
+  margin-top: 10px;
   border: 1px solid #4A4A4A;
   border-radius: 3px;
-  padding: 8px 15px;
+  padding: 8px 10px;
   cursor: pointer;
   margin-right: 10px;
   color: #000000 !important;
-  min-width: 92px;
-  justify-content: center;
+  align-items: center;
+  width: 170px;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 14px;
 
   &:hover {
     background-color: #F5F8FC;

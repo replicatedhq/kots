@@ -1,0 +1,18 @@
+.RestoreSnapshotRow--wrapper {
+  background: #FFFFFF;
+  border: 1px solid #C4C8CA;
+  box-sizing: border-box;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 10px;
+
+  &.backupSelected {
+    background: #F5F8FC;
+    border: 1px solid #DCEEFF;
+    box-sizing: border-box;
+  }
+}
+
+.BackupRestoreBox--wrapper {
+  max-width: 550px;
+}

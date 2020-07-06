@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"os"
 
 	"github.com/pkg/errors"
@@ -26,7 +27,7 @@ func LogIn(password string) (*User, error) {
 	}
 
 	var shaBytes []byte
-	existingPassword, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-password", metav1.GetOptions{})
+	existingPassword, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
 	if err != nil {
 		// either no existing password secret or unable to get it
 		// so instead we fallback to the environment variable

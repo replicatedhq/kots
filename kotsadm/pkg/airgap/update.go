@@ -24,7 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
-func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
+func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError error) {
 	if err := task.SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -44,7 +44,6 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("update-download"); err != nil {
@@ -59,66 +58,56 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
 	cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create aes cipher")
 	}
 
 	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to decode")
 	}
 
 	decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to decrypt")
 	}
 
 	// Some info about the current version
 	currentArchivePath, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to get current archive")
 	}
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(currentArchivePath)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
 	if beforeKotsKinds.License == nil {
 		err := errors.New("no license found in application")
-		finalError = err
 		return err
 	}
 
 	// Start processing the airgap package
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	_, err = io.Copy(tmpFile, airgapBundle)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to copy temp airgap")
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
 	airgapRoot, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to extract archive")
 	}
+	defer os.RemoveAll(airgapRoot)
 
 	if err := task.SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -169,55 +158,44 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) error {
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to pull")
 	}
 
 	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(currentArchivePath)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
 	bc, err := cursor.NewCursor(beforeKotsKinds.Installation.Spec.UpdateCursor)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create bc")
 	}
 
 	ac, err := cursor.NewCursor(afterKotsKinds.Installation.Spec.UpdateCursor)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create ac")
 	}
 
 	if !bc.Comparable(ac) {
-		err := errors.Errorf("cannot compare %q and %q", beforeKotsKinds.Installation.Spec.UpdateCursor, afterKotsKinds.Installation.Spec.UpdateCursor)
-		finalError = err
-		return err
+		return errors.Errorf("cannot compare %q and %q", beforeKotsKinds.Installation.Spec.UpdateCursor, afterKotsKinds.Installation.Spec.UpdateCursor)
 	}
 
 	if !bc.Before(ac) {
-		err := errors.Errorf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)
-		finalError = err
-		return err
+		return errors.Errorf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)
 	}
 
 	// Create the app in the db
 	newSequence, err := version.CreateVersion(a.ID, currentArchivePath, "Airgap Upload", a.CurrentSequence)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create new version")
 	}
 
 	// upload to s3
 	if err := version.CreateAppVersionArchive(a.ID, newSequence, currentArchivePath); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to upload to s3")
 	}
 
 	if err := preflight.Run(a.ID, newSequence, currentArchivePath); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to start preflights")
 	}
 

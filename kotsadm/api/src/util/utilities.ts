@@ -153,7 +153,7 @@ export function getLicenseType(license: string): string {
 
 export function getGitProviderCommitUrl(repoUri: string, commitHash: string, provider: string): string {
   switch (provider) {
-    case "github" || "gitlab":
+    case "github" || "github_enterprise" || "gitlab":
       return `${repoUri}/commit/${commitHash}`;
     case "bitbucket":
       return `${repoUri}/commits/${commitHash}`;

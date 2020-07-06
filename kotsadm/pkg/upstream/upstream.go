@@ -21,7 +21,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
-func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
+func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence int64, finalError error) {
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
@@ -37,7 +37,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("update-download"); err != nil {
@@ -52,8 +51,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to read kots kinds before update")
+		return 0, errors.Wrap(err, "failed to read kots kinds before update")
 	}
 
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
@@ -71,7 +69,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	a, err := app.Get(appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get app")
+		return 0, errors.Wrap(err, "failed to get app")
 	}
 
 	appNamespace := os.Getenv("POD_NAMESPACE")
@@ -81,7 +79,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
 	if err != nil {
-		return errors.Wrap(err, "failed to get new app sequence")
+		return 0, errors.Wrap(err, "failed to get new app sequence")
 	}
 
 	pullOptions := kotspull.PullOptions{
@@ -102,7 +100,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get registry settings")
+		return 0, errors.Wrap(err, "failed to get registry settings")
 	}
 
 	if registrySettings != nil {
@@ -110,17 +108,17 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 
 		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 		if err != nil {
-			return errors.Wrap(err, "failed to create aes cipher")
+			return 0, errors.Wrap(err, "failed to create aes cipher")
 		}
 
 		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 		if err != nil {
-			return errors.Wrap(err, "failed to decode")
+			return 0, errors.Wrap(err, "failed to decode")
 		}
 
 		decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
 		if err != nil {
-			return errors.Wrap(err, "failed to decrypt")
+			return 0, errors.Wrap(err, "failed to decrypt")
 		}
 
 		pullOptions.RewriteImageOptions = kotspull.RewriteImageOptions{
@@ -132,35 +130,30 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) error {
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to pull")
+		return 0, errors.Wrap(err, "failed to pull")
 	}
 
 	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to read kots kinds after update")
+		return 0, errors.Wrap(err, "failed to read kots kinds after update")
 	}
 
 	if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
-		return nil // ?
+		return 0, nil // ?
 	}
 
 	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence)
 	if err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to create version")
+		return 0, errors.Wrap(err, "failed to create version")
 	}
 
 	if err := version.CreateAppVersionArchive(appID, newSequence, archiveDir); err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to create app version archive")
+		return 0, errors.Wrap(err, "failed to create app version archive")
 	}
 
 	if err := preflight.Run(appID, newSequence, archiveDir); err != nil {
-		finalError = err
-		return errors.Wrap(err, "failed to run preflights")
+		return 0, errors.Wrap(err, "failed to run preflights")
 	}
 
-	return nil
+	return newSequence, nil
 }

@@ -1,0 +1,55 @@
+.UploadLicenseFile-wrapper {
+  position: relative;
+}
+.UploadLicenseFileBox-wrapper {
+  background-color: #ffffff;
+  box-shadow: 0 0 6px rgba(0,0,0,.16);
+  border-radius: 4px;
+
+  .upload-license-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-position: center;
+    background-size: cover;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  }
+
+  .backup-restore-wrapper {
+    padding: 20px;
+    width: 500px;
+    max-width: 500px;
+  }
+
+  .upload-form-wrapper {
+    padding: 20px;
+    max-width: 300px;
+
+    &.secure-console {
+      width: 500px;
+      max-width: 500px;
+    }
+  }
+}
+
+.EmptyBackup--wrapper {
+  border-radius: 6px;
+  border: 1px dashed #c4c7ca;
+  padding: 15px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+
+/* ≥ 768px */
+@media screen and (min-width: 48em) {
+  .UploadLicenseFileBox-wrapper .scm-form-wrapper {
+    .component-wrapper:first-child {
+      margin-right: 20px;
+      margin-bottom: 0;
+    }
+    .component-wrapper:last-child {
+      margin-left: 20px;
+    }
+  }
+}

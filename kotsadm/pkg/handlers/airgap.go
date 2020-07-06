@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -130,7 +131,7 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	}
 
 	// kURL registry secret is always in default namespace
-	secret, err := clientset.CoreV1().Secrets("default").Get("registry-creds", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets("default").Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 	if err != nil {
 		return
 	}

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -176,7 +177,7 @@ func (c *Client) ensureNamespacePresent(name string) error {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
 
-	_, err = clientset.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		namespace := &corev1.Namespace{
 			TypeMeta: metav1.TypeMeta{
@@ -188,7 +189,7 @@ func (c *Client) ensureNamespacePresent(name string) error {
 			},
 		}
 
-		_, err = clientset.CoreV1().Namespaces().Create(namespace)
+		_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create namespace")
 		}
@@ -359,7 +360,7 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 			continue
 		}
 		// there may be other resources that can't be listed besides what's in the skip set so ignore error
-		unstructuredList, _ := dyn.Resource(gvr).Namespace(namespace).List(metav1.ListOptions{})
+		unstructuredList, _ := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 		for _, u := range unstructuredList.Items {
 			annotations := u.GetAnnotations()
 			if annotations["kots.io/app-slug"] == slug {
@@ -369,7 +370,7 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 					continue
 				}
 				log.Printf("Deleting %s/%s/%s\n", namespace, gvr, u.GetName())
-				err := dyn.Resource(gvr).Namespace(namespace).Delete(u.GetName(), &metav1.DeleteOptions{})
+				err := dyn.Resource(gvr).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
 				if err != nil {
 					log.Printf("Resource %s (%s) in namepsace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
 					return false, err
@@ -462,12 +463,12 @@ func deletePVCs(namespace string, pvcs []string) error {
 	for _, pvc := range pvcs {
 		grace := int64(0)
 		policy := metav1.DeletePropagationBackground
-		opts := &metav1.DeleteOptions{
+		opts := metav1.DeleteOptions{
 			GracePeriodSeconds: &grace,
 			PropagationPolicy:  &policy,
 		}
 		log.Printf("deleting pvc: %s", pvc)
-		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(pvc, opts)
+		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), pvc, opts)
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
 		}

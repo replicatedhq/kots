@@ -2,6 +2,7 @@ package online
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -28,7 +30,7 @@ type PendingApp struct {
 	LicenseData string
 }
 
-func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.KotsKinds, error) {
+func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 
@@ -51,7 +53,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("online-install"); err != nil {
@@ -93,14 +94,12 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 	}
 	defer os.RemoveAll(licenseFile.Name())
 	if err := ioutil.WriteFile(licenseFile.Name(), []byte(pendingApp.LicenseData), 0644); err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to write license tmp file")
 	}
 
 	// pull to a tmp dir
 	tmpRoot, err := ioutil.TempDir("", "kots")
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to create tmp dir for pull")
 	}
 	defer os.RemoveAll(tmpRoot)
@@ -112,19 +111,16 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 
 	configValues, err := readConfigValuesFromInClusterSecret()
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to read config values from in cluster")
 	}
 	configFile := ""
 	if configValues != "" {
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
-			finalError = err
 			return nil, errors.Wrap(err, "failed to create temp file for config values")
 		}
 		defer os.RemoveAll(tmpFile.Name())
 		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
-			finalError = err
 			return nil, errors.Wrap(err, "failed to write config values to temp file")
 		}
 
@@ -160,7 +156,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 	query := `select id, title from cluster`
 	rows, err := db.Query(query)
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to query clusters")
 	}
 	defer rows.Close()
@@ -170,7 +165,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		clusterID := ""
 		name := ""
 		if err := rows.Scan(&clusterID, &name); err != nil {
-			finalError = err
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
 
@@ -180,7 +174,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 		query = `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
 		_, err = db.Exec(query, pendingApp.ID, clusterID, name)
 		if err != nil {
-			finalError = err
 			return nil, errors.Wrap(err, "failed to create app downstream")
 		}
 	}
@@ -188,24 +181,24 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (*kotsutil.
 	query = `update app set install_state = 'installed', is_airgap=false where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to update app to installed")
 	}
 
 	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
 
 	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to create app version archive")
+	}
+
+	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+		return nil, errors.Wrap(err, "failed to start preflights")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
-		finalError = err
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
@@ -235,7 +228,7 @@ func readConfigValuesFromInClusterSecret() (string, error) {
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
-	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
+	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=configvalues",
 	})
 	if err != nil {
@@ -251,7 +244,7 @@ func readConfigValuesFromInClusterSecret() (string, error) {
 		}
 
 		// delete it, these are one time use secrets
-		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(configValuesSecret.Name, &metav1.DeleteOptions{})
+		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(context.TODO(), configValuesSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Errorf("error deleting config values secret: %v", err)
 		}

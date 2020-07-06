@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -53,13 +54,13 @@ func ensureDistribution(deployOptions types.DeployOptions, clientset *kubernetes
 }
 
 func ensureDistributionConfigmap(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-registry-storage-config", metav1.GetOptions{})
+	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-registry-storage-config", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing configmap")
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(distributionConfigMap(deployOptions))
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), distributionConfigMap(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create distribution configmap")
 		}
@@ -69,13 +70,13 @@ func ensureDistributionConfigmap(deployOptions types.DeployOptions, clientset *k
 }
 
 func ensureDistributionStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-registry-storage", metav1.GetOptions{})
+	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-registry-storage", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(distributionStatefulset(deployOptions))
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), distributionStatefulset(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create distrtibution statefulset")
 		}
@@ -85,13 +86,13 @@ func ensureDistributionStatefulset(deployOptions types.DeployOptions, clientset 
 }
 
 func ensureDistributionService(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-minio", metav1.GetOptions{})
+	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(deployOptions.Namespace).Create(distributionService(deployOptions))
+		_, err := clientset.CoreV1().Services(deployOptions.Namespace).Create(context.TODO(), distributionService(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create service")
 		}

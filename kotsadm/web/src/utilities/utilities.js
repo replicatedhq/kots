@@ -152,7 +152,7 @@ export function getCronInterval(frequency) {
   switch (frequency) {
   case "0 * * * *":
     return "hourly";
-  case "0 0 1 * *":
+  case "0 0 * * *":
     return "daily";
   case "0 0 * * MON":
     return "weekly";
@@ -166,7 +166,7 @@ export function getCronFrequency(schedule) {
     case "hourly":
       return "0 * * * *"
     case "daily":
-      return "0 0 1 * *";
+      return "0 0 * * *";
     default:
       return "0 0 * * MON";
   }
@@ -183,11 +183,19 @@ export function getReadableCronDescriptor(expression) {
   return cronstrue.toString(expression);
 }
 
-export function getServiceSite(provider) {
-  const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
-  const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
-  const serviceSite = isGitlab ? "gitlab.com" : isBitbucket ? "bitbucket.org" : "github.com";
-  return serviceSite;
+export function getServiceSite(provider, hostname = "") {
+  switch (provider) {
+    case "github":
+      return "github.com";
+    case "github_enterprise":
+      return hostname;
+    case "gitlab":
+      return "gitlab.com";
+    case "bitbucket":
+      return "bitbucket.org";
+    default:
+      return "github.com";
+  }
 }
 
 export function getAddKeyUri(gitUri, provider, ownerRepo) {
@@ -521,5 +529,13 @@ export const Utilities = {
           return 4;
       }
     });
+  },
+
+  bytesToSize(bytes) {
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    if (bytes === 0) return "0 B";
+    let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    if (i === 0) return bytes + " " + sizes[i];
+    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
   }
 };

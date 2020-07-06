@@ -1,6 +1,8 @@
 package k8sutil
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,7 +10,7 @@ import (
 )
 
 func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, error) {
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: "app=kotsadm"})
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
 	}

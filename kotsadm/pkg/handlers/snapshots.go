@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
@@ -18,6 +19,7 @@ type GlobalSnapshotSettingsResponse struct {
 	IsVeleroRunning bool     `json:"isVeleroRunning"`
 	ResticVersion   string   `json:"resticVersion"`
 	IsResticRunning bool     `json:"isResticRunning"`
+	IsKurl          bool     `json:"isKurl"`
 
 	Store   *snapshottypes.Store `json:"store,omitempty"`
 	Success bool                 `json:"success"`
@@ -88,6 +90,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
+	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
@@ -263,6 +266,14 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// most plugins (all?) require that velero be restared after updating
+	if err := snapshot.RestartVelero(); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to try to restart velero"
+		JSON(w, 400, globalSnapshotSettingsResponse)
+		return
+	}
+
 	updatedStore, err := snapshot.GetGlobalStore(updatedBackupStorageLocation)
 	if err != nil {
 		logger.Error(err)
@@ -329,6 +340,7 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
+	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {

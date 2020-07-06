@@ -12,6 +12,7 @@ import Modal from "react-modal";
 import moment from "moment";
 import changeCase from "change-case";
 import find from "lodash/find";
+
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
@@ -139,10 +140,12 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
     const downstream = app.downstreams[0];
     const diffSummary = this.getVersionDiffSummary(version);
+    const hasYamlErrors = this.hasYamlErrors(downstream, version);
+
     return (
       <div>
-        {diffSummary ? (
-          diffSummary.filesChanged > 0 ?
+        {diffSummary ?
+          (diffSummary.filesChanged > 0 ?
             <div
               className="DiffSummary u-cursor--pointer"
               onClick={() => {
@@ -159,11 +162,28 @@ class AppVersionHistory extends Component {
               <span className="lines-added">+{diffSummary.linesAdded} </span>
               <span className="lines-removed">-{diffSummary.linesRemoved}</span>
             </div>
-            :
-            <div className="DiffSummary">
-              <span className="files">No changes</span>
+            : hasYamlErrors ?
+              <div className="flex flex1 alignItems--center">
+                <div className="DiffSummary">
+                  <span className="files">No changes</span>
+                </div>
+                <div className="flex flex1 alignItems--center u-marginLeft--10">
+                  <span className="icon error-small" />
+                  <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red u-marginTop--5" data-for="invalid-yaml" data-tip="Invalid YAML was found in this release. Your application may break if you install this version.">Contains invalid yaml </span>
+                  <ReactTooltip id="invalid-yaml" effect="solid" place="top" className="replicated-tooltip white" />
+                </div>
+              </div>
+              :
+              <div className="DiffSummary">
+                <span className="files">No changes</span>
+              </div>
+          ) : hasYamlErrors ?
+            <div className="flex flex1 alignItems--center">
+              <span className="icon error-small" />
+              <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red u-marginTop--5" data-for="invalid-yaml" data-tip="Invalid YAML was found in this release. Your application may break if you install this version.">Contains invalid yaml </span>
+              <ReactTooltip id="invalid-yaml" effect="solid" place="top" className="replicated-tooltip white" />
             </div>
-        ) : <span>&nbsp;</span>}
+            : <span>&nbsp;</span>}
       </div>
     );
   }
@@ -252,7 +272,7 @@ class AppVersionHistory extends Component {
     if (isPastVersion && app.hasPreflight) {
       if (preflightsFailed) {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
-      } else if(version.status !== "pending_config") {
+      } else if (version.status !== "pending_config") {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
       }
     }
@@ -264,7 +284,7 @@ class AppVersionHistory extends Component {
     } else if (app.hasPreflight) {
       if (preflightsFailed) {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflight errors</Link>);
-      } else if(version.status !== "pending_config") {
+      } else if (version.status !== "pending_config") {
         preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
       }
     }
@@ -721,6 +741,21 @@ class AppVersionHistory extends Component {
     return {
       firstHash: getCommitHashFromUrl(firstCommitUrl),
       secondHash: getCommitHashFromUrl(secondCommitUrl)
+    }
+  }
+
+  hasYamlErrors = (downstream, version) => {
+    const pendingVersion = downstream.pendingVersions?.find(v => v.title === version.title);
+    const pastVersion = downstream.pastVersions?.find(v => v.title === version.title);
+
+    if (downstream.currentVersion?.title === version.title) {
+      return downstream.currentVersion?.yamlErrors ? true : false;
+    } else if (pendingVersion?.yamlErrors) {
+      return true;
+    } else if (pastVersion?.yamlErrors) {
+      return true;
+    } else {
+      return false;
     }
   }
 

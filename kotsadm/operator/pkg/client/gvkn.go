@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -69,7 +70,7 @@ func findPodsByOwner(name string, namespace string, gvk *k8sschema.GroupVersionK
 		return nil, errors.Wrap(err, "failed to get client set")
 	}
 
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list pods")
 	}
@@ -97,7 +98,7 @@ func findPodByName(name string, namespace string) (*corev1.Pod, error) {
 		return nil, errors.Wrap(err, "failed to get client set")
 	}
 
-	pod, err := clientset.CoreV1().Pods(namespace).Get(name, metav1.GetOptions{})
+	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pod")
 	}

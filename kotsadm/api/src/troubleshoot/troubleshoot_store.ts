@@ -151,7 +151,7 @@ export class TroubleshootStore {
   }
 
   public async listSupportBundles(appOrWatchId: string): Promise<SupportBundle[]> {
-    const q = `select id from supportbundle where watch_id = $1 order by created_at`;
+    const q = `select id from supportbundle where watch_id = $1 order by created_at desc`;
     const v = [appOrWatchId];
     const result = await this.pool.query(q, v);
     const supportBundles: SupportBundle[] = [];

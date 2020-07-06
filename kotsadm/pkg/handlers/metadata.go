@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -39,14 +40,9 @@ func Metadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isKurlEnabled := false
+	isKurlEnabled := kurl.IsKurl()
 
-	_, err = kurl.ReadConfigMap(clientset)
-	if err == nil {
-		isKurlEnabled = true
-	}
-
-	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-application-metadata", metav1.GetOptions{})
+	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		logger.Error(err)
 		w.WriteHeader(500)

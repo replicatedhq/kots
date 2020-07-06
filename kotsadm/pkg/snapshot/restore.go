@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"context"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ func CreateRestore(snapshotName string) error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(veleroNamespace).Get(snapshotName, metav1.GetOptions{})
+	_, err = veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to find backup")
 	}
@@ -62,7 +63,7 @@ func CreateRestore(snapshotName string) error {
 		},
 	}
 
-	_, err = veleroClient.Restores(veleroNamespace).Create(restore)
+	_, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
@@ -88,7 +89,7 @@ func DeleteRestore(snapshotName string) error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	err = veleroClient.Restores(veleroNamespace).Delete(snapshotName, &metav1.DeleteOptions{})
+	err = veleroClient.Restores(veleroNamespace).Delete(context.TODO(), snapshotName, metav1.DeleteOptions{})
 	if err != nil && !strings.Contains(err.Error(), "not found") {
 		return errors.Wrapf(err, "failed to delete restore %s", snapshotName)
 	}
@@ -115,7 +116,7 @@ func GetBackup(snapshotName string) (*veleroapiv1.Backup, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(snapshotName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}

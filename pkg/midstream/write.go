@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -62,12 +61,12 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	if options.IsGitOps && options.AppSlug != "" {
-		if m.Kustomization.CommonAnnotations == nil {
-			m.Kustomization.CommonAnnotations = make(map[string]string)
+	// This check is to not break deployments on existing installations
+	if existingKustomization == nil {
+		if m.Kustomization.CommonLabels == nil {
+			m.Kustomization.CommonLabels = make(map[string]string)
 		}
-		m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
-		m.Kustomization.CommonAnnotations["kots.io/app-sequence"] = strconv.FormatInt(options.AppSequence, 10)
+		m.Kustomization.CommonLabels["kots.io/app-slug"] = options.AppSlug
 	}
 
 	m.mergeKustomization(existingKustomization)
@@ -94,21 +93,22 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
-	// common annotations
-	mergedCommonAnnotations := existing.CommonAnnotations
-	if mergedCommonAnnotations != nil {
-		delete(mergedCommonAnnotations, "kots.io/app-slug")
-		delete(mergedCommonAnnotations, "kots.io/app-sequence")
+	delete(existing.CommonAnnotations, "kots.io/app-slug")
+	delete(existing.CommonAnnotations, "kots.io/app-sequence")
+	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
+
+	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
+}
+
+func mergeMaps(new map[string]string, existing map[string]string) map[string]string {
+	merged := existing
+	if merged == nil {
+		merged = make(map[string]string)
 	}
-	if m.Kustomization.CommonAnnotations != nil {
-		if mergedCommonAnnotations == nil {
-			mergedCommonAnnotations = make(map[string]string)
-		}
-		for key, value := range m.Kustomization.CommonAnnotations {
-			mergedCommonAnnotations[key] = value
-		}
+	for key, value := range new {
+		merged[key] = value
 	}
-	m.Kustomization.CommonAnnotations = mergedCommonAnnotations
+	return merged
 }
 
 func (m *Midstream) writeKustomization(options WriteOptions) error {

@@ -23,7 +23,7 @@ export default function DeleteSnapshotModal(props) {
             <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{deleteErrorMsg}</p>
             : null}
           <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">
-            Are you sure you want do permanently snapshot? This action cannot be reversed.
+            Are you sure you want do permanently delete a snapshot? This action cannot be reversed.
               </p>
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
             <div className="flex flex-column">

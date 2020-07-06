@@ -1,6 +1,7 @@
 package template
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -26,7 +27,7 @@ func GetKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 
 	installers := clientset.Installers(nameSpace)
 
-	retrieved, err := installers.Get(installerName, metav1.GetOptions{})
+	retrieved, err := installers.Get(context.TODO(), installerName, metav1.GetOptions{})
 
 	if err != nil {
 		return nil

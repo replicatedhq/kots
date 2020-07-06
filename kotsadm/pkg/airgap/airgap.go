@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -33,7 +34,7 @@ type PendingApp struct {
 
 func GetPendingAirgapUploadApp() (*PendingApp, error) {
 	db := persistence.MustGetPGSession()
-	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error')`
+	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error') order by created_at desc limit 1`
 	row := db.QueryRow(query)
 
 	id := ""
@@ -56,7 +57,7 @@ func GetPendingAirgapUploadApp() (*PendingApp, error) {
 // This function assumes that there's an app in the database that doesn't have a version
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
-func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, registryHost string, namespace string, username string, password string) error {
+func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, registryHost string, namespace string, username string, password string) (finalError error) {
 	if err := task.SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -76,7 +77,6 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("airgap-install"); err != nil {
@@ -100,19 +100,16 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	query := `update app set is_airgap=true where id = $1`
 	_, err := db.Exec(query, pendingApp.ID)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to set app airgap flag")
 	}
 
 	// save the file
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	_, err = io.Copy(tmpFile, airgapBundle)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to copy temp airgap")
 	}
 	defer os.RemoveAll(tmpFile.Name())
@@ -121,32 +118,28 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	// we seem to need a lot of temp dirs here... maybe too many?
 	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to extract archive")
 	}
+	defer os.RemoveAll(archiveDir)
 
 	if err := task.SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to set task status")
 	}
 
 	// extract the release
 	workspace, err := ioutil.TempDir("", "kots-airgap")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create workspace")
 	}
 	defer os.RemoveAll(workspace)
 
 	releaseDir, err := extractAppRelease(workspace, archiveDir)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to extract app dir")
 	}
 
 	tmpRoot, err := ioutil.TempDir("", "kots")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create temp root")
 	}
 	defer os.RemoveAll(tmpRoot)
@@ -154,19 +147,16 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(pendingApp.LicenseData), nil, nil)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to read pending license data")
 	}
 	license := obj.(*kotsv1beta1.License)
 
 	licenseFile, err := ioutil.TempFile("", "kotadm")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	if err := ioutil.WriteFile(licenseFile.Name(), []byte(pendingApp.LicenseData), 0644); err != nil {
 		os.Remove(licenseFile.Name())
-		finalError = err
 		return errors.Wrapf(err, "failed to write license to temp file")
 	}
 
@@ -210,7 +200,6 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to pull")
 	}
 
@@ -221,7 +210,6 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	query = `select id, title from cluster`
 	rows, err := db.Query(query)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to query clusters")
 	}
 	defer rows.Close()
@@ -231,7 +219,6 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		clusterID := ""
 		name := ""
 		if err := rows.Scan(&clusterID, &name); err != nil {
-			finalError = err
 			return errors.Wrap(err, "failed to scan row")
 		}
 
@@ -241,38 +228,36 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		query = `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
 		_, err = db.Exec(query, pendingApp.ID, clusterID, name)
 		if err != nil {
-			finalError = err
 			return errors.Wrap(err, "failed to create app downstream")
 		}
 	}
 
 	a, err := app.Get(pendingApp.ID)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to get app from pending app")
 	}
 
 	if err := registry.UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to update registry")
 	}
 
 	query = `update app set install_state = 'installed', is_airgap=true where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to update app to installed")
 	}
 
 	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload")
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create new version")
 	}
 
 	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create app version archive")
+	}
+
+	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+		return errors.Wrap(err, "failed to start preflights")
 	}
 
 	return nil

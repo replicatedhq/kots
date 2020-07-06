@@ -57,3 +57,46 @@ type Backup struct {
 	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
 	SupportBundleID    string     `json:"supportBundleId,omitempty"`
 }
+
+type BackupDetail struct {
+	Name            string           `json:"name"`
+	Status          string           `json:"status"`
+	VolumeSizeHuman string           `json:"volumeSizeHuman"`
+	Namespaces      []string         `json:"namespaces"`
+	Hooks           []SnapshotHook   `json:"hooks"`
+	Volumes         []SnapshotVolume `json:"volumes"`
+	Errors          []SnapshotError  `json:"errors"`
+	Warnings        []SnapshotError  `json:"warnings"`
+}
+
+type SnapshotHook struct {
+	Name          string          `json:"name"`
+	Namespace     string          `json:"namespace"`
+	Phase         string          `json:"pase"`
+	PodName       string          `json:"podName"`
+	Command       string          `json:"command"`
+	ContainerName string          `json:"containerName"`
+	Stdout        string          `json:"stdout"`
+	Stderr        string          `json:"stderr"`
+	StartedAt     *time.Time      `json:"startedAt,omitempty"`
+	FinishedAt    *time.Time      `json:"finishedAt,omitempty"`
+	Errors        []SnapshotError `json:"errors"`
+	Warnings      []SnapshotError `json:"warnings"`
+}
+
+type SnapshotVolume struct {
+	Name                 string     `json:"name"`
+	SizeBytesHuman       string     `json:"sizeBytesHuman"`
+	DoneBytesHuman       string     `json:"doneBytesHuman"`
+	CompletionPercent    int        `json:"completionPercent"`
+	TimeRemainingSeconds int        `json:"timeRemainingSeconds"`
+	StartedAt            *time.Time `json:"startedAt,omitempty"`
+	FinishedAt           *time.Time `json:"finishedAt,omitempty"`
+	Phase                string     `json:"phase"`
+}
+
+type SnapshotError struct {
+	Title     string `json:"title"`
+	Message   string `json:"message"`
+	Namespace string `json:"namespace"`
+}

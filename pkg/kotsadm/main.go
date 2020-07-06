@@ -1,6 +1,9 @@
 package kotsadm
 
 import (
+	"context"
+	"os"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -13,6 +16,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -145,10 +149,10 @@ func Deploy(deployOptions types.DeployOptions) error {
 	}
 
 	log.ChildActionWithSpinner("Creating namespace")
-	_, err = clientset.CoreV1().Namespaces().Create(namespace)
+	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
 	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
 		// Can't create namespace, but this might be a role restriction and namespace might already exist.
-		_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(metav1.ListOptions{})
+		_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to verify access to namespace")
 		}
@@ -178,8 +182,73 @@ func Deploy(deployOptions types.DeployOptions) error {
 	return nil
 }
 
+func Delete(options *types.DeleteOptions) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	grace := int64(0)
+	policy := metav1.DeletePropagationBackground
+	opts := metav1.DeleteOptions{
+		GracePeriodSeconds: &grace,
+		PropagationPolicy:  &policy,
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm")
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-api", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm-api")
+	}
+
+	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-operator", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete deployment kotsadm-operator")
+	}
+
+	err = clientset.AppsV1().StatefulSets(namespace).Delete(context.TODO(), "kotsadm-postgres", opts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete statefulset kotsadm-postgres")
+	}
+
+	return nil
+}
+
+func CreateRestoreJob(options *types.RestoreJobOptions) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client set")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	isOpenShift := isOpenshift(clientset)
+
+	job := restoreJob(options.BackupName, namespace, isOpenShift)
+	_, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create restore job")
+	}
+
+	return nil
+}
+
 func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
-	_, err := clientset.CoreV1().Namespaces().Get(upgradeOptions.Namespace, metav1.GetOptions{})
+	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), upgradeOptions.Namespace, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		err := errors.New("The namespace cannot be found or accessed")
 		return err
@@ -194,7 +263,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list nodes")
 	}
@@ -212,17 +281,17 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	// if there's a kotsadm web deployment, rmove (pre 1.11.0)
-	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get("kotsadm-web", metav1.GetOptions{})
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-web", metav1.GetOptions{})
 	if err == nil {
-		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete("kotsadm-web", &metav1.DeleteOptions{}); err != nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-web", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-web deployment")
 		}
 	}
 
 	// if there's a service named "kotsadm-api", remove (pre 1.11.0)
-	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get("kotsadm-api", metav1.GetOptions{})
+	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-api", metav1.GetOptions{})
 	if err == nil {
-		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete("kotsadm-api", &metav1.DeleteOptions{}); err != nil {
+		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-api service")
 		}
 	}

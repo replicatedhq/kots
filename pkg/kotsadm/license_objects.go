@@ -15,11 +15,9 @@ func licenseSecret(namespace string, license string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-default-license",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey:     types.KotsadmLabelValue,
+			Labels: types.GetKotsadmLabels(map[string]string{
 				"kots.io/automation": "license",
-				types.VeleroKey:      types.VeleroLabelValue,
-			},
+			}),
 		},
 		Data: map[string][]byte{
 			"license": []byte(license),

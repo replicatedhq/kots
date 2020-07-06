@@ -1,10 +1,12 @@
 package redact
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +37,7 @@ type RedactorList struct {
 type RedactorMetadata struct {
 	Metadata RedactorList `json:"metadata"`
 
-	Redact v1beta1.Redact `json:"redact"`
+	Redact string `json:"redact"`
 }
 
 // GetRedactSpec returns the redaction yaml spec, a pretty error string, and the underlying error
@@ -46,6 +47,10 @@ func GetRedactSpec() (string, string, error) {
 		return "", errstr, err
 	}
 
+	return getRedactSpec(configMap)
+}
+
+func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 	redactObj, err := buildFullRedact(configMap)
 	if err != nil {
 		return "", "failed to build full redact yaml", err
@@ -153,7 +158,7 @@ func SetRedactSpec(spec string) (string, error) {
 	}
 
 	configMap.Data = newMap
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return "failed to update kotsadm-redact configMap", errors.Wrap(err, "failed to update kotsadm-redact configMap")
 	}
@@ -162,61 +167,75 @@ func SetRedactSpec(spec string) (string, error) {
 
 // updates/creates an individual redact with the provided metadata and yaml
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
-	// parse yaml as redactor
-	newRedactorSpec := v1beta1.Redact{}
-	err := yaml.Unmarshal(yamlBytes, &newRedactorSpec)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to parse new redact yaml")
-	}
-
 	configMap, _, err := getConfigmap()
 	if err != nil {
 		return nil, err
 	}
 
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
+	newData, redactorEntry, err := setRedactYaml(slug, description, enabled, newRedact, time.Now(), yamlBytes, configMap.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap.Data = newData
+
+	_, err = writeConfigmap(configMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write configMap with updated redact")
+	}
+	return redactorEntry, nil
+}
+
+func setRedactYaml(slug, description string, enabled, newRedact bool, currentTime time.Time, yamlBytes []byte, data map[string]string) (map[string]string, *RedactorMetadata, error) {
+	// parse yaml as redactor
+	newRedactorSpec, err := parseRedact(yamlBytes)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to parse new redact yaml")
+	}
+
+	if data == nil {
+		data = map[string]string{}
 	}
 
 	redactorEntry := RedactorMetadata{}
-	redactString, ok := configMap.Data[slug]
+	redactString, ok := data[slug]
 	if !ok || newRedact {
 		// if name is not set in yaml, autogenerate a name
 		// if name is set, create the slug from the name
 		if newRedactorSpec.Name == "" {
-			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(configMap.Data)+1)
+			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(data)+1)
 			slug = getSlug(newRedactorSpec.Name)
 		} else {
 			slug = getSlug(newRedactorSpec.Name)
 		}
 
-		if _, ok := configMap.Data[slug]; ok {
+		if _, ok := data[slug]; ok {
 			// the target slug already exists - this is an error
-			return nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
+			return nil, nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
 		}
 
 		// create the new redactor
 		redactorEntry.Metadata = RedactorList{
 			Name:    newRedactorSpec.Name,
 			Slug:    slug,
-			Created: time.Now(),
+			Created: currentTime,
 		}
 	} else {
 		// unmarshal existing redactor, check if name changed
 		err = json.Unmarshal([]byte(redactString), &redactorEntry)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
+			return nil, nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
 		}
 
 		if slug != getSlug(newRedactorSpec.Name) && newRedactorSpec.Name != "" {
 			// changing name
 
-			if _, ok := configMap.Data[getSlug(newRedactorSpec.Name)]; ok {
+			if _, ok := data[getSlug(newRedactorSpec.Name)]; ok {
 				// the target slug already exists - this is an error
-				return nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
+				return nil, nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
 			}
 
-			delete(configMap.Data, slug)
+			delete(data, slug)
 			slug = getSlug(newRedactorSpec.Name)
 			redactorEntry.Metadata.Slug = slug
 			redactorEntry.Metadata.Name = newRedactorSpec.Name
@@ -230,22 +249,18 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 
 	redactorEntry.Metadata.Enabled = enabled
 	redactorEntry.Metadata.Description = description
-	redactorEntry.Metadata.Updated = time.Now()
+	redactorEntry.Metadata.Updated = currentTime
 
-	redactorEntry.Redact = newRedactorSpec
+	redactorEntry.Redact = string(yamlBytes)
 
 	jsonBytes, err := json.Marshal(redactorEntry)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
+		return nil, nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
 	}
 
-	configMap.Data[slug] = string(jsonBytes)
+	data[slug] = string(jsonBytes)
 
-	_, err = writeConfigmap(configMap)
-	if err != nil {
-		return nil, errors.Wrapf(err, "write configMap with updated redact")
-	}
-	return &redactorEntry, nil
+	return data, &redactorEntry, nil
 }
 
 func DeleteRedact(slug string) error {
@@ -274,7 +289,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 		return nil, "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get("kotsadm-redact", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-redact", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not a not found error, so a real error
@@ -295,7 +310,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 				},
 				Data: map[string]string{},
 			}
-			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(&newMap)
+			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &newMap, metav1.CreateOptions{})
 			if err != nil {
 				return nil, "failed to create kotsadm-redact configMap", errors.Wrap(err, "failed to create kotsadm-redact configMap")
 			}
@@ -317,7 +332,7 @@ func writeConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(configMap)
+	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update configmap")
 	}
@@ -328,6 +343,10 @@ func getSlug(name string) string {
 	name = strings.ReplaceAll(name, " ", "-")
 
 	name = regexp.MustCompile(`[^\w\d-_]`).ReplaceAllString(name, "")
+
+	if name == "kotsadm-redact" {
+		name = "kotsadm-redact-metadata"
+	}
 	return name
 }
 
@@ -343,16 +362,17 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 		Spec: v1beta1.RedactorSpec{},
 	}
 
-	for k, v := range config.Data {
+	keys := []string{}
+	for k, _ := range config.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := config.Data[k]
 		if k == "kotsadm-redact" {
-			// this is the key used for the combined redact list
-			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode([]byte(v), nil, nil)
-			if err != nil {
-				return nil, errors.Wrap(err, "deserialize combined redact spec")
-			}
-			redactor, ok := obj.(*v1beta1.Redactor)
-			if ok && redactor != nil {
+			redactor, err := parseRedact([]byte(v))
+			if err == nil && redactor != nil {
 				full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
 			}
 			continue
@@ -364,7 +384,11 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 			return nil, errors.Wrapf(err, "unable to parse key %s", k)
 		}
 		if redactorEntry.Metadata.Enabled {
-			full.Spec.Redactors = append(full.Spec.Redactors, &redactorEntry.Redact)
+			redactor, err := parseRedact([]byte(redactorEntry.Redact))
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to parse redactor %s", k)
+			}
+			full.Spec.Redactors = append(full.Spec.Redactors, redactor.Spec.Redactors...)
 		}
 	}
 	return full, nil
@@ -373,14 +397,13 @@ func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
 func splitRedactors(spec string, existingMap map[string]string) (map[string]string, error) {
 	fmt.Printf("running migration from combined kotsadm-redact doc")
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(spec), nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "deserialize combined redact spec")
+	if existingMap == nil {
+		existingMap = make(map[string]string, 0)
 	}
-	redactor, ok := obj.(*v1beta1.Redactor)
-	if !ok {
-		return nil, errors.Wrap(err, "combined redact spec at kotsadm-redact is not a redactor")
+
+	redactor, err := parseRedact([]byte(spec))
+	if err != nil {
+		return nil, errors.Wrap(err, "split redactors")
 	}
 
 	for idx, redactorSpec := range redactor.Spec.Redactors {
@@ -396,6 +419,19 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			redactorSpec.Name = redactorName
 		}
 
+		newSpec, err := util.MarshalIndent(2, v1beta1.Redactor{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Redactor",
+				APIVersion: "troubleshoot.replicated.com/v1beta1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: redactorName,
+			},
+			Spec: v1beta1.RedactorSpec{
+				Redactors: []*v1beta1.Redact{redactorSpec},
+			},
+		})
+
 		newRedactor := RedactorMetadata{
 			Metadata: RedactorList{
 				Name:    redactorName,
@@ -404,7 +440,7 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 				Updated: time.Now(),
 				Enabled: true,
 			},
-			Redact: *redactorSpec,
+			Redact: string(newSpec),
 		}
 
 		jsonBytes, err := json.Marshal(newRedactor)
@@ -417,4 +453,17 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 	delete(existingMap, "kotsadm-redact")
 
 	return existingMap, nil
+}
+
+func parseRedact(spec []byte) (*v1beta1.Redactor, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode(spec, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "deserialize combined redact spec")
+	}
+	redactor, ok := obj.(*v1beta1.Redactor)
+	if ok && redactor != nil {
+		return redactor, nil
+	}
+	return nil, errors.New("not a redactor")
 }

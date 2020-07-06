@@ -161,7 +161,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		if expired, err := licenseIsExpired(fetchOptions.License); err != nil {
+		if expired, err := LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
 			return "", util.ActionableError{Message: "License is expired"}
@@ -407,6 +407,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to load application")
 		}
 
+		allPrivate := false
+		if application != nil {
+			allPrivate = application.Spec.ProxyPublicImages
+		}
+
 		// Rewrite private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
 			BaseDir: writeBaseOptions.BaseDir,
@@ -416,7 +421,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
 			Installation:     newInstallation,
-			AllImagesPrivate: application.Spec.ProxyPublicImages,
+			AllImagesPrivate: allPrivate,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
@@ -636,7 +641,7 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	return nil
 }
 
-func licenseIsExpired(license *kotsv1beta1.License) (bool, error) {
+func LicenseIsExpired(license *kotsv1beta1.License) (bool, error) {
 	val, found := license.Spec.Entitlements["expires_at"]
 	if !found {
 		return false, nil

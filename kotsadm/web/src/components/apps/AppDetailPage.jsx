@@ -262,10 +262,12 @@ class AppDetailPage extends Component {
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                         refreshAppData={refreshAppData}
+                        snapshotInProgressApps={this.props.snapshotInProgressApps}
+                        ping={this.props.ping}
                       />}
                     />
 
-                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} appNameSpace={this.props.appNameSpace} />} />
+                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
 
                     <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
                       <AppVersionHistory

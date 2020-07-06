@@ -28,10 +28,10 @@ func runServiceController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.CoreV1().Services(targetNamespace).List(options)
+			return clientset.CoreV1().Services(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.CoreV1().Services(targetNamespace).Watch(options)
+			return clientset.CoreV1().Services(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(
@@ -125,7 +125,7 @@ func calculateServiceState(clientset kubernetes.Interface, r *corev1.Service) ty
 }
 
 func serviceGetStateFromEndpoints(clientset kubernetes.Interface, svc *corev1.Service) (minState types.State) {
-	endpoints, _ := clientset.CoreV1().Endpoints(svc.Namespace).Get(svc.Name, metav1.GetOptions{})
+	endpoints, _ := clientset.CoreV1().Endpoints(svc.Namespace).Get(context.TODO(), svc.Name, metav1.GetOptions{})
 	if endpoints == nil {
 		// I'm unsure of the state for this case
 		return types.StateUnavailable

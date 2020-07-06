@@ -28,10 +28,10 @@ func runIngressController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).List(options)
+			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).Watch(options)
+			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(
@@ -141,7 +141,7 @@ func calculateIngressState(clientset kubernetes.Interface, r *extensions.Ingress
 }
 
 func ingressGetStateFromBackend(clientset kubernetes.Interface, namespace string, backend extensions.IngressBackend) (minState types.State) {
-	service, _ := clientset.CoreV1().Services(namespace).Get(backend.ServiceName, metav1.GetOptions{})
+	service, _ := clientset.CoreV1().Services(namespace).Get(context.TODO(), backend.ServiceName, metav1.GetOptions{})
 	if service == nil {
 		return types.StateUnavailable
 	}

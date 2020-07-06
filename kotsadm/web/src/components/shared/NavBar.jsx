@@ -165,7 +165,7 @@ export class NavBar extends PureComponent {
                       <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "snapshots" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
                           <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                            <span>Snapshots</span>
+                            <span>Snapshot Settings</span>
                           </span>
                         </span>
                       </div>

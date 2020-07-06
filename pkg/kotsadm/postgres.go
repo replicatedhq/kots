@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -52,13 +53,13 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 }
 
 func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get("kotsadm-postgres", metav1.GetOptions{})
+	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(postgresStatefulset(deployOptions))
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), postgresStatefulset(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}
@@ -68,13 +69,13 @@ func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kub
 }
 
 func ensurePostgresService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get("kotsadm-postgres", metav1.GetOptions{})
+	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(postgresService(namespace))
+		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), postgresService(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "Failed to create service")
 		}

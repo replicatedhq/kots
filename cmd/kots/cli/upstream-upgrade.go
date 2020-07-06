@@ -113,7 +113,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			type updateCheckResponse struct {
-				UpdatesAvailable int `json:"updatesAvailable"`
+				AvailableUpdates int `json:"availableUpdates"`
 			}
 			ucr := updateCheckResponse{}
 			if err := json.Unmarshal(b, &ucr); err != nil {
@@ -123,12 +123,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			log.FinishSpinner()
 
 			if viper.GetBool("deploy") {
-				if ucr.UpdatesAvailable == 0 {
+				if ucr.AvailableUpdates == 0 {
 					log.ActionWithoutSpinner("")
 					log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
 				} else {
 					log.ActionWithoutSpinner("")
-					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ucr.UpdatesAvailable))
+					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ucr.AvailableUpdates))
 				}
 
 				log.ActionWithoutSpinner("")
@@ -138,12 +138,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return nil
 			}
 
-			if ucr.UpdatesAvailable == 0 {
+			if ucr.AvailableUpdates == 0 {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("There are no application updates available")
 			} else {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.UpdatesAvailable))
+				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.AvailableUpdates))
 			}
 
 			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))

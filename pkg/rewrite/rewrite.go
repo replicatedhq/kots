@@ -232,6 +232,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrap(err, "failed to load application")
 		}
 
+		allPrivate := false
+		if application != nil {
+			allPrivate = application.Spec.ProxyPublicImages
+		}
+
 		// When CopyImages is not set, we only rewrite private images and use license to create secrets
 		// for all objects that have private images
 		findPrivateImagesOptions := base.FindPrivateImagesOptions{
@@ -242,7 +247,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
 			},
 			Installation:     rewriteOptions.Installation,
-			AllImagesPrivate: application.Spec.ProxyPublicImages,
+			AllImagesPrivate: allPrivate,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {

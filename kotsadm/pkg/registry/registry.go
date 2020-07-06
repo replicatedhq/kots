@@ -2,6 +2,7 @@ package registry
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"fmt"
@@ -29,6 +30,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+const (
+	PasswordMask = "***HIDDEN***"
 )
 
 func GetRegistrySettingsForApp(appID string) (*types.RegistrySettings, error) {
@@ -63,18 +68,28 @@ func UpdateRegistry(appID string, hostname string, username string, password str
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
 
-	cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return errors.Wrap(err, "failed to create aes cipher")
-	}
-
-	passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
-
 	db := persistence.MustGetPGSession()
-	query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4 where id = $5`
-	_, err = db.Exec(query, hostname, username, passwordEnc, namespace, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to update registry settings")
+
+	if password == PasswordMask {
+		// password unchanged - don't update it
+		query := `update app set registry_hostname = $1, registry_username = $2, namespace = $3 where id = $4`
+		_, err := db.Exec(query, hostname, username, namespace, appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to update registry settings")
+		}
+	} else {
+		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+		if err != nil {
+			return errors.Wrap(err, "failed to create aes cipher")
+		}
+
+		passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
+
+		query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4 where id = $5`
+		_, err = db.Exec(query, hostname, username, passwordEnc, namespace, appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to update registry settings")
+		}
 	}
 
 	return nil
@@ -82,7 +97,7 @@ func UpdateRegistry(appID string, hostname string, username string, password str
 
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, configValues *kotsv1beta1.ConfigValues) error {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, configValues *kotsv1beta1.ConfigValues) (finalError error) {
 	if err := task.SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -102,7 +117,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		}
 	}()
 
-	var finalError error
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("image-rewrite"); err != nil {
@@ -118,27 +132,23 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	// get the archive and store it in a temporary location
 	appDir, err := version.GetAppVersionArchive(appID, sequence)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 	defer os.RemoveAll(appDir)
 
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(appDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to load installation from path")
 	}
 
 	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to load license from path")
 	}
 
 	if configValues == nil {
 		previousConfigValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
 		if err != nil && !os.IsNotExist(errors.Cause(err)) {
-			finalError = err
 			return errors.Wrap(err, "failed to load config values from path")
 		}
 
@@ -207,23 +217,19 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to rewrite images")
 	}
 
 	newSequence, err := version.CreateVersion(appID, appDir, "Registry Change", a.CurrentSequence)
 	if err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to create new version")
 	}
 
 	if err := version.CreateAppVersionArchive(appID, newSequence, appDir); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to upload app version")
 	}
 
 	if err := preflight.Run(appID, newSequence, appDir); err != nil {
-		finalError = err
 		return errors.Wrap(err, "failed to run preflights")
 	}
 
@@ -241,7 +247,7 @@ func HasKurlRegistry() (bool, error) {
 		return false, errors.Wrap(err, "failed to create clientset")
 	}
 
-	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get("registry-creds", metav1.GetOptions{})
+	registryCredsSecret, err := clientset.CoreV1().Secrets(metav1.NamespaceDefault).Get(context.TODO(), "registry-creds", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return false, nil
 	}

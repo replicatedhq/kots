@@ -27,10 +27,10 @@ func runStatefulSetController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.AppsV1().StatefulSets(targetNamespace).List(options)
+			return clientset.AppsV1().StatefulSets(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.AppsV1().StatefulSets(targetNamespace).Watch(options)
+			return clientset.AppsV1().StatefulSets(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(

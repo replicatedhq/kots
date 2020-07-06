@@ -6,10 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -21,11 +23,8 @@ func kotsadmClusterRole() *rbacv1.ClusterRole {
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-role",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-role",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -48,10 +47,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-role",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
@@ -95,11 +91,8 @@ func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRo
 			Kind:       "CluserRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kotsadm-rolebinding",
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Name:   "kotsadm-rolebinding",
+			Labels: types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -127,10 +120,7 @@ func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-rolebinding",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -158,10 +148,7 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 	}
 
@@ -217,6 +204,8 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
+	backupSize := resource.MustParse("1Gi")
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -225,10 +214,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: deployOptions.Namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -238,16 +224,110 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app":            "kotsadm",
-						types.KotsadmKey: types.KotsadmLabelValue,
-						types.VeleroKey:  types.VeleroLabelValue,
+					Labels: types.GetKotsadmLabels(map[string]string{
+						"app": "kotsadm",
+					}),
+					Annotations: map[string]string{
+						"backup.velero.io/backup-volumes":   "backup",
+						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
+						"pre.hook.backup.velero.io/timeout": "10m",
+						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext:    &securityContext,
+					SecurityContext: &securityContext,
+					Volumes: []corev1.Volume{
+						{
+							Name: "backup",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									Medium:    corev1.StorageMediumMemory,
+									SizeLimit: &backupSize,
+								},
+							},
+						},
+					},
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
+					InitContainers: []corev1.Container{
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
+							ImagePullPolicy: corev1.PullAlways,
+							Name:            "restore-db",
+							Command: []string{
+								"/restore-db.sh",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "POSTGRES_PASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
+										},
+									},
+								},
+							},
+						},
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
+							ImagePullPolicy: corev1.PullAlways,
+							Name:            "restore-s3",
+							Command: []string{
+								"/restore-s3.sh",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "S3_ENDPOINT",
+									Value: "http://kotsadm-minio:9000",
+								},
+								{
+									Name:  "S3_BUCKET_NAME",
+									Value: "kotsadm",
+								},
+								{
+									Name: "S3_ACCESS_KEY_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "accesskey",
+										},
+									},
+								},
+								{
+									Name: "S3_SECRET_ACCESS_KEY",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "secretkey",
+										},
+									},
+								},
+								{
+									Name:  "S3_BUCKET_ENDPOINT",
+									Value: "true",
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
@@ -271,6 +351,12 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "backup",
+									MountPath: "/backup",
+								},
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name: "SHARED_PASSWORD_BCRYPT",
@@ -291,6 +377,17 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 												Name: "kotsadm-session",
 											},
 											Key: "key",
+										},
+									},
+								},
+								{
+									Name: "POSTGRES_PASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
 										},
 									},
 								},
@@ -390,10 +487,7 @@ func kotsadmService(namespace string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: namespace,
-			Labels: map[string]string{
-				types.KotsadmKey: types.KotsadmLabelValue,
-				types.VeleroKey:  types.VeleroLabelValue,
-			},
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{

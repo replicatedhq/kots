@@ -1,6 +1,7 @@
 package automation
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +36,7 @@ func AutomateInstall() error {
 		return errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(metav1.ListOptions{
+	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=license",
 	})
 
@@ -64,6 +66,25 @@ func AutomateInstall() error {
 			continue
 		}
 
+		// sync license
+		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		verifiedLicense = latestLicense
+
+		// check license expiration
+		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		if expired {
+			logger.Error(errors.New("license is expired"))
+			continue
+		}
+
 		desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
@@ -87,7 +108,7 @@ func AutomateInstall() error {
 		}
 
 		// delete the license secret
-		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(licenseSecret.Name, &metav1.DeleteOptions{})
+		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error(err)
 			// this is going to create a new app on each start now!

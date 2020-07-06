@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -61,7 +62,7 @@ func ResetPasswordCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create k8s client")
 			}
 
-			existingSecret, err := clientset.CoreV1().Secrets(namespace).Get("kotsadm-password", metav1.GetOptions{})
+			existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
 			if err != nil {
 				if !kuberneteserrors.IsNotFound(err) {
 					return errors.Wrap(err, "failed to lookup secret")
@@ -81,14 +82,14 @@ func ResetPasswordCmd() *cobra.Command {
 					},
 				}
 
-				_, err := clientset.CoreV1().Secrets(namespace).Create(newSecret)
+				_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
 				if err != nil {
 					return errors.Wrap(err, "failed to create secret")
 				}
 			} else {
 				existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
 
-				_, err := clientset.CoreV1().Secrets(namespace).Update(existingSecret)
+				_, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrap(err, "failed to update secret")
 				}

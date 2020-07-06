@@ -1,0 +1,12 @@
+name: 'Run Command'
+description: 'Run an arbitrary sh command'
+inputs:
+  command:  # id of input
+    description: 'Command to run'
+    required: true
+    default: 'false'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.command }}

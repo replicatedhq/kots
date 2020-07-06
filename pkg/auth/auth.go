@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ func GetOrCreateAuthSlug(kubernetesConfigFlags *genericclioptions.ConfigFlags, n
 		return "", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(KotsadmAuthstringSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), KotsadmAuthstringSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			fmt.Printf("\nUnable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.\n\n", namespace)
@@ -59,15 +60,12 @@ func GetOrCreateAuthSlug(kubernetesConfigFlags *genericclioptions.ConfigFlags, n
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      KotsadmAuthstringSecretName,
 				Namespace: namespace,
-				Labels: map[string]string{
-					types.KotsadmKey: types.KotsadmLabelValue,
-					types.VeleroKey:  types.VeleroLabelValue,
-				},
+				Labels:    types.GetKotsadmLabels(),
 			},
 			StringData: map[string]string{KotsadmAuthstringSecretKey: newAuthstring},
 		}
 
-		_, err := clientset.CoreV1().Secrets(namespace).Create(&newSecret)
+		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), &newSecret, metav1.CreateOptions{})
 		if err != nil {
 			return "", errors.Wrap(err, "failed to create new kotsadm authstring secret")
 		}

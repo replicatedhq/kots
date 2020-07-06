@@ -4,18 +4,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
-
-type CreateRestoreRequest struct {
-}
 
 type CreateRestoreResponse struct {
 	Success bool   `json:"success"`
@@ -26,6 +24,11 @@ type GetRestoreStatusResponse struct {
 	Status      string `json:"status,omitempty"`
 	RestoreName string `json:"restore_name,omitempty"`
 	Error       string `json:"error,omitempty"`
+}
+
+type CreateKotsadmRestoreResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
 }
 
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
@@ -56,11 +59,31 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backup, err := snapshot.GetBackup(mux.Vars(r)["snapshotName"])
+	snapshotName := mux.Vars(r)["snapshotName"]
+
+	backup, err := snapshot.GetBackup(snapshotName)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
 		JSON(w, 500, createRestoreResponse)
+		return
+	}
+
+	if backup.Annotations[types.VeleroKey] == types.VeleroLabelConsoleValue {
+		// this is a kotsadm snapshot being restored
+		opts := &types.RestoreJobOptions{
+			BackupName: snapshotName,
+		}
+		if err := kotsadm.CreateRestoreJob(opts); err != nil {
+			logger.Error(err)
+			createRestoreResponse.Error = "failed to initiate restore"
+			JSON(w, 500, createRestoreResponse)
+			return
+
+		}
+
+		createRestoreResponse.Success = true
+		JSON(w, 200, createRestoreResponse)
 		return
 	}
 
@@ -105,14 +128,14 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := snapshot.DeleteRestore(mux.Vars(r)["snapshotName"]); err != nil {
+	if err := snapshot.DeleteRestore(snapshotName); err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
 		JSON(w, 500, createRestoreResponse)
 		return
 	}
 
-	err = app.InitiateRestore(mux.Vars(r)["snapshotName"], appID)
+	err = app.InitiateRestore(snapshotName, appID)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"

@@ -46,7 +46,7 @@ function isError(line: any): boolean {
 }
 
 function isWarning(line: any): boolean {
-  return line.level === "warninng";
+  return line.level === "warning";
 }
 
 function isExec(line: any): boolean {

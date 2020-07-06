@@ -1,10 +1,13 @@
 package k8sutil
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -14,7 +17,7 @@ func GetCurrentRules(deployOptions kotsadmtypes.DeployOptions, clientset *kubern
 			Namespace: deployOptions.Namespace,
 		},
 	}
-	response, err := clientset.AuthorizationV1().SelfSubjectRulesReviews().Create(sar)
+	response, err := clientset.AuthorizationV1().SelfSubjectRulesReviews().Create(context.TODO(), sar, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "no SAR in ns %s", deployOptions.Namespace)
 	}

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { compose } from "react-apollo";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
@@ -10,7 +10,7 @@ import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
-import "../scss/components/Login.scss";
+import "../scss/components/UploadLicenseFile.scss";
 
 class UploadLicenseFile extends React.Component {
   state = {
@@ -42,7 +42,7 @@ class UploadLicenseFile extends React.Component {
       try {
         const base64String = btoa(String.fromCharCode.apply(null, new Uint8Array(licenseFileContent)));
         licenseText = await this.exchangeRliFileForLicense(base64String);
-      } catch(err) {
+      } catch (err) {
         this.setState({
           fileUploading: false,
           errorMessage: err,
@@ -69,16 +69,16 @@ class UploadLicenseFile extends React.Component {
         licenseData: licenseText,
       }),
     })
-    .then(async (result) => {
-      data = await result.json();
-    })
-    .catch(err => {
-      this.setState({
-        fileUploading: false,
-        errorMessage: err,
-      });
-      return;
-    })
+      .then(async (result) => {
+        data = await result.json();
+      })
+      .catch(err => {
+        this.setState({
+          fileUploading: false,
+          errorMessage: err,
+        });
+        return;
+      })
 
     let count = 0;
     const interval = setInterval(() => {
@@ -90,6 +90,15 @@ class UploadLicenseFile extends React.Component {
       if (count > 3) {
         if (data) {
           clearInterval(interval);
+
+          if (!data.success) {
+            this.setState({
+              fileUploading: false,
+              errorMessage: data.error,
+            });
+            return;
+          }
+
           // When successful, refetch all the user's apps with onUploadSuccess
           onUploadSuccess().then(() => {
             if (data.isAirgap) {
@@ -107,21 +116,7 @@ class UploadLicenseFile extends React.Component {
             }
 
             if (data.hasPreflight) {
-              fetch(`${window.env.API_ENDPOINT}/app/${data.slug}/preflight/run`, {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "Authorization": Utilities.getToken(),
-                },
-                method: "POST",
-              })
-                .then(async (res) => {
-                  history.replace("/preflight");
-                })
-                .catch((err) => {
-                  // TODO: UI for this error
-                  console.log(err);
-                });
+              history.replace("/preflight");
               return;
             }
 
@@ -179,12 +174,58 @@ class UploadLicenseFile extends React.Component {
     });
   }
 
+  startRestore = snapshot => {
+    this.setState({ startingRestore: true, startingRestoreMsg: "" });
+
+    const payload = {
+      license: this.state.licenseFile
+    }
+
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const startRestoreResponse = await res.json();
+        if (!res.ok) {
+          this.setState({
+            startingRestore: false,
+            startingRestoreMsg: startRestoreResponse.error
+          })
+          return;
+        }
+
+        if (startRestoreResponse.success) {
+          this.setState({
+            startingRestore: false
+          });
+        } else {
+          this.setState({
+            startingRestore: false,
+            startingRestoreMsg: startRestoreResponse.error
+          })
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          startingRestore: false,
+          startingRestoreMsg: err.message ? err.message : "Something went wrong, please try again!"
+        });
+      });
+  }
+
   render() {
     const {
       appName,
       logo,
       fetchingMetadata,
       appsListLength,
+      isBackupRestore,
+      snapshot
     } = this.props;
     const { licenseFile, fileUploading, errorMessage, viewErrorMessage } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
@@ -199,24 +240,29 @@ class UploadLicenseFile extends React.Component {
       applicationName = appName;
     }
 
+    // TODO remove when restore is enabled
+    const isRestoreEnabled = false;
+
     return (
-      <div className="UploadLicenseFile--wrapper container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
+      <div className={`UploadLicenseFile--wrapper ${isBackupRestore ? "" : "container"} flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}>
         <Helmet>
           <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
-          <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
-            <div className="flex-column alignItems--center">
-              {logo
-              ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logoUri})` }} />
-              : !fetchingMetadata ? <span className="icon kots-login-icon" />
-              : <span style={{ width: "60px", height: "60px" }} />
-              }
-            </div>
+        {!fileUploading && <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-textAlign--center u-marginBottom--20"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>}
+        <div className="UploadLicenseFileBox-wrapper u-flexTabletReflow flex-auto justifyContent--center">
+          <div className={`flex-auto flex-column ${isBackupRestore ? "backup-restore-wrapper" : "upload-form-wrapper secure-console"} justifyContent--center`}>
             {!fileUploading ?
-              <div className="flex-column">
-                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center">Upload your license file</p>
-                <div className="u-marginTop--30 flex">
+              <div className="flex flex-column">
+                {applicationName &&
+                  <div className="flex flex1 alignItems--center">
+                    {logo
+                      ? <span className="icon upload-license-icon" style={{ backgroundImage: `url(${logoUri})` }} />
+                      : !fetchingMetadata ? <span className="icon kots-login-icon" />
+                        : <span style={{ width: "35px", height: "35px" }} />
+                    }
+                    <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-textAlign--center u-marginLeft--10">{applicationName}</p>
+                  </div>}
+                <div className={`flex ${applicationName && "u-marginTop--20"}`}>
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                     <Dropzone
                       className="Dropzone-wrapper"
@@ -230,13 +276,13 @@ class UploadLicenseFile extends React.Component {
                         </div>
                         :
                         <div className="u-textAlign--center">
-                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
+                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--royalBlue u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
                           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your license file.</p>
                         </div>
                       }
                     </Dropzone>
                   </div>
-                  {hasFile &&
+                  {hasFile && !isBackupRestore &&
                     <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
                       <button
                         type="button"
@@ -271,6 +317,16 @@ class UploadLicenseFile extends React.Component {
           </div>
         </div>
 
+        {!isBackupRestore && isRestoreEnabled &&
+          <div className="flex u-marginTop--15 alignItems--center">
+            <span className="icon restore-icon" />
+            <Link className="u-fontSize--normal u-color--royalBlue u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5" to="/restore">{`Restore ${applicationName ? `${applicationName}` : "app"} from a snapshot`} </Link>
+            <span className="icon u-arrow" style={{ marginTop: "2px" }} />
+          </div>}
+        {isBackupRestore ?
+          <button className="btn primary u-marginTop--20" onClick={() => this.startRestore(snapshot)} disabled={!hasFile}> Start restore </button>
+          : null}
+
         <Modal
           isOpen={viewErrorMessage}
           onRequestClose={this.toggleViewErrorMessage}
@@ -284,10 +340,10 @@ class UploadLicenseFile extends React.Component {
               <p className="u-fontSize--small u-color--chestnut">{typeof errorMessage === "object" ? "An unknown error orrcured while trying to upload your license. Please try again." : errorMessage}</p>
               <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
               <CodeSnippet
-                  language="bash"
-                  canCopy={true}
-                  onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-                >
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              >
                 kubectl support-bundle https://kots.io
               </CodeSnippet>
             </div>

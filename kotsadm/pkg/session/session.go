@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -79,7 +80,7 @@ func Parse(signedToken string) (*Session, error) {
 			return nil, errors.New("failed to create clientset")
 		}
 
-		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get("kotsadm-authstring", metav1.GetOptions{})
+		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.New("failed to read auth string")
 		}

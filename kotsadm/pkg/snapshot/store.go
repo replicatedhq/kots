@@ -66,7 +66,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket = store.Bucket
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
 
-	currentSecret, currentSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+	currentSecret, currentSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(context.TODO(), "cloud-credentials", metav1.GetOptions{})
 	if currentSecretErr != nil && !kuberneteserrors.IsNotFound(currentSecretErr) {
 		return nil, errors.Wrap(currentSecretErr, "failed to read aws secret")
 	}
@@ -84,7 +84,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		if store.AWS.UseInstanceRole {
 			// delete the secret
 			if currentSecretErr == nil {
-				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
+				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(context.TODO(), "cloud-credentials", metav1.DeleteOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to delete aws secret")
 				}
@@ -131,7 +131,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 						"cloud": awsCredentials.Bytes(),
 					},
 				}
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to create aws secret")
 				}
@@ -142,7 +142,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				}
 
 				currentSecret.Data["cloud"] = awsCredentials.Bytes()
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to update aws secret")
 				}
@@ -159,7 +159,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 
 			// delete the secret
 			if currentSecretErr == nil {
-				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete("cloud-credentials", &metav1.DeleteOptions{})
+				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(context.TODO(), "cloud-credentials", metav1.DeleteOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to delete google secret")
 				}
@@ -183,7 +183,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 						"cloud": []byte(store.Google.JSONFile),
 					},
 				}
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to create aws secret")
 				}
@@ -194,7 +194,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				}
 
 				currentSecret.Data["cloud"] = []byte(store.Google.JSONFile)
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to update aws secret")
 				}
@@ -230,7 +230,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 					"cloud": providers.RenderAzureConfig(config),
 				},
 			}
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(&toCreate)
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create aws secret")
 			}
@@ -241,14 +241,14 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			}
 
 			currentSecret.Data["cloud"] = providers.RenderAzureConfig(config)
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(currentSecret)
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to update aws secret")
 			}
 		}
 	}
 
-	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(kotsadmVeleroBackendStorageLocation)
+	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), kotsadmVeleroBackendStorageLocation, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update backup storage location")
 	}
@@ -275,7 +275,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 			return nil, errors.Wrap(err, "failed to create velero clientset")
 		}
 
-		backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+		backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 		}
@@ -319,7 +319,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 			}
 		}
 
-		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+		awsSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(context.TODO(), "cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
@@ -358,7 +358,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		}
 
 		// get the secret
-		azureSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+		azureSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(context.TODO(), "cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read azure secret")
 		}
@@ -378,7 +378,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 		break
 
 	case "gcp":
-		currentSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get("cloud-credentials", metav1.GetOptions{})
+		currentSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(context.TODO(), "cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.Wrap(err, "failed to read google secret")
 		}
@@ -413,7 +413,7 @@ func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(metav1.ListOptions{})
+	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 	}
@@ -567,9 +567,13 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 			return errors.Wrap(err, "failed to create storage client")
 		}
 
-		_, err = client.Bucket(bucket).Attrs(ctx)
+		objectsItr := client.Bucket(bucket).Objects(ctx, &gcpstorage.Query{})
+		_, err = objectsItr.Next()
 		if err != nil {
-			// if there is no bucket, this will be gcpstorage.ErrBucketNotExist
+			if strings.Contains(err.Error(), "no more items in iterator") {
+				return nil
+			}
+
 			return errors.Wrap(err, "failed to get bucket attributes")
 		}
 	}

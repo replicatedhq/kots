@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -26,13 +27,13 @@ func getApplicationMetadataYAML(data []byte, namespace string) (map[string][]byt
 }
 
 func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get("kotsadm-application-metadata", metav1.GetOptions{})
+	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(applicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace))
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), applicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}

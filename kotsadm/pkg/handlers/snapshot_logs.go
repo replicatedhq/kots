@@ -62,7 +62,7 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	_, err = velero.DownloadRequests(namespace).Create(dr)
+	_, err = velero.DownloadRequests(namespace).Create(context.TODO(), dr, metav1.CreateOptions{})
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -70,7 +70,7 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	signedURL := ""
-	watcher, err := velero.DownloadRequests(namespace).Watch(metav1.ListOptions{})
+	watcher, err := velero.DownloadRequests(namespace).Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -106,7 +106,7 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if err := velero.DownloadRequests(namespace).Delete(drName, &metav1.DeleteOptions{}); err != nil {
+	if err := velero.DownloadRequests(namespace).Delete(context.TODO(), drName, metav1.DeleteOptions{}); err != nil {
 		logger.Error(err)
 		// continue
 	}

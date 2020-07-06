@@ -9,5 +9,7 @@ bases:
 resources:
   - ./nodeport.yaml
   - ./distribution/distribution.yaml
+#  - ./schemahero.yaml # removed to prevent CRD removal upon skaffold stopping
+
 patches:
   - ./deployment.yaml

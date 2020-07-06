@@ -114,6 +114,10 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)
 	r.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateCheckerSpec)
 
+	// kotsadm snapshots
+	r.Path("/api/v1/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListKotsadmBackups)
+	r.Path("/api/v1/snapshot/{snapshotName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmBackup)
+
 	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
 	r.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRestoreStatus)

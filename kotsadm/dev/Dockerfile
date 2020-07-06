@@ -1,5 +1,13 @@
 FROM golang:1.14 as deps
 
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+  && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
+  && apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client-10 python-pip \
+  && pip install s3cmd \
+  && rm -rf /var/lib/apt/lists/*
+
+
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
 WORKDIR $PROJECTPATH
 ADD Makefile $PROJECTPATH/

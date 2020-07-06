@@ -82,8 +82,9 @@ func archiveToFileTree(archivePath string) (*types.FileTree, error) {
 }
 
 func getDirectoryNode(directory string, directories []string, files []string) (*types.FileTreeNode, error) {
+	_, f := filepath.Split(directory)
 	node := types.FileTreeNode{
-		Name: directory,
+		Name: f,
 		Path: directory,
 	}
 
@@ -101,7 +102,8 @@ func getDirectoryNode(directory string, directories []string, files []string) (*
 	}
 
 	for _, d := range directories {
-		if strings.HasPrefix(d, directory) && d != directory {
+		parent, _ := filepath.Split(d)
+		if strings.TrimSuffix(parent, string(os.PathSeparator)) == directory {
 			child, err := getDirectoryNode(d, directories, files)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to recursively call getDirectoryNode")

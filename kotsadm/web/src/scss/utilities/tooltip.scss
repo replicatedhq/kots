@@ -5,6 +5,16 @@
   color: #ffffff;
   font-weight: 500;
   background-color: #193B5B;
+
+  &.white {
+    color: #4A4A4A;
+    font-weight: 500;
+    background-color: #ffffff;
+    border: 1px solid #DFDFDF;
+    box-sizing: border-box;
+    width: 210px;
+    padding: 8px;
+  }
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip:after {
   border-top-color: #193B5B;
@@ -17,4 +27,10 @@
 }
 .__react_component_tooltip.type-dark.place-bottom.replicated-tooltip:after {
   border-bottom-color: #193B5B;
+}
+.__react_component_tooltip.type-dark.place-top.replicated-tooltip.white:after {
+  border-top-color:#ffffff;
+}
+.__react_component_tooltip.type-dark.place-top.replicated-tooltip.white:before{
+  border-top: 8px solid #DFDFDF;
 }
