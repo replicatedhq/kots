@@ -13,6 +13,7 @@ import (
 	"github.com/containers/image/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -115,24 +116,25 @@ func TestPushAccess(endpoint, username, password, org string) error {
 		return errors.New(errorResponseToString(authBody))
 	}
 
-	if strings.Contains(endpoint, "gcr.io") {
-		// gcr tokens are in a different format. it's enough to test that a token has been issued.
-		return nil
-	}
-
 	bearerToken, err := newBearerTokenFromJSONBlob(authBody)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse bearer token")
+		// not a fatal error - some registries don't return JWTs
+		logger.NewLogger().Info("failed to parse registry auth bearer token, continuing anyways: %s", err.Error())
+		return nil
 	}
 
 	jwtToken, err := bearerToken.getJwtToken()
 	if err != nil {
-		return errors.Wrap(err, "failed to parse JWT token")
+		// not a fatal error - some registries don't return JWTs
+		logger.NewLogger().Info("failed to parse registry auth jwt, continuing anyways: %s", err.Error())
+		return nil
 	}
 
 	claims, err := getJwtTokenClaims(jwtToken)
 	if err != nil {
-		return errors.Wrap(err, "failed to get claims")
+		// not a fatal error - some registries don't return JWTs
+		logger.NewLogger().Info("failed to find registry auth claims in jwt, continuing anyways: %s", err.Error())
+		return nil
 	}
 
 	for _, access := range claims.Access {
