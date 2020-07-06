@@ -40,8 +40,8 @@ build-alpha:
 build-release:
 	docker build -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
 	docker push kotsadm/kotsadm:${GIT_TAG}
-	mkdir -p bin/docker-archive
-	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm.tar
+	mkdir -p bin/docker-archive/kotsadm
+	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
 .PHONY: project-pact-tests
 project-pact-tests:
