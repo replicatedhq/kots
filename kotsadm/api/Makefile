@@ -83,6 +83,8 @@ build-alpha: build_and_push
 .PHONY: build-release
 build-release: IMAGE = kotsadm/${PROJECT_NAME}:${GIT_TAG}
 build-release: build_and_push
+	mkdir -p bin/docker-archive
+	skopeo copy docker-daemon:kotsadm/${PROJECT_NAME}:${GIT_TAG} docker-archive:bin/docker-archive/${PROJECT_NAME}.tar
 
 .PHONY: build_and_push
 build_and_push:
