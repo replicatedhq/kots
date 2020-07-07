@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -11,6 +13,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type GlobalSnapshotSettingsResponse struct {
@@ -31,10 +36,11 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	Bucket   string `json:"bucket"`
 	Path     string `json:"path"`
 
-	AWS    *snapshottypes.StoreAWS    `json:"aws"`
-	Google *snapshottypes.StoreGoogle `json:"gcp"`
-	Azure  *snapshottypes.StoreAzure  `json:"azure"`
-	Other  *snapshottypes.StoreOther  `json:"other"`
+	AWS      *snapshottypes.StoreAWS    `json:"aws"`
+	Google   *snapshottypes.StoreGoogle `json:"gcp"`
+	Azure    *snapshottypes.StoreAzure  `json:"azure"`
+	Other    *snapshottypes.StoreOther  `json:"other"`
+	Internal bool                       `json:"internal"`
 }
 
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +117,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.Azure = nil
 		store.Google = nil
 		store.Other = nil
+		store.Internal = nil
 
 		store.AWS.UseInstanceRole = updateGlobalSnapshotSettingsRequest.AWS.UseInstanceRole
 		if store.AWS.UseInstanceRole {
@@ -148,6 +155,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Azure = nil
 		store.Other = nil
+		store.Internal = nil
 
 		store.Google.UseInstanceRole = updateGlobalSnapshotSettingsRequest.Google.UseInstanceRole
 		if store.Google.UseInstanceRole {
@@ -188,6 +196,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Google = nil
 		store.Other = nil
+		store.Internal = nil
 
 		if updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup != "" {
 			store.Azure.ResourceGroup = updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup
@@ -224,6 +233,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Google = nil
 		store.Azure = nil
+		store.Internal = nil
 
 		if updateGlobalSnapshotSettingsRequest.Other.AccessKeyID != "" {
 			store.Other.AccessKeyID = updateGlobalSnapshotSettingsRequest.Other.AccessKeyID
@@ -249,6 +259,52 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 			JSON(w, 400, globalSnapshotSettingsResponse)
 			return
 		}
+	} else if updateGlobalSnapshotSettingsRequest.Internal {
+		if !kurl.IsKurl() {
+			globalSnapshotSettingsResponse.Error = "cannot use internal storage on a non-kurl cluster"
+			JSON(w, 400, globalSnapshotSettingsResponse)
+			return
+		}
+
+		if store.Internal == nil {
+			store.Internal = &snapshottypes.StoreInternal{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+
+		cfg, err := config.GetConfig()
+		if err != nil {
+			globalSnapshotSettingsResponse.Error = "failed to get cluster config"
+			JSON(w, 400, globalSnapshotSettingsResponse)
+			return
+		}
+
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			globalSnapshotSettingsResponse.Error = "failed to create clientset"
+			JSON(w, 400, globalSnapshotSettingsResponse)
+			return
+		}
+
+		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-s3", metav1.GetOptions{})
+		if err != nil {
+			logger.Error(err)
+			globalSnapshotSettingsResponse.Error = err.Error()
+			JSON(w, 400, globalSnapshotSettingsResponse)
+			return
+		}
+
+		store.Provider = "aws"
+		store.Bucket = string(secret.Data["velero-local-bucket"])
+		store.Path = ""
+
+		store.Internal.AccessKeyID = string(secret.Data["access-key-id"])
+		store.Internal.SecretAccessKey = string(secret.Data["secret-access-key"])
+		store.Internal.Endpoint = string(secret.Data["endpoint"])
+		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
+		store.Internal.Region = "us-east-1"
 	}
 
 	if err := snapshot.ValidateStore(store); err != nil {

@@ -297,6 +297,9 @@ class SnapshotStorageDestination extends Component {
       case "other":
         await this.snapshotProviderS3Compatible();
         break;
+      case "internal":
+        await this.snapshotProviderInternal();
+        break;
     }
   }
 
@@ -328,6 +331,11 @@ class SnapshotStorageDestination extends Component {
     this.props.updateSettings(payload);
   }
 
+  snapshotProviderInternal = async () => {
+    const payload = { internal: true };
+    this.props.updateSettings(payload);
+  }
+
   renderIcons = (destination) => {
     if (destination) {
       return <span className={`icon snapshotDestination--${destination.value}`} />;
@@ -339,7 +347,7 @@ class SnapshotStorageDestination extends Component {
   getDestinationLabel = (destination, label) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span style={{ fontSize: 18, marginRight: "10px" }}>{this.renderIcons(destination)}</span>
+        <span style={{ fontSize: 18, marginRight: "10px", minWidth: 16, textAlign: "center" }}>{this.renderIcons(destination)}</span>
         <span style={{ fontSize: 14, lineHeight: "16px" }}>{label}</span>
       </div>
     );
@@ -570,6 +578,11 @@ class SnapshotStorageDestination extends Component {
           </div>
         )
 
+      case "internal":
+        return (
+          null
+        )
+
       default:
         return (
           <div>No snapshot destination is selected</div>
@@ -602,7 +615,7 @@ class SnapshotStorageDestination extends Component {
             if (snapshotSettings.isKurl) {
               availableDestinations.push({
                 value: "internal",
-                label: "Internal Storage",
+                label: "Internal Storage (Default)",
               });
             }
             break;

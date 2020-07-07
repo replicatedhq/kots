@@ -32,14 +32,23 @@ type StoreOther struct {
 	Endpoint        string `json:"endpoint"`
 }
 
+type StoreInternal struct {
+	Region               string `json:"region"`
+	AccessKeyID          string `json:"accessKeyID"`
+	SecretAccessKey      string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
+	Endpoint             string `json:"endpoint"`
+	ObjectStoreClusterIP string `json:"objectStoreClusterIP"`
+}
+
 type Store struct {
-	Provider string       `json:"provider"`
-	Bucket   string       `json:"bucket"`
-	Path     string       `json:"path"`
-	AWS      *StoreAWS    `json:"aws,omitempty"`
-	Azure    *StoreAzure  `json:"azure,omitempty"`
-	Google   *StoreGoogle `json:"gcp,omitempty"`
-	Other    *StoreOther  `json:"other,omitempty"`
+	Provider string         `json:"provider"`
+	Bucket   string         `json:"bucket"`
+	Path     string         `json:"path"`
+	AWS      *StoreAWS      `json:"aws,omitempty"`
+	Azure    *StoreAzure    `json:"azure,omitempty"`
+	Google   *StoreGoogle   `json:"gcp,omitempty"`
+	Other    *StoreOther    `json:"other,omitempty"`
+	Internal *StoreInternal `json:"internal,omitempty"`
 }
 
 type Backup struct {
