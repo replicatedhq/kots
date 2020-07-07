@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -153,6 +154,18 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Other.Endpoint
 
 		// create or update the secret
+	} else if store.Internal != nil {
+		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.Internal.Region
+		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Internal.Endpoint
+		kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"] = fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP)
+
+		// delete the secret
+		if currentSecretErr == nil {
+			err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(context.TODO(), "cloud-credentials", metav1.DeleteOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to delete internal secret")
+			}
+		}
 	} else if store.Google != nil {
 		if store.Google.UseInstanceRole {
 			kotsadmVeleroBackendStorageLocation.Spec.Config["serviceAccount"] = store.Google.ServiceAccount
@@ -185,7 +198,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				}
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to create aws secret")
+					return nil, errors.Wrap(err, "failed to create google secret")
 				}
 			} else {
 				// update
@@ -196,7 +209,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 				currentSecret.Data["cloud"] = []byte(store.Google.JSONFile)
 				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to update aws secret")
+					return nil, errors.Wrap(err, "failed to update google secret")
 				}
 			}
 		}
@@ -232,7 +245,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			}
 			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create aws secret")
+				return nil, errors.Wrap(err, "failed to create azure secret")
 			}
 		} else {
 			// update
@@ -243,7 +256,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			currentSecret.Data["cloud"] = providers.RenderAzureConfig(config)
 			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to update aws secret")
+				return nil, errors.Wrap(err, "failed to update azure secret")
 			}
 		}
 	}
@@ -456,6 +469,13 @@ func ValidateStore(store *types.Store) error {
 		return nil
 	}
 
+	if store.Internal != nil {
+		if err := validateInternal(store.Internal, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate S3-compatible configuration")
+		}
+		return nil
+	}
+
 	return errors.New("no valid configuration found")
 }
 
@@ -591,6 +611,32 @@ func validateOther(storeOther *types.StoreOther, bucket string) error {
 
 	if storeOther.AccessKeyID != "" && storeOther.SecretAccessKey != "" {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
+	}
+
+	newSession := session.New(s3Config)
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucket),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "bucket does not exist")
+	}
+
+	return nil
+}
+
+func validateInternal(storeInternal *types.StoreInternal, bucket string) error {
+	s3Config := &aws.Config{
+		Region:           aws.String(storeInternal.Region),
+		Endpoint:         aws.String(storeInternal.Endpoint),
+		DisableSSL:       aws.Bool(true), // TODO: this needs to be configurable
+		S3ForcePathStyle: aws.Bool(true),
+	}
+
+	if storeInternal.AccessKeyID != "" && storeInternal.SecretAccessKey != "" {
+		s3Config.Credentials = credentials.NewStaticCredentials(storeInternal.AccessKeyID, storeInternal.SecretAccessKey, "")
 	}
 
 	newSession := session.New(s3Config)
