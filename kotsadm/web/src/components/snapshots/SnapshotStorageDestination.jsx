@@ -615,7 +615,7 @@ class SnapshotStorageDestination extends Component {
             if (snapshotSettings.isKurl) {
               availableDestinations.push({
                 value: "internal",
-                label: "Internal Storage",
+                label: "Internal Storage (Default)",
               });
             }
             break;
