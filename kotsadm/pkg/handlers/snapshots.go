@@ -117,6 +117,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.Azure = nil
 		store.Google = nil
 		store.Other = nil
+		store.Internal = nil
 
 		store.AWS.UseInstanceRole = updateGlobalSnapshotSettingsRequest.AWS.UseInstanceRole
 		if store.AWS.UseInstanceRole {
@@ -154,6 +155,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Azure = nil
 		store.Other = nil
+		store.Internal = nil
 
 		store.Google.UseInstanceRole = updateGlobalSnapshotSettingsRequest.Google.UseInstanceRole
 		if store.Google.UseInstanceRole {
@@ -194,6 +196,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Google = nil
 		store.Other = nil
+		store.Internal = nil
 
 		if updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup != "" {
 			store.Azure.ResourceGroup = updateGlobalSnapshotSettingsRequest.Azure.ResourceGroup
@@ -230,6 +233,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.AWS = nil
 		store.Google = nil
 		store.Azure = nil
+		store.Internal = nil
 
 		if updateGlobalSnapshotSettingsRequest.Other.AccessKeyID != "" {
 			store.Other.AccessKeyID = updateGlobalSnapshotSettingsRequest.Other.AccessKeyID
