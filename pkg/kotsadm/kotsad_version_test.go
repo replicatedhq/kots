@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
 	"go.undefinedlabs.com/scopeagent"
 )
@@ -36,11 +37,14 @@ func Test_kotsadmRegistry(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			scopetest := scopeagent.StartTest(t)
 			defer scopetest.End()
-			OverrideVersion = test.overrideVersion
-			OverrideRegistry = test.overrideRegistry
-			OverrideNamespace = test.overrideNamespace
 
-			actual := kotsadmRegistry()
+			options := types.KotsadmOptions{
+				OverrideVersion:   test.overrideVersion,
+				OverrideRegistry:  test.overrideRegistry,
+				OverrideNamespace: test.overrideNamespace,
+			}
+
+			actual := kotsadmRegistry(options)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

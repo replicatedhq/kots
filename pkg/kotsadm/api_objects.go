@@ -183,8 +183,7 @@ func updateApiDeployment(deployment *appsv1.Deployment, deployOptions types.Depl
 		return errors.New("failed to find kotsadm-api container in deployment")
 	}
 
-	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(), kotsadmTag())
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -218,6 +217,15 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -244,9 +252,10 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-api",
 					RestartPolicy:      corev1.RestartPolicyAlways,
+					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(), kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm-api:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-api",
 							Ports: []corev1.ContainerPort{

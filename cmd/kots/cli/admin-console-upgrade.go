@@ -52,6 +52,14 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
+
+				KotsadmOptions: kotsadmtypes.KotsadmOptions{
+					OverrideVersion:   v.GetString("kotsadm-tag"),
+					OverrideRegistry:  v.GetString("kotsadm-registry"),
+					OverrideNamespace: v.GetString("kotsadm-namespace"),
+					Username:          v.GetString("registry-username"),
+					Password:          v.GetString("registry-password"),
+				},
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -60,10 +68,6 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			}
 
 			upgradeOptions.Timeout = timeout
-
-			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
-			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
-			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
 
 			log := logger.NewLogger()
 

@@ -74,10 +74,6 @@ func InstallCmd() *cobra.Command {
 				namespace = enteredNamespace
 			}
 
-			kotsadm.OverrideVersion = v.GetString("kotsadm-tag")
-			kotsadm.OverrideRegistry = v.GetString("kotsadm-registry")
-			kotsadm.OverrideNamespace = v.GetString("kotsadm-namespace")
-
 			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 			if err != nil {
 				return errors.Wrap(err, "failed to pull app metadata")
@@ -128,6 +124,14 @@ func InstallCmd() *cobra.Command {
 				IncludeMinio:              v.GetBool("deploy-minio"),
 				IncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
 				Timeout:                   time.Minute * 2,
+
+				KotsadmOptions: kotsadmtypes.KotsadmOptions{
+					OverrideVersion:   v.GetString("kotsadm-tag"),
+					OverrideRegistry:  v.GetString("kotsadm-registry"),
+					OverrideNamespace: v.GetString("kotsadm-namespace"),
+					Username:          v.GetString("registry-username"),
+					Password:          v.GetString("registry-password"),
+				},
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -222,12 +226,14 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
+	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm images")
+	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
+	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
+
 	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().MarkHidden("kotsadm-tag")
-	cmd.Flags().MarkHidden("kotsadm-registry")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
 
 	// the following group of flags are experiemental and can be used to pull and push images during install time

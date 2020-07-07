@@ -11,4 +11,6 @@ type UpgradeOptions struct {
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
 	ForceUpgradeKurl      bool
 	Timeout               time.Duration
+
+	KotsadmOptions KotsadmOptions
 }
