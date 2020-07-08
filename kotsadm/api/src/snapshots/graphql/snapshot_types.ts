@@ -135,8 +135,8 @@ const SnapshotHook = `
     stderr: String
     started: String
     finished: String
-    errors: [SnapshotError]
-    warnings: [SnapshotError]
+    error: [SnapshotError]
+    warning: [SnapshotError]
   }
 `;
 

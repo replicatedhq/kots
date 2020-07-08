@@ -42,11 +42,11 @@ export const snapshotDetailRaw = `
         stderr
         started
         finished
-        warnings {
+        warning {
           title
           message
         }
-        errors {
+        error {
           title
           message
         }

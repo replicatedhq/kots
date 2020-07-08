@@ -280,8 +280,8 @@ class AppSnapshotDetail extends Component {
               </div>
             </div>
             <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
-              {!hook.errors &&
+              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.error ? "failed" : "completed"} u-marginLeft--5`}>{hook.error ? "Failed" : "Completed"}</span></p>
+              {!hook.error &&
                 <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
               {hook.stderr !== "" || hook.stdout !== "" &&
                 <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}
@@ -533,7 +533,7 @@ class AppSnapshotDetail extends Component {
               </div>
             </div>
 
-            {!isEmpty(snapshotDetails?.errors) && !isEmpty(snapshotDetails?.warnings) &&
+            {(!isEmpty(snapshotDetails?.errors) || !isEmpty(snapshotDetails?.warnings)) &&
               <div className="flex flex-auto u-marginBottom--30">
                 <div className="flex-column flex1 u-marginRight--20">
                   <div className="dashboard-card-wrapper flex1">

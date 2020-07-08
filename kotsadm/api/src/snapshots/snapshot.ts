@@ -72,8 +72,8 @@ export interface SnapshotHook {
   stderr: string;
   started: string;
   finished: string;
-  errors: SnapshotError[],
-  warnings: SnapshotError[],
+  error: SnapshotError[],
+  warning: SnapshotError[],
 }
 
 export interface RestoreDetail {
