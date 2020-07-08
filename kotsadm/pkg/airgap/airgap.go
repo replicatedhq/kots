@@ -114,11 +114,11 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
+	// Extract it
 	if err := task.SetTaskStatus("airgap-install", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	// Extract it
 	// we seem to need a lot of temp dirs here... maybe too many?
 	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
