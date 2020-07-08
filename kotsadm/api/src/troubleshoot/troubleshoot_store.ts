@@ -29,12 +29,9 @@ export class TroubleshootStore {
         supportbundle_analysis.max_severity AS analysis_max_severity,
         supportbundle_analysis.insights AS analysis_insights,
         supportbundle_analysis.created_at AS analysis_created_at,
-        watch.slug as watch_slug,
-        watch.title as watch_title,
         app.name as kots_app_title,
         app_version.kots_license as kots_license
       from supportbundle
-        left join watch on supportbundle.watch_id = watch.id
         left join app_downstream on supportbundle.watch_id = app_downstream.app_id
         left join app on supportbundle.watch_id = app.id
         left join app_version on supportbundle.watch_id = app_version.app_id
@@ -52,7 +49,6 @@ export class TroubleshootStore {
 
     supportBundle.id = row.id;
     supportBundle.slug = row.slug;
-    supportBundle.watchId = row.watch_id;
     supportBundle.name = row.name;
     supportBundle.size = row.size;
     supportBundle.status = row.status;
@@ -100,9 +96,6 @@ export class TroubleshootStore {
       analysis.createdAt = row.analysis_created_at,
       supportBundle.analysis = analysis;
     }
-
-    supportBundle.watchSlug = row.watch_slug;
-    supportBundle.watchName = row.kots_app_title;
 
     return supportBundle;
   }
