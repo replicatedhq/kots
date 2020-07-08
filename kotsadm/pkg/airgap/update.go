@@ -106,7 +106,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
-	if err := task.SetTaskStatus("update-download", "Extracting package archive...", "running"); err != nil {
+	if err := task.SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -125,7 +125,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	if err := task.SetTaskStatus("update-download", "Creating application...", "running"); err != nil {
+	if err := task.SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
