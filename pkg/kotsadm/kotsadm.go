@@ -29,7 +29,7 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	docs["kotsadm-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(kotsadmClusterRoleBinding(), &roleBinding); err != nil {
+	if err := s.Encode(kotsadmClusterRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
 	}
 	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
