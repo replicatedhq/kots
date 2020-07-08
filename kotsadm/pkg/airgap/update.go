@@ -96,7 +96,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		return errors.Wrap(err, "failed to create temp file")
 	}
 
-	if err := task.SetTaskStatus("update-download", "Copying package files...", "running"); err != nil {
+	if err := task.SetTaskStatus("update-download", "Copying package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
