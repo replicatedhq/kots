@@ -670,18 +670,27 @@ class SnapshotStorageDestination extends Component {
               {!snapshotSettings?.isVeleroRunning &&
                 <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
               <div className="flex1">
-                <Select
-                  className="replicated-select-container"
-                  classNamePrefix="replicated-select"
-                  placeholder="Select unit"
-                  options={availableDestinations}
-                  isSearchable={false}
-                  getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
-                  getOptionValue={(destination) => destination.label}
-                  value={selectedDestination}
-                  onChange={this.handleDestinationChange}
-                  isOptionSelected={(option) => { option.value === selectedDestination }}
-                />
+                {availableDestinations.length > 1 ?
+                  <Select
+                    className="replicated-select-container"
+                    classNamePrefix="replicated-select"
+                    placeholder="Select unit"
+                    options={availableDestinations}
+                    isSearchable={false}
+                    getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
+                    getOptionValue={(destination) => destination.label}
+                    value={selectedDestination}
+                    onChange={this.handleDestinationChange}
+                    isOptionSelected={(option) => { option.value === selectedDestination }}
+                  />
+                  : 
+                  availableDestinations.length === 1 ?
+                    <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
+                      {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
+                    </div>
+                    :
+                    null
+                }
               </div>
             </div>
             {!this.state.determiningDestination &&
