@@ -1,6 +1,0 @@
-bases:
-  - ../../base
-
-resources:
-  - ./database.yaml
-  - ./kotsadm-postgres.yaml

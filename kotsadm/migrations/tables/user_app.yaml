@@ -1,21 +1,21 @@
+ 
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: kotsadm-params
+  name: user-app
 spec:
   database: kotsadm-postgres
-  name: kotsadm_params
+  name: user_app
   requires: []
   schema:
     postgres:
       primaryKey:
-      - key
+      - user_id
+      - app_id
       columns:
-      - name: key
+      - name: user_id
         type: text
-      - name: value
+      - name: app_id
         type: text
-        constraints:
-          notNull: true

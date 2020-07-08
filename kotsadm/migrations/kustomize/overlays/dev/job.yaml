@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kotsadm-migrations
+spec:
+  template:
+    spec:
+      volumes:
+        - name: migrations
+          emptyDir:
+            medium: Memory      
+      initContainers:
+      - env:
+        - name: SCHEMAHERO_DRIVER
+          value: postgres
+        - name: SCHEMAHERO_SPEC_FILE
+          value: /tables
+        - name: SCHEMAHERO_URI
+          valueFrom:
+            secretKeyRef:
+              key: uri
+              name: ship-postgres
+        - name: SCHEMAHERO_OUT
+          value: /migrations/plan.yaml              
+        image: kotsadm-migrations
+        name: kotsadm-migrations
+        args: ["plan"]
+        name: migrations-plan
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations        
+      containers:
+      - env:
+        - name: SCHEMAHERO_DRIVER
+          value: postgres
+        - name: SCHEMAHERO_DDL
+          value: /migrations/plan.yaml
+        - name: SCHEMAHERO_URI
+          valueFrom:
+            secretKeyRef:
+              key: uri
+              name: ship-postgres
+        image: kotsadm-migrations
+        name: kotsadm-migrations
+        args: ["apply"]
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations
+      restartPolicy: OnFailure

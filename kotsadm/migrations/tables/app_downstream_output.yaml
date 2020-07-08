@@ -1,16 +1,17 @@
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
-  name: app-downstream
+  name: app-downstream-output
 spec:
   database: kotsadm-postgres
-  name: app_downstream
+  name: app_downstream_output
   requires: []
   schema:
     postgres:
       primaryKey:
         - app_id
         - cluster_id
+        - downstream_sequence
       columns:
       - name: app_id
         type: text
@@ -20,9 +21,17 @@ spec:
         type: text
         constraints:
           notNull: true
-      - name: downstream_name
-        type: text
+      - name: downstream_sequence
+        type: integer
         constraints:
           notNull: true
-      - name: current_sequence
-        type: integer
+      - name: dryrun_stdout
+        type: text
+      - name: dryrun_stderr
+        type: text
+      - name: apply_stdout
+        type: text
+      - name: apply_stderr
+        type: text
+      - name: is_error
+        type: boolean

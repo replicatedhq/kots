@@ -1,10 +1,13 @@
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
-  name: scheduled-snapshots
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: ship-user
 spec:
   database: kotsadm-postgres
-  name: scheduled_snapshots
+  name: ship_user
+  requires: []
   schema:
     postgres:
       primaryKey:
@@ -14,13 +17,10 @@ spec:
         type: text
         constraints:
           notNull: true
-      - name: app_id
-        type: text
-        constraints:
-          notNull: true
-      - name: scheduled_timestamp
+      - name: created_at
         type: timestamp without time zone
-        constraints:
-          notNull: true
-      - name: backup_name
-        type: text
+      - name: github_id
+        type: integer
+      - name: last_login
+        type: timestamp without time zone
+      

@@ -3,29 +3,32 @@ kind: Table
 metadata:
   labels:
     controller-tools.k8s.io: "1.0"
-  name: session
+  name: ship-user-local
 spec:
   database: kotsadm-postgres
-  name: session
+  name: ship_user_local
   requires: []
   schema:
     postgres:
+      indexes:
+        - columns: [email]
+          isUnique: true
       primaryKey:
-      - id
+      - user_id
       columns:
-      - name: id
-        type: text
-        constraints:
-          notNull: true
       - name: user_id
         type: text
         constraints:
           notNull: true
-      - name: metadata
+      - name: password_bcrypt
         type: text
         constraints:
           notNull: true
-      - name: expire_at
-        type: timestamp without time zone
+      - name: first_name
+        type: text
+      - name: last_name
+        type: text
+      - name: email
+        type: text
         constraints:
           notNull: true
