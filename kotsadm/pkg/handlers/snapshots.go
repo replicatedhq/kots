@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -13,9 +11,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type GlobalSnapshotSettingsResponse struct {
@@ -274,25 +269,17 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.Azure = nil
 		store.Other = nil
 
-		cfg, err := config.GetConfig()
-		if err != nil {
-			globalSnapshotSettingsResponse.Error = "failed to get cluster config"
-			JSON(w, 400, globalSnapshotSettingsResponse)
-			return
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			globalSnapshotSettingsResponse.Error = "failed to create clientset"
-			JSON(w, 400, globalSnapshotSettingsResponse)
-			return
-		}
-
-		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-s3", metav1.GetOptions{})
+		secret, err := kurl.GetS3Secret()
 		if err != nil {
 			logger.Error(err)
 			globalSnapshotSettingsResponse.Error = err.Error()
-			JSON(w, 400, globalSnapshotSettingsResponse)
+			JSON(w, 500, globalSnapshotSettingsResponse)
+			return
+		}
+		if secret == nil {
+			logger.Error(errors.New("s3 secret does not exist"))
+			globalSnapshotSettingsResponse.Error = "s3 secret does not exist"
+			JSON(w, 500, globalSnapshotSettingsResponse)
 			return
 		}
 
@@ -317,8 +304,8 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	updatedBackupStorageLocation, err := snapshot.UpdateGlobalStore(store)
 	if err != nil {
 		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to decode request body"
-		JSON(w, 400, globalSnapshotSettingsResponse)
+		globalSnapshotSettingsResponse.Error = "failed to update global store"
+		JSON(w, 500, globalSnapshotSettingsResponse)
 		return
 	}
 
@@ -326,7 +313,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	if err := snapshot.RestartVelero(); err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to try to restart velero"
-		JSON(w, 400, globalSnapshotSettingsResponse)
+		JSON(w, 500, globalSnapshotSettingsResponse)
 		return
 	}
 
