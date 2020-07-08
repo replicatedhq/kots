@@ -44,11 +44,28 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			SecurityContext:  &securityContext,
 			RestartPolicy:    corev1.RestartPolicyOnFailure,
 			ImagePullSecrets: pullSecrets,
-			Containers: []corev1.Container{
+			Volumes: []corev1.Volume{
+				{
+					Name: "migrations",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
 				{
 					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 					ImagePullPolicy: corev1.PullAlways,
-					Name:            name,
+					Name:            "plan",
+					Args:            []string{"plan"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "migrations",
+							MountPath: "/migrations",
+						},
+					},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "SCHEMAHERO_DRIVER",
@@ -57,6 +74,45 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 						{
 							Name:  "SCHEMAHERO_SPEC_FILE",
 							Value: "/tables",
+						},
+						{
+							Name:  "SCHEMAHERO_OUT",
+							Value: "/migrations/plan.yaml",
+						},
+						{
+							Name: "SCHEMAHERO_URI",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "kotsadm-postgres",
+									},
+									Key: "uri",
+								},
+							},
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(), kotsadmTag()),
+					ImagePullPolicy: corev1.PullAlways,
+					Name:            "apply",
+					Args:            []string{"apply"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "migrations",
+							MountPath: "/migrations",
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SCHEMAHERO_DRIVER",
+							Value: "postgres",
+						},
+						{
+							Name:  "SCHEMAHERO_DDL",
+							Value: "/migrations/plan.yaml",
 						},
 						{
 							Name: "SCHEMAHERO_URI",
