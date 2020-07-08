@@ -12,7 +12,6 @@ export class AnalyzerInsights extends React.Component {
       insights: [],
       analyzing: false,
       filterTiles: "0",
-      hasAnalysisError: false
     };
   }
 
@@ -97,20 +96,9 @@ export class AnalyzerInsights extends React.Component {
     });
   }
 
-  reAnalyzeBundle = () => {
-    this.setState({ analyzing: true });
-    this.props.reAnalyzeBundle((_, hasAnalysisError) => {
-      this.setState({ analyzing: false, hasAnalysisError });
-    });
-  }
-
-  renderAnalysisError = () => {
-    return <span style={{ maxWidth: 420 }} className="u-fontSize--small u-fontWeight--bold u-color--red u-marginTop--20 u-textAlign--center">An error occured during analysis</span>;
-  }
-
   render() {
     const { insights, status } = this.props;
-    const { filterTiles, analyzing, hasAnalysisError } = this.state;
+    const { filterTiles, analyzing } = this.state;
     const filteredInsights = this.state.insights;
 
     let noInsightsNode;
@@ -121,7 +109,6 @@ export class AnalyzerInsights extends React.Component {
             <Loader size="40" />
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
-            {hasAnalysisError && this.renderAnalysisError()}
           </div>
         )
       } else {
@@ -130,10 +117,6 @@ export class AnalyzerInsights extends React.Component {
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
-            <div className="u-marginTop--20">
-              <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
-            </div>
-            {hasAnalysisError && this.renderAnalysisError()}
           </div>
         )
       }
@@ -196,12 +179,6 @@ export class AnalyzerInsights extends React.Component {
                 </div>
               </div>
             }
-            <div className="flex-column flex-auto u-paddingTop--20">
-              <div className="flex-auto u-paddingLeft--10">
-                <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={analyzing}>{analyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
-              </div>
-              {hasAnalysisError && this.renderAnalysisError()}
-            </div>
           </div>
         }
       </div>

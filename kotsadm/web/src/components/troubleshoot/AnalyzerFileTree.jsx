@@ -29,7 +29,6 @@ class AnalyzerFileTree extends React.Component {
       fileLoadErr: false,
       fileLoadErrMessage: "",
       activeMarkers: [],
-      analysisError: false
     };
   }
 
@@ -182,20 +181,11 @@ class AnalyzerFileTree extends React.Component {
     }
   }
 
-  reAnalyzeBundle = () => {
-    this.setState({ isReanalyzing: true });
-    this.props.reAnalyzeBundle((response, analysisError) => {
-      this.setState({ isReanalyzing: false, analysisError });
-    });
-  }
-
   render() {
-    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading, analysisError } = this.state;
+    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading } = this.state;
     const fileToView = find(fileContents, ["key", selectedFile]);
     const format = getFileFormat(selectedFile);
     const isOld = files && has(files[0], "size");
-
-    const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
 
     return (
       <div className="flex-column flex1 AnalyzerFileTree--wrapper">
@@ -203,10 +193,6 @@ class AnalyzerFileTree extends React.Component {
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
             <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
             <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
-            <div className="u-marginTop--20">
-              <button className="btn secondary" onClick={() => this.reAnalyzeBundle()} disabled={this.state.isReanalyzing}>{this.state.isReanalyzing ? "Re-analyzing" : "Re-analyze bundle"}</button>
-            </div>
-            {analysisErrorExists && <span style={{ maxWidth: 420 }} className="u-fontSize--small u-lineHeight--normal u-fontWeight--bold u-color--error u-marginTop--20 u-textAlign--center">{analysisError.graphQLErrors[0].message}</span>}
           </div>
           :
           <div className="flex flex1">

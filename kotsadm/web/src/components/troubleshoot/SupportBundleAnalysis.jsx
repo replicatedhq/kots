@@ -21,26 +21,6 @@ export class SupportBundleAnalysis extends React.Component {
     };
   }
 
-  reAnalyzeBundle = async (callback) => {
-    try {
-      const bundleId = this.props.getSupportBundle.getSupportBundle.id;
-      const bundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/analyzebundle/${bundleId}`;
-
-      const response = await fetch(bundleUrl, {
-        method: "POST"
-      });
-      const analyzedBundle = await response.json();
-      if (callback && typeof callback === "function") {
-        callback(analyzedBundle, analyzedBundle.status === "analysis_error");
-      }
-      this.props.getSupportBundle.refetch();
-    } catch (error) {
-      if (callback && typeof callback === "function") {
-        callback(undefined, error);
-      }
-    }
-  }
-
   downloadBundle = async (bundle) => {
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
@@ -146,7 +126,6 @@ export class SupportBundleAnalysis extends React.Component {
                           status={bundle.status}
                           refetchSupportBundle={this.props.getSupportBundle.refetch}
                           insights={bundle.analysis?.insights}
-                          reAnalyzeBundle={this.reAnalyzeBundle}
                         />
                       } />
                       <Route exact path={fileTreeUrl} render={() =>
