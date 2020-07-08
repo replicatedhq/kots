@@ -159,6 +159,31 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Internal.Endpoint
 		kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"] = fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP)
 
+		awsCfg := ini.Empty()
+		section, err := awsCfg.NewSection("default")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create default section in aws creds")
+		}
+		_, err = section.NewKey("aws_access_key_id", store.Internal.AccessKeyID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create access key")
+		}
+
+		_, err = section.NewKey("aws_secret_access_key", store.Internal.SecretAccessKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create secret access key")
+		}
+
+		var awsCredentials bytes.Buffer
+		writer := bufio.NewWriter(&awsCredentials)
+		_, err = awsCfg.WriteTo(writer)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write ini")
+		}
+		if err := writer.Flush(); err != nil {
+			return nil, errors.Wrap(err, "failed to flush buffer")
+		}
+
 		// create or update the secret
 		if kuberneteserrors.IsNotFound(currentSecretErr) {
 			// create
@@ -172,9 +197,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
 				},
 				Data: map[string][]byte{
-					"cloud": []byte(fmt.Sprintf(`[default]
-aws_access_key_id=%s
-aws_secret_access_key=%s`, store.Internal.AccessKeyID, store.Internal.SecretAccessKey)),
+					"cloud": awsCredentials.Bytes(),
 				},
 			}
 			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
@@ -187,10 +210,7 @@ aws_secret_access_key=%s`, store.Internal.AccessKeyID, store.Internal.SecretAcce
 				currentSecret.Data = map[string][]byte{}
 			}
 
-			currentSecret.Data["cloud"] = []byte(fmt.Sprintf(`[default]
-aws_access_key_id=%s
-aws_secret_access_key=%s`, store.Internal.AccessKeyID, store.Internal.SecretAccessKey))
-
+			currentSecret.Data["cloud"] = awsCredentials.Bytes()
 			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to update internal secret")
