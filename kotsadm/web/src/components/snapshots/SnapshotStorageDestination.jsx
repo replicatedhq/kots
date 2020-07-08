@@ -25,6 +25,10 @@ const DESTINATIONS = [
   {
     value: "other",
     label: "Other S3-Compatible Storage",
+  },
+  {
+    value: "internal",
+    label: "Internal Storage (Default)",
   }
 ];
 

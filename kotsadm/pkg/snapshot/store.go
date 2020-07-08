@@ -159,11 +159,61 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Internal.Endpoint
 		kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"] = fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP)
 
-		// delete the secret
-		if currentSecretErr == nil {
-			err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(context.TODO(), "cloud-credentials", metav1.DeleteOptions{})
+		internalCfg := ini.Empty()
+		section, err := internalCfg.NewSection("default")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create default section in internal creds")
+		}
+		_, err = section.NewKey("aws_access_key_id", store.Internal.AccessKeyID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create internal access key id")
+		}
+
+		_, err = section.NewKey("aws_secret_access_key", store.Internal.SecretAccessKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create internal secret access key")
+		}
+
+		var internalCredentials bytes.Buffer
+		writer := bufio.NewWriter(&internalCredentials)
+		_, err = internalCfg.WriteTo(writer)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write ini")
+		}
+		if err := writer.Flush(); err != nil {
+			return nil, errors.Wrap(err, "failed to flush buffer")
+		}
+
+		// create or update the secret
+		if kuberneteserrors.IsNotFound(currentSecretErr) {
+			// create
+			toCreate := corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cloud-credentials",
+					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+				},
+				Data: map[string][]byte{
+					"cloud": internalCredentials.Bytes(),
+				},
+			}
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to delete internal secret")
+				return nil, errors.Wrap(err, "failed to create internal secret")
+			}
+		} else {
+			// update
+			if currentSecret.Data == nil {
+				currentSecret.Data = map[string][]byte{}
+			}
+
+			currentSecret.Data["cloud"] = internalCredentials.Bytes()
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update internal secret")
 			}
 		}
 	} else if store.Google != nil {
@@ -673,6 +723,18 @@ func Redact(store *types.Store) error {
 	if store.Azure != nil {
 		if store.Azure.ClientSecret != "" {
 			store.Azure.ClientSecret = "--- REDACTED ---"
+		}
+	}
+
+	if store.Other != nil {
+		if store.Other.SecretAccessKey != "" {
+			store.Other.SecretAccessKey = "--- REDACTED ---"
+		}
+	}
+
+	if store.Internal != nil {
+		if store.Internal.SecretAccessKey != "" {
+			store.Internal.SecretAccessKey = "--- REDACTED ---"
 		}
 	}
 
