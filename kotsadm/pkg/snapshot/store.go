@@ -159,20 +159,8 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Internal.Endpoint
 		kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"] = fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP)
 
-		// delete the cloud-credentials secret
-		if currentSecretErr == nil {
-			err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(context.TODO(), "cloud-credentials", metav1.DeleteOptions{})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to delete internal secret")
-			}
-		}
-
-		// ensure aws-credentials secret exists
-		_, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(context.TODO(), "aws-credentials", metav1.GetOptions{})
-		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "failed to get aws-credentials secret")
-		}
-		if kuberneteserrors.IsNotFound(err) {
+		// create or update the secret
+		if kuberneteserrors.IsNotFound(currentSecretErr) {
 			// create
 			toCreate := corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
@@ -180,7 +168,8 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 					Kind:       "Secret",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "aws-credentials",
+					Name:      "cloud-credentials",
+					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
 				},
 				Data: map[string][]byte{
 					"cloud": []byte(fmt.Sprintf(`[default]
@@ -190,7 +179,21 @@ aws_secret_access_key=%s`, store.Internal.AccessKeyID, store.Internal.SecretAcce
 			}
 			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create aws-credentials secret")
+				return nil, errors.Wrap(err, "failed to create internal secret")
+			}
+		} else {
+			// update
+			if currentSecret.Data == nil {
+				currentSecret.Data = map[string][]byte{}
+			}
+
+			currentSecret.Data["cloud"] = []byte(fmt.Sprintf(`[default]
+aws_access_key_id=%s
+aws_secret_access_key=%s`, store.Internal.AccessKeyID, store.Internal.SecretAccessKey))
+
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update internal secret")
 			}
 		}
 	} else if store.Google != nil {
