@@ -103,6 +103,8 @@ jobs:
 
     - name: Build
       if: ${{ github.ref == 'refs/heads/master' }}
+      env:
+        DOCKER_CONFIG: ./.docker
       run: |
         make -C kotsadm/migrations schema-alpha
 
