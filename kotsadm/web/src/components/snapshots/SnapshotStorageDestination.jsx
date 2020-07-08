@@ -204,7 +204,7 @@ class SnapshotStorageDestination extends Component {
     const { store } = snapshotSettings;
 
 
-    if (store?.provider === "aws") {
+    if (store?.aws) {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
@@ -217,7 +217,7 @@ class SnapshotStorageDestination extends Component {
       });
     }
 
-    if (store?.provider === "azure") {
+    if (store?.azure) {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "azure"]),
@@ -233,7 +233,7 @@ class SnapshotStorageDestination extends Component {
       });
     }
 
-    if (store?.provider === "gcp") {
+    if (store?.gcp) {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
@@ -245,7 +245,7 @@ class SnapshotStorageDestination extends Component {
       });
     }
 
-    if (store?.provider === "other") {
+    if (store?.other) {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "other"]),
@@ -257,6 +257,14 @@ class SnapshotStorageDestination extends Component {
         s3CompatibleRegion: store?.other?.region
       });
     }
+
+    if (store?.internal) {
+      return this.setState({
+        determiningDestination: false,
+        selectedDestination: find(DESTINATIONS, ["value", "internal"])
+      });
+    }
+
     // if nothing exists yet, we've determined default state is good
     this.setState({
       determiningDestination: false,

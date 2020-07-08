@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/providers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -372,9 +373,21 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 	case "aws":
 		endpoint, isS3Compatible := kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"]
 		if isS3Compatible {
-			store.Other = &types.StoreOther{
-				Region:   kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
-				Endpoint: endpoint,
+			s3Secret, err := kurl.GetS3Secret()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get s3 secret")
+			}
+			if s3Secret != nil && string(s3Secret.Data["endpoint"]) == endpoint {
+				store.Internal = &types.StoreInternal{
+					Region:               kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
+					Endpoint:             endpoint,
+					ObjectStoreClusterIP: string(s3Secret.Data["object-store-cluster-ip"]),
+				}
+			} else {
+				store.Other = &types.StoreOther{
+					Region:   kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
+					Endpoint: endpoint,
+				}
 			}
 		} else {
 			store.AWS = &types.StoreAWS{
@@ -399,10 +412,13 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 
 			for _, section := range awsCfg.Sections() {
 				if section.Name() == "default" {
-					if isS3Compatible {
+					if store.Internal != nil {
+						store.Internal.AccessKeyID = section.Key("aws_access_key_id").Value()
+						store.Internal.SecretAccessKey = section.Key("aws_secret_access_key").Value()
+					} else if store.Other != nil {
 						store.Other.AccessKeyID = section.Key("aws_access_key_id").Value()
 						store.Other.SecretAccessKey = section.Key("aws_secret_access_key").Value()
-					} else {
+					} else if store.AWS != nil {
 						store.AWS.AccessKeyID = section.Key("aws_access_key_id").Value()
 						store.AWS.SecretAccessKey = section.Key("aws_secret_access_key").Value()
 					}
