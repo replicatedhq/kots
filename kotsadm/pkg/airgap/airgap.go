@@ -115,16 +115,16 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	defer os.RemoveAll(tmpFile.Name())
 
 	// Extract it
+	if err := task.SetTaskStatus("airgap-install", "Extracting files...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
+
 	// we seem to need a lot of temp dirs here... maybe too many?
 	archiveDir, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
 	defer os.RemoveAll(archiveDir)
-
-	if err := task.SetTaskStatus("airgap-install", "Processing app package...", "running"); err != nil {
-		return errors.Wrap(err, "failed to set task status")
-	}
 
 	// extract the release
 	workspace, err := ioutil.TempDir("", "kots-airgap")
@@ -143,6 +143,10 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 		return errors.Wrap(err, "failed to create temp root")
 	}
 	defer os.RemoveAll(tmpRoot)
+
+	if err := task.SetTaskStatus("airgap-install", "Reading license data...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode([]byte(pendingApp.LicenseData), nil, nil)

@@ -95,11 +95,20 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
+
+	if err := task.SetTaskStatus("update-download", "Copying package...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
+
 	_, err = io.Copy(tmpFile, airgapBundle)
 	if err != nil {
 		return errors.Wrap(err, "failed to copy temp airgap")
 	}
 	defer os.RemoveAll(tmpFile.Name())
+
+	if err := task.SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
 
 	airgapRoot, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
 	if err != nil {
@@ -114,6 +123,10 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	appNamespace := os.Getenv("POD_NAMESPACE")
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	if err := task.SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
 	}
 
 	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)

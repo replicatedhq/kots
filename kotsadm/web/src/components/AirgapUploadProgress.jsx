@@ -84,13 +84,16 @@ class AirgapUploadProgress extends React.Component {
     } catch {
       // empty
     }
-
+    
     let statusDiv = (
       <div
-        className={`u-marginTop--20 u-color--dustyGray u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
+        className={`u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
       >
-        <p className="u-marginBottom--5">{statusMsg}</p>
-        <p>This may take a while depending on your network connection and size of your bundle</p>
+        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-color--tundora">
+          {statusMsg && <Loader className="flex u-marginRight--5" size="24" />}
+          <p>{statusMsg}</p>
+        </div>
+        <p className="u-color--dustyGray">This may take a while depending on your network connection and size of your bundle</p>
       </div>
     );
 
