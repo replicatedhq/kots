@@ -18,6 +18,6 @@ build-ttl-ci.sh: IMAGE = ttl.sh/${UUID}/${PROJECT_NAME}:2h
 build-ttl-ci.sh: build_schema
 
 build_schema:
-	docker pull schemahero/schemahero:0.7.2
+	docker pull schemahero/schemahero:0.9.0
 	docker build -f deploy/Dockerfile -t ${IMAGE} .
 	docker push ${IMAGE}

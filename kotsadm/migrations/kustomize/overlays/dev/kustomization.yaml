@@ -3,4 +3,4 @@ bases:
 
 resources:
   - ./postgres.yaml
-  - ./kotsadm-postgres.yaml
+  - ./job.yaml

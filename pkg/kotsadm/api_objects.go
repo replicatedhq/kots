@@ -81,7 +81,7 @@ func apiClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBi
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "CluserRoleBinding",
+			Kind:       "ClusterRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "kotsadm-api-rolebinding",

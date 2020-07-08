@@ -18,7 +18,7 @@ mkdir -p -m 755 $PWD/migrations/fixtures/schema
 docker run \
   -v $PWD/migrations/fixtures:/out \
   -v $PWD/migrations/tables:/in \
-  schemahero/schemahero:0.7.2 \
+  schemahero/schemahero:0.9.0 \
   fixtures --input-dir /in --output-dir /out/schema --dbname ship-cloud --driver postgres
 
 make -C migrations/fixtures deps build run build-ttl-ci.sh

@@ -23,13 +23,13 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var role bytes.Buffer
-	if err := s.Encode(kotsadmRole(deployOptions.Namespace), &role); err != nil {
+	if err := s.Encode(kotsadmClusterRole(), &role); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role")
 	}
 	docs["kotsadm-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(kotsadmRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+	if err := s.Encode(kotsadmClusterRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
 	}
 	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()

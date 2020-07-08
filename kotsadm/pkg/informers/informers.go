@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -32,6 +33,10 @@ func Start() error {
 
 	backupWatch, err := veleroClient.Backups("").Watch(context.TODO(), metav1.ListOptions{ResourceVersion: "0"})
 	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil
+		}
+
 		return errors.Wrap(err, "failed to watch")
 	}
 
