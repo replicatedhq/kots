@@ -51,6 +51,15 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 		}
 	}
 
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -99,7 +108,8 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &securityContext,
+					SecurityContext:  &securityContext,
+					ImagePullSecrets: pullSecrets,
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-minio",
@@ -118,7 +128,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(), kotsadmTag()),
+							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{

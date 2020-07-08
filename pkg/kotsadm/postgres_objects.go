@@ -1,6 +1,7 @@
 package kotsadm
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -14,6 +15,17 @@ import (
 
 func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	size := resource.MustParse("1Gi")
+
+	image := "postgres:10.7"
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		image = fmt.Sprintf("%s/postgres:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	}
 
 	if deployOptions.LimitRange != nil {
 		var allowedMax *resource.Quantity
@@ -90,7 +102,8 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 					}),
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &securityContext,
+					SecurityContext:  &securityContext,
+					ImagePullSecrets: pullSecrets,
 					Volumes: []corev1.Volume{
 						{
 							Name: "kotsadm-postgres",
@@ -103,7 +116,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           "postgres:10.7",
+							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-postgres",
 							Ports: []corev1.ContainerPort{

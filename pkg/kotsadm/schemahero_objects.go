@@ -21,6 +21,15 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 		}
 	}
 
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	}
+
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -32,11 +41,12 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.PodSpec{
-			SecurityContext: &securityContext,
-			RestartPolicy:   corev1.RestartPolicyOnFailure,
+			SecurityContext:  &securityContext,
+			RestartPolicy:    corev1.RestartPolicyOnFailure,
+			ImagePullSecrets: pullSecrets,
 			Containers: []corev1.Container{
 				{
-					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(), kotsadmTag()),
+					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 					ImagePullPolicy: corev1.PullAlways,
 					Name:            name,
 					Env: []corev1.EnvVar{

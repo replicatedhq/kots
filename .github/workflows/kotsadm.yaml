@@ -89,6 +89,8 @@ jobs:
       uses: actions/checkout@v2
 
     - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./kotsadm/migrations/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -108,8 +110,17 @@ jobs:
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: |
-        make -C kotsadm/migrations schema-release
+        DOCKER_CONFIG: ./.docker
+      uses: ./actions/containers
+      with:
+        command: "make -C kotsadm/migrations schema-release"
+
+    - name: Upload airgap image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: migrations-image
+        path: ./kotsadm/migrations/bin/docker-archive
 
 
   test_web:
@@ -682,7 +693,14 @@ jobs:
       id: get_tag
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-  
+
+    - name: Download migrations
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2
+      with:
+        name: migrations-image
+        path: ./docker-archive
+
     - name: Download kotsadm image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2

@@ -130,3 +130,7 @@ func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 		},
 	}
 }
+
+func privateKotsadmRegistrySecret(deployOptions types.DeployOptions) *corev1.Secret {
+	return kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions)
+}

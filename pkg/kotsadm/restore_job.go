@@ -11,11 +11,21 @@ import (
 )
 
 func restoreJob(backupName string, namespace string, isOpenShift bool) *batchv1.Job {
+	deployOptions := types.DeployOptions{} // TODO: make this real
 	var securityContext corev1.PodSecurityContext
 	if !isOpenShift {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(999),
 			FSGroup:   util.IntPointer(999),
+		}
+	}
+
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
 		}
 	}
 
@@ -40,9 +50,10 @@ func restoreJob(backupName string, namespace string, isOpenShift bool) *batchv1.
 					SecurityContext:    &securityContext,
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: "kotsadm",
+					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(), kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-restore",
 							Command: []string{

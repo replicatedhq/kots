@@ -164,7 +164,7 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 	}
 
 	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(), kotsadmTag())
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -198,6 +198,15 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -224,9 +233,10 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-operator",
 					RestartPolicy:      corev1.RestartPolicyAlways,
+					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(), kotsadmTag()),
+							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-operator",
 							Env: []corev1.EnvVar{

@@ -32,4 +32,6 @@ type DeployOptions struct {
 	IncludeMinio              bool
 	IncludeDockerDistribution bool
 	Timeout                   time.Duration
+
+	KotsadmOptions KotsadmOptions
 }

@@ -343,6 +343,10 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
+	if err := ensureKotsadmPullSecrets(&deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres")
+	}
+
 	if err := ensurePostgres(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
 	}

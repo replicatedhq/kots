@@ -4,6 +4,7 @@ const KotsadmKey = "kots.io/kotsadm"
 const KotsadmLabelValue = "true"
 
 const ClusterTokenSecret = "kotsadm-cluster-token"
+const PrivateKotsadmRegistrySecret = "kotsadm-private-registry"
 
 const VeleroKey = "kots.io/backup-type"
 const VeleroLabelConsoleValue = "admin-console"
