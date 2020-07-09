@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -104,6 +105,15 @@ where app_id = $3 and parent_sequence = $4`
 		return errors.Wrap(err, "failed to write preflight results")
 	}
 
+	// deploy first version if preflight checks passed
+	preflightState := getPreflightState(uploadPreflightResults)
+	if sequence == 0 && preflightState == "pass" {
+		err := version.DeployVersion(appID, sequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to deploy first version")
+		}
+	}
+
 	return nil
 }
 
@@ -113,4 +123,25 @@ func isPermissionsError(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "insufficient permissions to run all collectors")
+}
+
+func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+	if len(preflightResults.Errors) > 0 {
+		return "fail"
+	}
+
+	if len(preflightResults.Results) == 0 {
+		return "pass"
+	}
+
+	state := "pass"
+	for _, result := range preflightResults.Results {
+		if result.IsFail {
+			return "fail"
+		} else if result.IsWarn {
+			state = "warn"
+		}
+	}
+
+	return state
 }
