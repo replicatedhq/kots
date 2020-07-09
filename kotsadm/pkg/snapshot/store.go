@@ -79,9 +79,9 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			zap.String("accessKeyId", store.AWS.AccessKeyID),
 			zap.Bool("useInstanceRole", store.AWS.UseInstanceRole))
 
-		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.AWS.Region
-		// s3Url can be set by Other and conflicts with S3
-		delete(kotsadmVeleroBackendStorageLocation.Spec.Config, "s3Url")
+		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+			"region": store.AWS.Region,
+		}
 
 		if store.AWS.UseInstanceRole {
 			// delete the secret
@@ -151,14 +151,19 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 			}
 		}
 	} else if store.Other != nil {
-		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.Other.Region
-		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Other.Endpoint
+		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+			"region": store.Other.Region,
+			"s3Url": store.Other.Endpoint,
+		}
 
 		// create or update the secret
 	} else if store.Internal != nil {
-		kotsadmVeleroBackendStorageLocation.Spec.Config["region"] = store.Internal.Region
-		kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"] = store.Internal.Endpoint
-		kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"] = fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP)
+		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+			"region": store.Internal.Region,
+			"s3Url": store.Internal.Endpoint,
+			"publicUrl": fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP),
+			"s3ForcePathStyle": "true",
+		}
 
 		internalCfg := ini.Empty()
 		section, err := internalCfg.NewSection("default")
